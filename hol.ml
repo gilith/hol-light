@@ -95,6 +95,16 @@ loads "lib.ml";;        (* Various useful general library functions          *)
 loads "fusion.ml";;
 
 (* ------------------------------------------------------------------------- *)
+(* OpenTheory proof logging.                                                 *)
+(* ------------------------------------------------------------------------- *)
+
+loads "logging.ml";;
+
+start_logging ();;
+
+(***
+
+(* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)
 (* ------------------------------------------------------------------------- *)
 
@@ -158,3 +168,5 @@ loads "define.ml";;     (* Support for general recursive definitions         *)
 
 loads "help.ml";;       (* Online help using the entries in Help directory   *)
 loads "database.ml";;   (* List of name-theorem pairs for search system      *)
+
+***)
