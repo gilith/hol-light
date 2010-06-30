@@ -73,10 +73,18 @@ let PROVE_HYP ath bth =
 (* Rules for T                                                               *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "bool-def";;
+
 let T_DEF = new_basic_definition
  `T = ((\p:bool. p) = (\p:bool. p))`;;
 
+export_thm T_DEF;;
+
+logfile "bool-thm";;
+
 let TRUTH = EQ_MP (SYM T_DEF) (REFL `\p:bool. p`);;
+
+export_thm TRUTH;;
 
 let EQT_ELIM th =
   try EQ_MP (SYM th) TRUTH

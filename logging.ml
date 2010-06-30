@@ -4,18 +4,6 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Helper functions                                                          *)
-(* ------------------------------------------------------------------------- *)
-
-let curry3 f x y z = f (x,y,z);;
-
-let curry4 f w x y z = f (w,x,y,z);;
-
-let uncurry3 f (x,y,z) = f x y z;;
-
-let uncurry4 f (w,x,y,z) = f w x y z;;
-
-(* ------------------------------------------------------------------------- *)
 (* Setting up the log files: part 1                                          *)
 (* ------------------------------------------------------------------------- *)
 
@@ -119,12 +107,31 @@ let stop_logging () =
     | _ -> ();;
 
 (* ------------------------------------------------------------------------- *)
+(* Logging comments.                                                         *)
+(* ------------------------------------------------------------------------- *)
+
+let split s =
+    let n = String.length s in
+    let rec spl i =
+        if i = n then []
+        else if String.contains_from s i '\n' then
+          let j = String.index_from s i '\n' in
+          if j = i then "" :: spl (j + 1)
+          else String.sub s i (j - i) :: spl (j + 1)
+        else [String.sub s i (n - i)] in
+    spl 0;;
+
+let log_comment s =
+    let ws = map (fun w -> if w = "" then "#" else "# " ^ w) (split s) in
+    List.iter log_raw ws;;
+
+let log_comment_thm th = log_comment (string_of_thm th);;
+
+(* ------------------------------------------------------------------------- *)
 (* Logging complex types                                                     *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 let log_map (f : 'a -> 'b) (log_b : 'b -> unit) a = log_b (f a);;
-***)
 
 let log_nil () = log_command "nil";;
 
@@ -145,37 +152,6 @@ let log_pair (f : 'a -> unit) (g : 'b -> unit) (x,y) =
 
 let log_triple (f : 'a -> unit) (g : 'b -> unit) (h : 'c -> unit) (x,y,z) =
     f x; log_pair g h (y,z); log_command "cons";;
-
-let log_quadruple (f : 'a -> unit) (g : 'b -> unit) (h : 'c -> unit)
-      (j : 'd -> unit) (w,x,y,z) =
-    f w; log_triple g h j (x,y,z); log_command "cons";;
-
-(***
-let log_function n log_arg log_ret func arg =
-    if not (is_logging ()) then func arg else
-    try
-      (log_arg arg;
-       log_call n;
-       let ret = func arg in
-       log_ret ret;
-       log_return n;
-       ret)
-    with Failure err ->
-      (log_error ();
-       log_return n;
-       raise (Failure err));;
-
-let log_function2 n log_arg1 log_arg2 log_ret func =
-    curry (log_function n (log_pair log_arg1 log_arg2) log_ret (uncurry func));;
-
-let log_function3 n log_arg1 log_arg2 log_arg3 log_ret func =
-    curry3 (log_function n (log_triple log_arg1 log_arg2 log_arg3) log_ret
-    (uncurry3 func));;
-
-let log_function4 n log_arg1 log_arg2 log_arg3 log_arg4 log_ret func =
-    curry4 (log_function n (log_quadruple log_arg1 log_arg2 log_arg3 log_arg4)
-    log_ret (uncurry4 func));;
-***)
 
 let (log_type_op_mem,log_type_op_save,log_type_op) =
     let log _ n =
@@ -219,9 +195,20 @@ let log_term =
           (log_var v; f b; log_command "absTerm") in
     log_dict log;;
 
-let log_type_inst = log_list (log_pair log_type log_type);;
+let log_inst =
+  log_pair
+    (log_list (log_pair log_type_var log_type))
+    (log_list (log_pair log_var log_term));;
 
-let log_inst = log_list (log_pair log_term log_term);;
+let log_type_inst =
+    log_map
+      (fun i -> (map (fun (ty,v) -> (dest_vartype v, ty)) i, []))
+      log_inst;;
+
+let log_term_inst =
+    log_map
+      (fun i -> ([], map (fun (tm,v) -> (v,tm)) i))
+      log_inst;;
 
 let (log_thm_mem,log_thm_save,log_thm) =
     let log _ th =
@@ -255,11 +242,11 @@ let MK_COMB (th1,th2) =
               log_command "pop") in
     th;;
 
-let ABS tm1 th2 =
-    let th = ABS tm1 th2 in
+let ABS v1 th2 =
+    let th = ABS v1 th2 in
     let () =
         if log_thm_mem th then ()
-        else (log_term tm1;
+        else (log_var v1;
               log_thm th2;
               log_command "abs";
               log_thm_save th;
@@ -292,7 +279,10 @@ let EQ_MP th1 th2 =
         if log_thm_mem th then ()
         else (log_thm th1;
               log_thm th2;
+              log_comment_thm th1;
+              log_comment_thm th2;
               log_command "eqMp";
+              log_comment_thm th;
               log_thm_save th;
               log_command "pop") in
     th;;
@@ -323,9 +313,11 @@ let INST i1 th2 =
     let th = INST i1 th2 in
     let () =
         if log_thm_mem th then ()
-        else (log_inst i1;
+        else (log_term_inst i1;
               log_thm th2;
+              log_comment_thm th2;
               log_command "subst";
+              log_comment_thm th;
               log_thm_save th;
               log_command "pop") in
     th;;
@@ -351,10 +343,12 @@ let new_basic_definition tm =
 
 let new_basic_type_definition ty (abs,rep) th =
     let (ar,ra) = new_basic_type_definition ty (abs,rep) th in
+    let lhs tm = fst (dest_eq tm) in
+    let range ty = hd (tl (snd (dest_type ty))) in
     let (absTm,repTm) = dest_comb (lhs (concl ar)) in
     let (repTm,_) = dest_const (rator repTm) in
     let (absTm,newTy) = dest_const absTm in
-    let (_,newTy) = dest_fun newTy in
+    let newTy = range newTy in
     let (newTy,tyVars) = dest_type newTy in
     let tyVars = map dest_vartype tyVars in
     let () = (log_name ty;
@@ -375,7 +369,9 @@ let new_basic_type_definition ty (abs,rep) th =
               log_command "pop") in
     (ar,ra);;
 
-let TRANS th1 th2 = log_function2 "TRANS" log_thm log_thm log_thm TRANS;;
+let TRANS th1 th2 =
+    let th3 = MK_COMB(REFL(rator(concl th1)),th2) in
+    EQ_MP th3 th1;;
 
 (* ------------------------------------------------------------------------- *)
 (* Exporting theorems.                                                       *)

@@ -95,16 +95,6 @@ loads "lib.ml";;        (* Various useful general library functions          *)
 loads "fusion.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* OpenTheory proof logging.                                                 *)
-(* ------------------------------------------------------------------------- *)
-
-loads "logging.ml";;
-
-start_logging ();;
-
-(***
-
-(* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)
 (* ------------------------------------------------------------------------- *)
 
@@ -120,6 +110,14 @@ loads "parser.ml";;     (* Lexer and parser                                  *)
 loads "printer.ml";;    (* Crude prettyprinter                               *)
 
 (* ------------------------------------------------------------------------- *)
+(* OpenTheory proof logging.                                                 *)
+(* ------------------------------------------------------------------------- *)
+
+loads "logging.ml";;
+
+start_logging ();;
+
+(* ------------------------------------------------------------------------- *)
 (* Higher level deductive system.                                            *)
 (* ------------------------------------------------------------------------- *)
 
@@ -127,6 +125,9 @@ loads "equal.ml";;      (* Basic equality reasoning and conversionals        *)
 loads "bool.ml";;       (* Boolean theory and basic derived rules            *)
 loads "drule.ml";;      (* Additional derived rules                          *)
 loads "tactics.ml";;    (* Tactics, tacticals and goal stack                 *)
+
+(***
+
 loads "itab.ml";;       (* Toy prover for intuitionistic logic               *)
 loads "simp.ml";;       (* Basic rewriting and simplification tools.         *)
 loads "theorems.ml";;   (* Additional theorems (mainly for quantifiers) etc. *)
@@ -170,3 +171,5 @@ loads "help.ml";;       (* Online help using the entries in Help directory   *)
 loads "database.ml";;   (* List of name-theorem pairs for search system      *)
 
 ***)
+
+stop_logging ();;

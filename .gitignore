@@ -1,3 +1,6 @@
+*.art
+*.sum
+*.thy
 pa_j.cmi
 pa_j.cmo
 pa_j.ml
