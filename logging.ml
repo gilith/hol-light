@@ -87,13 +87,15 @@ let logfile f =
     match (!log_state) with
       Ready_logging ->
       (log_dict_reset ();
-       log_state := Active_logging (open_out (f ^ ".art")))
+       log_state := Active_logging (open_out ("opentheory/" ^ f ^ ".art")))
     | _ -> ();;
 
 let is_logging () =
     match (!log_state) with
-      Not_logging -> false
-    | _ -> true;;
+      Active_logging _ -> true
+    | _ -> false;;
+
+let not_logging () = not (is_logging ());;
 
 let start_logging () =
     match (!log_state) with
@@ -125,7 +127,9 @@ let log_comment s =
     let ws = map (fun w -> if w = "" then "#" else "# " ^ w) (split s) in
     List.iter log_raw ws;;
 
+(***
 let log_comment_thm th = log_comment (string_of_thm th);;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Logging complex types                                                     *)
@@ -224,7 +228,7 @@ let (log_thm_mem,log_thm_save,log_thm) =
 let REFL tm =
     let th = REFL tm in
     let () =
-        if log_thm_mem th then ()
+        if not_logging () || log_thm_mem th then ()
         else (log_term tm;
               log_command "refl";
               log_thm_save th;
@@ -234,7 +238,7 @@ let REFL tm =
 let MK_COMB (th1,th2) =
     let th = MK_COMB (th1,th2) in
     let () =
-        if log_thm_mem th then ()
+        if not_logging () || log_thm_mem th then ()
         else (log_thm th1;
               log_thm th2;
               log_command "app";
@@ -245,7 +249,7 @@ let MK_COMB (th1,th2) =
 let ABS v1 th2 =
     let th = ABS v1 th2 in
     let () =
-        if log_thm_mem th then ()
+        if not_logging () || log_thm_mem th then ()
         else (log_var v1;
               log_thm th2;
               log_command "abs";
@@ -256,7 +260,7 @@ let ABS v1 th2 =
 let BETA tm =
     let th = BETA tm in
     let () =
-        if log_thm_mem th then ()
+        if not_logging () || log_thm_mem th then ()
         else (log_term tm;
               log_command "betaConv";
               log_thm_save th;
@@ -266,7 +270,7 @@ let BETA tm =
 let ASSUME tm =
     let th = ASSUME tm in
     let () =
-        if log_thm_mem th then ()
+        if not_logging () || log_thm_mem th then ()
         else (log_term tm;
               log_command "assume";
               log_thm_save th;
@@ -276,13 +280,13 @@ let ASSUME tm =
 let EQ_MP th1 th2 =
     let th = EQ_MP th1 th2 in
     let () =
-        if log_thm_mem th then ()
+        if not_logging () || log_thm_mem th then ()
         else (log_thm th1;
               log_thm th2;
-              log_comment_thm th1;
-              log_comment_thm th2;
+              (*log_comment_thm th1;*)
+              (*log_comment_thm th2;*)
               log_command "eqMp";
-              log_comment_thm th;
+              (*log_comment_thm th;*)
               log_thm_save th;
               log_command "pop") in
     th;;
@@ -290,7 +294,7 @@ let EQ_MP th1 th2 =
 let DEDUCT_ANTISYM_RULE th1 th2 =
     let th = DEDUCT_ANTISYM_RULE th1 th2 in
     let () =
-        if log_thm_mem th then ()
+        if not_logging () || log_thm_mem th then ()
         else (log_thm th1;
               log_thm th2;
               log_command "deductAntisym";
@@ -301,7 +305,7 @@ let DEDUCT_ANTISYM_RULE th1 th2 =
 let INST_TYPE i1 th2 =
     let th = INST_TYPE i1 th2 in
     let () =
-        if log_thm_mem th then ()
+        if not_logging () || log_thm_mem th then ()
         else (log_type_inst i1;
               log_thm th2;
               log_command "subst";
@@ -312,74 +316,84 @@ let INST_TYPE i1 th2 =
 let INST i1 th2 =
     let th = INST i1 th2 in
     let () =
-        if log_thm_mem th then ()
+        if not_logging () || log_thm_mem th then ()
         else (log_term_inst i1;
               log_thm th2;
-              log_comment_thm th2;
+              (*log_comment_thm th2;*)
               log_command "subst";
-              log_comment_thm th;
+              (*log_comment_thm th;*)
               log_thm_save th;
               log_command "pop") in
     th;;
 
 let new_axiom tm =
     let th = new_axiom tm in
-    let () = (log_thm th;
+    let () =
+        if not_logging () || log_thm_mem th then ()
+        else (log_thm th;
               log_command "pop") in
     th;;
 
 let new_basic_definition tm =
     let th = new_basic_definition tm in
-    let (n,tm) = dest_eq (concl th) in
-    let (n,_) = dest_const n in
-    let () = (log_name n;
-              log_term tm;
-              log_command "defineConst";
-              log_thm_save th;
-              log_command "pop";
-              log_const_save n;
-              log_command "pop") in
+    let () =
+        if not_logging () then ()
+        else
+          let (n,tm) = dest_eq (concl th) in
+          let (n,_) = dest_const n in
+          (log_name n;
+           log_term tm;
+           log_command "defineConst";
+           log_thm_save th;
+           log_command "pop";
+           log_const_save n;
+           log_command "pop") in
     th;;
 
 let new_basic_type_definition ty (abs,rep) th =
     let (ar,ra) = new_basic_type_definition ty (abs,rep) th in
-    let lhs tm = fst (dest_eq tm) in
-    let range ty = hd (tl (snd (dest_type ty))) in
-    let (absTm,repTm) = dest_comb (lhs (concl ar)) in
-    let (repTm,_) = dest_const (rator repTm) in
-    let (absTm,newTy) = dest_const absTm in
-    let newTy = range newTy in
-    let (newTy,tyVars) = dest_type newTy in
-    let tyVars = map dest_vartype tyVars in
-    let () = (log_name ty;
-              log_name abs;
-              log_name rep;
-              log_list log_type_var tyVars;
-              log_thm th;
-              log_command "defineTypeOp";
-              log_thm_save ra;
-              log_command "pop";
-              log_thm_save ar;
-              log_command "pop";
-              log_const_save repTm;
-              log_command "pop";
-              log_const_save absTm;
-              log_command "pop";
-              log_type_op_save newTy;
-              log_command "pop") in
+    let () =
+        if not_logging () then ()
+        else
+          let lhs tm = fst (dest_eq tm) in
+          let range ty = hd (tl (snd (dest_type ty))) in
+          let (absTm,repTm) = dest_comb (lhs (concl ar)) in
+          let (repTm,_) = dest_const (rator repTm) in
+          let (absTm,newTy) = dest_const absTm in
+          let newTy = range newTy in
+          let (newTy,tyVars) = dest_type newTy in
+          let tyVars = map dest_vartype tyVars in
+          (log_name ty;
+           log_name abs;
+           log_name rep;
+           log_list log_type_var tyVars;
+           log_thm th;
+           log_command "defineTypeOp";
+           log_thm_save ra;
+           log_command "pop";
+           log_thm_save ar;
+           log_command "pop";
+           log_const_save repTm;
+           log_command "pop";
+           log_const_save absTm;
+           log_command "pop";
+           log_type_op_save newTy;
+           log_command "pop") in
     (ar,ra);;
 
 let TRANS th1 th2 =
-    let th3 = MK_COMB(REFL(rator(concl th1)),th2) in
-    EQ_MP th3 th1;;
+    if not_logging () then TRANS th1 th2
+    else
+      let th3 = MK_COMB(REFL(rator(concl th1)),th2) in
+      EQ_MP th3 th1;;
 
 (* ------------------------------------------------------------------------- *)
 (* Exporting theorems.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
 let export_thm th =
-    (log_thm th;
-     log_list log_term (hyp th);
-     log_term (concl th);
-     log_command "thm";
-     th);;
+    if not_logging () then ()
+    else (log_thm th;
+          log_list log_term (hyp th);
+          log_term (concl th);
+          log_command "thm");;

@@ -95,6 +95,14 @@ loads "lib.ml";;        (* Various useful general library functions          *)
 loads "fusion.ml";;
 
 (* ------------------------------------------------------------------------- *)
+(* OpenTheory proof logging.                                                 *)
+(* ------------------------------------------------------------------------- *)
+
+loads "logging.ml";;
+
+start_logging ();;
+
+(* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)
 (* ------------------------------------------------------------------------- *)
 
@@ -108,14 +116,6 @@ loads "nets.ml";;       (* Term nets for fast matchability-based lookup      *)
 loads "preterm.ml";;    (* Preterms and their interconversion with terms     *)
 loads "parser.ml";;     (* Lexer and parser                                  *)
 loads "printer.ml";;    (* Crude prettyprinter                               *)
-
-(* ------------------------------------------------------------------------- *)
-(* OpenTheory proof logging.                                                 *)
-(* ------------------------------------------------------------------------- *)
-
-loads "logging.ml";;
-
-start_logging ();;
 
 (* ------------------------------------------------------------------------- *)
 (* Higher level deductive system.                                            *)
