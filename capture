@@ -1,7 +1,5 @@
 #!/bin/bash
 
-ver=2009.8.24
-
 opentheory=../opentheory
 
 adir=$opentheory/test/articles/hol-light
@@ -17,54 +15,56 @@ then
     perl -ne 'chomp $_; if ($_ !~ /^ *([#]|$)/) { print STDOUT "$_\n"; }' < $int > opentheory/hol-light.int
 fi
 
-rdir=$opentheory/test/opentheory
-if ! test -d $rdir ; then echo "$rdir not a directory" ; exit 1 ; fi
+theories=$opentheory/test/theories
+if ! test -d $theories ; then echo "$theories not a directory" ; exit 1 ; fi
+
+repo=$opentheory/test/repo
+if ! test -d $repo ; then echo "$repo not a directory" ; exit 1 ; fi
 
 echo '#use "hol.ml";;' | ocaml
 
-cat opentheory/bool-true-def.art \
-    opentheory/bool-true-thm.art \
-    opentheory/bool-true-aux.art \
-    opentheory/bool-and-def.art \
-    opentheory/bool-and-aux.art \
-    opentheory/bool-imp-def.art \
-    opentheory/bool-imp-aux.art \
-    opentheory/bool-forall-def.art \
-    opentheory/bool-forall-aux.art \
-    opentheory/bool-exists-def.art \
-    opentheory/bool-exists-aux.art \
-    opentheory/bool-or-def.art \
-    opentheory/bool-or-aux.art \
-    opentheory/bool-false-def.art \
-    opentheory/bool-not-def.art \
-    opentheory/bool-not-aux.art \
-    opentheory/bool-exists-unique-def.art \
-    opentheory/bool-exists-unique-aux.art > $adir/bool.art
+cat opentheory/bool-true-thm.art > $adir/bool.art
 cat opentheory/tactics-aux.art > $adir/tactics.art
 
 for thy in $(ls -tr opentheory/*.thy)
 do
-    echo
-    base=$(basename $file .thy)
-    pdir=$rdir/packages/hol-light-$base-$ver
+    base=$(basename $thy .thy)
+    tdir=$theories/$base
 
-    if test -d $pdir
+    if ! test -d $tdir
     then
-        sum=opentheory/$base.sum
+        echo "making new" $base "theory directory"
+        mkdir $tdir
 
-        if test $thy -nt $sum
-        then
-            echo "compiling" $thy
+        echo $base.art > $tdir/.gitignore
 
-            $prog compile --summary-text $sum --article $pdir/$file $thy || exit 1
-            ls -l $file
-            ls -l $pdir/$file
-        else
-            echo "skipping" $file "(up to date)"
-        fi
+        tthy=$tdir/$base.thy
+        echo "name: $base" > $tthy
+        echo "version: 1.0" >> $tthy
+        echo -n "description: HOL Light theory segment $base extracted on " >> $tthy
+        date "+%Y-%m-%d." >> $tthy
+        echo "author: Joe Hurd <joe@gilith.com>" >> $tthy
+        echo "license: HOLLight" >> $tthy
+        echo >> $tthy
+        echo "main {" >> $tthy
+        echo "  article: \"$base.art\"" >> $tthy
+        echo "}" >> $tthy
+    fi
+
+    sum=opentheory/$base.sum
+
+    if test $thy -nt $sum
+    then
+        art=$tdir/$base.art
+
+        echo "compiling" $base
+
+        $prog compile --summary-text $sum --article $art $thy || exit 1
+        ls -l opentheory/$base.art
+        ls -l $art
+        echo
     else
-        echo -n "skipping "
-        ls -l $thy
+        echo "skipping " $base "(up to date)"
     fi
 done
 

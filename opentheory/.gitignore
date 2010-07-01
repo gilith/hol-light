@@ -1,3 +1,4 @@
 *.art
+*.sum
 *.thy
 hol-light.int

@@ -367,7 +367,7 @@ let INST i1 th2 =
 let new_axiom tm =
     let th = new_axiom tm in
     let () =
-        if not_logging () || log_thm_mem th then ()
+        if not_logging () then ()
         else (log_thm th;
               log_command "pop") in
     th;;
