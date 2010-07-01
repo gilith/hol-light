@@ -83,8 +83,18 @@ let is_auxiliary_file f =
 
 let add_auxiliary_file x = auxiliary_files := x :: !auxiliary_files;;
 
+let interpretation () =
+    let int = open_in "opentheory/hol-light.int" in
+    let rec read acc =
+        try let l = input_line int in
+            read (acc ^ "  interpret: " ^ l ^ "\n")
+        with End_of_file -> acc in
+    let res = read "" in
+    let () = close_in int in
+    res;;
+
 let write_theory_file f =
-    let int = "" in
+    let int = interpretation () in
     let thy = open_out ("opentheory/" ^ f ^ ".thy") in
     let write_block xs (n,a) =
         let () = output_string thy ("\n" ^ n ^ " {\n" ^ xs ^
@@ -269,7 +279,7 @@ let MK_COMB (th1,th2) =
         if not_logging () || log_thm_mem th then ()
         else (log_thm th1;
               log_thm th2;
-              log_command "app";
+              log_command "appThm";
               log_thm_save th;
               log_command "pop") in
     th;;
@@ -280,7 +290,7 @@ let ABS v1 th2 =
         if not_logging () || log_thm_mem th then ()
         else (log_var v1;
               log_thm th2;
-              log_command "abs";
+              log_command "absThm";
               log_thm_save th;
               log_command "pop") in
     th;;
