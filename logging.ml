@@ -103,7 +103,7 @@ let write_theory_file f =
     let mk_aux x = (x,x) in
     let xs = map mk_aux (!auxiliary_files) in
     let xs = rev (("main",f) :: xs) in
-    let () = output_string thy ("comment: theory file for " ^ f ^ "\n") in
+    let () = output_string thy ("description: theory file for " ^ f ^ "\n") in
     let _ = List.fold_left write_block "" xs in
     close_out thy
 

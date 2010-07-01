@@ -22,34 +22,39 @@ if ! test -d $rdir ; then echo "$rdir not a directory" ; exit 1 ; fi
 
 echo '#use "hol.ml";;' | ocaml
 
-if ! test -r bool-def.art ; then echo "bool-def.art not readable" ; exit 1 ; fi
-if ! test -r bool-thm.art ; then echo "bool-thm.art not readable" ; exit 1 ; fi
-cat bool-def.art bool-thm.art > $adir/bool.art
+cat opentheory/bool-true-def.art \
+    opentheory/bool-true-thm.art \
+    opentheory/bool-true-aux.art \
+    opentheory/bool-and-def.art \
+    opentheory/bool-and-aux.art \
+    opentheory/bool-imp-def.art \
+    opentheory/bool-imp-aux.art \
+    opentheory/bool-forall-def.art \
+    opentheory/bool-forall-aux.art \
+    opentheory/bool-exists-def.art \
+    opentheory/bool-exists-aux.art \
+    opentheory/bool-or-def.art \
+    opentheory/bool-or-aux.art \
+    opentheory/bool-false-def.art \
+    opentheory/bool-not-def.art \
+    opentheory/bool-not-aux.art \
+    opentheory/bool-exists-unique-def.art \
+    opentheory/bool-exists-unique-aux.art > $adir/bool.art
+cat opentheory/tactics-aux.art > $adir/tactics.art
 
-if ! test -r tactics-thm.art ; then echo "tactics-thm.art not readable" ; exit 1 ; fi
-cat tactics-thm.art > $adir/tactics.art
-
-for file in $(ls -tr *.art)
+for thy in $(ls -tr opentheory/*.thy)
 do
     echo
-    base=$(basename $file .art)
+    base=$(basename $file .thy)
     pdir=$rdir/packages/hol-light-$base-$ver
 
     if test -d $pdir
     then
-        sum=$base.sum
+        sum=opentheory/$base.sum
 
-        if : # test $file -nt $sum
+        if test $thy -nt $sum
         then
-            echo "compiling" $file
-
-            thy=$base.thy
-            echo 'main {' > $thy
-            perl -ne 'chomp $_; if ($_ !~ /^ *([#]|$)/) { print STDOUT "  interpret: $_\n"; }' < $int >> $thy
-            echo -n '  article: "' >> $thy
-            echo -n $file >> $thy
-            echo '"' >> $thy
-            echo '}' >> $thy
+            echo "compiling" $thy
 
             $prog compile --summary-text $sum --article $pdir/$file $thy || exit 1
             ls -l $file
@@ -59,11 +64,11 @@ do
         fi
     else
         echo -n "skipping "
-        ls -l $file
+        ls -l $thy
     fi
 done
 
 echo
 
-cd $opentheory
-make all-generic-theories || exit 1
+# cd $opentheory
+# make all-generic-theories || exit 1
