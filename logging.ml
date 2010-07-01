@@ -72,6 +72,32 @@ let log_dict (f : ('a -> unit) -> 'a -> unit) =
       (_,_,log) -> log;;
 
 (* ------------------------------------------------------------------------- *)
+(* Auxiliary files.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
+let auxiliary_files = ref ([] : string list);;
+
+let is_auxiliary_file f =
+    let n = String.length f in
+    n >= 4 && String.sub f (n - 4) 4 = "-aux";;
+
+let add_auxiliary_file x = auxiliary_files := x :: !auxiliary_files;;
+
+let write_theory_file f =
+    let int = "" in
+    let thy = open_out ("opentheory/" ^ f ^ ".thy") in
+    let write_block xs (n,a) =
+        let () = output_string thy ("\n" ^ n ^ " {\n" ^ xs ^
+                  int ^ "  article: \"" ^ a ^ ".art\"\n}\n") in
+        xs ^ "  import: " ^ n ^ "\n" in
+    let mk_aux x = (x,x) in
+    let xs = map mk_aux (!auxiliary_files) in
+    let xs = rev (("main",f) :: xs) in
+    let () = output_string thy ("comment: theory file for " ^ f ^ "\n") in
+    let _ = List.fold_left write_block "" xs in
+    close_out thy
+
+(* ------------------------------------------------------------------------- *)
 (* Setting up the log files: part 2                                          *)
 (* ------------------------------------------------------------------------- *)
 
@@ -84,9 +110,11 @@ let logfile_end () =
 
 let logfile f =
     logfile_end ();
+    if is_auxiliary_file f then add_auxiliary_file f else ();
     match (!log_state) with
       Ready_logging ->
       (log_dict_reset ();
+       if is_auxiliary_file f then () else write_theory_file f;
        log_state := Active_logging (open_out ("opentheory/" ^ f ^ ".art")))
     | _ -> ();;
 
