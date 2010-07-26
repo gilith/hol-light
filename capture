@@ -18,18 +18,28 @@ fi
 theories=$opentheory/test/theories
 if ! test -d $theories ; then echo "$theories not a directory" ; exit 1 ; fi
 
-repo=$opentheory/test/repo
-if ! test -d $repo ; then echo "$repo not a directory" ; exit 1 ; fi
+directory=$opentheory/test/directory
+if ! test -d $directory ; then echo "$directory not a directory" ; exit 1 ; fi
 
 echo '#use "hol.ml";;' | ocaml
 
-cat opentheory/bool-true-thm.art > $adir/bool.art
-cat opentheory/tactics-aux.art > $adir/tactics.art
+art=opentheory/bool-true-def.art
+if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi
+if test $art -nt $adir/$(basename $art) ; then cp -v $art $adir ; fi
+
+art=opentheory/bool-true-thm.art
+if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi
+if test $art -nt $adir/$(basename $art) ; then cp -v $art $adir ; fi
+
+art=opentheory/bool-true-aux.art
+if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi
+if test $art -nt $adir/$(basename $art) ; then cp -v $art $adir ; fi
 
 for thy in $(ls -tr opentheory/*.thy)
 do
     base=$(basename $thy .thy)
     tdir=$theories/$base
+    tthy=$tdir/$base.thy
 
     if ! test -d $tdir
     then
@@ -38,7 +48,6 @@ do
 
         echo $base.art > $tdir/.gitignore
 
-        tthy=$tdir/$base.thy
         echo "name: $base" > $tthy
         echo "version: 1.0" >> $tthy
         echo -n "description: HOL Light theory segment $base extracted on " >> $tthy
@@ -59,9 +68,8 @@ do
 
         echo "compiling" $base
 
-        $prog compile --summary-text $sum --article $art $thy || exit 1
-        ls -l opentheory/$base.art
-        ls -l $art
+        $prog info -o $sum --summary -o $art --article $thy || exit 1
+        $prog -d $directory install --reinstall --auto-uninstall $tthy || exit 1
         echo
     else
         echo "skipping " $base "(up to date)"
@@ -70,5 +78,5 @@ done
 
 echo
 
-# cd $opentheory
-# make all-generic-theories || exit 1
+cd $opentheory
+make compilation-theories || exit 1
