@@ -15,11 +15,8 @@ then
     perl -ne 'chomp $_; if ($_ !~ /^ *([#]|$)/) { print STDOUT "$_\n"; }' < $int > opentheory/hol-light.int
 fi
 
-theories=$opentheory/test/theories
+theories=$opentheory/data/theories
 if ! test -d $theories ; then echo "$theories not a directory" ; exit 1 ; fi
-
-directory=$opentheory/test/directory
-if ! test -d $directory ; then echo "$directory not a directory" ; exit 1 ; fi
 
 echo '#use "hol.ml";;' | ocaml
 
@@ -50,8 +47,8 @@ do
 
         echo "name: $base" > $tthy
         echo "version: 1.0" >> $tthy
-        echo -n "description: HOL Light theory segment $base extracted on " >> $tthy
-        date "+%Y-%m-%d." >> $tthy
+        echo -n "description: HOL Light theory segment extracted on " >> $tthy
+        date "+%Y-%m-%d" >> $tthy
         echo "author: Joe Hurd <joe@gilith.com>" >> $tthy
         echo "license: HOLLight" >> $tthy
         echo >> $tthy
@@ -69,7 +66,7 @@ do
         echo "compiling" $base
 
         $prog info -o $sum --summary -o $art --article $thy || exit 1
-        $prog -d $directory install --reinstall --auto-uninstall $tthy || exit 1
+        $prog install --reinstall --auto-uninstall $tthy || exit 1
         echo
     else
         echo "skipping " $base "(up to date)"
