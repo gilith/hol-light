@@ -15,16 +15,16 @@ then
     perl -ne 'chomp $_; if ($_ !~ /^ *([#]|$)/) { print STDOUT "$_\n"; }' < $int > opentheory/hol-light.int
 fi
 
-theories=$opentheory/data/theories
+theories=$opentheory/data/theories/hol-light
 if ! test -d $theories ; then echo "$theories not a directory" ; exit 1 ; fi
 
 echo '#use "hol.ml";;' | ocaml
 
-art=opentheory/bool-true-def.art
+art=opentheory/bool-def-true.art
 if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi
 if test $art -nt $adir/$(basename $art) ; then cp -v $art $adir ; fi
 
-art=opentheory/bool-true-thm.art
+art=opentheory/bool-int-true.art
 if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi
 if test $art -nt $adir/$(basename $art) ; then cp -v $art $adir ; fi
 
@@ -47,10 +47,10 @@ do
 
         echo "name: $base" > $tthy
         echo "version: 1.0" >> $tthy
-        echo -n "description: HOL Light theory segment extracted on " >> $tthy
-        date "+%Y-%m-%d" >> $tthy
+        echo "description: HOL Light theory segment" >> $tthy
         echo "author: Joe Hurd <joe@gilith.com>" >> $tthy
         echo "license: HOLLight" >> $tthy
+        echo "show: \"Data.Bool\"" >> $tthy
         echo >> $tthy
         echo "main {" >> $tthy
         echo "  article: \"$base.art\"" >> $tthy
@@ -73,7 +73,14 @@ do
     fi
 done
 
-echo
+hart=$theories/bool-def-true/bool-def-true.art
+tart=$opentheory/data/theories/bool-def-true/bool-def-true.art
+if ! test -r $hart ; then echo "$hart not readable" ; exit 1 ; fi
+if test $hart -nt $tart ; then cp -v $hart $tart ; fi
 
-cd $opentheory
-make compilation-theories || exit 1
+hart=$theories/bool-int-true/bool-int-true.art
+tart=$opentheory/data/theories/bool-int-true/bool-int-true.art
+if ! test -r $hart ; then echo "$hart not readable" ; exit 1 ; fi
+if test $hart -nt $tart ; then cp -v $hart $tart ; fi
+
+echo

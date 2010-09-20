@@ -9,6 +9,8 @@
 
 needs "itab.ml";;
 
+logfile "simp-aux";;
+
 (* ------------------------------------------------------------------------- *)
 (* Generalized conversion (conversion plus a priority).                      *)
 (* ------------------------------------------------------------------------- *)
@@ -144,9 +146,14 @@ let net_of_cong th sofar =
 (* ------------------------------------------------------------------------- *)
 
 let mk_rewrites =
-  let IMP_CONJ_CONV = REWR_CONV(ITAUT `p ==> q ==> r <=> p /\ q ==> r`)
+  let IMP_CONJ_CONV =
+    let pth = ITAUT `p ==> q ==> r <=> p /\ q ==> r` in
+    let () = export_thm pth in
+    REWR_CONV pth
   and IMP_EXISTS_RULE =
-    let cnv = REWR_CONV(ITAUT `(!x. P x ==> Q) <=> (?x. P x) ==> Q`) in
+    let pth = ITAUT `(!x. P x ==> Q) <=> (?x. P x) ==> Q` in
+    let () = export_thm pth in
+    let cnv = REWR_CONV pth in
     fun v th -> CONV_RULE cnv (GEN v th) in
   let collect_condition oldhyps th =
     let conds = subtract (hyp th) oldhyps in

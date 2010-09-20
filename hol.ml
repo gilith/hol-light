@@ -125,12 +125,12 @@ loads "equal.ml";;      (* Basic equality reasoning and conversionals        *)
 loads "bool.ml";;       (* Boolean theory and basic derived rules            *)
 loads "drule.ml";;      (* Additional derived rules                          *)
 loads "tactics.ml";;    (* Tactics, tacticals and goal stack                 *)
-
-(***
-
 loads "itab.ml";;       (* Toy prover for intuitionistic logic               *)
 loads "simp.ml";;       (* Basic rewriting and simplification tools.         *)
 loads "theorems.ml";;   (* Additional theorems (mainly for quantifiers) etc. *)
+
+(***
+
 loads "ind_defs.ml";;   (* Derived rules for inductive definitions           *)
 loads "class.ml";;      (* Classical reasoning: Choice and Extensionality    *)
 loads "trivia.ml";;     (* Some very basic theories, e.g. type ":1"          *)
