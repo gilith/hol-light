@@ -98,7 +98,7 @@ let write_theory_file f =
     let thy = open_out ("opentheory/articles/" ^ f ^ ".thy") in
     let write_block xs (n,i,a) =
         let () = output_string thy ("\n" ^ n ^ " {\n" ^ xs ^
-                  i ^ "  article: \"" ^ a ^ ".art\"\n}\n") in
+                   i ^ "  article: \"" ^ a ^ ".art\"\n}\n") in
         xs ^ "  import: " ^ n ^ "\n" in
     let mk_aux x = (x,"",x) in
     let xs = if is_auxiliary_file f then [] else map mk_aux (!auxiliary_files) in

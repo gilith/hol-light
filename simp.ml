@@ -398,6 +398,7 @@ let set_basic_rewrites,extend_basic_rewrites,basic_rewrites,
     (rewrites := canon_thl; rehash_convnet())
   and extend_basic_rewrites thl =
     let canon_thl = itlist (mk_rewrites false) thl [] in
+    let _ = map export_thm canon_thl in
     (rewrites := canon_thl @ !rewrites; rehash_convnet())
   and basic_rewrites() = !rewrites
   and set_basic_convs cnvs =
