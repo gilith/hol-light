@@ -95,13 +95,13 @@ let interpretation () =
 
 let write_theory_file f =
     let int = interpretation () in
-    let thy = open_out ("opentheory/" ^ f ^ ".thy") in
+    let thy = open_out ("opentheory/articles/" ^ f ^ ".thy") in
     let write_block xs (n,a) =
         let () = output_string thy ("\n" ^ n ^ " {\n" ^ xs ^
                   int ^ "  article: \"" ^ a ^ ".art\"\n}\n") in
         xs ^ "  import: " ^ n ^ "\n" in
     let mk_aux x = (x,x) in
-    let xs = map mk_aux (!auxiliary_files) in
+    let xs = if is_auxiliary_file f then [] else map mk_aux (!auxiliary_files) in
     let xs = rev (("main",f) :: xs) in
     let () = output_string thy ("description: theory file for " ^ f ^ "\n") in
     let _ = List.fold_left write_block "" xs in
@@ -124,8 +124,8 @@ let logfile f =
     match (!log_state) with
       Ready_logging ->
       (log_dict_reset ();
-       if is_auxiliary_file f then () else write_theory_file f;
-       log_state := Active_logging (open_out ("opentheory/" ^ f ^ ".art")))
+       write_theory_file f;
+       log_state := Active_logging (open_out ("opentheory/articles/" ^ f ^ ".art")))
     | _ -> ();;
 
 let is_logging () =

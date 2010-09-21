@@ -20,19 +20,36 @@ if ! test -d $theories ; then echo "$theories not a directory" ; exit 1 ; fi
 
 echo '#use "hol.ml";;' | ocaml
 
-art=opentheory/bool-def-true.art
+art=opentheory/articles/bool-def-true.art
 if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi
 if test $art -nt $adir/$(basename $art) ; then cp -v $art $adir ; fi
 
-art=opentheory/bool-int-true.art
+art=opentheory/articles/bool-int-true.art
 if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi
 if test $art -nt $adir/$(basename $art) ; then cp -v $art $adir ; fi
 
-art=opentheory/bool-true-aux.art
+art=opentheory/articles/bool-true-aux.art
 if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi
 if test $art -nt $adir/$(basename $art) ; then cp -v $art $adir ; fi
 
-for thy in $(ls -tr opentheory/*.thy)
+for thy in $(ls -tr opentheory/articles/*-aux.thy)
+do
+    base=$(basename $thy .thy)
+
+    art=opentheory/articles/$base.art
+    sum=opentheory/articles/$base.sum
+    cart=opentheory/articles/foo.art
+
+    echo "compressing" $art
+
+    $prog info --summary -o $sum --article -o $cart $thy || exit 1
+
+    mv $cart $art || exit 1
+done
+
+rm -f opentheory/articles/*-aux.thy
+
+for thy in $(ls -tr opentheory/articles/*.thy)
 do
     base=$(basename $thy .thy)
     tdir=$theories/$base
@@ -42,8 +59,6 @@ do
     then
         echo "making new" $base "theory directory"
         mkdir $tdir
-
-        echo $base.art > $tdir/.gitignore
 
         echo "name: $base" > $tthy
         echo "version: 1.0" >> $tthy
@@ -57,7 +72,7 @@ do
         echo "}" >> $tthy
     fi
 
-    sum=opentheory/$base.sum
+    sum=opentheory/articles/$base.sum
 
     if test $thy -nt $sum
     then
@@ -65,7 +80,7 @@ do
 
         echo "compiling" $base
 
-        $prog info -o $sum --summary -o $art --article $thy || exit 1
+        $prog info --summary -o $sum --article -o $art $thy || exit 1
         $prog install --reinstall --auto-uninstall $tthy || exit 1
         echo
     else
