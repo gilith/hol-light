@@ -96,13 +96,13 @@ let interpretation () =
 let write_theory_file f =
     let int = interpretation () in
     let thy = open_out ("opentheory/articles/" ^ f ^ ".thy") in
-    let write_block xs (n,a) =
+    let write_block xs (n,i,a) =
         let () = output_string thy ("\n" ^ n ^ " {\n" ^ xs ^
-                  int ^ "  article: \"" ^ a ^ ".art\"\n}\n") in
+                  i ^ "  article: \"" ^ a ^ ".art\"\n}\n") in
         xs ^ "  import: " ^ n ^ "\n" in
-    let mk_aux x = (x,x) in
+    let mk_aux x = (x,"",x) in
     let xs = if is_auxiliary_file f then [] else map mk_aux (!auxiliary_files) in
-    let xs = rev (("main",f) :: xs) in
+    let xs = rev (("main",int,f) :: xs) in
     let () = output_string thy ("description: theory file for " ^ f ^ "\n") in
     let _ = List.fold_left write_block "" xs in
     close_out thy
