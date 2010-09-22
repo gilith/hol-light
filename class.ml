@@ -13,12 +13,19 @@ needs "ind_defs.ml";;
 (* Eta-axiom, corresponding conversion, and extensionality.                  *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "axiom-extensionality";;
+
 let ETA_AX = new_axiom
   `!t:A->B. (\x. t x) = t`;;
+
+export_thm ETA_AX;;
+
+logfile "eta-conv-aux";;
 
 let ETA_CONV =
   let t = `t:A->B` in
   let pth = prove(`(\x. (t:A->B) x) = t`,MATCH_ACCEPT_TAC ETA_AX) in
+  let () = export_thm pth in
   fun tm ->
     try let bv,bod = dest_abs tm in
         let l,r = dest_comb bod in
@@ -27,10 +34,14 @@ let ETA_CONV =
         else fail()
     with Failure _ -> failwith "ETA_CONV";;
 
+logfile "bool-extensionality";;
+
 let EQ_EXT = prove
  (`!(f:A->B) g. (!x. f x = g x) ==> f = g`,
   REPEAT GEN_TAC THEN DISCH_THEN(MP_TAC o ABS `x:A` o SPEC `x:A`) THEN
   REWRITE_TAC[ETA_AX]);;
+
+export_thm EQ_EXT;;
 
 let FUN_EQ_THM = prove
  (`!(f:A->B) g. f = g <=> (!x. f x = g x)`,
@@ -38,9 +49,13 @@ let FUN_EQ_THM = prove
    [DISCH_THEN SUBST1_TAC THEN GEN_TAC THEN REFL_TAC;
     MATCH_ACCEPT_TAC EQ_EXT]);;
 
+export_thm FUN_EQ_THM;;
+
 (* ------------------------------------------------------------------------- *)
 (* Indefinite descriptor (giving AC).                                        *)
 (* ------------------------------------------------------------------------- *)
+
+logfile "axiom-choice";;
 
 new_constant("@",`:(A->bool)->A`);;
 
@@ -53,9 +68,13 @@ let mk_select = mk_binder "@";;
 let SELECT_AX = new_axiom
  `!P (x:A). P x ==> P((@) P)`;;
 
+export_thm SELECT_AX;;
+
 (* ------------------------------------------------------------------------- *)
 (* Useful for compatibility. (The old EXISTS_DEF.)                           *)
 (* ------------------------------------------------------------------------- *)
+
+logfile "bool-choice-exists";;
 
 let EXISTS_THM = prove
  (`(?) = \P:A->bool. P ((@) P)`,
@@ -64,6 +83,8 @@ let EXISTS_THM = prove
   EQ_TAC THENL
    [DISCH_THEN(CHOOSE_THEN MP_TAC) THEN MATCH_ACCEPT_TAC SELECT_AX;
     DISCH_TAC THEN EXISTS_TAC `((@) P):A` THEN POP_ASSUM ACCEPT_TAC]);;
+
+export_thm EXISTS_THM;;
 
 (* ------------------------------------------------------------------------- *)
 (* Rules and so on for the select operator.                                  *)

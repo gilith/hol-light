@@ -9,6 +9,8 @@
 
 needs "theorems.ml";;
 
+logfile "ind-defs-aux";;
+
 (* ------------------------------------------------------------------------- *)
 (* Strip off exactly n arguments from combination.                           *)
 (* ------------------------------------------------------------------------- *)
@@ -40,6 +42,7 @@ let EXISTS_EQUATION =
     REPEAT STRIP_TAC THEN FIRST_ASSUM MATCH_MP_TAC THEN
     EXISTS_TAC `t:A` THEN FIRST_ASSUM MATCH_MP_TAC THEN
     REFL_TAC) in
+  let () = export_thm pth in
   fun tm th ->
     let l,r = dest_eq tm in
     let P = mk_abs(l,concl th) in
@@ -245,24 +248,38 @@ let derive_nonschematic_inductive_relations =
 (* Part 2: Tactic-integrated tools for proving monotonicity automatically.   *)
 (* ========================================================================= *)
 
+logfile "bool-int-mono";;
+
 let MONO_AND = ITAUT `(A ==> B) /\ (C ==> D) ==> (A /\ C ==> B /\ D)`;;
+
+export_thm MONO_AND;;
 
 let MONO_OR = ITAUT `(A ==> B) /\ (C ==> D) ==> (A \/ C ==> B \/ D)`;;
 
+export_thm MONO_OR;;
+
 let MONO_IMP = ITAUT `(B ==> A) /\ (C ==> D) ==> ((A ==> C) ==> (B ==> D))`;;
 
+export_thm MONO_IMP;;
+
 let MONO_NOT = ITAUT `(B ==> A) ==> (~A ==> ~B)`;;
+
+export_thm MONO_NOT;;
 
 let MONO_FORALL = prove
  (`(!x:A. P x ==> Q x) ==> ((!x. P x) ==> (!x. Q x))`,
   REPEAT STRIP_TAC THEN FIRST_ASSUM MATCH_MP_TAC THEN
   ASM_REWRITE_TAC[]);;
 
+export_thm MONO_FORALL;;
+
 let MONO_EXISTS = prove
  (`(!x:A. P x ==> Q x) ==> ((?x. P x) ==> (?x. Q x))`,
   DISCH_TAC THEN DISCH_THEN(X_CHOOSE_TAC `x:A`) THEN
   EXISTS_TAC `x:A` THEN FIRST_ASSUM MATCH_MP_TAC THEN
   ASM_REWRITE_TAC[]);;
+
+export_thm MONO_EXISTS;;
 
 (* ------------------------------------------------------------------------- *)
 (* Assignable list of monotonicity theorems, so users can add their own.     *)
@@ -275,8 +292,11 @@ let monotonicity_theorems = ref
 (* Attempt to backchain through the monotonicity theorems.                   *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "ind-defs-mono-aux";;
+
 let MONO_TAC =
   let imp = `(==>)` and IMP_REFL = ITAUT `!p. p ==> p` in
+  let () = export_thm IMP_REFL in
   let BACKCHAIN_TAC th =
     let match_fn = PART_MATCH (snd o dest_imp) th in
     fun (asl,w) ->
