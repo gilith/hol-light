@@ -42,7 +42,7 @@ let EXISTS_EQUATION =
     REPEAT STRIP_TAC THEN FIRST_ASSUM MATCH_MP_TAC THEN
     EXISTS_TAC `t:A` THEN FIRST_ASSUM MATCH_MP_TAC THEN
     REFL_TAC) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun tm th ->
     let l,r = dest_eq tm in
     let P = mk_abs(l,concl th) in
@@ -296,7 +296,7 @@ logfile "ind-defs-mono-aux";;
 
 let MONO_TAC =
   let imp = `(==>)` and IMP_REFL = ITAUT `!p. p ==> p` in
-  let () = export_thm IMP_REFL in
+  let () = export_aux_thm IMP_REFL in
   let BACKCHAIN_TAC th =
     let match_fn = PART_MATCH (snd o dest_imp) th in
     fun (asl,w) ->

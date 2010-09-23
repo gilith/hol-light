@@ -148,11 +148,11 @@ let net_of_cong th sofar =
 let mk_rewrites =
   let IMP_CONJ_CONV =
     let pth = ITAUT `p ==> q ==> r <=> p /\ q ==> r` in
-    let () = export_thm pth in
+    let () = export_aux_thm pth in
     REWR_CONV pth
   and IMP_EXISTS_RULE =
     let pth = ITAUT `(!x. P x ==> Q) <=> (?x. P x) ==> Q` in
-    let () = export_thm pth in
+    let () = export_aux_thm pth in
     let cnv = REWR_CONV pth in
     fun v th -> CONV_RULE cnv (GEN v th) in
   let collect_condition oldhyps th =
@@ -398,7 +398,7 @@ let set_basic_rewrites,extend_basic_rewrites,basic_rewrites,
     (rewrites := canon_thl; rehash_convnet())
   and extend_basic_rewrites thl =
     let canon_thl = itlist (mk_rewrites false) thl [] in
-    let _ = map export_thm canon_thl in
+    let _ = map export_aux_thm canon_thl in
     (rewrites := canon_thl @ !rewrites; rehash_convnet())
   and basic_rewrites() = !rewrites
   and set_basic_convs cnvs =
@@ -419,7 +419,7 @@ let set_basic_rewrites,extend_basic_rewrites,basic_rewrites,
 let set_basic_congs,extend_basic_congs,basic_congs =
   let congs = ref ([]:thm list) in
   (fun thl -> congs := thl),
-  (fun thl -> let _ = map export_thm thl in
+  (fun thl -> let _ = map export_aux_thm thl in
               congs := union' equals_thm thl (!congs)),
   (fun () -> !congs);;
 

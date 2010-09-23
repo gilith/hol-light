@@ -98,7 +98,7 @@ let EQT_INTRO =
     let th1 = DEDUCT_ANTISYM_RULE (ASSUME t) TRUTH in
     let th2 = EQT_ELIM(ASSUME(concl th1)) in
     DEDUCT_ANTISYM_RULE th2 th1 in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th -> EQ_MP (INST[concl th,t] pth) th;;
 
 (* ------------------------------------------------------------------------- *)
@@ -128,7 +128,7 @@ let CONJ =
     let th2 = ABS f th1 in
     let th3 = BETA_RULE (AP_THM (AP_THM AND_DEF p) q) in
     EQ_MP (SYM th3) th2 in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th1 th2 ->
     let th = INST [concl th1,p; concl th2,q] pth in
     PROVE_HYP th2 (PROVE_HYP th1 th);;
@@ -140,7 +140,7 @@ let CONJUNCT1 =
     let th2 = CONV_RULE (RAND_CONV BETA_CONV) (AP_THM th1 `Q:bool`) in
     let th3 = EQ_MP th2 (ASSUME `P /\ Q`) in
     EQT_ELIM(BETA_RULE (AP_THM th3 `\(p:bool) (q:bool). p`)) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th ->
     try let l,r = dest_conj(concl th) in
         PROVE_HYP th (INST [l,P; r,Q] pth)
@@ -153,7 +153,7 @@ let CONJUNCT2 =
     let th2 = CONV_RULE (RAND_CONV BETA_CONV) (AP_THM th1 `Q:bool`) in
     let th3 = EQ_MP th2 (ASSUME `P /\ Q`) in
     EQT_ELIM(BETA_RULE (AP_THM th3 `\(p:bool) (q:bool). q`)) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th ->
     try let l,r = dest_conj(concl th) in
         PROVE_HYP th (INST [l,P; r,Q] pth)
@@ -187,7 +187,7 @@ let MP =
     let th1 = BETA_RULE (AP_THM (AP_THM IMP_DEF p) q) in
     let th2 = EQ_MP th1 (ASSUME `p ==> q`) in
     CONJUNCT2 (EQ_MP (SYM th2) (ASSUME `p:bool`)) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun ith th ->
     let ant,con = dest_imp (concl ith) in
     if aconv ant (concl th) then
@@ -198,7 +198,7 @@ let DISCH =
   let p = `p:bool`
   and q = `q:bool` in
   let pth = SYM(BETA_RULE (AP_THM (AP_THM IMP_DEF p) q)) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun a th ->
     let th1 = CONJ (ASSUME a) th in
     let th2 = CONJUNCT1 (ASSUME (concl th1)) in
@@ -228,8 +228,8 @@ let EQ_IMP_RULE =
   let p,q = dest_iff peq in
   let pth1 = DISCH peq (DISCH p (EQ_MP (ASSUME peq) (ASSUME p)))
   and pth2 = DISCH peq (DISCH q (EQ_MP (SYM(ASSUME peq)) (ASSUME q))) in
-  let () = export_thm pth1 in
-  let () = export_thm pth2 in
+  let () = export_aux_thm pth1 in
+  let () = export_aux_thm pth2 in
   fun th -> let l,r = dest_iff(concl th) in
             MP (INST [l,p; r,q] pth1) th,MP (INST [l,p; r,q] pth2) th;;
 
@@ -239,7 +239,7 @@ let IMP_TRANS =
   let p,q = dest_imp pq and r = rand qr in
   let pth =
     itlist DISCH [pq; qr; p] (MP (ASSUME qr) (MP (ASSUME pq) (ASSUME p))) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th1 th2 ->
         let x,y = dest_imp(concl th1)
         and y',z = dest_imp(concl th2) in
@@ -270,7 +270,7 @@ let SPEC =
     let th2 = AP_THM (CONV_RULE BETA_CONV th1) `x:A` in
     let th3 = CONV_RULE (RAND_CONV BETA_CONV) th2 in
     DISCH_ALL (EQT_ELIM th3) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun tm th ->
     try let abs = rand(concl th) in
         CONV_RULE BETA_CONV
@@ -310,7 +310,7 @@ let GEN =
     let th1 = ASSUME `P = \x:A. T` in
     let th2 = AP_THM FORALL_DEF `P:A->bool` in
     EQ_MP (SYM(CONV_RULE(RAND_CONV BETA_CONV) th2)) th1 in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun x th ->
    PROVE_HYP (ABS x (EQT_INTRO th))
              (PINST [snd(dest_var x),aty] [mk_abs(x,concl th),P] pth);;
@@ -345,7 +345,7 @@ let EXISTS =
     let th2 = SPEC `x:A` (ASSUME `!x:A. P x ==> Q`) in
     let th3 = DISCH `!x:A. P x ==> Q` (MP th2 (ASSUME `(P:A->bool) x`)) in
     EQ_MP (SYM th1) (GEN `Q:bool` th3) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun (etm,stm) th ->
     try let qf,abs = dest_comb etm in
         let bth = BETA_CONV(mk_comb(abs,stm)) in
@@ -362,7 +362,7 @@ let CHOOSE =
     let th1 = CONV_RULE (RAND_CONV BETA_CONV) (AP_THM EXISTS_DEF P) in
     let th2 = SPEC `Q:bool` (UNDISCH(fst(EQ_IMP_RULE th1))) in
     DISCH_ALL (DISCH `(?) (P:A->bool)` (UNDISCH th2)) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun (v,th1) th2 ->
     try let abs = rand(concl th1) in
         let bv,bod = dest_abs abs in
@@ -401,7 +401,7 @@ let DISJ1 =
     let th3 = MP (ASSUME `P ==> t`) (ASSUME `P:bool`) in
     let th4 = GEN `t:bool` (DISCH `P ==> t` (DISCH `Q ==> t` th3)) in
     EQ_MP (SYM th2) th4 in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th tm ->
     try PROVE_HYP th (INST [concl th,P; tm,Q] pth)
     with Failure _ -> failwith "DISJ1";;
@@ -414,7 +414,7 @@ let DISJ2 =
     let th3 = MP (ASSUME `Q ==> t`) (ASSUME `Q:bool`) in
     let th4 = GEN `t:bool` (DISCH `P ==> t` (DISCH `Q ==> t` th3)) in
     EQ_MP (SYM th2) th4 in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun tm th ->
     try PROVE_HYP th (INST [tm,P; concl th,Q] pth)
     with Failure _ -> failwith "DISJ2";;
@@ -426,7 +426,7 @@ let DISJ_CASES =
     let th2 = CONV_RULE (RAND_CONV BETA_CONV) (AP_THM th1 `Q:bool`) in
     let th3 = SPEC `R:bool` (EQ_MP th2 (ASSUME `P \/ Q`)) in
     UNDISCH (UNDISCH th3) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th0 th1 th2 ->
     try let c1 = concl th1 and c2 = concl th2 in
         if not (aconv c1 c2) then failwith "DISJ_CASES" else
@@ -466,7 +466,7 @@ let mk_neg =
 let NOT_ELIM =
   let P = `P:bool` in
   let pth = CONV_RULE(RAND_CONV BETA_CONV) (AP_THM NOT_DEF P) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th ->
     try EQ_MP (INST [rand(concl th),P] pth) th
     with Failure _ -> failwith "NOT_ELIM";;
@@ -474,7 +474,7 @@ let NOT_ELIM =
 let NOT_INTRO =
   let P = `P:bool` in
   let pth = SYM(CONV_RULE(RAND_CONV BETA_CONV) (AP_THM NOT_DEF P)) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th ->
     try EQ_MP (INST [rand(rator(concl th)),P] pth) th
     with Failure _ -> failwith "NOT_INTRO";;
@@ -485,7 +485,7 @@ let EQF_INTRO =
     let th1 = NOT_ELIM (ASSUME `~ P`)
     and th2 = DISCH `F` (SPEC P (EQ_MP F_DEF (ASSUME `F`))) in
     DISCH_ALL (IMP_ANTISYM_RULE th1 th2) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th ->
     try MP (INST [rand(concl th),P] pth) th
     with Failure _ -> failwith "EQF_INTRO";;
@@ -496,7 +496,7 @@ let EQF_ELIM =
     let th1 = EQ_MP (ASSUME `P = F`) (ASSUME `P:bool`) in
     let th2 = DISCH P (SPEC `F` (EQ_MP F_DEF th1)) in
     DISCH_ALL (NOT_INTRO th2) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th ->
     try MP (INST [rand(rator(concl th)),P] pth) th
     with Failure _ -> failwith "EQF_ELIM";;
@@ -504,7 +504,7 @@ let EQF_ELIM =
 let CONTR =
   let P = `P:bool` and f_tm = `F` in
   let pth = SPEC P (EQ_MP F_DEF (ASSUME `F`)) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun tm th ->
     if concl th <> f_tm then failwith "CONTR"
     else PROVE_HYP th (INST [tm,P] pth);;
@@ -530,7 +530,7 @@ let EXISTENCE =
     let th1 = CONV_RULE (RAND_CONV BETA_CONV) (AP_THM EXISTS_UNIQUE_DEF P) in
     let th2 = UNDISCH (fst(EQ_IMP_RULE th1)) in
     DISCH_ALL (CONJUNCT1 th2) in
-  let () = export_thm pth in
+  let () = export_aux_thm pth in
   fun th ->
     try let abs = rand(concl th) in
         let ty = snd(dest_var(bndvar abs)) in

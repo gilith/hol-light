@@ -101,13 +101,13 @@ let (compose_insts :instantiation->instantiation->instantiation) =
 
 let _FALSITY_ = new_definition `_FALSITY_ = F`;;
 
-export_thm _FALSITY_;;
+export_aux_thm _FALSITY_;;
 
 let mk_fthm =
   let pth = UNDISCH(fst(EQ_IMP_RULE _FALSITY_))
   and qth = ASSUME `_FALSITY_` in
-  let () = export_thm pth in
-  let () = export_thm qth in
+  let () = export_aux_thm pth in
+  let () = export_aux_thm qth in
   fun (asl,c) -> PROVE_HYP qth (itlist ADD_ASSUM (rev asl) (CONTR c pth));;
 
 (* ------------------------------------------------------------------------- *)

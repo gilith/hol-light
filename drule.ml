@@ -447,6 +447,7 @@ let HIGHER_REWRITE_CONV =
     INST (zip gvs fvs) th in
   fun ths ->
     let thl = map (GINST o SPEC_ALL) ths in
+    let _ = map export_aux_thm thl in
     let concs = map concl thl in
     let lefts = map lhs concs in
     let preds,pats = unzip(map dest_comb lefts) in

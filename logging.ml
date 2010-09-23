@@ -10,13 +10,13 @@
 type log_state =
      Not_logging
    | Ready_logging
-   | Active_logging of out_channel;;
+   | Active_logging of bool * out_channel;;
 
 let log_state = ref Not_logging;;
 
 let log_raw s =
     match (!log_state) with
-      Active_logging h -> output_string h (s ^ "\n")
+      Active_logging (_,h) -> output_string h (s ^ "\n")
     | _ -> ();;
 
 (* ------------------------------------------------------------------------- *)
@@ -113,19 +113,21 @@ let write_theory_file f =
 
 let logfile_end () =
     match (!log_state) with
-      Active_logging h ->
+      Active_logging (_,h) ->
       (close_out h;
        log_state := Ready_logging)
     | _ -> ();;
 
 let logfile f =
     logfile_end ();
-    if is_auxiliary_file f then add_auxiliary_file f else ();
+    let aux = is_auxiliary_file f in
+    if aux then add_auxiliary_file f else ();
     match (!log_state) with
       Ready_logging ->
       (log_dict_reset ();
        write_theory_file f;
-       log_state := Active_logging (open_out ("opentheory/articles/" ^ f ^ ".art")))
+       let h = open_out ("opentheory/articles/" ^ f ^ ".art") in
+       log_state := Active_logging (aux,h))
     | _ -> ();;
 
 let is_logging () =
@@ -134,6 +136,13 @@ let is_logging () =
     | _ -> false;;
 
 let not_logging () = not (is_logging ());;
+
+let is_aux_logging () =
+    match (!log_state) with
+      Active_logging (aux,_) -> aux
+    | _ -> false;;
+
+let not_aux_logging () = not (is_aux_logging ());;
 
 let start_logging () =
     match (!log_state) with
@@ -435,3 +444,7 @@ let export_thm th =
           log_list log_term (hyp th);
           log_term (concl th);
           log_command "thm");;
+
+let export_aux_thm th =
+    if not_aux_logging () then ()
+    else export_thm th;;
