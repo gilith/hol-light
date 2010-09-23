@@ -13,13 +13,21 @@ needs "class.ml";;
 (* Combinators. We don't bother with S and K, which seem of little use.      *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "function-def-comb";;
+
 parse_as_infix ("o",(26,"right"));;
 
 let o_DEF = new_definition
  `(o) (f:B->C) g = \x:A. f(g(x))`;;
 
+export_thm o_DEF;;
+
 let I_DEF = new_definition
  `I = \x:A. x`;;
+
+export_thm I_DEF;;
+
+logfile "function-comb";;
 
 let o_THM = prove
  (`!f:B->C. !g:A->B. !x:A. (f o g) x = f(g(x))`,
@@ -27,24 +35,34 @@ let o_THM = prove
   CONV_TAC (DEPTH_CONV BETA_CONV) THEN
   REPEAT GEN_TAC THEN REFL_TAC);;
 
+export_thm o_THM;;
+
 let o_ASSOC = prove
  (`!f:C->D. !g:B->C. !h:A->B. f o (g o h) = (f o g) o h`,
   REPEAT GEN_TAC THEN REWRITE_TAC [o_DEF] THEN
   CONV_TAC (REDEPTH_CONV BETA_CONV) THEN
   REFL_TAC);;
 
+export_thm o_ASSOC;;
+
 let I_THM = prove
  (`!x:A. I x = x`,
   REWRITE_TAC [I_DEF]);;
+
+export_thm I_THM;;
 
 let I_O_ID = prove
  (`!f:A->B. (I o f = f) /\ (f o I = f)`,
   REPEAT STRIP_TAC THEN
   REWRITE_TAC[FUN_EQ_THM; o_DEF; I_THM]);;
 
+export_thm I_O_ID;;
+
 (* ------------------------------------------------------------------------- *)
 (* The theory "1" (a 1-element type).                                        *)
 (* ------------------------------------------------------------------------- *)
+
+logfile "unit-def";;
 
 let EXISTS_ONE_REP = prove
  (`?b:bool. b`,
@@ -64,24 +82,36 @@ let one = prove
   ONCE_REWRITE_TAC[GSYM (CONJUNCT1 one_tydef)] THEN
   ASM_REWRITE_TAC[]);;
 
+export_thm one;;
+
+logfile "unit-thm";;
+
 let one_axiom = prove
  (`!f g. f = (g:A->1)`,
   REPEAT GEN_TAC THEN ONCE_REWRITE_TAC[FUN_EQ_THM] THEN
   GEN_TAC THEN ONCE_REWRITE_TAC[one] THEN REFL_TAC);;
 
+export_thm one_axiom;;
+
 let one_INDUCT = prove
  (`!P. P one ==> !x. P x`,
   ONCE_REWRITE_TAC[one] THEN REWRITE_TAC[]);;
 
+export_thm one_INDUCT;;
+
 let one_RECURSION = prove
  (`!e:A. ?fn. fn one = e`,
   GEN_TAC THEN EXISTS_TAC `\x:1. e:A` THEN BETA_TAC THEN REFL_TAC);;
+
+export_thm one_RECURSION;;
 
 let one_Axiom = prove
  (`!e:A. ?!fn. fn one = e`,
   GEN_TAC THEN REWRITE_TAC[EXISTS_UNIQUE_THM; one_RECURSION] THEN
   REPEAT STRIP_TAC THEN ONCE_REWRITE_TAC[FUN_EQ_THM] THEN
   ONCE_REWRITE_TAC [one] THEN ASM_REWRITE_TAC[]);;
+
+export_thm one_Axiom;;
 
 (* ------------------------------------------------------------------------- *)
 (* Add the type "1" to the inductive type store.                             *)

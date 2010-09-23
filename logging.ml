@@ -438,13 +438,19 @@ let TRANS th1 th2 =
 (* Exporting theorems.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-let export_thm th =
+let export_raw_thm th =
     if not_logging () then ()
     else (log_thm th;
           log_list log_term (hyp th);
           log_term (concl th);
           log_command "thm");;
 
+let export_thm th =
+    if not_logging () then ()
+    else if not_aux_logging () then export_raw_thm th
+    else failwith "export_thm called in auxiliary mode";;
+
 let export_aux_thm th =
-    if not_aux_logging () then ()
-    else export_thm th;;
+    if not_logging () then ()
+    else if is_aux_logging () then export_raw_thm th
+    else failwith "export_aux_thm called when not in auxiliary mode";;
