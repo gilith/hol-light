@@ -242,12 +242,10 @@ extend_basic_rewrites
    let IMP_EQ_CLAUSE = prove
     (`((x = x) ==> p) <=> p`,
      REWRITE_TAC[EQT_INTRO(SPEC_ALL EQ_REFL); IMP_CLAUSES]) in
-   let () = export_thm IMP_EQ_CLAUSE in
    IMP_EQ_CLAUSE];;
 
-let pth = ITAUT `(p <=> p') ==> (p' ==> (q <=> q')) ==> (p ==> q <=> p' ==> q')` in
-let () = export_thm pth in
-extend_basic_congs [pth];;
+extend_basic_congs
+  [ITAUT `(p <=> p') ==> (p' ==> (q <=> q')) ==> (p ==> q <=> p' ==> q')`];;
 
 (* ------------------------------------------------------------------------- *)
 (* Rewrite rule for unique existence.                                        *)

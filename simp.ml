@@ -419,7 +419,8 @@ let set_basic_rewrites,extend_basic_rewrites,basic_rewrites,
 let set_basic_congs,extend_basic_congs,basic_congs =
   let congs = ref ([]:thm list) in
   (fun thl -> congs := thl),
-  (fun thl -> congs := union' equals_thm thl (!congs)),
+  (fun thl -> let _ = map export_thm thl in
+              congs := union' equals_thm thl (!congs)),
   (fun () -> !congs);;
 
 (* ------------------------------------------------------------------------- *)
