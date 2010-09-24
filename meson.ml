@@ -515,7 +515,7 @@ let GEN_MESON_TAC =
     and imp_CONV =
         let pth = TAUT `a \/ b <=> ~b ==> a` in
         let () = export_aux_thm pth in
-        REWR_CONV pth in
+        REWR_CONV pth
     and push_CONV =
         let pth1 = TAUT `~(a \/ b) <=> ~a /\ ~b` in
         let pth2 = TAUT `~(~a) <=> a` in

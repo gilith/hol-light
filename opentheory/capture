@@ -62,10 +62,23 @@ do
 
         echo "name: $base" > $tthy
         echo "version: 1.0" >> $tthy
-        echo "description: HOL Light theory segment" >> $tthy
+        echo -n "description: HOL Light theory segment extracted on " >> $tthy
+        date "+%Y-%M-%d" >> $tthy
         echo "author: Joe Hurd <joe@gilith.com>" >> $tthy
         echo "license: HOLLight" >> $tthy
         echo "show: \"Data.Bool\"" >> $tthy
+        if (echo $base | grep '^unit-' > /dev/null)
+        then
+            echo "show: \"Data.Unit\"" >> $tthy
+        fi
+        if (echo $base | grep '^function-' > /dev/null)
+        then
+            echo "show: \"Function\"" >> $tthy
+        fi
+        if (echo $base | grep '^pair-' > /dev/null)
+        then
+            echo "show: \"Data.Pair\"" >> $tthy
+        fi
         echo >> $tthy
         echo "main {" >> $tthy
         echo "  article: \"$base.art\"" >> $tthy
