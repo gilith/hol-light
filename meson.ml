@@ -9,6 +9,8 @@
 
 needs "canon.ml";;
 
+logfile "meson-aux";;
+
 (* ------------------------------------------------------------------------- *)
 (* Some parameters controlling MESON behaviour.                              *)
 (* ------------------------------------------------------------------------- *)
@@ -510,13 +512,24 @@ let GEN_MESON_TAC =
 
   let clear_contrapos_cache,make_hol_contrapos =
     let DISJ_AC = AC DISJ_ACI
-    and imp_CONV = REWR_CONV(TAUT `a \/ b <=> ~b ==> a`)
+    and imp_CONV =
+        let pth = TAUT `a \/ b <=> ~b ==> a` in
+        let () = export_aux_thm pth in
+        REWR_CONV pth in
     and push_CONV =
-      GEN_REWRITE_CONV TOP_SWEEP_CONV
-       [TAUT `~(a \/ b) <=> ~a /\ ~b`; TAUT `~(~a) <=> a`]
-    and pull_CONV = GEN_REWRITE_CONV DEPTH_CONV
-       [TAUT `~a \/ ~b <=> ~(a /\ b)`]
-    and imf_CONV = REWR_CONV(TAUT `~p <=> p ==> F`) in
+        let pth1 = TAUT `~(a \/ b) <=> ~a /\ ~b` in
+        let pth2 = TAUT `~(~a) <=> a` in
+        let () = export_aux_thm pth1 in
+        let () = export_aux_thm pth2 in
+        GEN_REWRITE_CONV TOP_SWEEP_CONV [pth1; pth2]
+    and pull_CONV =
+        let pth = TAUT `~a \/ ~b <=> ~(a /\ b)` in
+        let () = export_aux_thm pth in
+        GEN_REWRITE_CONV DEPTH_CONV [pth]
+    and imf_CONV =
+        let pth = TAUT `~p <=> p ==> F` in
+        let () = export_aux_thm pth in
+        REWR_CONV pth in
     let memory = ref [] in
     let clear_contrapos_cache() = memory := [] in
     let make_hol_contrapos (n,th) =
@@ -548,8 +561,11 @@ let GEN_MESON_TAC =
     let merge_inst (t,x) current =
       (fol_subst current t,x)::current in
     let finish_RULE =
-      GEN_REWRITE_RULE I
-       [TAUT `(~p ==> p) <=> p`; TAUT `(p ==> ~p) <=> ~p`] in
+        let pth1 = TAUT `(~p ==> p) <=> p` in
+        let pth2 = TAUT `(p ==> ~p) <=> ~p` in
+        let () = export_aux_thm pth1 in
+        let () = export_aux_thm pth2 in
+        GEN_REWRITE_RULE I [pth1; pth2] in
     let rec meson_to_hol insts (Subgoal(g,gs,(n,th),offset,locin)) =
       let newins = itlist merge_inst locin insts in
       let g' = fol_inst newins g in
@@ -575,10 +591,15 @@ let GEN_MESON_TAC =
        (~(x:A = y) \/ ~(x = z) \/ (y = z))`,
       REWRITE_TAC[] THEN ASM_CASES_TAC `x:A = y` THEN
       ASM_REWRITE_TAC[] THEN CONV_TAC TAUT) in
-    let imp_elim_CONV = REWR_CONV
-      (TAUT `(a ==> b) <=> ~a \/ b`) in
+    let _ = map export_aux_thm eq_thms in
+    let imp_elim_CONV =
+        let pth = TAUT `(a ==> b) <=> ~a \/ b` in
+        let () = export_aux_thm pth in
+        REWR_CONV pth in
     let eq_elim_RULE =
-      MATCH_MP(TAUT `(a <=> b) ==> b \/ ~a`) in
+        let pth = TAUT `(a <=> b) ==> b \/ ~a` in
+        let () = export_aux_thm pth in
+        MATCH_MP pth in
     let veq_tm = rator(rator(concl(hd eq_thms))) in
     let create_equivalence_axioms (eq,_) =
       let tyins = type_match (type_of veq_tm) (type_of eq) [] in
@@ -647,7 +668,10 @@ let GEN_MESON_TAC =
       else if is_const tm then insert tm acc else
       let fn,args = strip_comb tm in
       itlist (subterms_refl lconsts) args (insert tm acc) in
-    let CLAUSIFY = CONV_RULE(REWR_CONV(TAUT `a ==> b <=> ~a \/ b`)) in
+    let CLAUSIFY =
+        let pth = TAUT `a ==> b <=> ~a \/ b` in
+        let () = export_aux_thm pth in
+        CONV_RULE(REWR_CONV pth) in
     let rec BRAND tms th =
       if tms = [] then th else
       let tm = hd tms in
@@ -676,7 +700,10 @@ let GEN_MESON_TAC =
       CLAUSIFY(DISCH eq (EQ_MP (AP_TERM (rator tm) (ASSUME eq)) th)) in
     let LDISJ_CASES th lth rth =
       DISJ_CASES th (DISJ1 lth (concl rth)) (DISJ2 (concl lth) rth) in
-    let ASSOCIATE = CONV_RULE(REWR_CONV(GSYM DISJ_ASSOC)) in
+    let ASSOCIATE =
+        let pth = GSYM DISJ_ASSOC in
+        let () = export_aux_thm pth in
+        CONV_RULE(REWR_CONV pth) in
     let rec BRAND_TRANS th =
       let tm = concl th in
       try let l,r = dest_disj tm in
