@@ -19,18 +19,30 @@ new_type ("ind",0);;
 (* We assert the axiom of infinity as in HOL88, but then we can forget it!   *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "function-def-inj-surj";;
+
 let ONE_ONE = new_definition
   `ONE_ONE(f:A->B) = !x1 x2. (f x1 = f x2) ==> (x1 = x2)`;;
+
+export_thm ONE_ONE;;
 
 let ONTO = new_definition
   `ONTO(f:A->B) = !y. ?x. y = f x`;;
 
+export_thm ONTO;;
+
+logfile "axiom-infinity";;
+
 let INFINITY_AX = new_axiom
   `?f:ind->ind. ONE_ONE f /\ ~(ONTO f)`;;
+
+export_thm INFINITY_AX;;
 
 (* ------------------------------------------------------------------------- *)
 (* Actually introduce constants.                                             *)
 (* ------------------------------------------------------------------------- *)
+
+logfile "natural-def";;
 
 let IND_SUC_0_EXISTS = prove
  (`?(f:ind->ind) z. (!x1 x2. (f x1 = f x2) = (x1 = x2)) /\ (!x. ~(f x = z))`,
@@ -69,6 +81,8 @@ let NOT_SUC = prove
   REWRITE_TAC[SUC_DEF; ZERO_DEF] THEN
   MESON_TAC[NUM_REP_RULES; fst num_tydef; snd num_tydef; IND_SUC_0]);;
 
+export_thm NOT_SUC;;
+
 let SUC_INJ = prove
  (`!m n. SUC m = SUC n <=> m = n`,
   REPEAT GEN_TAC THEN REWRITE_TAC[SUC_DEF] THEN
@@ -80,6 +94,8 @@ let SUC_INJ = prove
   DISCH_TAC THEN ASM_REWRITE_TAC[IND_SUC_INJ] THEN
   DISCH_THEN(MP_TAC o AP_TERM `mk_num`) THEN
   REWRITE_TAC[fst num_tydef]);;
+
+export_thm SUC_INJ;;
 
 (* ------------------------------------------------------------------------- *)
 (* Induction.                                                                *)
@@ -100,6 +116,8 @@ let num_INDUCTION = prove
         FIRST_ASSUM MATCH_MP_TAC THEN FIRST_ASSUM MATCH_ACCEPT_TAC]];
     DISCH_THEN(MP_TAC o SPEC `dest_num n`) THEN
     REWRITE_TAC[fst num_tydef; snd num_tydef]]);;
+
+export_thm num_INDUCTION;;
 
 (* ------------------------------------------------------------------------- *)
 (* Recursion.                                                                *)

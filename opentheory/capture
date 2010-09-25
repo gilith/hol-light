@@ -79,6 +79,14 @@ do
         then
             echo "show: \"Data.Pair\"" >> $tthy
         fi
+        if (echo $base | grep '^natural-' > /dev/null)
+        then
+            echo "show: \"Number.Natural\"" >> $tthy
+        fi
+        if (echo $base | grep '^natural-' > /dev/null)
+        then
+            echo "show: \"Number.Numeral\"" >> $tthy
+        fi
         echo >> $tthy
         echo "main {" >> $tthy
         echo "  article: \"$base.art\"" >> $tthy
