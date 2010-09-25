@@ -63,7 +63,7 @@ do
         echo "name: $base" > $tthy
         echo "version: 1.0" >> $tthy
         echo -n "description: HOL Light theory segment extracted on " >> $tthy
-        date "+%Y-%M-%d" >> $tthy
+        date "+%Y-%m-%d" >> $tthy
         echo "author: Joe Hurd <joe@gilith.com>" >> $tthy
         echo "license: HOLLight" >> $tthy
         echo "show: \"Data.Bool\"" >> $tthy

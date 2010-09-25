@@ -454,3 +454,8 @@ let export_aux_thm th =
     if not_logging () then ()
     else if is_aux_logging () then export_raw_thm th
     else failwith "export_aux_thm called when not in auxiliary mode";;
+
+let export_if_aux_thm th =
+    if not_logging () then ()
+    else if is_aux_logging () then export_raw_thm th
+    else ();;

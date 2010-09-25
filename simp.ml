@@ -395,6 +395,7 @@ let set_basic_rewrites,extend_basic_rewrites,basic_rewrites,
                 empty_net) in
   let set_basic_rewrites thl =
     let canon_thl = itlist (mk_rewrites false) thl [] in
+    let _ = map export_aux_thm canon_thl in
     (rewrites := canon_thl; rehash_convnet())
   and extend_basic_rewrites thl =
     let canon_thl = itlist (mk_rewrites false) thl [] in
@@ -429,6 +430,7 @@ let set_basic_congs,extend_basic_congs,basic_congs =
 
 let GENERAL_REWRITE_CONV rep (cnvl:conv->conv) (builtin_net:gconv net) thl =
   let thl_canon = itlist (mk_rewrites false) thl [] in
+  let _ = map export_if_aux_thm thl_canon in
   let final_net = itlist (net_of_thm rep) thl_canon builtin_net in
   cnvl (REWRITES_CONV final_net);;
 

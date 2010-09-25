@@ -9,31 +9,51 @@
 
 needs "recursion.ml";;
 
-logfile "pair-sugar-aux";;
-
 (* ------------------------------------------------------------------------- *)
 (* Constants implementing (or at least tagging) syntactic sugar.             *)
 (* ------------------------------------------------------------------------- *)
 
-let LET_DEF = new_definition
- `LET (f:A->B) x = f x`;;
+logfile "bool-def-let";;
+
+let LET_OPENTHEORY_DEF = new_basic_definition
+ `LET = \(f:A->B) x. f x`;;
+
+export_thm LET_OPENTHEORY_DEF;;
+
+logfile "bool-def-let-aux";;
+
+let LET_DEF = prove
+  (`!(f:A->B) x. LET f x = f x`,
+   REWRITE_TAC [LET_OPENTHEORY_DEF]);;
 
 export_aux_thm LET_DEF;;
+
+let GABS_OPENTHEORY_DEF = prove
+  (`!P. (@) (P:A->bool) = (@) P`,
+   REPEAT GEN_TAC THEN
+   REFL_TAC);;
+
+export_aux_thm GABS_OPENTHEORY_DEF;;
+
+let GEQ_OPENTHEORY_DEF = prove
+  (`!a b. (a = b) = (a:A = b)`,
+   REPEAT GEN_TAC THEN
+   REFL_TAC);;
+
+export_aux_thm GEQ_OPENTHEORY_DEF;;
+
+logfile_end ();;
 
 let LET_END_DEF = new_definition
  `LET_END (t:A) = t`;;
 
-export_aux_thm LET_END_DEF;;
-
 let GABS_DEF = new_definition
  `GABS (P:A->bool) = (@) P`;;
-
-export_aux_thm GABS_DEF;;
 
 let GEQ_DEF = new_definition
  `GEQ a b = (a:A = b)`;;
 
-export_aux_thm GEQ_DEF;;
+logfile "pair-sugar-aux";;
 
 let _SEQPATTERN = new_definition
  `_SEQPATTERN = \r s x. if ?y. r x y then r x else s x`;;
@@ -285,7 +305,10 @@ let GEN_BETA_CONV =
       SYM(SPEC_ALL(SELECT_RULE th)) in
     let ths = map mk_projector avs in
     ((***projection_cache := (conname,ths)::(!projection_cache);***) ths) in
-  let GEQ_CONV = REWR_CONV(GSYM GEQ_DEF)
+  let GEQ_CONV =
+      let pth = GSYM GEQ_DEF in
+      let () = export_aux_thm pth in
+      REWR_CONV pth
   and DEGEQ_RULE = CONV_RULE(REWR_CONV GEQ_DEF) in
   let GABS_RULE =
     let pth = prove
@@ -338,7 +361,7 @@ inductive_type_store :=
 (* Convenient rules to eliminate binders over pairs.                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "pair-quant";;
+logfile "pair-abs";;
 
 let FORALL_PAIR_THM = prove
  (`!P. (!p. P p) <=> (!p1 p2. P(p1,p2))`,
@@ -357,6 +380,8 @@ let LAMBDA_PAIR_THM = prove
   REWRITE_TAC[FORALL_PAIR_THM; FUN_EQ_THM]);;
 
 export_thm LAMBDA_PAIR_THM;;
+
+logfile_end ();;
 
 (* ------------------------------------------------------------------------- *)
 (* Related theorems for explicitly paired quantifiers.                       *)
@@ -398,7 +423,7 @@ export_thm EXISTS_TRIPLED_THM;;
 (* Expansion of a let-term.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "pair-let-aux";;
+logfile "bool-let-aux";;
 
 let let_CONV =
   let let1_CONV = REWR_CONV LET_DEF THENC GEN_BETA_CONV
