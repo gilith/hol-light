@@ -364,6 +364,7 @@ let PART_MATCH,GEN_PART_MATCH =
     with Failure _ -> acc in
   let PART_MATCH partfn th =
     let sth = SPEC_ALL th in
+    let () = export_if_aux_thm sth in
     let bod = concl sth in
     let pbod = partfn bod in
     let lconsts = intersect (frees (concl th)) (freesl(hyp th)) in
