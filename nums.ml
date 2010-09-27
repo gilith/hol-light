@@ -123,6 +123,8 @@ export_thm num_INDUCTION;;
 (* Recursion.                                                                *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-recursion";;
+
 let num_Axiom = prove
  (`!(e:A) f. ?!fn. (fn _0 = e) /\
                    (!n. fn (SUC n) = f (fn n) n)`,
@@ -152,17 +154,27 @@ let num_Axiom = prove
     MATCH_MP_TAC num_INDUCTION THEN ASM_REWRITE_TAC[] THEN
     REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[]]);;
 
+export_thm num_Axiom;;
+
 (* ------------------------------------------------------------------------- *)
 (* The basic numeral tag; rewrite existing instances of "_0".                *)
 (* ------------------------------------------------------------------------- *)
 
+logfile_end ();;
+
 let NUMERAL = new_definition
  `NUMERAL (n:num) = n`;;
+
+logfile "nums-numeral-aux";;
 
 let [NOT_SUC; num_INDUCTION; num_Axiom] =
   let th = prove(`_0 = 0`,REWRITE_TAC[NUMERAL]) in
   map (GEN_REWRITE_RULE DEPTH_CONV [th])
     [NOT_SUC; num_INDUCTION; num_Axiom];;
+
+export_aux_thm NOT_SUC;;
+export_aux_thm num_INDUCTION;;
+export_aux_thm num_Axiom;;
 
 (* ------------------------------------------------------------------------- *)
 (* Induction tactic.                                                         *)
@@ -172,9 +184,13 @@ let (INDUCT_TAC:tactic) =
   MATCH_MP_TAC num_INDUCTION THEN
   CONJ_TAC THENL [ALL_TAC; GEN_TAC THEN DISCH_TAC];;
 
+logfile "natural-cases";;
+
 let num_RECURSION =
   let avs = fst(strip_forall(concl num_Axiom)) in
   GENL avs (EXISTENCE (SPECL avs num_Axiom));;
+
+export_thm num_RECURSION;;
 
 (* ------------------------------------------------------------------------- *)
 (* Cases theorem.                                                            *)
@@ -183,6 +199,8 @@ let num_RECURSION =
 let num_CASES = prove
  (`!m. (m = 0) \/ (?n. m = SUC n)`,
   INDUCT_TAC THEN MESON_TAC[]);;
+
+export_thm num_CASES;;
 
 (* ------------------------------------------------------------------------- *)
 (* Augmenting inductive type store.                                          *)
@@ -194,6 +212,8 @@ let num_RECURSION_STD = prove
   MP_TAC(ISPECL [`e:Z`; `(\z n. (f:num->Z->Z) n z)`] num_RECURSION) THEN
   REWRITE_TAC[]);;
 
+export_thm num_RECURSION_STD;;
+
 inductive_type_store :=
  ("num",(2,num_INDUCTION,num_RECURSION_STD))::(!inductive_type_store);;
 
@@ -201,9 +221,15 @@ inductive_type_store :=
 (* "Bitwise" binary representation of numerals.                              *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-numeral";;
+
 let BIT0_DEF = new_recursive_definition num_RECURSION
  `(BIT0 0 = 0) /\
   (!n. BIT0 (SUC n) = SUC(SUC(BIT0 n)))`;;
 
+export_thm BIT0_DEF;;
+
 let BIT1_DEF = new_definition
  `BIT1 n = SUC (BIT0 n)`;;
+
+export_thm BIT1_DEF;;
