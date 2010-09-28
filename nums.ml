@@ -160,6 +160,14 @@ export_thm num_Axiom;;
 (* The basic numeral tag; rewrite existing instances of "_0".                *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "nums-numeral-def-aux";;
+
+let NUMERAL_OPENTHEORY = prove
+  (`!n. (n:num) = n`,
+   REPEAT GEN_TAC THEN
+   REFL_TAC) in
+export_aux_thm NUMERAL_OPENTHEORY;;
+
 logfile_end ();;
 
 let NUMERAL = new_definition
@@ -233,3 +241,5 @@ let BIT1_DEF = new_definition
  `BIT1 n = SUC (BIT0 n)`;;
 
 export_thm BIT1_DEF;;
+
+logfile_end ();;

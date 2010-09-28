@@ -44,6 +44,11 @@ do
 
     $prog info --summary -o $sum --article -o $cart $thy || exit 1
 
+    if grep 'Unwanted' $cart
+    then
+        exit 1
+    fi
+
     mv $cart $art || exit 1
 done
 
@@ -102,7 +107,14 @@ do
         echo "compiling" $base
 
         $prog info --summary -o $sum --article -o $art $thy || exit 1
+
+        if grep 'Unwanted' $art
+        then
+            exit 1
+        fi
+
         $prog install --reinstall --auto-uninstall $tthy || exit 1
+
         echo
     else
         echo "skipping " $base "(up to date)"

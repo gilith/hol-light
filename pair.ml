@@ -31,15 +31,13 @@ export_aux_thm LET_DEF;;
 let GABS_OPENTHEORY_DEF = prove
   (`!P. (@) (P:A->bool) = (@) P`,
    REPEAT GEN_TAC THEN
-   REFL_TAC);;
-
+   REFL_TAC) in
 export_aux_thm GABS_OPENTHEORY_DEF;;
 
 let GEQ_OPENTHEORY_DEF = prove
   (`!a b. (a = b) = (a:A = b)`,
    REPEAT GEN_TAC THEN
-   REFL_TAC);;
-
+   REFL_TAC) in
 export_aux_thm GEQ_OPENTHEORY_DEF;;
 
 logfile_end ();;
@@ -484,3 +482,5 @@ let (LET_TAC:tactic) =
      W(fun (asl',w') ->
         let tm' = follow_path path w' in
         CONV_TAC(PATH_CONV path (K(let_CONV tm'))))) gl;;
+
+logfile_end ();;
