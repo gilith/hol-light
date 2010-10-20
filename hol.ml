@@ -98,7 +98,7 @@ loads "fusion.ml";;
 (* OpenTheory proof logging.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-loads "logging.ml";;
+loads "opentheory/logging.ml";;
 
 start_logging ();;
 
