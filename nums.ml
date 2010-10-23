@@ -229,7 +229,7 @@ inductive_type_store :=
 (* "Bitwise" binary representation of numerals.                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-numeral";;
+logfile "natural-numeral-def";;
 
 let BIT0_DEF = new_recursive_definition num_RECURSION
  `(BIT0 0 = 0) /\
