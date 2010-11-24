@@ -1,3 +1,16 @@
+Thu 28th Oct 2010       Library/rstc.ml
+
+Noticed that the theorems RTC_INDUCT_L and RTC_INDUCT_R both had the hypothesis
+(!x y. R x y ==> P x y), which is redundant since it follows from the other 
+two. So I just removed it; as far as I can see there are no proof changes 
+needed.
+
+Thu 28th Oct 2010       arith.ml, passim
+
+Joe Hurd pointed out that EQ_SUC proved in arith.ml was just a duplicate of the
+theorem SUC_INJ from nums.ml, so I removed its proof and replaced EQ_SUC by
+SUC_INJ everywhere it was used.
+
 Fri  8th Oct 2010       README
 
 Updated the README file with a few modernizations, in particular a more careful
