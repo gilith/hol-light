@@ -42,7 +42,7 @@ do
 
     echo "compressing" $art
 
-    $prog info --summary -o $sum --article -o $cart $thy || exit 1
+    $prog info --preserve-theory --summary -o $sum --article -o $cart $thy || exit 1
 
     if grep 'Unwanted' $cart
     then
@@ -106,7 +106,7 @@ do
 
         echo "compiling" $base
 
-        $prog info --summary -o $sum --article -o $art $thy || exit 1
+        $prog info --preserve-theory --summary -o $sum --article -o $art $thy || exit 1
 
         if grep 'Unwanted' $art
         then

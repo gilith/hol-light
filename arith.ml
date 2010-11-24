@@ -200,6 +200,8 @@ let is_numeral = can dest_numeral;;
 (* One immediate consequence.                                                *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-add-suc";;
+
 let ADD1 = prove
  (`!m. SUC m = m + 1`,
   REWRITE_TAC[BIT1_THM; ADD_CLAUSES]);;
@@ -949,7 +951,7 @@ let EVEN_AND_ODD = prove
  (`!n. ~(EVEN n /\ ODD n)`,
   REWRITE_TAC[GSYM NOT_EVEN; ITAUT `~(p /\ ~p)`]);;
 
-export_thm EVEN_ADD_ODD;;
+export_thm EVEN_AND_ODD;;
 
 let EVEN_ADD = prove
  (`!m n. EVEN(m + n) <=> (EVEN m <=> EVEN n)`,
