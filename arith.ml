@@ -325,7 +325,7 @@ let EXP = new_recursive_definition num_RECURSION
 
 export_thm EXP;;
 
-logfile "natural-exp-basic";;
+logfile "natural-exp-thm";;
 
 let EXP_EQ_0 = prove
  (`!m n. (m EXP n = 0) <=> (m = 0) /\ ~(n = 0)`,
@@ -650,6 +650,8 @@ export_thm LE_1;;
 (* Relate the orderings to arithmetic operations.                            *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-add-order";;
+
 let LE_EXISTS = prove
  (`!m n. (m <= n) <=> (?d. n = m + d)`,
   GEN_TAC THEN INDUCT_TAC THEN ASM_REWRITE_TAC[LE] THENL
@@ -771,6 +773,8 @@ export_thm LT_ADD2;;
 (* ------------------------------------------------------------------------- *)
 (* And multiplication.                                                       *)
 (* ------------------------------------------------------------------------- *)
+
+logfile "natural-mult-order";;
 
 let LT_MULT = prove
  (`!m n. (0 < m * n) <=> (0 < m) /\ (0 < n)`,
