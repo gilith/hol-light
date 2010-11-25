@@ -131,7 +131,7 @@ export_thm EQ_ADD_RCANCEL_0;;
 (* Now define "bitwise" binary representation of numerals.                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-numeral-thm";;
+logfile "natural-add-numeral";;
 
 let BIT0 = prove
  (`!n. BIT0 n = n + n`,
@@ -149,27 +149,27 @@ let BIT0_THM = prove
  (`!n. NUMERAL (BIT0 n) = NUMERAL n + NUMERAL n`,
   REWRITE_TAC[NUMERAL; BIT0]);;
 
-export_thm BIT0_THM;;
-
 let BIT1_THM = prove
  (`!n. NUMERAL (BIT1 n) = SUC(NUMERAL n + NUMERAL n)`,
   REWRITE_TAC[NUMERAL; BIT1]);;
-
-export_thm BIT1_THM;;
 
 (* ------------------------------------------------------------------------- *)
 (* Following is handy before num_CONV arrives.                               *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-numeral-thm";;
+
 let ONE = prove
  (`1 = SUC 0`,
-  REWRITE_TAC[BIT1; REWRITE_RULE[NUMERAL] ADD_CLAUSES; NUMERAL]);;
+  REWRITE_TAC [NUMERAL; REWRITE_RULE [NUMERAL] BIT1_DEF;
+               REWRITE_RULE [NUMERAL] BIT0_DEF]);;
 
 export_thm ONE;;
 
 let TWO = prove
  (`2 = SUC 1`,
-  REWRITE_TAC[BIT0; BIT1; REWRITE_RULE[NUMERAL] ADD_CLAUSES; NUMERAL]);;
+  REWRITE_TAC [NUMERAL; REWRITE_RULE [NUMERAL] BIT1_DEF;
+               REWRITE_RULE [NUMERAL] BIT0_DEF]);;
 
 export_thm TWO;;
 
