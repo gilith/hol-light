@@ -1830,14 +1830,20 @@ export_thm DIV_MOD;;
 (* We have versions that introduce universal or existential quantifiers.     *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-elim-aux";;
+
 let PRE_ELIM_THM = prove
  (`P(PRE n) <=> !m. n = SUC m \/ m = 0 /\ n = 0 ==> P m`,
   SPEC_TAC(`n:num`,`n:num`) THEN INDUCT_TAC THEN
   REWRITE_TAC[NOT_SUC; SUC_INJ; PRE] THEN MESON_TAC[]);;
 
+export_aux_thm PRE_ELIM_THM;;
+
 let PRE_ELIM_THM' = prove
  (`P(PRE n) <=> ?m. (n = SUC m \/ m = 0 /\ n = 0) /\ P m`,
   MP_TAC(INST [`\x:num. ~P x`,`P:num->bool`] PRE_ELIM_THM) THEN MESON_TAC[]);;
+
+export_aux_thm PRE_ELIM_THM';;
 
 let SUB_ELIM_THM = prove
  (`P(a - b) <=> !d. a = b + d \/ a < b /\ d = 0 ==> P d`,
@@ -1846,9 +1852,13 @@ let SUB_ELIM_THM = prove
   FIRST_ASSUM(X_CHOOSE_THEN `e:num` SUBST1_TAC o REWRITE_RULE[LE_EXISTS]) THEN
   SIMP_TAC[ADD_SUB2; GSYM NOT_LE; LE_ADD; EQ_ADD_LCANCEL] THEN MESON_TAC[]);;
 
+export_aux_thm SUB_ELIM_THM;;
+
 let SUB_ELIM_THM' = prove
  (`P(a - b) <=> ?d. (a = b + d \/ a < b /\ d = 0) /\ P d`,
   MP_TAC(INST [`\x:num. ~P x`,`P:num->bool`] SUB_ELIM_THM) THEN MESON_TAC[]);;
+
+export_aux_thm SUB_ELIM_THM';;
 
 let DIVMOD_ELIM_THM = prove
  (`P (m DIV n) (m MOD n) <=>
@@ -1857,11 +1867,15 @@ let DIVMOD_ELIM_THM = prove
    [ASM_MESON_TAC[DIVISION_0; LT];
     FIRST_ASSUM(MP_TAC o MATCH_MP DIVISION) THEN MESON_TAC[DIVMOD_UNIQ]]);;
 
+export_aux_thm DIVMOD_ELIM_THM;;
+
 let DIVMOD_ELIM_THM' = prove
  (`P (m DIV n) (m MOD n) <=>
         ?q r. (n = 0 /\ q = 0 /\ r = m \/ m = q * n + r /\ r < n) /\ P q r`,
   MP_TAC(INST [`\x:num y:num. ~P x y`,`P:num->num->bool`] DIVMOD_ELIM_THM) THEN
   MESON_TAC[]);;
+
+export_aux_thm DIVMOD_ELIM_THM';;
 
 (* ------------------------------------------------------------------------- *)
 (* Crude but useful conversion for cancelling down equations.                *)
@@ -1879,6 +1893,7 @@ let NUM_CANCEL_CONV =
   let EQ_ADD_LCANCEL_0' =
     GEN_REWRITE_RULE (funpow 2 BINDER_CONV o LAND_CONV) [EQ_SYM_EQ]
       EQ_ADD_LCANCEL_0 in
+  let () = export_aux_thm EQ_ADD_LCANCEL_0' in
   let AC_RULE = AC ADD_AC in
   fun tm ->
     let l,r = dest_eq tm in
@@ -1899,17 +1914,24 @@ let NUM_CANCEL_CONV =
 
 let LE_IMP =
   let pth = PURE_ONCE_REWRITE_RULE[IMP_CONJ] LE_TRANS in
+  let () = export_aux_thm pth in
   fun th -> GEN_ALL(MATCH_MP pth (SPEC_ALL th));;
 
 (* ------------------------------------------------------------------------- *)
 (* Maximum and minimum of natural numbers.                                   *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-min-max";;
+
 let MAX = new_definition
   `!m n. MAX m n = if m <= n then n else m`;;
 
+export_thm MAX;;
+
 let MIN = new_definition
   `!m n. MIN m n = if m <= n then m else n`;;
+
+export_thm MIN;;
 
 (* ------------------------------------------------------------------------- *)
 (* Binder for "the minimal n such that".                                     *)
@@ -1925,9 +1947,13 @@ let MINIMAL = prove
   GEN_TAC THEN REWRITE_TAC[minimal] THEN CONV_TAC(RAND_CONV SELECT_CONV) THEN
   REWRITE_TAC[GSYM num_WOP]);;
 
+export_thm MINIMAL;;
+
 (* ------------------------------------------------------------------------- *)
 (* A common lemma for transitive relations.                                  *)
 (* ------------------------------------------------------------------------- *)
+
+logfile "relation-transitive";;
 
 let TRANSITIVE_STEPWISE_LT_EQ = prove
  (`!R. (!x y z. R x y /\ R y z ==> R x z)
@@ -1938,6 +1964,8 @@ let TRANSITIVE_STEPWISE_LT_EQ = prove
   REWRITE_TAC[LEFT_FORALL_IMP_THM; EXISTS_REFL; ADD_CLAUSES] THEN
   INDUCT_TAC THEN REWRITE_TAC[ADD_CLAUSES] THEN ASM_MESON_TAC[]);;
 
+export_thm TRANSITIVE_STEPWISE_LT_EQ;;
+
 let TRANSITIVE_STEPWISE_LT = prove
  (`!R. (!x y z. R x y /\ R y z ==> R x z) /\ (!n. R n (SUC n))
        ==> !m n. m < n ==> R m n`,
@@ -1945,15 +1973,18 @@ let TRANSITIVE_STEPWISE_LT = prove
    `(a ==> (c <=> b)) ==> a /\ b ==> c`) THEN
   MATCH_ACCEPT_TAC TRANSITIVE_STEPWISE_LT_EQ);;
 
+export_thm TRANSITIVE_STEPWISE_LT;;
+
 let TRANSITIVE_STEPWISE_LE_EQ = prove
  (`!R. (!x. R x x) /\ (!x y z. R x y /\ R y z ==> R x z)
        ==> ((!m n. m <= n ==> R m n) <=> (!n. R n (SUC n)))`,
   REPEAT STRIP_TAC THEN EQ_TAC THEN ASM_SIMP_TAC[LE; LE_REFL] THEN
-
   DISCH_TAC THEN SIMP_TAC[LE_EXISTS; LEFT_IMP_EXISTS_THM] THEN
   GEN_TAC THEN ONCE_REWRITE_TAC[SWAP_FORALL_THM] THEN
   REWRITE_TAC[LEFT_FORALL_IMP_THM; EXISTS_REFL; ADD_CLAUSES] THEN
   INDUCT_TAC THEN REWRITE_TAC[ADD_CLAUSES] THEN ASM_MESON_TAC[]);;
+
+export_thm TRANSITIVE_STEPWISE_LE_EQ;;
 
 let TRANSITIVE_STEPWISE_LE = prove
  (`!R. (!x. R x x) /\ (!x y z. R x y /\ R y z ==> R x z) /\
@@ -1962,5 +1993,7 @@ let TRANSITIVE_STEPWISE_LE = prove
   REPEAT GEN_TAC THEN MATCH_MP_TAC(TAUT
    `(a /\ a' ==> (c <=> b)) ==> a /\ a' /\ b ==> c`) THEN
   MATCH_ACCEPT_TAC TRANSITIVE_STEPWISE_LE_EQ);;
+
+export_thm TRANSITIVE_STEPWISE_LE;;
 
 logfile_end ();;
