@@ -356,15 +356,15 @@ export_thm FORALL_NOT_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let FORALL_BOOL_THM = prove
-  (`(!b. P b) <=> P T /\ P F`,
-   EQ_TAC THEN DISCH_TAC THEN ASM_REWRITE_TAC[] THEN
+  (`!P. (!b. P b) <=> P T /\ P F`,
+   GEN_TAC THEN EQ_TAC THEN DISCH_TAC THEN ASM_REWRITE_TAC[] THEN
    GEN_TAC THEN BOOL_CASES_TAC `b:bool` THEN ASM_REWRITE_TAC[]);;
 
 export_thm FORALL_BOOL_THM;;
 
 let EXISTS_BOOL_THM = prove
- (`(?b. P b) <=> P T \/ P F`,
-  MATCH_MP_TAC(TAUT `(~p <=> ~q) ==> (p <=> q)`) THEN
+ (`!P. (?b. P b) <=> P T \/ P F`,
+  GEN_TAC THEN MATCH_MP_TAC(TAUT `(~p <=> ~q) ==> (p <=> q)`) THEN
   REWRITE_TAC[DE_MORGAN_THM; NOT_EXISTS_THM; FORALL_BOOL_THM]);;
 
 export_thm EXISTS_BOOL_THM;;
@@ -522,7 +522,10 @@ let TAUT =
 (* ------------------------------------------------------------------------- *)
 
 let MONO_COND = prove
- (`(A ==> B) /\ (C ==> D) ==> (if b then A else C) ==> (if b then B else D)`,
+ (`!b A B C D.
+     (A ==> B) /\ (C ==> D) ==>
+     (if b then A else C) ==> (if b then B else D)`,
+  REPEAT GEN_TAC THEN
   STRIP_TAC THEN BOOL_CASES_TAC `b:bool` THEN
   ASM_REWRITE_TAC[]);;
 
@@ -535,8 +538,9 @@ monotonicity_theorems := MONO_COND::(!monotonicity_theorems);;
 (* ------------------------------------------------------------------------- *)
 
 let COND_ELIM_THM = prove
- (`(P:A->bool) (if c then x else y) <=> (c ==> P x) /\ (~c ==> P y)`,
-  BOOL_CASES_TAC `c:bool` THEN REWRITE_TAC[]);;
+ (`!P c x y.
+     (P:A->bool) (if c then x else y) <=> (c ==> P x) /\ (~c ==> P y)`,
+  REPEAT GEN_TAC THEN BOOL_CASES_TAC `c:bool` THEN REWRITE_TAC[]);;
 
 export_thm COND_ELIM_THM;;
 

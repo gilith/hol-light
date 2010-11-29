@@ -90,9 +90,10 @@ let ADD_ASSOC = prove
 export_thm ADD_ASSOC;;
 
 let ADD_AC = prove
- (`(m + n = n + m) /\
-   ((m + n) + p = m + (n + p)) /\
-   (m + (n + p) = n + (m + p))`,
+ (`!m n p.
+     (m + n = n + m) /\
+     ((m + n) + p = m + (n + p)) /\
+     (m + (n + p) = n + (m + p))`,
   MESON_TAC[ADD_ASSOC; ADD_SYM]);;
 
 export_thm ADD_AC;;
@@ -270,9 +271,10 @@ let MULT_ASSOC = prove
 export_thm MULT_ASSOC;;
 
 let MULT_AC = prove
- (`(m * n = n * m) /\
-   ((m * n) * p = m * (n * p)) /\
-   (m * (n * p) = n * (m * p))`,
+ (`!m n p.
+     (m * n = n * m) /\
+     ((m * n) * p = m * (n * p)) /\
+     (m * (n * p) = n * (m * p))`,
   MESON_TAC[MULT_ASSOC; MULT_SYM]);;
 
 export_thm MULT_AC;;
@@ -857,14 +859,15 @@ export_thm LE_SQUARE_REFL;;
 logfile "natural-set";;
 
 let WLOG_LE = prove
- (`(!m n. P m n <=> P n m) /\ (!m n. m <= n ==> P m n) ==> !m n. P m n`,
+ (`!P. (!m n. P m n <=> P n m) /\ (!m n. m <= n ==> P m n) ==> !m n. P m n`,
   MESON_TAC[LE_CASES]);;
 
 export_thm WLOG_LE;;
 
 let WLOG_LT = prove
- (`(!m. P m m) /\ (!m n. P m n <=> P n m) /\ (!m n. m < n ==> P m n)
-   ==> !m y. P m y`,
+ (`!P.
+     (!m. P m m) /\ (!m n. P m n <=> P n m) /\ (!m n. m < n ==> P m n)
+     ==> !m y. P m y`,
   MESON_TAC[LT_CASES]);;
 
 export_thm WLOG_LT;;
@@ -1786,7 +1789,8 @@ let DIV_LE_EXCLUSION = prove
 export_thm DIV_LE_EXCLUSION;;
 
 let DIV_EQ_EXCLUSION = prove
- (`b * c < (a + 1) * d /\ a * d < (c + 1) * b ==> (a DIV b = c DIV d)`,
+ (`!a b c d.
+     b * c < (a + 1) * d /\ a * d < (c + 1) * b ==> (a DIV b = c DIV d)`,
   REPEAT GEN_TAC THEN
   ASM_CASES_TAC `b = 0` THEN ASM_REWRITE_TAC[MULT_CLAUSES; LT] THEN
   ASM_CASES_TAC `d = 0` THEN ASM_REWRITE_TAC[MULT_CLAUSES; LT] THEN

@@ -86,11 +86,12 @@ let CONJ_SYM = prove
 export_thm CONJ_SYM;;
 
 let CONJ_ACI = prove
- (`(p /\ q <=> q /\ p) /\
-   ((p /\ q) /\ r <=> p /\ (q /\ r)) /\
-   (p /\ (q /\ r) <=> q /\ (p /\ r)) /\
-   (p /\ p <=> p) /\
-   (p /\ (p /\ q) <=> p /\ q)`,
+ (`!p q r.
+     (p /\ q <=> q /\ p) /\
+     ((p /\ q) /\ r <=> p /\ (q /\ r)) /\
+     (p /\ (q /\ r) <=> q /\ (p /\ r)) /\
+     (p /\ p <=> p) /\
+     (p /\ (p /\ q) <=> p /\ q)`,
   ITAUT_TAC);;
 
 export_thm CONJ_ACI;;
@@ -110,11 +111,12 @@ let DISJ_SYM = prove
 export_thm DISJ_SYM;;
 
 let DISJ_ACI = prove
- (`(p \/ q <=> q \/ p) /\
-   ((p \/ q) \/ r <=> p \/ (q \/ r)) /\
-   (p \/ (q \/ r) <=> q \/ (p \/ r)) /\
-   (p \/ p <=> p) /\
-   (p \/ (p \/ q) <=> p \/ q)`,
+ (`!p q r.
+     (p \/ q <=> q \/ p) /\
+     ((p \/ q) \/ r <=> p \/ (q \/ r)) /\
+     (p \/ (q \/ r) <=> q \/ (p \/ r)) /\
+     (p \/ p <=> p) /\
+     (p \/ (p \/ q) <=> p \/ q)`,
   ITAUT_TAC);;
 
 export_thm DISJ_ACI;;
@@ -122,7 +124,7 @@ export_thm DISJ_ACI;;
 logfile "bool-int-imp";;
 
 let IMP_CONJ = prove
- (`p /\ q ==> r <=> p ==> q ==> r`,
+ (`!p q r. p /\ q ==> r <=> p ==> q ==> r`,
   ITAUT_TAC);;
 
 export_thm IMP_CONJ;;
@@ -132,7 +134,7 @@ let IMP_IMP = GSYM IMP_CONJ;;
 export_thm IMP_IMP;;
 
 let IMP_CONJ_ALT = prove
- (`p /\ q ==> r <=> q ==> p ==> r`,
+ (`!p q r. p /\ q ==> r <=> q ==> p ==> r`,
   ITAUT_TAC);;
 
 export_thm IMP_CONJ_ALT;;
@@ -179,7 +181,7 @@ export_thm EXISTS_SIMP;;
 
 logfile "bool-int-rewr";;
 
-let EQ_IMP = ITAUT `(a <=> b) ==> a ==> b`;;
+let EQ_IMP = ITAUT `!a b. (a <=> b) ==> a ==> b`;;
 
 export_thm EQ_IMP;;
 
