@@ -144,6 +144,7 @@ let (GEN_NNF_CONV:bool->conv*(term->thm*thm)->conv) =
   let () = export_aux_thm pth_eq in
   let () = export_aux_thm pth_not_eq in
   let () = export_aux_thm pth_eq' in
+  let () = export_aux_thm pth_not_eq' in
   let () = export_aux_thm pth_not_forall in
   let () = export_aux_thm pth_not_exists in
   let () = export_aux_thm pth_not_exu in
