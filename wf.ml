@@ -29,8 +29,9 @@ export_thm WF;;
 logfile "relation-well-founded-thm";;
 
 let WF_EQ = prove
- (`WF(<<) <=> !P:A->bool. (?x. P(x)) <=> (?x. P(x) /\ !y. y << x ==> ~P(y))`,
-  REWRITE_TAC[WF] THEN MESON_TAC[]);;
+ (`!(<<).
+     WF(<<) <=> !P:A->bool. (?x. P(x)) <=> (?x. P(x) /\ !y. y << x ==> ~P(y))`,
+  GEN_TAC THEN REWRITE_TAC[WF] THEN MESON_TAC[]);;
 
 export_thm WF_EQ;;
 
@@ -39,7 +40,9 @@ export_thm WF_EQ;;
 (* ------------------------------------------------------------------------- *)
 
 let WF_IND = prove
- (`WF(<<) <=> !P:A->bool. (!x. (!y. y << x ==> P(y)) ==> P(x)) ==> !x. P(x)`,
+ (`!(<<).
+     WF(<<) <=> !P:A->bool. (!x. (!y. y << x ==> P(y)) ==> P(x)) ==> !x. P(x)`,
+  GEN_TAC THEN
   REWRITE_TAC[WF] THEN EQ_TAC THEN DISCH_TAC THEN GEN_TAC THEN
   POP_ASSUM(MP_TAC o SPEC `\x:A. ~P(x)`) THEN REWRITE_TAC[] THEN MESON_TAC[]);;
 
@@ -50,7 +53,8 @@ export_thm WF_IND;;
 (* ------------------------------------------------------------------------- *)
 
 let WF_DCHAIN = prove
- (`WF(<<) <=> ~(?s:num->A. !n. s(SUC n) << s(n))`,
+ (`!(<<). WF(<<) <=> ~(?s:num->A. !n. s(SUC n) << s(n))`,
+  GEN_TAC THEN
   REWRITE_TAC[WF; TAUT `(a <=> ~b) <=> (~a <=> b)`; NOT_FORALL_THM] THEN
   EQ_TAC THEN DISCH_THEN CHOOSE_TAC THENL
    [POP_ASSUM(MP_TAC o REWRITE_RULE[NOT_IMP]) THEN
@@ -74,7 +78,8 @@ export_thm WF_DCHAIN;;
 (* ------------------------------------------------------------------------- *)
 
 let WF_UREC = prove
- (`WF(<<) ==>
+ (`!(<<).
+     WF(<<) ==>
        !H. (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x))
             ==> !(f:A->B) g. (!x. f x = H f x) /\ (!x. g x = H g x)
                               ==> (f = g)`,
@@ -85,10 +90,12 @@ let WF_UREC = prove
 export_thm WF_UREC;;
 
 let WF_UREC_WF = prove
- (`(!H. (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x))
+ (`!(<<).
+     (!H. (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x))
         ==> !(f:A->bool) g. (!x. f x = H f x) /\ (!x. g x = H g x)
                           ==> (f = g))
-   ==> WF(<<)`,
+     ==> WF(<<)`,
+  GEN_TAC THEN
   REWRITE_TAC[WF_IND] THEN DISCH_TAC THEN GEN_TAC THEN DISCH_TAC THEN
   FIRST_X_ASSUM(MP_TAC o SPEC `\f x. P(x:A) \/ !z:A. z << x ==> f(z)`) THEN
   REWRITE_TAC[] THEN
@@ -103,10 +110,11 @@ export_thm WF_UREC_WF;;
 (* ------------------------------------------------------------------------- *)
 
 let WF_REC_INVARIANT = prove
- (`WF(<<)
-   ==> !H S. (!f g x. (!z. z << x ==> (f z = g z) /\ S z (f z))
-                      ==> (H f x = H g x) /\ S x (H f x))
-             ==> ?f:A->B. !x. (f x = H f x)`,
+ (`!(<<).
+     WF(<<)
+     ==> !H S. (!f g x. (!z. z << x ==> (f z = g z) /\ S z (f z))
+                        ==> (H f x = H g x) /\ S x (H f x))
+               ==> ?f:A->B. !x. (f x = H f x)`,
   let lemma = prove_inductive_relations_exist
     `!f:A->B x. (!z. z << x ==> R z (f z)) ==> R x (H f x)` in
   REWRITE_TAC[WF_IND] THEN REPEAT STRIP_TAC THEN
@@ -123,9 +131,10 @@ export_thm WF_REC_INVARIANT;;
 (* ------------------------------------------------------------------------- *)
 
 let WF_REC = prove
- (`WF(<<)
-   ==> !H. (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x))
-           ==> ?f:A->B. !x. f x = H f x`,
+ (`!(<<).
+     WF(<<)
+     ==> !H. (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x))
+             ==> ?f:A->B. !x. f x = H f x`,
   REPEAT STRIP_TAC THEN
   FIRST_X_ASSUM(MATCH_MP_TAC o MATCH_MP WF_REC_INVARIANT) THEN
   EXISTS_TAC `\x:A y:B. T` THEN ASM_REWRITE_TAC[]);;
@@ -133,9 +142,11 @@ let WF_REC = prove
 export_thm WF_REC;;
 
 let WF_REC_WF = prove
- (`(!H. (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x))
-                 ==> ?f:A->num. !x. f x = H f x)
-   ==> WF(<<)`,
+ (`!(<<).
+     (!H. (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x))
+                   ==> ?f:A->num. !x. f x = H f x)
+     ==> WF(<<)`,
+  GEN_TAC THEN
   DISCH_TAC THEN REWRITE_TAC[WF_DCHAIN] THEN
   DISCH_THEN(X_CHOOSE_TAC `x:num->A`) THEN
   SUBGOAL_THEN `!n. (x:num->A)(@m. x(m) << x(n)) << x(n)` ASSUME_TAC THENL
@@ -166,7 +177,8 @@ export_thm WF_REC_WF;;
 (* ------------------------------------------------------------------------- *)
 
 let WF_EREC = prove
- (`WF(<<) ==>
+ (`!(<<).
+     WF(<<) ==>
        !H. (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x))
             ==> ?!f:A->B. !x. f x = H f x`,
   MESON_TAC[WF_REC; WF_UREC]);;
@@ -180,7 +192,8 @@ export_thm WF_EREC;;
 parse_as_infix("<<<",(12,"right"));;
 
 let WF_SUBSET = prove
- (`(!(x:A) y. x << y ==> x <<< y) /\ WF(<<<) ==> WF(<<)`,
+ (`!(<<) (<<<). (!(x:A) y. x << y ==> x <<< y) /\ WF(<<<) ==> WF(<<)`,
+  REPEAT GEN_TAC THEN
   DISCH_THEN(CONJUNCTS_THEN2 ASSUME_TAC MP_TAC) THEN REWRITE_TAC[WF] THEN
   DISCH_TAC THEN GEN_TAC THEN DISCH_THEN(ANTE_RES_THEN MP_TAC) THEN
   UNDISCH_TAC `!(x:A) (y:A). x << y ==> x <<< y` THEN MESON_TAC[]);;
@@ -188,8 +201,8 @@ let WF_SUBSET = prove
 export_thm WF_SUBSET;;
 
 let WF_MEASURE_GEN = prove
- (`!m:A->B. WF(<<) ==> WF(\x x'. m x << m x')`,
-  GEN_TAC THEN REWRITE_TAC[WF_IND] THEN REPEAT STRIP_TAC THEN
+ (`!(<<) (m:A->B). WF(<<) ==> WF(\x x'. m x << m x')`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[WF_IND] THEN REPEAT STRIP_TAC THEN
   FIRST_ASSUM(MP_TAC o SPEC `\y:B. !x:A. (m(x) = y) ==> P x`) THEN
   UNDISCH_TAC `!x. (!y. (m:A->B) y << m x ==> P y) ==> P x` THEN
   REWRITE_TAC[] THEN MESON_TAC[]);;
@@ -225,9 +238,10 @@ let WF_LEX = prove
 export_thm WF_LEX;;
 
 let WF_POINTWISE = prove
- (`WF((<<) :A->A->bool) /\ WF((<<<) :B->B->bool)
-   ==> WF(\(x1,y1) (x2,y2). x1 << x2 /\ y1 <<< y2)`,
-  STRIP_TAC THEN MATCH_MP_TAC(GEN_ALL WF_SUBSET) THEN EXISTS_TAC
+ (`!(<<) (<<<).
+     WF((<<) :A->A->bool) /\ WF((<<<) :B->B->bool)
+     ==> WF(\(x1,y1) (x2,y2). x1 << x2 /\ y1 <<< y2)`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC(GEN_ALL WF_SUBSET) THEN EXISTS_TAC
    `\(x1,y1) (x2,y2). x1 << x2 \/ (x1:A = x2) /\ (y1:B) <<< (y2:B)` THEN
   CONJ_TAC THENL
    [REWRITE_TAC[FORALL_PAIR_THM] THEN CONV_TAC TAUT;
@@ -274,7 +288,7 @@ let WF_MEASURE = prove
 export_thm WF_MEASURE;;
 
 let MEASURE_LE = prove
- (`(!y. MEASURE m y a ==> MEASURE m y b) <=> m(a) <= m(b)`,
+ (`!m a b. (!y. MEASURE m y a ==> MEASURE m y b) <=> m(a) <= m(b)`,
     REWRITE_TAC[MEASURE] THEN MESON_TAC[NOT_LE; LTE_TRANS; LT_REFL]);;
 
 export_thm MEASURE_LE;;
@@ -286,8 +300,8 @@ export_thm MEASURE_LE;;
 logfile "relation-well-founded-trivial";;
 
 let WF_REFL = prove
- (`!x:A. WF(<<) ==> ~(x << x)`,
-  GEN_TAC THEN REWRITE_TAC[WF] THEN
+ (`!(<<) (x:A). WF(<<) ==> ~(x << x)`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[WF] THEN
   DISCH_THEN(MP_TAC o SPEC `\y:A. y = x`) THEN
   REWRITE_TAC[] THEN MESON_TAC[]);;
 
@@ -347,7 +361,8 @@ export_thm WF_REC_TAIL;;
 (* ------------------------------------------------------------------------- *)
 
 let WF_REC_TAIL_GENERAL = prove
- (`!P G H. WF(<<) /\
+ (`!(<<) P G H.
+           WF(<<) /\
            (!f g x. (!z. z << x ==> (f z = g z))
                     ==> (P f x <=> P g x) /\ G f x = G g x /\ H f x = H g x) /\
            (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x)) /\
