@@ -15,16 +15,24 @@ needs "arith.ml";;
 
 parse_as_infix("<<",(12,"right"));;
 
+logfile "relation-well-founded-def";;
+
 let WF = new_definition
   `WF(<<) <=> !P:A->bool. (?x. P(x)) ==> (?x. P(x) /\ !y. y << x ==> ~P(y))`;;
+
+export_thm WF;;
 
 (* ------------------------------------------------------------------------- *)
 (* Strengthen it to equality.                                                *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "relation-well-founded-thm";;
+
 let WF_EQ = prove
  (`WF(<<) <=> !P:A->bool. (?x. P(x)) <=> (?x. P(x) /\ !y. y << x ==> ~P(y))`,
   REWRITE_TAC[WF] THEN MESON_TAC[]);;
+
+export_thm WF_EQ;;
 
 (* ------------------------------------------------------------------------- *)
 (* Equivalence of wellfounded induction.                                     *)
@@ -34,6 +42,8 @@ let WF_IND = prove
  (`WF(<<) <=> !P:A->bool. (!x. (!y. y << x ==> P(y)) ==> P(x)) ==> !x. P(x)`,
   REWRITE_TAC[WF] THEN EQ_TAC THEN DISCH_TAC THEN GEN_TAC THEN
   POP_ASSUM(MP_TAC o SPEC `\x:A. ~P(x)`) THEN REWRITE_TAC[] THEN MESON_TAC[]);;
+
+export_thm WF_IND;;
 
 (* ------------------------------------------------------------------------- *)
 (* Equivalence of the "infinite descending chains" version.                  *)
@@ -57,6 +67,8 @@ let WF_DCHAIN = prove
     EXISTS_TAC `\y:A. ?n:num. y = s(n)` THEN REWRITE_TAC[] THEN
     ASM_MESON_TAC[]]);;
 
+export_thm WF_DCHAIN;;
+
 (* ------------------------------------------------------------------------- *)
 (* Equivalent to just *uniqueness* part of recursion.                        *)
 (* ------------------------------------------------------------------------- *)
@@ -70,6 +82,8 @@ let WF_UREC = prove
   FIRST_ASSUM MATCH_MP_TAC THEN GEN_TAC THEN
   DISCH_THEN(ANTE_RES_THEN MP_TAC) THEN ASM_REWRITE_TAC[]);;
 
+export_thm WF_UREC;;
+
 let WF_UREC_WF = prove
  (`(!H. (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x))
         ==> !(f:A->bool) g. (!x. f x = H f x) /\ (!x. g x = H g x)
@@ -81,6 +95,8 @@ let WF_UREC_WF = prove
   W(C SUBGOAL_THEN (fun t -> REWRITE_TAC[t]) o funpow 2 lhand o snd) THENL
    [MESON_TAC[]; DISCH_THEN(MP_TAC o SPECL [`P:A->bool`; `\x:A. T`]) THEN
     REWRITE_TAC[FUN_EQ_THM] THEN ASM_MESON_TAC[]]);;
+
+export_thm WF_UREC_WF;;
 
 (* ------------------------------------------------------------------------- *)
 (* Stronger form of recursion with "inductive invariant" (Krstic/Matthews).  *)
@@ -100,6 +116,8 @@ let WF_REC_INVARIANT = prove
   FIRST_X_ASSUM(fun th -> GEN_REWRITE_TAC BINDER_CONV [th]) THEN
   SUBGOAL_THEN `!x:A y:B. R x y ==> S x y` MP_TAC THEN ASM_MESON_TAC[]);;
 
+export_thm WF_REC_INVARIANT;;
+
 (* ------------------------------------------------------------------------- *)
 (* Equivalent to just *existence* part of recursion.                         *)
 (* ------------------------------------------------------------------------- *)
@@ -111,6 +129,8 @@ let WF_REC = prove
   REPEAT STRIP_TAC THEN
   FIRST_X_ASSUM(MATCH_MP_TAC o MATCH_MP WF_REC_INVARIANT) THEN
   EXISTS_TAC `\x:A y:B. T` THEN ASM_REWRITE_TAC[]);;
+
+export_thm WF_REC;;
 
 let WF_REC_WF = prove
  (`(!H. (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x))
@@ -139,6 +159,8 @@ let WF_REC_WF = prove
     MP_TAC(SPEC `\n:num. ?i:num. n = f(x(i):A)` num_WOP) THEN
     REWRITE_TAC[] THEN ASM_MESON_TAC[]]);;
 
+export_thm WF_REC_WF;;
+
 (* ------------------------------------------------------------------------- *)
 (* Combine the two versions of the recursion theorem.                        *)
 (* ------------------------------------------------------------------------- *)
@@ -148,6 +170,8 @@ let WF_EREC = prove
        !H. (!f g x. (!z. z << x ==> (f z = g z)) ==> (H f x = H g x))
             ==> ?!f:A->B. !x. f x = H f x`,
   MESON_TAC[WF_REC; WF_UREC]);;
+
+export_thm WF_EREC;;
 
 (* ------------------------------------------------------------------------- *)
 (* Some preservation theorems for wellfoundedness.                           *)
@@ -161,12 +185,16 @@ let WF_SUBSET = prove
   DISCH_TAC THEN GEN_TAC THEN DISCH_THEN(ANTE_RES_THEN MP_TAC) THEN
   UNDISCH_TAC `!(x:A) (y:A). x << y ==> x <<< y` THEN MESON_TAC[]);;
 
+export_thm WF_SUBSET;;
+
 let WF_MEASURE_GEN = prove
  (`!m:A->B. WF(<<) ==> WF(\x x'. m x << m x')`,
   GEN_TAC THEN REWRITE_TAC[WF_IND] THEN REPEAT STRIP_TAC THEN
   FIRST_ASSUM(MP_TAC o SPEC `\y:B. !x:A. (m(x) = y) ==> P x`) THEN
   UNDISCH_TAC `!x. (!y. (m:A->B) y << m x ==> P y) ==> P x` THEN
   REWRITE_TAC[] THEN MESON_TAC[]);;
+
+export_thm WF_MEASURE_GEN;;
 
 let WF_LEX_DEPENDENT = prove
  (`!R:A->A->bool S:A->B->B->bool. WF(R) /\ (!a. WF(S a))
@@ -187,10 +215,14 @@ let WF_LEX_DEPENDENT = prove
   DISCH_TAC THEN EXISTS_TAC `(a:A,b:B)` THEN ASM_REWRITE_TAC[] THEN
   REWRITE_TAC[FORALL_PAIR_THM] THEN ASM_MESON_TAC[]);;
 
+export_thm WF_LEX_DEPENDENT;;
+
 let WF_LEX = prove
  (`!R:A->A->bool S:B->B->bool. WF(R) /\ WF(S)
          ==> WF(\(r1,s1) (r2,s2). R r1 r2 \/ (r1 = r2) /\ S s1 s2)`,
   SIMP_TAC[WF_LEX_DEPENDENT; ETA_AX]);;
+
+export_thm WF_LEX;;
 
 let WF_POINTWISE = prove
  (`WF((<<) :A->A->bool) /\ WF((<<<) :B->B->bool)
@@ -201,6 +233,8 @@ let WF_POINTWISE = prove
    [REWRITE_TAC[FORALL_PAIR_THM] THEN CONV_TAC TAUT;
     MATCH_MP_TAC WF_LEX THEN ASM_REWRITE_TAC[]]);;
 
+export_thm WF_POINTWISE;;
+
 (* ------------------------------------------------------------------------- *)
 (* Wellfoundedness properties of natural numbers.                            *)
 (* ------------------------------------------------------------------------- *)
@@ -209,17 +243,27 @@ let WF_num = prove
  (`WF(<)`,
   REWRITE_TAC[WF_IND; num_WF]);;
 
+export_thm WF_num;;
+
 let WF_REC_num = prove
  (`!H. (!f g n. (!m. m < n ==> (f m = g m)) ==> (H f n = H g n))
         ==> ?f:num->A. !n. f n = H f n`,
   MATCH_ACCEPT_TAC(MATCH_MP WF_REC WF_num));;
 
+export_thm WF_REC_num;;
+
 (* ------------------------------------------------------------------------- *)
 (* Natural number measures (useful in program verification).                 *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "relation-measure-def";;
+
 let MEASURE = new_definition
   `MEASURE m = \x y. m(x) < m(y)`;;
+
+export_thm MEASURE;;
+
+logfile "relation-measure-thm";;
 
 let WF_MEASURE = prove
  (`!m:A->num. WF(MEASURE m)`,
@@ -227,19 +271,27 @@ let WF_MEASURE = prove
   MATCH_MP_TAC WF_MEASURE_GEN THEN
   MATCH_ACCEPT_TAC WF_num);;
 
+export_thm WF_MEASURE;;
+
 let MEASURE_LE = prove
  (`(!y. MEASURE m y a ==> MEASURE m y b) <=> m(a) <= m(b)`,
     REWRITE_TAC[MEASURE] THEN MESON_TAC[NOT_LE; LTE_TRANS; LT_REFL]);;
 
+export_thm MEASURE_LE;;
+
 (* ------------------------------------------------------------------------- *)
 (* Trivially, a WF relation is irreflexive.                                  *)
 (* ------------------------------------------------------------------------- *)
+
+logfile "relation-well-founded-trivial";;
 
 let WF_REFL = prove
  (`!x:A. WF(<<) ==> ~(x << x)`,
   GEN_TAC THEN REWRITE_TAC[WF] THEN
   DISCH_THEN(MP_TAC o SPEC `\y:A. y = x`) THEN
   REWRITE_TAC[] THEN MESON_TAC[]);;
+
+export_thm WF_REFL;;
 
 (* ------------------------------------------------------------------------- *)
 (* Even more trivially, the everywhere-false relation is wellfounded.        *)
@@ -249,9 +301,13 @@ let WF_FALSE = prove
  (`WF(\x y:A. F)`,
   REWRITE_TAC[WF]);;
 
+export_thm WF_FALSE;;
+
 (* ------------------------------------------------------------------------- *)
 (* Tail recursion.                                                           *)
 (* ------------------------------------------------------------------------- *)
+
+logfile "relation-well-founded-tail";;
 
 let WF_REC_TAIL = prove
  (`!P g h. ?f:A->B. !x. f x = if P(x) then f(g x) else h x`,
@@ -283,6 +339,8 @@ let WF_REC_TAIL = prove
      [SIMP_TAC[LEFT_IMP_EXISTS_THM] THEN
       INDUCT_TAC THEN ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[LT_0];
       ASM_MESON_TAC[LT]]]);;
+
+export_thm WF_REC_TAIL;;
 
 (* ------------------------------------------------------------------------- *)
 (* A more general mix of tail and wellfounded recursion.                     *)
@@ -345,18 +403,24 @@ let WF_REC_TAIL_GENERAL = prove
     MATCH_MP_TAC MONO_FORALL THEN X_GEN_TAC `x:A` THEN
     ASM_CASES_TAC `P (f:A->B) (x:A) :bool` THEN ASM_MESON_TAC[]]);;
 
+export_thm WF_REC_TAIL_GENERAL;;
+
 (* ------------------------------------------------------------------------- *)
 (* Tactic to apply WF induction on a free "measured" term in the goal.       *)
 (* ------------------------------------------------------------------------- *)
+
+logfile "wf-aux";;
 
 let WF_INDUCT_TAC =
   let qqconv =
     let pth = prove
      (`(!x. P x ==> !y. Q x y) <=> !y x. P x ==> Q x y`, MESON_TAC[]) in
+    let () = export_aux_thm pth in
     GEN_REWRITE_CONV I [pth]
   and eqconv =
     let pth = prove
      (`(!m. P m ==> (m = e) ==> Q) <=> (P e ==> Q)`, MESON_TAC[]) in
+    let () = export_aux_thm pth in
     REWR_CONV pth in
   let rec qqconvs tm =
     try (qqconv THENC BINDER_CONV qqconvs) tm
@@ -370,3 +434,5 @@ let WF_INDUCT_TAC =
     let th2 = CONV_RULE(LAND_CONV qqconvs) (DISCH_ALL th1) in
     (MATCH_MP_TAC th2 THEN MAP_EVERY X_GEN_TAC fvs THEN
      CONV_TAC(LAND_CONV qqconvs) THEN DISCH_THEN ASSUME_TAC) gl;;
+
+logfile_end ();;

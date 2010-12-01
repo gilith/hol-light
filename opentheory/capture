@@ -72,6 +72,10 @@ do
         echo "author: Joe Hurd <joe@gilith.com>" >> $tthy
         echo "license: HOLLight" >> $tthy
         echo "show: \"Data.Bool\"" >> $tthy
+        if (echo $base | grep '^pair-' > /dev/null)
+        then
+            echo "show: \"Data.Pair\"" >> $tthy
+        fi
         if (echo $base | grep '^unit-' > /dev/null)
         then
             echo "show: \"Data.Unit\"" >> $tthy
@@ -80,10 +84,6 @@ do
         then
             echo "show: \"Function\"" >> $tthy
         fi
-        if (echo $base | grep '^pair-' > /dev/null)
-        then
-            echo "show: \"Data.Pair\"" >> $tthy
-        fi
         if (echo $base | grep '^natural-' > /dev/null)
         then
             echo "show: \"Number.Natural\"" >> $tthy
@@ -91,6 +91,10 @@ do
         if (echo $base | grep '^natural-' > /dev/null)
         then
             echo "show: \"Number.Numeral\"" >> $tthy
+        fi
+        if (echo $base | grep '^relation-' > /dev/null)
+        then
+            echo "show: \"Relation\"" >> $tthy
         fi
         echo >> $tthy
         echo "main {" >> $tthy
