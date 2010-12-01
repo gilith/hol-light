@@ -9,6 +9,8 @@
 
 needs "wf.ml";;
 
+logfile "calc-num-aux";;
+
 (* ------------------------------------------------------------------------- *)
 (* Simple rule to get rid of NUMERAL constant.                               *)
 (* ------------------------------------------------------------------------- *)
@@ -27,12 +29,16 @@ let ARITH_ZERO = prove
    (BIT0 _0 = _0)`,
   REWRITE_TAC[NUMERAL; BIT0; DENUMERAL ADD_CLAUSES]);;
 
+export_aux_thm ARITH_ZERO;;
+
 let ARITH_SUC = prove
  (`(!n. SUC(NUMERAL n) = NUMERAL(SUC n)) /\
    (SUC _0 = BIT1 _0) /\
    (!n. SUC (BIT0 n) = BIT1 n) /\
    (!n. SUC (BIT1 n) = BIT0 (SUC n))`,
   REWRITE_TAC[NUMERAL; BIT0; BIT1; DENUMERAL ADD_CLAUSES]);;
+
+export_aux_thm ARITH_SUC;;
 
 let ARITH_PRE = prove
  (`(!n. PRE(NUMERAL n) = NUMERAL(PRE n)) /\
@@ -42,6 +48,8 @@ let ARITH_PRE = prove
   REWRITE_TAC[NUMERAL; BIT1; BIT0; DENUMERAL PRE] THEN INDUCT_TAC THEN
   REWRITE_TAC[NUMERAL; DENUMERAL PRE; DENUMERAL ADD_CLAUSES; DENUMERAL NOT_SUC;
               ARITH_ZERO]);;
+
+export_aux_thm ARITH_PRE;;
 
 let ARITH_ADD = prove
  (`(!m n. NUMERAL(m) + NUMERAL(n) = NUMERAL(m + n)) /\
@@ -57,6 +65,8 @@ let ARITH_ADD = prove
   PURE_REWRITE_TAC[NUMERAL; BIT0; BIT1; DENUMERAL ADD_CLAUSES; SUC_INJ] THEN
   REWRITE_TAC[ADD_AC]);;
 
+export_aux_thm ARITH_ADD;;
+
 let ARITH_MULT = prove
  (`(!m n. NUMERAL(m) * NUMERAL(n) = NUMERAL(m * n)) /\
    (_0 * _0 = _0) /\
@@ -71,6 +81,8 @@ let ARITH_MULT = prove
   PURE_REWRITE_TAC[NUMERAL; BIT0; BIT1; DENUMERAL MULT_CLAUSES;
                    DENUMERAL ADD_CLAUSES; SUC_INJ] THEN
   REWRITE_TAC[LEFT_ADD_DISTRIB; RIGHT_ADD_DISTRIB; ADD_AC]);;
+
+export_aux_thm ARITH_MULT;;
 
 let ARITH_EXP = prove
  (`(!m n. (NUMERAL m) EXP (NUMERAL n) = NUMERAL(m EXP n)) /\
@@ -89,6 +101,8 @@ let ARITH_EXP = prove
   TRY(GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [BIT0; BIT1]) THEN
   REWRITE_TAC[DENUMERAL EXP; DENUMERAL MULT_CLAUSES; EXP_ADD]);;
 
+export_aux_thm ARITH_EXP;;
+
 let ARITH_EVEN = prove
  (`(!n. EVEN(NUMERAL n) <=> EVEN n) /\
    (EVEN _0 <=> T) /\
@@ -96,12 +110,16 @@ let ARITH_EVEN = prove
    (!n. EVEN(BIT1 n) <=> F)`,
   REWRITE_TAC[NUMERAL; BIT1; BIT0; DENUMERAL EVEN; EVEN_ADD]);;
 
+export_aux_thm ARITH_EVEN;;
+
 let ARITH_ODD = prove
  (`(!n. ODD(NUMERAL n) <=> ODD n) /\
    (ODD _0 <=> F) /\
    (!n. ODD(BIT0 n) <=> F) /\
    (!n. ODD(BIT1 n) <=> T)`,
   REWRITE_TAC[NUMERAL; BIT1; BIT0; DENUMERAL ODD; ODD_ADD]);;
+
+export_aux_thm ARITH_ODD;;
 
 let ARITH_LE = prove
  (`(!m n. NUMERAL m <= NUMERAL n <=> m <= n) /\
@@ -131,6 +149,8 @@ let ARITH_LE = prove
     DISCH_THEN(MP_TAC o AP_TERM `EVEN`) THEN
     REWRITE_TAC[EVEN_MULT; EVEN_ADD; NUMERAL; BIT1; EVEN]]);;
 
+export_aux_thm ARITH_LE;;
+
 let ARITH_LT = prove
  (`(!m n. NUMERAL m < NUMERAL n <=> m < n) /\
    ((_0 < _0) <=> F) /\
@@ -145,9 +165,15 @@ let ARITH_LT = prove
   REWRITE_TAC[NUMERAL; GSYM NOT_LE; ARITH_LE] THEN
   REWRITE_TAC[DENUMERAL LE]);;
 
+export_aux_thm ARITH_LT;;
+
 let ARITH_GE = REWRITE_RULE[GSYM GE; GSYM GT] ARITH_LE;;
 
+export_aux_thm ARITH_GE;;
+
 let ARITH_GT = REWRITE_RULE[GSYM GE; GSYM GT] ARITH_LT;;
+
+export_aux_thm ARITH_GT;;
 
 let ARITH_EQ = prove
  (`(!m n. (NUMERAL m = NUMERAL n) <=> (m = n)) /\
@@ -162,6 +188,8 @@ let ARITH_EQ = prove
    (!m n. (BIT1 m = BIT1 n) <=> (m = n))`,
   REWRITE_TAC[NUMERAL; GSYM LE_ANTISYM; ARITH_LE] THEN
   REWRITE_TAC[LET_ANTISYM; LTE_ANTISYM; DENUMERAL LE_0]);;
+
+export_aux_thm ARITH_EQ;;
 
 let ARITH_SUB = prove
  (`(!m n. NUMERAL m - NUMERAL n = NUMERAL(m - n)) /\
@@ -184,12 +212,16 @@ let ARITH_SUB = prove
   REWRITE_TAC[ADD1; LEFT_ADD_DISTRIB] THEN
   REWRITE_TAC[ADD_SUB2; GSYM ADD_ASSOC]);;
 
+export_aux_thm ARITH_SUB;;
+
 let ARITH = end_itlist CONJ
   [ARITH_ZERO; ARITH_SUC; ARITH_PRE;
    ARITH_ADD; ARITH_MULT; ARITH_EXP;
    ARITH_EVEN; ARITH_ODD;
    ARITH_EQ; ARITH_LE; ARITH_LT; ARITH_GE; ARITH_GT;
    ARITH_SUB];;
+
+export_aux_thm ARITH;;
 
 (* ------------------------------------------------------------------------- *)
 (* Now more delicate conversions for situations where efficiency matters.    *)
@@ -204,6 +236,8 @@ let NUM_EQ_CONV,NUM_LE_CONV,NUM_LT_CONV,NUM_GE_CONV,NUM_GT_CONV =
     REPEATC(GEN_REWRITE_CONV I [CONJUNCT2 ARITH_EQ])
   and NUM_LL_CONV' =
     REPEATC(GEN_REWRITE_CONV I [CONJUNCT2 ARITH_LE; CONJUNCT2 ARITH_LT]) in
+  let () = export_aux_thm ARITH_GE' in
+  let () = export_aux_thm ARITH_GT' in
   let GEN_NUM_REL_CONV th cnv = GEN_REWRITE_CONV I [th] THENC cnv in
   GEN_NUM_REL_CONV (CONJUNCT1 ARITH_EQ) NUM_EQ_CONV',
   GEN_NUM_REL_CONV (CONJUNCT1 ARITH_LE) NUM_LL_CONV',
@@ -213,10 +247,14 @@ let NUM_EQ_CONV,NUM_LE_CONV,NUM_LT_CONV,NUM_GE_CONV,NUM_GT_CONV =
 
 let NUM_EVEN_CONV =
   let tth,rths = CONJ_PAIR ARITH_EVEN in
+  let () = export_aux_thm tth in
+  let () = export_aux_thm rths in
   GEN_REWRITE_CONV I [tth] THENC GEN_REWRITE_CONV I [rths];;
 
 let NUM_ODD_CONV =
   let tth,rths = CONJ_PAIR ARITH_ODD in
+  let () = export_aux_thm tth in
+  let () = export_aux_thm rths in
   GEN_REWRITE_CONV I [tth] THENC GEN_REWRITE_CONV I [rths];;
 
 let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV =
@@ -258,6 +296,23 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV =
     and pth_add = prove
      (`NUMERAL m + NUMERAL n = NUMERAL(m + n)`,
       REWRITE_TAC[NUMERAL]) in
+    let () = export_aux_thm sth_z in
+    let () = export_aux_thm sth_0 in
+    let () = export_aux_thm sth_1 in
+    let () = export_aux_thm ath_0x in
+    let () = export_aux_thm ath_x0 in
+    let () = export_aux_thm ath_00 in
+    let () = export_aux_thm ath_01 in
+    let () = export_aux_thm ath_10 in
+    let () = export_aux_thm ath_11 in
+    let () = export_aux_thm cth_0x in
+    let () = export_aux_thm cth_x0 in
+    let () = export_aux_thm cth_00 in
+    let () = export_aux_thm cth_01 in
+    let () = export_aux_thm cth_10 in
+    let () = export_aux_thm cth_11 in
+    let () = export_aux_thm pth_suc in
+    let () = export_aux_thm pth_add in
     let rec raw_suc_conv tm =
       let otm = rand tm in
       if otm = zero_tm then sth_z else
@@ -382,7 +437,8 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV =
       ONCE_REWRITE_TAC[AC ADD_AC
        `a + (b + c) + d + e = (a + c + d) + (b + e)`] THEN
       SIMP_TAC[EQ_ADD_RCANCEL] THEN REWRITE_TAC[ADD_AC]) in
-    let dest_mul = dest_binop `(* )` in
+    let () = export_aux_thm pth in
+    let dest_mul = dest_binop `( * )` in
     let mk_raw_numeral =
       let Z = mk_const("_0",[])
       and BIT0 = mk_const("BIT0",[])
@@ -410,7 +466,8 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV =
          (BIT1 _0 * x = x) /\
          (x * BIT1 _0 = x)`,
         REWRITE_TAC[BIT1; DENUMERAL MULT_CLAUSES]) in
-      let mk_mul = mk_binop `(* )` in
+      let () = export_aux_thm pth in
+      let mk_mul = mk_binop `( * )` in
       let odds = map (fun x -> 2 * x + 1) (0--7) in
       let nums = map (fun n -> mk_raw_numeral(Int n)) odds in
       let pairs = allpairs mk_mul nums nums in
@@ -423,6 +480,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV =
         REWRITE_TAC[BIT0; BIT1; DENUMERAL MULT_CLAUSES;
                     DENUMERAL ADD_CLAUSES] THEN
         REWRITE_TAC[LEFT_ADD_DISTRIB; RIGHT_ADD_DISTRIB; GSYM ADD_ASSOC]) in
+      let () = export_aux_thm pth in
       GEN_REWRITE_CONV I [pth] in
     let right_th = prove
      (`s * BIT1 x = s + BIT0 (s * x)`,
@@ -434,6 +492,8 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV =
       REWRITE_TAC[BIT0; BIT1; DENUMERAL ADD_CLAUSES;
                   DENUMERAL MULT_CLAUSES] THEN
       REWRITE_TAC[RIGHT_ADD_DISTRIB; ADD_AC]) in
+    let () = export_aux_thm right_th in
+    let () = export_aux_thm left_th in
     let LEFT_REWR_CONV = REWR_CONV left_th
     and RIGHT_REWR_CONV = REWR_CONV right_th in
     let rec NUM_MULT_CONV' tm =
@@ -552,7 +612,12 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV =
     and n = `n:num` and w = `w:num` and x = `x:num`
     and y = `y:num` and z = `z:num`
     and Z = `_0` and BIT0 = `BIT0`
-    and mul = `(*)` in
+    and mul = `( * )` in
+    let () = export_aux_thm pth0 in
+    let () = export_aux_thm pth1 in
+    let () = export_aux_thm pth in
+    let () = export_aux_thm tth in
+    let () = export_aux_thm fth in
     let tconv = GEN_REWRITE_CONV I [tth] in
     let rec NUM_EXP_CONV l r =
       if r = Z then INST [l,x] pth else
@@ -584,10 +649,12 @@ let NUM_PRE_CONV =
   let tth = prove
    (`PRE 0 = 0`,
     REWRITE_TAC[PRE]) in
+  let () = export_aux_thm tth in
   let pth = prove
    (`(SUC m = n) ==> (PRE n = m)`,
     DISCH_THEN(SUBST1_TAC o SYM) THEN REWRITE_TAC[PRE])
   and m = `m:num` and n = `n:num` in
+  let () = export_aux_thm pth in
   let suc = `SUC` in
   let pre = `PRE` in
   fun tm -> try let l,r = dest_comb tm in
@@ -611,6 +678,8 @@ let NUM_SUB_CONV =
   and minus = `(-)`
   and plus = `(+)`
   and le = `(<=)` in
+  let () = export_aux_thm pth0 in
+  let () = export_aux_thm pth1 in
   fun tm -> try let l,r = dest_binop minus tm in
                 let ln = dest_numeral l
                 and rn = dest_numeral r in
@@ -632,6 +701,7 @@ let NUM_DIV_CONV,NUM_MOD_CONV =
     MESON_TAC[DIVMOD_UNIQ])
   and m = `m:num` and n = `n:num` and q = `q:num` and r = `r:num`
   and dtm = `(DIV)` and mtm = `(MOD)` in
+  let () = export_aux_thm pth in
   let NUM_DIVMOD_CONV x y =
     let k = quo_num x y
     and l = mod_num x y in
@@ -651,7 +721,7 @@ let NUM_DIV_CONV,NUM_MOD_CONV =
 
 let NUM_FACT_CONV =
   let suc = `SUC`
-  and mul = `(*)` in
+  and mul = `( * )` in
   let pth_0 = prove
    (`FACT 0 = 1`,
     REWRITE_TAC[FACT])
@@ -660,6 +730,8 @@ let NUM_FACT_CONV =
     REPEAT (DISCH_THEN(SUBST1_TAC o SYM)) THEN
     REWRITE_TAC[FACT])
   and w = `w:num` and x = `x:num` and y = `y:num` and z = `z:num` in
+  let () = export_aux_thm pth_0 in
+  let () = export_aux_thm pth_suc in
   let mksuc n =
     let n' = n -/ (Int 1) in
     NUM_SUC_CONV (mk_comb(suc,mk_numeral n')) in
@@ -755,6 +827,8 @@ let EXPAND_CASES_CONV =
   and pth_step = prove
    (`(!n. n < SUC k ==> P n) <=> (!n. n < k ==> P n) /\ P k`,
     REWRITE_TAC[LT] THEN MESON_TAC[]) in
+  let () = export_aux_thm pth_base in
+  let () = export_aux_thm pth_step in
   let base_CONV = GEN_REWRITE_CONV I [pth_base]
   and step_CONV =
     BINDER_CONV(LAND_CONV(RAND_CONV num_CONV)) THENC
@@ -762,3 +836,5 @@ let EXPAND_CASES_CONV =
   let rec conv tm =
     (base_CONV ORELSEC (step_CONV THENC LAND_CONV conv)) tm in
   conv THENC (REWRITE_CONV[GSYM CONJ_ASSOC]);;
+
+logfile_end ();;
