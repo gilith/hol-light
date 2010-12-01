@@ -6,6 +6,8 @@
 
 needs "calc_num.ml";;
 
+logfile "normalizer-aux";;
+
 let SEMIRING_NORMALIZERS_CONV =
   let SEMIRING_PTHS = prove
    (`(!x:A y z. add x (add y z) = add (add x y) z) /\
@@ -88,6 +90,7 @@ let SEMIRING_NORMALIZERS_CONV =
      (fun th -> ASM_MESON_TAC[th]) THEN
     GEN_TAC THEN GEN_TAC THEN INDUCT_TAC THEN ASM_REWRITE_TAC[MULT_CLAUSES])
   and true_tm = concl TRUTH in
+  let () = export_aux_thm SEMIRING_PTHS in
   fun sth rth (is_semiring_constant,
                SEMIRING_ADD_CONV,
                SEMIRING_MUL_CONV,
@@ -557,9 +560,12 @@ let NUM_NORMALIZE_CONV =
   and SEMIRING_ADD_CONV = NUM_ADD_CONV
   and SEMIRING_MUL_CONV = NUM_MULT_CONV
   and SEMIRING_POW_CONV = NUM_EXP_CONV in
+  let () = export_aux_thm sth in
   let _,_,_,_,_,NUM_NORMALIZE_CONV =
     SEMIRING_NORMALIZERS_CONV sth rth
      (is_semiring_constant,
       SEMIRING_ADD_CONV,SEMIRING_MUL_CONV,SEMIRING_POW_CONV)
      (<) in
   NUM_NORMALIZE_CONV;;
+
+logfile_end ();;
