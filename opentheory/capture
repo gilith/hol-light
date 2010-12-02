@@ -74,9 +74,21 @@ do
         echo "author: Joe Hurd <joe@gilith.com>" >> $tthy
         echo "license: HOLLight" >> $tthy
         echo "show: \"Data.Bool\"" >> $tthy
+        if (echo $base | grep '^list-' > /dev/null)
+        then
+            echo "show: \"Data.List\"" >> $tthy
+        fi
+        if (echo $base | grep '^option-' > /dev/null)
+        then
+            echo "show: \"Data.Option\"" >> $tthy
+        fi
         if (echo $base | grep '^pair-' > /dev/null)
         then
             echo "show: \"Data.Pair\"" >> $tthy
+        fi
+        if (echo $base | grep '^sum-' > /dev/null)
+        then
+            echo "show: \"Data.Sum\"" >> $tthy
         fi
         if (echo $base | grep '^unit-' > /dev/null)
         then

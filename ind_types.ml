@@ -843,10 +843,14 @@ export_thm sum_RECURSION;;
 let OUTL = new_recursive_definition sum_RECURSION
   `OUTL (INL x :A+B) = x`;;
 
+let OUTL = GEN_ALL OUTL;;
+
 export_thm OUTL;;
 
 let OUTR = new_recursive_definition sum_RECURSION
   `OUTR (INR y :A+B) = y`;;
+
+let OUTR = GEN_ALL OUTR;;
 
 export_thm OUTR;;
 
