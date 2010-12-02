@@ -119,6 +119,8 @@ do
             exit 1
         fi
 
+        echo "installing" $base
+
         $prog install --reinstall --auto-uninstall $tthy || exit 1
 
         echo
