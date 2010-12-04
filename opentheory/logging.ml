@@ -132,17 +132,22 @@ let fresh_name_article f =
         if exists_name_article fi then check (i + 1) else fi in
     if exists_name_article f then check 1 else f;;
 
+let fresh_name_auxiliary_article f =
+    let s = String.sub f 0 (String.length f - 4) in
+    let rec check i =
+        let fi = s ^ "-a" ^ string_of_int i ^ "-aux" in
+        if exists_name_article fi then check (i + 1) else fi in
+    if exists_name_article f then check 1 else f;;
+
 let filename_article fty =
     "opentheory/articles/" ^ name_article fty ^ ".art";;
 
-let add_article f =
-    let aux = is_auxiliary_article f in
-    let n = fresh_name_article f in
-    let ty = if not aux then Theory_article n
-             else if n = f then Auxiliary_article
-             else failwith "auxiliary article already exists" in
-    let () = articles := (f,ty) :: !articles in
-    (aux, filename_article (f,ty));;
+let add_article n =
+    let aux = is_auxiliary_article n in
+    let nty = if aux then (fresh_name_auxiliary_article n, Auxiliary_article)
+              else (n, Theory_article (fresh_name_article n)) in
+    let () = articles := nty :: !articles in
+    (aux, filename_article nty);;
 
 (* ------------------------------------------------------------------------- *)
 (* Writing theory files.                                                     *)

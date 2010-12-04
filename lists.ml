@@ -132,7 +132,7 @@ let MEM = new_recursive_definition list_RECURSION
 
 export_thm MEM;;
 
-logfile "list-x2-def-aux";;
+logfile "list-all2-def-aux";;
 
 let ALL2_DEF = new_recursive_definition list_RECURSION
   `(ALL2 P [] l2 <=> (l2 = [])) /\
@@ -150,6 +150,8 @@ let ALL2 = prove
   REWRITE_TAC[distinctness "list"; ALL2_DEF; HD; TL]);;
 
 export_aux_thm ALL2;;
+
+logfile "list-map2-def-aux";;
 
 let MAP2_DEF = new_recursive_definition list_RECURSION
   `(MAP2 f [] l = []) /\
@@ -180,7 +182,7 @@ let FILTER = new_recursive_definition list_RECURSION
 
 export_thm FILTER;;
 
-logfile "list-assoc2-def-aux";;
+logfile "list-assoc-def-aux";;
 
 let ASSOC = new_recursive_definition list_RECURSION
   `ASSOC a (CONS h t) = if FST h = a then SND h else ASSOC a t`;;
@@ -208,7 +210,7 @@ let ZIP_DEF = new_recursive_definition list_RECURSION
 
 let ZIP = prove
  (`(ZIP [] [] = []) /\
-   (ZIP (CONS h1 t1) (CONS h2 t2) = CONS (h1,h2) (ZIP t1 t2))`,
+   (!h1 h2 t1 t2. ZIP (CONS h1 t1) (CONS h2 t2) = CONS (h1,h2) (ZIP t1 t2))`,
   REWRITE_TAC[ZIP_DEF; HD; TL]);;
 
 export_thm ZIP;;
@@ -228,8 +230,8 @@ export_thm NOT_CONS_NIL;;
 logfile "list-last-thm";;
 
 let LAST_CLAUSES = prove
- (`(LAST [h:A] = h) /\
-   (LAST (CONS h (CONS k t)) = LAST (CONS k t))`,
+ (`(!h. LAST [h:A] = h) /\
+   (!h k t. LAST (CONS h (CONS k t)) = LAST (CONS k t))`,
   REWRITE_TAC[LAST; NOT_CONS_NIL]);;
 
 export_thm LAST_CLAUSES;;
@@ -371,7 +373,7 @@ let ALL_T = prove
 
 export_thm ALL_T;;
 
-logfile "list-quant2-thm-aux";;
+logfile "list-all2-thm-aux";;
 
 let MAP_EQ_ALL2 = prove
  (`!l m. ALL2 (\x y. f x = f y) l m ==> (MAP f l = MAP f m)`,
@@ -426,8 +428,8 @@ let ALL_MP = prove
 export_thm ALL_MP;;
 
 let AND_ALL = prove
- (`!l. ALL P l /\ ALL Q l <=> ALL (\x. P x /\ Q x) l`,
-  CONV_TAC(ONCE_DEPTH_CONV SYM_CONV) THEN
+ (`!P Q l. ALL P l /\ ALL Q l <=> ALL (\x. P x /\ Q x) l`,
+  GEN_TAC THEN GEN_TAC THEN CONV_TAC(ONCE_DEPTH_CONV SYM_CONV) THEN
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[ALL; CONJ_ACI]);;
 
 export_thm AND_ALL;;
@@ -542,21 +544,35 @@ let MAP_SND_ZIP = prove
   LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN
   ASM_SIMP_TAC[LENGTH; SUC_INJ; MAP; FST; ZIP; NOT_SUC]);;
 
+export_thm MAP_SND_ZIP;;
+
+logfile "list-assoc-thm-aux";;
+
 let MEM_ASSOC = prove
  (`!l x. MEM (x,ASSOC x l) l <=> MEM x (MAP FST l)`,
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[MEM; MAP; ASSOC] THEN
   GEN_TAC THEN COND_CASES_TAC THEN ASM_REWRITE_TAC[] THEN
   ASM_MESON_TAC[PAIR; FST]);;
 
+export_aux_thm MEM_ASSOC;;
+
+logfile "list-quant-thm";;
+
 let ALL_APPEND = prove
  (`!P l1 l2. ALL P (APPEND l1 l2) <=> ALL P l1 /\ ALL P l2`,
   GEN_TAC THEN LIST_INDUCT_TAC THEN
   ASM_REWRITE_TAC[ALL; APPEND; GSYM CONJ_ASSOC]);;
 
+export_thm ALL_APPEND;;
+
+logfile "list-member-thm";;
+
 let MEM_EL = prove
  (`!l n. n < LENGTH l ==> MEM (EL n l) l`,
   LIST_INDUCT_TAC THEN REWRITE_TAC[MEM; CONJUNCT1 LT; LENGTH] THEN
   INDUCT_TAC THEN ASM_SIMP_TAC[EL; HD; LT_SUC; TL]);;
+
+export_thm MEM_EL;;
 
 let MEM_EXISTS_EL = prove
  (`!l x. MEM x l <=> ?i. i < LENGTH l /\ x = EL i l`,
@@ -565,9 +581,15 @@ let MEM_EXISTS_EL = prove
    [MESON[num_CASES] `(?i. P i) <=> P 0 \/ (?i. P(SUC i))`] THEN
   REWRITE_TAC[LT_SUC; LT_0; EL; HD; TL]);;
 
+export_thm MEM_EXISTS_EL;;
+
+logfile "list-all2-thm-aux";;
+
 let ALL2_MAP2 = prove
  (`!l m. ALL2 P (MAP f l) (MAP g m) = ALL2 (\x y. P (f x) (g y)) l m`,
   LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[ALL2; MAP]);;
+
+export_aux_thm ALL2_MAP2;;
 
 let AND_ALL2 = prove
  (`!P Q l m. ALL2 P l m /\ ALL2 Q l m <=> ALL2 (\x y. P x y /\ Q x y) l m`,
@@ -575,23 +597,40 @@ let AND_ALL2 = prove
   LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[ALL2] THEN
   REWRITE_TAC[CONJ_ACI]);;
 
+export_aux_thm AND_ALL2;;
+
 let ALL2_ALL = prove
  (`!P l. ALL2 P l l <=> ALL (\x. P x x) l`,
   GEN_TAC THEN LIST_INDUCT_TAC THEN
   ASM_REWRITE_TAC[ALL2; ALL]);;
 
+export_aux_thm ALL2_ALL;;
+
+logfile "list-append-thm";;
+
 let APPEND_EQ_NIL = prove
  (`!l m. (APPEND l m = []) <=> (l = []) /\ (m = [])`,
-  REWRITE_TAC[GSYM LENGTH_EQ_NIL; LENGTH_APPEND; ADD_EQ_0]);;
+  LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN
+  ASM_REWRITE_TAC[APPEND; NOT_CONS_NIL]);;
+
+export_thm APPEND_EQ_NIL;;
+
+logfile "list-map2-thm-aux";;
 
 let LENGTH_MAP2 = prove
  (`!f l m. (LENGTH l = LENGTH m) ==> (LENGTH(MAP2 f l m) = LENGTH m)`,
   GEN_TAC THEN LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN
   ASM_SIMP_TAC[LENGTH; NOT_CONS_NIL; NOT_SUC; MAP2; SUC_INJ]);;
 
+export_aux_thm LENGTH_MAP2;;
+
+logfile "list-map-thm";;
+
 let MAP_EQ_NIL  = prove
  (`!f l. MAP f l = [] <=> l = []`,
   GEN_TAC THEN LIST_INDUCT_TAC THEN REWRITE_TAC[MAP; NOT_CONS_NIL]);;
+
+export_thm MAP_EQ_NIL;;
 
 let INJECTIVE_MAP = prove
  (`!f:A->B. (!l m. MAP f l = MAP f m ==> l = m) <=>
@@ -603,6 +642,8 @@ let INJECTIVE_MAP = prove
     REPEAT LIST_INDUCT_TAC THEN ASM_SIMP_TAC[MAP; NOT_CONS_NIL; CONS_11] THEN
     ASM_MESON_TAC[]]);;
 
+export_thm INJECTIVE_MAP;;
+
 let SURJECTIVE_MAP = prove
  (`!f:A->B. (!m. ?l. MAP f l = m) <=> (!y. ?x. f x = y)`,
   GEN_TAC THEN EQ_TAC THEN DISCH_TAC THENL
@@ -612,27 +653,47 @@ let SURJECTIVE_MAP = prove
     MATCH_MP_TAC list_INDUCT] THEN
   ASM_MESON_TAC[MAP]);;
 
+export_thm SURJECTIVE_MAP;;
+
 let MAP_ID = prove
  (`!l. MAP (\x. x) l = l`,
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[MAP]);;
 
+export_thm MAP_ID;;
+
 let MAP_I = prove
  (`MAP I = I`,
   REWRITE_TAC[FUN_EQ_THM; I_DEF; MAP_ID]);;
+
+export_thm MAP_I;;
+
+logfile "list-butlast-thm-aux";;
 
 let APPEND_BUTLAST_LAST = prove
  (`!l. ~(l = []) ==> APPEND (BUTLAST l) [LAST l] = l`,
   LIST_INDUCT_TAC THEN REWRITE_TAC[LAST; BUTLAST; NOT_CONS_NIL] THEN
   COND_CASES_TAC THEN ASM_SIMP_TAC[APPEND]);;
 
+export_aux_thm APPEND_BUTLAST_LAST;;
+
+logfile "list-last-thm";;
+
 let LAST_APPEND = prove
  (`!p q. LAST(APPEND p q) = if q = [] then LAST p else LAST q`,
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[APPEND; LAST; APPEND_EQ_NIL] THEN
   MESON_TAC[]);;
 
+export_thm LAST_APPEND;;
+
+logfile "list-length-thm";;
+
 let LENGTH_TL = prove
  (`!l. ~(l = []) ==> LENGTH(TL l) = LENGTH l - 1`,
   LIST_INDUCT_TAC THEN REWRITE_TAC[LENGTH; TL; ARITH; SUC_SUB1]);;
+
+export_thm LENGTH_TL;;
+
+logfile "list-nth-thm";;
 
 let EL_APPEND = prove
  (`!k l m. EL k (APPEND l m) = if k < LENGTH l then EL k l
@@ -642,19 +703,27 @@ let EL_APPEND = prove
   REWRITE_TAC[HD; APPEND; LENGTH; SUB_0; EL; LT_0; CONJUNCT1 LT] THEN
   ASM_REWRITE_TAC[TL; LT_SUC; SUB_SUC]);;
 
+export_thm EL_APPEND;;
+
 let EL_TL = prove
- (`!n. EL n (TL l) = EL (n + 1) l`,
+ (`!n l. EL n (TL l) = EL (n + 1) l`,
   REWRITE_TAC[GSYM ADD1; EL]);;
+
+export_thm EL_TL;;
 
 let EL_CONS = prove
  (`!n h t. EL n (CONS h t) = if n = 0 then h else EL (n - 1) t`,
   INDUCT_TAC THEN REWRITE_TAC[EL; HD; TL; NOT_SUC; SUC_SUB1]);;
+
+export_thm EL_CONS;;
 
 let LAST_EL = prove
  (`!l. ~(l = []) ==> LAST l = EL (LENGTH l - 1) l`,
   LIST_INDUCT_TAC THEN REWRITE_TAC[LAST; LENGTH; SUC_SUB1] THEN
   DISCH_TAC THEN COND_CASES_TAC THEN
   ASM_SIMP_TAC[LENGTH; EL; HD; EL_CONS; LENGTH_EQ_NIL]);;
+
+export_thm LAST_EL;;
 
 logfile "list-append-thm";;
 
@@ -688,10 +757,16 @@ let mk_flist tms =
 (* Extra monotonicity theorems for inductive definitions.                    *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "list-quant-thm";;
+
 let MONO_ALL = prove
- (`(!x:A. P x ==> Q x) ==> ALL P l ==> ALL Q l`,
-  DISCH_TAC THEN SPEC_TAC(`l:A list`,`l:A list`) THEN
+ (`!P Q l. (!x:A. P x ==> Q x) ==> ALL P l ==> ALL Q l`,
+  REPEAT GEN_TAC THEN DISCH_TAC THEN SPEC_TAC(`l:A list`,`l:A list`) THEN
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[ALL] THEN ASM_MESON_TAC[]);;
+
+export_thm MONO_ALL;;
+
+logfile "list-all2-thm-aux";;
 
 let MONO_ALL2 = prove
  (`(!x y. (P:A->B->bool) x y ==> Q x y) ==> ALL2 P l l' ==> ALL2 Q l l'`,
@@ -699,6 +774,8 @@ let MONO_ALL2 = prove
   SPEC_TAC(`l':B list`,`l':B list`) THEN SPEC_TAC(`l:A list`,`l:A list`) THEN
   LIST_INDUCT_TAC THEN REWRITE_TAC[ALL2_DEF] THEN
   GEN_TAC THEN COND_CASES_TAC THEN REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
+
+export_aux_thm MONO_ALL2;;
 
 monotonicity_theorems := [MONO_ALL; MONO_ALL2] @ !monotonicity_theorems;;
 
