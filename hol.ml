@@ -147,10 +147,10 @@ loads "calc_num.ml";;   (* Calculation with natural numbers                  *)
 loads "normalizer.ml";; (* Polynomial normalizer for rings and semirings     *)
 loads "grobner.ml";;    (* Groebner basis procedure for most semirings.      *)
 loads "ind_types.ml";;  (* Tools for defining inductive types                *)
+loads "lists.ml";;      (* Theory of lists                                   *)
 
 (***
 
-loads "lists.ml";;      (* Theory of lists                                   *)
 loads "realax.ml";;     (* Definition of real numbers                        *)
 loads "calc_int.ml";;   (* Calculation with integer-valued reals             *)
 loads "realarith.ml";;  (* Universal linear real decision procedure          *)

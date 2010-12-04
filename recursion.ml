@@ -111,5 +111,6 @@ let new_recursive_definition =
     let evs,bod = strip_exists(concl eth) in
     let dth = new_specification (map (fst o dest_var) evs) eth in
     let dths = map2 SPECL fvs (CONJUNCTS dth) in
+    let dths = map GEN_ALL dths in
     let th = end_itlist CONJ dths in
     the_recursive_definitions := th::(!the_recursive_definitions); th;;

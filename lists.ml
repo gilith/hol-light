@@ -13,10 +13,13 @@ needs "ind_types.ml";;
 (* Standard tactic for list induction using MATCH_MP_TAC list_INDUCT         *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "list-induct-aux";;
+
 let LIST_INDUCT_TAC =
   let list_INDUCT = prove
    (`!P:(A)list->bool. P [] /\ (!h t. P t ==> P (CONS h t)) ==> !l. P l`,
     MATCH_ACCEPT_TAC list_INDUCT) in
+  let () = export_aux_thm list_INDUCT in
   MATCH_MP_TAC list_INDUCT THEN
   CONJ_TAC THENL [ALL_TAC; GEN_TAC THEN GEN_TAC THEN DISCH_TAC];;
 
@@ -24,64 +27,122 @@ let LIST_INDUCT_TAC =
 (* Basic definitions.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "list-dest-def";;
+
 let HD = new_recursive_definition list_RECURSION
   `HD(CONS (h:A) t) = h`;;
 
+export_thm HD;;
+
 let TL = new_recursive_definition list_RECURSION
   `TL(CONS (h:A) t) = t`;;
+
+export_thm TL;;
+
+logfile "list-append-def";;
 
 let APPEND = new_recursive_definition list_RECURSION
   `(!l:(A)list. APPEND [] l = l) /\
    (!h t l. APPEND (CONS h t) l = CONS h (APPEND t l))`;;
 
+export_thm APPEND;;
+
+logfile "list-reverse-def";;
+
 let REVERSE = new_recursive_definition list_RECURSION
   `(REVERSE [] = []) /\
    (REVERSE (CONS (x:A) l) = APPEND (REVERSE l) [x])`;;
+
+export_thm REVERSE;;
+
+logfile "list-length-def";;
 
 let LENGTH = new_recursive_definition list_RECURSION
   `(LENGTH [] = 0) /\
    (!h:A. !t. LENGTH (CONS h t) = SUC (LENGTH t))`;;
 
+export_thm LENGTH;;
+
+logfile "list-map-def";;
+
 let MAP = new_recursive_definition list_RECURSION
   `(!f:A->B. MAP f NIL = NIL) /\
    (!f h t. MAP f (CONS h t) = CONS (f h) (MAP f t))`;;
 
+export_thm MAP;;
+
+logfile "list-last-def";;
+
 let LAST = new_recursive_definition list_RECURSION
   `LAST (CONS (h:A) t) = if t = [] then h else LAST t`;;
+
+export_thm LAST;;
+
+logfile "list-butlast-def-aux";;
 
 let BUTLAST = new_recursive_definition list_RECURSION
  `(BUTLAST [] = []) /\
   (BUTLAST (CONS h t) = if t = [] then [] else CONS h (BUTLAST t))`;;
 
+export_aux_thm BUTLAST;;
+
+logfile "list-duplicate-def";;
+
 let REPLICATE = new_recursive_definition num_RECURSION
   `(REPLICATE 0 x = []) /\
    (REPLICATE (SUC n) x = CONS x (REPLICATE n x))`;;
+
+export_thm REPLICATE;;
+
+logfile "list-dest-def";;
 
 let NULL = new_recursive_definition list_RECURSION
   `(NULL [] = T) /\
    (NULL (CONS h t) = F)`;;
 
+export_thm NULL;;
+
+logfile "list-all-def";;
+
 let ALL = new_recursive_definition list_RECURSION
   `(ALL P [] = T) /\
    (ALL P (CONS h t) <=> P h /\ ALL P t)`;;
+
+export_thm ALL;;
+
+logfile "list-exists-def";;
 
 let EX = new_recursive_definition list_RECURSION
   `(EX P [] = F) /\
    (EX P (CONS h t) <=> P h \/ EX P t)`;;
 
+export_thm EX;;
+
+logfile "list-foldr-def-aux";;
+
 let ITLIST = new_recursive_definition list_RECURSION
   `(ITLIST f [] b = b) /\
    (ITLIST f (CONS h t) b = f h (ITLIST f t b))`;;
 
+export_aux_thm ITLIST;;
+
+logfile "list-mem-def";;
+
 let MEM = new_recursive_definition list_RECURSION
   `(MEM x [] <=> F) /\
    (MEM x (CONS h t) <=> (x = h) \/ MEM x t)`;;
+
+export_thm MEM;;
+
+logfile "list-x2-def-aux";;
 
 let ALL2_DEF = new_recursive_definition list_RECURSION
   `(ALL2 P [] l2 <=> (l2 = [])) /\
    (ALL2 P (CONS h1 t1) l2 <=>
         if l2 = [] then F
         else P h1 (HD l2) /\ ALL2 P t1 (TL l2))`;;
+
+export_aux_thm ALL2_DEF;;
 
 let ALL2 = prove
  (`(ALL2 P [] [] <=> T) /\
@@ -90,34 +151,58 @@ let ALL2 = prove
    (ALL2 P (CONS h1 t1) (CONS h2 t2) <=> P h1 h2 /\ ALL2 P t1 t2)`,
   REWRITE_TAC[distinctness "list"; ALL2_DEF; HD; TL]);;
 
+export_aux_thm ALL2;;
+
 let MAP2_DEF = new_recursive_definition list_RECURSION
   `(MAP2 f [] l = []) /\
    (MAP2 f (CONS h1 t1) l = CONS (f h1 (HD l)) (MAP2 f t1 (TL l)))`;;
+
+export_aux_thm MAP2_DEF;;
 
 let MAP2 = prove
  (`(MAP2 f [] [] = []) /\
    (MAP2 f (CONS h1 t1) (CONS h2 t2) = CONS (f h1 h2) (MAP2 f t1 t2))`,
   REWRITE_TAC[MAP2_DEF; HD; TL]);;
 
+export_aux_thm MAP2;;
+
+logfile "list-nth-def";;
+
 let EL = new_recursive_definition num_RECURSION
   `(EL 0 l = HD l) /\
    (EL (SUC n) l = EL n (TL l))`;;
+
+export_thm EL;;
+
+logfile "list-filter-def";;
 
 let FILTER = new_recursive_definition list_RECURSION
   `(FILTER P [] = []) /\
    (FILTER P (CONS h t) = if P h then CONS h (FILTER P t) else FILTER P t)`;;
 
+export_thm FILTER;;
+
+logfile "list-assoc2-def-aux";;
+
 let ASSOC = new_recursive_definition list_RECURSION
   `ASSOC a (CONS h t) = if FST h = a then SND h else ASSOC a t`;;
+
+export_aux_thm ASSOC;;
 
 let ITLIST2_DEF = new_recursive_definition list_RECURSION
   `(ITLIST2 f [] l2 b = b) /\
    (ITLIST2 f (CONS h1 t1) l2 b = f h1 (HD l2) (ITLIST2 f t1 (TL l2) b))`;;
 
+export_aux_thm ITLIST2_DEF;;
+
 let ITLIST2 = prove
  (`(ITLIST2 f [] [] b = b) /\
    (ITLIST2 f (CONS h1 t1) (CONS h2 t2) b = f h1 h2 (ITLIST2 f t1 t2 b))`,
   REWRITE_TAC[ITLIST2_DEF; HD; TL]);;
+
+export_aux_thm ITLIST2;;
+
+logfile "list-zip-def";;
 
 let ZIP_DEF = new_recursive_definition list_RECURSION
   `(ZIP [] l2 = []) /\
@@ -128,44 +213,72 @@ let ZIP = prove
    (ZIP (CONS h1 t1) (CONS h2 t2) = CONS (h1,h2) (ZIP t1 t2))`,
   REWRITE_TAC[ZIP_DEF; HD; TL]);;
 
+export_thm ZIP;;
+
 (* ------------------------------------------------------------------------- *)
 (* Various trivial theorems.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "list-thm";;
+
 let NOT_CONS_NIL = prove
  (`!(h:A) t. ~(CONS h t = [])`,
   REWRITE_TAC[distinctness "list"]);;
+
+export_thm NOT_CONS_NIL;;
+
+logfile "list-last-thm";;
 
 let LAST_CLAUSES = prove
  (`(LAST [h:A] = h) /\
    (LAST (CONS h (CONS k t)) = LAST (CONS k t))`,
   REWRITE_TAC[LAST; NOT_CONS_NIL]);;
 
+export_thm LAST_CLAUSES;;
+
+logfile "list-append-thm";;
+
 let APPEND_NIL = prove
  (`!l:A list. APPEND l [] = l`,
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[APPEND]);;
 
+export_thm APPEND_NIL;;
+
 let APPEND_ASSOC = prove
  (`!(l:A list) m n. APPEND l (APPEND m n) = APPEND (APPEND l m) n`,
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[APPEND]);;
+
+export_thm APPEND_ASSOC;;
+
+logfile "list-reverse-thm";;
 
 let REVERSE_APPEND = prove
  (`!(l:A list) m. REVERSE (APPEND l m) = APPEND (REVERSE m) (REVERSE l)`,
   LIST_INDUCT_TAC THEN
   ASM_REWRITE_TAC[APPEND; REVERSE; APPEND_NIL; APPEND_ASSOC]);;
 
+export_thm REVERSE_APPEND;;
+
 let REVERSE_REVERSE = prove
  (`!l:A list. REVERSE(REVERSE l) = l`,
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[REVERSE; REVERSE_APPEND; APPEND]);;
+
+export_thm REVERSE_REVERSE;;
+
+logfile "list-thm";;
 
 let CONS_11 = prove
  (`!(h1:A) h2 t1 t2. (CONS h1 t1 = CONS h2 t2) <=> (h1 = h2) /\ (t1 = t2)`,
   REWRITE_TAC[injectivity "list"]);;
 
+export_thm CONS_11;;
+
 let list_CASES = prove
  (`!l:(A)list. (l = []) \/ ?h t. l = CONS h t`,
   LIST_INDUCT_TAC THEN REWRITE_TAC[CONS_11; NOT_CONS_NIL] THEN
   MESON_TAC[]);;
+
+export_thm list_CASES;;
 
 let LENGTH_APPEND = prove
  (`!(l:A list) m. LENGTH(APPEND l m) = LENGTH l + LENGTH m`,
@@ -507,3 +620,5 @@ let char_INDUCT,char_RECURSION = define_type
  "char = ASCII bool bool bool bool bool bool bool bool";;
 
 new_type_abbrev("string",`:char list`);;
+
+logfile_end ();;

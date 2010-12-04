@@ -18,9 +18,13 @@ fi
 theories=$opentheory/data/theories/hol-light
 if ! test -d $theories ; then echo "$theories not a directory" ; exit 1 ; fi
 
+rm -rf opentheory/articles/*.art
+rm -rf opentheory/articles/*.sum
+rm -rf opentheory/articles/*.thy
+
 log=opentheory/log
 echo '#use "hol.ml";;' | ocaml &> $log
-if grep '^Error:' $log ; then cat $log ; exit 1 ; fi
+if grep '^Exception:\|^Error:\|^Error in included file' $log ; then cat $log ; exit 1 ; fi
 
 art=opentheory/articles/bool-def-true.art
 if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi

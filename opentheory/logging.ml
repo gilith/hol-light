@@ -23,9 +23,17 @@ let log_raw s =
 (* Logging primitive types                                                   *)
 (* ------------------------------------------------------------------------- *)
 
+let namespace = "HOLLight";;
+
+let mk_name s = namespace ^ "." ^ s;;
+
 let log_num n = log_raw (string_of_int n);;
 
 let log_name s = log_raw ("\"" ^ String.escaped s ^ "\"");;
+
+let log_type_op_name s = log_name (mk_name s);;
+
+let log_const_name s = log_name (mk_name s);;
 
 let log_command s = log_raw s;;
 
@@ -72,18 +80,10 @@ let log_dict (f : ('a -> unit) -> 'a -> unit) =
       (_,_,log) -> log;;
 
 (* ------------------------------------------------------------------------- *)
-(* Auxiliary files.                                                          *)
+(* The HOL Light to OpenTheory interpretation.                               *)
 (* ------------------------------------------------------------------------- *)
 
-let auxiliary_files = ref ([] : string list);;
-
-let is_auxiliary_file f =
-    let n = String.length f in
-    n >= 4 && String.sub f (n - 4) 4 = "-aux";;
-
-let add_auxiliary_file x = auxiliary_files := x :: !auxiliary_files;;
-
-let interpretation () =
+let mk_interpretation () =
     let int = open_in "opentheory/hol-light.int" in
     let rec read acc =
         try let l = input_line int in
@@ -93,19 +93,104 @@ let interpretation () =
     let () = close_in int in
     res;;
 
-let write_theory_file f =
+let interpretation =
+    let int = ref (None : string option) in
+    let mk () =
+        let s = mk_interpretation () in
+        let () = int := Some s in
+        s in
+    fun () ->
+        match !int with
+          Some s -> s
+        | None -> mk ();;
+
+(* ------------------------------------------------------------------------- *)
+(* Article files.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
+type article =
+     Auxiliary_article
+   | Theory_article of string;;
+
+let articles = ref ([] : (string * article) list);;
+
+let is_auxiliary_article f =
+    let n = String.length f in
+    n >= 4 && String.sub f (n - 4) 4 = "-aux";;
+
+let name_article (f,ty) =
+    match ty with
+      Auxiliary_article -> f
+    | Theory_article s -> s;;
+
+let exists_name_article f =
+    List.exists (fun fty -> name_article fty = f) (!articles);;
+
+let fresh_name_article f =
+    let rec check i =
+        let fi = f ^ "-a" ^ string_of_int i in
+        if exists_name_article fi then check (i + 1) else fi in
+    if exists_name_article f then check 1 else f;;
+
+let filename_article fty =
+    "opentheory/articles/" ^ name_article fty ^ ".art";;
+
+let add_article f =
+    let aux = is_auxiliary_article f in
+    let n = fresh_name_article f in
+    let ty = if not aux then Theory_article n
+             else if n = f then Auxiliary_article
+             else failwith "auxiliary article already exists" in
+    let () = articles := (f,ty) :: !articles in
+    (aux, filename_article (f,ty));;
+
+(* ------------------------------------------------------------------------- *)
+(* Writing theory files.                                                     *)
+(* ------------------------------------------------------------------------- *)
+
+let write_theory_file aux t ntys =
     let int = interpretation () in
-    let thy = open_out ("opentheory/articles/" ^ f ^ ".thy") in
-    let write_block xs (n,i,a) =
-        let () = output_string thy ("\n" ^ n ^ " {\n" ^ xs ^
-                   i ^ "  article: \"" ^ a ^ ".art\"\n}\n") in
-        xs ^ "  import: " ^ n ^ "\n" in
-    let mk_aux x = (x,"",x) in
-    let xs = if is_auxiliary_file f then [] else map mk_aux (!auxiliary_files) in
-    let xs = rev (("main",int,f) :: xs) in
-    let () = output_string thy ("description: theory file for " ^ f ^ "\n") in
-    let _ = List.fold_left write_block "" xs in
-    close_out thy
+    let thy = open_out ("opentheory/articles/" ^ t ^ ".thy") in
+    let write_block n imps sint =
+        let () = output_string thy ("\n" ^ n ^ " {\n" ^ imps) in
+        let () = if sint then output_string thy int else () in
+        let () = if n = "main" then ()
+                 else output_string thy ("  article: \"" ^ n ^ ".art\"\n") in
+        let () = output_string thy "}\n" in
+        "  import: " ^ n ^ "\n" in
+    let add_block (ts,xs,bs) (n,ty) =
+          match ty with
+            Auxiliary_article ->
+              let x = write_block n bs (aux && t <> "hol-light") in
+              (ts, xs ^ x, bs ^ x)
+          | Theory_article f ->
+            if aux || n <> t then (ts,xs,bs)
+            else
+              let x = write_block f bs true in
+              (ts ^ x, xs, bs ^ x) in
+    let () = output_string thy ("description: theory file for " ^ t ^ "\n") in
+    let (ts,xs,_) = List.fold_left add_block ("","","") ntys in
+    let _ = write_block "main" (if aux then xs else ts) false in
+    let () = close_out thy in
+    ();;
+
+let write_theory_files () =
+    let rec write_theories ntys =
+        match ntys with
+          [] -> ()
+        | (n,ty) :: ntys' ->
+          write_theories
+            (match ty with
+               Auxiliary_article ->
+               let () = write_theory_file true n [(n,ty)] in
+               ntys'
+             | _ ->
+               let () = write_theory_file false n (rev ntys) in
+               List.filter (fun (n',_) -> n' <> n) ntys') in
+    let ntys = !articles in
+    let () = write_theories ntys in
+    let () = write_theory_file true "hol-light" (rev ntys) in
+    ();;
 
 (* ------------------------------------------------------------------------- *)
 (* Setting up the log files: part 2                                          *)
@@ -118,15 +203,13 @@ let logfile_end () =
        log_state := Ready_logging)
     | _ -> ();;
 
-let logfile f =
+let logfile n =
     logfile_end ();
-    let aux = is_auxiliary_file f in
-    if aux then add_auxiliary_file f else ();
     match (!log_state) with
       Ready_logging ->
       (log_dict_reset ();
-       write_theory_file f;
-       let h = open_out ("opentheory/articles/" ^ f ^ ".art") in
+       let (aux,f) = add_article n in
+       let h = open_out f in
        log_state := Active_logging (aux,h))
     | _ -> ();;
 
@@ -152,7 +235,8 @@ let start_logging () =
 let stop_logging () =
     logfile_end ();
     match (!log_state) with
-      Ready_logging -> log_state := Not_logging
+      Ready_logging -> (write_theory_files ();
+                        log_state := Not_logging)
     | _ -> ();;
 
 (* ------------------------------------------------------------------------- *)
@@ -206,7 +290,7 @@ let log_triple (f : 'a -> unit) (g : 'b -> unit) (h : 'c -> unit) (x,y,z) =
 
 let (log_type_op_mem,log_type_op_save,log_type_op) =
     let log _ n =
-        (log_name n;
+        (log_type_op_name n;
          log_command "typeOp") in
     log_dict_all log;;
 
@@ -223,7 +307,7 @@ let log_type =
 
 let (log_const_mem,log_const_save,log_const) =
     let log _ n =
-        (log_name n;
+        (log_const_name n;
          log_command "const") in
     log_dict_all log;;
 
@@ -388,7 +472,7 @@ let new_basic_definition tm =
         else
           let (n,tm) = dest_eq (concl th) in
           let (n,_) = dest_const n in
-          (log_name n;
+          (log_const_name n;
            log_term tm;
            log_command "defineConst";
            log_thm_save th;
@@ -410,9 +494,9 @@ let new_basic_type_definition ty (abs,rep) th =
           let newTy = range newTy in
           let (newTy,tyVars) = dest_type newTy in
           let tyVars = map dest_vartype tyVars in
-          (log_name ty;
-           log_name abs;
-           log_name rep;
+          (log_type_op_name ty;
+           log_const_name abs;
+           log_const_name rep;
            log_list log_type_var tyVars;
            log_thm th;
            log_command "defineTypeOp";
