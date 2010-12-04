@@ -1101,12 +1101,19 @@ inductive_type_store :=
 (* ------------------------------------------------------------------------- *)
 
 let basic_rectype_net = ref empty_net;;
-let distinctness_store = ref ["bool",TAUT `(T <=> F) <=> F`];;
+let distinctness_store =
+    let pth = TAUT `(T <=> F) <=> F` in
+    let () = export_aux_thm pth in
+    ref ["bool",pth];;
 let injectivity_store = ref [];;
 
 let extend_rectype_net (tyname,(_,_,rth)) =
-  let ths1 = try [prove_constructors_distinct rth] with Failure _ -> []
-  and ths2 = try [prove_constructors_injective rth] with Failure _ -> [] in
+  let ths1 = try [let pth = prove_constructors_distinct rth in
+                  let () = export_if_aux_thm pth in
+                  pth] with Failure _ -> []
+  and ths2 = try [let pth = prove_constructors_injective rth in
+                  let () = export_if_aux_thm pth in
+                  pth] with Failure _ -> [] in
   let canon_thl = itlist (mk_rewrites false) (ths1 @ ths2) [] in
   distinctness_store := map (fun th -> tyname,th) ths1 @ (!distinctness_store);
   injectivity_store := map (fun th -> tyname,th) ths2 @ (!injectivity_store);
@@ -1134,14 +1141,20 @@ let cases ty =
 let ISO = new_definition
   `ISO (f:A->B) (g:B->A) <=> (!x. f(g x) = x) /\ (!y. g(f y) = y)`;;
 
+export_aux_thm ISO;;
+
 let ISO_REFL = prove
  (`ISO (\x:A. x) (\x. x)`,
   REWRITE_TAC[ISO]);;
+
+export_aux_thm ISO_REFL;;
 
 let ISO_FUN = prove
  (`ISO (f:A->A') f' /\ ISO (g:B->B') g'
    ==> ISO (\h a'. g(h(f' a'))) (\h a. g'(h(f a)))`,
   REWRITE_TAC[ISO; FUN_EQ_THM] THEN MESON_TAC[]);;
+
+export_aux_thm ISO_FUN;;
 
 let ISO_USAGE = prove
  (`ISO f g
@@ -1149,6 +1162,8 @@ let ISO_USAGE = prove
        (!P. (?x. P x) <=> (?x. P(g x))) /\
        (!a b. (a = g b) <=> (f a = b))`,
   REWRITE_TAC[ISO; FUN_EQ_THM] THEN MESON_TAC[]);;
+
+export_aux_thm ISO_USAGE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Hence extend type definition to nested types.                             *)
