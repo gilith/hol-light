@@ -56,6 +56,8 @@ do
     fi
 
     mv $cart $art || exit 1
+
+    echo
 done
 
 rm -f opentheory/articles/*-aux.thy
@@ -138,11 +140,11 @@ do
         echo "installing" $base
 
         $prog install --reinstall --auto-uninstall $tthy || exit 1
-
-        echo
     else
         echo "skipping " $base "(up to date)"
     fi
+
+    echo
 done
 
 hart=$theories/bool-def-true/bool-def-true.art

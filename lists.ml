@@ -213,7 +213,7 @@ let ZIP = prove
    (!h1 h2 t1 t2. ZIP (CONS h1 t1) (CONS h2 t2) = CONS (h1,h2) (ZIP t1 t2))`,
   REWRITE_TAC[ZIP_DEF; HD; TL]);;
 
-export_thm ZIP;;
+export_aux_thm ZIP;;
 
 (* ------------------------------------------------------------------------- *)
 (* Various trivial theorems.                                                 *)
@@ -537,14 +537,14 @@ let MAP_FST_ZIP = prove
   LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN
   ASM_SIMP_TAC[LENGTH; SUC_INJ; MAP; FST; ZIP; NOT_SUC]);;
 
-export_thm MAP_FST_ZIP;;
+export_aux_thm MAP_FST_ZIP;;
 
 let MAP_SND_ZIP = prove
  (`!l1 l2. (LENGTH l1 = LENGTH l2) ==> (MAP SND (ZIP l1 l2) = l2)`,
   LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN
   ASM_SIMP_TAC[LENGTH; SUC_INJ; MAP; FST; ZIP; NOT_SUC]);;
 
-export_thm MAP_SND_ZIP;;
+export_aux_thm MAP_SND_ZIP;;
 
 logfile "list-assoc-thm-aux";;
 
