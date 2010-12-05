@@ -34,11 +34,20 @@ parse_as_infix("MOD",(22,"left"));;
 (* The predecessor function.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-pre";;
+logfile "natural-pre-def";;
 
 let PRE = new_recursive_definition num_RECURSION
  `(PRE 0 = 0) /\
   (!n. PRE (SUC n) = n)`;;
+
+let PRE_0,PRE_SUC = CONJ_PAIR PRE;;
+
+export_thm PRE_0;;
+export_thm PRE_SUC;;
+
+logfile "natural-pre-thm";;
+
+let PRE = CONJ PRE_0 PRE_SUC;;
 
 export_thm PRE;;
 
@@ -1210,7 +1219,7 @@ export_thm ODD_SUB;;
 (* The factorial function.                                                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-fact-def";;
+logfile "natural-factorial-def";;
 
 let FACT = new_recursive_definition num_RECURSION
   `(FACT 0 = 1) /\
@@ -1218,7 +1227,7 @@ let FACT = new_recursive_definition num_RECURSION
 
 export_thm FACT;;
 
-logfile "natural-fact-thm";;
+logfile "natural-factorial-thm";;
 
 let FACT_LT = prove
  (`!n. 0 < FACT n`,
