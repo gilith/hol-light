@@ -34,7 +34,7 @@ parse_as_infix("MOD",(22,"left"));;
 (* The predecessor function.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-pre-def";;
+logfile "natural-pre";;
 
 let PRE = new_recursive_definition num_RECURSION
  `(PRE 0 = 0) /\
@@ -45,11 +45,11 @@ let PRE_0,PRE_SUC = CONJ_PAIR PRE;;
 export_thm PRE_0;;
 export_thm PRE_SUC;;
 
-logfile "natural-pre-thm";;
+logfile "natural-pre-thm-aux";;
 
 let PRE = CONJ PRE_0 PRE_SUC;;
 
-export_thm PRE;;
+export_aux_thm PRE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Addition.                                                                 *)
