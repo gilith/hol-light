@@ -434,14 +434,14 @@ let AND_ALL = prove
 
 export_thm AND_ALL;;
 
+logfile "list-member-thm";;
+
 let EX_IMP = prove
  (`!P Q l. (!x. MEM x l /\ P x ==> Q x) /\ EX P l ==> EX Q l`,
   GEN_TAC THEN GEN_TAC THEN LIST_INDUCT_TAC THEN
   REWRITE_TAC[MEM; EX] THEN ASM_MESON_TAC[]);;
 
 export_thm EX_IMP;;
-
-logfile "list-member-thm";;
 
 let ALL_MEM = prove
  (`!P l. (!x. MEM x l ==> P x) <=> ALL P l`,
