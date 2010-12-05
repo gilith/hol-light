@@ -202,7 +202,7 @@ let ITLIST2 = prove
 
 export_aux_thm ITLIST2;;
 
-logfile "list-zip-def";;
+logfile "list-zip-def-aux";;
 
 let ZIP_DEF = new_recursive_definition list_RECURSION
   `(ZIP [] l2 = []) /\
@@ -530,7 +530,7 @@ let EX_MEM = prove
 
 export_thm EX_MEM;;
 
-logfile "list-zip-thm";;
+logfile "list-zip-thm-aux";;
 
 let MAP_FST_ZIP = prove
  (`!l1 l2. (LENGTH l1 = LENGTH l2) ==> (MAP FST (ZIP l1 l2) = l1)`,
