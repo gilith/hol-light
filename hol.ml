@@ -100,6 +100,7 @@ loads "fusion.ml";;
 loads "opentheory/logging.ml";;
 
 start_logging ();;
+reset_package_context [];;
 
 (* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)
@@ -171,4 +172,12 @@ loads "database.ml";;   (* List of name-theorem pairs for search system      *)
 
 ***)
 
+write_auxiliary_theory_file "hol-light";;
 stop_logging ();;
+
+(* ------------------------------------------------------------------------- *)
+(* OpenTheory examples.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+loads "Examples/byte.ml";;
+loads "Examples/utf8.ml";;

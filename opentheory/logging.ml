@@ -105,6 +105,14 @@ let interpretation =
         | None -> mk ();;
 
 (* ------------------------------------------------------------------------- *)
+(* The package context.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+let package_context = ref ([] : (string * string) list);;
+
+let reset_package_context ps = package_context := ps;;
+
+(* ------------------------------------------------------------------------- *)
 (* Article files.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
@@ -113,6 +121,8 @@ type article =
    | Theory_article of string;;
 
 let articles = ref ([] : (string * article) list);;
+
+let reset_articles () = articles := [];;
 
 let is_auxiliary_article f =
     let n = String.length f in
@@ -153,29 +163,63 @@ let add_article n =
 (* Writing theory files.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
-let write_theory_file aux t ntys =
+type article_output_mode =
+     Theory_output_mode
+   | One_auxiliary_output_mode
+   | All_auxiliary_output_mode;;
+
+type theory_block =
+     Article_theory_block of string
+   | Package_theory_block of string
+   | Union_theory_block
+
+let write_theory_file mode t ntys =
     let int = interpretation () in
     let thy = open_out ("opentheory/articles/" ^ t ^ ".thy") in
-    let write_block n imps sint =
+    let write_block n imps sint block =
         let () = output_string thy ("\n" ^ n ^ " {\n" ^ imps) in
         let () = if sint then output_string thy int else () in
-        let () = if n = "main" then ()
-                 else output_string thy ("  article: \"" ^ n ^ ".art\"\n") in
+        let () =
+            match block with
+              Article_theory_block f ->
+              output_string thy ("  article: \"" ^ f ^ "\"\n")
+            | Package_theory_block p ->
+              output_string thy ("  package: " ^ p ^ "\n")
+            | Union_theory_block -> () in
         let () = output_string thy "}\n" in
         "  import: " ^ n ^ "\n" in
-    let add_block (ts,xs,bs) (n,ty) =
+    let add_package_block bs (n,p) =
+        let b = write_block n bs false (Package_theory_block p) in
+        bs ^ b in
+    let add_article_block (ts,xs,bs) (n,ty) =
           match ty with
             Auxiliary_article ->
-              let x = write_block n bs (aux && t <> "hol-light") in
+              let sint =
+                  match mode with
+                    One_auxiliary_output_mode -> true
+                  | _ -> false in
+              let block = Article_theory_block (n ^ ".art") in
+              let x = write_block n bs sint block in
               (ts, xs ^ x, bs ^ x)
           | Theory_article f ->
-            if aux || n <> t then (ts,xs,bs)
+            let active =
+                match mode with
+                  Theory_output_mode -> n = t
+                | _ -> false in
+            if not active then (ts,xs,bs)
             else
-              let x = write_block f bs true in
+              let block = Article_theory_block (f ^ ".art") in
+              let x = write_block f bs true block in
               (ts ^ x, xs, bs ^ x) in
     let () = output_string thy ("description: theory file for " ^ t ^ "\n") in
-    let (ts,xs,_) = List.fold_left add_block ("","","") ntys in
-    let _ = write_block "main" (if aux then xs else ts) false in
+    let bs = List.fold_left add_package_block "" (!package_context) in
+    let (ts,xs,_) = List.fold_left add_article_block ("","",bs) ntys in
+    let _ =
+        let imps =
+            match mode with
+              Theory_output_mode -> ts
+            | _ -> xs in
+        write_block "main" imps false Union_theory_block in
     let () = close_out thy in
     ();;
 
@@ -187,14 +231,21 @@ let write_theory_files () =
           write_theories
             (match ty with
                Auxiliary_article ->
-               let () = write_theory_file true n [(n,ty)] in
+               let mode = One_auxiliary_output_mode in
+               let () = write_theory_file mode n [(n,ty)] in
                ntys'
              | _ ->
-               let () = write_theory_file false n (rev ntys) in
+               let mode = Theory_output_mode in
+               let () = write_theory_file mode n (rev ntys) in
                List.filter (fun (n',_) -> n' <> n) ntys') in
     let ntys = !articles in
     let () = write_theories ntys in
-    let () = write_theory_file true "hol-light" (rev ntys) in
+    ();;
+
+let write_auxiliary_theory_file name =
+    let mode = All_auxiliary_output_mode in
+    let ntys = rev (!articles) in
+    let () = write_theory_file mode name ntys in
     ();;
 
 (* ------------------------------------------------------------------------- *)
@@ -234,7 +285,9 @@ let not_aux_logging () = not (is_aux_logging ());;
 
 let start_logging () =
     match (!log_state) with
-      Not_logging -> log_state := Ready_logging
+      Not_logging -> (reset_package_context [("hol-light","hol-light-1.0")];
+                      reset_articles ();
+                      log_state := Ready_logging)
     | _ -> ();;
 
 let stop_logging () =
