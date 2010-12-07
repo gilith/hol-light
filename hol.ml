@@ -179,5 +179,9 @@ stop_logging ();;
 (* OpenTheory examples.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-loads "Examples/byte.ml";;
-loads "Examples/utf8.ml";;
+start_logging ();;
+
+loads "opentheory/examples/byte.ml";;
+loads "opentheory/examples/utf8.ml";;
+
+stop_logging ();;
