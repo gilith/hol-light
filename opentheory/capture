@@ -8,13 +8,6 @@ if ! test -d $adir ; then echo "$adir not a directory" ; exit 1 ; fi
 prog=$opentheory/bin/mlton/opentheory
 if ! test -x $prog ; then echo "$prog not an executable" ; exit 1 ; fi
 
-int=$opentheory/test/interpretations/hol-light.int
-if ! test -r $int ; then echo "$int not readable" ; exit 1 ; fi
-if test $int -nt opentheory/hol-light.int
-then
-    perl -ne 'chomp $_; if ($_ !~ /^ *([#]|$)/) { print STDOUT "$_\n"; }' < $int > opentheory/hol-light.int
-fi
-
 theories=$opentheory/data/theories/hol-light
 if ! test -d $theories ; then echo "$theories not a directory" ; exit 1 ; fi
 
