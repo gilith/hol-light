@@ -55,7 +55,10 @@ done
 
 rm -f opentheory/articles/*-aux.thy
 
-for thy in $(ls -tr opentheory/articles/*.thy)
+thys=$(if test -e opentheory/articles/hol-light.thy ; then (echo opentheory/articles/hol-light.thy ; (ls -t opentheory/articles/*.thy | grep -v hol-light.thy)) ; else ls -t opentheory/articles/*.thy ; fi)
+# echo $thys
+
+for thy in $thys
 do
     base=$(basename $thy .thy)
     tdir=$theories/$base
