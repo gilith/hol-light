@@ -17,21 +17,22 @@ rm -f opentheory/articles/*.thy
 
 log=opentheory/log
 echo '#use "hol.ml";;' | ocaml &> $log
-if grep '^Exception:\|^Error:\|^Error in included file' $log ; then cat $log ; exit 1 ; fi
+if grep '^Exception:\|^Error:\|^Error in included file' $log
+then
+    cat $log
+    exit 1
+fi
 
 art=opentheory/articles/bool-def-true.art
-if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi
-if test $art -nt $adir/$(basename $art) ; then cp -v $art $adir ; fi
+if test -r $art ; then cp -v $art $adir ; fi
 
 art=opentheory/articles/bool-int-true.art
-if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi
-if test $art -nt $adir/$(basename $art) ; then cp -v $art $adir ; fi
+if test -r $art ; then cp -v $art $adir ; fi
 
 art=opentheory/articles/bool-true-aux.art
-if ! test -r $art ; then echo "$art not readable" ; exit 1 ; fi
-if test $art -nt $adir/$(basename $art) ; then cp -v $art $adir ; fi
+if test -r $art ; then cp -v $art $adir ; fi
 
-for thy in $(ls -tr opentheory/articles/*-aux.thy)
+for thy in $(ls opentheory/articles/*-aux.thy)
 do
     base=$(basename $thy .thy)
 
@@ -41,12 +42,9 @@ do
 
     echo "compressing" $art
 
-    $prog info --preserve-theory --summary -o $sum --article -o $cart $thy || exit 1
+    $prog info --manual --preserve-theory --summary -o $sum --article -o $cart $thy || exit 1
 
-    if grep 'Unwanted' $cart
-    then
-        exit 1
-    fi
+    if grep 'Unwanted' $cart ; then exit 1 ; fi
 
     mv $cart $art || exit 1
 
@@ -55,14 +53,16 @@ done
 
 rm -f opentheory/articles/*-aux.thy
 
-thys=$(if test -e opentheory/articles/hol-light.thy ; then (echo opentheory/articles/hol-light.thy ; (ls -t opentheory/articles/*.thy | grep -v hol-light.thy)) ; else ls -t opentheory/articles/*.thy ; fi)
+thys=$(if test -e opentheory/articles/hol-light.thy ; then (echo opentheory/articles/hol-light.thy ; (ls opentheory/articles/*.thy | grep -v hol-light.thy)) ; else ls opentheory/articles/*.thy ; fi)
 # echo $thys
 
 for thy in $thys
 do
     base=$(basename $thy .thy)
+    sum=opentheory/articles/$base.sum
     tdir=$theories/$base
     tthy=$tdir/$base.thy
+    tart=$tdir/$base.art
 
     if ! test -d $tdir
     then
@@ -118,39 +118,31 @@ do
         echo "}" >> $tthy
     fi
 
-    sum=opentheory/articles/$base.sum
+    echo "compiling" $base
 
-    if test $thy -nt $sum
-    then
-        art=$tdir/$base.art
+    $prog info --manual --preserve-theory --summary -o $sum --article -o $tart $thy || exit 1
 
-        echo "compiling" $base
+    if grep 'Unwanted' $tart ; then exit 1 ; fi
 
-        $prog info --preserve-theory --summary -o $sum --article -o $art $thy || exit 1
+    echo "installing" $base
 
-        if grep 'Unwanted' $art
-        then
-            exit 1
-        fi
-
-        echo "installing" $base
-
-        $prog install --reinstall --auto-uninstall $tthy || exit 1
-    else
-        echo "skipping " $base "(up to date)"
-    fi
+    $prog install --manual --reinstall --auto-uninstall $tthy || exit 1
 
     echo
 done
 
 hart=$theories/bool-def-true/bool-def-true.art
-tart=$opentheory/data/theories/bool-def-true/bool-def-true.art
-if ! test -r $hart ; then echo "$hart not readable" ; exit 1 ; fi
-if test $hart -nt $tart ; then cp -v $hart $tart ; fi
+if test -r $hart
+then
+    tart=$opentheory/data/theories/bool-def-true/bool-def-true.art
+    if test $hart -nt $tart ; then cp -v $hart $tart ; fi
+fi
 
 hart=$theories/bool-int-true/bool-int-true.art
-tart=$opentheory/data/theories/bool-int-true/bool-int-true.art
-if ! test -r $hart ; then echo "$hart not readable" ; exit 1 ; fi
-if test $hart -nt $tart ; then cp -v $hart $tart ; fi
+if test -r $hart
+then
+    tart=$opentheory/data/theories/bool-int-true/bool-int-true.art
+    if test $hart -nt $tart ; then cp -v $hart $tart ; fi
+fi
 
 echo

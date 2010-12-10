@@ -2,12 +2,11 @@
 (* A type of bytes.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "byte";;
+logfile "byte-def";;
 
-let byte_INDUCT,byte_RECURSION = define_type
- "byte = BYTE bool bool bool bool bool bool bool bool";;
+let byte_width_def = new_definition
+  `byte_width = 8`;;
 
-export_thm byte_INDUCT;;
-export_thm byte_RECURSION;;
+export_thm byte_width_def;;
 
 logfile_end ();;

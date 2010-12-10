@@ -99,8 +99,10 @@ loads "fusion.ml";;
 
 loads "opentheory/logging.ml";;
 
+(***
 start_logging ();;
 reset_package_context [];;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)
@@ -151,7 +153,6 @@ loads "ind_types.ml";;  (* Tools for defining inductive types                *)
 loads "lists.ml";;      (* Theory of lists                                   *)
 
 (***
-
 loads "realax.ml";;     (* Definition of real numbers                        *)
 loads "calc_int.ml";;   (* Calculation with integer-valued reals             *)
 loads "realarith.ml";;  (* Universal linear real decision procedure          *)
@@ -169,11 +170,12 @@ loads "define.ml";;     (* Support for general recursive definitions         *)
 
 loads "help.ml";;       (* Online help using the entries in Help directory   *)
 loads "database.ml";;   (* List of name-theorem pairs for search system      *)
-
 ***)
 
+(***
 write_auxiliary_theory_file "hol-light";;
 stop_logging ();;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* OpenTheory examples.                                                      *)
@@ -181,6 +183,8 @@ stop_logging ();;
 
 start_logging ();;
 
+loads "opentheory/examples/modular.ml";;
+loads "opentheory/examples/word.ml";;
 loads "opentheory/examples/byte.ml";;
 loads "opentheory/examples/utf8.ml";;
 

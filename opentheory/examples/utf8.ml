@@ -2,7 +2,7 @@
 (* A type of Unicode characters.                                             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "unicode";;
+logfile "char";;
 
 (* plane[0..16] * code point[0..65535] *)
 
