@@ -182,6 +182,7 @@ start_logging ();;
 loads "opentheory/examples/modular.ml";;
 loads "opentheory/examples/word.ml";;
 loads "opentheory/examples/byte.ml";;
+loads "opentheory/examples/char.ml";;
 loads "opentheory/examples/utf8.ml";;
 
 stop_logging ();;
