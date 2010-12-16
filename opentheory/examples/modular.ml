@@ -47,7 +47,7 @@ let mod_add = prove
    [REWRITE_TAC [mod_N_positive];
     DISCH_THEN ACCEPT_TAC]);;
 
-export_thm mod_mod;;
+export_thm mod_add;;
 
 logfile "modular-equiv-def";;
 
@@ -179,7 +179,8 @@ let (mod_add_def,mod_add_lift) = lift_function
   mod_rep_abs (mod_equiv_refl,mod_equiv_trans)
   "mod_add" mod_equiv_add;;
 
-let mod_add_from_num = REWRITE_RULE [GSYM mod_from_num_def] mod_add_lift;;
+let mod_add_from_num =
+  GEN_ALL (REWRITE_RULE [GSYM mod_from_num_def] mod_add_lift);;
 
 export_thm mod_add_from_num;;
 

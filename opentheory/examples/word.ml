@@ -12,8 +12,8 @@ let word_size_def = new_definition
 export_thm word_size_def;;
 
 let word_size_nonzero = prove
-  (`0 < word_size`,
-   REWRITE_TAC [word_size_def; EXP_LT_0] THEN
+  (`~(word_size = 0)`,
+   REWRITE_TAC [word_size_def; EXP_EQ_0] THEN
    NUM_REDUCE_TAC);;
 
 export_thm word_size_nonzero;;

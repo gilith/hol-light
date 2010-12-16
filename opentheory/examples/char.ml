@@ -10,7 +10,7 @@ let plane_size_def = new_definition
 export_thm plane_size_def;;
 
 let plane_size_nonzero = prove
-  (`0 < plane_size`,
+  (`~(plane_size = 0)`,
    REWRITE_TAC [plane_size_def] THEN
    NUM_REDUCE_TAC);;
 
