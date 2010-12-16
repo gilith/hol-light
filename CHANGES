@@ -1,8 +1,41 @@
+Wed 15th Dec 2010       system.ml
+
+At the suggestion of Ondrej Kuncar, switched from
+
+  fun set_jrh_lexer -> set_jrh_lexer;;
+
+to just
+
+  set_jrh_lexer;;
+
+This magic variable gets mapped to a constant anyway, so there is no need for
+this elaborate expression, which moreover generates a warning about
+a non-exhaustive match.
+
+Mon 13th Dec 2010       sets.ml
+
+Added SET_PAIR_THM = |- !P. {p | P p} = {a,b | P (a,b)}
+
+Thu  2nd Dec 2010       Makefile, Proofrecording/hol_light/Makefile, pa_j_3.1x_5.xx.ml [new file], pa_j_3.1x_6.xx.ml [new file], pa_j_3.10.ml [deleted], pa_j_3.11.ml [deleted]
+
+Ondrej Kuncar pointed out that the system doesn't build with the new camlp5
+6.0. So now for OCaml >= 3.10 I need to start distinguishing only based on
+the camlp5 version. Modified the Makefile accordingly, making the two current
+versions for < 6.0 and >= 6.0 of camlp5 called pa_j_3.1x_5.xx.ml (what used
+to be pa_j_3.10.ml and pa_j_3.11.ml) and pa_j_3.1x_6.xx.ml (a new one derived
+by modifying the source to camlp5 6.02.0).
+
+Thu 18th Nov 2010       real.ml
+
+Finally added the theorem REAL_LE_POW_2 = |- !x. &0 <= x pow 2.
+Even though REAL_LE_SQUARE is close, it's nice not to have to make
+trivial rewrites back and forth just to use it.
+
 Thu 28th Oct 2010       Library/rstc.ml
 
 Noticed that the theorems RTC_INDUCT_L and RTC_INDUCT_R both had the hypothesis
-(!x y. R x y ==> P x y), which is redundant since it follows from the other 
-two. So I just removed it; as far as I can see there are no proof changes 
+(!x y. R x y ==> P x y), which is redundant since it follows from the other
+two. So I just removed it; as far as I can see there are no proof changes
 needed.
 
 Thu 28th Oct 2010       arith.ml, passim
