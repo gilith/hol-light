@@ -1418,11 +1418,25 @@ let DIVMOD_EXIST_0 = prove
 let DIVISION_0 =  new_specification ["DIV"; "MOD"]
   (REWRITE_RULE[SKOLEM_THM] DIVMOD_EXIST_0);;
 
-let DIVISION = prove
- (`!m n. ~(n = 0) ==> (m = m DIV n * n + m MOD n) /\ m MOD n < n`,
+let DIVISION_DEF_DIV = prove
+ (`!m n. ~(n = 0) ==> m DIV n * n + m MOD n = m`,
   MESON_TAC[DIVISION_0]);;
 
-export_thm DIVISION;;
+export_thm DIVISION_DEF_DIV;;
+
+let DIVISION_DEF_MOD = prove
+ (`!m n. ~(n = 0) ==> m MOD n < n`,
+  MESON_TAC[DIVISION_0]);;
+
+export_thm DIVISION_DEF_MOD;;
+
+logfile "natural-div-mod-aux";;
+
+let DIVISION = prove
+ (`!m n. ~(n = 0) ==> (m = m DIV n * n + m MOD n) /\ m MOD n < n`,
+  MESON_TAC[DIVISION_DEF_DIV; DIVISION_DEF_MOD]);;
+
+export_aux_thm DIVISION;;
 
 logfile "natural-div-mod-thm";;
 
