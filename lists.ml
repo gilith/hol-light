@@ -86,7 +86,7 @@ let BUTLAST = new_recursive_definition list_RECURSION
 
 export_aux_thm BUTLAST;;
 
-logfile "list-duplicate-def";;
+logfile "list-replicate-def";;
 
 let REPLICATE = new_recursive_definition num_RECURSION
   `(REPLICATE 0 x = []) /\
@@ -450,7 +450,7 @@ let ALL_MEM = prove
 
 export_thm ALL_MEM;;
 
-logfile "list-duplicate-thm";;
+logfile "list-replicate-thm";;
 
 let LENGTH_REPLICATE = prove
  (`!n x. LENGTH(REPLICATE n x) = n`,

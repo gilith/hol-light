@@ -273,7 +273,7 @@ export_thm WF_REC_num;;
 logfile "relation-measure-def";;
 
 let MEASURE = new_definition
-  `MEASURE m = \x y. m(x) < m(y)`;;
+  `MEASURE m = \x (y:A). m(x) < m(y)`;;
 
 export_thm MEASURE;;
 
