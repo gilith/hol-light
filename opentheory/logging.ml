@@ -10,13 +10,13 @@
 type log_state =
      Not_logging
    | Ready_logging
-   | Active_logging of bool * out_channel;;
+   | Active_logging of out_channel;;
 
 let log_state = ref Not_logging;;
 
 let log_raw s =
     match (!log_state) with
-      Active_logging (_,h) -> output_string h (s ^ "\n")
+      Active_logging h -> output_string h (s ^ "\n")
     | _ -> ();;
 
 (* ------------------------------------------------------------------------- *)
@@ -54,30 +54,71 @@ let (log_dict_reset,log_dict_reset_register) =
     let reset () = (reset_all (); log_dict_reset_key ()) in
     (reset,register);;
 
-let log_dict_all (f : ('a -> unit) -> 'a -> unit) =
+let log_dict_all proj (f : ('a -> int) -> ('a -> unit) -> 'a -> unit) =
     let hashtbl = Hashtbl.create 10000 in
     let reset () = Hashtbl.clear hashtbl in
     let () = log_dict_reset_register reset in
-    let mem x = Hashtbl.mem hashtbl x in
-    let peek x = if mem x then Some (Hashtbl.find hashtbl x) else None in
-    let save x =
-        (let n = log_dict_next_key () in
-         Hashtbl.add hashtbl x n;
-         log_num n;
-         log_command "def") in
+    let mem x = Hashtbl.mem hashtbl (proj x) in
+    let peek x = if mem x then Some (Hashtbl.find hashtbl (proj x)) else None in
+    let save_ref x =
+        match (peek x) with
+          Some n -> n
+        | None ->
+          let n = log_dict_next_key () in
+          let () = Hashtbl.add hashtbl (proj x) n in
+          let () = log_num n in
+          let () = log_command "def" in
+          n in
+    let save x = let _ = save_ref x in () in
     let rec log x =
         match (peek x) with
           Some n ->
-          (log_num n;
-           log_command "ref")
+            let () = log_num n in
+            let () = log_command "ref" in
+            ()
         | None ->
-          (f log x;
-           save x) in
-    (mem,save,log);;
+            let () = f save_ref log x in
+            let () = save x in
+            () in
+    (save,log);;
 
 let log_dict (f : ('a -> unit) -> 'a -> unit) =
-    match (log_dict_all f) with
-      (_,_,log) -> log;;
+    let proj x = x in
+    let g _ log_rec x = f log_rec x in
+    match (log_dict_all proj g) with
+      (_,log) -> log;;
+
+(* ------------------------------------------------------------------------- *)
+(* Article files.                                                            *)
+(* ------------------------------------------------------------------------- *)
+
+type article = Article of string * string;;
+
+let articles = ref ([] : article list);;
+
+let reset_articles () = articles := [];;
+
+let thy_article (Article (thy,_)) = thy;;
+
+let name_article (Article (_,name)) = name;;
+
+let exists_name_article name =
+    List.exists (fun art -> name_article art = name) (!articles);;
+
+let fresh_name_article name =
+    let rec check i =
+        let name_i = name ^ "-a" ^ string_of_int i in
+        if exists_name_article name_i then check (i + 1) else name_i in
+    if exists_name_article name then check 1 else name;;
+
+let filename_article art =
+    "opentheory/articles/" ^ name_article art ^ ".art";;
+
+let add_article thy =
+    let name = fresh_name_article thy in
+    let art = Article (thy,name) in
+    let () = articles := art :: !articles in
+    filename_article art;;
 
 (* ------------------------------------------------------------------------- *)
 (* The HOL Light to OpenTheory interpretation.                               *)
@@ -105,147 +146,54 @@ let interpretation =
         | None -> mk ();;
 
 (* ------------------------------------------------------------------------- *)
-(* The package context.                                                      *)
-(* ------------------------------------------------------------------------- *)
-
-let package_context = ref ([] : (string * string) list);;
-
-let reset_package_context ps = package_context := ps;;
-
-(* ------------------------------------------------------------------------- *)
-(* Article files.                                                          *)
-(* ------------------------------------------------------------------------- *)
-
-type article =
-     Auxiliary_article
-   | Theory_article of string;;
-
-let articles = ref ([] : (string * article) list);;
-
-let reset_articles () = articles := [];;
-
-let is_auxiliary_article f =
-    let n = String.length f in
-    n >= 4 && String.sub f (n - 4) 4 = "-aux";;
-
-let name_article (f,ty) =
-    match ty with
-      Auxiliary_article -> f
-    | Theory_article s -> s;;
-
-let exists_name_article f =
-    List.exists (fun fty -> name_article fty = f) (!articles);;
-
-let fresh_name_article f =
-    let rec check i =
-        let fi = f ^ "-a" ^ string_of_int i in
-        if exists_name_article fi then check (i + 1) else fi in
-    if exists_name_article f then check 1 else f;;
-
-let fresh_name_auxiliary_article f =
-    let s = String.sub f 0 (String.length f - 4) in
-    let rec check i =
-        let fi = s ^ "-a" ^ string_of_int i ^ "-aux" in
-        if exists_name_article fi then check (i + 1) else fi in
-    if exists_name_article f then check 1 else f;;
-
-let filename_article fty =
-    "opentheory/articles/" ^ name_article fty ^ ".art";;
-
-let add_article n =
-    let aux = is_auxiliary_article n in
-    let nty = if aux then (fresh_name_auxiliary_article n, Auxiliary_article)
-              else (n, Theory_article (fresh_name_article n)) in
-    let () = articles := nty :: !articles in
-    (aux, filename_article nty);;
-
-(* ------------------------------------------------------------------------- *)
 (* Writing theory files.                                                     *)
 (* ------------------------------------------------------------------------- *)
-
-type article_output_mode =
-     Theory_output_mode
-   | One_auxiliary_output_mode
-   | All_auxiliary_output_mode;;
 
 type theory_block =
      Article_theory_block of string
    | Package_theory_block of string
-   | Union_theory_block
+   | Union_theory_block;;
 
-let write_theory_file mode t ntys =
+let write_theory_file thy names =
     let int = interpretation () in
-    let thy = open_out ("opentheory/articles/" ^ t ^ ".thy") in
-    let write_block n imps sint block =
-        let () = output_string thy ("\n" ^ n ^ " {\n" ^ imps) in
-        let () = if sint then output_string thy int else () in
+    let h = open_out ("opentheory/articles/" ^ thy ^ ".thy") in
+    let add_theory_block name imps sint block =
+        let () = output_string h ("\n" ^ name ^ " {\n" ^ imps) in
+        let () = if sint then output_string h int else () in
         let () =
             match block with
-              Article_theory_block f ->
-              output_string thy ("  article: \"" ^ f ^ "\"\n")
-            | Package_theory_block p ->
-              output_string thy ("  package: " ^ p ^ "\n")
+              Article_theory_block file ->
+              output_string h ("  article: \"" ^ file ^ "\"\n")
+            | Package_theory_block pkg ->
+              output_string h ("  package: " ^ pkg ^ "\n")
             | Union_theory_block -> () in
-        let () = output_string thy "}\n" in
-        "  import: " ^ n ^ "\n" in
-    let add_package_block bs (n,p) =
-        let b = write_block n bs false (Package_theory_block p) in
-        bs ^ b in
-    let add_article_block (ts,xs,bs) (n,ty) =
-          match ty with
-            Auxiliary_article ->
-              let sint =
-                  match mode with
-                    One_auxiliary_output_mode -> true
-                  | _ -> false in
-              let block = Article_theory_block (n ^ ".art") in
-              let x = write_block n bs sint block in
-              (ts, xs ^ x, bs ^ x)
-          | Theory_article f ->
-            let active =
-                match mode with
-                  Theory_output_mode -> n = t
-                | _ -> false in
-            if not active then (ts,xs,bs)
-            else
-              let block = Article_theory_block (f ^ ".art") in
-              let x = write_block f bs true block in
-              (ts ^ x, xs, bs ^ x) in
-    let () = output_string thy ("description: theory file for " ^ t ^ "\n") in
-    let bs = List.fold_left add_package_block "" (!package_context) in
-    let (ts,xs,_) = List.fold_left add_article_block ("","",bs) ntys in
-    let _ =
-        let imps =
-            match mode with
-              Theory_output_mode -> ts
-            | _ -> xs in
-        write_block "main" imps false Union_theory_block in
-    let () = close_out thy in
+        let () = output_string h "}\n" in
+        "  import: " ^ name ^ "\n" in
+    let add_article_block imps name =
+        let file = name ^ ".art" in
+        imps ^ add_theory_block name imps true (Article_theory_block file) in
+    let add_union_block name imps =
+        add_theory_block name imps false Union_theory_block in
+    let () = output_string h ("description: theory file for " ^ thy ^ "\n") in
+    let imps = List.fold_left add_article_block "" names in
+    let _ = add_union_block "main" imps in
+    let () = close_out h in
     ();;
 
 let write_theory_files () =
-    let rec write_theories ntys =
-        match ntys with
+    let rec write_theories arts =
+        match arts with
           [] -> ()
-        | (n,ty) :: ntys' ->
-          write_theories
-            (match ty with
-               Auxiliary_article ->
-               let mode = One_auxiliary_output_mode in
-               let () = write_theory_file mode n [(n,ty)] in
-               ntys'
-             | _ ->
-               let mode = Theory_output_mode in
-               let () = write_theory_file mode n (rev ntys) in
-               List.filter (fun (n',_) -> n' <> n) ntys') in
-    let ntys = !articles in
-    let () = write_theories ntys in
-    ();;
-
-let write_auxiliary_theory_file name =
-    let mode = All_auxiliary_output_mode in
-    let ntys = rev (!articles) in
-    let () = write_theory_file mode name ntys in
+        | art :: arts ->
+            let thy = thy_article art in
+            let is_thy a = thy_article a = thy in
+            let not_thy a = not (is_thy a) in
+            let names = map name_article (art :: List.filter is_thy arts) in
+            let arts = List.filter not_thy arts in
+            let () = write_theory_file thy (rev names) in
+            write_theories arts in
+    let arts = !articles in
+    let () = write_theories arts in
     ();;
 
 (* ------------------------------------------------------------------------- *)
@@ -254,20 +202,28 @@ let write_auxiliary_theory_file name =
 
 let logfile_end () =
     match (!log_state) with
-      Active_logging (_,h) ->
-      (close_out h;
-       log_state := Ready_logging)
+      Active_logging h ->
+        let () = close_out h in
+        let () = log_state := Ready_logging in
+        ()
     | _ -> ();;
 
-let logfile n =
-    logfile_end ();
-    match (!log_state) with
-      Ready_logging ->
-      (log_dict_reset ();
-       let (aux,f) = add_article n in
-       let h = open_out f in
-       log_state := Active_logging (aux,h))
-    | _ -> ();;
+let is_auxiliary_thy_article thy =
+    let len = String.length thy in
+    len >= 4 && String.sub thy (len - 4) 4 = "-aux";;
+
+let logfile thy =
+    if is_auxiliary_thy_article thy then ()
+    else
+      let ()  = logfile_end () in
+      match (!log_state) with
+        Ready_logging ->
+          let () = log_dict_reset () in
+          let file = add_article thy in
+          let h = open_out file in
+          let () = log_state := Active_logging h in
+          ()
+      | _ -> ();;
 
 let is_logging () =
     match (!log_state) with
@@ -276,49 +232,22 @@ let is_logging () =
 
 let not_logging () = not (is_logging ());;
 
-let is_aux_logging () =
-    match (!log_state) with
-      Active_logging (aux,_) -> aux
-    | _ -> false;;
-
-let not_aux_logging () = not (is_aux_logging ());;
-
 let start_logging () =
     match (!log_state) with
-      Not_logging -> (reset_package_context [("hol-light","hol-light-1.0")];
-                      reset_articles ();
-                      log_state := Ready_logging)
+      Not_logging ->
+        let () = reset_articles () in
+        let () = log_state := Ready_logging in
+        ()
     | _ -> ();;
 
 let stop_logging () =
-    logfile_end ();
+    let () = logfile_end () in
     match (!log_state) with
-      Ready_logging -> (write_theory_files ();
-                        log_state := Not_logging)
+      Ready_logging ->
+        let () = write_theory_files () in
+        let () = log_state := Not_logging in
+        ()
     | _ -> ();;
-
-(* ------------------------------------------------------------------------- *)
-(* Logging comments.                                                         *)
-(* ------------------------------------------------------------------------- *)
-
-let split s =
-    let n = String.length s in
-    let rec spl i =
-        if i = n then []
-        else if String.contains_from s i '\n' then
-          let j = String.index_from s i '\n' in
-          if j = i then "" :: spl (j + 1)
-          else String.sub s i (j - i) :: spl (j + 1)
-        else [String.sub s i (n - i)] in
-    spl 0;;
-
-let log_comment s =
-    let ws = map (fun w -> if w = "" then "#" else "# " ^ w) (split s) in
-    List.iter log_raw ws;;
-
-(***
-let log_comment_thm th = log_comment (string_of_thm th);;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Logging complex types                                                     *)
@@ -346,11 +275,13 @@ let log_pair (f : 'a -> unit) (g : 'b -> unit) (x,y) =
 let log_triple (f : 'a -> unit) (g : 'b -> unit) (h : 'c -> unit) (x,y,z) =
     f x; log_pair g h (y,z); log_command "cons";;
 
-let (log_type_op_mem,log_type_op_save,log_type_op) =
-    let log _ n =
-        (log_type_op_name n;
-         log_command "typeOp") in
-    log_dict_all log;;
+let (log_type_op_save,log_type_op) =
+    let proj x = x in
+    let log _ _ n =
+        let () = log_type_op_name n in
+        let () = log_command "typeOp" in
+        () in
+    log_dict_all proj log;;
 
 let log_type_var n = log_name n;;
 
@@ -363,35 +294,53 @@ let log_type =
           (log_type_var (dest_vartype ty); log_command "varType") in
     log_dict log;;
 
-let (log_const_mem,log_const_save,log_const) =
-    let log _ n =
-        (log_const_name n;
-         log_command "const") in
-    log_dict_all log;;
+let (log_const_save,log_const) =
+    let proj x = x in
+    let log _ _ n =
+        let () = log_const_name n in
+        let () = log_command "const" in
+        () in
+    log_dict_all proj log;;
 
-let log_var v =
-    let (n,ty) = dest_var v in
-    (log_name n; log_type ty; log_command "var");;
+let log_var =
+    let log _ v =
+        let (n,ty) = dest_var v in
+        let () = log_name n in
+        let () = log_type ty in
+        let () = log_command "var" in
+        () in
+    log_dict log;;
 
 let log_term =
-    let rec log f tm =
+    let log log_rec tm =
         if is_const tm then
           let (n,ty) = dest_const tm in
-          (log_const n; log_type ty; log_command "constTerm")
+          let () = log_const n in
+          let () = log_type ty in
+          let () = log_command "constTerm" in
+          ()
         else if is_var tm then
-          (log_var tm; log_command "varTerm")
+          let () = log_var tm in
+          let () = log_command "varTerm" in
+          ()
         else if is_comb tm then
           let (a,b) = dest_comb tm in
-          (f a; f b; log_command "appTerm")
+          let () = log_rec a in
+          let () = log_rec b in
+          let () = log_command "appTerm" in
+          ()
         else
           let (v,b) = dest_abs tm in
-          (log_var v; f b; log_command "absTerm") in
+          let () = log_var v in
+          let () = log_rec b in
+          let () = log_command "absTerm" in
+          () in
     log_dict log;;
 
 let log_inst =
-  log_pair
-    (log_list (log_pair log_type_var log_type))
-    (log_list (log_pair log_var log_term));;
+    log_pair
+      (log_list (log_pair log_type_var log_type))
+      (log_list (log_pair log_var log_term));;
 
 let log_type_inst =
     log_map
@@ -403,201 +352,127 @@ let log_term_inst =
       (fun i -> ([], map (fun (tm,v) -> (v,tm)) i))
       log_inst;;
 
-let (log_thm_mem,log_thm_save,log_thm) =
-    let log _ th =
-        (log_list log_term (hyp th);
-         log_term (concl th);
-         log_command "axiom") in
-    log_dict_all log;;
-
-(* ------------------------------------------------------------------------- *)
-(* Logged version of the logical kernel                                      *)
-(* ------------------------------------------------------------------------- *)
-
-let REFL tm =
-    let th = REFL tm in
-    let () =
-        if not_logging () || log_thm_mem th then ()
-        else (log_term tm;
-              log_command "refl";
-              log_thm_save th;
-              log_command "pop") in
-    th;;
-
-let MK_COMB (th1,th2) =
-    let th = MK_COMB (th1,th2) in
-    let () =
-        if not_logging () || log_thm_mem th then ()
-        else (log_thm th1;
-              log_thm th2;
-              log_command "appThm";
-              log_thm_save th;
-              log_command "pop") in
-    th;;
-
-let ABS v1 th2 =
-    let th = ABS v1 th2 in
-    let () =
-        if not_logging () || log_thm_mem th then ()
-        else (log_var v1;
-              log_thm th2;
-              log_command "absThm";
-              log_thm_save th;
-              log_command "pop") in
-    th;;
-
-let BETA tm =
-    let th = BETA tm in
-    let () =
-        if not_logging () || log_thm_mem th then ()
-        else (log_term tm;
-              log_command "betaConv";
-              log_thm_save th;
-              log_command "pop") in
-    th;;
-
-let ASSUME tm =
-    let th = ASSUME tm in
-    let () =
-        if not_logging () || log_thm_mem th then ()
-        else (log_term tm;
-              log_command "assume";
-              log_thm_save th;
-              log_command "pop") in
-    th;;
-
-let EQ_MP th1 th2 =
-    let th = EQ_MP th1 th2 in
-    let () =
-        if not_logging () || log_thm_mem th then ()
-        else (log_thm th1;
-              log_thm th2;
-              (*log_comment_thm th1;*)
-              (*log_comment_thm th2;*)
-              log_command "eqMp";
-              (*log_comment_thm th;*)
-              log_thm_save th;
-              log_command "pop") in
-    th;;
-
-let DEDUCT_ANTISYM_RULE th1 th2 =
-    let th = DEDUCT_ANTISYM_RULE th1 th2 in
-    let () =
-        if not_logging () || log_thm_mem th then ()
-        else (log_thm th1;
-              log_thm th2;
-              log_command "deductAntisym";
-              log_thm_save th;
-              log_command "pop") in
-    th;;
-
-let INST_TYPE i1 th2 =
-    let th = INST_TYPE i1 th2 in
-    let () =
-        if not_logging () || log_thm_mem th then ()
-        else (log_type_inst i1;
-              log_thm th2;
-              log_command "subst";
-              log_thm_save th;
-              log_command "pop") in
-    th;;
-
-let INST i1 th2 =
-    let th = INST i1 th2 in
-    let () =
-        if not_logging () || log_thm_mem th then ()
-        else (log_term_inst i1;
-              log_thm th2;
-              (*log_comment_thm th2;*)
-              log_command "subst";
-              (*log_comment_thm th;*)
-              log_thm_save th;
-              log_command "pop") in
-    th;;
-
-let new_axiom tm =
-    let th = new_axiom tm in
-    let () =
-        if not_logging () then ()
-        else (log_thm th;
-              log_command "pop") in
-    th;;
-
-let new_basic_definition tm =
-    let th = new_basic_definition tm in
-    let () =
-        if not_logging () then ()
-        else
-          let (n,tm) = dest_eq (concl th) in
-          let (n,_) = dest_const n in
-          (log_const_name n;
-           log_term tm;
-           log_command "defineConst";
-           log_thm_save th;
-           log_command "pop";
-           log_const_save n;
-           log_command "pop") in
-    th;;
-
-let new_basic_type_definition ty (abs,rep) th =
-    let (ar,ra) = new_basic_type_definition ty (abs,rep) th in
-    let () =
-        if not_logging () then ()
-        else
-          let lhs tm = fst (dest_eq tm) in
-          let range ty = hd (tl (snd (dest_type ty))) in
-          let (absTm,repTm) = dest_comb (lhs (concl ar)) in
-          let (repTm,_) = dest_const (rator repTm) in
-          let (absTm,newTy) = dest_const absTm in
-          let newTy = range newTy in
-          let (newTy,tyVars) = dest_type newTy in
-          let tyVars = map dest_vartype tyVars in
-          (log_type_op_name ty;
-           log_const_name abs;
-           log_const_name rep;
-           log_list log_type_var tyVars;
-           log_thm th;
-           log_command "defineTypeOp";
-           log_thm_save ra;
-           log_command "pop";
-           log_thm_save ar;
-           log_command "pop";
-           log_const_save repTm;
-           log_command "pop";
-           log_const_save absTm;
-           log_command "pop";
-           log_type_op_save newTy;
-           log_command "pop") in
-    (ar,ra);;
-
-let TRANS th1 th2 =
-    if not_logging () then TRANS th1 th2
-    else
-      let th3 = MK_COMB(REFL(rator(concl th1)),th2) in
-      EQ_MP th3 th1;;
+let log_thm =
+    let proj x = dest_thm x in
+    let log log_save log_rec th =
+        match read_proof th with
+          Axiom_proof ->
+            let () = log_list log_term (hyp th) in
+            let () = log_term (concl th) in
+            let () = log_command "axiom" in
+            ()
+        | Refl_proof tm ->
+            let () = log_term tm in
+            let () = log_command "refl" in
+            ()
+        | Trans_proof (th1,th2) ->
+            let tm = rator (concl th1) in
+            let () = log_term tm in
+            let () = log_command "refl" in
+            let () = log_rec th2 in
+            let () = log_command "appThm" in
+            let () = log_rec th1 in
+            let () = log_command "eqMp" in
+            ()
+        | Mk_comb_proof (th1,th2) ->
+            let () = log_rec th1 in
+            let () = log_rec th2 in
+            let () = log_command "appThm" in
+            ()
+        | Abs_proof (v1,th2) ->
+            let () = log_var v1 in
+            let () = log_rec th2 in
+            let () = log_command "absThm" in
+            ()
+        | Beta_proof tm ->
+            let () = log_term tm in
+            let () = log_command "betaConv" in
+            ()
+        | Assume_proof tm ->
+            let () = log_term tm in
+            let () = log_command "assume" in
+            ()
+        | Eq_mp_proof (th1,th2) ->
+            let () = log_rec th1 in
+            let () = log_rec th2 in
+            let () = log_command "eqMp" in
+            ()
+        | Deduct_antisym_rule_proof (th1,th2) ->
+            let () = log_rec th1 in
+            let () = log_rec th2 in
+            let () = log_command "deductAntisym" in
+            ()
+        | Inst_type_proof (i1,th2) ->
+            let () = log_type_inst i1 in
+            let () = log_rec th2 in
+            let () = log_command "subst" in
+            ()
+        | Inst_proof (i1,th2) ->
+            let () = log_term_inst i1 in
+            let () = log_rec th2 in
+            let () = log_command "subst" in
+            ()
+        | New_basic_definition_proof ->
+            let (n,tm) = dest_eq (concl th) in
+            let (n,_) = dest_const n in
+            let () = log_const_name n in
+            let () = log_term tm in
+            let () = log_command "defineConst" in
+            let i = log_save th in
+            let () = log_command "pop" in
+            let () = log_const_save n in
+            let () = log_command "pop" in
+            let () = log_num i in
+            let () = log_command "ref" in
+            ()
+        | New_basic_type_definition_proof
+            (is_ar,(ty,(abs,rep),exists_th),(ar,ra)) ->
+            let lhs tm = fst (dest_eq tm) in
+            let range ty = hd (tl (snd (dest_type ty))) in
+            let (absTm,repTm) = dest_comb (lhs (concl ar)) in
+            let (repTm,_) = dest_const (rator repTm) in
+            let (absTm,newTy) = dest_const absTm in
+            let newTy = range newTy in
+            let (newTy,tyVars) = dest_type newTy in
+            let tyVars = map dest_vartype tyVars in
+            let () = log_type_op_name ty in
+            let () = log_const_name abs in
+            let () = log_const_name rep in
+            let () = log_list log_type_var tyVars in
+            let () = log_rec exists_th in
+            let () = log_command "defineTypeOp" in
+            let ra_i = log_save ra in
+            let () = log_command "pop" in
+            let ar_i = log_save ar in
+            let () = log_command "pop" in
+            let () = log_const_save repTm in
+            let () = log_command "pop" in
+            let () = log_const_save absTm in
+            let () = log_command "pop" in
+            let () = log_type_op_save newTy in
+            let () = log_command "pop" in
+            let () = log_num (if is_ar then ar_i else ra_i) in
+            let () = log_command "ref" in
+            () in
+    let (_,logd) = log_dict_all proj log in
+    logd;;
 
 (* ------------------------------------------------------------------------- *)
 (* Exporting theorems.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-let export_raw_thm th =
-    if not_logging () then ()
-    else (log_thm th;
-          log_list log_term (hyp th);
-          log_term (concl th);
-          log_command "thm");;
-
 let export_thm th =
-    if not_logging () then ()
-    else if not_aux_logging () then export_raw_thm th
-    else failwith "export_thm called in auxiliary mode";;
+    let () =
+        if not_logging () then () else
+        let () = log_thm th in
+        let () = log_list log_term (hyp th) in
+        let () = log_term (concl th) in
+        let () = log_command "thm" in
+        let () = log_command "pop" in
+        () in
+    let () = delete_proof th in
+    ();;
 
-let export_aux_thm th =
-    if not_logging () then ()
-    else if is_aux_logging () then export_raw_thm th
-    else failwith "export_aux_thm called when not in auxiliary mode";;
+let export_aux_thm th = ();;
 
-let export_if_aux_thm th =
-    if not_logging () then ()
-    else if is_aux_logging () then export_raw_thm th
-    else ();;
+let export_if_aux_thm th = ();;
