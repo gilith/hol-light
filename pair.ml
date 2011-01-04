@@ -20,63 +20,44 @@ let LET_OPENTHEORY_DEF = new_basic_definition
 
 export_thm LET_OPENTHEORY_DEF;;
 
-logfile "bool-def-let-aux";;
+logfile_end ();;
 
 let LET_DEF = prove
   (`!(f:A->B) x. LET f x = f x`,
    REWRITE_TAC [LET_OPENTHEORY_DEF]);;
 
-export_aux_thm LET_DEF;;
-
-let GABS_OPENTHEORY_DEF = prove
-  (`!P. (@) (P:A->bool) = (@) P`,
-   REPEAT GEN_TAC THEN
-   REFL_TAC) in
-export_aux_thm GABS_OPENTHEORY_DEF;;
-
-let GEQ_OPENTHEORY_DEF = prove
-  (`!a b. (a = b) = (a:A = b)`,
-   REPEAT GEN_TAC THEN
-   REFL_TAC) in
-export_aux_thm GEQ_OPENTHEORY_DEF;;
-
-logfile_end ();;
-
 let LET_END_DEF = new_definition
  `LET_END (t:A) = t`;;
+
+delete_const_definition ["LET_END"];;
+delete_proof LET_END_DEF;;
 
 let GABS_DEF = new_definition
  `GABS (P:A->bool) = (@) P`;;
 
+delete_const_definition ["GABS"];;
+delete_proof GABS_DEF;;
+
 let GEQ_DEF = new_definition
  `GEQ a b = (a:A = b)`;;
 
-logfile "pair-sugar-aux";;
+delete_const_definition ["GEQ"];;
+delete_proof GEQ_DEF;;
 
 let _SEQPATTERN = new_definition
  `_SEQPATTERN = \r s x. if ?y. r x y then r x else s x`;;
 
-export_aux_thm _SEQPATTERN;;
-
 let _UNGUARDED_PATTERN = new_definition
  `_UNGUARDED_PATTERN = \p r. p /\ r`;;
-
-export_aux_thm _UNGUARDED_PATTERN;;
 
 let _GUARDED_PATTERN = new_definition
  `_GUARDED_PATTERN = \p g r. p /\ g /\ r`;;
 
-export_aux_thm _GUARDED_PATTERN;;
-
 let _MATCH = new_definition
  `_MATCH =  \e r. if (?!) (r e) then (@) (r e) else @z. F`;;
 
-export_aux_thm _MATCH;;
-
 let _FUNCTION = new_definition
  `_FUNCTION = \r x. if (?!) (r x) then (@) (r x) else @z. F`;;
-
-export_aux_thm _FUNCTION;;
 
 (* ------------------------------------------------------------------------- *)
 (* Pair type.                                                                *)
@@ -182,8 +163,6 @@ export_thm pair_RECURSION;;
 (* Syntax operations.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "pair-def-aux";;
-
 let is_pair = is_binary ",";;
 
 let dest_pair = dest_binary ",";;
@@ -244,17 +223,11 @@ let new_definition =
 let CURRY_DEF = new_definition
  `CURRY(f:A#B->C) x y = f(x,y)`;;
 
-export_aux_thm CURRY_DEF;;
-
 let UNCURRY_DEF = new_definition
  `!f x y. UNCURRY(f:A->B->C)(x,y) = f x y`;;
 
-export_aux_thm UNCURRY_DEF;;
-
 let PASSOC_DEF = new_definition
  `!f x y z. PASSOC (f:(A#B)#C->D) (x,y,z) = f ((x,y),z)`;;
-
-export_aux_thm PASSOC_DEF;;
 
 (* ------------------------------------------------------------------------- *)
 (* Analog of ABS_CONV for generalized abstraction.                           *)
@@ -305,14 +278,12 @@ let GEN_BETA_CONV =
     ((***projection_cache := (conname,ths)::(!projection_cache);***) ths) in
   let GEQ_CONV =
       let pth = GSYM GEQ_DEF in
-      let () = export_aux_thm pth in
       REWR_CONV pth
   and DEGEQ_RULE = CONV_RULE(REWR_CONV GEQ_DEF) in
   let GABS_RULE =
     let pth = prove
      (`(?) P ==> P (GABS P)`,
       SIMP_TAC[GABS_DEF; SELECT_AX; ETA_AX]) in
-    let () = export_aux_thm pth in
     MATCH_MP pth in
   let rec create_iterated_projections tm =
     if frees tm = [] then []
@@ -421,8 +392,6 @@ export_thm EXISTS_TRIPLED_THM;;
 (* Expansion of a let-term.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-let-aux";;
-
 let let_CONV =
   let let1_CONV = REWR_CONV LET_DEF THENC GEN_BETA_CONV
   and lete_CONV = REWR_CONV LET_END_DEF in
@@ -451,13 +420,10 @@ let (LET_TAC:tactic) =
     let pth = prove
      (`((x,y) = a) <=> (x = FST a) /\ (y = SND a)`,
       MESON_TAC[PAIR; PAIR_EQ]) in
-    let () = export_aux_thm pth in
     let rewr1_CONV = GEN_REWRITE_CONV TOP_DEPTH_CONV [pth]
     and rewr2_RULE =
         let pth1 = TAUT `(x = x) <=> T` in
         let pth2 = TAUT `a /\ T <=> a` in
-        let () = export_aux_thm pth1 in
-        let () = export_aux_thm pth2 in
         GEN_REWRITE_RULE (LAND_CONV o DEPTH_CONV) [pth1; pth2] in
     fun tm ->
       let th1 = rewr1_CONV tm in

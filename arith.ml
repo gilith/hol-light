@@ -45,11 +45,7 @@ let PRE_0,PRE_SUC = CONJ_PAIR PRE;;
 export_thm PRE_0;;
 export_thm PRE_SUC;;
 
-logfile "natural-pre-thm-aux";;
-
 let PRE = CONJ PRE_0 PRE_SUC;;
-
-export_aux_thm PRE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Addition.                                                                 *)
@@ -1430,13 +1426,9 @@ let DIVISION_DEF_MOD = prove
 
 export_thm DIVISION_DEF_MOD;;
 
-logfile "natural-div-mod-aux";;
-
 let DIVISION = prove
  (`!m n. ~(n = 0) ==> (m = m DIV n * n + m MOD n) /\ m MOD n < n`,
   MESON_TAC[DIVISION_DEF_DIV; DIVISION_DEF_MOD]);;
-
-export_aux_thm DIVISION;;
 
 logfile "natural-div-mod-thm";;
 
@@ -1857,20 +1849,14 @@ export_thm DIV_MOD;;
 (* We have versions that introduce universal or existential quantifiers.     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-elim-aux";;
-
 let PRE_ELIM_THM = prove
  (`P(PRE n) <=> !m. n = SUC m \/ m = 0 /\ n = 0 ==> P m`,
   SPEC_TAC(`n:num`,`n:num`) THEN INDUCT_TAC THEN
   REWRITE_TAC[NOT_SUC; SUC_INJ; PRE] THEN MESON_TAC[]);;
 
-export_aux_thm PRE_ELIM_THM;;
-
 let PRE_ELIM_THM' = prove
  (`P(PRE n) <=> ?m. (n = SUC m \/ m = 0 /\ n = 0) /\ P m`,
   MP_TAC(INST [`\x:num. ~P x`,`P:num->bool`] PRE_ELIM_THM) THEN MESON_TAC[]);;
-
-export_aux_thm PRE_ELIM_THM';;
 
 let SUB_ELIM_THM = prove
  (`P(a - b) <=> !d. a = b + d \/ a < b /\ d = 0 ==> P d`,
@@ -1879,13 +1865,9 @@ let SUB_ELIM_THM = prove
   FIRST_ASSUM(X_CHOOSE_THEN `e:num` SUBST1_TAC o REWRITE_RULE[LE_EXISTS]) THEN
   SIMP_TAC[ADD_SUB2; GSYM NOT_LE; LE_ADD; EQ_ADD_LCANCEL] THEN MESON_TAC[]);;
 
-export_aux_thm SUB_ELIM_THM;;
-
 let SUB_ELIM_THM' = prove
  (`P(a - b) <=> ?d. (a = b + d \/ a < b /\ d = 0) /\ P d`,
   MP_TAC(INST [`\x:num. ~P x`,`P:num->bool`] SUB_ELIM_THM) THEN MESON_TAC[]);;
-
-export_aux_thm SUB_ELIM_THM';;
 
 let DIVMOD_ELIM_THM = prove
  (`P (m DIV n) (m MOD n) <=>
@@ -1894,15 +1876,11 @@ let DIVMOD_ELIM_THM = prove
    [ASM_MESON_TAC[DIVISION_0; LT];
     FIRST_ASSUM(MP_TAC o MATCH_MP DIVISION) THEN MESON_TAC[DIVMOD_UNIQ]]);;
 
-export_aux_thm DIVMOD_ELIM_THM;;
-
 let DIVMOD_ELIM_THM' = prove
  (`P (m DIV n) (m MOD n) <=>
         ?q r. (n = 0 /\ q = 0 /\ r = m \/ m = q * n + r /\ r < n) /\ P q r`,
   MP_TAC(INST [`\x:num y:num. ~P x y`,`P:num->num->bool`] DIVMOD_ELIM_THM) THEN
   MESON_TAC[]);;
-
-export_aux_thm DIVMOD_ELIM_THM';;
 
 (* ------------------------------------------------------------------------- *)
 (* Crude but useful conversion for cancelling down equations.                *)
@@ -1920,7 +1898,6 @@ let NUM_CANCEL_CONV =
   let EQ_ADD_LCANCEL_0' =
     GEN_REWRITE_RULE (funpow 2 BINDER_CONV o LAND_CONV) [EQ_SYM_EQ]
       EQ_ADD_LCANCEL_0 in
-  let () = export_aux_thm EQ_ADD_LCANCEL_0' in
   let AC_RULE = AC ADD_AC in
   fun tm ->
     let l,r = dest_eq tm in
@@ -1941,7 +1918,6 @@ let NUM_CANCEL_CONV =
 
 let LE_IMP =
   let pth = PURE_ONCE_REWRITE_RULE[IMP_CONJ] LE_TRANS in
-  let () = export_aux_thm pth in
   fun th -> GEN_ALL(MATCH_MP pth (SPEC_ALL th));;
 
 (* ------------------------------------------------------------------------- *)

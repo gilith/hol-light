@@ -4,6 +4,64 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
+(* Tracking definitions.                                                     *)
+(* ------------------------------------------------------------------------- *)
+
+type type_op_definition =
+     Type_op_definition of (thm * (thm * thm));;
+
+type const_definition =
+     Const_definition of thm
+   | Abs_type_definition of string
+   | Rep_type_definition of string;;
+
+let (peek_type_op_definition,
+     add_type_op_definition,
+     delete_type_op_definition) =
+    let the_defs = ref ([] : (string * type_op_definition) list) in
+    let mem ty = List.mem_assoc ty (!the_defs) in
+    let peek ty = if mem ty then Some (List.assoc ty (!the_defs)) else None in
+    let add ty def =
+        if mem ty then failwith "redefinition of type op" else
+        let () = the_defs := (ty,def) :: !the_defs in
+        () in
+    let delete tys =
+        let pred (ty,_) = not (List.mem ty tys) in
+        let () = the_defs := List.filter pred (!the_defs) in
+        () in
+    (peek,add,delete);;
+
+let (peek_const_definition,
+     add_const_definition,
+     delete_const_definition) =
+    let the_defs = ref ([] : (string * const_definition) list) in
+    let mem ty = List.mem_assoc ty (!the_defs) in
+    let peek ty = if mem ty then Some (List.assoc ty (!the_defs)) else None in
+    let add ty def =
+        if mem ty then failwith "redefinition of type op" else
+        let () = the_defs := (ty,def) :: !the_defs in
+        () in
+    let delete tys =
+        let pred (ty,_) = not (List.mem ty tys) in
+        let () = the_defs := List.filter pred (!the_defs) in
+        () in
+    (peek,add,delete);;
+
+let new_basic_definition tm =
+    let th = new_basic_definition tm in
+    let (c,_) = dest_eq (concl th) in
+    let (c,_) = dest_const c in
+    let () = add_const_definition c (Const_definition th) in
+    th;;
+
+let new_basic_type_definition ty (abs,rep) exists_th =
+    let ar_ra = new_basic_type_definition ty (abs,rep) exists_th in
+    let () = add_type_op_definition ty (Type_op_definition (exists_th,ar_ra)) in
+    let () = add_const_definition abs (Abs_type_definition ty) in
+    let () = add_const_definition rep (Rep_type_definition ty) in
+    ar_ra;;
+
+(* ------------------------------------------------------------------------- *)
 (* Setting up the log files: part 1                                          *)
 (* ------------------------------------------------------------------------- *)
 
@@ -23,70 +81,324 @@ let log_raw s =
 (* Logging primitive types                                                   *)
 (* ------------------------------------------------------------------------- *)
 
-let namespace = "HOLLight";;
-
-let mk_name s = namespace ^ "." ^ s;;
+type opentheory_object =
+     Type_op_object of string
+   | Type_object of hol_type
+   | Const_object of string
+   | Var_object of term
+   | Term_object of term
+   | Thm_object of (term list * term);;
 
 let log_num n = log_raw (string_of_int n);;
 
 let log_name s = log_raw ("\"" ^ String.escaped s ^ "\"");;
 
-let log_type_op_name s = log_name (mk_name s);;
-
-let log_const_name s = log_name (mk_name s);;
+let (log_type_op_name,log_const_name) =
+    let namespace = "HOLLight" in
+    let mk_namespace_name s = namespace ^ "." ^ s in
+    let log_namespace_name s = log_name (mk_namespace_name s) in
+    (log_namespace_name,log_namespace_name);;
 
 let log_command s = log_raw s;;
 
+let log_nil () = log_command "nil";;
+
+let log_list (log : 'a -> unit) =
+    let rec logl l =
+        match l with
+          [] ->
+          let () = log_nil () in
+          ()
+        | h :: t ->
+          let () = log h in
+          let () = logl t in
+          let () = log_command "cons" in
+          () in
+    logl;;
+
+let log_unit () = log_nil ();;
+
+let log_sing (log_a : 'a -> unit) a =
+    let () = log_a a in
+    let () = log_nil () in
+    let () = log_command "cons" in
+    ();;
+
+let log_pair (log_a : 'a -> unit) (log_b : 'b -> unit) (a,b) =
+    let () = log_a a in
+    let () = log_sing log_b b in
+    let () = log_command "cons" in
+    ();;
+
+let log_type_var n = log_name n;;
+
 (* ------------------------------------------------------------------------- *)
-(* The dictionary                                                            *)
+(* The dictionary.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-let (log_dict_next_key,log_dict_reset_key) =
-    let key = ref 0 in
-    let next () = let k = !key in (key := k + 1; k) in
-    let reset () = key := 0 in
-    (next,reset);;
-
-let (log_dict_reset,log_dict_reset_register) =
-    let resets = ref [] in
-    let register r = resets := r :: !resets in
-    let reset_all () = List.iter (fun r -> r ()) (!resets) in
-    let reset () = (reset_all (); log_dict_reset_key ()) in
-    (reset,register);;
-
-let log_dict_all proj (f : ('a -> int) -> ('a -> unit) -> 'a -> unit) =
-    let hashtbl = Hashtbl.create 10000 in
-    let reset () = Hashtbl.clear hashtbl in
-    let () = log_dict_reset_register reset in
-    let mem x = Hashtbl.mem hashtbl (proj x) in
-    let peek x = if mem x then Some (Hashtbl.find hashtbl (proj x)) else None in
-    let save_ref x =
-        match (peek x) with
-          Some n -> n
+let (log_reset,log_term,log_thm) =
+    let (reset_key,next_key) =
+        let key = ref 0 in
+        let reset () = key := 0 in
+        let next () = let k = !key in (key := k + 1; k) in
+        (reset,next) in
+    let (reset_dict,peek_dict,save_dict) =
+        let hashtbl = Hashtbl.create 10000 in
+        let reset () = Hashtbl.clear hashtbl in
+        let mem x = Hashtbl.mem hashtbl x in
+        let peek x = if mem x then Some (Hashtbl.find hashtbl x) else None in
+        let save x =
+            match (peek x) with
+              Some k -> k
+            | None ->
+                let k = next_key () in
+                let () = Hashtbl.add hashtbl x k in
+                let () = log_num k in
+                let () = log_command "def" in
+                k in
+        (reset,peek,save) in
+    let reset () =
+        let () = reset_key () in
+        let () = reset_dict () in
+        () in
+    let saved ob =
+        match (peek_dict ob) with
+          Some k ->
+            let () = log_num k in
+            let () = log_command "ref" in
+            true
         | None ->
-          let n = log_dict_next_key () in
-          let () = Hashtbl.add hashtbl (proj x) n in
-          let () = log_num n in
-          let () = log_command "def" in
-          n in
-    let save x = let _ = save_ref x in () in
-    let rec log x =
-        match (peek x) with
-          Some n ->
-            let () = log_num n in
+            false in
+    let rec log_type_op_def (exists_th,(ar,ra)) =
+        let lhs tm = fst (dest_eq tm) in
+        let range ty = hd (tl (snd (dest_type ty))) in
+        let (absTm,repTm) = dest_comb (lhs (concl ar)) in
+        let (repTm,_) = dest_const (rator repTm) in
+        let (absTm,newTy) = dest_const absTm in
+        let newTy = range newTy in
+        let (newTy,tyVars) = dest_type newTy in
+        let tyVars = map dest_vartype tyVars in
+        let () = log_type_op_name newTy in
+        let () = log_const_name absTm in
+        let () = log_const_name repTm in
+        let () = log_list log_type_var tyVars in
+        let () = log_thm exists_th in
+        let () = log_command "defineTypeOp" in
+        let ra_k = save_dict (Thm_object (dest_thm ra)) in
+        let () = log_command "pop" in
+        let ar_k = save_dict (Thm_object (dest_thm ar)) in
+        let () = log_command "pop" in
+        let rep_k = save_dict (Const_object repTm) in
+        let () = log_command "pop" in
+        let abs_k = save_dict (Const_object absTm) in
+        let () = log_command "pop" in
+        let ty_k = save_dict (Type_op_object newTy) in
+        let () = log_command "pop" in
+        (ty_k,abs_k,rep_k,ar_k,ra_k)
+    and log_type_op ty =
+        let ob = Type_op_object ty in
+        if saved ob then () else
+        match (peek_type_op_definition ty) with
+          Some (Type_op_definition tydef) ->
+            let (k,_,_,_,_) = log_type_op_def tydef in
+            let () = log_num k in
             let () = log_command "ref" in
             ()
         | None ->
-            let () = f save_ref log x in
-            let () = save x in
-            () in
-    (save,log);;
-
-let log_dict (f : ('a -> unit) -> 'a -> unit) =
-    let proj x = x in
-    let g _ log_rec x = f log_rec x in
-    match (log_dict_all proj g) with
-      (_,log) -> log;;
+            let () = log_type_op_name ty in
+            let () = log_command "typeOp" in
+            let _ = save_dict ob in
+            ()
+    and log_type ty =
+        let ob = Type_object ty in
+        if saved ob then () else
+        if is_type ty then
+          let (n,l) = dest_type ty in
+          let () = log_type_op n in
+          let () = log_list log_type l in
+          let () = log_command "opType" in
+          ()
+        else
+          let () = log_type_var (dest_vartype ty) in
+          let () = log_command "varType" in
+          ()
+    and log_const_def th =
+        let (c,tm) = dest_eq (concl th) in
+        let (c,_) = dest_const c in
+        let () = log_const_name c in
+        let () = log_term tm in
+        let () = log_command "defineConst" in
+        let th_k = save_dict (Thm_object (dest_thm th)) in
+        let () = log_command "pop" in
+        let c_k = save_dict (Const_object c) in
+        let () = log_command "pop" in
+        (c_k,th_k)
+    and log_const c =
+        let ob = Const_object c in
+        if saved ob then () else
+        match (peek_const_definition c) with
+          None ->
+            let () = log_const_name c in
+            let () = log_command "const" in
+            let _ = save_dict ob in
+            ()
+        | Some def ->
+            match def with
+              Const_definition cdef ->
+                let (k,_) = log_const_def cdef in
+                let () = log_num k in
+                let () = log_command "ref" in
+                ()
+            | Abs_type_definition ty ->
+              (match (peek_type_op_definition ty) with
+                 Some (Type_op_definition tydef) ->
+                   let (_,k,_,_,_) = log_type_op_def tydef in
+                   let () = log_num k in
+                   let () = log_command "ref" in
+                   ()
+               | None ->
+                 failwith ("abs const out of type op definition scope: " ^ ty))
+            | Rep_type_definition ty ->
+              (match (peek_type_op_definition ty) with
+                 Some (Type_op_definition tydef) ->
+                   let (_,_,k,_,_) = log_type_op_def tydef in
+                   let () = log_num k in
+                   let () = log_command "ref" in
+                   ()
+               | None ->
+                 failwith ("rep const out of type op definition scope: " ^ ty))
+    and log_var v =
+        let ob = Var_object v in
+        if saved ob then () else
+        let (n,ty) = dest_var v in
+        let () = log_name n in
+        let () = log_type ty in
+        let () = log_command "var" in
+        let _ = save_dict ob in
+        ()
+    and log_term tm =
+        let ob = Term_object tm in
+        if saved ob then () else
+        let () =
+            if is_const tm then
+              let (n,ty) = dest_const tm in
+              let () = log_const n in
+              let () = log_type ty in
+              let () = log_command "constTerm" in
+              ()
+            else if is_var tm then
+              let () = log_var tm in
+              let () = log_command "varTerm" in
+              ()
+            else if is_comb tm then
+              let (a,b) = dest_comb tm in
+              let () = log_term a in
+              let () = log_term b in
+              let () = log_command "appTerm" in
+              ()
+            else
+              let (v,b) = dest_abs tm in
+              let () = log_var v in
+              let () = log_term b in
+              let () = log_command "absTerm" in
+              () in
+        let _ = save_dict ob in
+        ()
+    and log_inst ins =
+        log_pair
+          (log_list (log_pair log_type_var log_type))
+          (log_list (log_pair log_var log_term))
+          ins
+    and log_type_inst tyins =
+        let conv (ty,v) = (dest_vartype v, ty) in
+        let ins = (map conv tyins, []) in
+        log_inst ins
+    and log_term_inst tmins =
+        let conv (tm,v) = (v,tm) in
+        let ins = ([], map conv tmins) in
+        log_inst ins
+    and log_thm th =
+        let ob = Thm_object (dest_thm th) in
+        if saved ob then () else
+        let () =
+            match read_proof th with
+              Axiom_proof ->
+                let () = log_list log_term (hyp th) in
+                let () = log_term (concl th) in
+                let () = log_command "axiom" in
+                ()
+            | Refl_proof tm ->
+                let () = log_term tm in
+                let () = log_command "refl" in
+                ()
+            | Trans_proof (th1,th2) ->
+                let tm = rator (concl th1) in
+                let () = log_term tm in
+                let () = log_command "refl" in
+                let () = log_thm th2 in
+                let () = log_command "appThm" in
+                let () = log_thm th1 in
+                let () = log_command "eqMp" in
+                ()
+            | Mk_comb_proof (th1,th2) ->
+                let () = log_thm th1 in
+                let () = log_thm th2 in
+                let () = log_command "appThm" in
+                ()
+            | Abs_proof (v1,th2) ->
+                let () = log_var v1 in
+                let () = log_thm th2 in
+                let () = log_command "absThm" in
+                ()
+            | Beta_proof tm ->
+                let () = log_term tm in
+                let () = log_command "betaConv" in
+                ()
+            | Assume_proof tm ->
+                let () = log_term tm in
+                let () = log_command "assume" in
+                ()
+            | Eq_mp_proof (th1,th2) ->
+                let () = log_thm th1 in
+                let () = log_thm th2 in
+                let () = log_command "eqMp" in
+                ()
+            | Deduct_antisym_rule_proof (th1,th2) ->
+                let () = log_thm th1 in
+                let () = log_thm th2 in
+                let () = log_command "deductAntisym" in
+                ()
+            | Inst_type_proof (i1,th2) ->
+                let () = log_type_inst i1 in
+                let () = log_thm th2 in
+                let () = log_command "subst" in
+                ()
+            | Inst_proof (i1,th2) ->
+                let () = log_term_inst i1 in
+                let () = log_thm th2 in
+                let () = log_command "subst" in
+                ()
+            | New_basic_definition_proof c ->
+                (match (peek_const_definition c) with
+                   Some (Const_definition cdef) ->
+                     let (_,k) = log_const_def cdef in
+                     let () = log_num k in
+                     let () = log_command "ref" in
+                     ()
+                 | _ ->
+                   failwith ("thm out of const definition scope: " ^ c))
+            | New_basic_type_definition_proof (is_ar,ty) ->
+                (match (peek_type_op_definition ty) with
+                   Some (Type_op_definition tydef) ->
+                     let (_,_,_,ar_k,ra_k) = log_type_op_def tydef in
+                     let () = log_num (if is_ar then ar_k else ra_k) in
+                     let () = log_command "ref" in
+                     ()
+                 | _ ->
+                   failwith ("thm out of type op definition scope: " ^ ty)) in
+        let _ = save_dict ob in
+        () in
+    (reset,log_term,log_thm);;
 
 (* ------------------------------------------------------------------------- *)
 (* Article files.                                                            *)
@@ -213,12 +525,12 @@ let is_auxiliary_thy_article thy =
     len >= 4 && String.sub thy (len - 4) 4 = "-aux";;
 
 let logfile thy =
-    if is_auxiliary_thy_article thy then ()
+    if is_auxiliary_thy_article thy then failwith ("auxiliary file: " ^ thy)
     else
-      let ()  = logfile_end () in
+      let () = logfile_end () in
       match (!log_state) with
         Ready_logging ->
-          let () = log_dict_reset () in
+          let () = log_reset () in
           let file = add_article thy in
           let h = open_out file in
           let () = log_state := Active_logging h in
@@ -250,216 +562,56 @@ let stop_logging () =
     | _ -> ();;
 
 (* ------------------------------------------------------------------------- *)
-(* Logging complex types                                                     *)
-(* ------------------------------------------------------------------------- *)
-
-let log_map (f : 'a -> 'b) (log_b : 'b -> unit) a = log_b (f a);;
-
-let log_nil () = log_command "nil";;
-
-let log_list (f : 'a -> unit) =
-    let rec logl l =
-        match l with
-          [] -> log_nil ()
-        | h :: t -> (f h; logl t; log_command "cons") in
-    logl;;
-
-let log_unit () = log_nil ();;
-
-let log_sing (f : 'a -> unit) x =
-    f x; log_nil (); log_command "cons";;
-
-let log_pair (f : 'a -> unit) (g : 'b -> unit) (x,y) =
-    f x; log_sing g y; log_command "cons";;
-
-let log_triple (f : 'a -> unit) (g : 'b -> unit) (h : 'c -> unit) (x,y,z) =
-    f x; log_pair g h (y,z); log_command "cons";;
-
-let (log_type_op_save,log_type_op) =
-    let proj x = x in
-    let log _ _ n =
-        let () = log_type_op_name n in
-        let () = log_command "typeOp" in
-        () in
-    log_dict_all proj log;;
-
-let log_type_var n = log_name n;;
-
-let log_type =
-    let rec log f ty =
-        if is_type ty then
-          let (n,l) = dest_type ty in
-          (log_type_op n; log_list f l; log_command "opType")
-        else
-          (log_type_var (dest_vartype ty); log_command "varType") in
-    log_dict log;;
-
-let (log_const_save,log_const) =
-    let proj x = x in
-    let log _ _ n =
-        let () = log_const_name n in
-        let () = log_command "const" in
-        () in
-    log_dict_all proj log;;
-
-let log_var =
-    let log _ v =
-        let (n,ty) = dest_var v in
-        let () = log_name n in
-        let () = log_type ty in
-        let () = log_command "var" in
-        () in
-    log_dict log;;
-
-let log_term =
-    let log log_rec tm =
-        if is_const tm then
-          let (n,ty) = dest_const tm in
-          let () = log_const n in
-          let () = log_type ty in
-          let () = log_command "constTerm" in
-          ()
-        else if is_var tm then
-          let () = log_var tm in
-          let () = log_command "varTerm" in
-          ()
-        else if is_comb tm then
-          let (a,b) = dest_comb tm in
-          let () = log_rec a in
-          let () = log_rec b in
-          let () = log_command "appTerm" in
-          ()
-        else
-          let (v,b) = dest_abs tm in
-          let () = log_var v in
-          let () = log_rec b in
-          let () = log_command "absTerm" in
-          () in
-    log_dict log;;
-
-let log_inst =
-    log_pair
-      (log_list (log_pair log_type_var log_type))
-      (log_list (log_pair log_var log_term));;
-
-let log_type_inst =
-    log_map
-      (fun i -> (map (fun (ty,v) -> (dest_vartype v, ty)) i, []))
-      log_inst;;
-
-let log_term_inst =
-    log_map
-      (fun i -> ([], map (fun (tm,v) -> (v,tm)) i))
-      log_inst;;
-
-let log_thm =
-    let proj x = dest_thm x in
-    let log log_save log_rec th =
-        match read_proof th with
-          Axiom_proof ->
-            let () = log_list log_term (hyp th) in
-            let () = log_term (concl th) in
-            let () = log_command "axiom" in
-            ()
-        | Refl_proof tm ->
-            let () = log_term tm in
-            let () = log_command "refl" in
-            ()
-        | Trans_proof (th1,th2) ->
-            let tm = rator (concl th1) in
-            let () = log_term tm in
-            let () = log_command "refl" in
-            let () = log_rec th2 in
-            let () = log_command "appThm" in
-            let () = log_rec th1 in
-            let () = log_command "eqMp" in
-            ()
-        | Mk_comb_proof (th1,th2) ->
-            let () = log_rec th1 in
-            let () = log_rec th2 in
-            let () = log_command "appThm" in
-            ()
-        | Abs_proof (v1,th2) ->
-            let () = log_var v1 in
-            let () = log_rec th2 in
-            let () = log_command "absThm" in
-            ()
-        | Beta_proof tm ->
-            let () = log_term tm in
-            let () = log_command "betaConv" in
-            ()
-        | Assume_proof tm ->
-            let () = log_term tm in
-            let () = log_command "assume" in
-            ()
-        | Eq_mp_proof (th1,th2) ->
-            let () = log_rec th1 in
-            let () = log_rec th2 in
-            let () = log_command "eqMp" in
-            ()
-        | Deduct_antisym_rule_proof (th1,th2) ->
-            let () = log_rec th1 in
-            let () = log_rec th2 in
-            let () = log_command "deductAntisym" in
-            ()
-        | Inst_type_proof (i1,th2) ->
-            let () = log_type_inst i1 in
-            let () = log_rec th2 in
-            let () = log_command "subst" in
-            ()
-        | Inst_proof (i1,th2) ->
-            let () = log_term_inst i1 in
-            let () = log_rec th2 in
-            let () = log_command "subst" in
-            ()
-        | New_basic_definition_proof ->
-            let (n,tm) = dest_eq (concl th) in
-            let (n,_) = dest_const n in
-            let () = log_const_name n in
-            let () = log_term tm in
-            let () = log_command "defineConst" in
-            let i = log_save th in
-            let () = log_command "pop" in
-            let () = log_const_save n in
-            let () = log_command "pop" in
-            let () = log_num i in
-            let () = log_command "ref" in
-            ()
-        | New_basic_type_definition_proof
-            (is_ar,(ty,(abs,rep),exists_th),(ar,ra)) ->
-            let lhs tm = fst (dest_eq tm) in
-            let range ty = hd (tl (snd (dest_type ty))) in
-            let (absTm,repTm) = dest_comb (lhs (concl ar)) in
-            let (repTm,_) = dest_const (rator repTm) in
-            let (absTm,newTy) = dest_const absTm in
-            let newTy = range newTy in
-            let (newTy,tyVars) = dest_type newTy in
-            let tyVars = map dest_vartype tyVars in
-            let () = log_type_op_name ty in
-            let () = log_const_name abs in
-            let () = log_const_name rep in
-            let () = log_list log_type_var tyVars in
-            let () = log_rec exists_th in
-            let () = log_command "defineTypeOp" in
-            let ra_i = log_save ra in
-            let () = log_command "pop" in
-            let ar_i = log_save ar in
-            let () = log_command "pop" in
-            let () = log_const_save repTm in
-            let () = log_command "pop" in
-            let () = log_const_save absTm in
-            let () = log_command "pop" in
-            let () = log_type_op_save newTy in
-            let () = log_command "pop" in
-            let () = log_num (if is_ar then ar_i else ra_i) in
-            let () = log_command "ref" in
-            () in
-    let (_,logd) = log_dict_all proj log in
-    logd;;
-
-(* ------------------------------------------------------------------------- *)
 (* Exporting theorems.                                                       *)
 (* ------------------------------------------------------------------------- *)
+
+let thm_type_ops =
+    let rec type_ops_in_types acc tys =
+        match tys with
+          [] -> acc
+        | ty :: tys ->
+          if is_vartype ty then type_ops_in_types acc tys
+          else
+            let (t,l) = dest_type ty in
+            let acc = if List.mem t acc then acc else t :: acc in
+            type_ops_in_types acc (l @ tys) in
+    let rec type_ops_in_terms acc tms =
+        match tms with
+          [] -> acc
+        | tm :: tms ->
+          if is_var tm then
+            let (_,ty) = dest_var tm in
+            let acc = type_ops_in_types acc [ty] in
+            type_ops_in_terms acc tms
+          else if is_const tm then
+            let (_,ty) = dest_const tm in
+            let acc = type_ops_in_types acc [ty] in
+            type_ops_in_terms acc tms
+          else if is_comb tm then
+            let (f,x) = dest_comb tm in
+            type_ops_in_terms acc (f :: x :: tms)
+          else
+            let (v,b) = dest_abs tm in
+            type_ops_in_terms acc (v :: b :: tms) in
+    fun th -> type_ops_in_terms [] (concl th :: hyp th);;
+
+let thm_consts =
+    let rec consts_in_terms acc tms =
+        match tms with
+          [] -> acc
+        | tm :: tms ->
+          if is_var tm then consts_in_terms acc tms
+          else if is_const tm then
+            let (c,_) = dest_const tm in
+            let acc = if List.mem c acc then acc else c :: acc in
+            consts_in_terms acc tms
+          else if is_comb tm then
+            let (f,x) = dest_comb tm in
+            consts_in_terms acc (f :: x :: tms)
+          else
+            let (_,b) = dest_abs tm in
+            consts_in_terms acc (b :: tms) in
+    fun th -> consts_in_terms [] (concl th :: hyp th);;
 
 let export_thm th =
     let () =
@@ -468,11 +620,8 @@ let export_thm th =
         let () = log_list log_term (hyp th) in
         let () = log_term (concl th) in
         let () = log_command "thm" in
-        let () = log_command "pop" in
         () in
     let () = delete_proof th in
+    let () = delete_type_op_definition (thm_type_ops th) in
+    let () = delete_const_definition (thm_consts th) in
     ();;
-
-let export_aux_thm th = ();;
-
-let export_if_aux_thm th = ();;

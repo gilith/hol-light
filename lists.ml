@@ -13,13 +13,10 @@ needs "ind_types.ml";;
 (* Standard tactic for list induction using MATCH_MP_TAC list_INDUCT         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-induct-aux";;
-
 let LIST_INDUCT_TAC =
   let list_INDUCT = prove
    (`!P:(A)list->bool. P [] /\ (!h t. P t ==> P (CONS h t)) ==> !l. P l`,
     MATCH_ACCEPT_TAC list_INDUCT) in
-  let () = export_aux_thm list_INDUCT in
   MATCH_MP_TAC list_INDUCT THEN
   CONJ_TAC THENL [ALL_TAC; GEN_TAC THEN GEN_TAC THEN DISCH_TAC];;
 
@@ -78,13 +75,9 @@ let LAST = new_recursive_definition list_RECURSION
 
 export_thm LAST;;
 
-logfile "list-butlast-def-aux";;
-
 let BUTLAST = new_recursive_definition list_RECURSION
  `(BUTLAST [] = []) /\
   (BUTLAST (CONS h t) = if t = [] then [] else CONS h (BUTLAST t))`;;
-
-export_aux_thm BUTLAST;;
 
 logfile "list-replicate-def";;
 
@@ -116,13 +109,9 @@ let EX = new_recursive_definition list_RECURSION
 
 export_thm EX;;
 
-logfile "list-foldr-def-aux";;
-
 let ITLIST = new_recursive_definition list_RECURSION
   `(ITLIST f [] b = b) /\
    (ITLIST f (CONS h t) b = f h (ITLIST f t b))`;;
-
-export_aux_thm ITLIST;;
 
 logfile "list-member-def";;
 
@@ -132,15 +121,11 @@ let MEM = new_recursive_definition list_RECURSION
 
 export_thm MEM;;
 
-logfile "list-all2-def-aux";;
-
 let ALL2_DEF = new_recursive_definition list_RECURSION
   `(ALL2 P [] l2 <=> (l2 = [])) /\
    (ALL2 P (CONS h1 t1) l2 <=>
         if l2 = [] then F
         else P h1 (HD l2) /\ ALL2 P t1 (TL l2))`;;
-
-export_aux_thm ALL2_DEF;;
 
 let ALL2 = prove
  (`(ALL2 P [] [] <=> T) /\
@@ -149,22 +134,14 @@ let ALL2 = prove
    (ALL2 P (CONS h1 t1) (CONS h2 t2) <=> P h1 h2 /\ ALL2 P t1 t2)`,
   REWRITE_TAC[distinctness "list"; ALL2_DEF; HD; TL]);;
 
-export_aux_thm ALL2;;
-
-logfile "list-map2-def-aux";;
-
 let MAP2_DEF = new_recursive_definition list_RECURSION
   `(MAP2 f [] l = []) /\
    (MAP2 f (CONS h1 t1) l = CONS (f h1 (HD l)) (MAP2 f t1 (TL l)))`;;
-
-export_aux_thm MAP2_DEF;;
 
 let MAP2 = prove
  (`(MAP2 f [] [] = []) /\
    (MAP2 f (CONS h1 t1) (CONS h2 t2) = CONS (f h1 h2) (MAP2 f t1 t2))`,
   REWRITE_TAC[MAP2_DEF; HD; TL]);;
-
-export_aux_thm MAP2;;
 
 logfile "list-nth-def";;
 
@@ -182,27 +159,17 @@ let FILTER = new_recursive_definition list_RECURSION
 
 export_thm FILTER;;
 
-logfile "list-assoc-def-aux";;
-
 let ASSOC = new_recursive_definition list_RECURSION
   `ASSOC a (CONS h t) = if FST h = a then SND h else ASSOC a t`;;
-
-export_aux_thm ASSOC;;
 
 let ITLIST2_DEF = new_recursive_definition list_RECURSION
   `(ITLIST2 f [] l2 b = b) /\
    (ITLIST2 f (CONS h1 t1) l2 b = f h1 (HD l2) (ITLIST2 f t1 (TL l2) b))`;;
 
-export_aux_thm ITLIST2_DEF;;
-
 let ITLIST2 = prove
  (`(ITLIST2 f [] [] b = b) /\
    (ITLIST2 f (CONS h1 t1) (CONS h2 t2) b = f h1 h2 (ITLIST2 f t1 t2 b))`,
   REWRITE_TAC[ITLIST2_DEF; HD; TL]);;
-
-export_aux_thm ITLIST2;;
-
-logfile "list-zip-def-aux";;
 
 let ZIP_DEF = new_recursive_definition list_RECURSION
   `(ZIP [] l2 = []) /\
@@ -212,8 +179,6 @@ let ZIP = prove
  (`(ZIP [] [] = []) /\
    (!h1 h2 t1 t2. ZIP (CONS h1 t1) (CONS h2 t2) = CONS (h1,h2) (ZIP t1 t2))`,
   REWRITE_TAC[ZIP_DEF; HD; TL]);;
-
-export_aux_thm ZIP;;
 
 (* ------------------------------------------------------------------------- *)
 (* Various trivial theorems.                                                 *)
@@ -373,21 +338,15 @@ let ALL_T = prove
 
 export_thm ALL_T;;
 
-logfile "list-all2-thm-aux";;
-
 let MAP_EQ_ALL2 = prove
  (`!l m. ALL2 (\x y. f x = f y) l m ==> (MAP f l = MAP f m)`,
   REPEAT LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[MAP; ALL2; CONS_11] THEN
   ASM_MESON_TAC[]);;
 
-export_aux_thm MAP_EQ_ALL2;;
-
 let ALL2_MAP = prove
  (`!P f l. ALL2 P (MAP f l) l <=> ALL (\a. P (f a) a) l`,
   GEN_TAC THEN GEN_TAC THEN
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[ALL2; MAP; ALL]);;
-
-export_aux_thm ALL2_MAP;;
 
 let MAP_EQ_DEGEN = prove
  (`!l f. ALL (\x. f(x) = x) l ==> (MAP f l = l)`,
@@ -395,28 +354,20 @@ let MAP_EQ_DEGEN = prove
   REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[] THEN
   FIRST_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[]);;
 
-export_aux_thm MAP_EQ_DEGEN;;
-
 let ALL2_AND_RIGHT = prove
  (`!l m P Q. ALL2 (\x y. P x /\ Q x y) l m <=> ALL P l /\ ALL2 Q l m`,
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[ALL; ALL2] THEN
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[ALL; ALL2] THEN
   REWRITE_TAC[CONJ_ACI]);;
 
-export_aux_thm ALL2_AND_RIGHT;;
-
 let ITLIST_APPEND = prove
  (`!f a l1 l2. ITLIST f (APPEND l1 l2) a = ITLIST f l1 (ITLIST f l2 a)`,
   GEN_TAC THEN GEN_TAC THEN LIST_INDUCT_TAC THEN
   ASM_REWRITE_TAC[ITLIST; APPEND]);;
 
-export_aux_thm ITLIST_APPEND;;
-
 let ITLIST_EXTRA = prove
  (`!l. ITLIST f (APPEND l [a]) b = ITLIST f l (f a b)`,
   REWRITE_TAC[ITLIST_APPEND; ITLIST]);;
-
-export_aux_thm ITLIST_EXTRA;;
 
 logfile "list-quant-thm";;
 
@@ -530,31 +481,21 @@ let EX_MEM = prove
 
 export_thm EX_MEM;;
 
-logfile "list-zip-thm-aux";;
-
 let MAP_FST_ZIP = prove
  (`!l1 l2. (LENGTH l1 = LENGTH l2) ==> (MAP FST (ZIP l1 l2) = l1)`,
   LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN
   ASM_SIMP_TAC[LENGTH; SUC_INJ; MAP; FST; ZIP; NOT_SUC]);;
-
-export_aux_thm MAP_FST_ZIP;;
 
 let MAP_SND_ZIP = prove
  (`!l1 l2. (LENGTH l1 = LENGTH l2) ==> (MAP SND (ZIP l1 l2) = l2)`,
   LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN
   ASM_SIMP_TAC[LENGTH; SUC_INJ; MAP; FST; ZIP; NOT_SUC]);;
 
-export_aux_thm MAP_SND_ZIP;;
-
-logfile "list-assoc-thm-aux";;
-
 let MEM_ASSOC = prove
  (`!l x. MEM (x,ASSOC x l) l <=> MEM x (MAP FST l)`,
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[MEM; MAP; ASSOC] THEN
   GEN_TAC THEN COND_CASES_TAC THEN ASM_REWRITE_TAC[] THEN
   ASM_MESON_TAC[PAIR; FST]);;
-
-export_aux_thm MEM_ASSOC;;
 
 logfile "list-quant-thm";;
 
@@ -583,13 +524,9 @@ let MEM_EXISTS_EL = prove
 
 export_thm MEM_EXISTS_EL;;
 
-logfile "list-all2-thm-aux";;
-
 let ALL2_MAP2 = prove
  (`!l m. ALL2 P (MAP f l) (MAP g m) = ALL2 (\x y. P (f x) (g y)) l m`,
   LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[ALL2; MAP]);;
-
-export_aux_thm ALL2_MAP2;;
 
 let AND_ALL2 = prove
  (`!P Q l m. ALL2 P l m /\ ALL2 Q l m <=> ALL2 (\x y. P x y /\ Q x y) l m`,
@@ -597,14 +534,10 @@ let AND_ALL2 = prove
   LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[ALL2] THEN
   REWRITE_TAC[CONJ_ACI]);;
 
-export_aux_thm AND_ALL2;;
-
 let ALL2_ALL = prove
  (`!P l. ALL2 P l l <=> ALL (\x. P x x) l`,
   GEN_TAC THEN LIST_INDUCT_TAC THEN
   ASM_REWRITE_TAC[ALL2; ALL]);;
-
-export_aux_thm ALL2_ALL;;
 
 logfile "list-append-thm";;
 
@@ -615,14 +548,10 @@ let APPEND_EQ_NIL = prove
 
 export_thm APPEND_EQ_NIL;;
 
-logfile "list-map2-thm-aux";;
-
 let LENGTH_MAP2 = prove
  (`!f l m. (LENGTH l = LENGTH m) ==> (LENGTH(MAP2 f l m) = LENGTH m)`,
   GEN_TAC THEN LIST_INDUCT_TAC THEN LIST_INDUCT_TAC THEN
   ASM_SIMP_TAC[LENGTH; NOT_CONS_NIL; NOT_SUC; MAP2; SUC_INJ]);;
-
-export_aux_thm LENGTH_MAP2;;
 
 logfile "list-map-thm";;
 
@@ -667,14 +596,10 @@ let MAP_I = prove
 
 export_thm MAP_I;;
 
-logfile "list-butlast-thm-aux";;
-
 let APPEND_BUTLAST_LAST = prove
  (`!l. ~(l = []) ==> APPEND (BUTLAST l) [LAST l] = l`,
   LIST_INDUCT_TAC THEN REWRITE_TAC[LAST; BUTLAST; NOT_CONS_NIL] THEN
   COND_CASES_TAC THEN ASM_SIMP_TAC[APPEND]);;
-
-export_aux_thm APPEND_BUTLAST_LAST;;
 
 logfile "list-last-thm";;
 
@@ -766,16 +691,12 @@ let MONO_ALL = prove
 
 export_thm MONO_ALL;;
 
-logfile "list-all2-thm-aux";;
-
 let MONO_ALL2 = prove
  (`(!x y. (P:A->B->bool) x y ==> Q x y) ==> ALL2 P l l' ==> ALL2 Q l l'`,
   DISCH_TAC THEN
   SPEC_TAC(`l':B list`,`l':B list`) THEN SPEC_TAC(`l:A list`,`l:A list`) THEN
   LIST_INDUCT_TAC THEN REWRITE_TAC[ALL2_DEF] THEN
   GEN_TAC THEN COND_CASES_TAC THEN REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
-
-export_aux_thm MONO_ALL2;;
 
 monotonicity_theorems := [MONO_ALL; MONO_ALL2] @ !monotonicity_theorems;;
 

@@ -9,8 +9,6 @@
 
 needs "canon.ml";;
 
-logfile "meson-aux";;
-
 (* ------------------------------------------------------------------------- *)
 (* Some parameters controlling MESON behaviour.                              *)
 (* ------------------------------------------------------------------------- *)
@@ -514,21 +512,16 @@ let GEN_MESON_TAC =
     let DISJ_AC = AC DISJ_ACI
     and imp_CONV =
         let pth = TAUT `a \/ b <=> ~b ==> a` in
-        let () = export_aux_thm pth in
         REWR_CONV pth
     and push_CONV =
         let pth1 = TAUT `~(a \/ b) <=> ~a /\ ~b` in
         let pth2 = TAUT `~(~a) <=> a` in
-        let () = export_aux_thm pth1 in
-        let () = export_aux_thm pth2 in
         GEN_REWRITE_CONV TOP_SWEEP_CONV [pth1; pth2]
     and pull_CONV =
         let pth = TAUT `~a \/ ~b <=> ~(a /\ b)` in
-        let () = export_aux_thm pth in
         GEN_REWRITE_CONV DEPTH_CONV [pth]
     and imf_CONV =
         let pth = TAUT `~p <=> p ==> F` in
-        let () = export_aux_thm pth in
         REWR_CONV pth in
     let memory = ref [] in
     let clear_contrapos_cache() = memory := [] in
@@ -563,8 +556,6 @@ let GEN_MESON_TAC =
     let finish_RULE =
         let pth1 = TAUT `(~p ==> p) <=> p` in
         let pth2 = TAUT `(p ==> ~p) <=> ~p` in
-        let () = export_aux_thm pth1 in
-        let () = export_aux_thm pth2 in
         GEN_REWRITE_RULE I [pth1; pth2] in
     let rec meson_to_hol insts (Subgoal(g,gs,(n,th),offset,locin)) =
       let newins = itlist merge_inst locin insts in
@@ -591,14 +582,11 @@ let GEN_MESON_TAC =
        (~(x:A = y) \/ ~(x = z) \/ (y = z))`,
       REWRITE_TAC[] THEN ASM_CASES_TAC `x:A = y` THEN
       ASM_REWRITE_TAC[] THEN CONV_TAC TAUT) in
-    let _ = map export_aux_thm eq_thms in
     let imp_elim_CONV =
         let pth = TAUT `(a ==> b) <=> ~a \/ b` in
-        let () = export_aux_thm pth in
         REWR_CONV pth in
     let eq_elim_RULE =
         let pth = TAUT `(a <=> b) ==> b \/ ~a` in
-        let () = export_aux_thm pth in
         MATCH_MP pth in
     let veq_tm = rator(rator(concl(hd eq_thms))) in
     let create_equivalence_axioms (eq,_) =
@@ -670,7 +658,6 @@ let GEN_MESON_TAC =
       itlist (subterms_refl lconsts) args (insert tm acc) in
     let CLAUSIFY =
         let pth = TAUT `a ==> b <=> ~a \/ b` in
-        let () = export_aux_thm pth in
         CONV_RULE(REWR_CONV pth) in
     let rec BRAND tms th =
       if tms = [] then th else
@@ -702,7 +689,6 @@ let GEN_MESON_TAC =
       DISJ_CASES th (DISJ1 lth (concl rth)) (DISJ2 (concl lth) rth) in
     let ASSOCIATE =
         let pth = GSYM DISJ_ASSOC in
-        let () = export_aux_thm pth in
         CONV_RULE(REWR_CONV pth) in
     let rec BRAND_TRANS th =
       let tm = concl th in
@@ -856,3 +842,5 @@ let MESON_TAC ths = POP_ASSUM_LIST(K ALL_TAC) THEN ASM_MESON_TAC ths;;
 (* ------------------------------------------------------------------------- *)
 
 let MESON ths tm = prove(tm,MESON_TAC ths);;
+
+logfile_end ();;

@@ -9,8 +9,6 @@
 
 needs "meson.ml";;
 
-logfile "quot-aux";;
-
 (* ------------------------------------------------------------------------- *)
 (* Given a type name "ty" and a curried binary relation R, this defines      *)
 (* a new type "ty" of R-equivalence classes. The abstraction and             *)
@@ -56,7 +54,6 @@ let lift_function =
    (`!x:A. (@y. x = y) = x`,
     GEN_TAC THEN GEN_REWRITE_TAC (LAND_CONV o BINDER_CONV) [EQ_SYM_EQ] THEN
     MATCH_ACCEPT_TAC SELECT_REFL) in
-  let () = export_aux_thm SELECT_LEMMA in
   fun tybij2 ->
     let tybl,tybr = dest_comb(concl tybij2) in
     let eqvx = rand(body(rand(rand tybl))) in
@@ -156,7 +153,6 @@ let lift_theorem =
     GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [GSYM ETA_AX] THEN
     FIRST_ASSUM(fun th -> GEN_REWRITE_TAC I [th]) THEN
     CONV_TAC SELECT_CONV THEN ASM_MESON_TAC[]) in
-  let () = export_aux_thm pth in
   fun tybij (refl_th,sym_th,trans_th) ->
     let tybij1 = GEN_ALL (fst tybij)
     and tybij2 = GEN_ALL (snd tybij) in

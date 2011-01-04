@@ -20,12 +20,9 @@ let ETA_AX = new_axiom
 
 export_thm ETA_AX;;
 
-logfile "eta-conv-aux";;
-
 let ETA_CONV =
   let t = `t:A->B` in
   let pth = prove(`(\x. (t:A->B) x) = t`,MATCH_ACCEPT_TAC ETA_AX) in
-  let () = export_aux_thm pth in
   fun tm ->
     try let bv,bod = dest_abs tm in
         let l,r = dest_comb bod in
@@ -90,14 +87,11 @@ export_thm EXISTS_THM;;
 (* Rules and so on for the select operator.                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-choice-aux";;
-
 let SELECT_RULE =
   let P = `P:A->bool` in
   let pth = prove
    (`(?) (P:A->bool) ==> P((@) P)`,
     SIMP_TAC[SELECT_AX; ETA_AX]) in
-  let () = export_aux_thm pth in
   fun th ->
     try let abs = rand(concl th) in
         let ty = type_of(bndvar abs) in
@@ -109,7 +103,6 @@ let SELECT_CONV =
   let pth = prove
    (`(P:A->bool)((@) P) = (?) P`,
     REWRITE_TAC[EXISTS_THM] THEN BETA_TAC THEN REFL_TAC) in
-  let () = export_aux_thm pth in
    fun tm ->
      try let is_epsok t = is_select t &
                           let bv,bod = dest_select t in
@@ -140,8 +133,6 @@ let SELECT_UNIQUE = prove
   ASM_REWRITE_TAC[SELECT_REFL]);;
 
 export_thm SELECT_UNIQUE;;
-
-logfile "bool-choice-select-aux";;
 
 extend_basic_rewrites [SELECT_REFL];;
 
@@ -276,8 +267,6 @@ let CONTRAPOS_THM = TAUT `!t1 t2. (~t1 ==> ~t2) <=> (t2 ==> t1)`;;
 
 export_thm CONTRAPOS_THM;;
 
-logfile "bool-choice-cases-aux";;
-
 extend_basic_rewrites [CONJUNCT1 NOT_CLAUSES];;
 
 (* ------------------------------------------------------------------------- *)
@@ -287,7 +276,6 @@ extend_basic_rewrites [CONJUNCT1 NOT_CLAUSES];;
 let CCONTR =
   let P = `P:bool` in
   let pth = TAUT `(~P ==> F) ==> P` in
-  let () = export_aux_thm pth in
   fun tm th ->
     try let tm' = mk_neg tm in
         MP (INST [tm,P] pth) (DISCH tm' th)
@@ -296,7 +284,6 @@ let CCONTR =
 let CONTRAPOS_CONV =
   let a = `a:bool` and b = `b:bool` in
   let pth = TAUT `(a ==> b) <=> (~b ==> ~a)` in
-  let () = export_aux_thm pth in
   fun tm ->
     try let P,Q = dest_imp tm in
         INST [P,a; Q,b] pth
@@ -310,7 +297,6 @@ let REFUTE_THEN =
   let f_tm = `F`
   and conv =
     let pth = TAUT `p <=> ~p ==> F` in
-    let () = export_aux_thm pth in
     REWR_CONV pth in
   fun ttac (asl,w as gl) ->
     if w = f_tm then ALL_TAC gl
@@ -450,8 +436,6 @@ let COND_CLAUSES = prove
 
 export_thm COND_CLAUSES;;
 
-logfile "bool-choice-cond-aux";;
-
 let is_cond tm =
   try fst(dest_const(rator(rator (rator tm)))) = "COND"
   with Failure _ -> false;;
@@ -544,13 +528,10 @@ let COND_ELIM_THM = prove
 
 export_thm COND_ELIM_THM;;
 
-logfile "bool-choice-cond-elim-aux";;
-
 let COND_ELIM_CONV = HIGHER_REWRITE_CONV[COND_ELIM_THM] true;;
 
 let (COND_CASES_TAC :tactic) =
   let pth = TAUT `~ ~ p <=> p` in
-  let () = export_aux_thm pth in
   let DENEG_RULE = GEN_REWRITE_RULE I [pth] in
   CONV_TAC COND_ELIM_CONV THEN CONJ_TAC THENL
     [DISCH_THEN(fun th -> ASSUME_TAC th THEN SUBST1_TAC(EQT_INTRO th));
@@ -612,8 +593,6 @@ export_thm UNIQUE_SKOLEM_THM;;
 (* Extend default congruences for contextual rewriting.                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-choice-cond-rewr-aux";;
-
 let COND_CONG =
   TAUT `(g = g') ==>
         (g' ==> (t = t')) ==>
@@ -648,3 +627,5 @@ export_thm bool_RECURSION;;
 
 let inductive_type_store = ref
  ["bool",(2,bool_INDUCT,bool_RECURSION)];;
+
+logfile_end ();;

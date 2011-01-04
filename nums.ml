@@ -160,29 +160,16 @@ export_thm num_Axiom;;
 (* The basic numeral tag; rewrite existing instances of "_0".                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "nums-numeral-def-aux";;
-
-let NUMERAL_OPENTHEORY = prove
-  (`!n. (n:num) = n`,
-   REPEAT GEN_TAC THEN
-   REFL_TAC) in
-export_aux_thm NUMERAL_OPENTHEORY;;
-
-logfile_end ();;
-
 let NUMERAL = new_definition
  `NUMERAL (n:num) = n`;;
 
-logfile "nums-numeral-aux";;
+delete_const_definition ["NUMERAL"];;
+delete_proof NUMERAL;;
 
 let [NOT_SUC; num_INDUCTION; num_Axiom] =
   let th = prove(`_0 = 0`,REWRITE_TAC[NUMERAL]) in
   map (GEN_REWRITE_RULE DEPTH_CONV [th])
     [NOT_SUC; num_INDUCTION; num_Axiom];;
-
-export_aux_thm NOT_SUC;;
-export_aux_thm num_INDUCTION;;
-export_aux_thm num_Axiom;;
 
 (* ------------------------------------------------------------------------- *)
 (* Induction tactic.                                                         *)

@@ -364,7 +364,6 @@ let PART_MATCH,GEN_PART_MATCH =
     with Failure _ -> acc in
   let PART_MATCH partfn th =
     let sth = SPEC_ALL th in
-    let () = export_if_aux_thm sth in
     let bod = concl sth in
     let pbod = partfn bod in
     let lconsts = intersect (frees (concl th)) (freesl(hyp th)) in
@@ -448,7 +447,6 @@ let HIGHER_REWRITE_CONV =
     INST (zip gvs fvs) th in
   fun ths ->
     let thl = map (GINST o SPEC_ALL) ths in
-    let _ = map export_aux_thm thl in
     let concs = map concl thl in
     let lefts = map lhs concs in
     let preds,pats = unzip(map dest_comb lefts) in
@@ -488,3 +486,5 @@ let new_definition tm =
                   TRANS ith (BETA_CONV(rand(concl ith)))) largs th1 in
   let rvs = filter (not o C mem avs) largs in
   itlist GEN rvs (itlist GEN avs th2);;
+
+logfile_end ();;

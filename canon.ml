@@ -9,8 +9,6 @@
 
 needs "trivia.ml";;
 
-logfile "canon-aux";;
-
 (* ------------------------------------------------------------------------- *)
 (* Pre-simplification.                                                       *)
 (* ------------------------------------------------------------------------- *)
@@ -51,10 +49,6 @@ let DISJ_ACI_RULE =
   and pth = repeat UNDISCH (TAUT `~a ==> ~b ==> ~(a \/ b)`)
   and pth_neg = UNDISCH(TAUT `(~a <=> ~b) ==> (a <=> b)`)
   and a_tm = `a:bool` and b_tm = `b:bool` in
-  let () = export_aux_thm pth_left in
-  let () = export_aux_thm pth_right in
-  let () = export_aux_thm pth in
-  let () = export_aux_thm pth_neg in
   let NOT_DISJ_PAIR th =
     let p,q = dest_disj(rand(concl th)) in
     let ilist = [p,a_tm; q,b_tm] in
@@ -136,19 +130,6 @@ let (GEN_NNF_CONV:bool->conv*(term->thm*thm)->conv) =
     REWRITE_TAC[EXISTS_UNIQUE_DEF; TAUT `a /\ b ==> c <=> ~a \/ ~b \/ c`] THEN
     REWRITE_TAC[EQ_SYM_EQ])
   and p_tm = `p:bool` and q_tm = `q:bool` in
-  let () = export_aux_thm pth_not_not in
-  let () = export_aux_thm pth_not_and in
-  let () = export_aux_thm pth_not_or in
-  let () = export_aux_thm pth_imp in
-  let () = export_aux_thm pth_not_imp in
-  let () = export_aux_thm pth_eq in
-  let () = export_aux_thm pth_not_eq in
-  let () = export_aux_thm pth_eq' in
-  let () = export_aux_thm pth_not_eq' in
-  let () = export_aux_thm pth_not_forall in
-  let () = export_aux_thm pth_not_exists in
-  let () = export_aux_thm pth_not_exu in
-  let () = export_aux_thm pth_exu in
   let rec NNF_DCONV cf baseconvs tm =
     match tm with
       Comb(Comb(Const("/\\",_),l),r) ->
@@ -412,8 +393,6 @@ let WEAK_DNF_CONV,DNF_CONV =
   let pth1 = TAUT `a /\ (b \/ c) <=> a /\ b \/ a /\ c`
   and pth2 = TAUT `(a \/ b) /\ c <=> a /\ c \/ b /\ c`
   and a_tm = `a:bool` and b_tm = `b:bool` and c_tm = `c:bool` in
-  let () = export_aux_thm pth1 in
-  let () = export_aux_thm pth2 in
   let rec distribute tm =
     match tm with
       Comb(Comb(Const("/\\",_),a),Comb(Comb(Const("\\/",_),b),c)) ->
@@ -456,8 +435,6 @@ let WEAK_CNF_CONV,CNF_CONV =
   let pth1 = TAUT `a \/ (b /\ c) <=> (a \/ b) /\ (a \/ c)`
   and pth2 = TAUT `(a /\ b) \/ c <=> (a \/ c) /\ (b \/ c)`
   and a_tm = `a:bool` and b_tm = `b:bool` and c_tm = `c:bool` in
-  let () = export_aux_thm pth1 in
-  let () = export_aux_thm pth2 in
   let rec distribute tm =
     match tm with
       Comb(Comb(Const("\\/",_),a),Comb(Comb(Const("/\\",_),b),c)) ->
@@ -529,7 +506,6 @@ let SELECT_ELIM_TAC =
        (`(P:A->bool)((@) P) <=> (?) P`,
         REWRITE_TAC[EXISTS_THM] THEN BETA_TAC THEN REFL_TAC)
       and ptm = `P:A->bool` in
-      let () = export_aux_thm pth in
       fun tm -> let stm,atm = dest_comb tm in
                 if is_const stm & fst(dest_const stm) = "@" then
                  CONV_RULE(LAND_CONV BETA_CONV)
@@ -541,7 +517,6 @@ let SELECT_ELIM_TAC =
     let SELECT_AX_THM =
       let pth = ISPEC `P:A->bool` SELECT_AX
       and ptm = `P:A->bool` in
-      let () = export_aux_thm pth in
       fun tm -> let stm,atm = dest_comb tm in
                 if is_const stm & fst(dest_const stm) = "@" then
                   let fvs = frees atm in
@@ -582,7 +557,6 @@ let LAMBDA_ELIM_CONV =
     let pth = prove
      (`(s = \x. t x) <=> (!x. s x = t x)`,
       REWRITE_TAC[FUN_EQ_THM]) in
-    let () = export_aux_thm pth in
     let rec conv vs tm =
       if vs = [] then REFL tm else
       (GEN_REWRITE_CONV I [pth] THENC BINDER_CONV(conv (tl vs))) tm in
@@ -606,7 +580,6 @@ let LAMBDA_ELIM_CONV =
     let pth = prove
      (`(!a. (a = c) ==> (P = Q a)) ==> (P <=> !a. (a = c) ==> Q a)`,
       SIMP_TAC[LEFT_FORALL_IMP_THM; EXISTS_REFL]) in
-    let () = export_aux_thm pth in
     MATCH_MP pth in
   let LAMB1_CONV tm =
     let atm = find_lambda tm in
@@ -641,8 +614,6 @@ let CONDS_ELIM_CONV,CONDS_CELIM_CONV =
     BOOL_CASES_TAC `b:bool` THEN ASM_REWRITE_TAC[])
   and propsimps = basic_net()
   and false_tm = `F` and true_tm = `T` in
-  let () = export_aux_thm th_cond in
-  let () = export_aux_thm th_cond' in
   let match_th = MATCH_MP th_cond and match_th' = MATCH_MP th_cond'
   and propsimp_conv = DEPTH_CONV(REWRITES_CONV propsimps)
   and proptsimp_conv =
@@ -714,7 +685,6 @@ let ASM_FOL_TAC =
     let th = prove
      (`!(f:A->B) x. f x = I f x`,
       REWRITE_TAC[I_THM]) in
-    let () = export_aux_thm th in
     REWR_CONV th in
   let rec APP_N_CONV n tm =
     if n = 1 then APP_CONV tm
@@ -761,3 +731,5 @@ let rec PROP_ATOM_CONV conv tm =
         -> BINOP_CONV (PROP_ATOM_CONV conv) tm
   | Comb(Const("~",_),_) -> RAND_CONV (PROP_ATOM_CONV conv) tm
   | _ -> TRY_CONV conv tm;;
+
+logfile_end ();;

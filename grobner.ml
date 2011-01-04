@@ -12,8 +12,6 @@
 
 needs "normalizer.ml";;
 
-logfile "grobner-aux";;
-
 (* ------------------------------------------------------------------------- *)
 (* Type for recording history, i.e. how a polynomial was obtained.           *)
 (* ------------------------------------------------------------------------- *)
@@ -354,7 +352,6 @@ let RING_AND_IDEAL_CONV =
     ONCE_REWRITE_TAC[GSYM CONTRAPOS_THM] THEN ASM_SIMP_TAC[])
   and FINAL_RULE = MATCH_MP(TAUT `(p ==> F) ==> (~q = p) ==> q`)
   and false_tm = `F` in
-  let () = export_aux_thm pth_step in
   let rec refute_disj rfn tm =
     match tm with
       Comb(Comb(Const("\\/",_),l),r) ->
@@ -612,10 +609,6 @@ let NUM_SIMPLIFY_CONV =
      (~ODD(x) <=> (!y. ~(x = SUC(2 * y))))`,
     REWRITE_TAC[GSYM NOT_EXISTS_THM; GSYM EVEN_EXISTS; GSYM ODD_EXISTS] THEN
     REWRITE_TAC[NOT_EVEN; NOT_ODD]) in
-  let () = export_aux_thm PRE_ELIM_THM'' in
-  let () = export_aux_thm SUB_ELIM_THM'' in
-  let () = export_aux_thm DIVMOD_ELIM_THM'' in
-  let () = export_aux_thm pth_evenodd in
   let rec NUM_MULTIPLY_CONV pos tm =
     if is_forall tm or is_exists tm or is_uexists tm then
        BINDER_CONV (NUM_MULTIPLY_CONV pos) tm
@@ -681,7 +674,6 @@ let NUM_RING =
     ONCE_REWRITE_TAC[AC ADD_AC
      `a + b + c + d + e = a + c + e + b + d`] THEN
     REWRITE_TAC[EQ_ADD_LCANCEL; EQ_ADD_LCANCEL_0; MULT_EQ_0]) in
-  let () = export_aux_thm NUM_INTEGRAL_LEMMA in
   let NUM_INTEGRAL = prove
    (`(!x. 0 * x = 0) /\
      (!x y z. (x + y = x + z) <=> (y = z)) /\
@@ -693,7 +685,6 @@ let NUM_RING =
     REPEAT(FIRST_X_ASSUM
      (CHOOSE_THEN SUBST1_TAC o REWRITE_RULE[LE_EXISTS])) THEN
     ASM_MESON_TAC[NUM_INTEGRAL_LEMMA; ADD_SYM; MULT_SYM]) in
-  let () = export_aux_thm NUM_INTEGRAL in
   let rawring =
     RING(dest_numeral,mk_numeral,NUM_EQ_CONV,
          genvar bool_ty,`(+):num->num->num`,genvar bool_ty,

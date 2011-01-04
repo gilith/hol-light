@@ -424,18 +424,14 @@ export_thm WF_REC_TAIL_GENERAL;;
 (* Tactic to apply WF induction on a free "measured" term in the goal.       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "wf-aux";;
-
 let WF_INDUCT_TAC =
   let qqconv =
     let pth = prove
      (`(!x. P x ==> !y. Q x y) <=> !y x. P x ==> Q x y`, MESON_TAC[]) in
-    let () = export_aux_thm pth in
     GEN_REWRITE_CONV I [pth]
   and eqconv =
     let pth = prove
      (`(!m. P m ==> (m = e) ==> Q) <=> (P e ==> Q)`, MESON_TAC[]) in
-    let () = export_aux_thm pth in
     REWR_CONV pth in
   let rec qqconvs tm =
     try (qqconv THENC BINDER_CONV qqconvs) tm

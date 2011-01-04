@@ -223,8 +223,6 @@ let IMP_CLAUSES = prove
 
 export_thm IMP_CLAUSES;;
 
-logfile "bool-int-rewr-aux";;
-
 extend_basic_rewrites
   [REFL_CLAUSE;
    EQ_CLAUSES;
@@ -508,3 +506,5 @@ let EXISTS_UNIQUE = prove
   REWRITE_TAC[CONJ_ACI]);;
 
 export_thm EXISTS_UNIQUE;;
+
+logfile_end ();;

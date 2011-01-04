@@ -29,34 +29,7 @@ if test -r $art ; then cp -v $art $adir ; fi
 art=opentheory/articles/bool-int-true.art
 if test -r $art ; then cp -v $art $adir ; fi
 
-art=opentheory/articles/bool-true-aux.art
-if test -r $art ; then cp -v $art $adir ; fi
-
-for thy in $(ls opentheory/articles/*-aux.thy)
-do
-    base=$(basename $thy .thy)
-
-    art=opentheory/articles/$base.art
-    sum=opentheory/articles/$base.sum
-    cart=opentheory/articles/foo.art
-
-    echo "compressing" $art
-
-    $prog info --preserve-theory --summary -o $sum --article -o $cart $thy || exit 1
-
-    if grep 'Unwanted' $cart ; then exit 1 ; fi
-
-    mv $cart $art || exit 1
-
-    echo
-done
-
-rm -f opentheory/articles/*-aux.thy
-
-thys=$(if test -e opentheory/articles/hol-light.thy ; then (echo opentheory/articles/hol-light.thy ; (ls opentheory/articles/*.thy | grep -v hol-light.thy)) ; else ls opentheory/articles/*.thy ; fi)
-# echo $thys
-
-for thy in $thys
+for thy in opentheory/articles/*.thy
 do
     base=$(basename $thy .thy)
     sum=opentheory/articles/$base.sum

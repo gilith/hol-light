@@ -35,9 +35,8 @@ module type Hol_kernel =
             | Deduct_antisym_rule_proof of thm * thm
             | Inst_type_proof of (hol_type * hol_type) list * thm
             | Inst_proof of (term * term) list * thm
-            | New_basic_definition_proof
-            | New_basic_type_definition_proof of
-                bool * (string * (string * string) * thm) * (thm * thm)
+            | New_basic_definition_proof of string
+            | New_basic_type_definition_proof of bool * string
 
       val types: unit -> (string * int)list
       val get_type_arity : string -> int
@@ -133,9 +132,8 @@ module Hol : Hol_kernel = struct
             | Deduct_antisym_rule_proof of thm * thm
             | Inst_type_proof of (hol_type * hol_type) list * thm
             | Inst_proof of (term * term) list * thm
-            | New_basic_definition_proof
-            | New_basic_type_definition_proof of
-                bool * (string * (string * string) * thm) * (thm * thm)
+            | New_basic_definition_proof of string
+            | New_basic_type_definition_proof of bool * string
 
 (* ------------------------------------------------------------------------- *)
 (* List of current type constants with their arities.                        *)
@@ -634,7 +632,7 @@ module Hol : Hol_kernel = struct
         then failwith "new_definition: Type variables not reflected in constant"
         else let c = new_constant(cname,ty); Const(cname,ty) in
              let dth = Sequent(([],safe_mk_eq c r),
-                               ref New_basic_definition_proof) in
+                               ref (New_basic_definition_proof cname)) in
              the_definitions := dth::(!the_definitions); dth
     | _ -> failwith "new_basic_definition"
 
@@ -651,7 +649,7 @@ module Hol : Hol_kernel = struct
 (* Where "abs" and "rep" are new constants with the nominated names.         *)
 (* ------------------------------------------------------------------------- *)
 
-  let new_basic_type_definition tyname (absname,repname) (Sequent((asl,c),_) as exists_th) =
+  let new_basic_type_definition tyname (absname,repname) (Sequent((asl,c),_)) =
     if exists (can get_const_type) [absname; repname] then
       failwith "new_basic_type_definition: Constant(s) already in use" else
     if not (asl = []) then
@@ -671,20 +669,11 @@ module Hol : Hol_kernel = struct
     let abs = (new_constant(absname,absty); Const(absname,absty))
     and rep = (new_constant(repname,repty); Const(repname,repty)) in
     let a = Var("a",aty) and r = Var("r",rty) in
-    let ar_proof = ref Axiom_proof in
-    let ra_proof = ref Axiom_proof in
-    let ar_thm =
-        Sequent(([],safe_mk_eq (Comb(abs,mk_comb(rep,a))) a),ar_proof) in
-    let ra_thm =
-        Sequent(([],safe_mk_eq (Comb(P,r))
-                    (safe_mk_eq (mk_comb(rep,mk_comb(abs,r))) r)),ra_proof) in
-    let () = ar_proof :=
-               New_basic_type_definition_proof
-                 (true,(tyname,(absname,repname),exists_th),(ar_thm,ra_thm)) in
-    let () = ra_proof :=
-               New_basic_type_definition_proof
-                 (false,(tyname,(absname,repname),exists_th),(ar_thm,ra_thm)) in
-    (ar_thm,ra_thm)
+    Sequent(([],safe_mk_eq (Comb(abs,mk_comb(rep,a))) a),
+            ref (New_basic_type_definition_proof (true,tyname))),
+    Sequent(([],safe_mk_eq (Comb(P,r))
+                  (safe_mk_eq (mk_comb(rep,mk_comb(abs,r))) r)),
+            ref (New_basic_type_definition_proof (false,tyname)))
 
   let read_proof (Sequent (_,rp)) = !rp
 
