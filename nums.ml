@@ -160,11 +160,15 @@ export_thm num_Axiom;;
 (* The basic numeral tag; rewrite existing instances of "_0".                *)
 (* ------------------------------------------------------------------------- *)
 
+let OPENTHEORY_NUMERAL = prove
+  (`!(n:num). n = n`,
+   GEN_TAC THEN REFL_TAC);;
+
 let NUMERAL = new_definition
  `NUMERAL (n:num) = n`;;
 
 delete_const_definition ["NUMERAL"];;
-delete_proof NUMERAL;;
+replace_proof NUMERAL (read_proof OPENTHEORY_NUMERAL);;
 
 let [NOT_SUC; num_INDUCTION; num_Axiom] =
   let th = prove(`_0 = 0`,REWRITE_TAC[NUMERAL]) in

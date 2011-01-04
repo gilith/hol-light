@@ -26,11 +26,15 @@ let LET_DEF = prove
   (`!(f:A->B) x. LET f x = f x`,
    REWRITE_TAC [LET_OPENTHEORY_DEF]);;
 
+let OPENTHEORY_LET_END_DEF = prove
+  (`!(t:A). t = t`,
+   GEN_TAC THEN REFL_TAC);;
+
 let LET_END_DEF = new_definition
  `LET_END (t:A) = t`;;
 
 delete_const_definition ["LET_END"];;
-delete_proof LET_END_DEF;;
+replace_proof LET_END_DEF (read_proof OPENTHEORY_LET_END_DEF);;
 
 let GABS_DEF = new_definition
  `GABS (P:A->bool) = (@) P`;;
@@ -275,7 +279,7 @@ let GEN_BETA_CONV =
       let th = BETA_RULE(PINST [ity,zty] [list_mk_abs(avs,a),gcon] fth) in
       SYM(SPEC_ALL(SELECT_RULE th)) in
     let ths = map mk_projector avs in
-    ((***projection_cache := (conname,ths)::(!projection_cache);***) ths) in
+    (projection_cache := (conname,ths)::(!projection_cache); ths) in
   let GEQ_CONV =
       let pth = GSYM GEQ_DEF in
       REWR_CONV pth

@@ -102,6 +102,7 @@ module type Hol_kernel =
               string -> string * string -> thm -> thm * thm
 
       val read_proof : thm -> proof
+      val replace_proof : thm -> proof -> unit
       val delete_proof : thm -> unit
 end;;
 
@@ -677,9 +678,9 @@ module Hol : Hol_kernel = struct
 
   let read_proof (Sequent (_,rp)) = !rp
 
-  let delete_proof (Sequent (_,rp)) =
-      let () = rp := Axiom_proof in
-      ()
+  let replace_proof (Sequent (_,rp)) p = let () = rp := p in ()
+
+  let delete_proof th = replace_proof th Axiom_proof
 
 end;;
 
