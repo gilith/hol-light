@@ -148,8 +148,6 @@ loads "normalizer.ml";; (* Polynomial normalizer for rings and semirings     *)
 loads "grobner.ml";;    (* Groebner basis procedure for most semirings.      *)
 loads "ind_types.ml";;  (* Tools for defining inductive types                *)
 loads "lists.ml";;      (* Theory of lists                                   *)
-
-(***
 loads "realax.ml";;     (* Definition of real numbers                        *)
 loads "calc_int.ml";;   (* Calculation with integer-valued reals             *)
 loads "realarith.ml";;  (* Universal linear real decision procedure          *)
@@ -167,7 +165,6 @@ loads "define.ml";;     (* Support for general recursive definitions         *)
 
 loads "help.ml";;       (* Online help using the entries in Help directory   *)
 loads "database.ml";;   (* List of name-theorem pairs for search system      *)
-***)
 
 stop_logging ();;
 
@@ -175,14 +172,11 @@ stop_logging ();;
 (* OpenTheory examples.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 start_logging ();;
 
 loads "opentheory/examples/modular.ml";;
 loads "opentheory/examples/word.ml";;
 loads "opentheory/examples/byte.ml";;
 loads "opentheory/examples/char.ml";;
-loads "opentheory/examples/utf8.ml";;
 
 stop_logging ();;
-***)

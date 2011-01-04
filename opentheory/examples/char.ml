@@ -43,4 +43,12 @@ let unicode_INDUCT,unicode_RECURSION = define_type
 export_thm unicode_INDUCT;;
 export_thm unicode_RECURSION;;
 
+(* ------------------------------------------------------------------------- *)
+(* UTF-8 encodings of unicode characters.                                    *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "char-utf8";;
+
+(* decode : byte list -> (char * byte list) option *)
+
 logfile_end ();;
