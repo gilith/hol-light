@@ -520,22 +520,16 @@ let logfile_end () =
         ()
     | _ -> ();;
 
-let is_auxiliary_thy_article thy =
-    let len = String.length thy in
-    len >= 4 && String.sub thy (len - 4) 4 = "-aux";;
-
 let logfile thy =
-    if is_auxiliary_thy_article thy then failwith ("auxiliary file: " ^ thy)
-    else
-      let () = logfile_end () in
-      match (!log_state) with
-        Ready_logging ->
-          let () = log_reset () in
-          let file = add_article thy in
-          let h = open_out file in
-          let () = log_state := Active_logging h in
-          ()
-      | _ -> ();;
+    let () = logfile_end () in
+    match (!log_state) with
+      Ready_logging ->
+        let () = log_reset () in
+        let file = add_article thy in
+        let h = open_out file in
+        let () = log_state := Active_logging h in
+        ()
+    | _ -> ();;
 
 let is_logging () =
     match (!log_state) with
