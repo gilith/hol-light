@@ -100,8 +100,8 @@ loads "fusion.ml";;
 loads "opentheory/logging.ml";;
 
 (* Uncomment to extract the standard theory library
-*)
 start_logging ();;
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)
@@ -169,8 +169,8 @@ loads "help.ml";;       (* Online help using the entries in Help directory   *)
 loads "database.ml";;   (* List of name-theorem pairs for search system      *)
 
 (* Uncomment to extract the standard theory library
-*)
 stop_logging ();;
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* OpenTheory examples.                                                      *)
