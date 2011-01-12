@@ -2,9 +2,6 @@
 
 opentheory=../opentheory
 
-adir=$opentheory/test/articles/hol-light
-if ! test -d $adir ; then echo "$adir not a directory" ; exit 1 ; fi
-
 prog=$opentheory/bin/mlton/opentheory
 if ! test -x $prog ; then echo "$prog not an executable" ; exit 1 ; fi
 
@@ -22,12 +19,6 @@ then
     cat $log
     exit 1
 fi
-
-art=opentheory/articles/bool-def-true.art
-if test -r $art ; then cp -v $art $adir ; fi
-
-art=opentheory/articles/bool-int-true.art
-if test -r $art ; then cp -v $art $adir ; fi
 
 for thy in opentheory/articles/*.thy
 do
@@ -103,19 +94,5 @@ do
 
     echo
 done
-
-hart=$theories/bool-def-true/bool-def-true.art
-if test -r $hart
-then
-    tart=$opentheory/data/theories/bool-def-true/bool-def-true.art
-    if test $hart -nt $tart ; then cp -v $hart $tart ; fi
-fi
-
-hart=$theories/bool-int-true/bool-int-true.art
-if test -r $hart
-then
-    tart=$opentheory/data/theories/bool-int-true/bool-int-true.art
-    if test $hart -nt $tart ; then cp -v $hart $tart ; fi
-fi
 
 echo
