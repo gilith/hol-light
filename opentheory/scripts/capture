@@ -13,7 +13,8 @@ rm -f opentheory/articles/*.sum
 rm -f opentheory/articles/*.thy
 
 log=opentheory/log
-echo '#use "hol.ml";;' | ocaml &> $log
+echo '#use "hol.ml";;
+#use "opentheory/examples/all.ml";;' | ocaml &> $log
 if grep '^Exception:\|^Error:\|^Error in included file' $log
 then
     cat $log

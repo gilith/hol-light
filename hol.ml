@@ -171,16 +171,3 @@ loads "database.ml";;   (* List of name-theorem pairs for search system      *)
 (* Uncomment to extract the standard theory library
 stop_logging ();;
 *)
-
-(* ------------------------------------------------------------------------- *)
-(* OpenTheory examples.                                                      *)
-(* ------------------------------------------------------------------------- *)
-
-start_logging ();;
-
-loads "opentheory/examples/modular.ml";;
-loads "opentheory/examples/word.ml";;
-loads "opentheory/examples/byte.ml";;
-loads "opentheory/examples/char.ml";;
-
-stop_logging ();;
