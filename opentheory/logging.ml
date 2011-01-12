@@ -440,7 +440,9 @@ let mk_interpretation () =
     let int = open_in "opentheory/hol-light.int" in
     let rec read acc =
         try let l = input_line int in
-            read (acc ^ "  interpret: " ^ l ^ "\n")
+            let c = String.length l = 0 || String.get l 0 = '#' in
+            let acc = if c then acc else acc ^ "  interpret: " ^ l ^ "\n" in
+            read acc
         with End_of_file -> acc in
     let res = read "" in
     let () = close_in int in
