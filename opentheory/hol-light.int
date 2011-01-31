@@ -36,6 +36,7 @@ const "HOLLight.T" as "Data.Bool.T"
 
 type "HOLLight.list" as "Data.List.list"
 
+const "HOLLight.case_list" as "Data.List.case"
 const "HOLLight.CONS" as "Data.List.::"
 const "HOLLight.NIL" as "Data.List.[]"
 const "HOLLight.APPEND" as "Data.List.@"
@@ -57,6 +58,7 @@ const "HOLLight.TL" as "Data.List.tail"
 
 type "HOLLight.option" as "Data.Option.option"
 
+const "HOLLight.case_option" as "Data.Option.case"
 const "HOLLight.NONE" as "Data.Option.none"
 const "HOLLight.SOME" as "Data.Option.some"
 
@@ -159,35 +161,6 @@ type "HOLLight.position" as "Data.Char.Position.position"
 
 const "HOLLight.position_width" as "Data.Char.Position.width"
 
-# Data.Parser
-
-type "HOLLight.parser" as "Data.Parser.parser"
-
-const "HOLLight.dest_parser" as "Data.Parser.destParser"
-const "HOLLight.is_parser" as "Data.Parser.isParser"
-const "HOLLight.mk_parser" as "Data.Parser.mkParser"
-const "HOLLight.parse" as "Data.Parser.parse"
-const "HOLLight.parse_option" as "Data.Parser.parsePartial"
-const "HOLLight.parser_option" as "Data.Parser.parsePartial.pb"
-const "HOLLight.parse_pair" as "Data.Parser.parsePair"
-const "HOLLight.parser_pair" as "Data.Parser.parsePair.pbc"
-const "HOLLight.parse_some" as "Data.Parser.parseSome"
-const "HOLLight.parse_stream" as "Data.Parser.parseStream"
-
-# Data.Parser.Stream
-
-type "HOLLight.stream" as "Data.Parser.Stream.stream"
-
-const "HOLLight.case_stream" as "Data.Parser.Stream.case"
-const "HOLLight.Eof" as "Data.Parser.Stream.eof"
-const "HOLLight.Error" as "Data.Parser.Stream.error"
-const "HOLLight.list_to_stream" as "Data.Parser.Stream.fromList"
-const "HOLLight.is_proper_suffix_stream" as "Data.Parser.Stream.isProperSuffix"
-const "HOLLight.is_suffix_stream" as "Data.Parser.Stream.isSuffix"
-const "HOLLight.length_stream" as "Data.Parser.Stream.length"
-const "HOLLight.Stream" as "Data.Parser.Stream.stream"
-const "HOLLight.stream_to_list" as "Data.Parser.Stream.toList"
-
 # Data.Word
 
 type "HOLLight.word" as "Data.Word.word"
@@ -209,3 +182,32 @@ const "HOLLight.mod_add" as "Number.Modular.+"
 const "HOLLight.mod_from_num" as "Number.Modular.fromNatural"
 const "HOLLight.mod_N" as "Number.Modular.size"
 const "HOLLight.mod_to_num" as "Number.Modular.toNatural"
+
+# Parser
+
+type "HOLLight.parser" as "Parser.parser"
+
+const "HOLLight.dest_parser" as "Parser.destParser"
+const "HOLLight.is_parser" as "Parser.isParser"
+const "HOLLight.mk_parser" as "Parser.mkParser"
+const "HOLLight.parse" as "Parser.parse"
+const "HOLLight.parse_option" as "Parser.parsePartial"
+const "HOLLight.parser_option" as "Parser.parsePartial.pb"
+const "HOLLight.parse_pair" as "Parser.parsePair"
+const "HOLLight.parser_pair" as "Parser.parsePair.pbc"
+const "HOLLight.parse_some" as "Parser.parseSome"
+const "HOLLight.parse_stream" as "Parser.parseStream"
+
+# Parser.Stream
+
+type "HOLLight.stream" as "Parser.Stream.stream"
+
+const "HOLLight.case_stream" as "Parser.Stream.case"
+const "HOLLight.Eof" as "Parser.Stream.eof"
+const "HOLLight.Error" as "Parser.Stream.error"
+const "HOLLight.list_to_stream" as "Parser.Stream.fromList"
+const "HOLLight.is_proper_suffix_stream" as "Parser.Stream.isProperSuffix"
+const "HOLLight.is_suffix_stream" as "Parser.Stream.isSuffix"
+const "HOLLight.length_stream" as "Parser.Stream.length"
+const "HOLLight.Stream" as "Parser.Stream.stream"
+const "HOLLight.stream_to_list" as "Parser.Stream.toList"
