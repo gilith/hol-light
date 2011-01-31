@@ -4,6 +4,14 @@
 
 logfile "option-case-def";;
 
+let option_distinct = distinctness "option";;
+
+export_thm option_distinct;;
+
+let option_inj = injectivity "option";;
+
+export_thm option_inj;;
+
 let option_cases = prove_cases_thm option_INDUCT;;
 
 export_thm option_cases;;
@@ -22,7 +30,7 @@ let case_list_def = new_recursive_definition list_RECURSION
 
 export_thm case_list_def;;
 
-logfile "parser-def";;
+logfile "parser-stream-def";;
 
 let stream_induct,stream_recursion = define_type
     "stream = Error
@@ -38,6 +46,13 @@ let case_stream_def = new_recursive_definition stream_recursion
    (case_stream f b e (Stream a s) = f (a:A) s)`;;
 
 export_thm case_stream_def;;
+
+let length_stream_def = new_recursive_definition stream_recursion
+  `(length_stream Error = 0) /\
+   (length_stream Eof = 0) /\
+   (length_stream (Stream a s) = SUC (length_stream s))`;;
+
+export_thm length_stream_def;;
 
 let is_proper_suffix_stream_def = new_recursive_definition stream_recursion
   `(is_proper_suffix_stream s Error = F) /\
@@ -69,6 +84,106 @@ let list_to_stream_def = new_recursive_definition list_RECURSION
    (list_to_stream (CONS h t) = Stream (h:A) (list_to_stream t))`;;
 
 export_thm list_to_stream_def;;
+
+logfile "parser-stream-thm";;
+
+let stream_cases = prove_cases_thm stream_induct;;
+
+export_thm stream_cases;;
+
+let stream_distinct = distinctness "stream";;
+
+export_thm stream_distinct;;
+
+let stream_inj = injectivity "stream";;
+
+export_thm stream_inj;;
+
+let is_proper_suffix_stream_trans = prove
+  (`!x y z : A stream.
+      is_proper_suffix_stream x y /\ is_proper_suffix_stream y z ==>
+      is_proper_suffix_stream x z`,
+   GEN_TAC THEN
+   GEN_TAC THEN
+   MATCH_MP_TAC stream_induct THEN
+   ASM_REWRITE_TAC [is_proper_suffix_stream_def] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_MESON_TAC []);;
+
+export_thm is_proper_suffix_stream_trans;;
+
+let is_proper_suffix_stream_length = prove
+  (`!x y : A stream.
+      is_proper_suffix_stream x y ==> length_stream x < length_stream y`,
+   GEN_TAC THEN
+   MATCH_MP_TAC stream_induct THEN
+   ASM_REWRITE_TAC
+     [is_proper_suffix_stream_def; length_stream_def; LT_SUC_LE] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_MESON_TAC [LE_REFL; LT_IMP_LE]);;
+
+export_thm is_proper_suffix_stream_length;;
+
+let is_proper_suffix_stream_wf = prove
+  (`WF (is_proper_suffix_stream : A stream -> A stream -> bool)`,
+   MATCH_MP_TAC
+     (ISPECL [`is_proper_suffix_stream : A stream -> A stream -> bool`;
+              `MEASURE (length_stream : A stream -> num)`] WF_SUBSET) THEN
+   REWRITE_TAC [WF_MEASURE] THEN
+   REWRITE_TAC [MEASURE; is_proper_suffix_stream_length]);;
+
+export_thm is_proper_suffix_stream_wf;;
+
+let is_proper_suffix_stream_induct = prove
+  (`!(p: A stream-> bool).
+       (!x. (!y. is_proper_suffix_stream y x ==> p y) ==> p x) ==> !x. p x`,
+   REWRITE_TAC [GSYM WF_IND; is_proper_suffix_stream_wf]);;
+
+export_thm is_proper_suffix_stream_induct;;
+
+let is_proper_suffix_stream_induct = prove
+  (`!(p: A stream-> bool).
+       (!x. (!y. is_proper_suffix_stream y x ==> p y) ==> p x) ==> !x. p x`,
+   REWRITE_TAC [GSYM WF_IND; is_proper_suffix_stream_wf]);;
+
+export_thm is_proper_suffix_stream_induct;;
+
+let is_proper_suffix_stream_recursion = prove
+  (`!(h : (A stream -> B) -> A stream -> B).
+       (!f g s.
+          (!s'. is_proper_suffix_stream s' s ==> (f s' = g s')) ==>
+          (h f s = h g s)) ==>
+       ?f. !s. f s = h f s`,
+   MATCH_MP_TAC WF_REC THEN
+   REWRITE_TAC [is_proper_suffix_stream_wf]);;
+
+export_thm is_proper_suffix_stream_recursion;;
+
+let is_suffix_stream_proper = prove
+  (`!x y : A stream. is_proper_suffix_stream x y ==> is_suffix_stream x y`,
+   SIMP_TAC [is_suffix_stream_def]);;
+
+export_thm is_suffix_stream_proper;;
+
+let is_suffix_stream_refl = prove
+  (`!x : A stream. is_suffix_stream x x`,
+   SIMP_TAC [is_suffix_stream_def]);;
+
+export_thm is_suffix_stream_refl;;
+
+let is_suffix_stream_trans = prove
+  (`!x y z : A stream.
+      is_suffix_stream x y /\ is_suffix_stream y z ==>
+      is_suffix_stream x z`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [is_suffix_stream_def] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_MESON_TAC [is_proper_suffix_stream_trans]);;
+
+export_thm is_suffix_stream_trans;;
+
+logfile "parser-basic-def";;
 
 let is_parser_def = new_definition
   `is_parser (p : A -> A stream -> (B # A stream) option) =
@@ -126,72 +241,13 @@ let parse_option_def = new_definition
 
 export_thm parse_option_def;;
 
-(***
-parseSome :: (a -> Bool) -> Parser a a
-parseSome p =
-    parseMaybe f
-  where
-    f a = if p a then Just a else Nothing
+let parse_some_def = new_definition
+  `parse_some (p : A -> bool) =
+   parse_option (\a. if p a then SOME a else NONE)`;;
 
-parseStream :: Parser a b -> Stream a -> Stream b
-parseStream _ Error = Error
-parseStream _ Eof = Eof
-parseStream p (Stream a s) =
-    case unParser p a s of
-      Nothing -> Error
-      Just (b,s') -> Stream b (parseStream p s')
-***)
+export_thm parse_some_def;;
 
-logfile "parser-thm";;
-
-let stream_cases = prove_cases_thm stream_induct;;
-
-export_thm stream_cases;;
-
-let stream_distinct = distinctness "stream";;
-
-export_thm stream_distinct;;
-
-let stream_inj = injectivity "stream";;
-
-export_thm stream_inj;;
-
-let is_proper_suffix_stream_trans = prove
-  (`!x y z : A stream.
-      is_proper_suffix_stream x y /\ is_proper_suffix_stream y z ==>
-      is_proper_suffix_stream x z`,
-   GEN_TAC THEN
-   GEN_TAC THEN
-   MATCH_MP_TAC stream_induct THEN
-   ASM_REWRITE_TAC [is_proper_suffix_stream_def] THEN
-   REPEAT STRIP_TAC THEN
-   ASM_MESON_TAC []);;
-
-export_thm is_proper_suffix_stream_trans;;
-
-let is_suffix_stream_proper = prove
-  (`!x y : A stream. is_proper_suffix_stream x y ==> is_suffix_stream x y`,
-   SIMP_TAC [is_suffix_stream_def]);;
-
-export_thm is_suffix_stream_proper;;
-
-let is_suffix_stream_refl = prove
-  (`!x : A stream. is_suffix_stream x x`,
-   SIMP_TAC [is_suffix_stream_def]);;
-
-export_thm is_suffix_stream_refl;;
-
-let is_suffix_stream_trans = prove
-  (`!x y z : A stream.
-      is_suffix_stream x y /\ is_suffix_stream y z ==>
-      is_suffix_stream x z`,
-   REPEAT GEN_TAC THEN
-   REWRITE_TAC [is_suffix_stream_def] THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [] THEN
-   ASM_MESON_TAC [is_proper_suffix_stream_trans]);;
-
-export_thm is_suffix_stream_trans;;
+logfile "parser-basic-thm";;
 
 let dest_is_parser = prove
   (`!p : (A,B) parser. is_parser (dest_parser p)`,
@@ -233,6 +289,19 @@ let dest_parser_cases = prove
    REWRITE_TAC [dest_is_parser]);;
 
 export_thm dest_parser_cases;;
+
+let dest_parser_suffix_stream = prove
+  (`!(p : (A,B) parser) a s b s'.
+       dest_parser p a s = SOME (b,s') ==> is_suffix_stream s' s`,
+   REPEAT GEN_TAC THEN
+   STRIP_TAC THEN
+   MP_TAC (SPECL [`p : (A,B) parser`; `a:A`; `s:A stream`]
+             dest_parser_cases) THEN
+   ASM_REWRITE_TAC [option_distinct; option_inj; PAIR_EQ] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm dest_parser_suffix_stream;;
 
 let parse_cases = prove
   (`!(p : (A,B) parser) s.
@@ -282,5 +351,65 @@ let is_parser_option = prove
    MATCH_ACCEPT_TAC is_suffix_stream_refl);;
 
 export_thm is_parser_option;;
+
+logfile "parser-rec";;
+
+let parse_stream_exists = prove
+  (`!(p : (A,B) parser). ?f.
+      (f Error = Error) /\
+      (f Eof = Eof) /\
+      (!a s.
+         f (Stream a s) =
+           case_option
+             (\ (b,s'). Stream b (f s'))
+             Error
+             (dest_parser p a s))`,
+   let exists0 = prove
+     (`!(p : (A,B) parser). ?f.
+         !s.
+           f s =
+           (\f'.
+              case_stream
+                (\a s'.
+                   case_option
+                     (\ (b,s''). Stream b (f' s''))
+                     Error
+                     (dest_parser p a s'))
+                Eof
+                Error) f s`,
+      GEN_TAC THEN
+      MATCH_MP_TAC is_proper_suffix_stream_recursion THEN
+      SIMP_TAC [] THEN
+      REPEAT STRIP_TAC THEN
+      MP_TAC (SPEC `s : A stream` stream_cases) THEN
+      STRIP_TAC THEN
+      ASM_REWRITE_TAC [case_stream_def] THEN
+      MP_TAC (ISPEC `dest_parser (p : (A,B) parser) a0 a1` option_cases) THEN
+      STRIP_TAC THEN
+      ASM_REWRITE_TAC [case_option_def] THEN
+      POP_ASSUM MP_TAC THEN
+      MP_TAC (ISPEC `a : B # A stream` PAIR_SURJECTIVE) THEN
+      STRIP_TAC THEN
+      ASM_REWRITE_TAC [stream_inj] THEN
+      STRIP_TAC THEN
+      FIRST_ASSUM MATCH_MP_TAC THEN
+      ASM_REWRITE_TAC [is_proper_suffix_stream_def] THEN
+      REWRITE_TAC [GSYM is_suffix_stream_def] THEN
+      MATCH_MP_TAC
+        (ISPECL [`p : (A,B) parser`; `a0 : A`; `a1 : A stream`;
+                 `x : B`; `y : A stream`] dest_parser_suffix_stream) THEN
+      ASM_REWRITE_TAC []) in
+   GEN_TAC THEN
+   MP_TAC (SPEC `p : (A,B) parser` exists0) THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `f : A stream -> B stream` THEN
+   REPEAT STRIP_TAC THEN
+   POP_ASSUM (fun th -> CONV_TAC (LAND_CONV (REWR_CONV th))) THEN
+   REWRITE_TAC [case_stream_def]);;
+
+let parse_stream_def = new_specification ["parse_stream"]
+  (REWRITE_RULE[SKOLEM_THM] parse_stream_exists);;
+
+export_thm parse_stream_def;;
 
 logfile_end ();;
