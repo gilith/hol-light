@@ -172,7 +172,7 @@ loads "database.ml";;   (* List of name-theorem pairs for search system      *)
 (* Additions to the standard library.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/stdlib.ml";;
+loads "opentheory/stdlib/all.ml";;
 
 (* Uncomment to extract the standard theory library
 stop_logging ();;
