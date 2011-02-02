@@ -49,6 +49,17 @@ let mod_add = prove
 
 export_thm mod_add;;
 
+let mod_mult = prove
+  (`!m n. (m MOD mod_N * n MOD mod_N) MOD mod_N = (m * n) MOD mod_N`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPECL [`m:num`; `mod_N:num`; `n:num`] MOD_MULT_MOD2) THEN
+   MATCH_MP_TAC (TAUT `a /\ (b ==> c) ==> (a ==> b) ==> c`) THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [mod_N_positive];
+    DISCH_THEN ACCEPT_TAC]);;
+
+export_thm mod_mult;;
+
 logfile "modular-equiv-def";;
 
 let mod_equiv_def = new_definition
@@ -101,13 +112,22 @@ let mod_equiv_add = prove
 
 export_thm mod_equiv_add;;
 
+let mod_equiv_mult = prove
+  (`!x1 x2 y1 y2.
+      mod_equiv x1 x2 /\ mod_equiv y1 y2 ==> mod_equiv (x1 * y1) (x2 * y2)`,
+   REWRITE_TAC [mod_equiv_def] THEN
+   ONCE_REWRITE_TAC [GSYM mod_mult] THEN
+   SIMP_TAC []);;
+
+export_thm mod_equiv_mult;;
+
 logfile "modular-def";;
 
 let (mod_abs_rep,mod_rep_abs) = define_quotient_type
   "mod" ("mod_from_class","mod_to_class") `mod_equiv`;;
 
-let mod_from_num_def = new_definition
-  `mod_from_num x = mod_from_class (mod_equiv x)`;;
+let num_to_mod_def = new_definition
+  `num_to_mod x = mod_from_class (mod_equiv x)`;;
 
 let mod_rep_abs_surj = prove
   (`!x. (?y. mod_to_class x = mod_equiv y)`,
@@ -130,10 +150,10 @@ let mod_from_class_inj = prove
    ASM_REWRITE_TAC []);;
 
 let mod_to_num_exists = prove
-  (`!x. ?y. y < mod_N /\ mod_from_num y = x`,
+  (`!x. ?y. y < mod_N /\ num_to_mod y = x`,
    GEN_TAC THEN
    ONCE_REWRITE_TAC [GSYM mod_abs_rep] THEN
-   REWRITE_TAC [mod_from_num_def] THEN
+   REWRITE_TAC [num_to_mod_def] THEN
    MP_TAC (SPEC `x:mod` mod_rep_abs_surj) THEN
    STRIP_TAC THEN
    ASM_REWRITE_TAC [] THEN
@@ -148,40 +168,69 @@ let mod_to_num_def = new_specification ["mod_to_num"]
   (REWRITE_RULE [SKOLEM_THM] mod_to_num_exists);;
 
 let mod_to_num_from_num = prove
-  (`!x. mod_from_num (mod_to_num x) = x`,
+  (`!x. num_to_mod (mod_to_num x) = x`,
    REWRITE_TAC [mod_to_num_def]);;
 
 export_thm mod_to_num_from_num;;
 
-let mod_from_num_inj = prove
-  (`!x y. x < mod_N /\ y < mod_N /\ mod_from_num x = mod_from_num y ==> x = y`,
-   REWRITE_TAC [mod_from_num_def] THEN
+let num_to_mod_inj = prove
+  (`!x y. x < mod_N /\ y < mod_N /\ num_to_mod x = num_to_mod y ==> x = y`,
+   REWRITE_TAC [num_to_mod_def] THEN
    REPEAT STRIP_TAC THEN
    MATCH_MP_TAC mod_equiv_inj THEN
    ASM_REWRITE_TAC [] THEN
    MATCH_MP_TAC mod_from_class_inj THEN
    ASM_REWRITE_TAC []);;
 
-export_thm mod_from_num_inj;;
+export_thm num_to_mod_inj;;
 
-let mod_from_num_to_num = prove
-  (`!x. mod_to_num (mod_from_num x) = x MOD mod_N`,
+let num_to_mod_to_num = prove
+  (`!x. mod_to_num (num_to_mod x) = x MOD mod_N`,
    GEN_TAC THEN
-   MATCH_MP_TAC mod_from_num_inj THEN
+   MATCH_MP_TAC num_to_mod_inj THEN
    SIMP_TAC [mod_to_num_def; mod_to_num_from_num; mod_lt] THEN
-   REWRITE_TAC [mod_from_num_def] THEN
+   REWRITE_TAC [num_to_mod_def] THEN
    AP_TERM_TAC THEN
    SIMP_TAC [mod_equiv_eq; mod_mod]);;
 
-export_thm mod_from_num_to_num;;
+export_thm num_to_mod_to_num;;
 
 let (mod_add_def,mod_add_lift) = lift_function
   mod_rep_abs (mod_equiv_refl,mod_equiv_trans)
   "mod_add" mod_equiv_add;;
 
-let mod_add_from_num =
-  GEN_ALL (REWRITE_RULE [GSYM mod_from_num_def] mod_add_lift);;
+let num_to_mod_add =
+  GEN_ALL (REWRITE_RULE [GSYM num_to_mod_def] mod_add_lift);;
 
-export_thm mod_add_from_num;;
+export_thm num_to_mod_add;;
+
+let (mod_mult_def,mod_mult_lift) = lift_function
+  mod_rep_abs (mod_equiv_refl,mod_equiv_trans)
+  "mod_mult" mod_equiv_mult;;
+
+let num_to_mod_mult =
+  GEN_ALL (REWRITE_RULE [GSYM num_to_mod_def] mod_mult_lift);;
+
+export_thm num_to_mod_mult;;
+
+let mod_neg_def = new_definition
+  `mod_neg x = num_to_mod (mod_N - mod_to_num x)`;;
+
+export_thm mod_neg_def;;
+
+let mod_sub_def = new_definition
+  `mod_sub x y = mod_add x (mod_neg y)`;;
+
+export_thm mod_sub_def;;
+
+let mod_le_def = new_definition
+  `mod_le x y = mod_to_num x <= mod_to_num y`;;
+
+export_thm mod_le_def;;
+
+let mod_lt_def = new_definition
+  `mod_lt x y = ~(mod_le y x)`;;
+
+export_thm mod_lt_def;;
 
 logfile_end ();;

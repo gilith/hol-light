@@ -2,19 +2,20 @@
 (* A type of Unicode characters.                                             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "char-plane-def";;
+logfile "char-def";;
 
-let plane_size_def = new_definition
-  `plane_size = 17`;;
+let is_plane_def = new_definition
+  `is_plane p = byte_lt p (num_to_byte 17)`;;
 
-export_thm plane_size_def;;
+export_thm is_plane_def;;
 
-let plane_size_nonzero = prove
-  (`~(plane_size = 0)`,
-   REWRITE_TAC [plane_size_def] THEN
-   NUM_REDUCE_TAC);;
+let plane_exists = prove
+  (`?p. is_plane p`,
+   EXISTS_TAC `num_to_byte 0` THEN
+   REWRITE_TAC [is_parser_def; case_option_def]);;
 
-export_thm plane_size_nonzero;;
+let plane_tybij =
+    new_type_definition "plane" ("mk_plane","dest_plane") plane_exists;;
 
 (* Apply theory functor modular *)
 
