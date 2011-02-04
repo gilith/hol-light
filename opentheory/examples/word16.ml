@@ -39,7 +39,7 @@ let word16_size_def = new_axiom
 let word16_size_nonzero = new_axiom
   `~(word16_size = 0)`;;
 
-let word16_to_num_from_num = new_axiom
+let word16_to_num_to_word16 = new_axiom
   `!x. num_to_word16 (word16_to_num x) = x`;;
 
 let num_to_word16_inj = new_axiom
@@ -65,6 +65,12 @@ let word16_le_def = new_axiom
 
 let word16_lt_def = new_axiom
   `!x y. word16_lt x y = ~(word16_le y x)`;;
+
+let word16_to_num_inj = new_axiom
+  `!x y. word16_to_num x = word16_to_num y ==> x = y`;;
+
+let num_to_word16_eq = new_axiom
+  `!x y. num_to_word16 x = num_to_word16 y <=> x MOD word16_size = y MOD word16_size`;;
 
 let word16_shl_def = new_axiom
  `!w n. word16_shl w n = num_to_word16 (word16_to_num w * (2 EXP n))`;;

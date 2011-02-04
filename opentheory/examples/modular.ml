@@ -167,11 +167,11 @@ let mod_to_num_exists = prove
 let mod_to_num_def = new_specification ["mod_to_num"]
   (REWRITE_RULE [SKOLEM_THM] mod_to_num_exists);;
 
-let mod_to_num_from_num = prove
+let mod_to_num_to_mod = prove
   (`!x. num_to_mod (mod_to_num x) = x`,
    REWRITE_TAC [mod_to_num_def]);;
 
-export_thm mod_to_num_from_num;;
+export_thm mod_to_num_to_mod;;
 
 let num_to_mod_inj = prove
   (`!x y. x < mod_N /\ y < mod_N /\ num_to_mod x = num_to_mod y ==> x = y`,
@@ -188,7 +188,7 @@ let num_to_mod_to_num = prove
   (`!x. mod_to_num (num_to_mod x) = x MOD mod_N`,
    GEN_TAC THEN
    MATCH_MP_TAC num_to_mod_inj THEN
-   SIMP_TAC [mod_to_num_def; mod_to_num_from_num; mod_lt] THEN
+   SIMP_TAC [mod_to_num_def; mod_to_num_to_mod; mod_lt] THEN
    REWRITE_TAC [num_to_mod_def] THEN
    AP_TERM_TAC THEN
    SIMP_TAC [mod_equiv_eq; mod_mod]);;
@@ -232,5 +232,28 @@ let mod_lt_def = new_definition
   `!x y. mod_lt x y = ~(mod_le y x)`;;
 
 export_thm mod_lt_def;;
+
+logfile "modular-thm";;
+
+let mod_to_num_inj = prove
+  (`!x y. mod_to_num x = mod_to_num y ==> x = y`,
+   REPEAT STRIP_TAC THEN
+   ONCE_REWRITE_TAC [GSYM mod_to_num_to_mod] THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm mod_to_num_inj;;
+
+let num_to_mod_eq = prove
+  (`!x y. num_to_mod x = num_to_mod y <=> x MOD mod_N = y MOD mod_N`,
+   REWRITE_TAC [GSYM num_to_mod_to_num] THEN
+   REPEAT STRIP_TAC THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    ASM_REWRITE_TAC [];
+    STRIP_TAC THEN
+    MATCH_MP_TAC mod_to_num_inj THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm num_to_mod_eq;;
 
 logfile_end ();;

@@ -39,7 +39,7 @@ let byte_size_def = new_axiom
 let byte_size_nonzero = new_axiom
   `~(byte_size = 0)`;;
 
-let byte_to_num_from_num = new_axiom
+let byte_to_num_to_byte = new_axiom
   `!x. num_to_byte (byte_to_num x) = x`;;
 
 let num_to_byte_inj = new_axiom
@@ -65,6 +65,12 @@ let byte_le_def = new_axiom
 
 let byte_lt_def = new_axiom
   `!x y. byte_lt x y = ~(byte_le y x)`;;
+
+let byte_to_num_inj = new_axiom
+  `!x y. byte_to_num x = byte_to_num y ==> x = y`;;
+
+let num_to_byte_eq = new_axiom
+  `!x y. num_to_byte x = num_to_byte y <=> x MOD byte_size = y MOD byte_size`;;
 
 let byte_shl_def = new_axiom
  `!w n. byte_shl w n = num_to_byte (byte_to_num w * (2 EXP n))`;;
@@ -102,8 +108,12 @@ let byte_not_def = new_axiom
 
 let byte_reduce_conv =
     REWRITE_CONV
-      [byte_lt_def; byte_le_def; num_to_byte_to_num;
-       byte_size_def; byte_width_def] THENC
+      [byte_to_num_to_byte;
+       byte_le_def; byte_lt_def] THENC
+    REWRITE_CONV
+      [num_to_byte_to_num] THENC
+    REWRITE_CONV
+      [byte_width_def; byte_size_def; num_to_byte_eq] THENC
     NUM_REDUCE_CONV;;
 
 logfile_end ();;

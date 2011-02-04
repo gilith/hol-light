@@ -20,6 +20,8 @@ let plane_exists = prove
 let plane_tybij =
     new_type_definition "plane" ("mk_plane","dest_plane") plane_exists;;
 
+export_thm plane_tybij;;
+
 (* Positions *)
 
 let is_position_def = new_definition
@@ -36,22 +38,37 @@ let position_tybij =
     new_type_definition
       "position" ("mk_position","dest_position") position_exists;;
 
+export_thm position_tybij;;
+
 (* Unicode characters *)
 
 let is_unicode_def = new_definition
-  `!pl pos. is_unicode (p : word16) = T`;;
+  `!pl pos.
+     is_unicode (pl,pos) =
+     let pli = dest_plane pl in
+     let posi = dest_position pos in
+     ~(pli = num_to_byte 0) \/
+     word16_lt posi (num_to_word16 55296) \/
+     (word16_lt (num_to_word16 57343) posi /\
+      word16_lt posi (num_to_word16 65534))`;;
 
-export_thm is_position_def;;
+export_thm is_unicode_def;;
 
-newtype Unicode =
-    Unicode { unUnicode :: (Plane,Position) }
-  deriving (Eq,Show)
+let unicode_exists = prove
+  (`?pl_pos. is_unicode pl_pos`,
+   EXISTS_TAC `(mk_plane (num_to_byte 1), (pos : position))` THEN
+   REWRITE_TAC [is_unicode_def; LET_DEF; LET_END_DEF] THEN
+   MP_TAC (SPEC `num_to_byte 1` (CONJUNCT2 plane_tybij)) THEN
+   REWRITE_TAC [is_plane_def] THEN
+   CONV_TAC byte_reduce_conv THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   CONV_TAC byte_reduce_conv);;
 
-let unicode_INDUCT,unicode_RECURSION = define_type
-  "unicode = Unicode plane position";;
+let unicode_tybij =
+    new_type_definition "unicode" ("mk_unicode","dest_unicode") unicode_exists;;
 
-export_thm unicode_INDUCT;;
-export_thm unicode_RECURSION;;
+export_thm unicode_tybij;;
 
 (* ------------------------------------------------------------------------- *)
 (* UTF-8 encodings of unicode characters.                                    *)

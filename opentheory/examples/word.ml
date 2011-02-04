@@ -83,7 +83,7 @@ new_constant ("word_lt", `:word -> word -> bool`);;
 new_constant ("num_to_word", `:num -> word`);;
 new_constant ("word_to_num", `:word -> num`);;
 
-let word_to_num_from_num = new_axiom
+let word_to_num_to_word = new_axiom
   `!x. num_to_word (word_to_num x) = x`;;
 
 let num_to_word_inj = new_axiom
@@ -109,6 +109,12 @@ let word_le_def = new_axiom
 
 let word_lt_def = new_axiom
   `!x y. word_lt x y = ~(word_le y x)`;;
+
+let word_to_num_inj = new_axiom
+  `!x y. word_to_num x = word_to_num y ==> x = y`;;
+
+let num_to_word_eq = new_axiom
+  `!x y. num_to_word x = num_to_word y <=> x MOD word_size = y MOD word_size`;;
 
 logfile "word-bits";;
 
