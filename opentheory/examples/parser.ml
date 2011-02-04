@@ -45,8 +45,8 @@ let stream_to_list_def = new_recursive_definition stream_recursion
    (stream_to_list Eof = SOME []) /\
    (!a s. stream_to_list (Stream a s) =
       case_option
-        (\l. SOME (CONS (a:A) l))
         NONE
+        (\l. SOME (CONS (a:A) l))
         (stream_to_list s))`;;
 
 export_thm stream_to_list_def;;
@@ -160,8 +160,8 @@ logfile "parser-basic-def";;
 let is_parser_def = new_definition
   `is_parser (p : A -> A stream -> (B # A stream) option) =
      !x xs. case_option
-              (\ (y,xs'). is_suffix_stream xs' xs)
               T
+              (\ (y,xs'). is_suffix_stream xs' xs)
               (p x xs)`;;
 
 export_thm is_parser_def;;
@@ -186,12 +186,12 @@ export_thm parse_def;;
 let parser_pair_def = new_definition
   `parser_pair (pb : (A,B) parser) (pc : (A,C) parser) a s =
      case_option
+       NONE
        (\ (b,s').
           case_option
-            (\ (c,s''). SOME ((b,c),s''))
             NONE
+            (\ (c,s''). SOME ((b,c),s''))
             (parse pc s'))
-       NONE
        (dest_parser pb a s)`;;
 
 export_thm parser_pair_def;;
@@ -204,7 +204,7 @@ export_thm parse_pair_def;;
 
 let parser_option_def = new_definition
   `parser_option (f : A -> B option) a (s : A stream) =
-      case_option (\b. SOME (b,s)) NONE (f a)`;;
+      case_option NONE (\b. SOME (b,s)) (f a)`;;
 
 export_thm parser_option_def;;
 
@@ -333,8 +333,8 @@ let parse_stream_exists = prove
       (!a s.
          f (Stream a s) =
            case_option
-             (\ (b,s'). Stream b (f s'))
              Error
+             (\ (b,s'). Stream b (f s'))
              (dest_parser p a s))`,
    let exists0 = prove
      (`!(p : (A,B) parser). ?f.
@@ -346,8 +346,8 @@ let parse_stream_exists = prove
                 Eof
                 (\a s'.
                    case_option
-                     (\ (b,s''). Stream b (f' s''))
                      Error
+                     (\ (b,s''). Stream b (f' s''))
                      (dest_parser p a s'))) f s`,
       GEN_TAC THEN
       MATCH_MP_TAC is_proper_suffix_stream_recursion THEN
