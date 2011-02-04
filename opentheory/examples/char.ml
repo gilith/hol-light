@@ -12,7 +12,7 @@ export_thm is_plane_def;;
 let plane_exists = prove
   (`?p. is_plane p`,
    EXISTS_TAC `num_to_byte 0` THEN
-   REWRITE_TAC [is_parser_def; case_option_def]);;
+   REWRITE_TAC [is_plane_def; byte_lt_def]);;
 
 let plane_tybij =
     new_type_definition "plane" ("mk_plane","dest_plane") plane_exists;;

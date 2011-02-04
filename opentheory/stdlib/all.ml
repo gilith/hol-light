@@ -24,6 +24,12 @@ let case_option_def = new_recursive_definition option_RECURSION
 
 export_thm case_option_def;;
 
+logfile "list-thm";;
+
+let list_cases = prove_cases_thm list_INDUCT;;
+
+export_thm list_cases;;
+
 logfile "list-case";;
 
 let case_list_def = new_recursive_definition list_RECURSION

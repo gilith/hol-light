@@ -13,23 +13,23 @@ export_thm stream_induct;;
 export_thm stream_recursion;;
 
 let case_stream_def = new_recursive_definition stream_recursion
-  `(case_stream f b e Error = (e:B)) /\
-   (case_stream f b e Eof = b) /\
-   (case_stream f b e (Stream a s) = f (a:A) s)`;;
+  `(!e b f. case_stream e b f Error = (e:B)) /\
+   (!e b f. case_stream e b f Eof = b) /\
+   (!e b f a s. case_stream e b f (Stream a s) = f (a:A) s)`;;
 
 export_thm case_stream_def;;
 
 let length_stream_def = new_recursive_definition stream_recursion
   `(length_stream Error = 0) /\
    (length_stream Eof = 0) /\
-   (length_stream (Stream a s) = SUC (length_stream s))`;;
+   (!a s. length_stream (Stream a s) = SUC (length_stream s))`;;
 
 export_thm length_stream_def;;
 
 let is_proper_suffix_stream_def = new_recursive_definition stream_recursion
-  `(is_proper_suffix_stream s Error = F) /\
-   (is_proper_suffix_stream s Eof = F) /\
-   (is_proper_suffix_stream s (Stream (a:A) s') =
+  `(!s. is_proper_suffix_stream s Error = F) /\
+   (!s. is_proper_suffix_stream s Eof = F) /\
+   (!s a s'. is_proper_suffix_stream s (Stream (a:A) s') =
       ((s = s') \/ is_proper_suffix_stream s s'))`;;
 
 export_thm is_proper_suffix_stream_def;;
@@ -43,7 +43,7 @@ export_thm is_suffix_stream_def;;
 let stream_to_list_def = new_recursive_definition stream_recursion
   `(stream_to_list Error = NONE) /\
    (stream_to_list Eof = SOME []) /\
-   (stream_to_list (Stream a s) =
+   (!a s. stream_to_list (Stream a s) =
       case_option
         (\l. SOME (CONS (a:A) l))
         NONE
@@ -53,7 +53,7 @@ export_thm stream_to_list_def;;
 
 let list_to_stream_def = new_recursive_definition list_RECURSION
   `(list_to_stream [] = Eof) /\
-   (list_to_stream (CONS h t) = Stream (h:A) (list_to_stream t))`;;
+   (!h t. list_to_stream (CONS h t) = Stream (h:A) (list_to_stream t))`;;
 
 export_thm list_to_stream_def;;
 
@@ -342,13 +342,13 @@ let parse_stream_exists = prove
            f s =
            (\f'.
               case_stream
+                Error
+                Eof
                 (\a s'.
                    case_option
                      (\ (b,s''). Stream b (f' s''))
                      Error
-                     (dest_parser p a s'))
-                Eof
-                Error) f s`,
+                     (dest_parser p a s'))) f s`,
       GEN_TAC THEN
       MATCH_MP_TAC is_proper_suffix_stream_recursion THEN
       SIMP_TAC [] THEN

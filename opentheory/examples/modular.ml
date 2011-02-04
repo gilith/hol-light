@@ -63,7 +63,7 @@ export_thm mod_mult;;
 logfile "modular-equiv-def";;
 
 let mod_equiv_def = new_definition
-  `mod_equiv x y = x MOD mod_N = y MOD mod_N`;;
+  `!x y. mod_equiv x y = x MOD mod_N = y MOD mod_N`;;
 
 export_thm mod_equiv_def;;
 
@@ -127,7 +127,7 @@ let (mod_abs_rep,mod_rep_abs) = define_quotient_type
   "mod" ("mod_from_class","mod_to_class") `mod_equiv`;;
 
 let num_to_mod_def = new_definition
-  `num_to_mod x = mod_from_class (mod_equiv x)`;;
+  `!x. num_to_mod x = mod_from_class (mod_equiv x)`;;
 
 let mod_rep_abs_surj = prove
   (`!x. (?y. mod_to_class x = mod_equiv y)`,
@@ -214,22 +214,22 @@ let num_to_mod_mult =
 export_thm num_to_mod_mult;;
 
 let mod_neg_def = new_definition
-  `mod_neg x = num_to_mod (mod_N - mod_to_num x)`;;
+  `!x. mod_neg x = num_to_mod (mod_N - mod_to_num x)`;;
 
 export_thm mod_neg_def;;
 
 let mod_sub_def = new_definition
-  `mod_sub x y = mod_add x (mod_neg y)`;;
+  `!x y. mod_sub x y = mod_add x (mod_neg y)`;;
 
 export_thm mod_sub_def;;
 
 let mod_le_def = new_definition
-  `mod_le x y = mod_to_num x <= mod_to_num y`;;
+  `!x y. mod_le x y = mod_to_num x <= mod_to_num y`;;
 
 export_thm mod_le_def;;
 
 let mod_lt_def = new_definition
-  `mod_lt x y = ~(mod_le y x)`;;
+  `!x y. mod_lt x y = ~(mod_le y x)`;;
 
 export_thm mod_lt_def;;
 
