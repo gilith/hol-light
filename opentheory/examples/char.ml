@@ -4,39 +4,48 @@
 
 logfile "char-def";;
 
+(* Planes *)
+
 let is_plane_def = new_definition
-  `is_plane p = byte_lt p (num_to_byte 17)`;;
+  `!p. is_plane p = byte_lt p (num_to_byte 17)`;;
 
 export_thm is_plane_def;;
 
 let plane_exists = prove
   (`?p. is_plane p`,
    EXISTS_TAC `num_to_byte 0` THEN
-   REWRITE_TAC [is_plane_def; byte_lt_def]);;
+   REWRITE_TAC [is_plane_def] THEN
+   CONV_TAC byte_reduce_conv);;
 
 let plane_tybij =
     new_type_definition "plane" ("mk_plane","dest_plane") plane_exists;;
 
-(* Apply theory functor modular *)
+(* Positions *)
 
-new_type ("plane",0);;
+let is_position_def = new_definition
+  `!p. is_position (p : word16) = T`;;
 
-new_constant ("plane_to_num", `:plane -> num`);;
+export_thm is_position_def;;
 
-logfile "char-position-def";;
+let position_exists = prove
+  (`?p. is_position p`,
+   EXISTS_TAC `p : word16` THEN
+   REWRITE_TAC [is_position_def]);;
 
-let position_width_def = new_definition
-  `position_width = 16`;;
+let position_tybij =
+    new_type_definition
+      "position" ("mk_position","dest_position") position_exists;;
 
-export_thm position_width_def;;
+(* Unicode characters *)
 
-(* Apply theory functor word *)
+let is_unicode_def = new_definition
+  `!pl pos. is_unicode (p : word16) = T`;;
 
-new_type ("position",0);;
+export_thm is_position_def;;
 
-new_constant ("position_to_num", `:plane -> num`);;
-
-logfile "char-def";;
+newtype Unicode =
+    Unicode { unUnicode :: (Plane,Position) }
+  deriving (Eq,Show)
 
 let unicode_INDUCT,unicode_RECURSION = define_type
   "unicode = Unicode plane position";;

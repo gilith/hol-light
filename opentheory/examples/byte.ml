@@ -98,4 +98,12 @@ let byte_or_def = new_axiom
 let byte_not_def = new_axiom
   `!w. byte_not w = list_to_byte (MAP (~) (byte_to_list w))`;;
 
+(* A reduction conversion *)
+
+let byte_reduce_conv =
+    REWRITE_CONV
+      [byte_lt_def; byte_le_def; num_to_byte_to_num;
+       byte_size_def; byte_width_def] THENC
+    NUM_REDUCE_CONV;;
+
 logfile_end ();;
