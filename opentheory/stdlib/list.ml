@@ -8,6 +8,14 @@ let list_cases = prove_cases_thm list_INDUCT;;
 
 export_thm list_cases;;
 
+logfile "list-case";;
+
+let case_list_def = new_recursive_definition list_RECURSION
+  `(!b f. case_list b f [] = (b:B)) /\
+   (!b f h t. case_list b f (CONS h t) = f (h:A) t)`;;
+
+export_thm case_list_def;;
+
 logfile "list-dest-thm";;
 
 let NULL_EQ_NIL = prove
@@ -16,14 +24,6 @@ let NULL_EQ_NIL = prove
   ASM_REWRITE_TAC [NULL; NOT_CONS_NIL]);;
 
 export_thm NULL_EQ_NIL;;
-
-logfile "list-case";;
-
-let case_list_def = new_recursive_definition list_RECURSION
-  `(!b f. case_list b f [] = (b:B)) /\
-   (!b f h t. case_list b f (CONS h t) = f (h:A) t)`;;
-
-export_thm case_list_def;;
 
 logfile "list-append-thm";;
 
