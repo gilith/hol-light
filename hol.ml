@@ -169,3 +169,5 @@ loads "database.ml";;   (* List of name-theorem pairs for search system      *)
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/stdlib/all.ml";;
+
+stop_logging ();;
