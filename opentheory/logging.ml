@@ -70,7 +70,13 @@ type log_state =
    | Ready_logging
    | Active_logging of out_channel;;
 
-let log_state = ref Not_logging;;
+let log_state =
+    let initial_log_state =
+        (try (let _ = Sys.getenv "OPENTHEORY_STDLIB" in
+              let () = report "Logging the OpenTheory standard library" in
+              Ready_logging)
+         with Not_found -> Not_logging) in
+    ref initial_log_state;;
 
 let log_raw s =
     match (!log_state) with

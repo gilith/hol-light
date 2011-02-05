@@ -51,9 +51,14 @@ let stream_to_list_def = new_recursive_definition stream_recursion
 
 export_thm stream_to_list_def;;
 
-let list_to_stream_def = new_recursive_definition list_RECURSION
-  `(list_to_stream [] = Eof) /\
-   (!h t. list_to_stream (CONS h t) = Stream (h:A) (list_to_stream t))`;;
+let append_stream_def = new_recursive_definition list_RECURSION
+  `(!s. append_stream [] s = s) /\
+   (!h t s. append_stream (CONS h t) s = Stream (h:A) (append_stream t s))`;;
+
+export_thm append_stream_def;;
+
+let list_to_stream_def = new_definition
+  `!l. list_to_stream l = append_stream l Eof`;;
 
 export_thm list_to_stream_def;;
 
@@ -218,6 +223,13 @@ let parse_some_def = new_definition
    parse_option (\a. if p a then SOME a else NONE)`;;
 
 export_thm parse_some_def;;
+
+let parse_inverse_def = new_definition
+  `!p e.
+     parse_inverse p e =
+     !x s. parse p (append_stream (e x) s) = SOME (x,s)`;;
+
+export_thm parse_inverse_def;;
 
 logfile "parser-basic-thm";;
 
