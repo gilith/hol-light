@@ -264,6 +264,7 @@ const "HOLLight.mod_to_num" as "Number.Modular.toNatural"
 type "HOLLight.parser" as "Parser.parser"
 
 const "HOLLight.dest_parser" as "Parser.destParser"
+const "HOLLight.parse_inverse" as "Parser.inverse"
 const "HOLLight.is_parser" as "Parser.isParser"
 const "HOLLight.mk_parser" as "Parser.mkParser"
 const "HOLLight.parse" as "Parser.parse"
@@ -273,11 +274,13 @@ const "HOLLight.parse_pair" as "Parser.parsePair"
 const "HOLLight.parser_pair" as "Parser.parsePair.pbc"
 const "HOLLight.parse_some" as "Parser.parseSome"
 const "HOLLight.parse_stream" as "Parser.parseStream"
+const "HOLLight.parse_strong_inverse" as "Parser.strongInverse"
 
 # Parser.Stream
 
 type "HOLLight.stream" as "Parser.Stream.stream"
 
+const "HOLLight.append_stream" as "Parser.Stream.append"
 const "HOLLight.case_stream" as "Parser.Stream.case"
 const "HOLLight.Eof" as "Parser.Stream.eof"
 const "HOLLight.Error" as "Parser.Stream.error"

@@ -74,7 +74,7 @@ export_thm unicode_tybij;;
 (* UTF-8 encodings of unicode characters.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "char-utf8";;
+logfile "char-utf8-def";;
 
 let is_cont_def = new_definition
   `!b. is_cont b <=> byte_bit b 7 /\ ~byte_bit b 6`;;
@@ -243,5 +243,27 @@ let encode_def = new_definition
   `!chs. encode chs = concat (MAP encoder chs)`;;
 
 export_thm encode_def;;
+
+logfile "char-utf8-thm";;
+
+(***
+let is_parser_decoder_parse = prove
+  (`is_parser decoder_parse`,
+   REWRITE_TAC [decoder_parse_def] THEN
+
+export_thm decoder_encoder_strong_inverse;;
+
+let decoder_encoder_inverse = prove
+  (`parse_inverse decoder encoder`,
+   REWRITE_TAC [parse_inverse_def] THEN
+
+export_thm decoder_encoder_inverse;;
+
+let decoder_encoder_strong_inverse = prove
+  (`parse_strong_inverse decoder encoder`,
+   REWRITE_TAC [parse_strong_inverse_def] THEN
+
+export_thm decoder_encoder_strong_inverse;;
+***)
 
 logfile_end ();;
