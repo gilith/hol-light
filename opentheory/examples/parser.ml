@@ -171,11 +171,13 @@ export_thm append_stream_assoc;;
 logfile "parser-basic-def";;
 
 let is_parser_def = new_definition
-  `is_parser (p : A -> A stream -> (B # A stream) option) =
-     !x xs. case_option
-              T
-              (\ (y,xs'). is_suffix_stream xs' xs)
-              (p x xs)`;;
+  `!p.
+     is_parser (p : A -> A stream -> (B # A stream) option) =
+       !x xs.
+         case_option
+           T
+           (\ (y,xs'). is_suffix_stream xs' xs)
+           (p x xs)`;;
 
 export_thm is_parser_def;;
 
@@ -190,9 +192,9 @@ let parser_tybij =
 export_thm parser_tybij;;
 
 let parse_def = new_recursive_definition stream_recursion
-  `(parse (p : (A,B) parser) Error = NONE) /\
-   (parse p Eof = NONE) /\
-   (parse p (Stream a s) = dest_parser p a s)`;;
+  `(!p. parse (p : (A,B) parser) Error = NONE) /\
+   (!p. parse p Eof = NONE) /\
+   (!p a s. parse p (Stream a s) = dest_parser p a s)`;;
 
 export_thm parse_def;;
 
@@ -211,8 +213,53 @@ let parse_strong_inverse_def = new_definition
 
 export_thm parse_strong_inverse_def;;
 
+let parser_none_def = new_definition
+  `!a s. parser_none (a : A) (s : A stream) = (NONE : (B # A stream) option)`;;
+
+export_thm parser_none_def;;
+
+let parse_none_def = new_definition
+  `(parse_none : (A,B) parser) = mk_parser parser_none`;;
+
+export_thm parse_none_def;;
+
+let parser_all_def = new_definition
+  `!a s. parser_all (a : A) (s : A stream) = SOME (a,s)`;;
+
+export_thm parser_all_def;;
+
+let parse_all_def = new_definition
+  `(parse_all : (A,A) parser) = mk_parser parser_all`;;
+
+export_thm parse_all_def;;
+
+let parser_partial_map_def = new_definition
+  `!f p a s.
+     parser_partial_map (f : B -> C option) (p : (A,B) parser) a s =
+     case_option
+       NONE
+       (\ (b,s'). case_option NONE (\c. SOME (c,s')) (f b))
+       (dest_parser p a s)`;;
+
+export_thm parser_partial_map_def;;
+
+let parse_partial_map_def = new_definition
+  `!f p.
+     parse_partial_map (f : B -> C option) (p : (A,B) parser) =
+     mk_parser (parser_partial_map f p)`;;
+
+export_thm parse_partial_map_def;;
+
+let parse_map_def = new_definition
+  `!f p.
+     parse_map (f : B -> C) (p : (A,B) parser) =
+     parse_partial_map (\b. SOME (f b)) p`;;
+
+export_thm parse_map_def;;
+
 let parser_pair_def = new_definition
-  `parser_pair (pb : (A,B) parser) (pc : (A,C) parser) a s =
+  `!pb pc a s.
+     parser_pair (pb : (A,B) parser) (pc : (A,C) parser) a s =
      case_option
        NONE
        (\ (b,s').
@@ -225,25 +272,21 @@ let parser_pair_def = new_definition
 export_thm parser_pair_def;;
 
 let parse_pair_def = new_definition
-  `parse_pair (pb : (A,B) parser) (pc : (A,C) parser) =
+  `!pb pc.
+     parse_pair (pb : (A,B) parser) (pc : (A,C) parser) =
      mk_parser (parser_pair pb pc)`;;
 
 export_thm parse_pair_def;;
 
-let parser_option_def = new_definition
-  `parser_option (f : A -> B option) a (s : A stream) =
-      case_option NONE (\b. SOME (b,s)) (f a)`;;
-
-export_thm parser_option_def;;
-
 let parse_option_def = new_definition
-  `parse_option (f : A -> B option) = mk_parser (parser_option f)`;;
+  `!f. parse_option (f : A -> B option) = parse_partial_map f parse_all`;;
 
 export_thm parse_option_def;;
 
 let parse_some_def = new_definition
-  `parse_some (p : A -> bool) =
-   parse_option (\a. if p a then SOME a else NONE)`;;
+  `!p.
+     parse_some (p : A -> bool) =
+     parse_option (\a. if p a then SOME a else NONE)`;;
 
 export_thm parse_some_def;;
 
@@ -322,6 +365,221 @@ let parse_cases = prove
    ASM_REWRITE_TAC [is_proper_suffix_stream_def]);;
 
 export_thm parse_cases;;
+
+let is_parser_none = prove
+  (`is_parser (parser_none : A -> A stream -> (B # A stream) option)`,
+   REWRITE_TAC [is_parser_def; parser_none_def; case_option_def]);;
+
+export_thm is_parser_none;;
+
+let dest_parse_none = prove
+  (`dest_parser (parse_none : (A,B) parser) = parser_none`,
+   REWRITE_TAC
+     [parse_none_def; GSYM (CONJUNCT2 parser_tybij); is_parser_none]);;
+
+export_thm dest_parse_none;;
+
+let parse_parse_none = prove
+  (`!s. parse (parse_none : (A,B) parser) s = NONE`,
+    REPEAT STRIP_TAC THEN
+    MP_TAC (ISPEC `s : A stream` stream_cases) THEN
+    REPEAT STRIP_TAC THEN
+    ASM_REWRITE_TAC [parse_def; case_stream_def; case_option_def] THEN
+    REWRITE_TAC [dest_parse_none; parser_none_def]);;
+
+export_thm parse_parse_none;;
+
+let is_parser_all = prove
+  (`is_parser (parser_all : A -> A stream -> (A # A stream) option)`,
+   REWRITE_TAC
+     [is_parser_def; parser_all_def; case_option_def; is_suffix_stream_refl]);;
+
+export_thm is_parser_all;;
+
+let dest_parse_all = prove
+  (`dest_parser (parse_all : (A,A) parser) = parser_all`,
+   REWRITE_TAC
+     [parse_all_def; GSYM (CONJUNCT2 parser_tybij); is_parser_all]);;
+
+export_thm dest_parse_none;;
+
+let parse_parse_all = prove
+  (`parse (parse_all : (A,A) parser) =
+    case_stream NONE NONE (\a s. SOME (a,s))`,
+    ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+    REPEAT STRIP_TAC THEN
+    MP_TAC (ISPEC `x : A stream` stream_cases) THEN
+    REPEAT STRIP_TAC THEN
+    ASM_REWRITE_TAC [parse_def; case_stream_def; case_option_def] THEN
+    REWRITE_TAC [dest_parse_all; parser_all_def]);;
+
+export_thm parse_parse_all;;
+
+let parse_all_inverse = prove
+  (`parse_inverse (parse_all : (A,A) parser) (\a. CONS a [])`,
+   REWRITE_TAC [parse_inverse_def] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [parse_parse_all; append_stream_def; case_stream_def;
+      case_option_def]);;
+
+export_thm parse_all_inverse;;
+
+let parse_all_strong_inverse = prove
+  (`parse_strong_inverse (parse_all : (A,A) parser) (\a. CONS a [])`,
+   REWRITE_TAC [parse_strong_inverse_def; parse_all_inverse] THEN
+   ASM_REWRITE_TAC [parse_parse_all; append_stream_def] THEN
+   REPEAT GEN_TAC THEN
+   MP_TAC (ISPEC `s : A stream` stream_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [case_stream_def; option_distinct; stream_inj; option_inj; PAIR_EQ]);;
+
+export_thm parse_all_strong_inverse;;
+
+let is_parser_partial_map = prove
+  (`!f p. is_parser (parser_partial_map (f : B -> C option) (p : (A,B) parser))`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [is_parser_def; parser_partial_map_def] THEN
+   REPEAT GEN_TAC THEN
+   MP_TAC (ISPECL [`p : (A,B) parser`;
+                   `x : A`; `xs : A stream`] dest_parser_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   MP_TAC (ISPECL [`(f : B -> C option) b`] option_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_option_def]);;
+
+export_thm is_parser_partial_map;;
+
+let dest_parse_partial_map = prove
+  (`!f p.
+      dest_parser (parse_partial_map (f : B -> C option) (p : (A,B) parser)) =
+      parser_partial_map f p`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC
+     [parse_partial_map_def; GSYM (CONJUNCT2 parser_tybij);
+      is_parser_partial_map]);;
+
+export_thm dest_parse_partial_map;;
+
+let parse_parse_partial_map = prove
+  (`!f p s.
+      parse (parse_partial_map (f : B -> C option) (p : (A,B) parser)) s =
+      case_option
+        NONE
+        (\ (b,s'). case_option NONE (\c. SOME (c,s')) (f b))
+        (parse p s)`,
+    REPEAT GEN_TAC THEN
+    MP_TAC (ISPEC `s : A stream` stream_cases) THEN
+    REPEAT STRIP_TAC THEN
+    ASM_REWRITE_TAC [parse_def; case_option_def] THEN
+    REWRITE_TAC [dest_parse_partial_map; parser_partial_map_def]);;
+
+export_thm parse_parse_partial_map;;
+
+let parse_partial_map_inverse = prove
+  (`!f p g e.
+      parse_inverse (p : (A,B) parser) e /\
+      (!b. f (g b) = SOME b) ==>
+      parse_inverse (parse_partial_map (f : B -> C option) p) (\c. e (g c))`,
+   REWRITE_TAC [parse_inverse_def] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [parse_parse_partial_map; append_stream_def; case_stream_def;
+      case_option_def]);;
+
+export_thm parse_partial_map_inverse;;
+
+let parse_partial_map_strong_inverse = prove
+  (`!(f : B -> C option) p g e.
+      parse_strong_inverse (p : (A,B) parser) e /\
+      (!b. f (g b) = SOME b) /\
+      (!b1 b2 c. f b1 = SOME c /\ f b2 = SOME c ==> b1 = b2) ==>
+      parse_strong_inverse (parse_partial_map f p) (\c. e (g c))`,
+   REWRITE_TAC [parse_strong_inverse_def] THEN
+   REPEAT STRIP_TAC THENL
+   [MATCH_MP_TAC parse_partial_map_inverse THEN
+    ASM_REWRITE_TAC [];
+    POP_ASSUM MP_TAC THEN
+    ASM_REWRITE_TAC [parse_parse_partial_map; append_stream_def] THEN
+    MP_TAC (ISPECL [`p : (A,B) parser`; `s : A stream`] parse_cases) THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [case_option_def; option_distinct; option_inj; PAIR_EQ] THEN
+    MP_TAC (ISPEC `(f : B -> C option) b` option_cases) THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [case_option_def; option_distinct; option_inj; PAIR_EQ] THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC [option_inj; PAIR_EQ] THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    EXISTS_TAC `x : C` THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm parse_partial_map_strong_inverse;;
+
+let dest_parse_map = prove
+  (`!f p a s.
+      dest_parser (parse_map (f : B -> C) (p : (A,B) parser)) a s =
+      case_option
+        NONE
+        (\ (b,s'). SOME (f b, s'))
+        (dest_parser p a s)`,
+   REWRITE_TAC
+     [parse_map_def; dest_parse_partial_map; parser_partial_map_def;
+      case_option_def]);;
+
+export_thm dest_parse_map;;
+
+let parse_parse_map = prove
+  (`!f p s.
+      parse (parse_map (f : B -> C) (p : (A,B) parser)) s =
+      case_option
+        NONE
+        (\ (b,s'). SOME (f b, s'))
+        (parse p s)`,
+   REWRITE_TAC [parse_map_def; parse_parse_partial_map; case_option_def]);;
+
+export_thm parse_parse_map;;
+
+let parse_map_inverse = prove
+  (`!f p g e.
+      parse_inverse (p : (A,B) parser) e /\
+      (!b. f (g b) = b) ==>
+      parse_inverse (parse_map (f : B -> C) p) (\c. e (g c))`,
+   REWRITE_TAC [parse_inverse_def] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [parse_parse_map; append_stream_def; case_stream_def;
+      case_option_def]);;
+
+export_thm parse_map_inverse;;
+
+let parse_map_strong_inverse = prove
+  (`!(f : B -> C) p g e.
+      parse_strong_inverse (p : (A,B) parser) e /\
+      (!b. f (g b) = b) /\
+      (!b1 b2 c. f b1 = c /\ f b2 = c ==> b1 = b2) ==>
+      parse_strong_inverse (parse_map f p) (\c. e (g c))`,
+   REWRITE_TAC [parse_strong_inverse_def] THEN
+   REPEAT STRIP_TAC THENL
+   [MATCH_MP_TAC parse_map_inverse THEN
+    ASM_REWRITE_TAC [];
+    POP_ASSUM MP_TAC THEN
+    ASM_REWRITE_TAC [parse_parse_map; append_stream_def] THEN
+    MP_TAC (ISPECL [`p : (A,B) parser`; `s : A stream`] parse_cases) THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [case_option_def; option_distinct; option_inj; PAIR_EQ] THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC [option_inj; PAIR_EQ] THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    EXISTS_TAC `x : C` THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm parse_map_strong_inverse;;
 
 let is_parser_pair = prove
   (`!pb pc. is_parser (parser_pair (pb : (A,B) parser) (pc : (A,C) parser))`,
@@ -425,23 +683,13 @@ let parse_pair_strong_inverse = prove
 
 export_thm parse_pair_strong_inverse;;
 
-let is_parser_option = prove
-  (`!f. is_parser (parser_option (f : A -> B option))`,
-   REPEAT GEN_TAC THEN
-   REWRITE_TAC [is_parser_def; parser_option_def] THEN
-   REPEAT GEN_TAC THEN
-   MP_TAC (ISPECL [`(f : A -> B option) x`] option_cases) THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [case_option_def] THEN
-   MATCH_ACCEPT_TAC is_suffix_stream_refl);;
-
-export_thm is_parser_option;;
-
 let dest_parse_option = prove
-  (`!f. dest_parser (parse_option (f : A -> B option)) = parser_option f`,
-   REPEAT GEN_TAC THEN
+  (`!f a s.
+      dest_parser (parse_option (f : A -> B option)) a s =
+      case_option NONE (\b. SOME (b,s)) (f a)`,
    REWRITE_TAC
-     [parse_option_def; GSYM (CONJUNCT2 parser_tybij); is_parser_option]);;
+     [parse_option_def; dest_parse_partial_map; parser_partial_map_def;
+      case_option_def; dest_parse_all; parser_all_def]);;
 
 export_thm dest_parse_option;;
 
@@ -451,13 +699,14 @@ let parse_parse_option = prove
       case_stream
         NONE
         NONE
-        (\a s'. case_option NONE (\b. SOME (b,s')) (f a))`,
-    ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
-    REPEAT STRIP_TAC THEN
-    MP_TAC (ISPEC `x : A stream` stream_cases) THEN
-    REPEAT STRIP_TAC THEN
-    ASM_REWRITE_TAC [parse_def; case_stream_def; case_option_def] THEN
-    REWRITE_TAC [dest_parse_option; parser_option_def]);;
+        (\a s. case_option NONE (\b. SOME (b,s)) (f a))`,
+   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+   REWRITE_TAC
+     [parse_option_def; parse_parse_partial_map; parse_parse_all] THEN
+   REPEAT STRIP_TAC THEN
+   MP_TAC (ISPEC `x : A stream` stream_cases) THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_stream_def; case_option_def]);;
 
 export_thm parse_parse_option;;
 
@@ -499,23 +748,30 @@ let parse_option_strong_inverse = prove
 
 export_thm parse_option_strong_inverse;;
 
+let dest_parse_some = prove
+  (`!p a s.
+      dest_parser (parse_some (p : A -> bool)) a s =
+      if p a then SOME (a,s) else NONE`,
+   REWRITE_TAC [parse_some_def; dest_parse_option] THEN
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPEC `(p : A -> bool) a` BOOL_CASES_AX) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_option_def; COND_CLAUSES]);;
+
+export_thm dest_parse_some;;
+
 let parse_parse_some = prove
   (`!p.
       parse (parse_some (p : A -> bool)) =
       case_stream
         NONE
         NONE
-        (\a s'. if p a then SOME (a,s') else NONE)`,
-    REWRITE_TAC [parse_parse_option; parse_some_def] THEN
-    GEN_TAC THEN
-    AP_TERM_TAC THEN
-    ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
-    ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
-    REPEAT STRIP_TAC THEN
-    REWRITE_TAC [] THEN
-    MP_TAC (SPEC `(p : A -> bool) x` BOOL_CASES_AX) THEN
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [case_option_def; COND_CLAUSES]);;
+        (\a s. if p a then SOME (a,s) else NONE)`,
+   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+   REPEAT GEN_TAC THEN
+   MP_TAC (ISPEC `x : A stream` stream_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [parse_def; case_stream_def; dest_parse_some]);;
 
 export_thm parse_parse_some;;
 
