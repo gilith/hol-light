@@ -194,6 +194,49 @@ let decode_def = new_definition
 
 export_thm decode_def;;
 
+let encode_cont1_def = new_definition
+  `!p0 p1.
+     encode_cont1 p0 p1 =
+     let b00 = byte_shl p0 2 in
+     let b01 = byte_shr (byte_and p1 (num_to_byte 192)) 6 in
+     let b0 = byte_or (num_to_byte 192) (byte_or b00 b01) in
+     let b10 = byte_and p1 (num_to_byte 63) in
+     let b1 = byte_or (num_to_byte 128) b10 in
+     CONS b0 (CONS b1 [])`;;
+
+export_thm encode_cont1_def;;
+
+let encode_cont2_def = new_definition
+  `!p0 p1.
+     encode_cont2 p0 p1 =
+     let b00 = byte_shr (byte_and p0 (num_to_byte 240)) 4 in
+     let b0 = byte_or (num_to_byte 224) b00 in
+     let b10 = byte_shl (byte_and p0 (num_to_byte 15)) 2 in
+     let b11 = byte_shr (byte_and p1 (num_to_byte 192)) 6 in
+     let b1 = byte_or (num_to_byte 128) (byte_or b10 b11) in
+     let b20 = byte_and p1 (num_to_byte 63) in
+     let b2 = byte_or (num_to_byte 128) b20 in
+     CONS b0 (CONS b1 (CONS b2 []))`;;
+
+export_thm encode_cont2_def;;
+
+let encode_cont3_def = new_definition
+  `!p p0 p1.
+     encode_cont3 p p0 p1 =
+     let b00 = byte_shr (byte_and p (num_to_byte 28)) 2 in
+     let b0 = byte_or (num_to_byte 240) b00 in
+     let b10 = byte_shl (byte_and p (num_to_byte 3)) 4 in
+     let b11 = byte_shr (byte_and p0 (num_to_byte 240)) 4 in
+     let b1 = byte_or (num_to_byte 128) (byte_or b10 b11) in
+     let b20 = byte_shl (byte_and p0 (num_to_byte 15)) 2 in
+     let b21 = byte_shr (byte_and p1 (num_to_byte 192)) 6 in
+     let b2 = byte_or (num_to_byte 128) (byte_or b20 b21) in
+     let b30 = byte_and p1 (num_to_byte 63) in
+     let b3 = byte_or (num_to_byte 128) b30 in
+     CONS b0 (CONS b1 (CONS b2 (CONS b3 [])))`;;
+
+export_thm encode_cont3_def;;
+
 let encoder_def = new_definition
   `!ch.
      encoder ch =
@@ -201,45 +244,15 @@ let encoder_def = new_definition
      let p = dest_plane pl in
      let (p0,p1) = word16_to_bytes (dest_position pos) in
      if p = num_to_byte 0 then
-       if p0 = num_to_byte 0 then
-         if byte_bit p1 7 then
-           let b00 = byte_shr (byte_and p1 (num_to_byte 192)) 6 in
-           let b0 = byte_or (num_to_byte 192) b00 in
-           let b10 = byte_and p1 (num_to_byte 63) in
-           let b1 = byte_or (num_to_byte 128) b10 in
-           CONS b0 (CONS b1 [])
-         else
-           let b0 = p1 in
-           CONS b0 []
+       if p0 = num_to_byte 0 /\ ~byte_bit p1 7 then
+         CONS p1 []
        else
          if byte_and (num_to_byte 248) p0 = num_to_byte 0 then
-           let b00 = byte_shl p0 2 in
-           let b01 = byte_shr (byte_and p1 (num_to_byte 192)) 6 in
-           let b0 = byte_or (num_to_byte 192) (byte_or b00 b01) in
-           let b10 = byte_and p1 (num_to_byte 63) in
-           let b1 = byte_or (num_to_byte 128) b10 in
-           CONS b0 (CONS b1 [])
+           encode_cont1 p0 p1
          else
-           let b00 = byte_shr (byte_and p0 (num_to_byte 240)) 4 in
-           let b0 = byte_or (num_to_byte 224) b00 in
-           let b10 = byte_shl (byte_and p0 (num_to_byte 15)) 2 in
-           let b11 = byte_shr (byte_and p1 (num_to_byte 192)) 6 in
-           let b1 = byte_or (num_to_byte 128) (byte_or b10 b11) in
-           let b20 = byte_and p1 (num_to_byte 63) in
-           let b2 = byte_or (num_to_byte 128) b20 in
-           CONS b0 (CONS b1 (CONS b2 []))
+           encode_cont2 p0 p1
      else
-       let b00 = byte_shr (byte_and p (num_to_byte 28)) 2 in
-       let b0 = byte_or (num_to_byte 240) b00 in
-       let b10 = byte_shl (byte_and p (num_to_byte 3)) 4 in
-       let b11 = byte_shr (byte_and p0 (num_to_byte 240)) 4 in
-       let b1 = byte_or (num_to_byte 128) (byte_or b10 b11) in
-       let b20 = byte_shl (byte_and p0 (num_to_byte 15)) 2 in
-       let b21 = byte_shr (byte_and p1 (num_to_byte 192)) 6 in
-       let b2 = byte_or (num_to_byte 128) (byte_or b20 b21) in
-       let b30 = byte_and p1 (num_to_byte 63) in
-       let b3 = byte_or (num_to_byte 128) b30 in
-       CONS b0 (CONS b1 (CONS b2 (CONS b3 [])))`;;
+       encode_cont3 p p0 p1`;;
 
 export_thm encoder_def;;
 
@@ -304,6 +317,8 @@ export_thm dest_parser_decoder;;
 let decoder_encoder_inverse = prove
   (`parse_inverse decoder encoder`,
    REWRITE_TAC [parse_inverse_def] THEN
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [encoder_def] THEN
 
 export_thm decoder_encoder_inverse;;
 
