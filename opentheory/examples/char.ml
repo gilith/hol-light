@@ -96,9 +96,9 @@ let parse_cont3_def = new_definition
 
 export_thm parse_cont3_def;;
 
-let decode_cont_def = new_definition
+let decode_cont1_def = new_definition
   `!b0 b1.
-     decode_cont b0 b1 =
+     decode_cont1 b0 b1 =
      let pl = mk_plane (num_to_byte 0) in
      let p0 = byte_shr (byte_and b0 (num_to_byte 28)) 2 in
      let y1 = byte_shl (byte_and b0 (num_to_byte 3)) 6 in
@@ -111,7 +111,7 @@ let decode_cont_def = new_definition
        let ch = mk_unicode (pl,pos) in
        SOME ch`;;
 
-export_thm decode_cont_def;;
+export_thm decode_cont1_def;;
 
 let decode_cont2_def = new_definition
   `!b0 b1 b2.
@@ -168,7 +168,7 @@ let decoder_parse_def = new_definition
            else
              parse (parse_partial_map (decode_cont2 b0) parse_cont2) s
          else
-           parse (parse_partial_map (decode_cont b0) parse_cont) s
+           parse (parse_partial_map (decode_cont1 b0) parse_cont) s
        else
          NONE
      else
@@ -294,7 +294,7 @@ let is_parser_decoder_parse = prove
       ASM_REWRITE_TAC [case_option_def] THEN
       MATCH_MP_TAC is_suffix_stream_proper THEN
       ASM_REWRITE_TAC []];
-     MP_TAC (ISPECL [`parse_partial_map (decode_cont x) parse_cont`;
+     MP_TAC (ISPECL [`parse_partial_map (decode_cont1 x) parse_cont`;
                      `xs : byte stream`] parse_cases) THEN
      STRIP_TAC THEN
      ASM_REWRITE_TAC [case_option_def] THEN
