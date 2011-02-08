@@ -96,6 +96,45 @@ let parse_cont3_def = new_definition
 
 export_thm parse_cont3_def;;
 
+let decode_cont_def = new_definition
+  `!b0 b1.
+     decode_cont b0 b1 =
+     let pl = mk_plane (num_to_byte 0) in
+     let p0 = byte_shr (byte_and b0 (num_to_byte 28)) 2 in
+     let y1 = byte_shl (byte_and b0 (num_to_byte 3)) 6 in
+     let x1 = byte_and b1 (num_to_byte 63) in
+     let p1 = byte_or y1 x1 in
+     if p0 = num_to_byte 0 /\ byte_lt p1 (num_to_byte 128) then
+       NONE
+     else
+       let pos = mk_position (bytes_to_word16 p0 p1) in
+       let ch = mk_unicode (pl,pos) in
+       SOME ch`;;
+
+export_thm decode_cont_def;;
+
+let decode_cont2_def = new_definition
+  `!b0 b1 b2.
+     decode_cont2 b0 (b1,b2) =
+     let z0 = byte_shl (byte_and b0 (num_to_byte 15)) 4 in
+     let y0 = byte_shr (byte_and b1 (num_to_byte 60)) 2 in
+     let p0 = byte_or z0 y0 in
+     if byte_lt p0 (num_to_byte 8) \/
+        (byte_le (num_to_byte 216) p0 /\
+         byte_le p0 (num_to_byte 223)) then NONE
+     else
+       let y1 = byte_shl (byte_and b1 (num_to_byte 3)) 6 in
+       let x1 = byte_and b2 (num_to_byte 63) in
+       let p1 = byte_or y1 x1 in
+       if p0 = num_to_byte 255 /\ byte_le (num_to_byte 254) p1 then NONE
+       else
+         let pl = mk_plane (num_to_byte 0) in
+         let pos = mk_position (bytes_to_word16 p0 p1) in
+         let ch = mk_unicode (pl,pos) in
+         SOME ch`;;
+
+export_thm decode_cont2_def;;
+
 let decode_cont3_def = new_definition
   `!b0 b1 b2 b3.
      decode_cont3 b0 (b1,(b2,b3)) =
@@ -124,49 +163,12 @@ let decoder_parse_def = new_definition
        if byte_bit b0 6 then
          if byte_bit b0 5 then
            if byte_bit b0 4 then
-             if byte_bit b0 3 then
-               NONE
-             else
-               parse (parse_partial_map (decode_cont3 b0) parse_cont3) s
+             if byte_bit b0 3 then NONE
+             else parse (parse_partial_map (decode_cont3 b0) parse_cont3) s
            else
-             case_option
-               NONE
-               (\ ((b1,b2),s').
-                  let z0 = byte_shl (byte_and b0 (num_to_byte 15)) 4 in
-                  let y0 = byte_shr (byte_and b1 (num_to_byte 60)) 2 in
-                  let p0 = byte_or z0 y0 in
-                  if byte_lt p0 (num_to_byte 8) \/
-                     (byte_le (num_to_byte 216) p0 /\
-                      byte_le p0 (num_to_byte 223)) then
-                    NONE
-                  else
-                    let y1 = byte_shl (byte_and b1 (num_to_byte 3)) 6 in
-                    let x1 = byte_and b2 (num_to_byte 63) in
-                    let p1 = byte_or y1 x1 in
-                    if p0 = num_to_byte 255 /\ byte_le (num_to_byte 254) p1 then
-                      NONE
-                    else
-                      let pl = mk_plane (num_to_byte 0) in
-                      let pos = mk_position (bytes_to_word16 p0 p1) in
-                      let ch = mk_unicode (pl,pos) in
-                      SOME (ch,s'))
-               (parse parse_cont2 s)
+             parse (parse_partial_map (decode_cont2 b0) parse_cont2) s
          else
-           case_option
-             NONE
-             (\ (b1,s').
-               let pl = mk_plane (num_to_byte 0) in
-               let p0 = byte_shr (byte_and b0 (num_to_byte 28)) 2 in
-               let y1 = byte_shl (byte_and b0 (num_to_byte 3)) 6 in
-               let x1 = byte_and b1 (num_to_byte 63) in
-               let p1 = byte_or y1 x1 in
-               if p0 = num_to_byte 0 /\ byte_lt p1 (num_to_byte 128) then
-                 NONE
-               else
-                 let pos = mk_position (bytes_to_word16 p0 p1) in
-                 let ch = mk_unicode (pl,pos) in
-                 SOME (ch,s'))
-             (parse parse_cont s)
+           parse (parse_partial_map (decode_cont b0) parse_cont) s
        else
          NONE
      else
@@ -248,13 +250,57 @@ export_thm encode_def;;
 
 logfile "char-utf8-thm";;
 
-(***
 let is_parser_decoder_parse = prove
   (`is_parser decoder_parse`,
-   REWRITE_TAC [decoder_parse_def] THEN
+   REWRITE_TAC [is_parser_def; decoder_parse_def] THEN
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPEC `byte_bit x 7` BOOL_CASES_AX) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_option_def; COND_CLAUSES] THENL
+   [MP_TAC (SPEC `byte_bit x 6` BOOL_CASES_AX) THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [case_option_def; COND_CLAUSES] THEN
+    MP_TAC (SPEC `byte_bit x 5` BOOL_CASES_AX) THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [case_option_def; COND_CLAUSES] THENL
+    [MP_TAC (SPEC `byte_bit x 4` BOOL_CASES_AX) THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC [case_option_def; COND_CLAUSES] THENL
+     [MP_TAC (SPEC `byte_bit x 3` BOOL_CASES_AX) THEN
+      STRIP_TAC THEN
+      ASM_REWRITE_TAC [case_option_def; COND_CLAUSES] THEN
+      MP_TAC (ISPECL [`parse_partial_map (decode_cont3 x) parse_cont3`;
+                      `xs : byte stream`] parse_cases) THEN
+      STRIP_TAC THEN
+      ASM_REWRITE_TAC [case_option_def] THEN
+      MATCH_MP_TAC is_suffix_stream_proper THEN
+      ASM_REWRITE_TAC [];
+      MP_TAC (ISPECL [`parse_partial_map (decode_cont2 x) parse_cont2`;
+                      `xs : byte stream`] parse_cases) THEN
+      STRIP_TAC THEN
+      ASM_REWRITE_TAC [case_option_def] THEN
+      MATCH_MP_TAC is_suffix_stream_proper THEN
+      ASM_REWRITE_TAC []];
+     MP_TAC (ISPECL [`parse_partial_map (decode_cont x) parse_cont`;
+                     `xs : byte stream`] parse_cases) THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC [case_option_def] THEN
+     MATCH_MP_TAC is_suffix_stream_proper THEN
+     ASM_REWRITE_TAC []];
+    REWRITE_TAC
+      [LET_DEF; LET_END_DEF; case_option_def; is_suffix_stream_refl]]);;
 
-export_thm decoder_encoder_strong_inverse;;
+export_thm is_parser_decoder_parse;;
 
+let dest_parser_decoder = prove
+  (`dest_parser decoder = decoder_parse`,
+   REWRITE_TAC
+     [decoder_def; GSYM (CONJUNCT2 parser_tybij);
+      is_parser_decoder_parse]);;
+
+export_thm dest_parser_decoder;;
+
+(***
 let decoder_encoder_inverse = prove
   (`parse_inverse decoder encoder`,
    REWRITE_TAC [parse_inverse_def] THEN
