@@ -163,11 +163,3 @@ loads "define.ml";;     (* Support for general recursive definitions         *)
 
 loads "help.ml";;       (* Online help using the entries in Help directory   *)
 loads "database.ml";;   (* List of name-theorem pairs for search system      *)
-
-(* ------------------------------------------------------------------------- *)
-(* Additions to the standard library.                                        *)
-(* ------------------------------------------------------------------------- *)
-
-loads "opentheory/stdlib/all.ml";;
-
-stop_logging ();;

@@ -4,3 +4,5 @@
 
 loads "opentheory/stdlib/option.ml";;
 loads "opentheory/stdlib/list.ml";;
+
+stop_logging ();;

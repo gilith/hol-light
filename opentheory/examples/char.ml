@@ -96,6 +96,27 @@ let parse_cont3_def = new_definition
 
 export_thm parse_cont3_def;;
 
+let decode_cont3_def = new_definition
+  `!b0 b1 b2 b3.
+     decode_cont3 b0 (b1,(b2,b3)) =
+     let w = byte_shl (byte_and b0 (num_to_byte 7)) 2 in
+     let z = byte_shr (byte_and b1 (num_to_byte 48)) 4 in
+     let p = byte_or w z in
+     if p = num_to_byte 0 \/ byte_lt (num_to_byte 16) p then NONE
+     else
+       let pl = mk_plane p in
+       let z0 = byte_shl (byte_and b1 (num_to_byte 15)) 4 in
+       let y0 = byte_shr (byte_and b2 (num_to_byte 60)) 2 in
+       let p0 = byte_or z0 y0 in
+       let y1 = byte_shl (byte_and b2 (num_to_byte 3)) 6 in
+       let x1 = byte_and b3 (num_to_byte 63) in
+       let p1 = byte_or y1 x1 in
+       let pos = mk_position (bytes_to_word16 p0 p1) in
+       let ch = mk_unicode (pl,pos) in
+       SOME ch`;;
+
+export_thm decode_cont3_def;;
+
 let decoder_parse_def = new_definition
   `!b0 s.
      decoder_parse b0 s =
@@ -106,26 +127,7 @@ let decoder_parse_def = new_definition
              if byte_bit b0 3 then
                NONE
              else
-               case_option
-                 NONE
-                 (\ ((b1,(b2,b3)),s').
-                    let w = byte_shl (byte_and b0 (num_to_byte 7)) 2 in
-                    let z = byte_shr (byte_and b1 (num_to_byte 48)) 4 in
-                    let p = byte_or w z in
-                    if p = num_to_byte 0 \/ byte_lt (num_to_byte 16) p then
-                      NONE
-                    else
-                      let pl = mk_plane p in
-                      let z0 = byte_shl (byte_and b1 (num_to_byte 15)) 4 in
-                      let y0 = byte_shr (byte_and b2 (num_to_byte 60)) 2 in
-                      let p0 = byte_or z0 y0 in
-                      let y1 = byte_shl (byte_and b2 (num_to_byte 3)) 6 in
-                      let x1 = byte_and b3 (num_to_byte 63) in
-                      let p1 = byte_or y1 x1 in
-                      let pos = mk_position (bytes_to_word16 p0 p1) in
-                      let ch = mk_unicode (pl,pos) in
-                      SOME (ch,s'))
-                 (parse parse_cont3 s)
+               parse (parse_partial_map (decode_cont3 b0) parse_cont3) s
            else
              case_option
                NONE

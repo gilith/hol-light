@@ -14,6 +14,7 @@ rm -f opentheory/articles/*.thy
 
 log=opentheory/log
 (echo '#use "hol.ml";;'
+echo '#use "opentheory/stdlib/all.ml";;'
 if test "$OPENTHEORY_STDLIB" = ""
 then
     echo '#use "opentheory/examples/all.ml";;'
