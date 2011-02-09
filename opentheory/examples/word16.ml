@@ -72,6 +72,9 @@ let word16_to_num_inj = new_axiom
 let num_to_word16_eq = new_axiom
   `!x y. num_to_word16 x = num_to_word16 y <=> x MOD word16_size = y MOD word16_size`;;
 
+let word16_to_num_bound = new_axiom
+  `!x. word16_to_num x < word16_size`;;
+
 let word16_shl_def = new_axiom
  `!w n. word16_shl w n = num_to_word16 (word16_to_num w * (2 EXP n))`;;
 
@@ -104,7 +107,7 @@ let word16_or_def = new_axiom
 let word16_not_def = new_axiom
   `!w. word16_not w = list_to_word16 (MAP (~) (word16_to_list w))`;;
 
-logfile "word16-bytes";;
+logfile "word16-bytes-def";;
 
 let word16_to_bytes_def = new_definition
   `!w.
@@ -122,6 +125,26 @@ let bytes_to_word16_def = new_definition
        (num_to_word16 (byte_to_num b2))`;;
 
 export_thm bytes_to_word16_def;;
+
+logfile "word16-bytes-thm";;
+
+(***
+let dest_bytes_to_word16_cases = prove
+  (`!w. ?b0 b1. w = bytes_to_word16 b0 b1 /\ word16_to_bytes w = (b0,b1)`,
+   GEN_TAC THEN
+   EXISTS_TAC `FST (word16_to_bytes w)` THEN
+   EXISTS_TAC `SND (word16_to_bytes w)` THEN
+   REWRITE_TAC [] THEN
+   REWRITE_TAC [word16_to_bytes_def; bytes_to_word16_def] THEN
+   REWRITE_TAC [num_to_byte_to_num; word16_to_num_to_word16]
+
+export_thm dest_bytes_to_word16_cases;;
+
+let bytes_to_word16_cases = prove
+  (`!w. ?b0 b1. w = bytes_to_word16 b0 b1`,
+
+export_thm bytes_to_word16_cases;;
+***)
 
 logfile_end ();;
 

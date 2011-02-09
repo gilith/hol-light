@@ -256,4 +256,11 @@ let num_to_mod_eq = prove
 
 export_thm num_to_mod_eq;;
 
+let mod_to_num_bound = prove
+  (`!x. mod_to_num x < mod_N`,
+   ONCE_REWRITE_TAC [GSYM mod_to_num_to_mod] THEN
+   REWRITE_TAC [num_to_mod_to_num; mod_lt]);;
+
+export_thm mod_to_num_bound;;
+
 logfile_end ();;

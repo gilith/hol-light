@@ -70,6 +70,69 @@ let unicode_tybij =
 
 export_thm unicode_tybij;;
 
+logfile "char-thm";;
+
+let plane_cases = prove
+  (`!pl. ?b. is_plane b /\ pl = mk_plane b`,
+   GEN_TAC THEN
+   EXISTS_TAC `dest_plane pl` THEN
+   REWRITE_TAC [plane_tybij]);;
+
+export_thm plane_cases;;
+
+let dest_plane_cases = prove
+  (`!pl. ?b. is_plane b /\ pl = mk_plane b /\ dest_plane pl = b`,
+   GEN_TAC THEN
+   MP_TAC (SPEC `pl : plane` plane_cases) THEN
+   REWRITE_TAC [plane_tybij] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `b : byte` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm dest_plane_cases;;
+
+let position_cases = prove
+  (`!pos. ?w. is_position w /\ pos = mk_position w`,
+   GEN_TAC THEN
+   EXISTS_TAC `dest_position pos` THEN
+   REWRITE_TAC [position_tybij]);;
+
+export_thm position_cases;;
+
+let dest_position_cases = prove
+  (`!pos. ?w. is_position w /\ pos = mk_position w /\ dest_position pos = w`,
+   GEN_TAC THEN
+   MP_TAC (SPEC `pos : position` position_cases) THEN
+   REWRITE_TAC [position_tybij] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `w : word16` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm dest_position_cases;;
+
+let unicode_cases = prove
+  (`!c. ?pl pos. is_unicode (pl,pos) /\ c = mk_unicode (pl,pos)`,
+   GEN_TAC THEN
+   EXISTS_TAC `FST (dest_unicode c)` THEN
+   EXISTS_TAC `SND (dest_unicode c)` THEN
+   REWRITE_TAC [unicode_tybij]);;
+
+export_thm unicode_cases;;
+
+let dest_unicode_cases = prove
+  (`!c. ?pl pos.
+      is_unicode (pl,pos) /\ c = mk_unicode (pl,pos) /\
+      dest_unicode c = (pl,pos)`,
+   GEN_TAC THEN
+   MP_TAC (SPEC `c : unicode` unicode_cases) THEN
+   REWRITE_TAC [unicode_tybij] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `pl : plane` THEN
+   EXISTS_TAC `pos : position` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm dest_unicode_cases;;
+
 (* ------------------------------------------------------------------------- *)
 (* UTF-8 encodings of unicode characters.                                    *)
 (* ------------------------------------------------------------------------- *)
@@ -318,7 +381,21 @@ let decoder_encoder_inverse = prove
   (`parse_inverse decoder encoder`,
    REWRITE_TAC [parse_inverse_def] THEN
    REPEAT GEN_TAC THEN
-   REWRITE_TAC [encoder_def] THEN
+   REWRITE_TAC [encoder_def; LET_DEF; LET_END_DEF] THEN
+   MP_TAC (SPEC `x : unicode` dest_unicode_cases) THEN
+   STRIP_TAC THEN
+   POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
+   POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC (SPEC `pl : plane` dest_plane_cases) THEN
+   STRIP_TAC THEN
+   POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
+   POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC (SPEC `pos : position` dest_position_cases) THEN
+   STRIP_TAC THEN
+   POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
+   POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
+
+   REWRITE_TAC [word16_to_bytes_def]
 
 export_thm decoder_encoder_inverse;;
 

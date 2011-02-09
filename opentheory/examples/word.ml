@@ -64,7 +64,10 @@ let word_to_num_inj = new_axiom
 let num_to_word_eq = new_axiom
   `!x y. num_to_word x = num_to_word y <=> x MOD word_size = y MOD word_size`;;
 
-logfile "word-bits";;
+let word_to_num_bound = new_axiom
+  `!x. word_to_num x < word_size`;;
+
+logfile "word-bits-def";;
 
 let word_shl_def = new_definition
  `!w n. word_shl w n = num_to_word (word_to_num w * (2 EXP n))`;;
@@ -113,5 +116,39 @@ let word_not_def = new_definition
   `!w. word_not w = list_to_word (MAP (~) (word_to_list w))`;;
 
 export_thm word_not_def;;
+
+logfile "word-bits-thm";;
+
+let length_word_to_list = prove
+  (`!w. LENGTH (word_to_list w) = word_width`,
+   REWRITE_TAC [word_to_list_def; LENGTH_MAP; length_interval]);;
+
+export_thm length_word_to_list;;
+
+(***
+let list_to_word_to_list = prove
+  (`!l. LENGTH l = word_width <=> word_to_list (list_to_word l) = l`,
+   GEN_TAC THEN
+   EQ_TAC THENL
+   [
+
+let num_to_word_list = prove
+  (`(num_to_word 0 = list_to_word []) /\
+    (!n. num_to_word n = list_to_word []) /\
+
+word_and (list_to_word []) l2 = list_to_word []) /\
+    (!l1. word_and l1 (list_to_word []) = list_to_word []) /\
+    (!h1 t1 h2 t2.
+
+let word_and_list = prove
+  (`(!l2. word_and (list_to_word []) l2 = list_to_word []) /\
+    (!l1. word_and l1 (list_to_word []) = list_to_word []) /\
+    (!h1 t1 h2 t2.
+       word_and (list_to_word (CONS h1 t1)) (list_to_word (CONS h2 t2)) =
+       list_to_word (CONS (h1 /\ h2) (word_to_list (word_and (list_to_word t1) (CONS h1 t1)) (list_to_word (CONS h2 t2)) =
+!w1 w2.
+     word_and w1 w2 =
+     list_to_word (zipwith ( /\ ) (word_to_list w1) (word_to_list w2))`;;
+***)
 
 logfile_end ();;

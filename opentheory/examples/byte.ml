@@ -72,6 +72,9 @@ let byte_to_num_inj = new_axiom
 let num_to_byte_eq = new_axiom
   `!x y. num_to_byte x = num_to_byte y <=> x MOD byte_size = y MOD byte_size`;;
 
+let byte_to_num_bound = new_axiom
+  `!x. byte_to_num x < byte_size`;;
+
 let byte_shl_def = new_axiom
  `!w n. byte_shl w n = num_to_byte (byte_to_num w * (2 EXP n))`;;
 
