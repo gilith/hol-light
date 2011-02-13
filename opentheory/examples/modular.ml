@@ -38,7 +38,7 @@ let mod_mod = prove
 
 export_thm mod_mod;;
 
-let mod_add = prove
+let add_mod = prove
   (`!m n. (m MOD mod_N + n MOD mod_N) MOD mod_N = (m + n) MOD mod_N`,
    REPEAT GEN_TAC THEN
    MP_TAC (SPECL [`m:num`; `n:num`; `mod_N:num`] MOD_ADD_MOD) THEN
@@ -47,9 +47,9 @@ let mod_add = prove
    [REWRITE_TAC [mod_N_positive];
     DISCH_THEN ACCEPT_TAC]);;
 
-export_thm mod_add;;
+export_thm add_mod;;
 
-let mod_mult = prove
+let mult_mod = prove
   (`!m n. (m MOD mod_N * n MOD mod_N) MOD mod_N = (m * n) MOD mod_N`,
    REPEAT GEN_TAC THEN
    MP_TAC (SPECL [`m:num`; `mod_N:num`; `n:num`] MOD_MULT_MOD2) THEN
@@ -58,7 +58,7 @@ let mod_mult = prove
    [REWRITE_TAC [mod_N_positive];
     DISCH_THEN ACCEPT_TAC]);;
 
-export_thm mod_mult;;
+export_thm mult_mod;;
 
 logfile "modular-equiv-def";;
 
@@ -107,7 +107,7 @@ let mod_equiv_add = prove
   (`!x1 x2 y1 y2.
       mod_equiv x1 x2 /\ mod_equiv y1 y2 ==> mod_equiv (x1 + y1) (x2 + y2)`,
    REWRITE_TAC [mod_equiv_def] THEN
-   ONCE_REWRITE_TAC [GSYM mod_add] THEN
+   ONCE_REWRITE_TAC [GSYM add_mod] THEN
    SIMP_TAC []);;
 
 export_thm mod_equiv_add;;
@@ -116,7 +116,7 @@ let mod_equiv_mult = prove
   (`!x1 x2 y1 y2.
       mod_equiv x1 x2 /\ mod_equiv y1 y2 ==> mod_equiv (x1 * y1) (x2 * y2)`,
    REWRITE_TAC [mod_equiv_def] THEN
-   ONCE_REWRITE_TAC [GSYM mod_mult] THEN
+   ONCE_REWRITE_TAC [GSYM mult_mod] THEN
    SIMP_TAC []);;
 
 export_thm mod_equiv_mult;;
@@ -262,5 +262,25 @@ let mod_to_num_bound = prove
    REWRITE_TAC [num_to_mod_to_num; mod_lt]);;
 
 export_thm mod_to_num_bound;;
+
+let mod_to_num_div_bound = prove
+  (`!x. mod_to_num x DIV mod_N = 0`,
+   GEN_TAC THEN
+   MATCH_MP_TAC DIV_LT THEN
+   REWRITE_TAC [mod_to_num_bound]);;
+
+export_thm mod_to_num_div_bound;;
+
+let mod_add_to_num = prove
+  (`!x y. mod_to_num (mod_add x y) = (mod_to_num x + mod_to_num y) MOD mod_N`,
+   REPEAT GEN_TAC THEN
+   (CONV_TAC o LAND_CONV o RAND_CONV o RAND_CONV)
+     (REWR_CONV (GSYM mod_to_num_to_mod)) THEN
+   (CONV_TAC o LAND_CONV o RAND_CONV o RATOR_CONV o RAND_CONV)
+     (REWR_CONV (GSYM mod_to_num_to_mod)) THEN
+   REWRITE_TAC [GSYM num_to_mod_add] THEN
+   REWRITE_TAC [num_to_mod_to_num]);;
+
+export_thm mod_add_to_num;;
 
 logfile_end ();;
