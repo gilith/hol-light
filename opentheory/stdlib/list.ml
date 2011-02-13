@@ -52,6 +52,46 @@ let null_concat = prove
 
 export_thm null_concat;;
 
+logfile "list-take-drop-def";;
+
+let take_raw_def = new_recursive_definition num_RECURSION
+  `(!l. take 0 (l : A list) = []) /\
+   (!n l. take (SUC n) (l : A list) = CONS (HD l) (take n (TL l)))`;;
+
+let take_def = prove
+  (`(!l. take 0 (l : A list) = []) /\
+    (!n h t. take (SUC n) (CONS h t) = CONS (h : A) (take n t))`,
+   REWRITE_TAC [take_raw_def; HD; TL]);;
+
+export_thm take_def;;
+
+let drop_raw_def = new_recursive_definition num_RECURSION
+  `(!l. drop 0 (l : A list) = l) /\
+   (!n l. drop (SUC n) (l : A list) = drop n (TL l))`;;
+
+let drop_def = prove
+  (`(!l. drop 0 (l : A list) = l) /\
+    (!n h t. drop (SUC n) (CONS (h : A) t) = drop n t)`,
+   REWRITE_TAC [drop_raw_def; TL]);;
+
+export_thm drop_def;;
+
+logfile "list-take-drop-thm";;
+
+let take_drop = prove
+  (`!n (l : A list). n <= LENGTH l ==> APPEND (take n l) (drop n l) = l`,
+   MATCH_MP_TAC num_INDUCTION THEN
+   REWRITE_TAC [LENGTH; take_def; drop_def; SUC_INJ; APPEND] THEN
+   GEN_TAC THEN
+   STRIP_TAC THEN
+   GEN_TAC THEN
+   MP_TAC (SPEC `l : A list` list_cases) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [LENGTH; LE; NOT_SUC];
+    ASM_REWRITE_TAC [LENGTH; take_def; drop_def; APPEND; LE_SUC; CONS_11]]);;
+
+export_thm take_drop;;
+
 logfile "list-interval-def";;
 
 let interval_def = new_recursive_definition num_RECURSION

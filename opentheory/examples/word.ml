@@ -170,17 +170,6 @@ let is_word_to_list = prove
 
 export_thm is_word_to_list;;
 
-let PAT_ASSUM pat =
-    let is_pat th = can (term_match [] pat) (concl th) in
-    FIRST_X_ASSUM (fun th -> if is_pat th then MP_TAC th else NO_TAC);;
-
-let KNOW_TAC =
-    let th = ITAUT `!x y. x /\ (x ==> y) ==> y` in
-    fun tm ->
-      MATCH_MP_TAC th THEN
-      EXISTS_TAC tm THEN
-      CONJ_TAC;;
-
 let cond_mod_2 = prove
   (`!n. (if ODD n then 1 else 0) = n MOD 2`,
    GEN_TAC THEN
@@ -297,6 +286,14 @@ let word_to_list_to_word = prove
 export_thm word_to_list_to_word;;
 
 (***
+let list_to_word_to_list = prove
+  (`!l.
+      word_to_list (list_to_word l) =
+      if LENGTH l <= word_width then
+        APPEND l (REPLICATE (word_width - LENGTH l) F)
+      else
+        take word_width l`
+
 let list_to_word_to_list = prove
   (`!l. LENGTH l = word_width <=> word_to_list (list_to_word l) = l`,
    GEN_TAC THEN
