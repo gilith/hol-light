@@ -35,6 +35,64 @@ export_thm NULL_APPEND;;
 
 logfile_end ();;
 
+logfile "list-nth-thm";;
+
+let nth_eq = prove
+  (`!l (m : A list).
+      LENGTH l = LENGTH m /\
+      (!i. i < LENGTH l ==> EL i l = EL i m) ==>
+      l = m`,
+   ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [LENGTH; LENGTH_EQ_NIL] THEN
+    REPEAT STRIP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    LIST_INDUCT_TAC THENL
+    [REWRITE_TAC [LENGTH; NOT_SUC];
+     POP_ASSUM (K ALL_TAC) THEN
+     REWRITE_TAC [LENGTH; SUC_INJ; CONS_11] THEN
+     REPEAT STRIP_TAC THENL
+     [FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `0` th)) THEN
+      REWRITE_TAC [LT_0; EL; HD];
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
+      ASM_REWRITE_TAC [] THEN
+      REPEAT STRIP_TAC THEN
+      FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `SUC i` th)) THEN
+      ASM_REWRITE_TAC [LT_SUC; EL; TL]]]]);;
+
+export_thm nth_eq;;
+
+let nth_map = prove
+  (`!f l i. i < LENGTH l ==> EL i (MAP (f : A -> B) l) = f (EL i l)`,
+   GEN_TAC THEN
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [LENGTH; LT];
+    REWRITE_TAC [LENGTH; MAP] THEN
+    MATCH_MP_TAC num_INDUCTION THEN
+    REWRITE_TAC [EL; HD; LT_SUC; TL] THEN
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    FIRST_X_ASSUM ACCEPT_TAC]);;
+
+export_thm nth_map;;
+
+logfile "list-replicate-thm";;
+
+let nth_replicate = prove
+  (`!n x i. i < n ==> EL i (REPLICATE n (x : A)) = x`,
+   MATCH_MP_TAC num_INDUCTION THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [LT];
+    GEN_TAC THEN
+    STRIP_TAC THEN
+    REPEAT GEN_TAC THEN
+    MP_TAC (SPEC `i : num` num_CASES) THEN
+    STRIP_TAC THENL
+    [ASM_REWRITE_TAC [EL; HD; REPLICATE];
+     ASM_REWRITE_TAC [EL; TL; REPLICATE; LT_SUC]]]);;
+
+export_thm nth_replicate;;
+
 logfile "list-concat-def";;
 
 let concat_def = new_recursive_definition list_RECURSION
@@ -92,6 +150,80 @@ let take_drop = prove
 
 export_thm take_drop;;
 
+let length_take = prove
+  (`!n l. n <= LENGTH (l : A list) ==> LENGTH (take n l) = n`,
+   MATCH_MP_TAC num_INDUCTION THEN
+   REWRITE_TAC [LENGTH; take_def] THEN
+   GEN_TAC THEN
+   STRIP_TAC THEN
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [LENGTH; LE; NOT_SUC];
+    ASM_REWRITE_TAC [LENGTH; LE_SUC; take_def; SUC_INJ]]);;
+
+export_thm length_take;;
+
+let length_drop = prove
+  (`!n l. n <= LENGTH (l : A list) ==> LENGTH (drop n l) = LENGTH l - n`,
+   MATCH_MP_TAC num_INDUCTION THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [LENGTH; drop_def; SUB];
+    GEN_TAC THEN
+    STRIP_TAC THEN
+    LIST_INDUCT_TAC THENL
+    [REWRITE_TAC [LENGTH; LE; NOT_SUC];
+     ASM_REWRITE_TAC [LENGTH; LE_SUC; drop_def; SUB_SUC]]]);;
+
+export_thm length_drop;;
+
+let nth_take = prove
+  (`!n l i. n <= LENGTH (l : A list) /\ i < n ==> EL i (take n l) = EL i l`,
+   MATCH_MP_TAC num_INDUCTION THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [LT];
+    GEN_TAC THEN
+    STRIP_TAC THEN
+    LIST_INDUCT_TAC THENL
+    [REWRITE_TAC [LENGTH; LE; NOT_SUC];
+     REWRITE_TAC [LENGTH; LE_SUC; take_def] THEN
+     GEN_TAC THEN
+     MP_TAC (SPEC `i : num` num_CASES) THEN
+     STRIP_TAC THENL
+     [ASM_REWRITE_TAC [EL; HD];
+      ASM_REWRITE_TAC [EL; TL; LT_SUC]]]]);;
+
+export_thm nth_take;;
+
+let nth_drop = prove
+  (`!n l i.
+       n <= LENGTH (l : A list) /\ i < LENGTH l - n ==>
+       EL i (drop n l) = EL (n + i) l`,
+   MATCH_MP_TAC num_INDUCTION THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [ADD; drop_def];
+    GEN_TAC THEN
+    STRIP_TAC THEN
+    LIST_INDUCT_TAC THENL
+    [REWRITE_TAC [LENGTH; LE; NOT_SUC];
+     POP_ASSUM (K ALL_TAC) THEN
+     REWRITE_TAC [LENGTH; LE_SUC; drop_def; SUB_SUC; ADD; EL; TL] THEN
+     FIRST_ASSUM MATCH_ACCEPT_TAC]]);;
+
+export_thm nth_drop;;
+
+let take_length = prove
+  (`!l. take (LENGTH l) (l : A list) = l`,
+   LIST_INDUCT_TAC THEN
+   ASM_REWRITE_TAC [LENGTH; take_def]);;
+
+export_thm take_length;;
+
+let drop_length = prove
+  (`!l. drop (LENGTH l) (l : A list) = []`,
+   LIST_INDUCT_TAC THEN
+   ASM_REWRITE_TAC [LENGTH; drop_def]);;
+
+export_thm drop_length;;
+
 logfile "list-interval-def";;
 
 let interval_def = new_recursive_definition num_RECURSION
@@ -109,6 +241,24 @@ let length_interval = prove
    SIMP_TAC [LENGTH; interval_def; SUC_INJ]);;
 
 export_thm length_interval;;
+
+let nth_interval = prove
+  (`!m n i. i < n ==> EL i (interval m n) = m + i`,
+   ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
+   MATCH_MP_TAC num_INDUCTION THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [LT];
+    ALL_TAC] THEN
+   GEN_TAC THEN
+   STRIP_TAC THEN
+   REWRITE_TAC [interval_def] THEN
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPEC `i : num` num_CASES) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [EL; HD; ADD_0];
+    ASM_REWRITE_TAC [EL; TL; ADD_SUC; LT_SUC; GSYM (CONJUNCT2 ADD)]]);;
+
+export_thm nth_interval;;
 
 logfile "list-zipwith-def";;
 
