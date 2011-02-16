@@ -175,6 +175,41 @@ let is_word_to_list = prove
 
 export_thm is_word_to_list;;
 
+let even_0 = prove
+  (`!n. n = 0 ==> EVEN n`,
+   GEN_TAC THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   REWRITE_TAC [EVEN]);;
+
+let exp_2_nz = prove
+  (`!n. ~(2 EXP n = 0)`,
+   REWRITE_TAC [EXP_EQ_0] THEN
+   NUM_REDUCE_TAC);;
+
+let le_exp_2 = prove
+  (`!m n. 2 EXP m <= 2 EXP n <=> m <= n`,
+   REWRITE_TAC [LE_EXP] THEN
+   NUM_REDUCE_TAC);;
+
+let lt_exp_2 = prove
+  (`!m n. 2 EXP m < 2 EXP n <=> m < n`,
+   REWRITE_TAC [LT_EXP] THEN
+   NUM_REDUCE_TAC);;
+
+let mod_exp_2_lt = prove
+  (`!m n. m MOD (2 EXP n) < 2 EXP n`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPECL [`m : num`; `2 EXP n`] DIVISION) THEN
+   COND_TAC THENL
+   [REWRITE_TAC [exp_2_nz];
+    DISCH_THEN (fun th -> ACCEPT_TAC (CONJUNCT2 th))]);;
+
+let div_exp_2_lt = prove
+  (`!m n. m DIV (2 EXP n) = 0 <=> m < 2 EXP n`,
+   REPEAT GEN_TAC THEN
+   MATCH_MP_TAC DIV_EQ_0 THEN
+   MATCH_ACCEPT_TAC exp_2_nz);;
+
 let cond_mod_2 = prove
   (`!n. (if ODD n then 1 else 0) = n MOD 2`,
    GEN_TAC THEN
@@ -189,6 +224,45 @@ let cond_mod_2 = prove
     MP_TAC (SPEC `n:num` ODD_MOD) THEN
     ASM_REWRITE_TAC [] THEN
     DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
+
+let odd_mod_exp_2 = prove
+  (`!m n. ODD (m MOD (2 EXP n)) <=> ODD m /\ ~(n = 0)`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPEC `n:num` num_CASES) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [EXP; MULT_CLAUSES; MOD_1; ODD];
+    ALL_TAC] THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [NOT_SUC; EXP; ODD_MOD] THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC MOD_MOD THEN
+   REWRITE_TAC [GSYM EXP; exp_2_nz]);;
+
+let mod_div_exp_2 = prove
+  (`!x m n.
+      (x MOD (2 EXP m)) DIV (2 EXP n) =
+      (if m <= n then 0 else (x DIV (2 EXP n)) MOD (2 EXP (m - n)))`,
+   REPEAT GEN_TAC THEN
+   bool_cases_tac `m <= n` THENL
+   [ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC DIV_LT THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `2 EXP m` THEN
+    ASM_REWRITE_TAC [le_exp_2; mod_exp_2_lt];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   MP_TAC (SPECL [`x : num`; `2 EXP n`; `2 EXP (m - n)`] DIV_MOD) THEN
+   COND_TAC THENL
+   [REWRITE_TAC [MULT_EQ_0; exp_2_nz];
+    ALL_TAC] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [GSYM EXP_ADD] THEN
+   AP_TERM_TAC THEN
+   ASM_ARITH_TAC);;
 
 let word_bit_div = prove
   (`!w n. word_bit w n = ODD (word_to_num w DIV (2 EXP n))`,
@@ -303,25 +377,114 @@ let word_to_list_inj = prove
 
 export_thm word_to_list_inj;;
 
-(***
 let list_to_word_bit = prove
   (`!l n.
-      n < word_width ==>
-      word_bit (list_to_word l) n = (n < LENGTH l /\ EL n l)`,
-   REWRITE_TAC [word_bit_def; word_shr_def; num_to_word_to_num] THEN
-   REPEAT GEN_TAC THEN
-   AP_TERM_TAC THEN
-   MATCH_MP_TAC lt_word_size THEN
-   MATCH_MP_TAC LET_TRANS THEN
-   EXISTS_TAC `word_to_num w` THEN
+      word_bit (list_to_word l) n =
+      (n < word_width /\ n < LENGTH l /\ EL n l)`,
+   REWRITE_TAC [word_bit_div] THEN
+   ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
+   MATCH_MP_TAC num_INDUCTION THEN
    CONJ_TAC THENL
-   [MATCH_MP_TAC DIV_LE THEN
-    REWRITE_TAC [EXP_EQ_0] THEN
-    NUM_REDUCE_TAC;
-    REWRITE_TAC [word_to_num_bound]]);;
+   [LIST_INDUCT_TAC THENL
+    [REWRITE_TAC [LENGTH; nil_to_word_to_num; LT; ODD; EXP; DIV_1];
+     ALL_TAC] THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    REWRITE_TAC
+      [LENGTH; cons_to_word_to_num; EXP; DIV_1; EL; HD; LT_NZ; NOT_SUC] THEN
+    ASM_REWRITE_TAC [word_size_def; odd_mod_exp_2] THEN
+    CONV_TAC (RATOR_CONV (ONCE_REWRITE_CONV [CONJ_SYM])) THEN
+    AP_TERM_TAC THEN
+    MP_TAC (SPEC `h:bool` BOOL_CASES_AX) THEN
+    STRIP_TAC THENL
+    [ASM_REWRITE_TAC [GSYM ADD1; ODD_DOUBLE];
+     ASM_REWRITE_TAC [ADD_0; GSYM NOT_EVEN; EVEN_DOUBLE]];
+    ALL_TAC] THEN
+   GEN_TAC THEN
+   STRIP_TAC THEN
+   bool_cases_tac' `SUC n < word_width` THENL
+   [POP_ASSUM MP_TAC THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    REPEAT STRIP_TAC THEN
+    ASM_REWRITE_TAC [NOT_ODD] THEN
+    MATCH_MP_TAC even_0 THEN
+    REWRITE_TAC [div_exp_2_lt] THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `word_size` THEN
+    REWRITE_TAC [word_to_num_bound] THEN
+    REWRITE_TAC [word_size_def; le_exp_2] THEN
+    ASM_ARITH_TAC;
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [LENGTH; nil_to_word_to_num; LT; NOT_ODD] THEN
+    MATCH_MP_TAC even_0 THEN
+    REWRITE_TAC [div_exp_2_lt; LT_NZ; exp_2_nz];
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REWRITE_TAC [LENGTH; cons_to_word_to_num] THEN
+   REWRITE_TAC [LT_SUC; EL; TL] THEN
+   REWRITE_TAC [word_size_def; mod_div_exp_2; GSYM NOT_LT] THEN
+   ASM_REWRITE_TAC [odd_mod_exp_2; SUB_EQ_0; GSYM NOT_LT] THEN
+   FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `t : bool list` th)) THEN
+   KNOW_TAC `n < word_width` THENL
+   [ASM_ARITH_TAC;
+    ALL_TAC] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
+   REWRITE_TAC [ODD_MOD] THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC
+     `((2 * word_to_num (list_to_word t) + (if h then 1 else 0)) DIV 2) DIV
+      (2 EXP n)` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [EXP] THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    MATCH_MP_TAC DIV_DIV THEN
+    REWRITE_TAC [GSYM EXP; exp_2_nz];
+    ALL_TAC] THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC
+     `(2 * word_to_num (list_to_word t)) DIV 2 +
+      (if h then 1 else 0) DIV 2` THEN
+   CONJ_TAC THENL
+   [MP_TAC (SPECL [`2 * word_to_num (list_to_word t)`; `if h then 1 else 0`;
+                   `2`] DIV_ADD_MOD) THEN
+    COND_TAC THENL
+    [NUM_REDUCE_TAC;
+     ALL_TAC] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
+    MP_TAC (SPECL [`2`; `word_to_num (list_to_word t)`] MOD_MULT) THEN
+    COND_TAC THENL
+    [NUM_REDUCE_TAC;
+     ALL_TAC] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th; ADD]) THEN
+    BOOL_CASES_TAC `h:bool` THENL
+    [REWRITE_TAC [] THEN
+     NUM_REDUCE_TAC THEN
+     REWRITE_TAC [GSYM ODD_MOD; GSYM ADD1; ODD_DOUBLE];
+     REWRITE_TAC [] THEN
+     NUM_REDUCE_TAC THEN
+     REWRITE_TAC [GSYM EVEN_MOD; ADD_0; EVEN_DOUBLE]];
+    ALL_TAC] THEN
+   MP_TAC (SPECL [`2`; `word_to_num (list_to_word t)`] DIV_MULT) THEN
+   COND_TAC THENL
+   [NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th; EQ_ADD_LCANCEL_0]) THEN
+   MATCH_MP_TAC DIV_LT THEN
+   BOOL_CASES_TAC `h:bool` THEN
+   REWRITE_TAC [] THEN
+   NUM_REDUCE_TAC);;
 
-export_thm word_bit_div;;
+export_thm list_to_word_bit;;
 
+(***
 let short_list_to_word_to_list = prove
   (`!l.
       LENGTH l <= word_width ==>
