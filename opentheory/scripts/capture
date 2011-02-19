@@ -1,103 +1,18 @@
 #!/bin/bash
 
-opentheory=../opentheory
-
-prog=$opentheory/bin/mlton/opentheory
-if ! test -x $prog ; then echo "$prog not an executable" ; exit 1 ; fi
-
-theories=$opentheory/data/theories/hol-light
-if ! test -d $theories ; then echo "$theories not a directory" ; exit 1 ; fi
-
-rm -f opentheory/articles/*.art
-rm -f opentheory/articles/*.sum
-rm -f opentheory/articles/*.thy
-
 log=opentheory/log
+
 (echo '#use "hol.ml";;'
 echo '#use "opentheory/stdlib/all.ml";;'
 if test "$OPENTHEORY_STDLIB" = ""
 then
     echo '#use "opentheory/examples/all.ml";;'
 fi) | ocaml &> $log
+
 if grep '^Exception:\|^Error:\|^Error in included file' $log
 then
     cat $log
     exit 1
 fi
-
-for thy in opentheory/articles/*.thy
-do
-    base=$(basename $thy .thy)
-    sum=opentheory/articles/$base.sum
-    tdir=$theories/$base
-    tthy=$tdir/$base.thy
-    tart=$tdir/$base.art
-
-    if ! test -d $tdir
-    then
-        echo "making new" $base "theory directory"
-        mkdir $tdir
-
-        echo "name: $base" > $tthy
-        echo "version: 1.0" >> $tthy
-        echo -n "description: HOL Light theory segment extracted on " >> $tthy
-        date "+%Y-%m-%d" >> $tthy
-        echo "author: Joe Hurd <joe@gilith.com>" >> $tthy
-        echo "license: HOLLight" >> $tthy
-        echo "show: \"Data.Bool\"" >> $tthy
-        if (echo $base | grep '^list-' > /dev/null)
-        then
-            echo "show: \"Data.List\"" >> $tthy
-        fi
-        if (echo $base | grep '^option-' > /dev/null)
-        then
-            echo "show: \"Data.Option\"" >> $tthy
-        fi
-        if (echo $base | grep '^pair-' > /dev/null)
-        then
-            echo "show: \"Data.Pair\"" >> $tthy
-        fi
-        if (echo $base | grep '^sum-' > /dev/null)
-        then
-            echo "show: \"Data.Sum\"" >> $tthy
-        fi
-        if (echo $base | grep '^unit-' > /dev/null)
-        then
-            echo "show: \"Data.Unit\"" >> $tthy
-        fi
-        if (echo $base | grep '^function-' > /dev/null)
-        then
-            echo "show: \"Function\"" >> $tthy
-        fi
-        if (echo $base | grep '^natural-' > /dev/null)
-        then
-            echo "show: \"Number.Natural\"" >> $tthy
-        fi
-        if (echo $base | grep '^natural-' > /dev/null)
-        then
-            echo "show: \"Number.Numeral\"" >> $tthy
-        fi
-        if (echo $base | grep '^relation-' > /dev/null)
-        then
-            echo "show: \"Relation\"" >> $tthy
-        fi
-        echo >> $tthy
-        echo "main {" >> $tthy
-        echo "  article: \"$base.art\"" >> $tthy
-        echo "}" >> $tthy
-    fi
-
-    echo "compiling" $base
-
-    $prog info --preserve-theory --summary -o $sum --article -o $tart $thy || exit 1
-
-    if grep 'Unwanted' $tart ; then exit 1 ; fi
-
-    echo "installing" $base
-
-    $prog install --manual --reinstall --auto-uninstall $tthy || exit 1
-
-    echo
-done
 
 echo

@@ -163,17 +163,7 @@ export_thm word_not_def;;
 
 logfile "word-bits-thm";;
 
-let length_word_to_list = prove
-  (`!w. LENGTH (word_to_list w) = word_width`,
-   REWRITE_TAC [word_to_list_def; LENGTH_MAP; length_interval]);;
-
-export_thm length_word_to_list;;
-
-let is_word_to_list = prove
-  (`!w. is_word_list (word_to_list w)`,
-   REWRITE_TAC [is_word_list_def; length_word_to_list]);;
-
-export_thm is_word_to_list;;
+(* Helper theorems (not exported) *)
 
 let even_0 = prove
   (`!n. n = 0 ==> EVEN n`,
@@ -310,6 +300,20 @@ let mod_div_exp_2 = prove
    REWRITE_TAC [GSYM EXP_ADD] THEN
    AP_TERM_TAC THEN
    ASM_ARITH_TAC);;
+
+(* Exported theorems *)
+
+let length_word_to_list = prove
+  (`!w. LENGTH (word_to_list w) = word_width`,
+   REWRITE_TAC [word_to_list_def; LENGTH_MAP; length_interval]);;
+
+export_thm length_word_to_list;;
+
+let is_word_to_list = prove
+  (`!w. is_word_list (word_to_list w)`,
+   REWRITE_TAC [is_word_list_def; length_word_to_list]);;
+
+export_thm is_word_to_list;;
 
 let word_bit_div = prove
   (`!w n. word_bit w n = ODD (word_to_num w DIV (2 EXP n))`,
@@ -822,6 +826,21 @@ let word_shr_list = prove
     ASM_ARITH_TAC]);;
 
 export_thm word_shr_list;;
+
+let word_eq_bits = prove
+  (`!w1 w2. (!i. i < word_width ==> word_bit w1 i = word_bit w2 i) ==> w1 = w2`,
+   REPEAT GEN_TAC THEN
+   CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
+   REWRITE_TAC [list_to_word_bit] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC word_to_list_inj THEN
+   MATCH_MP_TAC nth_eq THEN
+   REWRITE_TAC [length_word_to_list] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `i : num` th)) THEN
+   ASM_REWRITE_TAC [length_word_to_list]);;
+
+export_thm word_eq_bits;;
 
 (***
 let num_to_word_list = prove

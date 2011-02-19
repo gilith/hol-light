@@ -129,6 +129,24 @@ export_thm bytes_to_word16_def;;
 logfile "word16-bytes-thm";;
 
 (***
+let byte_to_word16_list = prove
+  (`!b. num_to_word16 (byte_to_num b) = list_to_word16 (byte_to_list b)`,
+   GEN_TAC THEN
+   EXISTS_TAC `FST (word16_to_bytes w)` THEN
+   EXISTS_TAC `SND (word16_to_bytes w)` THEN
+   REWRITE_TAC [] THEN
+   REWRITE_TAC [word16_to_bytes_def; bytes_to_word16_def] THEN
+   REWRITE_TAC [num_to_byte_to_num; word16_to_num_to_word16]
+
+let word16_to_byte_list = prove
+  (`!w. num_to_byte (word16_to_num b) = list_to_byte (word16_to_list w)`,
+   GEN_TAC THEN
+   EXISTS_TAC `FST (word16_to_bytes w)` THEN
+   EXISTS_TAC `SND (word16_to_bytes w)` THEN
+   REWRITE_TAC [] THEN
+   REWRITE_TAC [word16_to_bytes_def; bytes_to_word16_def] THEN
+   REWRITE_TAC [num_to_byte_to_num; word16_to_num_to_word16]
+
 let dest_bytes_to_word16_cases = prove
   (`!w. ?b0 b1. w = bytes_to_word16 b0 b1 /\ word16_to_bytes w = (b0,b1)`,
    GEN_TAC THEN

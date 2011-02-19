@@ -142,7 +142,7 @@ let log_type_var n = log_name n;;
 (* The dictionary.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-let (log_reset,log_term,log_thm) =
+let (log_reset,log_term,log_thm,log_clear) =
     let (reset_key,next_key) =
         let key = ref 0 in
         let reset () = key := 0 in
@@ -166,6 +166,17 @@ let (log_reset,log_term,log_thm) =
     let reset () =
         let () = reset_key () in
         let () = reset_dict () in
+        () in
+    let clear () =
+        let rec clear_up_to k =
+            if k = 0 then () else
+            let k = k - 1 in
+            let () = log_num k in
+            let () = log_command "remove" in
+            let () = log_command "pop" in
+            clear_up_to k in
+        let () = clear_up_to (next_key ()) in
+        let () = reset () in
         () in
     let saved ob =
         match (peek_dict ob) with
@@ -404,7 +415,7 @@ let (log_reset,log_term,log_thm) =
                    failwith ("thm out of type op definition scope: " ^ ty)) in
         let _ = save_dict ob in
         () in
-    (reset,log_term,log_thm);;
+    (reset,log_term,log_thm,clear);;
 
 (* ------------------------------------------------------------------------- *)
 (* Article files.                                                            *)
@@ -523,6 +534,7 @@ let write_theory_files () =
 let logfile_end () =
     match (!log_state) with
       Active_logging h ->
+        let () = log_clear () in
         let () = close_out h in
         let () = log_state := Ready_logging in
         ()
