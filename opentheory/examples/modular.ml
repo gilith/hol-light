@@ -1,286 +1,452 @@
 (* ------------------------------------------------------------------------- *)
-(* A functor theory of modular arithmetic.                                   *)
+(* A parametric theory of modular arithmetic.                                *)
 (* ------------------------------------------------------------------------- *)
 
-new_constant ("mod_N", `:num`);;
+(*PARAMETRIC
+(* modular *)
+*)
 
-let mod_N_positive = new_axiom `~(mod_N = 0)`;;
+(* The theory parameters *)
+
+new_constant ("modulus", `:num`);;
+
+let modulus_positive = new_axiom `~(modulus = 0)`;;
 
 logfile "modular-mod";;
 
-let lt_mod = prove
-  (`!n. n < mod_N ==> n MOD mod_N = n`,
+(*PARAMETRIC
+(* modular-mod *)
+*)
+
+let mod_lt_modulus = prove
+  (`!n. n < modulus ==> n MOD modulus = n`,
    REPEAT STRIP_TAC THEN
-   MP_TAC (SPECL [`n:num`; `mod_N:num`] MOD_LT) THEN
+   MP_TAC (SPECL [`n:num`; `modulus:num`] MOD_LT) THEN
    ASM_REWRITE_TAC []);;
 
-export_thm lt_mod;;
+export_thm mod_lt_modulus;;
 
-let mod_lt = prove
-  (`!n. n MOD mod_N < mod_N`,
+(*PARAMETRIC
+let mod_lt_modulus = new_axiom
+  `!n. n < modulus ==> n MOD modulus = n`;;
+*)
+
+let lt_mod_modulus = prove
+  (`!n. n MOD modulus < modulus`,
    GEN_TAC THEN
-   MP_TAC (SPECL [`n:num`; `mod_N:num`] DIVISION) THEN
-   MATCH_MP_TAC (TAUT `a /\ (b ==> c) ==> (a ==> b) ==> c`) THEN
-   CONJ_TAC THENL
-   [REWRITE_TAC [mod_N_positive];
+   MP_TAC (SPECL [`n:num`; `modulus:num`] DIVISION) THEN
+   COND_TAC THENL
+   [REWRITE_TAC [modulus_positive];
     DISCH_THEN (ACCEPT_TAC o CONJUNCT2)]);;
 
-export_thm mod_lt;;
+export_thm lt_mod_modulus;;
 
-let mod_mod = prove
-  (`!n. n MOD mod_N MOD mod_N = n MOD mod_N`,
+(*PARAMETRIC
+let lt_mod_modulus = new_axiom
+  `!n. n MOD modulus < modulus`;;
+*)
+
+let mod_mod_refl_modulus = prove
+  (`!n. n MOD modulus MOD modulus = n MOD modulus`,
    GEN_TAC THEN
-   MP_TAC (SPECL [`n:num`; `mod_N:num`] MOD_MOD_REFL) THEN
-   MATCH_MP_TAC (TAUT `a /\ (b ==> c) ==> (a ==> b) ==> c`) THEN
-   CONJ_TAC THENL
-   [REWRITE_TAC [mod_N_positive];
+   MP_TAC (SPECL [`n:num`; `modulus:num`] MOD_MOD_REFL) THEN
+   COND_TAC THENL
+   [REWRITE_TAC [modulus_positive];
     DISCH_THEN ACCEPT_TAC]);;
 
-export_thm mod_mod;;
+export_thm mod_mod_refl_modulus;;
 
-let add_mod = prove
-  (`!m n. (m MOD mod_N + n MOD mod_N) MOD mod_N = (m + n) MOD mod_N`,
+(*PARAMETRIC
+let mod_mod_refl_modulus = new_axiom
+  `!n. n MOD modulus MOD modulus = n MOD modulus`;;
+*)
+
+let mod_add_mod_modulus = prove
+  (`!m n. (m MOD modulus + n MOD modulus) MOD modulus = (m + n) MOD modulus`,
    REPEAT GEN_TAC THEN
-   MP_TAC (SPECL [`m:num`; `n:num`; `mod_N:num`] MOD_ADD_MOD) THEN
-   MATCH_MP_TAC (TAUT `a /\ (b ==> c) ==> (a ==> b) ==> c`) THEN
-   CONJ_TAC THENL
-   [REWRITE_TAC [mod_N_positive];
+   MP_TAC (SPECL [`m:num`; `n:num`; `modulus:num`] MOD_ADD_MOD) THEN
+   COND_TAC THENL
+   [REWRITE_TAC [modulus_positive];
     DISCH_THEN ACCEPT_TAC]);;
 
-export_thm add_mod;;
+export_thm mod_add_mod_modulus;;
 
-let mult_mod = prove
-  (`!m n. (m MOD mod_N * n MOD mod_N) MOD mod_N = (m * n) MOD mod_N`,
+(*PARAMETRIC
+let mod_add_mod_modulus = new_axiom
+  `!m n. (m MOD modulus + n MOD modulus) MOD modulus = (m + n) MOD modulus`;;
+*)
+
+let mod_mult_mod2_modulus = prove
+  (`!m n. (m MOD modulus * n MOD modulus) MOD modulus = (m * n) MOD modulus`,
    REPEAT GEN_TAC THEN
-   MP_TAC (SPECL [`m:num`; `mod_N:num`; `n:num`] MOD_MULT_MOD2) THEN
-   MATCH_MP_TAC (TAUT `a /\ (b ==> c) ==> (a ==> b) ==> c`) THEN
-   CONJ_TAC THENL
-   [REWRITE_TAC [mod_N_positive];
+   MP_TAC (SPECL [`m:num`; `modulus:num`; `n:num`] MOD_MULT_MOD2) THEN
+   COND_TAC THENL
+   [REWRITE_TAC [modulus_positive];
     DISCH_THEN ACCEPT_TAC]);;
 
-export_thm mult_mod;;
+export_thm mod_mult_mod2_modulus;;
+
+(*PARAMETRIC
+let mod_mult_mod2_modulus = new_axiom
+  `!m n. (m MOD modulus * n MOD modulus) MOD modulus = (m * n) MOD modulus`;;
+*)
 
 logfile "modular-equiv-def";;
 
-let mod_equiv_def = new_definition
-  `!x y. mod_equiv x y = x MOD mod_N = y MOD mod_N`;;
+let modular_equiv_def = new_definition
+  `!x y. modular_equiv x y = x MOD modulus = y MOD modulus`;;
 
-export_thm mod_equiv_def;;
+export_thm modular_equiv_def;;
 
 logfile "modular-equiv-thm";;
 
-let mod_equiv_refl = prove
-  (`!x. mod_equiv x x`,
-   REWRITE_TAC [mod_equiv_def]);;
+let modular_equiv_refl = prove
+  (`!x. modular_equiv x x`,
+   REWRITE_TAC [modular_equiv_def]);;
 
-export_thm mod_equiv_refl;;
+export_thm modular_equiv_refl;;
 
-let mod_equiv_trans = prove
-  (`!x y z. mod_equiv x y /\ mod_equiv y z ==> mod_equiv x z`,
-   REWRITE_TAC [mod_equiv_def] THEN
+let modular_equiv_trans = prove
+  (`!x y z. modular_equiv x y /\ modular_equiv y z ==> modular_equiv x z`,
+   REWRITE_TAC [modular_equiv_def] THEN
    SIMP_TAC []);;
 
-export_thm mod_equiv_trans;;
+export_thm modular_equiv_trans;;
 
-let mod_equiv_eq = prove
-  (`!x y. mod_equiv x = mod_equiv y <=> x MOD mod_N = y MOD mod_N`,
+let modular_equiv_eq = prove
+  (`!x y. modular_equiv x = modular_equiv y <=> x MOD modulus = y MOD modulus`,
    ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
-   REWRITE_TAC [mod_equiv_def] THEN
+   REWRITE_TAC [modular_equiv_def] THEN
    REPEAT STRIP_TAC THEN
    EQ_TAC THENL
    [DISCH_THEN (MP_TAC o SPEC `y:num`) THEN
     REWRITE_TAC [];
     DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
 
-export_thm mod_equiv_eq;;
+export_thm modular_equiv_eq;;
 
-let mod_equiv_inj = prove
-  (`!x y. x < mod_N /\ y < mod_N /\ mod_equiv x = mod_equiv y ==> x = y`,
-   REWRITE_TAC [mod_equiv_eq] THEN
+let modular_equiv_inj = prove
+  (`!x y.
+      x < modulus /\ y < modulus /\ modular_equiv x = modular_equiv y ==>
+      x = y`,
+   REWRITE_TAC [modular_equiv_eq] THEN
    REPEAT STRIP_TAC THEN
    POP_ASSUM MP_TAC THEN
-   ASM_SIMP_TAC [lt_mod]);;
+   ASM_SIMP_TAC [mod_lt_modulus]);;
 
-export_thm mod_equiv_inj;;
+export_thm modular_equiv_inj;;
 
-let mod_equiv_add = prove
+let modular_equiv_add = prove
   (`!x1 x2 y1 y2.
-      mod_equiv x1 x2 /\ mod_equiv y1 y2 ==> mod_equiv (x1 + y1) (x2 + y2)`,
-   REWRITE_TAC [mod_equiv_def] THEN
-   ONCE_REWRITE_TAC [GSYM add_mod] THEN
+      modular_equiv x1 x2 /\ modular_equiv y1 y2 ==>
+      modular_equiv (x1 + y1) (x2 + y2)`,
+   REWRITE_TAC [modular_equiv_def] THEN
+   ONCE_REWRITE_TAC [GSYM mod_add_mod_modulus] THEN
    SIMP_TAC []);;
 
-export_thm mod_equiv_add;;
+export_thm modular_equiv_add;;
 
-let mod_equiv_mult = prove
+let modular_equiv_mult = prove
   (`!x1 x2 y1 y2.
-      mod_equiv x1 x2 /\ mod_equiv y1 y2 ==> mod_equiv (x1 * y1) (x2 * y2)`,
-   REWRITE_TAC [mod_equiv_def] THEN
-   ONCE_REWRITE_TAC [GSYM mult_mod] THEN
+      modular_equiv x1 x2 /\ modular_equiv y1 y2 ==>
+      modular_equiv (x1 * y1) (x2 * y2)`,
+   REWRITE_TAC [modular_equiv_def] THEN
+   ONCE_REWRITE_TAC [GSYM mod_mult_mod2_modulus] THEN
    SIMP_TAC []);;
 
-export_thm mod_equiv_mult;;
+export_thm modular_equiv_mult;;
 
 logfile "modular-def";;
 
-let (mod_abs_rep,mod_rep_abs) = define_quotient_type
-  "mod" ("mod_from_class","mod_to_class") `mod_equiv`;;
+(*PARAMETRIC
+(* modular-def *)
+*)
 
-let num_to_mod_def = new_definition
-  `!x. num_to_mod x = mod_from_class (mod_equiv x)`;;
+let (modular_abs_rep,modular_rep_abs) = define_quotient_type
+  "modular" ("modular_from_class","modular_to_class") `modular_equiv`;;
 
-let mod_rep_abs_surj = prove
-  (`!x. (?y. mod_to_class x = mod_equiv y)`,
+(*PARAMETRIC
+new_type ("modular",0);;
+*)
+
+let num_to_modular_def = new_definition
+  `!x. num_to_modular x = modular_from_class (modular_equiv x)`;;
+
+(*PARAMETRIC
+new_constant ("num_to_modular", `:num -> modular`);;
+*)
+
+let modular_rep_abs_surj = prove
+  (`!x. (?y. modular_to_class x = modular_equiv y)`,
    GEN_TAC THEN
-   REWRITE_TAC [mod_rep_abs; mod_abs_rep]);;
+   REWRITE_TAC [modular_rep_abs; modular_abs_rep]);;
 
-let mod_rep_abs_triv = prove
-  (`!x. mod_to_class (mod_from_class (mod_equiv x)) = mod_equiv x`,
+let modular_rep_abs_triv = prove
+  (`!x.
+      modular_to_class (modular_from_class (modular_equiv x)) =
+      modular_equiv x`,
    GEN_TAC THEN
-   REWRITE_TAC [GSYM mod_rep_abs] THEN
+   REWRITE_TAC [GSYM modular_rep_abs] THEN
    EXISTS_TAC `x:num` THEN
    REFL_TAC);;
 
-let mod_from_class_inj = prove
+let modular_from_class_inj = prove
   (`!x y.
-      mod_from_class (mod_equiv x) = mod_from_class (mod_equiv y) ==>
-      mod_equiv x = mod_equiv y`,
+      modular_from_class (modular_equiv x) =
+      modular_from_class (modular_equiv y) ==>
+      modular_equiv x = modular_equiv y`,
    REPEAT STRIP_TAC THEN
-   ONCE_REWRITE_TAC [GSYM mod_rep_abs_triv] THEN
+   ONCE_REWRITE_TAC [GSYM modular_rep_abs_triv] THEN
    ASM_REWRITE_TAC []);;
 
-let mod_to_num_exists = prove
-  (`!x. ?y. y < mod_N /\ num_to_mod y = x`,
+let modular_to_num_exists = prove
+  (`!x. ?y. y < modulus /\ num_to_modular y = x`,
    GEN_TAC THEN
-   ONCE_REWRITE_TAC [GSYM mod_abs_rep] THEN
-   REWRITE_TAC [num_to_mod_def] THEN
-   MP_TAC (SPEC `x:mod` mod_rep_abs_surj) THEN
+   ONCE_REWRITE_TAC [GSYM modular_abs_rep] THEN
+   REWRITE_TAC [num_to_modular_def] THEN
+   MP_TAC (SPEC `x:modular` modular_rep_abs_surj) THEN
    STRIP_TAC THEN
    ASM_REWRITE_TAC [] THEN
-   EXISTS_TAC `y MOD mod_N` THEN
-   REWRITE_TAC [mod_lt; mod_abs_rep] THEN
+   EXISTS_TAC `y MOD modulus` THEN
+   REWRITE_TAC [lt_mod_modulus; modular_abs_rep] THEN
    AP_TERM_TAC THEN
    ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
    GEN_TAC THEN
-   REWRITE_TAC [mod_equiv_def; mod_mod]);;
+   REWRITE_TAC [modular_equiv_def; mod_mod_refl_modulus]);;
 
-let mod_to_num_def = new_specification ["mod_to_num"]
-  (REWRITE_RULE [SKOLEM_THM] mod_to_num_exists);;
+let modular_to_num_def = new_specification ["modular_to_num"]
+  (REWRITE_RULE [SKOLEM_THM] modular_to_num_exists);;
 
-let mod_to_num_to_mod = prove
-  (`!x. num_to_mod (mod_to_num x) = x`,
-   REWRITE_TAC [mod_to_num_def]);;
+(*PARAMETRIC
+new_constant ("modular_to_num", `:modular -> num`);;
+*)
 
-export_thm mod_to_num_to_mod;;
+let modular_to_num_to_modular = prove
+  (`!x. num_to_modular (modular_to_num x) = x`,
+   REWRITE_TAC [modular_to_num_def]);;
 
-let num_to_mod_inj = prove
-  (`!x y. x < mod_N /\ y < mod_N /\ num_to_mod x = num_to_mod y ==> x = y`,
-   REWRITE_TAC [num_to_mod_def] THEN
+export_thm modular_to_num_to_modular;;
+
+(*PARAMETRIC
+let modular_to_num_to_modular = new_axiom
+  `!x. num_to_modular (modular_to_num x) = x`;;
+*)
+
+let num_to_modular_inj = prove
+  (`!x y.
+      x < modulus /\ y < modulus /\ num_to_modular x = num_to_modular y ==>
+      x = y`,
+   REWRITE_TAC [num_to_modular_def] THEN
    REPEAT STRIP_TAC THEN
-   MATCH_MP_TAC mod_equiv_inj THEN
+   MATCH_MP_TAC modular_equiv_inj THEN
    ASM_REWRITE_TAC [] THEN
-   MATCH_MP_TAC mod_from_class_inj THEN
+   MATCH_MP_TAC modular_from_class_inj THEN
    ASM_REWRITE_TAC []);;
 
-export_thm num_to_mod_inj;;
+export_thm num_to_modular_inj;;
 
-let num_to_mod_to_num = prove
-  (`!x. mod_to_num (num_to_mod x) = x MOD mod_N`,
+(*PARAMETRIC
+let num_to_modular_inj = new_axiom
+   `!x y.
+      x < modulus /\ y < modulus /\ num_to_modular x = num_to_modular y ==>
+      x = y`;;
+*)
+
+let num_to_modular_to_num = prove
+  (`!x. modular_to_num (num_to_modular x) = x MOD modulus`,
    GEN_TAC THEN
-   MATCH_MP_TAC num_to_mod_inj THEN
-   SIMP_TAC [mod_to_num_def; mod_to_num_to_mod; mod_lt] THEN
-   REWRITE_TAC [num_to_mod_def] THEN
+   MATCH_MP_TAC num_to_modular_inj THEN
+   SIMP_TAC [modular_to_num_def; modular_to_num_to_modular; lt_mod_modulus] THEN
+   REWRITE_TAC [num_to_modular_def] THEN
    AP_TERM_TAC THEN
-   SIMP_TAC [mod_equiv_eq; mod_mod]);;
+   SIMP_TAC [modular_equiv_eq; mod_mod_refl_modulus]);;
 
-export_thm num_to_mod_to_num;;
+export_thm num_to_modular_to_num;;
 
-let (mod_add_def,mod_add_lift) = lift_function
-  mod_rep_abs (mod_equiv_refl,mod_equiv_trans)
-  "mod_add" mod_equiv_add;;
+(*PARAMETRIC
+let num_to_modular_to_num = new_axiom
+  `!x. modular_to_num (num_to_modular x) = x MOD modulus`;;
+*)
 
-let num_to_mod_add =
-  GEN_ALL (REWRITE_RULE [GSYM num_to_mod_def] mod_add_lift);;
+let (modular_add_def,modular_add_lift) = lift_function
+  modular_rep_abs (modular_equiv_refl,modular_equiv_trans)
+  "modular_add" modular_equiv_add;;
 
-export_thm num_to_mod_add;;
+(*PARAMETRIC
+new_constant ("modular_add", `:modular -> modular -> modular`);;
+*)
 
-let (mod_mult_def,mod_mult_lift) = lift_function
-  mod_rep_abs (mod_equiv_refl,mod_equiv_trans)
-  "mod_mult" mod_equiv_mult;;
+let num_to_modular_add =
+  GEN_ALL (REWRITE_RULE [GSYM num_to_modular_def] modular_add_lift);;
 
-let num_to_mod_mult =
-  GEN_ALL (REWRITE_RULE [GSYM num_to_mod_def] mod_mult_lift);;
+export_thm num_to_modular_add;;
 
-export_thm num_to_mod_mult;;
+(*PARAMETRIC
+let num_to_modular_add = new_axiom
+  `!x1 y1.
+     num_to_modular (x1 + y1) =
+     modular_add (num_to_modular x1) (num_to_modular y1)`;;
+*)
 
-let mod_neg_def = new_definition
-  `!x. mod_neg x = num_to_mod (mod_N - mod_to_num x)`;;
+let (modular_mult_def,modular_mult_lift) = lift_function
+  modular_rep_abs (modular_equiv_refl,modular_equiv_trans)
+  "modular_mult" modular_equiv_mult;;
 
-export_thm mod_neg_def;;
+(*PARAMETRIC
+new_constant ("modular_mult", `:modular -> modular -> modular`);;
+*)
 
-let mod_sub_def = new_definition
-  `!x y. mod_sub x y = mod_add x (mod_neg y)`;;
+let num_to_modular_mult =
+  GEN_ALL (REWRITE_RULE [GSYM num_to_modular_def] modular_mult_lift);;
 
-export_thm mod_sub_def;;
+export_thm num_to_modular_mult;;
 
-let mod_le_def = new_definition
-  `!x y. mod_le x y = mod_to_num x <= mod_to_num y`;;
+(*PARAMETRIC
+let num_to_modular_mult = new_axiom
+  `!x1 y1.
+     num_to_modular (x1 * y1) =
+     modular_mult (num_to_modular x1) (num_to_modular y1)`;;
+*)
 
-export_thm mod_le_def;;
+let modular_neg_def = new_definition
+  `!x. modular_neg x = num_to_modular (modulus - modular_to_num x)`;;
 
-let mod_lt_def = new_definition
-  `!x y. mod_lt x y = ~(mod_le y x)`;;
+(*PARAMETRIC
+new_constant ("modular_neg", `:modular -> modular`);;
+*)
 
-export_thm mod_lt_def;;
+export_thm modular_neg_def;;
+
+(*PARAMETRIC
+let modular_neg_def = new_axiom
+  `!x. modular_neg x = num_to_modular (modulus - modular_to_num x)`;;
+*)
+
+let modular_sub_def = new_definition
+  `!x y. modular_sub x y = modular_add x (modular_neg y)`;;
+
+(*PARAMETRIC
+new_constant ("modular_sub", `:modular -> modular -> modular`);;
+*)
+
+export_thm modular_sub_def;;
+
+(*PARAMETRIC
+let modular_sub_def = new_axiom
+  `!x y. modular_sub x y = modular_add x (modular_neg y)`;;
+*)
+
+let modular_le_def = new_definition
+  `!x y. modular_le x y = modular_to_num x <= modular_to_num y`;;
+
+(*PARAMETRIC
+new_constant ("modular_le", `:modular -> modular -> bool`);;
+*)
+
+export_thm modular_le_def;;
+
+(*PARAMETRIC
+let modular_le_def = new_axiom
+  `!x y. modular_le x y = modular_to_num x <= modular_to_num y`;;
+*)
+
+let modular_lt_def = new_definition
+  `!x y. modular_lt x y = ~(modular_le y x)`;;
+
+(*PARAMETRIC
+new_constant ("modular_lt", `:modular -> modular -> bool`);;
+*)
+
+export_thm modular_lt_def;;
+
+(*PARAMETRIC
+let modular_lt_def = new_axiom
+  `!x y. modular_lt x y = ~(modular_le y x)`;;
+*)
 
 logfile "modular-thm";;
 
-let mod_to_num_inj = prove
-  (`!x y. mod_to_num x = mod_to_num y ==> x = y`,
+(*PARAMETRIC
+(* modular-thm *)
+*)
+
+let modular_to_num_inj = prove
+  (`!x y. modular_to_num x = modular_to_num y ==> x = y`,
    REPEAT STRIP_TAC THEN
-   ONCE_REWRITE_TAC [GSYM mod_to_num_to_mod] THEN
+   ONCE_REWRITE_TAC [GSYM modular_to_num_to_modular] THEN
    ASM_REWRITE_TAC []);;
 
-export_thm mod_to_num_inj;;
+export_thm modular_to_num_inj;;
 
-let num_to_mod_eq = prove
-  (`!x y. num_to_mod x = num_to_mod y <=> x MOD mod_N = y MOD mod_N`,
-   REWRITE_TAC [GSYM num_to_mod_to_num] THEN
+(*PARAMETRIC
+let modular_to_num_inj = new_axiom
+  `!x y. modular_to_num x = modular_to_num y ==> x = y`;;
+*)
+
+let num_to_modular_eq = prove
+  (`!x y.
+      num_to_modular x = num_to_modular y <=> x MOD modulus = y MOD modulus`,
+   REWRITE_TAC [GSYM num_to_modular_to_num] THEN
    REPEAT STRIP_TAC THEN
    EQ_TAC THENL
    [STRIP_TAC THEN
     ASM_REWRITE_TAC [];
     STRIP_TAC THEN
-    MATCH_MP_TAC mod_to_num_inj THEN
+    MATCH_MP_TAC modular_to_num_inj THEN
     ASM_REWRITE_TAC []]);;
 
-export_thm num_to_mod_eq;;
+export_thm num_to_modular_eq;;
 
-let mod_to_num_bound = prove
-  (`!x. mod_to_num x < mod_N`,
-   ONCE_REWRITE_TAC [GSYM mod_to_num_to_mod] THEN
-   REWRITE_TAC [num_to_mod_to_num; mod_lt]);;
+(*PARAMETRIC
+let num_to_modular_eq = new_axiom
+   `!x y.
+      num_to_modular x = num_to_modular y <=> x MOD modulus = y MOD modulus`;;
+*)
 
-export_thm mod_to_num_bound;;
+let modular_to_num_bound = prove
+  (`!x. modular_to_num x < modulus`,
+   ONCE_REWRITE_TAC [GSYM modular_to_num_to_modular] THEN
+   REWRITE_TAC [num_to_modular_to_num; lt_mod_modulus]);;
 
-let mod_to_num_div_bound = prove
-  (`!x. mod_to_num x DIV mod_N = 0`,
+export_thm modular_to_num_bound;;
+
+(*PARAMETRIC
+let modular_to_num_bound = new_axiom
+  `!x. modular_to_num x < modulus`;;
+*)
+
+let modular_to_num_div_bound = prove
+  (`!x. modular_to_num x DIV modulus = 0`,
    GEN_TAC THEN
    MATCH_MP_TAC DIV_LT THEN
-   REWRITE_TAC [mod_to_num_bound]);;
+   REWRITE_TAC [modular_to_num_bound]);;
 
-export_thm mod_to_num_div_bound;;
+export_thm modular_to_num_div_bound;;
 
-let mod_add_to_num = prove
-  (`!x y. mod_to_num (mod_add x y) = (mod_to_num x + mod_to_num y) MOD mod_N`,
+(*PARAMETRIC
+let modular_to_num_div_bound = new_axiom
+  `!x. modular_to_num x DIV modulus = 0`;;
+*)
+
+let modular_add_to_num = prove
+  (`!x y.
+      modular_to_num (modular_add x y) =
+      (modular_to_num x + modular_to_num y) MOD modulus`,
    REPEAT GEN_TAC THEN
    (CONV_TAC o LAND_CONV o RAND_CONV o RAND_CONV)
-     (REWR_CONV (GSYM mod_to_num_to_mod)) THEN
+     (REWR_CONV (GSYM modular_to_num_to_modular)) THEN
    (CONV_TAC o LAND_CONV o RAND_CONV o RATOR_CONV o RAND_CONV)
-     (REWR_CONV (GSYM mod_to_num_to_mod)) THEN
-   REWRITE_TAC [GSYM num_to_mod_add] THEN
-   REWRITE_TAC [num_to_mod_to_num]);;
+     (REWR_CONV (GSYM modular_to_num_to_modular)) THEN
+   REWRITE_TAC [GSYM num_to_modular_add] THEN
+   REWRITE_TAC [num_to_modular_to_num]);;
 
-export_thm mod_add_to_num;;
+export_thm modular_add_to_num;;
+
+(*PARAMETRIC
+let modular_add_to_num = new_axiom
+   `!x y.
+      modular_to_num (modular_add x y) =
+      (modular_to_num x + modular_to_num y) MOD modulus`;;
+*)
 
 logfile_end ();;

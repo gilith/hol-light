@@ -1,15 +1,34 @@
 (* ------------------------------------------------------------------------- *)
-(* A functor theory of words.                                                *)
+(* A parametric theory of words.                                             *)
 (* ------------------------------------------------------------------------- *)
+
+(*PARAMETRIC
+(* word *)
+*)
+
+(* The theory parameters *)
 
 new_constant ("word_width", `:num`);;
 
 logfile "word-def";;
 
+(*PARAMETRIC
+(* word-def *)
+*)
+
 let word_size_def = new_definition
   `word_size = 2 EXP word_width`;;
 
+(*PARAMETRIC
+new_constant ("word_size", `:num`);;
+*)
+
 export_thm word_size_def;;
+
+(*PARAMETRIC
+let word_size_def = new_axiom
+  `word_size = 2 EXP word_width`;;
+*)
 
 let word_size_nonzero = prove
   (`~(word_size = 0)`,
@@ -18,115 +37,76 @@ let word_size_nonzero = prove
 
 export_thm word_size_nonzero;;
 
-(* Start of parametric theory instantiation: modular *)
+(*PARAMETRIC
+let word_size_nonzero = new_axiom
+  `~(word_size = 0)`;;
+*)
 
-(* modular-mod *)
+(* Parametric theory instantiation: modular *)
 
-let lt_word_size = new_axiom
-  `!n. n < word_size ==> n MOD word_size = n`;;
-
-let word_size_lt = new_axiom
-  `!n. n MOD word_size < word_size`;;
-
-let mod_mod_word_size = new_axiom
-  `!n. n MOD word_size MOD word_size = n MOD word_size`;;
-
-let add_mod_word_size = new_axiom
-  `!m n.
-     (m MOD word_size + n MOD word_size) MOD word_size =
-     (m + n) MOD word_size`;;
-
-let mult_mod_word_size = new_axiom
-  `!m n.
-     (m MOD word_size * n MOD word_size) MOD word_size =
-     (m * n) MOD word_size`;;
-
-(* modular-def *)
-
-new_type ("word",0);;
-
-new_constant ("word_add", `:word -> word -> word`);;
-new_constant ("word_mult", `:word -> word -> word`);;
-new_constant ("word_neg", `:word -> word`);;
-new_constant ("word_sub", `:word -> word -> word`);;
-new_constant ("word_le", `:word -> word -> bool`);;
-new_constant ("word_lt", `:word -> word -> bool`);;
-new_constant ("num_to_word", `:num -> word`);;
-new_constant ("word_to_num", `:word -> num`);;
-
-let word_to_num_to_word = new_axiom
-  `!x. num_to_word (word_to_num x) = x`;;
-
-let num_to_word_inj = new_axiom
-  `!x y.
-     x < word_size /\ y < word_size /\ num_to_word x = num_to_word y ==>
-     x = y`;;
-
-let num_to_word_to_num = new_axiom
-  `!x. word_to_num (num_to_word x) = x MOD word_size`;;
-
-let num_to_word_add = new_axiom
-  `!x1 y1.
-     num_to_word (x1 + y1) = word_add (num_to_word x1) (num_to_word y1)`;;
-
-let num_to_word_mult = new_axiom
-  `!x1 y1.
-     num_to_word (x1 * y1) = word_mult (num_to_word x1) (num_to_word y1)`;;
-
-let word_neg_def = new_axiom
-  `!x. word_neg x = num_to_word (word_size - word_to_num x)`;;
-
-let word_sub_def = new_axiom
-  `!x y. word_sub x y = word_add x (word_neg y)`;;
-
-let word_le_def = new_axiom
-  `!x y. word_le x y = word_to_num x <= word_to_num y`;;
-
-let word_lt_def = new_axiom
-  `!x y. word_lt x y = ~(word_le y x)`;;
-
-(* modular-thm *)
-
-let word_to_num_inj = new_axiom
-  `!x y. word_to_num x = word_to_num y ==> x = y`;;
-
-let num_to_word_eq = new_axiom
-  `!x y. num_to_word x = num_to_word y <=> x MOD word_size = y MOD word_size`;;
-
-let word_to_num_bound = new_axiom
-  `!x. word_to_num x < word_size`;;
-
-let word_to_num_div_bound = new_axiom
-  `!x. word_to_num x DIV word_size = 0`;;
-
-let word_add_to_num = new_axiom
-  `!x y.
-     word_to_num (word_add x y) =
-     (word_to_num x + word_to_num y) MOD word_size`;;
-
-(* End of parametric theory instantiation: modular *)
+loads "opentheory/examples/word-modular.ml";;
 
 logfile "word-bits-def";;
 
+(*PARAMETRIC
+(* word-bits-def *)
+*)
+
 let word_shl_def = new_definition
- `!w n. word_shl w n = num_to_word ((2 EXP n) * word_to_num w)`;;
+  `!w n. word_shl w n = num_to_word ((2 EXP n) * word_to_num w)`;;
+
+(*PARAMETRIC
+new_constant ("word_shl", `:word -> num -> word`);;
+*)
 
 export_thm word_shl_def;;
 
+(*PARAMETRIC
+let word_shl_def = new_axiom
+  `!w n. word_shl w n = num_to_word ((2 EXP n) * word_to_num w)`;;
+*)
+
 let word_shr_def = new_definition
- `!w n. word_shr w n = num_to_word (word_to_num w DIV (2 EXP n))`;;
+  `!w n. word_shr w n = num_to_word (word_to_num w DIV (2 EXP n))`;;
+
+(*PARAMETRIC
+new_constant ("word_shr", `:word -> num -> word`);;
+*)
 
 export_thm word_shr_def;;
 
+(*PARAMETRIC
+let word_shr_def = new_axiom
+  `!w n. word_shr w n = num_to_word (word_to_num w DIV (2 EXP n))`;;
+*)
+
 let word_bit_def = new_definition
- `!w n. word_bit w n = ODD (word_to_num (word_shr w n))`;;
+  `!w n. word_bit w n = ODD (word_to_num (word_shr w n))`;;
+
+(*PARAMETRIC
+new_constant ("word_bit", `:word -> num -> bool`);;
+*)
 
 export_thm word_bit_def;;
 
+(*PARAMETRIC
+let word_bit_def = new_axiom
+  `!w n. word_bit w n = ODD (word_to_num (word_shr w n))`;;
+*)
+
 let word_to_list_def = new_definition
- `!w. word_to_list w = MAP (word_bit w) (interval 0 word_width)`;;
+  `!w. word_to_list w = MAP (word_bit w) (interval 0 word_width)`;;
+
+(*PARAMETRIC
+new_constant ("word_to_list", `:word -> bool list`);;
+*)
 
 export_thm word_to_list_def;;
+
+(*PARAMETRIC
+let word_to_list_def = new_axiom
+  `!w. word_to_list w = MAP (word_bit w) (interval 0 word_width)`;;
+*)
 
 let list_to_word_def = new_recursive_definition list_RECURSION
   `(list_to_word [] = num_to_word 0) /\
@@ -135,33 +115,90 @@ let list_to_word_def = new_recursive_definition list_RECURSION
       if h then word_add (word_shl (list_to_word t) 1) (num_to_word 1)
       else word_shl (list_to_word t) 1)`;;
 
+(*PARAMETRIC
+new_constant ("list_to_word", `:bool list -> word`);;
+*)
+
 export_thm list_to_word_def;;
 
+(*PARAMETRIC
+let list_to_word_def = new_axiom
+  `(list_to_word [] = num_to_word 0) /\
+   (!h t.
+      list_to_word (CONS h t) =
+      if h then word_add (word_shl (list_to_word t) 1) (num_to_word 1)
+      else word_shl (list_to_word t) 1)`;;
+*)
+
 let is_word_list_def = new_definition
- `!l. is_word_list (l : bool list) <=> LENGTH l = word_width`;;
+  `!l. is_word_list (l : bool list) <=> LENGTH l = word_width`;;
+
+(*PARAMETRIC
+new_constant ("is_word_list", `:bool list -> bool`);;
+*)
 
 export_thm is_word_list_def;;
+
+(*PARAMETRIC
+let is_word_list_def = new_axiom
+  `!l. is_word_list (l : bool list) <=> LENGTH l = word_width`;;
+*)
 
 let word_and_def = new_definition
   `!w1 w2.
      word_and w1 w2 =
      list_to_word (zipwith ( /\ ) (word_to_list w1) (word_to_list w2))`;;
 
+(*PARAMETRIC
+new_constant ("word_and", `:word -> word -> word`);;
+*)
+
 export_thm word_and_def;;
+
+(*PARAMETRIC
+let word_and_def = new_axiom
+  `!w1 w2.
+     word_and w1 w2 =
+     list_to_word (zipwith ( /\ ) (word_to_list w1) (word_to_list w2))`;;
+*)
 
 let word_or_def = new_definition
   `!w1 w2.
      word_or w1 w2 =
      list_to_word (zipwith ( \/ ) (word_to_list w1) (word_to_list w2))`;;
 
+(*PARAMETRIC
+new_constant ("word_or", `:word -> word -> word`);;
+*)
+
 export_thm word_or_def;;
+
+(*PARAMETRIC
+let word_or_def = new_axiom
+  `!w1 w2.
+     word_or w1 w2 =
+     list_to_word (zipwith ( \/ ) (word_to_list w1) (word_to_list w2))`;;
+*)
 
 let word_not_def = new_definition
   `!w. word_not w = list_to_word (MAP (~) (word_to_list w))`;;
 
+(*PARAMETRIC
+new_constant ("word_not", `:word -> word`);;
+*)
+
 export_thm word_not_def;;
 
+(*PARAMETRIC
+let word_not_def = new_axiom
+  `!w. word_not w = list_to_word (MAP (~) (word_to_list w))`;;
+*)
+
 logfile "word-bits-thm";;
+
+(*PARAMETRIC
+(* word-bits-thm *)
+*)
 
 (* Helper theorems (not exported) *)
 
@@ -309,18 +346,28 @@ let length_word_to_list = prove
 
 export_thm length_word_to_list;;
 
+(*PARAMETRIC
+let length_word_to_list = new_axiom
+  `!w. LENGTH (word_to_list w) = word_width`;;
+*)
+
 let is_word_to_list = prove
   (`!w. is_word_list (word_to_list w)`,
    REWRITE_TAC [is_word_list_def; length_word_to_list]);;
 
 export_thm is_word_to_list;;
 
+(*PARAMETRIC
+let is_word_to_list = new_axiom
+  `!w. is_word_list (word_to_list w)`;;
+*)
+
 let word_bit_div = prove
   (`!w n. word_bit w n = ODD (word_to_num w DIV (2 EXP n))`,
    REWRITE_TAC [word_bit_def; word_shr_def; num_to_word_to_num] THEN
    REPEAT GEN_TAC THEN
    AP_TERM_TAC THEN
-   MATCH_MP_TAC lt_word_size THEN
+   MATCH_MP_TAC mod_lt_word_size THEN
    MATCH_MP_TAC LET_TRANS THEN
    EXISTS_TAC `word_to_num w` THEN
    CONJ_TAC THENL
@@ -331,13 +378,23 @@ let word_bit_div = prove
 
 export_thm word_bit_div;;
 
+(*PARAMETRIC
+let word_bit_div = new_axiom
+  `!w n. word_bit w n = ODD (word_to_num w DIV (2 EXP n))`;;
+*)
+
 let nil_to_word_to_num = prove
   (`word_to_num (list_to_word []) = 0`,
    REWRITE_TAC [list_to_word_def; num_to_word_to_num] THEN
-   MATCH_MP_TAC lt_word_size THEN
+   MATCH_MP_TAC mod_lt_word_size THEN
    REWRITE_TAC [LT_NZ; word_size_nonzero]);;
 
 export_thm nil_to_word_to_num;;
+
+(*PARAMETRIC
+let nil_to_word_to_num = new_axiom
+  `word_to_num (list_to_word []) = 0`;;
+*)
 
 let cons_to_word_to_num = prove
   (`!h t.
@@ -349,11 +406,18 @@ let cons_to_word_to_num = prove
    STRIP_TAC THENL
    [ASM_REWRITE_TAC
       [word_add_to_num; word_shl_def; EXP_1; word_to_num_to_word] THEN
-    REWRITE_TAC [num_to_word_to_num; add_mod_word_size];
+    REWRITE_TAC [num_to_word_to_num; mod_add_mod_word_size];
     ASM_REWRITE_TAC [word_shl_def; EXP_1; word_to_num_to_word; ADD_0] THEN
-    REWRITE_TAC [num_to_word_to_num; add_mod_word_size]]);;
+    REWRITE_TAC [num_to_word_to_num; mod_add_mod_word_size]]);;
 
 export_thm cons_to_word_to_num;;
+
+(*PARAMETRIC
+let cons_to_word_to_num = new_axiom
+   `!h t.
+      word_to_num (list_to_word (CONS h t)) =
+      (2 * word_to_num (list_to_word t) + (if h then 1 else 0)) MOD word_size`;;
+*)
 
 let list_to_word_to_num_bound = prove
   (`!l. word_to_num (list_to_word l) < 2 EXP (LENGTH l)`,
@@ -381,6 +445,11 @@ let list_to_word_to_num_bound = prove
 
 export_thm list_to_word_to_num_bound;;
 
+(*PARAMETRIC
+let list_to_word_to_num_bound = new_axiom
+  `!l. word_to_num (list_to_word l) < 2 EXP (LENGTH l)`;;
+*)
+
 let list_to_word_to_num_bound_suc = prove
   (`!l. 2 * word_to_num (list_to_word l) + 1 < 2 EXP (SUC (LENGTH l))`,
    GEN_TAC THEN
@@ -388,6 +457,11 @@ let list_to_word_to_num_bound_suc = prove
    MATCH_ACCEPT_TAC list_to_word_to_num_bound);;
 
 export_thm list_to_word_to_num_bound_suc;;
+
+(*PARAMETRIC
+let list_to_word_to_num_bound_suc = new_axiom
+  `!l. 2 * word_to_num (list_to_word l) + 1 < 2 EXP (SUC (LENGTH l))`;;
+*)
 
 let cons_to_word_to_num_bound = prove
   (`!h t.
@@ -403,6 +477,13 @@ let cons_to_word_to_num_bound = prove
     MATCH_ACCEPT_TAC list_to_word_to_num_bound_suc]);;
 
 export_thm cons_to_word_to_num_bound;;
+
+(*PARAMETRIC
+let cons_to_word_to_num_bound = new_axiom
+   `!h t.
+      2 * word_to_num (list_to_word t) + (if h then 1 else 0) <
+      2 EXP SUC (LENGTH t)`;;
+*)
 
 let word_to_list_to_word = prove
   (`!w. list_to_word (word_to_list w) = w`,
@@ -428,8 +509,7 @@ let word_to_list_to_word = prove
     ALL_TAC] THEN
    REPEAT STRIP_TAC THEN
    PAT_ASSUM `X ==> Y` THEN
-   MATCH_MP_TAC (ITAUT `X /\ (Y ==> Z) ==> ((X ==> Y) ==> Z)`) THEN
-   CONJ_TAC THENL
+   COND_TAC THENL
    [MATCH_MP_TAC LE_TRANS THEN
     EXISTS_TAC `SUC k` THEN
     ASM_REWRITE_TAC [LE; LE_REFL];
@@ -445,20 +525,18 @@ let word_to_list_to_word = prove
    REWRITE_TAC [EXP] THEN
    MP_TAC (SPECL [`word_to_num w`; `2 EXP (word_width - SUC k)`;
                    `2`] (ONCE_REWRITE_RULE [MULT_SYM] DIV_DIV)) THEN
-   MATCH_MP_TAC (ITAUT `X /\ (Y ==> Z) ==> ((X ==> Y) ==> Z)`) THEN
-   CONJ_TAC THENL
+   COND_TAC THENL
    [REWRITE_TAC [GSYM EXP; EXP_EQ_0] THEN
     NUM_REDUCE_TAC;
     ALL_TAC] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
    MP_TAC (SPECL [`word_to_num w DIV (2 EXP (word_width - SUC k))`;
                    `2`] DIVISION) THEN
-   MATCH_MP_TAC (ITAUT `X /\ (Y ==> Z) ==> ((X ==> Y) ==> Z)`) THEN
-   CONJ_TAC THENL
+   COND_TAC THENL
    [NUM_REDUCE_TAC;
     ALL_TAC] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [GSYM (CONJUNCT1 th)]) THEN
-   MATCH_MP_TAC lt_word_size THEN
+   MATCH_MP_TAC mod_lt_word_size THEN
    MATCH_MP_TAC LET_TRANS THEN
    EXISTS_TAC `word_to_num w` THEN
    CONJ_TAC THENL
@@ -469,6 +547,11 @@ let word_to_list_to_word = prove
 
 export_thm word_to_list_to_word;;
 
+(*PARAMETRIC
+let word_to_list_to_word = new_axiom
+  `!w. list_to_word (word_to_list w) = w`;;
+*)
+
 let word_to_list_inj = prove
   (`!w1 w2. word_to_list w1 = word_to_list w2 ==> w1 = w2`,
    REPEAT STRIP_TAC THEN
@@ -476,6 +559,11 @@ let word_to_list_inj = prove
    ASM_REWRITE_TAC []);;
 
 export_thm word_to_list_inj;;
+
+(*PARAMETRIC
+let word_to_list_inj = new_axiom
+  `!w1 w2. word_to_list w1 = word_to_list w2 ==> w1 = w2`;;
+*)
 
 let list_to_word_bit = prove
   (`!l n.
@@ -552,6 +640,13 @@ let list_to_word_bit = prove
 
 export_thm list_to_word_bit;;
 
+(*PARAMETRIC
+let list_to_word_bit = new_axiom
+   `!l n.
+      word_bit (list_to_word l) n =
+      (n < word_width /\ n < LENGTH l /\ EL n l)`;;
+*)
+
 let short_list_to_word_to_list = prove
   (`!l.
       LENGTH l <= word_width ==>
@@ -589,6 +684,14 @@ let short_list_to_word_to_list = prove
 
 export_thm short_list_to_word_to_list;;
 
+(*PARAMETRIC
+let short_list_to_word_to_list = new_axiom
+   `!l.
+      LENGTH l <= word_width ==>
+      word_to_list (list_to_word l) =
+      APPEND l (REPLICATE (word_width - LENGTH l) F)`;;
+*)
+
 let long_list_to_word_to_list = prove
   (`!l.
       word_width <= LENGTH l ==>
@@ -625,6 +728,13 @@ let long_list_to_word_to_list = prove
 
 export_thm long_list_to_word_to_list;;
 
+(*PARAMETRIC
+let long_list_to_word_to_list = new_axiom
+   `!l.
+      word_width <= LENGTH l ==>
+      word_to_list (list_to_word l) = take word_width l`;;
+*)
+
 let list_to_word_to_list_eq = prove
   (`!l.
       word_to_list (list_to_word l) =
@@ -643,6 +753,16 @@ let list_to_word_to_list_eq = prove
 
 export_thm list_to_word_to_list_eq;;
 
+(*PARAMETRIC
+let list_to_word_to_list_eq = new_axiom
+   `!l.
+      word_to_list (list_to_word l) =
+      if LENGTH l <= word_width then
+        APPEND l (REPLICATE (word_width - LENGTH l) F)
+      else
+        take word_width l`;;
+*)
+
 let list_to_word_to_list = prove
   (`!l. LENGTH l = word_width <=> word_to_list (list_to_word l) = l`,
    GEN_TAC THEN
@@ -659,6 +779,11 @@ let list_to_word_to_list = prove
     MATCH_ACCEPT_TAC length_word_to_list]);;
 
 export_thm list_to_word_to_list;;
+
+(*PARAMETRIC
+let list_to_word_to_list = new_axiom
+  `!l. LENGTH l = word_width <=> word_to_list (list_to_word l) = l`;;
+*)
 
 let word_shl_list = prove
   (`!l n.
@@ -686,6 +811,13 @@ let word_shl_list = prove
    REWRITE_TAC [EXP; MULT_ASSOC]);;
 
 export_thm word_shl_list;;
+
+(*PARAMETRIC
+let word_shl_list = new_axiom
+   `!l n.
+      word_shl (list_to_word l) n =
+      list_to_word (APPEND (REPLICATE n F) l)`;;
+*)
 
 let short_word_shr_list = prove
   (`!l n.
@@ -785,6 +917,15 @@ let short_word_shr_list = prove
 
 export_thm short_word_shr_list;;
 
+(*PARAMETRIC
+let short_word_shr_list = new_axiom
+   `!l n.
+      LENGTH l <= word_width ==>
+      word_shr (list_to_word l) n =
+      (if LENGTH l <= n then list_to_word []
+       else list_to_word (drop n l))`;;
+*)
+
 let long_word_shr_list = prove
   (`!l n.
       word_width <= LENGTH l ==>
@@ -807,6 +948,15 @@ let long_word_shr_list = prove
 
 export_thm long_word_shr_list;;
 
+(*PARAMETRIC
+let long_word_shr_list = new_axiom
+   `!l n.
+      word_width <= LENGTH l ==>
+      word_shr (list_to_word l) n =
+      if word_width <= n then list_to_word []
+      else list_to_word (drop n (take word_width l))`;;
+*)
+
 let word_shr_list = prove
   (`!l n.
       word_shr (list_to_word l) n =
@@ -827,6 +977,18 @@ let word_shr_list = prove
 
 export_thm word_shr_list;;
 
+(*PARAMETRIC
+let word_shr_list = new_axiom
+   `!l n.
+      word_shr (list_to_word l) n =
+      (if LENGTH l <= word_width then
+         if LENGTH l <= n then list_to_word []
+         else list_to_word (drop n l)
+       else
+         if word_width <= n then list_to_word []
+         else list_to_word (drop n (take word_width l)))`;;
+*)
+
 let word_eq_bits = prove
   (`!w1 w2. (!i. i < word_width ==> word_bit w1 i = word_bit w2 i) ==> w1 = w2`,
    REPEAT GEN_TAC THEN
@@ -841,6 +1003,11 @@ let word_eq_bits = prove
    ASM_REWRITE_TAC [length_word_to_list]);;
 
 export_thm word_eq_bits;;
+
+(*PARAMETRIC
+let word_eq_bits = new_axiom
+  `!w1 w2. (!i. i < word_width ==> word_bit w1 i = word_bit w2 i) ==> w1 = w2`;;
+*)
 
 (***
 let num_to_word_list = prove

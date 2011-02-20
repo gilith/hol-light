@@ -263,9 +263,9 @@ export_thm nth_interval;;
 logfile "list-zipwith-def";;
 
 let zipwith_raw_def = new_recursive_definition list_RECURSION
-  `(!f l. zipwith f [] l = []) /\
+  `(!f l. zipwith (f : A -> B -> C) [] l = []) /\
    (!f h t l.
-      zipwith f (CONS h t) l =
+      zipwith (f : A -> B -> C) (CONS h t) l =
       CONS (f h (HD l)) (zipwith f t (TL l)))`;;
 
 let zipwith_def = prove
