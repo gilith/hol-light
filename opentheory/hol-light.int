@@ -253,18 +253,18 @@ const "HOLLight.word16_width" as "Data.Word16.width"
 
 # Number.Modular
 
-type "HOLLight.mod" as "Number.Modular.modular"
+type "HOLLight.modular" as "Number.Modular.modular"
 
-const "HOLLight.mod_add" as "Number.Modular.+"
-const "HOLLight.mod_le" as "Number.Modular.<="
-const "HOLLight.mod_lt" as "Number.Modular.<"
-const "HOLLight.mod_neg" as "Number.Modular.~"
-const "HOLLight.mod_mult" as "Number.Modular.*"
-const "HOLLight.mod_sub" as "Number.Modular.-"
-const "HOLLight.mod_equiv" as "Number.Modular.equivalent"
-const "HOLLight.num_to_mod" as "Number.Modular.fromNatural"
-const "HOLLight.mod_N" as "Number.Modular.size"
-const "HOLLight.mod_to_num" as "Number.Modular.toNatural"
+const "HOLLight.modular_add" as "Number.Modular.+"
+const "HOLLight.modular_le" as "Number.Modular.<="
+const "HOLLight.modular_lt" as "Number.Modular.<"
+const "HOLLight.modular_neg" as "Number.Modular.~"
+const "HOLLight.modular_mult" as "Number.Modular.*"
+const "HOLLight.modular_sub" as "Number.Modular.-"
+const "HOLLight.modular_equiv" as "Number.Modular.equivalent"
+const "HOLLight.num_to_modular" as "Number.Modular.fromNatural"
+const "HOLLight.modulus" as "Number.Modular.size"
+const "HOLLight.modular_to_num" as "Number.Modular.toNatural"
 
 # Parser
 
