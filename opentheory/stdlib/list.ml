@@ -104,7 +104,7 @@ export_thm concat_def;;
 logfile "list-concat-thm";;
 
 let null_concat = prove
-  (`!l. NULL (concat l) <=> ALL NULL (l : A list list)`,
+  (`!l. NULL (concat l) <=> ALL NULL (l : (A list) list)`,
    LIST_INDUCT_TAC THEN
    ASM_REWRITE_TAC [concat_def; ALL; NULL; NULL_APPEND]);;
 
