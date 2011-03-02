@@ -79,7 +79,7 @@ let mod_add_mod_modulus = new_axiom
 let mod_mult_mod2_modulus = prove
   (`!m n. (m MOD modulus * n MOD modulus) MOD modulus = (m * n) MOD modulus`,
    REPEAT GEN_TAC THEN
-   MP_TAC (SPECL [`m:num`; `modulus:num`; `n:num`] MOD_MULT_MOD2) THEN
+   MP_TAC (SPECL [`m:num`; `modulus`; `n:num`] MOD_MULT_MOD2) THEN
    COND_TAC THENL
    [REWRITE_TAC [modulus_positive];
     DISCH_THEN ACCEPT_TAC]);;
