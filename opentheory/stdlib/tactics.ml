@@ -37,3 +37,5 @@ let COND_TAC =
     let th = ITAUT `!x y z. x /\ (y ==> z) ==> ((x ==> y) ==> z)` in
     MATCH_MP_TAC th THEN
     CONJ_TAC;;
+
+let rec N_TAC n tac = if n == 0 then ALL_TAC else tac THEN N_TAC (n - 1) tac;;

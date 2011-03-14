@@ -251,3 +251,20 @@ let word16_shr_list = new_axiom
 
 let word16_eq_bits = new_axiom
   `!w1 w2. (!i. i < word16_width ==> word16_bit w1 i = word16_bit w2 i) ==> w1 = w2`;;
+
+let num_to_word16_list = new_axiom
+  `!n.
+     num_to_word16 n =
+     list_to_word16
+       (if n = 0 then []
+        else CONS (ODD n) (word16_to_list (num_to_word16 (n DIV 2))))`;;
+
+let word16_reduce_conv =
+    REWRITE_CONV
+      [word16_to_num_to_word16;
+       word16_le_def; word16_lt_def] THENC
+    REWRITE_CONV
+      [num_to_word16_to_num] THENC
+    REWRITE_CONV
+      [word16_width_def; word16_size_def; num_to_word16_eq] THENC
+    NUM_REDUCE_CONV;;

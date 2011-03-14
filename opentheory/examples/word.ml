@@ -1009,28 +1009,57 @@ let word_eq_bits = new_axiom
   `!w1 w2. (!i. i < word_width ==> word_bit w1 i = word_bit w2 i) ==> w1 = w2`;;
 *)
 
-(***
 let num_to_word_list = prove
-  (`(num_to_word 0 = list_to_word []) /\
-    (!n. num_to_word n = list_to_word []) /\
+  (`!n.
+      num_to_word n =
+      list_to_word
+        (if n = 0 then []
+         else CONS (ODD n) (word_to_list (num_to_word (n DIV 2))))`,
+   GEN_TAC THEN
+   bool_cases_tac `n = 0` THENL
+   [ASM_REWRITE_TAC [list_to_word_def];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC word_to_num_inj THEN
+   REWRITE_TAC [cons_to_word_to_num] THEN
+   REWRITE_TAC [word_to_list_to_word] THEN
+   REWRITE_TAC [num_to_word_to_num] THEN
+   ONCE_REWRITE_TAC [GSYM mod_add_mod_word_size] THEN
+   ONCE_REWRITE_TAC [GSYM mod_mult_mod2_word_size] THEN
+   REWRITE_TAC [mod_mod_refl_word_size] THEN
+   REWRITE_TAC [mod_mult_mod2_word_size] THEN
+   REWRITE_TAC [mod_add_mod_word_size] THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [cond_mod_2] THEN
+   ONCE_REWRITE_TAC [MULT_SYM] THEN
+   MP_TAC (SPECL [`n : num`; `2`] DIVISION) THEN
+   COND_TAC THENL
+   [NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   DISCH_THEN (ACCEPT_TAC o CONJUNCT1));;
 
-let num_to_word_list = prove
-  (`(num_to_word 0 = list_to_word []) /\
-    (!n. num_to_word n = list_to_word []) /\
+export_thm num_to_word_list;;
 
-word_and (list_to_word []) l2 = list_to_word []) /\
-    (!l1. word_and l1 (list_to_word []) = list_to_word []) /\
-    (!h1 t1 h2 t2.
+(*PARAMETRIC
+let num_to_word_list = new_axiom
+  `!n.
+     num_to_word n =
+     list_to_word
+       (if n = 0 then []
+        else CONS (ODD n) (word_to_list (num_to_word (n DIV 2))))`;;
+*)
 
-let word_and_list = prove
-  (`(!l2. word_and (list_to_word []) l2 = list_to_word []) /\
-    (!l1. word_and l1 (list_to_word []) = list_to_word []) /\
-    (!h1 t1 h2 t2.
-       word_and (list_to_word (CONS h1 t1)) (list_to_word (CONS h2 t2)) =
-       list_to_word (CONS (h1 /\ h2) (word_to_list (word_and (list_to_word t1) (CONS h1 t1)) (list_to_word (CONS h2 t2)) =
-!w1 w2.
-     word_and w1 w2 =
-     list_to_word (zipwith ( /\ ) (word_to_list w1) (word_to_list w2))`;;
-***)
+(*PARAMETRIC
+let word_reduce_conv =
+    REWRITE_CONV
+      [word_to_num_to_word;
+       word_le_def; word_lt_def] THENC
+    REWRITE_CONV
+      [num_to_word_to_num] THENC
+    REWRITE_CONV
+      [word_width_def; word_size_def; num_to_word_eq] THENC
+    NUM_REDUCE_CONV;;
+*)
 
 logfile_end ();;

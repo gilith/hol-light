@@ -251,3 +251,20 @@ let byte_shr_list = new_axiom
 
 let byte_eq_bits = new_axiom
   `!w1 w2. (!i. i < byte_width ==> byte_bit w1 i = byte_bit w2 i) ==> w1 = w2`;;
+
+let num_to_byte_list = new_axiom
+  `!n.
+     num_to_byte n =
+     list_to_byte
+       (if n = 0 then []
+        else CONS (ODD n) (byte_to_list (num_to_byte (n DIV 2))))`;;
+
+let byte_reduce_conv =
+    REWRITE_CONV
+      [byte_to_num_to_byte;
+       byte_le_def; byte_lt_def] THENC
+    REWRITE_CONV
+      [num_to_byte_to_num] THENC
+    REWRITE_CONV
+      [byte_width_def; byte_size_def; num_to_byte_eq] THENC
+    NUM_REDUCE_CONV;;
