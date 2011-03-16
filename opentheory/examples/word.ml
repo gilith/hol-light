@@ -1131,8 +1131,6 @@ let word_lte_list = prove
     ALL_TAC] THEN
    POP_ASSUM (K ALL_TAC) THEN
    REWRITE_TAC [cons_to_word_to_num; word_bits_lte_def]
-
-
 ***)
 
 (* Word tactics *)
