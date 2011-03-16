@@ -156,16 +156,21 @@ const "HOLLight.byte_mult" as "Data.Byte.*"
 const "HOLLight.byte_sub" as "Data.Byte.-"
 const "HOLLight.byte_and" as "Data.Byte.and"
 const "HOLLight.byte_bit" as "Data.Byte.bit"
-const "HOLLight.list_to_byte" as "Data.Byte.fromList"
 const "HOLLight.num_to_byte" as "Data.Byte.fromNatural"
 const "HOLLight.byte_size" as "Data.Byte.modulus"
 const "HOLLight.byte_not" as "Data.Byte.not"
 const "HOLLight.byte_or" as "Data.Byte.or"
 const "HOLLight.byte_shl" as "Data.Byte.shiftLeft"
 const "HOLLight.byte_shr" as "Data.Byte.shiftRight"
-const "HOLLight.byte_to_list" as "Data.Byte.toList"
 const "HOLLight.byte_to_num" as "Data.Byte.toNatural"
 const "HOLLight.byte_width" as "Data.Byte.width"
+
+# Data.Byte.Bits
+
+const "HOLLight.byte_bits_lte" as "Data.Byte.Bits.compare"
+const "HOLLight.byte_to_list" as "Data.Byte.Bits.fromWord"
+const "HOLLight.is_byte_list" as "Data.Byte.Bits.normal"
+const "HOLLight.list_to_byte" as "Data.Byte.Bits.toWord"
 
 # Data.Char
 
@@ -214,17 +219,21 @@ const "HOLLight.word_mult" as "Data.Word.*"
 const "HOLLight.word_sub" as "Data.Word.-"
 const "HOLLight.word_and" as "Data.Word.and"
 const "HOLLight.word_bit" as "Data.Word.bit"
-const "HOLLight.list_to_word" as "Data.Word.fromList"
 const "HOLLight.num_to_word" as "Data.Word.fromNatural"
-const "HOLLight.is_word_list" as "Data.Word.isList"
 const "HOLLight.word_size" as "Data.Word.modulus"
 const "HOLLight.word_not" as "Data.Word.not"
 const "HOLLight.word_or" as "Data.Word.or"
 const "HOLLight.word_shl" as "Data.Word.shiftLeft"
 const "HOLLight.word_shr" as "Data.Word.shiftRight"
-const "HOLLight.word_to_list" as "Data.Word.toList"
 const "HOLLight.word_to_num" as "Data.Word.toNatural"
 const "HOLLight.word_width" as "Data.Word.width"
+
+# Data.Word.Bits
+
+const "HOLLight.word_bits_lte" as "Data.Word.Bits.compare"
+const "HOLLight.word_to_list" as "Data.Word.Bits.fromWord"
+const "HOLLight.is_word_list" as "Data.Word.Bits.normal"
+const "HOLLight.list_to_word" as "Data.Word.Bits.toWord"
 
 # Data.Word16
 
@@ -239,7 +248,6 @@ const "HOLLight.word16_sub" as "Data.Word16.-"
 const "HOLLight.word16_and" as "Data.Word16.and"
 const "HOLLight.word16_bit" as "Data.Word16.bit"
 const "HOLLight.bytes_to_word16" as "Data.Word16.fromBytes"
-const "HOLLight.list_to_word16" as "Data.Word16.fromList"
 const "HOLLight.num_to_word16" as "Data.Word16.fromNatural"
 const "HOLLight.word16_size" as "Data.Word16.modulus"
 const "HOLLight.word16_not" as "Data.Word16.not"
@@ -247,9 +255,15 @@ const "HOLLight.word16_or" as "Data.Word16.or"
 const "HOLLight.word16_shl" as "Data.Word16.shiftLeft"
 const "HOLLight.word16_shr" as "Data.Word16.shiftRight"
 const "HOLLight.word16_to_bytes" as "Data.Word16.toBytes"
-const "HOLLight.word16_to_list" as "Data.Word16.toList"
 const "HOLLight.word16_to_num" as "Data.Word16.toNatural"
 const "HOLLight.word16_width" as "Data.Word16.width"
+
+# Data.Word16.Bits
+
+const "HOLLight.word16_bits_lte" as "Data.Word16.Bits.compare"
+const "HOLLight.word16_to_list" as "Data.Word16.Bits.fromWord"
+const "HOLLight.is_word16_list" as "Data.Word16.Bits.normal"
+const "HOLLight.list_to_word16" as "Data.Word16.Bits.toWord"
 
 # Number
 
