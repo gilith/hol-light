@@ -376,7 +376,25 @@ let dest_parser_decoder = prove
 
 export_thm dest_parser_decoder;;
 
+let parse_decoder = prove
+  (`parse decoder = case_stream NONE NONE decoder_parse`,
+   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+   GEN_TAC THEN
+   MP_TAC (ISPEC `x : byte stream` stream_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [parse_def; case_stream_def; dest_parser_decoder]);;
+
+export_thm parse_decoder;;
+
 (***
+let decoder_encoder_inverse = prove
+  (`!b0 b1 s.
+      parse decoder (append_stream (encode_cont1 b0 b1) s) =
+      parse (parse_partial_map (decode_cont1 b0) parse_cont) s
+
+parse (parse_partial_map (decode_cont1 b0) parse_cont) s
+parse (parse_partial_map (decode_cont1 b0) parse_cont) s
+
 let decoder_encoder_inverse = prove
   (`parse_inverse decoder encoder`,
    REWRITE_TAC [parse_inverse_def] THEN
@@ -402,8 +420,46 @@ let decoder_encoder_inverse = prove
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    STRIP_TAC THEN
    STRIP_TAC THEN
- 
-  REWRITE_TAC [decoder_def]
+   bool_cases_tac `b = num_to_byte 0` THENL
+   [ASM_REWRITE_TAC [] THEN
+    bool_cases_tac `b0 = num_to_byte 0 /\ ~byte_bit b1 7` THENL
+    [ASM_REWRITE_TAC [append_stream_def] THEN
+     REWRITE_TAC [parse_decoder; case_stream_def; decoder_parse_def] THEN
+     ASM_REWRITE_TAC [LET_DEF; LET_END_DEF];
+     ASM_REWRITE_TAC [] THEN
+     bool_cases_tac `byte_and (num_to_byte 248) b0 = num_to_byte 0` THENL
+     [ASM_REWRITE_TAC [] THEN
+      REWRITE_TAC [encode_cont1_def] THEN
+      REPEAT (POP_ASSUM MP_TAC) THEN
+      MP_TAC (SPEC `b0 : byte` byte_list_cases) THEN
+      STRIP_TAC THEN
+      POP_ASSUM SUBST_VAR_TAC THEN
+      MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
+      STRIP_TAC THEN
+      POP_ASSUM SUBST_VAR_TAC THEN
+      bit_blast_tac THEN
+      REWRITE_TAC [] THEN
+      REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+      bit_blast_tac THEN
+      REWRITE_TAC [append_stream_def] THEN
+      REWRITE_TAC [parse_decoder; case_stream_def] THEN
+      REWRITE_TAC [decoder_parse_def] THEN
+      bit_blast_tac THEN
+      REWRITE_TAC [] THEN
+      REPEAT STRIP_TAC THEN
+      ASM_REWRITE_TAC [] THEN
+      REWRITE_TAC
+        [parse_parse_partial_map; parse_parse_some; parse_cont_def;
+         case_option_def; case_stream_def; is_cont_def] THEN
+      bit_blast_tac THEN
+      REWRITE_TAC [case_option_def] THEN
+      REWRITE_TAC [decode_cont1_def] THEN
+      bit_blast_tac THEN
+      REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+      bit_blast_tac THEN
+      REWRITE_TAC []
+
+   REWRITE_TAC [parse_decoder_def]
 
 export_thm decoder_encoder_inverse;;
 

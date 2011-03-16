@@ -359,6 +359,17 @@ let byte_shl_list_conv =
       (RATOR_CONV (RAND_CONV replicate_conv) THENC
        append_conv);;
 
+let byte_bit_list_conv =
+    let th = SPECL [`l : bool list`; `NUMERAL n`] list_to_byte_bit in
+    REWR_CONV th THENC
+    andalso_conv
+      (RAND_CONV byte_width_conv THENC
+       NUM_REDUCE_CONV)
+      (andalso_conv
+        (RAND_CONV length_conv THENC
+         NUM_REDUCE_CONV)
+        el_conv);;
+
 let byte_eq_list_conv =
     let th = SYM (SPECL [`list_to_byte l1`; `list_to_byte l2`]
                     byte_to_list_inj_eq) in
@@ -375,4 +386,5 @@ let byte_bit_conv =
     byte_or_list_conv ORELSEC
     byte_shr_list_conv ORELSEC
     byte_shl_list_conv ORELSEC
+    byte_bit_list_conv ORELSEC
     byte_eq_list_conv;;

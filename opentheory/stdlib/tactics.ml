@@ -2,6 +2,31 @@
 (* Additional tactics to support the OpenTheory standard library             *)
 (* ------------------------------------------------------------------------- *)
 
+let cond_conv =
+    let pth = SPEC_ALL COND_CLAUSES in
+    let ac = REWR_CONV (CONJUNCT1 pth) in
+    let bc = REWR_CONV (CONJUNCT2 pth) in
+    fun c a b ->
+      (RATOR_CONV o RATOR_CONV o RAND_CONV) c THENC
+      ((ac THENC a) ORELSEC
+       (bc THENC b));;
+
+let andalso_conv =
+    let tth = ITAUT `T /\ t <=> t` in
+    let fth = ITAUT `F /\ t <=> F` in
+    fun c a ->
+      (RATOR_CONV o RAND_CONV) c THENC
+      (REWR_CONV fth ORELSEC
+       (REWR_CONV tth THENC a));;
+
+let orelse_conv =
+    let tth = ITAUT `T \/ t <=> T` in
+    let fth = ITAUT `F \/ t <=> t` in
+    fun c a ->
+      (RATOR_CONV o RAND_CONV) c THENC
+      (REWR_CONV tth ORELSEC
+       (REWR_CONV fth THENC a));;
+
 (* Pretty useless without also making THEN1 infix... *)
 let (THEN1) = fun tac1 tac2 -> tac1 THENL [tac2; ALL_TAC];;
 

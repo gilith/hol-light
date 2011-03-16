@@ -296,15 +296,6 @@ export_thm length_zipwith;;
 
 (* Conversions for bit blasting *)
 
-let cond_conv =
-    let pth = SPEC_ALL COND_CLAUSES in
-    let ac = REWR_CONV (CONJUNCT1 pth) in
-    let bc = REWR_CONV (CONJUNCT2 pth) in
-    fun c a b ->
-      (RATOR_CONV o RATOR_CONV o RAND_CONV) c THENC
-      ((ac THENC a) ORELSEC
-       (bc THENC b));;
-
 let append_conv =
     let nil_conv = REWR_CONV (CONJUNCT1 APPEND) in
     let cons_conv = REWR_CONV (CONJUNCT2 APPEND) in
@@ -332,6 +323,16 @@ let replicate_conv =
          (RATOR_CONV (RAND_CONV num_CONV) THENC
           suc_conv THENC
           RAND_CONV rewr_conv)) tm in
+    rewr_conv;;
+
+let el_conv =
+    let zero_conv = REWR_CONV (CONJUNCT1 EL) in
+    let suc_conv = REWR_CONV (CONJUNCT2 EL) in
+    let rec rewr_conv tm =
+        (zero_conv ORELSEC
+         (RATOR_CONV (RAND_CONV num_CONV) THENC
+          suc_conv THENC
+          rewr_conv)) tm in
     rewr_conv;;
 
 let take_conv =
@@ -378,6 +379,7 @@ let list_bit_conv =
     append_conv ORELSEC
     length_conv ORELSEC
     replicate_conv ORELSEC
+    el_conv ORELSEC
     take_conv ORELSEC
     drop_conv ORELSEC
     zipwith_conv ALL_CONV ORELSEC

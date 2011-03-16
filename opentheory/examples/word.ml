@@ -194,6 +194,33 @@ let word_not_def = new_axiom
   `!w. word_not w = list_to_word (MAP (~) (word_to_list w))`;;
 *)
 
+let word_bits_lte_raw_def = new_recursive_definition list_RECURSION
+  `(!q l. word_bits_lte q [] l = q) /\
+   (!q h t l.
+      word_bits_lte q (CONS h t) l =
+      word_bits_lte ((~h /\ HD l) \/ (~(h /\ ~HD l) /\ q)) t (TL l))`;;
+
+(*PARAMETRIC
+new_constant ("word_bits_lte", `:bool -> bool list -> bool list -> bool`);;
+*)
+
+let word_bits_lte_def = prove
+  (`(!q. word_bits_lte q [] [] = q) /\
+    (!q h1 h2 t1 t2.
+       word_bits_lte q (CONS h1 t1) (CONS h2 t2) =
+       word_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2)`,
+   REWRITE_TAC [word_bits_lte_raw_def; HD; TL]);;
+
+export_thm word_bits_lte_def;;
+
+(*PARAMETRIC
+let word_bits_lte_def = new_axiom
+   `(!q. word_bits_lte q [] [] = q) /\
+    (!q h1 h2 t1 t2.
+       word_bits_lte q (CONS h1 t1) (CONS h2 t2) =
+       word_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2)`;;
+*)
+
 logfile "word-bits-thm";;
 
 (*PARAMETRIC
@@ -1079,6 +1106,20 @@ let num_to_word_list = new_axiom
         else CONS (ODD n) (word_to_list (num_to_word (n DIV 2))))`;;
 *)
 
+(***
+let word_le_list = prove
+  (`!w1 w2.
+      word_le w1 w2 <=>
+      word_bits_lte T (word_to_list w1) (word_to_list w2)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [word_le_def]
+   bool_cases_tac `n = 0` THENL
+   [ASM_REWRITE_TAC [list_to_word_def];
+    ASM_REWRITE_TAC [num_to_word_cons]]);;
+***)
+
+(* Word tactics *)
+
 (*PARAMETRIC
 let word_reduce_conv =
     REWRITE_CONV
@@ -1174,6 +1215,17 @@ let word_shl_list_conv =
       (RATOR_CONV (RAND_CONV replicate_conv) THENC
        append_conv);;
 
+let word_bit_list_conv =
+    let th = SPECL [`l : bool list`; `NUMERAL n`] list_to_word_bit in
+    REWR_CONV th THENC
+    andalso_conv
+      (RAND_CONV word_width_conv THENC
+       NUM_REDUCE_CONV)
+      (andalso_conv
+        (RAND_CONV length_conv THENC
+         NUM_REDUCE_CONV)
+        el_conv);;
+
 let word_eq_list_conv =
     let th = SYM (SPECL [`list_to_word l1`; `list_to_word l2`]
                     word_to_list_inj_eq) in
@@ -1190,6 +1242,7 @@ let word_bit_conv =
     word_or_list_conv ORELSEC
     word_shr_list_conv ORELSEC
     word_shl_list_conv ORELSEC
+    word_bit_list_conv ORELSEC
     word_eq_list_conv;;
 *)
 
