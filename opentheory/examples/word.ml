@@ -565,6 +565,21 @@ let word_to_list_inj = new_axiom
   `!w1 w2. word_to_list w1 = word_to_list w2 ==> w1 = w2`;;
 *)
 
+let word_to_list_inj_eq = prove
+  (`!w1 w2. word_to_list w1 = word_to_list w2 <=> w1 = w2`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC word_to_list_inj;
+    DISCH_THEN SUBST_VAR_TAC THEN
+    REFL_TAC]);;
+
+export_thm word_to_list_inj_eq;;
+
+(*PARAMETRIC
+let word_to_list_inj_eq = new_axiom
+  `!w1 w2. word_to_list w1 = word_to_list w2 <=> w1 = w2`;;
+*)
+
 let list_to_word_bit = prove
   (`!l n.
       word_bit (list_to_word l) n =
@@ -1009,17 +1024,11 @@ let word_eq_bits = new_axiom
   `!w1 w2. (!i. i < word_width ==> word_bit w1 i = word_bit w2 i) ==> w1 = w2`;;
 *)
 
-let num_to_word_list = prove
+let num_to_word_cons = prove
   (`!n.
-      num_to_word n =
-      list_to_word
-        (if n = 0 then []
-         else CONS (ODD n) (word_to_list (num_to_word (n DIV 2))))`,
+      list_to_word (CONS (ODD n) (word_to_list (num_to_word (n DIV 2)))) =
+      num_to_word n`,
    GEN_TAC THEN
-   bool_cases_tac `n = 0` THENL
-   [ASM_REWRITE_TAC [list_to_word_def];
-    ALL_TAC] THEN
-   ASM_REWRITE_TAC [] THEN
    MATCH_MP_TAC word_to_num_inj THEN
    REWRITE_TAC [cons_to_word_to_num] THEN
    REWRITE_TAC [word_to_list_to_word] THEN
@@ -1037,7 +1046,27 @@ let num_to_word_list = prove
    COND_TAC THENL
    [NUM_REDUCE_TAC;
     ALL_TAC] THEN
-   DISCH_THEN (ACCEPT_TAC o CONJUNCT1));;
+   DISCH_THEN (ACCEPT_TAC o SYM o CONJUNCT1));;
+
+export_thm num_to_word_cons;;
+
+(*PARAMETRIC
+let num_to_word_cons = new_axiom
+  `!n.
+     list_to_word (CONS (ODD n) (word_to_list (num_to_word (n DIV 2)))) =
+     num_to_word n`;;
+*)
+
+let num_to_word_list = prove
+  (`!n.
+      num_to_word n =
+      list_to_word
+        (if n = 0 then []
+         else CONS (ODD n) (word_to_list (num_to_word (n DIV 2))))`,
+   GEN_TAC THEN
+   bool_cases_tac `n = 0` THENL
+   [ASM_REWRITE_TAC [list_to_word_def];
+    ASM_REWRITE_TAC [num_to_word_cons]]);;
 
 export_thm num_to_word_list;;
 
@@ -1060,6 +1089,108 @@ let word_reduce_conv =
     REWRITE_CONV
       [word_width_def; word_size_def; num_to_word_eq] THENC
     NUM_REDUCE_CONV;;
+*)
+
+(*PARAMETRIC
+let word_width_conv = REWR_CONV word_width_def;;
+
+let list_to_word_to_list_conv =
+    REWR_CONV list_to_word_to_list_eq THENC
+    cond_conv
+      (RATOR_CONV (RAND_CONV length_conv) THENC
+       RAND_CONV word_width_conv THENC
+       NUM_REDUCE_CONV)
+      (RAND_CONV
+         ((RATOR_CONV o RAND_CONV)
+            (RATOR_CONV (RAND_CONV word_width_conv) THENC
+             RAND_CONV length_conv THENC
+             NUM_REDUCE_CONV) THENC
+          replicate_conv) THENC
+       append_conv)
+      (RATOR_CONV (RAND_CONV word_width_conv) THENC
+       take_conv);;
+
+let numeral_to_word_list_conv =
+    let zero_conv = REWR_CONV (SYM (CONJUNCT1 list_to_word_def)) in
+    let numeral_conv = REWR_CONV (SYM (SPEC `NUMERAL n` num_to_word_cons)) in
+    let rec rewr_conv tm =
+        (zero_conv ORELSEC
+         (numeral_conv THENC
+          RAND_CONV
+            (RATOR_CONV (RAND_CONV NUM_REDUCE_CONV) THENC
+             RAND_CONV
+               (RAND_CONV
+                  (RAND_CONV NUM_REDUCE_CONV THENC
+                   rewr_conv) THENC
+                list_to_word_to_list_conv)))) tm in
+    rewr_conv;;
+
+let word_and_list_conv =
+    let th = SPECL [`list_to_word l1`; `list_to_word l2`] word_and_def in
+    let ths = CONJUNCTS (SPEC_ALL AND_CLAUSES) in
+    let c = TRY_CONV (FIRST_CONV (map REWR_CONV ths)) in
+    REWR_CONV th THENC
+    RAND_CONV
+      (RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
+       RAND_CONV list_to_word_to_list_conv THENC
+       zipwith_conv c);;
+
+let word_or_list_conv =
+    let th = SPECL [`list_to_word l1`; `list_to_word l2`] word_or_def in
+    let ths = CONJUNCTS (SPEC_ALL OR_CLAUSES) in
+    let c = TRY_CONV (FIRST_CONV (map REWR_CONV ths)) in
+    REWR_CONV th THENC
+    RAND_CONV
+      (RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
+       RAND_CONV list_to_word_to_list_conv THENC
+       zipwith_conv c);;
+
+let word_shr_list_conv =
+    let th = SPECL [`l : bool list`; `NUMERAL n`] word_shr_list in
+    REWR_CONV th THENC
+    cond_conv
+      (RATOR_CONV (RAND_CONV length_conv) THENC
+       RAND_CONV word_width_conv THENC
+       NUM_REDUCE_CONV)
+      (cond_conv
+        (RATOR_CONV (RAND_CONV length_conv) THENC
+         NUM_REDUCE_CONV)
+        ALL_CONV
+        (RAND_CONV drop_conv))
+      (cond_conv
+        (RATOR_CONV (RAND_CONV word_width_conv) THENC
+         NUM_REDUCE_CONV)
+        ALL_CONV
+        (RAND_CONV
+           (RAND_CONV
+              (RATOR_CONV (RAND_CONV word_width_conv) THENC
+               take_conv) THENC
+            drop_conv)));;
+
+let word_shl_list_conv =
+    let th = SPECL [`l : bool list`; `NUMERAL n`] word_shl_list in
+    REWR_CONV th THENC
+    RAND_CONV
+      (RATOR_CONV (RAND_CONV replicate_conv) THENC
+       append_conv);;
+
+let word_eq_list_conv =
+    let th = SYM (SPECL [`list_to_word l1`; `list_to_word l2`]
+                    word_to_list_inj_eq) in
+    REWR_CONV th THENC
+    RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
+    RAND_CONV list_to_word_to_list_conv THENC
+    list_eq_conv;;
+
+let word_bit_conv =
+    word_width_conv ORELSEC
+    list_to_word_to_list_conv ORELSEC
+    numeral_to_word_list_conv ORELSEC
+    word_and_list_conv ORELSEC
+    word_or_list_conv ORELSEC
+    word_shr_list_conv ORELSEC
+    word_shl_list_conv ORELSEC
+    word_eq_list_conv;;
 *)
 
 logfile_end ();;

@@ -193,6 +193,9 @@ let word16_to_list_to_word16 = new_axiom
 let word16_to_list_inj = new_axiom
   `!w1 w2. word16_to_list w1 = word16_to_list w2 ==> w1 = w2`;;
 
+let word16_to_list_inj_eq = new_axiom
+  `!w1 w2. word16_to_list w1 = word16_to_list w2 <=> w1 = w2`;;
+
 let list_to_word16_bit = new_axiom
    `!l n.
       word16_bit (list_to_word16 l) n =
@@ -252,6 +255,11 @@ let word16_shr_list = new_axiom
 let word16_eq_bits = new_axiom
   `!w1 w2. (!i. i < word16_width ==> word16_bit w1 i = word16_bit w2 i) ==> w1 = w2`;;
 
+let num_to_word16_cons = new_axiom
+  `!n.
+     list_to_word16 (CONS (ODD n) (word16_to_list (num_to_word16 (n DIV 2)))) =
+     num_to_word16 n`;;
+
 let num_to_word16_list = new_axiom
   `!n.
      num_to_word16 n =
@@ -268,3 +276,103 @@ let word16_reduce_conv =
     REWRITE_CONV
       [word16_width_def; word16_size_def; num_to_word16_eq] THENC
     NUM_REDUCE_CONV;;
+
+let word16_width_conv = REWR_CONV word16_width_def;;
+
+let list_to_word16_to_list_conv =
+    REWR_CONV list_to_word16_to_list_eq THENC
+    cond_conv
+      (RATOR_CONV (RAND_CONV length_conv) THENC
+       RAND_CONV word16_width_conv THENC
+       NUM_REDUCE_CONV)
+      (RAND_CONV
+         ((RATOR_CONV o RAND_CONV)
+            (RATOR_CONV (RAND_CONV word16_width_conv) THENC
+             RAND_CONV length_conv THENC
+             NUM_REDUCE_CONV) THENC
+          replicate_conv) THENC
+       append_conv)
+      (RATOR_CONV (RAND_CONV word16_width_conv) THENC
+       take_conv);;
+
+let numeral_to_word16_list_conv =
+    let zero_conv = REWR_CONV (SYM (CONJUNCT1 list_to_word16_def)) in
+    let numeral_conv = REWR_CONV (SYM (SPEC `NUMERAL n` num_to_word16_cons)) in
+    let rec rewr_conv tm =
+        (zero_conv ORELSEC
+         (numeral_conv THENC
+          RAND_CONV
+            (RATOR_CONV (RAND_CONV NUM_REDUCE_CONV) THENC
+             RAND_CONV
+               (RAND_CONV
+                  (RAND_CONV NUM_REDUCE_CONV THENC
+                   rewr_conv) THENC
+                list_to_word16_to_list_conv)))) tm in
+    rewr_conv;;
+
+let word16_and_list_conv =
+    let th = SPECL [`list_to_word16 l1`; `list_to_word16 l2`] word16_and_def in
+    let ths = CONJUNCTS (SPEC_ALL AND_CLAUSES) in
+    let c = TRY_CONV (FIRST_CONV (map REWR_CONV ths)) in
+    REWR_CONV th THENC
+    RAND_CONV
+      (RATOR_CONV (RAND_CONV list_to_word16_to_list_conv) THENC
+       RAND_CONV list_to_word16_to_list_conv THENC
+       zipwith_conv c);;
+
+let word16_or_list_conv =
+    let th = SPECL [`list_to_word16 l1`; `list_to_word16 l2`] word16_or_def in
+    let ths = CONJUNCTS (SPEC_ALL OR_CLAUSES) in
+    let c = TRY_CONV (FIRST_CONV (map REWR_CONV ths)) in
+    REWR_CONV th THENC
+    RAND_CONV
+      (RATOR_CONV (RAND_CONV list_to_word16_to_list_conv) THENC
+       RAND_CONV list_to_word16_to_list_conv THENC
+       zipwith_conv c);;
+
+let word16_shr_list_conv =
+    let th = SPECL [`l : bool list`; `NUMERAL n`] word16_shr_list in
+    REWR_CONV th THENC
+    cond_conv
+      (RATOR_CONV (RAND_CONV length_conv) THENC
+       RAND_CONV word16_width_conv THENC
+       NUM_REDUCE_CONV)
+      (cond_conv
+        (RATOR_CONV (RAND_CONV length_conv) THENC
+         NUM_REDUCE_CONV)
+        ALL_CONV
+        (RAND_CONV drop_conv))
+      (cond_conv
+        (RATOR_CONV (RAND_CONV word16_width_conv) THENC
+         NUM_REDUCE_CONV)
+        ALL_CONV
+        (RAND_CONV
+           (RAND_CONV
+              (RATOR_CONV (RAND_CONV word16_width_conv) THENC
+               take_conv) THENC
+            drop_conv)));;
+
+let word16_shl_list_conv =
+    let th = SPECL [`l : bool list`; `NUMERAL n`] word16_shl_list in
+    REWR_CONV th THENC
+    RAND_CONV
+      (RATOR_CONV (RAND_CONV replicate_conv) THENC
+       append_conv);;
+
+let word16_eq_list_conv =
+    let th = SYM (SPECL [`list_to_word16 l1`; `list_to_word16 l2`]
+                    word16_to_list_inj_eq) in
+    REWR_CONV th THENC
+    RATOR_CONV (RAND_CONV list_to_word16_to_list_conv) THENC
+    RAND_CONV list_to_word16_to_list_conv THENC
+    list_eq_conv;;
+
+let word16_bit_conv =
+    word16_width_conv ORELSEC
+    list_to_word16_to_list_conv ORELSEC
+    numeral_to_word16_list_conv ORELSEC
+    word16_and_list_conv ORELSEC
+    word16_or_list_conv ORELSEC
+    word16_shr_list_conv ORELSEC
+    word16_shl_list_conv ORELSEC
+    word16_eq_list_conv;;

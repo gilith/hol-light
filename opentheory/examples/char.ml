@@ -386,6 +386,7 @@ let decoder_encoder_inverse = prove
    STRIP_TAC THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
+   POP_ASSUM MP_TAC THEN
    MP_TAC (SPEC `pl : plane` dest_plane_cases) THEN
    STRIP_TAC THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
@@ -394,8 +395,15 @@ let decoder_encoder_inverse = prove
    STRIP_TAC THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
-
-   REWRITE_TAC [word16_to_bytes_def]
+   POP_ASSUM MP_TAC THEN
+   MP_TAC (SPEC `w : word16` dest_bytes_to_word16_cases) THEN
+   STRIP_TAC THEN
+   POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
+   POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
+   STRIP_TAC THEN
+   STRIP_TAC THEN
+ 
+  REWRITE_TAC [decoder_def]
 
 export_thm decoder_encoder_inverse;;
 

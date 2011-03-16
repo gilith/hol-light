@@ -145,9 +145,14 @@ let MAP2 = prove
 
 logfile "list-nth-def";;
 
-let EL = new_recursive_definition num_RECURSION
-  `(EL 0 l = HD l) /\
-   (EL (SUC n) l = EL n (TL l))`;;
+let EL =
+  let def = new_recursive_definition num_RECURSION
+      `(!l. EL 0 (l : A list) = HD l) /\
+       (!n l. EL (SUC n) (l : A list) = EL n (TL l))` in
+  prove
+  (`(!h t. EL 0 (CONS (h : A) t) = h) /\
+    (!h t n. EL (SUC n) (CONS (h : A) t) = EL n t)`,
+   REWRITE_TAC [def; HD; TL]);;
 
 export_thm EL;;
 
@@ -509,14 +514,14 @@ export_thm ALL_APPEND;;
 logfile "list-member-thm";;
 
 let MEM_EL = prove
- (`!l n. n < LENGTH l ==> MEM (EL n l) l`,
+ (`!l n. n < LENGTH (l : A list) ==> MEM (EL n l) l`,
   LIST_INDUCT_TAC THEN REWRITE_TAC[MEM; CONJUNCT1 LT; LENGTH] THEN
   INDUCT_TAC THEN ASM_SIMP_TAC[EL; HD; LT_SUC; TL]);;
 
 export_thm MEM_EL;;
 
 let MEM_EXISTS_EL = prove
- (`!l x. MEM x l <=> ?i. i < LENGTH l /\ x = EL i l`,
+ (`!l x. MEM (x : A list) l <=> ?i. i < LENGTH l /\ x = EL i l`,
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[LENGTH; EL; MEM; CONJUNCT1 LT] THEN
   GEN_TAC THEN GEN_REWRITE_TAC RAND_CONV
    [MESON[num_CASES] `(?i. P i) <=> P 0 \/ (?i. P(SUC i))`] THEN
@@ -621,7 +626,7 @@ export_thm LENGTH_TL;;
 logfile "list-nth-thm";;
 
 let EL_APPEND = prove
- (`!k l m. EL k (APPEND l m) = if k < LENGTH l then EL k l
+ (`!k l m. EL k (APPEND l m) = if k < LENGTH l then EL k (l : A list)
                                else EL (k - LENGTH l) m`,
   INDUCT_TAC THEN REWRITE_TAC[EL] THEN
   LIST_INDUCT_TAC THEN
@@ -630,20 +635,20 @@ let EL_APPEND = prove
 
 export_thm EL_APPEND;;
 
+(* No longer true with new definition of EL
 let EL_TL = prove
  (`!n l. EL n (TL l) = EL (n + 1) l`,
   REWRITE_TAC[GSYM ADD1; EL]);;
-
-export_thm EL_TL;;
+*)
 
 let EL_CONS = prove
- (`!n h t. EL n (CONS h t) = if n = 0 then h else EL (n - 1) t`,
+ (`!n h t. EL n (CONS (h : A) t) = if n = 0 then h else EL (n - 1) t`,
   INDUCT_TAC THEN REWRITE_TAC[EL; HD; TL; NOT_SUC; SUC_SUB1]);;
 
 export_thm EL_CONS;;
 
 let LAST_EL = prove
- (`!l. ~(l = []) ==> LAST l = EL (LENGTH l - 1) l`,
+ (`!l. ~((l : A list) = []) ==> LAST l = EL (LENGTH l - 1) l`,
   LIST_INDUCT_TAC THEN REWRITE_TAC[LAST; LENGTH; SUC_SUB1] THEN
   DISCH_TAC THEN COND_CASES_TAC THEN
   ASM_SIMP_TAC[LENGTH; EL; HD; EL_CONS; LENGTH_EQ_NIL]);;

@@ -38,4 +38,8 @@ let COND_TAC =
     MATCH_MP_TAC th THEN
     CONJ_TAC;;
 
-let rec N_TAC n tac = if n == 0 then ALL_TAC else tac THEN N_TAC (n - 1) tac;;
+let rec N_TAC n tac =
+    if n == 0 then ALL_TAC else tac THEN N_TAC (n - 1) tac;;
+
+let rec N_CONV n conv =
+    if n == 0 then ALL_CONV else conv THENC N_CONV (n - 1) conv;;

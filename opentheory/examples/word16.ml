@@ -79,26 +79,6 @@ let word16_list_cases = prove
 
 export_thm word16_list_cases;;
 
-(***
-let word16_bit_blast_conv =
-  REWRITE_CONV
-    [num_to_word16_list] THENC
-  (REPEATC o CHANGED_CONV)
-    (REWRITE_CONV
-       [word16_shr_list; word16_width_def; LENGTH] THENC
-     NUM_REDUCE_CONV);;
-
-let word16_bit_blast_tac = CONV_TAC word16_bit_blast_conv;;
-
-let word_bit_blast_conv =
-    let numeral_th = SPEC `NUMERAL m` num_to_word_list in
-    CHANGED_CONV
-      (REWRITE_CONV [numeral_th] THENC
-       NUM_REDUCE_CONV)
-
-let word_bit_blast_tac = CONV_TAC word_bit_blast_conv;;
-***)
-
 logfile "word16-bytes-def";;
 
 let word16_to_bytes_def = new_definition
@@ -166,9 +146,16 @@ let word16_to_byte_list = prove
 
 export_thm word16_to_byte_list;;
 
-(***
+let bit_blast_conv =
+    REDEPTH_CONV
+      (word16_bit_conv ORELSEC
+       byte_bit_conv ORELSEC
+       list_bit_conv);;
+
+let bit_blast_tac = CONV_TAC bit_blast_conv;;
+
 let dest_bytes_to_word16_cases = prove
-  (`!w. ?b0 b1. bytes_to_word16 b0 b1 = w /\ word16_to_bytes w = (b0,b1)`,
+  (`!w. ?b0 b1. w = bytes_to_word16 b0 b1 /\ word16_to_bytes w = (b0,b1)`,
    GEN_TAC THEN
    EXISTS_TAC `FST (word16_to_bytes w)` THEN
    EXISTS_TAC `SND (word16_to_bytes w)` THEN
@@ -178,17 +165,21 @@ let dest_bytes_to_word16_cases = prove
    MP_TAC (SPEC `w : word16` word16_list_cases) THEN
    STRIP_TAC THEN
    POP_ASSUM SUBST_VAR_TAC THEN
-   word16_bit_blast_tac
-
-   REWRITE_TAC [num_to_byte_to_num; word16_to_num_to_word16]
+   bit_blast_tac THEN
+   REWRITE_TAC []);;
 
 export_thm dest_bytes_to_word16_cases;;
 
 let bytes_to_word16_cases = prove
   (`!w. ?b0 b1. w = bytes_to_word16 b0 b1`,
+   GEN_TAC THEN
+   MP_TAC (SPEC `w : word16` dest_bytes_to_word16_cases) THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `b0 : byte` THEN
+   EXISTS_TAC `b1 : byte` THEN
+   FIRST_ASSUM ACCEPT_TAC);;
 
 export_thm bytes_to_word16_cases;;
-***)
 
 logfile_end ();;
 

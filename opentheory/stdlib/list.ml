@@ -269,11 +269,11 @@ let zipwith_raw_def = new_recursive_definition list_RECURSION
       CONS (f h (HD l)) (zipwith f t (TL l)))`;;
 
 let zipwith_def = prove
-   (`(!f. zipwith (f : A -> B -> C) [] [] = []) /\
-     (!f h1 h2 t1 t2.
-        zipwith (f : A -> B -> C) (CONS h1 t1) (CONS h2 t2) =
-        CONS (f h1 h2) (zipwith f t1 t2))`,
-    REWRITE_TAC [zipwith_raw_def; HD; TL]);;
+  (`(!f. zipwith (f : A -> B -> C) [] [] = []) /\
+    (!f h1 h2 t1 t2.
+       zipwith (f : A -> B -> C) (CONS h1 t1) (CONS h2 t2) =
+       CONS (f h1 h2) (zipwith f t1 t2))`,
+   REWRITE_TAC [zipwith_raw_def; HD; TL]);;
 
 export_thm zipwith_def;;
 
@@ -293,3 +293,92 @@ let length_zipwith = prove
    FIRST_ASSUM MATCH_ACCEPT_TAC);;
 
 export_thm length_zipwith;;
+
+(* Conversions for bit blasting *)
+
+let cond_conv =
+    let pth = SPEC_ALL COND_CLAUSES in
+    let ac = REWR_CONV (CONJUNCT1 pth) in
+    let bc = REWR_CONV (CONJUNCT2 pth) in
+    fun c a b ->
+      (RATOR_CONV o RATOR_CONV o RAND_CONV) c THENC
+      ((ac THENC a) ORELSEC
+       (bc THENC b));;
+
+let append_conv =
+    let nil_conv = REWR_CONV (CONJUNCT1 APPEND) in
+    let cons_conv = REWR_CONV (CONJUNCT2 APPEND) in
+    let rec rewr_conv tm =
+        (nil_conv ORELSEC
+         (cons_conv THENC
+          RAND_CONV rewr_conv)) tm in
+    rewr_conv;;
+
+let length_conv =
+    let nil_conv = REWR_CONV (CONJUNCT1 LENGTH) in
+    let cons_conv = REWR_CONV (CONJUNCT2 LENGTH) in
+    let rec rewr_conv tm =
+        (nil_conv ORELSEC
+         (cons_conv THENC
+          RAND_CONV rewr_conv)) tm in
+    rewr_conv THENC
+    NUM_REDUCE_CONV;;
+
+let replicate_conv =
+    let zero_conv = REWR_CONV (CONJUNCT1 REPLICATE) in
+    let suc_conv = REWR_CONV (CONJUNCT2 REPLICATE) in
+    let rec rewr_conv tm =
+        (zero_conv ORELSEC
+         (RATOR_CONV (RAND_CONV num_CONV) THENC
+          suc_conv THENC
+          RAND_CONV rewr_conv)) tm in
+    rewr_conv;;
+
+let take_conv =
+    let zero_conv = REWR_CONV (CONJUNCT1 take_def) in
+    let suc_conv = REWR_CONV (CONJUNCT2 take_def) in
+    let rec rewr_conv tm =
+        (zero_conv ORELSEC
+         (RATOR_CONV (RAND_CONV num_CONV) THENC
+          suc_conv THENC
+          RAND_CONV rewr_conv)) tm in
+    rewr_conv;;
+
+let drop_conv =
+    let zero_conv = REWR_CONV (CONJUNCT1 drop_def) in
+    let suc_conv = REWR_CONV (CONJUNCT2 drop_def) in
+    let rec rewr_conv tm =
+        (zero_conv ORELSEC
+         (RATOR_CONV (RAND_CONV num_CONV) THENC
+          suc_conv THENC
+          rewr_conv)) tm in
+    rewr_conv;;
+
+let zipwith_conv =
+    let nil_conv = REWR_CONV (CONJUNCT1 zipwith_def) in
+    let cons_conv = REWR_CONV (CONJUNCT2 zipwith_def) in
+    fun c ->
+      let rec rewr_conv tm =
+          (nil_conv ORELSEC
+           (cons_conv THENC
+            RATOR_CONV (RAND_CONV c) THENC
+            RAND_CONV rewr_conv)) tm in
+      rewr_conv;;
+
+let list_eq_conv =
+    let nil_conv = REWR_CONV (EQT_INTRO (ISPEC `[] : A list` EQ_REFL)) in
+    let cons_conv = REWR_CONV CONS_11 in
+    let rec rewr_conv tm =
+        (nil_conv ORELSEC
+         (cons_conv THENC
+          RAND_CONV rewr_conv)) tm in
+    rewr_conv;;
+
+let list_bit_conv =
+    append_conv ORELSEC
+    length_conv ORELSEC
+    replicate_conv ORELSEC
+    take_conv ORELSEC
+    drop_conv ORELSEC
+    zipwith_conv ALL_CONV ORELSEC
+    list_eq_conv;;
