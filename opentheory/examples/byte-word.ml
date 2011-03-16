@@ -157,6 +157,14 @@ new_constant ("byte_not", `:byte -> byte`);;
 let byte_not_def = new_axiom
   `!w. byte_not w = list_to_byte (MAP (~) (byte_to_list w))`;;
 
+new_constant ("byte_bits_lte", `:bool -> bool list -> bool list -> bool`);;
+
+let byte_bits_lte_def = new_axiom
+   `(!q. byte_bits_lte q [] [] = q) /\
+    (!q h1 h2 t1 t2.
+       byte_bits_lte q (CONS h1 t1) (CONS h2 t2) =
+       byte_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2)`;;
+
 (* byte-bits-thm *)
 
 let length_byte_to_list = new_axiom

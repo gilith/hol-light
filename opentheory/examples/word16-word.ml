@@ -157,6 +157,14 @@ new_constant ("word16_not", `:word16 -> word16`);;
 let word16_not_def = new_axiom
   `!w. word16_not w = list_to_word16 (MAP (~) (word16_to_list w))`;;
 
+new_constant ("word16_bits_lte", `:bool -> bool list -> bool list -> bool`);;
+
+let word16_bits_lte_def = new_axiom
+   `(!q. word16_bits_lte q [] [] = q) /\
+    (!q h1 h2 t1 t2.
+       word16_bits_lte q (CONS h1 t1) (CONS h2 t2) =
+       word16_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2)`;;
+
 (* word16-bits-thm *)
 
 let length_word16_to_list = new_axiom

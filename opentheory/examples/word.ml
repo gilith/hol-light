@@ -1107,15 +1107,32 @@ let num_to_word_list = new_axiom
 *)
 
 (***
-let word_le_list = prove
-  (`!w1 w2.
-      word_le w1 w2 <=>
-      word_bits_lte T (word_to_list w1) (word_to_list w2)`,
+let word_lte_list = prove
+  (`!q w1 w2.
+      word_bits_lte q (word_to_list w1) (word_to_list w2) <=>
+      (if q then word_le w1 w2 else word_lt w1 w2)`,
    REPEAT GEN_TAC THEN
-   REWRITE_TAC [word_le_def]
-   bool_cases_tac `n = 0` THENL
-   [ASM_REWRITE_TAC [list_to_word_def];
-    ASM_REWRITE_TAC [num_to_word_cons]]);;
+   CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
+   KNOW_TAC
+     `LENGTH (word_to_list w1) <= word_width /\
+      LENGTH (word_to_list w2) <= word_width /\
+      LENGTH (word_to_list w1) = LENGTH (word_to_list w2)` THENL
+   [REWRITE_TAC [length_word_to_list; LE_REFL];
+    ALL_TAC] THEN
+   SPEC_TAC (`word_to_list w2`,`l2 : bool list`) THEN
+   SPEC_TAC (`word_to_list w1`,`l1 : bool list`) THEN
+   LIST_INDUCT_TAC THENL
+   [LIST_INDUCT_TAC THENL
+    [REWRITE_TAC [LE_REFL; word_bits_lte_def];
+     REWRITE_TAC [LENGTH; NOT_SUC]];
+    ALL_TAC] THENL
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [LENGTH; NOT_SUC];
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REWRITE_TAC [cons_to_word_to_num; word_bits_lte_def]
+
+
 ***)
 
 (* Word tactics *)
