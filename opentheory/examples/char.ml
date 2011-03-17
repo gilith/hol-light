@@ -518,7 +518,6 @@ ASM_MESON_TAC []
       AP_THM_TAC THEN
       AP_TERM_TAC THEN
       bit_blast_tac;
-      
 
    REWRITE_TAC [parse_decoder_def]
 
