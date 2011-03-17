@@ -1183,23 +1183,19 @@ let numeral_to_word_list_conv =
 
 let word_and_list_conv =
     let th = SPECL [`list_to_word l1`; `list_to_word l2`] word_and_def in
-    let ths = CONJUNCTS (SPEC_ALL AND_CLAUSES) in
-    let c = TRY_CONV (FIRST_CONV (map REWR_CONV ths)) in
     REWR_CONV th THENC
     RAND_CONV
       (RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
        RAND_CONV list_to_word_to_list_conv THENC
-       zipwith_conv c);;
+       zipwith_conv and_simp_conv);;
 
 let word_or_list_conv =
     let th = SPECL [`list_to_word l1`; `list_to_word l2`] word_or_def in
-    let ths = CONJUNCTS (SPEC_ALL OR_CLAUSES) in
-    let c = TRY_CONV (FIRST_CONV (map REWR_CONV ths)) in
     REWR_CONV th THENC
     RAND_CONV
       (RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
        RAND_CONV list_to_word_to_list_conv THENC
-       zipwith_conv c);;
+       zipwith_conv or_simp_conv);;
 
 let word_shr_list_conv =
     let th = SPECL [`l : bool list`; `NUMERAL n`] word_shr_list in

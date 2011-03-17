@@ -2,6 +2,30 @@
 (* Additional tactics to support the OpenTheory standard library             *)
 (* ------------------------------------------------------------------------- *)
 
+let not_simp_conv =
+    let ths = CONJUNCTS (SPEC_ALL NOT_CLAUSES) in
+    FIRST_CONV (map REWR_CONV ths);;
+
+let and_simp_conv =
+    let th1 = ITAUT `t /\ ~t <=> F` in
+    let th2 = ITAUT `~t /\ t <=> F` in
+    let ths = CONJUNCTS (SPEC_ALL AND_CLAUSES) in
+    FIRST_CONV (map REWR_CONV (th1 :: th2 :: ths));;
+
+let or_simp_conv =
+    let pth = SPEC_ALL EXCLUDED_MIDDLE in
+    let th1 = EQT_INTRO pth in
+    let th2 = EQT_INTRO (CONV_RULE (REWR_CONV DISJ_SYM) pth) in
+    let ths = CONJUNCTS (SPEC_ALL OR_CLAUSES) in
+    FIRST_CONV (map REWR_CONV (th1 :: th2 :: ths));;
+
+let iff_simp_conv =
+    let th1 = ISPEC `t:bool` REFL_CLAUSE in
+    let th2 = ITAUT `(t <=> ~t) <=> F` in
+    let th3 = ITAUT `(~t <=> t) <=> F` in
+    let ths = CONJUNCTS (SPEC_ALL EQ_CLAUSES) in
+    FIRST_CONV (map REWR_CONV (th1 :: th2 :: th3 :: ths));;
+
 let cond_conv =
     let pth = SPEC_ALL COND_CLAUSES in
     let ac = REWR_CONV (CONJUNCT1 pth) in
