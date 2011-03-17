@@ -320,23 +320,19 @@ let numeral_to_byte_list_conv =
 
 let byte_and_list_conv =
     let th = SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_and_def in
-    let ths = CONJUNCTS (SPEC_ALL AND_CLAUSES) in
-    let c = TRY_CONV (FIRST_CONV (map REWR_CONV ths)) in
     REWR_CONV th THENC
     RAND_CONV
       (RATOR_CONV (RAND_CONV list_to_byte_to_list_conv) THENC
        RAND_CONV list_to_byte_to_list_conv THENC
-       zipwith_conv c);;
+       zipwith_conv and_simp_conv);;
 
 let byte_or_list_conv =
     let th = SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_or_def in
-    let ths = CONJUNCTS (SPEC_ALL OR_CLAUSES) in
-    let c = TRY_CONV (FIRST_CONV (map REWR_CONV ths)) in
     REWR_CONV th THENC
     RAND_CONV
       (RATOR_CONV (RAND_CONV list_to_byte_to_list_conv) THENC
        RAND_CONV list_to_byte_to_list_conv THENC
-       zipwith_conv c);;
+       zipwith_conv or_simp_conv);;
 
 let byte_shr_list_conv =
     let th = SPECL [`l : bool list`; `NUMERAL n`] byte_shr_list in
@@ -384,7 +380,7 @@ let byte_eq_list_conv =
     REWR_CONV th THENC
     RATOR_CONV (RAND_CONV list_to_byte_to_list_conv) THENC
     RAND_CONV list_to_byte_to_list_conv THENC
-    list_eq_conv;;
+    list_eq_conv iff_simp_conv;;
 
 let byte_bit_conv =
     byte_width_conv ORELSEC

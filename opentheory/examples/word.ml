@@ -1243,7 +1243,7 @@ let word_eq_list_conv =
     REWR_CONV th THENC
     RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
     RAND_CONV list_to_word_to_list_conv THENC
-    list_eq_conv;;
+    list_eq_conv iff_simp_conv;;
 
 let word_bit_conv =
     word_width_conv ORELSEC

@@ -369,11 +369,14 @@ let zipwith_conv =
 let list_eq_conv =
     let nil_conv = REWR_CONV (EQT_INTRO (ISPEC `[] : A list` EQ_REFL)) in
     let cons_conv = REWR_CONV CONS_11 in
-    let rec rewr_conv tm =
-        (nil_conv ORELSEC
-         (cons_conv THENC
-          RAND_CONV rewr_conv)) tm in
-    rewr_conv;;
+    fun c ->
+      let rec rewr_conv tm =
+          (nil_conv ORELSEC
+           (cons_conv THENC
+            RATOR_CONV (RAND_CONV c) THENC
+            RAND_CONV rewr_conv THENC
+            TRY_CONV and_simp_conv)) tm in
+      rewr_conv;;
 
 let list_bit_conv =
     append_conv ORELSEC
@@ -383,4 +386,4 @@ let list_bit_conv =
     take_conv ORELSEC
     drop_conv ORELSEC
     zipwith_conv ALL_CONV ORELSEC
-    list_eq_conv;;
+    list_eq_conv ALL_CONV;;

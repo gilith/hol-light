@@ -320,23 +320,19 @@ let numeral_to_word16_list_conv =
 
 let word16_and_list_conv =
     let th = SPECL [`list_to_word16 l1`; `list_to_word16 l2`] word16_and_def in
-    let ths = CONJUNCTS (SPEC_ALL AND_CLAUSES) in
-    let c = TRY_CONV (FIRST_CONV (map REWR_CONV ths)) in
     REWR_CONV th THENC
     RAND_CONV
       (RATOR_CONV (RAND_CONV list_to_word16_to_list_conv) THENC
        RAND_CONV list_to_word16_to_list_conv THENC
-       zipwith_conv c);;
+       zipwith_conv and_simp_conv);;
 
 let word16_or_list_conv =
     let th = SPECL [`list_to_word16 l1`; `list_to_word16 l2`] word16_or_def in
-    let ths = CONJUNCTS (SPEC_ALL OR_CLAUSES) in
-    let c = TRY_CONV (FIRST_CONV (map REWR_CONV ths)) in
     REWR_CONV th THENC
     RAND_CONV
       (RATOR_CONV (RAND_CONV list_to_word16_to_list_conv) THENC
        RAND_CONV list_to_word16_to_list_conv THENC
-       zipwith_conv c);;
+       zipwith_conv or_simp_conv);;
 
 let word16_shr_list_conv =
     let th = SPECL [`l : bool list`; `NUMERAL n`] word16_shr_list in
@@ -384,7 +380,7 @@ let word16_eq_list_conv =
     REWR_CONV th THENC
     RATOR_CONV (RAND_CONV list_to_word16_to_list_conv) THENC
     RAND_CONV list_to_word16_to_list_conv THENC
-    list_eq_conv;;
+    list_eq_conv iff_simp_conv;;
 
 let word16_bit_conv =
     word16_width_conv ORELSEC
