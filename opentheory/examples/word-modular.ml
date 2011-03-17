@@ -90,6 +90,9 @@ let word_add_to_num = new_axiom
       word_to_num (word_add x y) =
       (word_to_num x + word_to_num y) MOD word_size`;;
 
+let word_lt_alt = new_axiom
+   `!x y. word_lt x y = word_to_num x < word_to_num y`;;
+
 (*PARAMETRIC
 (* word *)
 
@@ -182,4 +185,7 @@ let word_add_to_num = new_axiom
    `!x y.
       word_to_num (word_add x y) =
       (word_to_num x + word_to_num y) MOD word_size`;;
+
+let word_lt_alt = new_axiom
+   `!x y. word_lt x y = word_to_num x < word_to_num y`;;
 *)

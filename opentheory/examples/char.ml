@@ -388,14 +388,6 @@ export_thm parse_decoder;;
 
 (***
 let decoder_encoder_inverse = prove
-  (`!b0 b1 s.
-      parse decoder (append_stream (encode_cont1 b0 b1) s) =
-      parse (parse_partial_map (decode_cont1 b0) parse_cont) s
-
-parse (parse_partial_map (decode_cont1 b0) parse_cont) s
-parse (parse_partial_map (decode_cont1 b0) parse_cont) s
-
-let decoder_encoder_inverse = prove
   (`parse_inverse decoder encoder`,
    REWRITE_TAC [parse_inverse_def] THEN
    REPEAT GEN_TAC THEN
@@ -438,14 +430,12 @@ let decoder_encoder_inverse = prove
       STRIP_TAC THEN
       POP_ASSUM SUBST_VAR_TAC THEN
       bit_blast_tac THEN
-      REWRITE_TAC [] THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
       bit_blast_tac THEN
       REWRITE_TAC [append_stream_def] THEN
       REWRITE_TAC [parse_decoder; case_stream_def] THEN
       REWRITE_TAC [decoder_parse_def] THEN
       bit_blast_tac THEN
-      REWRITE_TAC [] THEN
       REPEAT STRIP_TAC THEN
       ASM_REWRITE_TAC [] THEN
       REWRITE_TAC
@@ -457,7 +447,78 @@ let decoder_encoder_inverse = prove
       bit_blast_tac THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
       bit_blast_tac THEN
-      REWRITE_TAC []
+      PAT_ASSUM `~(x /\ y)` THEN
+      ASM_REWRITE_TAC [] THEN
+      STRIP_TAC THEN
+      ASM_REWRITE_TAC [case_option_def] THEN
+      AP_TERM_TAC THEN
+      AP_THM_TAC THEN
+      AP_TERM_TAC THEN
+      AP_TERM_TAC THEN
+      AP_TERM_TAC THEN
+      AP_TERM_TAC THEN
+      AP_THM_TAC THEN
+      AP_TERM_TAC THEN
+      bit_blast_tac;
+      ASM_REWRITE_TAC [] THEN
+      REWRITE_TAC [encode_cont2_def] THEN
+      REPEAT (POP_ASSUM MP_TAC) THEN
+      MP_TAC (SPEC `b0 : byte` byte_list_cases) THEN
+      STRIP_TAC THEN
+      POP_ASSUM SUBST_VAR_TAC THEN
+      MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
+      STRIP_TAC THEN
+      POP_ASSUM SUBST_VAR_TAC THEN
+      bit_blast_tac THEN
+      REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+      bit_blast_tac THEN
+      REWRITE_TAC [append_stream_def] THEN
+      REWRITE_TAC [parse_decoder; case_stream_def] THEN
+      REWRITE_TAC [decoder_parse_def] THEN
+      bit_blast_tac THEN
+      REPEAT STRIP_TAC THEN
+      ASM_REWRITE_TAC [] THEN
+      REWRITE_TAC
+        [parse_parse_partial_map; parse_parse_some; parse_cont2_def;
+         parse_parse_pair; parse_cont_def;
+         case_option_def; case_stream_def; is_cont_def] THEN
+      bit_blast_tac THEN
+      REWRITE_TAC [case_option_def; case_stream_def] THEN
+      bit_blast_tac THEN
+      REWRITE_TAC [case_option_def] THEN
+      REWRITE_TAC [decode_cont2_def] THEN
+      bit_blast_tac THEN
+      REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+      bit_blast_tac THEN
+      KNOW_TAC
+        `~(~x7 /\ ~x6 /\ ~x5 /\ ~x4 /\ ~x3 \/
+           (x7 /\ x6 /\ (x5 \/ x4 /\ x3)) /\ (~x7 \/ ~x6 \/ ~x5))` THENL
+      [POP_ASSUM MP_TAC THEN
+       POP_ASSUM MP_TAC THEN
+       POP_ASSUM_LIST (K ALL_TAC) THEN
+       BOOL_CASES_TAC `x5 : bool` THEN
+       REWRITE_TAC [] THEN
+       BOOL_CASES_TAC `x6 : bool` THEN
+       REWRITE_TAC [] THEN
+       BOOL_CASES_TAC `x7 : bool` THEN
+       REWRITE_TAC [] THEN
+
+ASM_MESON_TAC []
+
+      PAT_ASSUM `~(x /\ y)` THEN
+      ASM_REWRITE_TAC [] THEN
+      STRIP_TAC THEN
+      ASM_REWRITE_TAC [case_option_def] THEN
+      AP_TERM_TAC THEN
+      AP_THM_TAC THEN
+      AP_TERM_TAC THEN
+      AP_TERM_TAC THEN
+      AP_TERM_TAC THEN
+      AP_TERM_TAC THEN
+      AP_THM_TAC THEN
+      AP_TERM_TAC THEN
+      bit_blast_tac;
+      
 
    REWRITE_TAC [parse_decoder_def]
 

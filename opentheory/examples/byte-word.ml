@@ -102,6 +102,9 @@ let byte_add_to_num = new_axiom
       byte_to_num (byte_add x y) =
       (byte_to_num x + byte_to_num y) MOD byte_size`;;
 
+let byte_lt_alt = new_axiom
+   `!x y. byte_lt x y = byte_to_num x < byte_to_num y`;;
+
 (* byte-bits-def *)
 
 new_constant ("byte_shl", `:byte -> num -> byte`);;
@@ -275,6 +278,19 @@ let num_to_byte_list = new_axiom
        (if n = 0 then []
         else CONS (ODD n) (byte_to_list (num_to_byte (n DIV 2))))`;;
 
+let byte_lte_list = new_axiom
+   `!q w1 w2.
+      byte_bits_lte q (byte_to_list w1) (byte_to_list w2) <=>
+      (if q then byte_le w1 w2 else byte_lt w1 w2)`;;
+
+let byte_le_list = new_axiom
+   `!w1 w2.
+      byte_bits_lte T (byte_to_list w1) (byte_to_list w2) <=> byte_le w1 w2`;;
+
+let byte_lt_list = new_axiom
+   `!w1 w2.
+      byte_bits_lte F (byte_to_list w1) (byte_to_list w2) <=> byte_lt w1 w2`;;
+
 let byte_reduce_conv =
     REWRITE_CONV
       [byte_to_num_to_byte;
@@ -374,6 +390,41 @@ let byte_bit_list_conv =
          NUM_REDUCE_CONV)
         el_conv);;
 
+let byte_bits_lte_conv =
+    let nil_conv = REWR_CONV (CONJUNCT1 byte_bits_lte_def) in
+    let cons_conv = REWR_CONV (CONJUNCT2 byte_bits_lte_def) in
+    let rec rewr_conv tm =
+        (nil_conv ORELSEC
+         (cons_conv THENC
+          (RATOR_CONV o RATOR_CONV o RAND_CONV)
+            ((RATOR_CONV o RAND_CONV)
+               (RATOR_CONV (RAND_CONV (TRY_CONV not_simp_conv)) THENC
+                TRY_CONV and_simp_conv) THENC
+             RAND_CONV
+               ((RATOR_CONV o RAND_CONV)
+                  (RAND_CONV
+                     (RAND_CONV (TRY_CONV not_simp_conv) THENC
+                      TRY_CONV and_simp_conv) THENC
+                   TRY_CONV not_simp_conv) THENC
+                TRY_CONV and_simp_conv) THENC
+             TRY_CONV or_simp_conv) THENC
+          rewr_conv)) tm in
+    rewr_conv;;
+
+let byte_le_list_conv =
+    let th = SYM (SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_le_list) in
+    REWR_CONV th THENC
+    RATOR_CONV (RAND_CONV list_to_byte_to_list_conv) THENC
+    RAND_CONV list_to_byte_to_list_conv THENC
+    byte_bits_lte_conv;;
+
+let byte_lt_list_conv =
+    let th = SYM (SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_lt_list) in
+    REWR_CONV th THENC
+    RATOR_CONV (RAND_CONV list_to_byte_to_list_conv) THENC
+    RAND_CONV list_to_byte_to_list_conv THENC
+    byte_bits_lte_conv;;
+
 let byte_eq_list_conv =
     let th = SYM (SPECL [`list_to_byte l1`; `list_to_byte l2`]
                     byte_to_list_inj_eq) in
@@ -391,4 +442,6 @@ let byte_bit_conv =
     byte_shr_list_conv ORELSEC
     byte_shl_list_conv ORELSEC
     byte_bit_list_conv ORELSEC
+    byte_le_list_conv ORELSEC
+    byte_lt_list_conv ORELSEC
     byte_eq_list_conv;;

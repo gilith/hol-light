@@ -449,4 +449,15 @@ let modular_add_to_num = new_axiom
       (modular_to_num x + modular_to_num y) MOD modulus`;;
 *)
 
+let modular_lt_alt = prove
+  (`!x y. modular_lt x y = modular_to_num x < modular_to_num y`,
+   REWRITE_TAC [modular_lt_def; modular_le_def; NOT_LE]);;
+
+export_thm modular_lt_alt;;
+
+(*PARAMETRIC
+let modular_lt_alt = new_axiom
+   `!x y. modular_lt x y = modular_to_num x < modular_to_num y`;;
+*)
+
 logfile_end ();;

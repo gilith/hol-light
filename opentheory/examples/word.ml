@@ -1106,12 +1106,19 @@ let num_to_word_list = new_axiom
         else CONS (ODD n) (word_to_list (num_to_word (n DIV 2))))`;;
 *)
 
-(***
 let word_lte_list = prove
   (`!q w1 w2.
       word_bits_lte q (word_to_list w1) (word_to_list w2) <=>
       (if q then word_le w1 w2 else word_lt w1 w2)`,
    REPEAT GEN_TAC THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `word_to_num w1 < word_to_num w2 + (if q then 1 else 0)` THEN
+   ONCE_REWRITE_TAC [CONJ_SYM] THEN
+   CONJ_TAC THENL
+   [BOOL_CASES_TAC `q : bool` THENL
+    [REWRITE_TAC [word_le_def; LT_SUC_LE; GSYM ADD1];
+     REWRITE_TAC [word_lt_alt; ADD_0]];
+    ALL_TAC] THEN
    CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
    KNOW_TAC
      `LENGTH (word_to_list w1) <= word_width /\
@@ -1119,19 +1126,95 @@ let word_lte_list = prove
       LENGTH (word_to_list w1) = LENGTH (word_to_list w2)` THENL
    [REWRITE_TAC [length_word_to_list; LE_REFL];
     ALL_TAC] THEN
+   SPEC_TAC (`q : bool`,`q : bool`) THEN
    SPEC_TAC (`word_to_list w2`,`l2 : bool list`) THEN
    SPEC_TAC (`word_to_list w1`,`l1 : bool list`) THEN
    LIST_INDUCT_TAC THENL
    [LIST_INDUCT_TAC THENL
-    [REWRITE_TAC [LE_REFL; word_bits_lte_def];
+    [GEN_TAC THEN
+     REWRITE_TAC [LT_ADD; word_bits_lte_def] THEN
+     BOOL_CASES_TAC `q : bool` THENL
+     [REWRITE_TAC [ONE; LT_0];
+      REWRITE_TAC [LT_REFL]];
      REWRITE_TAC [LENGTH; NOT_SUC]];
-    ALL_TAC] THENL
+    ALL_TAC] THEN
    LIST_INDUCT_TAC THENL
    [REWRITE_TAC [LENGTH; NOT_SUC];
     ALL_TAC] THEN
    POP_ASSUM (K ALL_TAC) THEN
-   REWRITE_TAC [cons_to_word_to_num; word_bits_lte_def]
-***)
+   GEN_TAC THEN
+   REWRITE_TAC [cons_to_word_to_num; word_bits_lte_def; LENGTH; SUC_INJ] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM
+     (MP_TAC o SPECL [`t' : bool list`; `~h /\ h' \/ ~(h /\ ~h') /\ q`]) THEN
+   COND_TAC THENL
+   [ASM_ARITH_TAC;
+    ALL_TAC] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   KNOW_TAC
+     `(2 * word_to_num (list_to_word t) + (if h then 1 else 0)) MOD word_size =
+      (2 * word_to_num (list_to_word t) + (if h then 1 else 0))` THENL
+   [MATCH_MP_TAC mod_lt_word_size THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `2 EXP SUC (LENGTH (t : bool list))` THEN
+    CONJ_TAC THENL
+    [MATCH_ACCEPT_TAC cons_to_word_to_num_bound;
+     REWRITE_TAC [word_size_def; le_exp_2] THEN
+     FIRST_ASSUM ACCEPT_TAC];
+    ALL_TAC] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   KNOW_TAC
+     `(2 * word_to_num (list_to_word t') + (if h' then 1 else 0)) MOD word_size =
+      (2 * word_to_num (list_to_word t') + (if h' then 1 else 0))` THENL
+   [MATCH_MP_TAC mod_lt_word_size THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `2 EXP SUC (LENGTH (t' : bool list))` THEN
+    CONJ_TAC THENL
+    [MATCH_ACCEPT_TAC cons_to_word_to_num_bound;
+     REWRITE_TAC [word_size_def; le_exp_2] THEN
+     FIRST_ASSUM ACCEPT_TAC];
+    ALL_TAC] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   ARITH_TAC);;
+
+export_thm word_lte_list;;
+
+(*PARAMETRIC
+let word_lte_list = new_axiom
+   `!q w1 w2.
+      word_bits_lte q (word_to_list w1) (word_to_list w2) <=>
+      (if q then word_le w1 w2 else word_lt w1 w2)`;;
+*)
+
+let word_le_list = prove
+  (`!w1 w2.
+      word_bits_lte T (word_to_list w1) (word_to_list w2) <=> word_le w1 w2`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPECL [`T`; `w1 : word`; `w2 : word`] word_lte_list) THEN
+   REWRITE_TAC []);;
+
+export_thm word_le_list;;
+
+(*PARAMETRIC
+let word_le_list = new_axiom
+   `!w1 w2.
+      word_bits_lte T (word_to_list w1) (word_to_list w2) <=> word_le w1 w2`;;
+*)
+
+let word_lt_list = prove
+  (`!w1 w2.
+      word_bits_lte F (word_to_list w1) (word_to_list w2) <=> word_lt w1 w2`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPECL [`F`; `w1 : word`; `w2 : word`] word_lte_list) THEN
+   REWRITE_TAC []);;
+
+export_thm word_lt_list;;
+
+(*PARAMETRIC
+let word_lt_list = new_axiom
+   `!w1 w2.
+      word_bits_lte F (word_to_list w1) (word_to_list w2) <=> word_lt w1 w2`;;
+*)
 
 (* Word tactics *)
 
@@ -1237,6 +1320,41 @@ let word_bit_list_conv =
          NUM_REDUCE_CONV)
         el_conv);;
 
+let word_bits_lte_conv =
+    let nil_conv = REWR_CONV (CONJUNCT1 word_bits_lte_def) in
+    let cons_conv = REWR_CONV (CONJUNCT2 word_bits_lte_def) in
+    let rec rewr_conv tm =
+        (nil_conv ORELSEC
+         (cons_conv THENC
+          (RATOR_CONV o RATOR_CONV o RAND_CONV)
+            ((RATOR_CONV o RAND_CONV)
+               (RATOR_CONV (RAND_CONV (TRY_CONV not_simp_conv))) THENC
+             TRY_CONV and_simp_conv) THENC
+          RAND_CONV
+            ((RATOR_CONV o RAND_CONV)
+               (RAND_CONV
+                  (RAND_CONV (TRY_CONV not_simp_conv) THENC
+                   TRY_CONV and_simp_conv) THENC
+                TRY_CONV not_simp_conv) THENC
+             TRY_CONV and_simp_conv) THENC
+          TRY_CONV or_simp_conv THENC
+          rewr_conv)) tm in
+    rewr_conv;;
+
+let word_le_list_conv =
+    let th = SYM (SPECL [`list_to_word l1`; `list_to_word l2`] word_le_list) in
+    REWR_CONV th THENC
+    RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
+    RAND_CONV list_to_word_to_list_conv THENC
+    word_bits_lte_conv;;
+
+let word_lt_list_conv =
+    let th = SYM (SPECL [`list_to_word l1`; `list_to_word l2`] word_lt_list) in
+    REWR_CONV th THENC
+    RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
+    RAND_CONV list_to_word_to_list_conv THENC
+    word_bits_lte_conv;;
+
 let word_eq_list_conv =
     let th = SYM (SPECL [`list_to_word l1`; `list_to_word l2`]
                     word_to_list_inj_eq) in
@@ -1254,6 +1372,8 @@ let word_bit_conv =
     word_shr_list_conv ORELSEC
     word_shl_list_conv ORELSEC
     word_bit_list_conv ORELSEC
+    word_le_list_conv ORELSEC
+    word_lt_list_conv ORELSEC
     word_eq_list_conv;;
 *)
 

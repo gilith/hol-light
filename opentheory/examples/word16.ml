@@ -15,6 +15,15 @@ logfile_end ();;
 
 loads "opentheory/examples/word16-word.ml";;
 
+let bit_blast_conv =
+    DEPTH_CONV
+      (word16_bit_conv ORELSEC
+       byte_bit_conv ORELSEC
+       list_bit_conv ORELSEC
+       bool_simp_conv);;
+
+let bit_blast_tac = CONV_TAC bit_blast_conv;;
+
 logfile "word16-bits";;
 
 let word16_list_cases = prove
@@ -145,14 +154,6 @@ let word16_to_byte_list = prove
     REWRITE_TAC [length_word16_to_list; CONJ_ASSOC]]);;
 
 export_thm word16_to_byte_list;;
-
-let bit_blast_conv =
-    REDEPTH_CONV
-      (word16_bit_conv ORELSEC
-       byte_bit_conv ORELSEC
-       list_bit_conv);;
-
-let bit_blast_tac = CONV_TAC bit_blast_conv;;
 
 let dest_bytes_to_word16_cases = prove
   (`!w. ?b0 b1. w = bytes_to_word16 b0 b1 /\ word16_to_bytes w = (b0,b1)`,

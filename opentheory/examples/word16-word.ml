@@ -102,6 +102,9 @@ let word16_add_to_num = new_axiom
       word16_to_num (word16_add x y) =
       (word16_to_num x + word16_to_num y) MOD word16_size`;;
 
+let word16_lt_alt = new_axiom
+   `!x y. word16_lt x y = word16_to_num x < word16_to_num y`;;
+
 (* word16-bits-def *)
 
 new_constant ("word16_shl", `:word16 -> num -> word16`);;
@@ -275,6 +278,19 @@ let num_to_word16_list = new_axiom
        (if n = 0 then []
         else CONS (ODD n) (word16_to_list (num_to_word16 (n DIV 2))))`;;
 
+let word16_lte_list = new_axiom
+   `!q w1 w2.
+      word16_bits_lte q (word16_to_list w1) (word16_to_list w2) <=>
+      (if q then word16_le w1 w2 else word16_lt w1 w2)`;;
+
+let word16_le_list = new_axiom
+   `!w1 w2.
+      word16_bits_lte T (word16_to_list w1) (word16_to_list w2) <=> word16_le w1 w2`;;
+
+let word16_lt_list = new_axiom
+   `!w1 w2.
+      word16_bits_lte F (word16_to_list w1) (word16_to_list w2) <=> word16_lt w1 w2`;;
+
 let word16_reduce_conv =
     REWRITE_CONV
       [word16_to_num_to_word16;
@@ -374,6 +390,41 @@ let word16_bit_list_conv =
          NUM_REDUCE_CONV)
         el_conv);;
 
+let word16_bits_lte_conv =
+    let nil_conv = REWR_CONV (CONJUNCT1 word16_bits_lte_def) in
+    let cons_conv = REWR_CONV (CONJUNCT2 word16_bits_lte_def) in
+    let rec rewr_conv tm =
+        (nil_conv ORELSEC
+         (cons_conv THENC
+          (RATOR_CONV o RATOR_CONV o RAND_CONV)
+            ((RATOR_CONV o RAND_CONV)
+               (RATOR_CONV (RAND_CONV (TRY_CONV not_simp_conv))) THENC
+             TRY_CONV and_simp_conv) THENC
+          RAND_CONV
+            ((RATOR_CONV o RAND_CONV)
+               (RAND_CONV
+                  (RAND_CONV (TRY_CONV not_simp_conv) THENC
+                   TRY_CONV and_simp_conv) THENC
+                TRY_CONV not_simp_conv) THENC
+             TRY_CONV and_simp_conv) THENC
+          TRY_CONV or_simp_conv THENC
+          rewr_conv)) tm in
+    rewr_conv;;
+
+let word16_le_list_conv =
+    let th = SYM (SPECL [`list_to_word16 l1`; `list_to_word16 l2`] word16_le_list) in
+    REWR_CONV th THENC
+    RATOR_CONV (RAND_CONV list_to_word16_to_list_conv) THENC
+    RAND_CONV list_to_word16_to_list_conv THENC
+    word16_bits_lte_conv;;
+
+let word16_lt_list_conv =
+    let th = SYM (SPECL [`list_to_word16 l1`; `list_to_word16 l2`] word16_lt_list) in
+    REWR_CONV th THENC
+    RATOR_CONV (RAND_CONV list_to_word16_to_list_conv) THENC
+    RAND_CONV list_to_word16_to_list_conv THENC
+    word16_bits_lte_conv;;
+
 let word16_eq_list_conv =
     let th = SYM (SPECL [`list_to_word16 l1`; `list_to_word16 l2`]
                     word16_to_list_inj_eq) in
@@ -391,4 +442,6 @@ let word16_bit_conv =
     word16_shr_list_conv ORELSEC
     word16_shl_list_conv ORELSEC
     word16_bit_list_conv ORELSEC
+    word16_le_list_conv ORELSEC
+    word16_lt_list_conv ORELSEC
     word16_eq_list_conv;;

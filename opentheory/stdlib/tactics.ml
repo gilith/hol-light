@@ -26,6 +26,18 @@ let iff_simp_conv =
     let ths = CONJUNCTS (SPEC_ALL EQ_CLAUSES) in
     FIRST_CONV (map REWR_CONV (th1 :: th2 :: th3 :: ths));;
 
+let cond_simp_conv =
+    let pth = SPEC_ALL COND_CLAUSES in
+    REWR_CONV (CONJUNCT1 pth) ORELSEC
+    REWR_CONV (CONJUNCT2 pth);;
+
+let bool_simp_conv =
+    not_simp_conv ORELSEC
+    and_simp_conv ORELSEC
+    or_simp_conv ORELSEC
+    iff_simp_conv ORELSEC
+    cond_simp_conv;;
+
 let cond_conv =
     let pth = SPEC_ALL COND_CLAUSES in
     let ac = REWR_CONV (CONJUNCT1 pth) in
