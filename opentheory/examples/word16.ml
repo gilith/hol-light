@@ -177,13 +177,42 @@ let word16_to_bytes_list = prove
        list_to_byte (take 8 (word16_to_list w))) =
       word16_to_bytes w`,
    GEN_TAC THEN
-   REWRITE_TAC [word16_to_bytes_def; word16_to_byte_list] THEN
+   REWRITE_TAC [word16_to_bytes_def; word16_to_byte_list; PAIR_EQ] THEN
    MP_TAC (SPEC `w : word16` word16_list_cases) THEN
    STRIP_TAC THEN
    POP_ASSUM SUBST_VAR_TAC THEN
    bit_blast_tac);;
 
 export_thm word16_to_bytes_list;;
+
+let dest_bytes_to_word16_cases = prove
+  (`!w. ?b0 b1. w = bytes_to_word16 b0 b1 /\ word16_to_bytes w = (b0,b1)`,
+   GEN_TAC THEN
+   EXISTS_TAC `FST (word16_to_bytes w)` THEN
+   EXISTS_TAC `SND (word16_to_bytes w)` THEN
+   REWRITE_TAC [] THEN
+   REWRITE_TAC [word16_to_bytes_def; bytes_to_word16_def] THEN
+   REWRITE_TAC [byte_to_word16_list; word16_to_byte_list] THEN
+   MP_TAC (SPEC `w : word16` word16_list_cases) THEN
+   STRIP_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   bit_blast_tac THEN
+   REWRITE_TAC []);;
+
+export_thm dest_bytes_to_word16_cases;;
+
+let bytes_to_word16_cases = prove
+  (`!w. ?b0 b1. w = bytes_to_word16 b0 b1`,
+   GEN_TAC THEN
+   MP_TAC (SPEC `w : word16` dest_bytes_to_word16_cases) THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `b0 : byte` THEN
+   EXISTS_TAC `b1 : byte` THEN
+   FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm bytes_to_word16_cases;;
+
+(* Extending the bit-blasting tactic *)
 
 let bytes_to_word16_list_conv =
     let th = SYM (SPECL [`list_to_byte l0`; `list_to_byte l1`]
@@ -217,32 +246,5 @@ let bit_blast_conv =
        bool_simp_conv);;
 
 let bit_blast_tac = CONV_TAC bit_blast_conv;;
-
-let dest_bytes_to_word16_cases = prove
-  (`!w. ?b0 b1. w = bytes_to_word16 b0 b1 /\ word16_to_bytes w = (b0,b1)`,
-   GEN_TAC THEN
-   EXISTS_TAC `FST (word16_to_bytes w)` THEN
-   EXISTS_TAC `SND (word16_to_bytes w)` THEN
-   REWRITE_TAC [] THEN
-   REWRITE_TAC [word16_to_bytes_def; bytes_to_word16_def] THEN
-   REWRITE_TAC [byte_to_word16_list; word16_to_byte_list] THEN
-   MP_TAC (SPEC `w : word16` word16_list_cases) THEN
-   STRIP_TAC THEN
-   POP_ASSUM SUBST_VAR_TAC THEN
-   bit_blast_tac THEN
-   REWRITE_TAC []);;
-
-export_thm dest_bytes_to_word16_cases;;
-
-let bytes_to_word16_cases = prove
-  (`!w. ?b0 b1. w = bytes_to_word16 b0 b1`,
-   GEN_TAC THEN
-   MP_TAC (SPEC `w : word16` dest_bytes_to_word16_cases) THEN
-   STRIP_TAC THEN
-   EXISTS_TAC `b0 : byte` THEN
-   EXISTS_TAC `b1 : byte` THEN
-   FIRST_ASSUM ACCEPT_TAC);;
-
-export_thm bytes_to_word16_cases;;
 
 logfile_end ();;
