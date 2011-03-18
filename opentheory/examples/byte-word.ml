@@ -403,8 +403,8 @@ let byte_bits_lte_conv =
              RAND_CONV
                ((RATOR_CONV o RAND_CONV)
                   (RAND_CONV
-                     (RAND_CONV (TRY_CONV not_simp_conv) THENC
-                      TRY_CONV and_simp_conv) THENC
+                    (RAND_CONV (TRY_CONV not_simp_conv) THENC
+                     TRY_CONV and_simp_conv) THENC
                    TRY_CONV not_simp_conv) THENC
                 TRY_CONV and_simp_conv) THENC
              TRY_CONV or_simp_conv) THENC

@@ -490,6 +490,32 @@ let decoder_encoder_inverse = prove
       bit_blast_tac THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
       bit_blast_tac THEN
+      MATCH_MP_TAC EQ_SYM THEN
+      ONCE_REWRITE_TAC [COND_RAND] THEN
+      ONCE_REWRITE_TAC [COND_RAND] THEN
+      REWRITE_TAC [case_option_def; option_distinct] THEN
+      KNOW_TAC `!c b. ~c /\ b ==> (if c then F else b)` THENL
+      [REWRITE_TAC [COND_EXPAND] THEN
+       ITAUT_TAC;
+       ALL_TAC] THENL
+      DISCH_THEN MATCH_MP_TAC THEN
+      CONJ_TAC THENL
+      [POP_ASSUM MP_TAC THEN
+       POP_ASSUM MP_TAC THEN
+       PAT_ASSUM `is_unicode X` THEN
+       ASM_REWRITE_TAC [is_unicode_def] THEN
+       PAT_ASSUM `is_plane X` THEN
+       ASM_REWRITE_TAC [plane_tybij] THEN
+       DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+       PAT_ASSUM `is_position X` THEN
+       ASM_REWRITE_TAC [position_tybij] THEN
+       DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+       bit_blast_tac THEN
+       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+       bit_blast_tac THEN
+
+      
+
       KNOW_TAC
         `~(~x7 /\ ~x6 /\ ~x5 /\ ~x4 /\ ~x3 \/
            (x7 /\ x6 /\ (x5 \/ x4 /\ x3)) /\ (~x7 \/ ~x6 \/ ~x5))` THENL

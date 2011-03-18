@@ -155,6 +155,69 @@ let word16_to_byte_list = prove
 
 export_thm word16_to_byte_list;;
 
+let bytes_to_word16_list = prove
+  (`!b0 b1.
+      list_to_word16 (APPEND (byte_to_list b1) (byte_to_list b0)) =
+      bytes_to_word16 b0 b1`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [bytes_to_word16_def; byte_to_word16_list] THEN
+   MP_TAC (SPEC `b0 : byte` byte_list_cases) THEN
+   STRIP_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
+   STRIP_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   bit_blast_tac);;
+
+export_thm bytes_to_word16_list;;
+
+let word16_to_bytes_list = prove
+  (`!w.
+      (list_to_byte (drop 8 (word16_to_list w)),
+       list_to_byte (take 8 (word16_to_list w))) =
+      word16_to_bytes w`,
+   GEN_TAC THEN
+   REWRITE_TAC [word16_to_bytes_def; word16_to_byte_list] THEN
+   MP_TAC (SPEC `w : word16` word16_list_cases) THEN
+   STRIP_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   bit_blast_tac);;
+
+export_thm word16_to_bytes_list;;
+
+let bytes_to_word16_list_conv =
+    let th = SYM (SPECL [`list_to_byte l0`; `list_to_byte l1`]
+                    bytes_to_word16_list) in
+    REWR_CONV th THENC
+    RAND_CONV
+      (RATOR_CONV (RAND_CONV list_to_byte_to_list_conv) THENC
+       RAND_CONV list_to_byte_to_list_conv THENC
+       append_conv);;
+
+let word16_to_bytes_list_conv =
+    let th = SYM (SPEC `list_to_word16 l` word16_to_bytes_list) in
+    REWR_CONV th THENC
+    (RATOR_CONV o RAND_CONV o RAND_CONV)
+      (RAND_CONV list_to_word16_to_list_conv THENC
+       drop_conv) THENC
+    (RAND_CONV o RAND_CONV)
+      (RAND_CONV list_to_word16_to_list_conv THENC
+       take_conv);;
+
+let word16_bytes_conv =
+    bytes_to_word16_list_conv ORELSEC
+    word16_to_bytes_list_conv;;
+
+let bit_blast_conv =
+    DEPTH_CONV
+      (word16_bytes_conv ORELSEC
+       word16_bit_conv ORELSEC
+       byte_bit_conv ORELSEC
+       list_bit_conv ORELSEC
+       bool_simp_conv);;
+
+let bit_blast_tac = CONV_TAC bit_blast_conv;;
+
 let dest_bytes_to_word16_cases = prove
   (`!w. ?b0 b1. w = bytes_to_word16 b0 b1 /\ word16_to_bytes w = (b0,b1)`,
    GEN_TAC THEN
@@ -183,4 +246,3 @@ let bytes_to_word16_cases = prove
 export_thm bytes_to_word16_cases;;
 
 logfile_end ();;
-

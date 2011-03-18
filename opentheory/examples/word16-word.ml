@@ -398,16 +398,16 @@ let word16_bits_lte_conv =
          (cons_conv THENC
           (RATOR_CONV o RATOR_CONV o RAND_CONV)
             ((RATOR_CONV o RAND_CONV)
-               (RATOR_CONV (RAND_CONV (TRY_CONV not_simp_conv))) THENC
-             TRY_CONV and_simp_conv) THENC
-          RAND_CONV
-            ((RATOR_CONV o RAND_CONV)
-               (RAND_CONV
-                  (RAND_CONV (TRY_CONV not_simp_conv) THENC
-                   TRY_CONV and_simp_conv) THENC
-                TRY_CONV not_simp_conv) THENC
-             TRY_CONV and_simp_conv) THENC
-          TRY_CONV or_simp_conv THENC
+               (RATOR_CONV (RAND_CONV (TRY_CONV not_simp_conv)) THENC
+                TRY_CONV and_simp_conv) THENC
+             RAND_CONV
+               ((RATOR_CONV o RAND_CONV)
+                  (RAND_CONV
+                    (RAND_CONV (TRY_CONV not_simp_conv) THENC
+                     TRY_CONV and_simp_conv) THENC
+                   TRY_CONV not_simp_conv) THENC
+                TRY_CONV and_simp_conv) THENC
+             TRY_CONV or_simp_conv) THENC
           rewr_conv)) tm in
     rewr_conv;;
 
