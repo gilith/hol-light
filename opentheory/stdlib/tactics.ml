@@ -2,6 +2,10 @@
 (* Additional tactics to support the OpenTheory standard library             *)
 (* ------------------------------------------------------------------------- *)
 
+let TAUT_TAC : tactic = fun (asl,w) -> ACCEPT_TAC (TAUT w) (asl,w);;
+
+let ASM_TAUT_TAC = REPEAT (POP_ASSUM MP_TAC) THEN TAUT_TAC;;
+
 let not_simp_conv =
     let ths = CONJUNCTS (SPEC_ALL NOT_CLAUSES) in
     FIRST_CONV (map REWR_CONV ths);;
