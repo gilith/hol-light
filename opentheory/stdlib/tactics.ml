@@ -70,6 +70,10 @@ let PAT_ASSUM pat =
     let is_pat th = can (term_match [] pat) (concl th) in
     FIRST_X_ASSUM (fun th -> if is_pat th then MP_TAC th else NO_TAC);;
 
+let BOOL_CASES_TAC' =
+    let pth = ONCE_REWRITE_RULE [DISJ_SYM] BOOL_CASES_AX in
+    fun p -> STRUCT_CASES_TAC (SPEC p pth);;
+
 let bool_cases_tac tm =
     MP_TAC (SPEC tm EXCLUDED_MIDDLE) THEN
     STRIP_TAC;;
