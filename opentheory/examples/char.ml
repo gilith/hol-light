@@ -1034,4 +1034,54 @@ let decoder_encoder_strong_inverse = prove
 
 export_thm decoder_encoder_strong_inverse;;
 
+let decode_encode = prove
+  (`!cs. decode (encode cs) = SOME cs`,
+   GEN_TAC THEN
+   REWRITE_TAC [decode_def; encode_def; decode_stream_def] THEN
+   REWRITE_TAC [GSYM list_to_stream_to_list] THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC parse_stream_inverse THEN
+   ACCEPT_TAC decoder_encoder_inverse);;
+
+export_thm decode_encode;;
+
+let encode_decode = prove
+  (`!bs. case_option T (\cs. encode cs = bs) (decode bs)`,
+   GEN_TAC THEN
+   REWRITE_TAC [decode_def; encode_def; decode_stream_def] THEN
+   MP_TAC (ISPECL [`decoder`; `encoder`; `list_to_stream (bs : byte list)`]
+                  parse_stream_strong_inverse) THEN
+   COND_TAC THENL
+   [ACCEPT_TAC decoder_encoder_strong_inverse;
+    ALL_TAC] THEN
+   REWRITE_TAC [list_to_stream_to_list; option_inj] THEN
+   DISCH_THEN (ACCEPT_TAC o ONCE_REWRITE_RULE [EQ_SYM_EQ]));;
+
+export_thm encode_decode;;
+
+(***
+prop1 :: [OpenTheory.Char.Unicode] -> Bool
+prop1 cs =
+    case OpenTheory.Char.decode (OpenTheory.Char.encode cs) of
+      Just cs' -> cs == cs'
+      Nothing -> False
+
+{- This property is violated by "overlong sequences", but we reject -}
+{- overlong sequences since they're a source of covert channels. -}
+prop2 :: [Data.Word.Word8] -> Bool
+prop2 bs =
+    case OpenTheory.Char.decode bs of
+      Just cs -> OpenTheory.Char.encode cs == bs
+      Nothing -> True
+
+prop3 :: [OpenTheory.Char.Unicode] -> Bool
+prop3 cs = length cs <= length (OpenTheory.Char.encode cs)
+
+prop4 :: [Data.Word.Word8] -> Bool
+prop4 bs =
+    case OpenTheory.Char.decode bs of
+      Just cs -> Data.List.all OpenTheory.Char.isUnicode cs
+      Nothing -> True
+***)
+
 logfile_end ();;

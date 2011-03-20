@@ -111,15 +111,16 @@ let is_proper_suffix_stream_wf = prove
 
 export_thm is_proper_suffix_stream_wf;;
 
-let is_proper_suffix_stream_induct = prove
-  (`!(p: A stream-> bool).
-       (!x. (!y. is_proper_suffix_stream y x ==> p y) ==> p x) ==> !x. p x`,
-   REWRITE_TAC [GSYM WF_IND; is_proper_suffix_stream_wf]);;
+let is_proper_suffix_stream_refl = prove
+  (`!x : A stream. ~is_proper_suffix_stream x x`,
+   GEN_TAC THEN
+   MATCH_MP_TAC WF_REFL THEN
+   ACCEPT_TAC is_proper_suffix_stream_wf);;
 
-export_thm is_proper_suffix_stream_induct;;
+export_thm is_proper_suffix_stream_refl;;
 
 let is_proper_suffix_stream_induct = prove
-  (`!(p: A stream-> bool).
+  (`!(p : A stream -> bool).
        (!x. (!y. is_proper_suffix_stream y x ==> p y) ==> p x) ==> !x. p x`,
    REWRITE_TAC [GSYM WF_IND; is_proper_suffix_stream_wf]);;
 
@@ -168,7 +169,36 @@ let append_stream_assoc = prove
 
 export_thm append_stream_assoc;;
 
-logfile "parser-basic-def";;
+let list_to_stream_to_list = prove
+  (`!l : A list. stream_to_list (list_to_stream l) = SOME l`,
+   REWRITE_TAC [list_to_stream_def] THEN
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [stream_to_list_def; append_stream_def];
+    REWRITE_TAC [stream_to_list_def; append_stream_def] THEN
+    ASM_REWRITE_TAC [case_option_def]]);;
+
+export_thm list_to_stream_to_list;;
+
+let stream_to_list_append = prove
+  (`!(l : A list) s.
+      stream_to_list (append_stream l s) =
+      case_option NONE (\ls. SOME (APPEND l ls)) (stream_to_list s)`,
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [APPEND; append_stream_def] THEN
+    CONV_TAC (DEPTH_CONV ETA_CONV) THEN
+    REWRITE_TAC [case_option_id];
+    ALL_TAC] THEN
+   GEN_TAC THEN
+   REWRITE_TAC [APPEND; append_stream_def; stream_to_list_def] THEN
+   POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC (ISPEC `stream_to_list (s : A stream)` option_cases) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [case_option_def];
+    ASM_REWRITE_TAC [case_option_def]]);;
+
+export_thm stream_to_list_append;;
+
+logfile "parser-comb-def";;
 
 let is_parser_def = new_definition
   `!p.
@@ -290,7 +320,7 @@ let parse_some_def = new_definition
 
 export_thm parse_some_def;;
 
-logfile "parser-basic-thm";;
+logfile "parser-comb-thm";;
 
 let dest_is_parser = prove
   (`!p : (A,B) parser. is_parser (dest_parser p)`,
@@ -775,7 +805,7 @@ let parse_parse_some = prove
 
 export_thm parse_parse_some;;
 
-logfile "parser-rec";;
+logfile "parser-all-def";;
 
 let parse_stream_exists = prove
   (`!(p : (A,B) parser). ?f.
@@ -834,5 +864,106 @@ let parse_stream_def = new_specification ["parse_stream"]
   (REWRITE_RULE[SKOLEM_THM] parse_stream_exists);;
 
 export_thm parse_stream_def;;
+
+logfile "parser-all-thm";;
+
+let parse_stream_append = prove
+  (`!p (e : A -> B list) x s.
+      parse_inverse p e ==>
+      parse_stream p (append_stream (e x) s) = Stream x (parse_stream p s)`,
+   REWRITE_TAC [parse_inverse_def] THEN
+   REPEAT STRIP_TAC THEN
+   POP_ASSUM (MP_TAC o SPECL [`x : A`; `s : B stream`]) THEN
+   MP_TAC (ISPEC `(e : A -> B list) x` list_CASES) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [append_stream_def] THEN
+    MP_TAC (ISPECL [`p : (B,A) parser`; `s : B stream`] parse_cases) THEN
+    STRIP_TAC THENL
+    [ASM_REWRITE_TAC [option_distinct];
+     ASM_REWRITE_TAC [option_inj; PAIR_EQ] THEN
+     STRIP_TAC THEN
+     PAT_ASSUM `is_proper_suffix_stream X Y` THEN
+     ASM_REWRITE_TAC [is_proper_suffix_stream_refl]];
+    ASM_REWRITE_TAC [parse_def; parse_stream_def; append_stream_def] THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [case_option_def]]);;
+
+export_thm parse_stream_append;;
+
+let parse_stream_inverse = prove
+  (`!p (e : A -> B list) l.
+      parse_inverse p e ==>
+      parse_stream p (list_to_stream (concat (MAP e l))) =
+      list_to_stream l`,
+   REPEAT STRIP_TAC THEN
+   SPEC_TAC (`l : A list`, `l : A list`) THEN
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC
+      [MAP; concat_def; parse_stream_def; list_to_stream_def;
+       append_stream_def];
+    ALL_TAC] THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC
+     [MAP; concat_def; parse_stream_def; list_to_stream_def;
+      append_stream_def] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [SYM th]) THEN
+   REWRITE_TAC [append_stream_assoc] THEN
+   MATCH_MP_TAC parse_stream_append THEN
+   FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm parse_stream_inverse;;
+
+let parse_stream_strong_inverse = prove
+  (`!p (e : A -> B list) s.
+      parse_strong_inverse p e ==>
+      case_option T (\l. stream_to_list s = SOME (concat (MAP e l)))
+        (stream_to_list (parse_stream p s))`,
+   REPEAT STRIP_TAC THEN
+   SPEC_TAC (`s : B stream`, `s : B stream`) THEN
+   MATCH_MP_TAC is_proper_suffix_stream_induct THEN
+   GEN_TAC THEN
+   MP_TAC (ISPEC `s : B stream` stream_cases) THEN
+   STRIP_TAC THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    REWRITE_TAC [stream_to_list_def; parse_stream_def; case_option_def];
+    POP_ASSUM SUBST_VAR_TAC THEN
+    REWRITE_TAC
+      [stream_to_list_def; parse_stream_def; case_option_def; MAP;
+       concat_def];
+    ALL_TAC] THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   STRIP_TAC THEN
+   REWRITE_TAC [parse_stream_def] THEN
+   MP_TAC (ISPECL [`p : (B,A) parser`; `a0 : B`; `a1 : B stream`]
+           dest_parser_cases) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [case_option_def; stream_to_list_def];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   CONV_TAC (RAND_CONV (REWRITE_CONV [stream_to_list_def])) THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `s' : B stream`) THEN
+   COND_TAC THENL
+   [PAT_ASSUM `is_suffix_stream (X : B stream) Y` THEN
+    REWRITE_TAC [is_suffix_stream_def; is_proper_suffix_stream_def];
+    ALL_TAC] THEN
+   MP_TAC (ISPEC `stream_to_list (parse_stream (p : (B,A) parser) s')`
+           option_cases) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [case_option_def];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   PAT_ASSUM `parse_strong_inverse (p : (B,A) parser) e` THEN
+   REWRITE_TAC [parse_strong_inverse_def] THEN
+   DISCH_THEN (MP_TAC o SPECL [`Stream (a0 : B) a1`; `b : A`;
+                               `s' : B stream`] o CONJUNCT2) THEN
+   COND_TAC THENL
+   [ASM_REWRITE_TAC [parse_def];
+    ALL_TAC] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   REWRITE_TAC [stream_to_list_append] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   REWRITE_TAC [case_option_def; option_inj; MAP; concat_def]);;
+
+export_thm parse_stream_strong_inverse;;
 
 logfile_end ();;
