@@ -1059,29 +1059,38 @@ let encode_decode = prove
 
 export_thm encode_decode;;
 
-(***
-prop1 :: [OpenTheory.Char.Unicode] -> Bool
-prop1 cs =
-    case OpenTheory.Char.decode (OpenTheory.Char.encode cs) of
-      Just cs' -> cs == cs'
-      Nothing -> False
+let decode_stream_length = prove
+  (`!bs. length_stream (decode_stream bs) <= length_stream bs`,
+   GEN_TAC THEN
+   REWRITE_TAC [decode_stream_def] THEN
+   MATCH_ACCEPT_TAC parse_stream_length);;
 
-{- This property is violated by "overlong sequences", but we reject -}
-{- overlong sequences since they're a source of covert channels. -}
-prop2 :: [Data.Word.Word8] -> Bool
-prop2 bs =
-    case OpenTheory.Char.decode bs of
-      Just cs -> OpenTheory.Char.encode cs == bs
-      Nothing -> True
+export_thm decode_stream_length;;
 
-prop3 :: [OpenTheory.Char.Unicode] -> Bool
-prop3 cs = length cs <= length (OpenTheory.Char.encode cs)
+let decode_length = prove
+  (`!bs. case_option T (\cs. LENGTH cs <= LENGTH bs) (decode bs)`,
+   GEN_TAC THEN
+   REWRITE_TAC [decode_def] THEN
+   REWRITE_TAC [GSYM list_to_stream_length] THEN
+   SPEC_TAC (`list_to_stream (bs : byte list)`, `bs : byte stream`) THEN
+   GEN_TAC THEN
+   MP_TAC (ISPEC `stream_to_list (decode_stream bs)` option_cases) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [case_option_def];
+    ALL_TAC] THEN
+   MP_TAC (ISPEC `decode_stream bs` stream_to_list_length) THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th; list_to_stream_length]) THEN
+   MATCH_ACCEPT_TAC decode_stream_length);;
 
-prop4 :: [Data.Word.Word8] -> Bool
-prop4 bs =
-    case OpenTheory.Char.decode bs of
-      Just cs -> Data.List.all OpenTheory.Char.isUnicode cs
-      Nothing -> True
-***)
+export_thm decode_length;;
+
+let encode_length = prove
+  (`!cs. LENGTH cs <= LENGTH (encode cs)`,
+   GEN_TAC THEN
+   MP_TAC (SPEC `encode cs` decode_length) THEN
+   REWRITE_TAC [decode_encode; case_option_def]);;
+
+export_thm encode_length;;
 
 logfile_end ();;

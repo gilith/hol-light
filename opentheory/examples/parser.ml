@@ -198,6 +198,57 @@ let stream_to_list_append = prove
 
 export_thm stream_to_list_append;;
 
+let is_suffix_stream_length = prove
+  (`!x y : A stream.
+      is_suffix_stream x y ==> length_stream x <= length_stream y`,
+   REWRITE_TAC [is_suffix_stream_def; LE_LT] THEN
+   REPEAT STRIP_TAC THENL
+   [DISJ2_TAC THEN
+    ASM_REWRITE_TAC [];
+    DISJ1_TAC THEN
+    MATCH_MP_TAC is_proper_suffix_stream_length THEN
+    FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm is_suffix_stream_length;;
+
+let append_stream_length = prove
+  (`!(l : A list) s.
+      length_stream (append_stream l s) = LENGTH l + length_stream s`,
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [length_stream_def; append_stream_def; LENGTH; ADD];
+    ASM_REWRITE_TAC [length_stream_def; append_stream_def; LENGTH; ADD]]);;
+
+export_thm append_stream_length;;
+
+let list_to_stream_length = prove
+  (`!l : A list. length_stream (list_to_stream l) = LENGTH l`,
+   REWRITE_TAC
+     [list_to_stream_def; append_stream_length; length_stream_def; ADD_0]);;
+
+export_thm list_to_stream_length;;
+
+let stream_to_list_length = prove
+  (`!s : A stream.
+     case_option T (\l. LENGTH l = length_stream s) (stream_to_list s)`,
+   MATCH_MP_TAC stream_induct THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [stream_to_list_def; case_option_def];
+    ALL_TAC] THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC
+      [stream_to_list_def; case_option_def; LENGTH; length_stream_def];
+    ALL_TAC] THEN
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [stream_to_list_def] THEN
+   MP_TAC (ISPEC `stream_to_list (a1 : A stream)` option_cases) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [case_option_def];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   REWRITE_TAC [LENGTH; length_stream_def; SUC_INJ]);;
+
+export_thm stream_to_list_length;;
+
 logfile "parser-comb-def";;
 
 let is_parser_def = new_definition
@@ -965,5 +1016,39 @@ let parse_stream_strong_inverse = prove
    REWRITE_TAC [case_option_def; option_inj; MAP; concat_def]);;
 
 export_thm parse_stream_strong_inverse;;
+
+let parse_stream_length = prove
+  (`!(p : (A,B) parser) s.
+      length_stream (parse_stream p s) <= length_stream s`,
+   GEN_TAC THEN
+   MATCH_MP_TAC is_proper_suffix_stream_induct THEN
+   GEN_TAC THEN
+   MP_TAC (ISPEC `s : A stream` stream_cases) THEN
+   STRIP_TAC THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    REWRITE_TAC [length_stream_def; parse_stream_def; LE_REFL];
+    POP_ASSUM SUBST_VAR_TAC THEN
+    REWRITE_TAC [length_stream_def; parse_stream_def; LE_REFL];
+    ALL_TAC] THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   STRIP_TAC THEN
+   REWRITE_TAC [parse_stream_def] THEN
+   MP_TAC (ISPECL [`p : (A,B) parser`; `a0 : A`; `a1 : A stream`]
+           dest_parser_cases) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [case_option_def; length_stream_def; LE_0];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   REWRITE_TAC [length_stream_def; LE_SUC] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `length_stream (s' : A stream)` THEN
+   CONJ_TAC THENL
+   [FIRST_X_ASSUM MATCH_MP_TAC THEN
+    PAT_ASSUM `is_suffix_stream (X : A stream) Y` THEN
+    REWRITE_TAC [is_suffix_stream_def; is_proper_suffix_stream_def];
+    MATCH_MP_TAC is_suffix_stream_length THEN
+    FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm parse_stream_length;;
 
 logfile_end ();;
