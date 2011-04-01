@@ -7,6 +7,7 @@ echo '#use "opentheory/stdlib/all.ml";;'
 if test "$OPENTHEORY_STDLIB" = ""
 then
     echo '#use "opentheory/examples/all.ml";;'
+    echo '#use "opentheory/haskell/all.ml";;'
 fi) | ocaml &> $log
 
 if grep '^Exception:\|^Error:\|^Error in included file' $log

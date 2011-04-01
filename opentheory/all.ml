@@ -13,3 +13,7 @@
 (* Example theories *)
 
 #use "opentheory/examples/all.ml";;
+
+(* Haskell theories *)
+
+#use "opentheory/haskell/all.ml";;

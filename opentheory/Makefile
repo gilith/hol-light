@@ -57,6 +57,7 @@ clean:
 .PHONY: standard-theories
 standard-theories:
 	$(MAKE) clean
+	$(MAKE) theory-instantiations
 	cd .. && OPENTHEORY_STDLIB=1 opentheory/scripts/capture
 
 ###############################################################################
