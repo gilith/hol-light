@@ -45,7 +45,59 @@ let length_streamH_def = new_definition
 
 export_thm length_streamH_def;;
 
-logfile "haskell-parser-export";;
+let is_proper_suffix_streamH_def = new_definition
+  `!s s'.
+     is_proper_suffix_streamH (s : A streamH) s' <=>
+     is_proper_suffix_stream (dest_streamH s) (dest_streamH s')`;;
+
+export_thm is_proper_suffix_streamH_def;;
+
+let is_suffix_streamH_def = new_definition
+  `!s s'.
+     is_suffix_streamH (s : A streamH) s' <=>
+     is_suffix_stream (dest_streamH s) (dest_streamH s')`;;
+
+export_thm is_suffix_streamH_def;;
+
+let stream_to_listH_def = new_definition
+  `!s.
+     stream_to_listH (s : A streamH) =
+     stream_to_list (dest_streamH s)`;;
+
+export_thm stream_to_listH_def;;
+
+let append_streamH_def = new_definition
+  `!l s.
+     append_streamH (l : A list) s =
+     mk_streamH (append_stream l (dest_streamH s))`;;
+
+export_thm append_streamH_def;;
+
+let list_to_streamH_def = new_definition
+  `!l. list_to_streamH (l : A list) = mk_streamH (list_to_stream l)`;;
+
+export_thm list_to_streamH_def;;
+
+logfile "haskell-parser-thm";;
+
+let dest_streamH_inj = prove
+  (`!s t. dest_streamH (s : A streamH) = dest_streamH t ==> s = t`,
+   REPEAT STRIP_TAC THEN
+   ONCE_REWRITE_TAC [GSYM streamH_tybij] THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm dest_streamH_inj;;
+
+let dest_streamH_inj_eq = prove
+  (`!s t. dest_streamH (s : A streamH) = dest_streamH t <=> s = t`,
+   REPEAT STRIP_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC dest_streamH_inj;
+    DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
+
+export_thm dest_streamH_inj_eq;;
+
+logfile "haskell-parser-haskell";;
 
 let streamH_induct = prove
   (`!P.
@@ -85,9 +137,9 @@ let streamH_data = CONJ streamH_induct streamH_recursion;;
 export_thm streamH_data;;
 
 let case_streamH = prove
-  (`(!e b f. case_streamH e b f ErrorH = (e:B)) /\
-    (!e b f. case_streamH e b f EofH = b) /\
-    (!e b f a s. case_streamH e b f (StreamH a s) = f (a:A) s)`,
+  (`(!e b f. case_streamH e b f (ErrorH : A streamH) = (e : B)) /\
+    (!e b f. case_streamH e b f (EofH : A streamH) = (b : B)) /\
+    (!e b f a s. case_streamH (e : B) b f (StreamH a s) = f (a : A) s)`,
    REWRITE_TAC
      [case_streamH_def; ErrorH_def; EofH_def; StreamH_def; streamH_tybij;
       case_stream_def]);;
@@ -104,44 +156,63 @@ let length_streamH = prove
 
 export_thm length_streamH;;
 
-(***
-let is_proper_suffix_stream_def = new_recursive_definition stream_recursion
-  `(!s. is_proper_suffix_stream s Error = F) /\
-   (!s. is_proper_suffix_stream s Eof = F) /\
-   (!s a s'. is_proper_suffix_stream s (Stream (a:A) s') =
-      ((s = s') \/ is_proper_suffix_stream s s'))`;;
+let is_proper_suffix_streamH = prove
+  (`(!s. is_proper_suffix_streamH (s : A streamH) ErrorH = F) /\
+    (!s. is_proper_suffix_streamH (s : A streamH) EofH = F) /\
+    (!s h t.
+       is_proper_suffix_streamH s (StreamH (h:A) t) =
+       ((s = t) \/ is_proper_suffix_streamH s t))`,
+   REWRITE_TAC
+     [is_proper_suffix_streamH_def; ErrorH_def; EofH_def; StreamH_def;
+      streamH_tybij; is_proper_suffix_stream_def; dest_streamH_inj_eq]);;
 
-export_thm is_proper_suffix_stream_def;;
+export_thm is_proper_suffix_streamH;;
 
-let is_suffix_stream_def = new_definition
-  `is_suffix_stream s s' =
-     (((s : A stream) = s') \/ is_proper_suffix_stream s s')`;;
+let is_suffix_streamH = prove
+  (`!s s'.
+      is_suffix_streamH s s' =
+      (((s : A streamH) = s') \/ is_proper_suffix_streamH s s')`,
+   REWRITE_TAC
+     [is_suffix_streamH_def; ErrorH_def; EofH_def; StreamH_def;
+      is_suffix_stream_def; is_proper_suffix_streamH_def;
+      dest_streamH_inj_eq]);;
 
-export_thm is_suffix_stream_def;;
+export_thm is_suffix_streamH;;
 
-let stream_to_list_def = new_recursive_definition stream_recursion
-  `(stream_to_list Error = NONE) /\
-   (stream_to_list Eof = SOME []) /\
-   (!a s. stream_to_list (Stream a s) =
-      case_option
-        NONE
-        (\l. SOME (CONS (a:A) l))
-        (stream_to_list s))`;;
+let stream_to_listH = prove
+  (`(stream_to_listH (ErrorH : A streamH) = NONE) /\
+    (stream_to_listH (EofH : A streamH) = SOME []) /\
+    (!h t.
+       stream_to_listH (StreamH h t) =
+       case_option
+         NONE
+         (\l. SOME (CONS (h:A) l))
+         (stream_to_listH t))`,
+   REWRITE_TAC
+     [stream_to_listH_def; ErrorH_def; EofH_def; StreamH_def;
+      streamH_tybij; stream_to_list_def]);;
 
-export_thm stream_to_list_def;;
+export_thm stream_to_listH;;
 
-let append_stream_def = new_recursive_definition list_RECURSION
-  `(!s. append_stream [] s = s) /\
-   (!h t s. append_stream (CONS h t) s = Stream (h:A) (append_stream t s))`;;
+let append_streamH = prove
+  (`(!s. append_streamH [] (s : A streamH) = s) /\
+    (!h t s.
+       append_streamH (CONS h t) s =
+       StreamH (h:A) (append_streamH t s))`,
+   REWRITE_TAC
+     [append_streamH_def; append_stream_def; StreamH_def;
+      streamH_tybij]);;
 
-export_thm append_stream_def;;
+export_thm append_streamH;;
 
-let list_to_stream_def = new_definition
-  `!l. list_to_stream l = append_stream l Eof`;;
+let list_to_streamH = prove
+  (`!l. list_to_streamH (l : A list) = append_streamH l EofH`,
+   REWRITE_TAC
+     [list_to_streamH_def; append_streamH_def; list_to_stream_def;
+      EofH_def; streamH_tybij]);;
 
-export_thm list_to_stream_def;;
-***)
+export_thm list_to_streamH;;
 
-logfile "haskell-parser-thm";;
+logfile "haskell-parser-test";;
 
 logfile_end ();;

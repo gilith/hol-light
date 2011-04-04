@@ -35,7 +35,8 @@ let is_proper_suffix_stream_def = new_recursive_definition stream_recursion
 export_thm is_proper_suffix_stream_def;;
 
 let is_suffix_stream_def = new_definition
-  `is_suffix_stream s s' =
+  `!s s'.
+     is_suffix_stream s s' =
      (((s : A stream) = s') \/ is_proper_suffix_stream s s')`;;
 
 export_thm is_suffix_stream_def;;
