@@ -162,6 +162,122 @@ let regions_def = new_recursive_definition state_recursion
 
 export_thm regions_def;;
 
+(* Protection domains *)
+
+let domain_induct,domain_recursion = define_type
+    "domain =
+       EDomain
+     | HDomain
+     | KDomain
+     | UDomain";;
+
+export_thm domain_induct;;
+export_thm domain_recursion;;
+
+let action_induct,action_recursion = define_type
+    "action =
+       WriteE virtual_address byte
+     | DeriveRegionH physical_region physical_page_address region_length
+     | AllocatePageDirectoryH physical_page_address
+     | FreePageDirectoryH page_directory
+     | AddMappingH
+         page_directory (physical_page_address list)
+         physical_region virtual_region
+     | RemoveMappingH page_directory virtual_region
+     | AddKernelMappingH physical_region virtual_region
+     | ExecuteH page_directory
+     | WriteK virtual_address byte
+     | WriteU virtual_address byte";;
+
+export_thm action_induct;;
+export_thm action_recursion;;
+
+let e_view_induct,e_view_recursion = define_type
+    "e_view =
+       EView (virtual_page_address -> page_data option)";;
+
+export_thm e_view_induct;;
+export_thm e_view_recursion;;
+
+let e_observable_pages_def = new_recursive_definition e_view_recursion
+  `!f. e_observable_pages (EView f) = f`;;
+
+export_thm e_observable_pages_def;;
+
+let h_view_induct,h_view_recursion = define_type
+    "h_view =
+       HView
+         page_directory
+         (physical_page_address -> page option)
+         region_state
+         page_directory";;
+
+export_thm h_view_induct;;
+export_thm h_view_recursion;;
+
+let current_pdir_def = new_recursive_definition h_view_recursion
+  `!c p g r. current_pdir (HView c p g r) = c`;;
+
+export_thm current_pdir_def;;
+
+let pages_def = new_recursive_definition h_view_recursion
+  `!c p g r. pages (HView c p g r) = p`;;
+
+export_thm pages_def;;
+
+let h_region_handles_def = new_recursive_definition h_view_recursion
+  `!c p g r. h_region_handles (HView c p g r) = g`;;
+
+export_thm h_region_handles_def;;
+
+let reference_pdir_def = new_recursive_definition h_view_recursion
+  `!c p g r. reference_pdir (HView c p g r) = r`;;
+
+export_thm reference_pdir_def;;
+
+let k_view_induct,k_view_recursion = define_type
+    "k_view =
+       KView
+         (virtual_page_address -> page_data option)
+         region_state";;
+
+export_thm k_view_induct;;
+export_thm k_view_recursion;;
+
+let k_observable_pages_def = new_recursive_definition k_view_recursion
+  `!f g. k_observable_pages (KView f g) = f`;;
+
+export_thm k_observable_pages_def;;
+
+let k_region_handles_def = new_recursive_definition k_view_recursion
+  `!f g. k_region_handles (KView f g) = g`;;
+
+export_thm k_region_handles_def;;
+
+let u_view_induct,u_view_recursion = define_type
+    "u_view =
+       UView (virtual_page_address -> page_data option)";;
+
+export_thm u_view_induct;;
+export_thm u_view_recursion;;
+
+let u_observable_pages_def = new_recursive_definition u_view_recursion
+  `!f. u_observable_pages (UView f) = f`;;
+
+export_thm u_observable_pages_def;;
+
+let view_induct,view_recursion = define_type
+    "view =
+       ViewE e_view
+     | ViewH h_view
+     | ViewK k_view
+     | ViewU u_view";;
+
+export_thm view_induct;;
+export_thm view_recursion;;
+
+new_type_abbrev("output",`:view`);;
+
 logfile "memory-thm";;
 
 (* Physical pages *)
@@ -233,5 +349,71 @@ export_thm state_cases;;
 let state_inj = injectivity "state";;
 
 export_thm state_inj;;
+
+(* Protection domains *)
+
+let domain_cases = prove_cases_thm domain_induct;;
+
+export_thm domain_cases;;
+
+let domain_distinct = distinctness "domain";;
+
+export_thm domain_distinct;;
+
+let action_cases = prove_cases_thm action_induct;;
+
+export_thm action_cases;;
+
+let action_distinct = distinctness "action";;
+
+export_thm action_distinct;;
+
+let action_inj = injectivity "action";;
+
+export_thm action_inj;;
+
+let e_view_cases = prove_cases_thm e_view_induct;;
+
+export_thm e_view_cases;;
+
+let e_view_inj = injectivity "e_view";;
+
+export_thm e_view_inj;;
+
+let h_view_cases = prove_cases_thm h_view_induct;;
+
+export_thm h_view_cases;;
+
+let h_view_inj = injectivity "h_view";;
+
+export_thm h_view_inj;;
+
+let k_view_cases = prove_cases_thm k_view_induct;;
+
+export_thm k_view_cases;;
+
+let k_view_inj = injectivity "k_view";;
+
+export_thm k_view_inj;;
+
+let u_view_cases = prove_cases_thm u_view_induct;;
+
+export_thm u_view_cases;;
+
+let u_view_inj = injectivity "u_view";;
+
+export_thm u_view_inj;;
+
+let view_cases = prove_cases_thm view_induct;;
+
+export_thm view_cases;;
+
+let view_distinct = distinctness "view";;
+
+export_thm view_distinct;;
+
+let view_inj = injectivity "view";;
+
+export_thm view_inj;;
 
 logfile_end ();;
