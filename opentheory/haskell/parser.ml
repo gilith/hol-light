@@ -4,15 +4,12 @@
 
 logfile "haskell-parser-def";;
 
-let is_streamH_def = new_definition
-  `!s. is_streamH (s : A stream) = T`;;
-
 let streamH_exists = prove
-  (`?s. is_streamH (s : A stream)`,
-   REWRITE_TAC [is_streamH_def]);;
+  (`?s. (\x. T) (s : A stream)`,
+   REWRITE_TAC []);;
 
 let streamH_tybij =
-    REWRITE_RULE [is_streamH_def]
+    REWRITE_RULE []
     (new_type_definition "streamH"
        ("mk_streamH","dest_streamH") streamH_exists);;
 
@@ -78,6 +75,60 @@ let list_to_streamH_def = new_definition
 
 export_thm list_to_streamH_def;;
 
+let is_parserH_def = new_definition
+  `!p.
+     is_parserH (p : A -> A streamH -> (B # A streamH) option) =
+     is_parser
+       (\x xs.
+          case_option
+            NONE
+            (\ (y,xs'). SOME (y, dest_streamH xs'))
+            (p x (mk_streamH xs)))`;;
+
+export_thm is_parserH_def;;
+
+(***
+let parserH_exists = prove
+  (`?p. is_parserH (p : A -> A streamH -> (B # A streamH) option)`,
+   REWRITE_TAC [is_parserH_def] THEN
+   EXISTS_TAC
+     `\x xs.
+        case_option NONE (\ (y,xs'). SOME (y, mk_streamH xs'))
+          (dest_parser (p : (A,B) parser) x (dest_streamH xs))` THEN
+   REWRITE_TAC [streamH_tybij] THEN
+   KNOW_TAC `is_parser (dest_parser (p : (A,B) parser))` THENL
+   [REWRITE_TAC [parser_tybij];
+    ALL_TAC] THEN
+
+;;
+***)
+
+let parserH_exists = prove
+  (`?p. (\x. T) (p : (A,B) parser)`,
+   REWRITE_TAC []);;
+
+let parserH_tybij =
+    REWRITE_RULE []
+    (new_type_definition "parserH"
+       ("mk_parserH","dest_parserH") parserH_exists);;
+
+export_thm parserH_tybij;;
+
+(***
+let mk_ParserH_def = new_definition
+  `!p. ParserH p = mk_parserH (mk_parser p : (A,B) parser)`;;
+
+let ParserH_def = new_definition
+  `!p. ParserH p = mk_parserH (mk_parser p : (A,B) parser)`;;
+
+export_thm ParserH_def;;
+
+let unParserH_def = new_definition
+  `!p. unParserH (p : (A,B) parserH) = dest_parser (dest_parserH p)`;;
+
+export_thm unParserH_def;;
+***)
+
 logfile "haskell-parser-thm";;
 
 let dest_streamH_inj = prove
@@ -96,6 +147,18 @@ let dest_streamH_inj_eq = prove
     DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
 
 export_thm dest_streamH_inj_eq;;
+
+(* Needed?
+let case_streamH = prove
+  (`(!e b f. case_streamH e b f (ErrorH : A streamH) = (e : B)) /\
+    (!e b f. case_streamH e b f (EofH : A streamH) = (b : B)) /\
+    (!e b f a s. case_streamH (e : B) b f (StreamH a s) = f (a : A) s)`,
+   REWRITE_TAC
+     [case_streamH_def; ErrorH_def; EofH_def; StreamH_def; streamH_tybij;
+      case_stream_def]);;
+
+export_thm case_streamH;;
+*)
 
 logfile "haskell-parser-haskell";;
 
@@ -135,16 +198,6 @@ let streamH_recursion = prove
 let streamH_data = CONJ streamH_induct streamH_recursion;;
 
 export_thm streamH_data;;
-
-let case_streamH = prove
-  (`(!e b f. case_streamH e b f (ErrorH : A streamH) = (e : B)) /\
-    (!e b f. case_streamH e b f (EofH : A streamH) = (b : B)) /\
-    (!e b f a s. case_streamH (e : B) b f (StreamH a s) = f (a : A) s)`,
-   REWRITE_TAC
-     [case_streamH_def; ErrorH_def; EofH_def; StreamH_def; streamH_tybij;
-      case_stream_def]);;
-
-export_thm case_streamH;;
 
 let length_streamH = prove
   (`(length_streamH (ErrorH : A streamH) = 0) /\
@@ -212,6 +265,58 @@ let list_to_streamH = prove
       EofH_def; streamH_tybij]);;
 
 export_thm list_to_streamH;;
+
+let parserH_newtype = prove
+  (`(!p. ParserH (unParserH p) = (p : (A,B) parserH)) /\
+    (!f. is_parserH f <=> unParserH (ParserH f : (A,B) parserH) = f)`,
+
+      is_parserH (p : A -> A streamH -> (B # A streamH) option) =
+      !x xs.
+        case_option
+          T
+          (\ (y,xs'). is_suffix_streamH xs' xs)
+          (p x xs)`,
+
+(***
+let is_parserH = prove
+  (`!p.
+      is_parserH (p : A -> A streamH -> (B # A streamH) option) =
+      !x xs.
+        case_option
+          T
+          (\ (y,xs'). is_suffix_streamH xs' xs)
+          (p x xs)`,
+   REWRITE_TAC [is_parserH_def; is_parser_def; is_suffix_streamH_def] THEN
+   STRIP_TAC THEN
+   EQ_TAC THENL
+   [DISCH_THEN (fun th ->
+      REPEAT GEN_TAC THEN
+      MP_TAC (SPECL [`x : A`; `dest_streamH (xs : A streamH)`] th)) THEN
+    REWRITE_TAC [streamH_tybij] THEN
+    MP_TAC (ISPEC `(p : A -> A streamH -> (B # A streamH) option) x xs`
+            option_cases) THEN
+    STRIP_TAC THENL
+    [ASM_REWRITE_TAC [case_option_def];
+     ASM_REWRITE_TAC [case_option_def] THEN
+     MP_TAC (ISPEC `a : B # A streamH` PAIR_SURJECTIVE) THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC [case_option_def]];
+    DISCH_THEN (fun th ->
+      REPEAT GEN_TAC THEN
+      MP_TAC (SPECL [`x : A`; `mk_streamH (xs : A stream)`] th)) THEN
+    REWRITE_TAC [streamH_tybij] THEN
+
+    MP_TAC (ISPEC `(p : A -> A streamH -> (B # A streamH) option) x
+                     (mk_streamH xs)` option_cases) THEN
+    STRIP_TAC THENL
+    [ASM_REWRITE_TAC [case_option_def];
+     ASM_REWRITE_TAC [case_option_def] THEN
+     MP_TAC (ISPEC `a : B # A streamH` PAIR_SURJECTIVE) THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC [case_option_def]]]);;
+
+export_thm is_parserH;;
+***)
 
 logfile "haskell-parser-test";;
 

@@ -11,4 +11,7 @@ loads "opentheory/examples/word16.ml";;
 loads "opentheory/examples/parser.ml";;
 loads "opentheory/examples/char.ml";;
 
+loads "opentheory/examples/word10.ml";;
+loads "opentheory/examples/word12.ml";;
+
 stop_logging ();;

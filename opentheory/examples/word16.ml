@@ -15,76 +15,9 @@ logfile_end ();;
 
 loads "opentheory/examples/word16-word.ml";;
 
-let bit_blast_conv =
-    DEPTH_CONV
-      (word16_bit_conv ORELSEC
-       byte_bit_conv ORELSEC
-       list_bit_conv ORELSEC
-       bool_simp_conv);;
-
-let bit_blast_tac = CONV_TAC bit_blast_conv;;
-
 logfile "word16-bits";;
 
-let word16_list_cases = prove
-  (`!w. ?x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15.
-      w = list_to_word16 [x0; x1; x2; x3; x4; x5; x6; x7;
-                          x8; x9; x10; x11; x12; x13; x14; x15]`,
-   GEN_TAC THEN
-   CONV_TAC
-     (funpow 16 (RAND_CONV o ABS_CONV)
-        (LAND_CONV (ONCE_REWRITE_CONV [GSYM word16_to_list_to_word16]))) THEN
-   KNOW_TAC
-     `LENGTH (word16_to_list w) =
-      SUC (SUC (SUC (SUC (SUC (SUC (SUC (SUC
-        (SUC (SUC (SUC (SUC (SUC (SUC (SUC (SUC 0)))))))))))))))` THENL
-   [REWRITE_TAC [length_word16_to_list; word16_width_def] THEN
-    NUM_REDUCE_TAC;
-    ALL_TAC] THEN
-   SPEC_TAC (`word16_to_list w`, `l : bool list`) THEN
-   REPEAT STRIP_TAC THEN
-   EXISTS_TAC `HD (l : bool list)` THEN
-   EXISTS_TAC `HD (TL (l : bool list))` THEN
-   EXISTS_TAC `HD (TL (TL (l : bool list)))` THEN
-   EXISTS_TAC `HD (TL (TL (TL (l : bool list))))` THEN
-   EXISTS_TAC `HD (TL (TL (TL (TL (l : bool list)))))` THEN
-   EXISTS_TAC `HD (TL (TL (TL (TL (TL (l : bool list))))))` THEN
-   EXISTS_TAC `HD (TL (TL (TL (TL (TL (TL (l : bool list)))))))` THEN
-   EXISTS_TAC `HD (TL (TL (TL (TL (TL (TL (TL (l : bool list))))))))` THEN
-   EXISTS_TAC
-     `HD (TL (TL (TL (TL (TL (TL (TL (TL (l : bool list)))))))))` THEN
-   EXISTS_TAC
-     `HD (TL (TL (TL (TL (TL (TL (TL (TL (TL (l : bool list))))))))))` THEN
-   EXISTS_TAC
-     `HD (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL
-        (l : bool list)))))))))))` THEN
-   EXISTS_TAC
-     `HD (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL
-        (l : bool list))))))))))))` THEN
-   EXISTS_TAC
-     `HD (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL
-        (l : bool list)))))))))))))` THEN
-   EXISTS_TAC
-     `HD (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL
-        (l : bool list))))))))))))))` THEN
-   EXISTS_TAC
-     `HD (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL
-        (l : bool list)))))))))))))))` THEN
-   EXISTS_TAC
-     `HD (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL (TL
-        (l : bool list))))))))))))))))` THEN
-   AP_TERM_TAC THEN
-   POP_ASSUM MP_TAC THEN
-   N_TAC 16
-     (MP_TAC (ISPEC `l : bool list` list_CASES) THEN
-      STRIP_TAC THENL
-      [ASM_REWRITE_TAC [LENGTH; NOT_SUC];
-       ALL_TAC] THEN
-      POP_ASSUM SUBST_VAR_TAC THEN
-      REWRITE_TAC [LENGTH; SUC_INJ; HD; TL; CONS_11] THEN
-      SPEC_TAC (`t : bool list`, `l : bool list`) THEN
-      GEN_TAC) THEN
-   REWRITE_TAC [LENGTH_EQ_NIL]);;
+let word16_list_cases = prove_word16_list_cases 16;;
 
 export_thm word16_list_cases;;
 
@@ -237,14 +170,8 @@ let word16_bytes_conv =
     bytes_to_word16_list_conv ORELSEC
     word16_to_bytes_list_conv;;
 
-let bit_blast_conv =
-    DEPTH_CONV
-      (word16_bytes_conv ORELSEC
-       word16_bit_conv ORELSEC
-       byte_bit_conv ORELSEC
-       list_bit_conv ORELSEC
-       bool_simp_conv);;
-
+let bit_blast_subterm_conv = word16_bytes_conv ORELSEC bit_blast_subterm_conv;;
+let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;
 let bit_blast_tac = CONV_TAC bit_blast_conv;;
 
 logfile_end ();;

@@ -13,12 +13,14 @@
 default: example-theories
 
 ###############################################################################
-# Parametric theory instantiations.
+# Parametric theory interpretations.
 ###############################################################################
 
-THEORY_INSTANTIATIONS = \
+THEORY_INTERPRETATIONS = \
   examples/byte-word.ml \
   examples/word-modular.ml \
+  examples/word10-word.ml \
+  examples/word12-word.ml \
   examples/word16-word.ml
 
 examples/byte-word.ml: examples/word.ml examples/word-modular.ml
@@ -27,11 +29,17 @@ examples/byte-word.ml: examples/word.ml examples/word-modular.ml
 examples/word-modular.ml: examples/modular.ml
 	scripts/instantiate -r "modulus/word_size:modular/word" -x $< > $@
 
+examples/word10-word.ml: examples/word.ml examples/word-modular.ml
+	scripts/instantiate -r "word/word10" $< > $@
+
+examples/word12-word.ml: examples/word.ml examples/word-modular.ml
+	scripts/instantiate -r "word/word12" $< > $@
+
 examples/word16-word.ml: examples/word.ml examples/word-modular.ml
 	scripts/instantiate -r "word/word16" $< > $@
 
-.PHONY: theory-instantiations
-theory-instantiations: $(THEORY_INSTANTIATIONS)
+.PHONY: theory-interpretations
+theory-interpretations: $(THEORY_INTERPRETATIONS)
 
 ###############################################################################
 # Cleaning temporary files.
@@ -57,7 +65,7 @@ clean:
 .PHONY: standard-theories
 standard-theories:
 	$(MAKE) clean
-	$(MAKE) theory-instantiations
+	$(MAKE) theory-interpretations
 	cd .. && OPENTHEORY_STDLIB=1 opentheory/scripts/capture
 
 ###############################################################################
@@ -67,5 +75,5 @@ standard-theories:
 .PHONY: example-theories
 example-theories:
 	$(MAKE) clean
-	$(MAKE) theory-instantiations
+	$(MAKE) theory-interpretations
 	cd .. && opentheory/scripts/capture

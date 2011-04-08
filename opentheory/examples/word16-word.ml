@@ -445,3 +445,51 @@ let word16_bit_conv =
     word16_le_list_conv ORELSEC
     word16_lt_list_conv ORELSEC
     word16_eq_list_conv;;
+
+let bit_blast_subterm_conv = word16_bit_conv ORELSEC bit_blast_subterm_conv;;
+let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;
+let bit_blast_tac = CONV_TAC bit_blast_conv;;
+
+let prove_word16_list_cases n =
+    let interval =
+        let rec intv i n = if n = 0 then [] else i :: intv (i + 1) (n - 1) in
+        intv 0 in
+    let lemma1 =
+        let nunary = funpow n (fun t -> mk_comb (`SUC`,t)) `0` in
+        let goal = mk_eq (`LENGTH (word16_to_list w)`,nunary) in
+        let tac =
+            REWRITE_TAC [length_word16_to_list; word16_width_def] THEN
+            NUM_REDUCE_TAC in
+        prove (goal,tac) in
+    let witnesses =
+        let addtl l = mk_comb (`TL : bool list -> bool list`, hd l) :: l in
+        let tls = rev (funpow (n - 1) addtl [`l : bool list`]) in
+        map (fun t -> mk_comb (`HD : bool list -> bool`, t)) tls in
+    let goal =
+        let is = interval n in
+        let xs = map (fun i -> mk_var ("x" ^ string_of_int i, bool_ty)) is in
+        let w = mk_var ("w", `:word16`) in
+        let body = mk_eq (w, mk_comb (`list_to_word16`, mk_list (xs,bool_ty))) in
+        mk_forall (w, list_mk_exists (xs,body)) in
+    let tac =
+        GEN_TAC THEN
+        CONV_TAC
+          (funpow n (RAND_CONV o ABS_CONV)
+             (LAND_CONV (ONCE_REWRITE_CONV [GSYM word16_to_list_to_word16]))) THEN
+        MP_TAC lemma1 THEN
+        SPEC_TAC (`word16_to_list w`, `l : bool list`) THEN
+        REPEAT STRIP_TAC THEN
+        EVERY (map EXISTS_TAC witnesses) in
+        AP_TERM_TAC THEN
+        POP_ASSUM MP_TAC THEN
+        N_TAC n
+          (MP_TAC (ISPEC `l : bool list` list_CASES) THEN
+           STRIP_TAC THENL
+           [ASM_REWRITE_TAC [LENGTH; NOT_SUC];
+            ALL_TAC] THEN
+           POP_ASSUM SUBST_VAR_TAC THEN
+           REWRITE_TAC [LENGTH; SUC_INJ; HD; TL; CONS_11] THEN
+           SPEC_TAC (`t : bool list`, `l : bool list`) THEN
+           GEN_TAC) THEN
+        REWRITE_TAC [LENGTH_EQ_NIL] in
+    prove (goal,tac);;

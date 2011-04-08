@@ -396,3 +396,7 @@ let list_bit_conv =
     drop_conv ORELSEC
     zipwith_conv ALL_CONV ORELSEC
     list_eq_conv ALL_CONV;;
+
+let bit_blast_subterm_conv = list_bit_conv ORELSEC bit_blast_subterm_conv;;
+let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;
+let bit_blast_tac = CONV_TAC bit_blast_conv;;
