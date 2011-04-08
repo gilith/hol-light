@@ -479,7 +479,7 @@ let prove_word16_list_cases n =
         MP_TAC lemma1 THEN
         SPEC_TAC (`word16_to_list w`, `l : bool list`) THEN
         REPEAT STRIP_TAC THEN
-        EVERY (map EXISTS_TAC witnesses) in
+        EVERY (map EXISTS_TAC witnesses) THEN
         AP_TERM_TAC THEN
         POP_ASSUM MP_TAC THEN
         N_TAC n
