@@ -13,5 +13,6 @@ loads "opentheory/examples/char.ml";;
 
 loads "opentheory/examples/word10.ml";;
 loads "opentheory/examples/word12.ml";;
+loads "opentheory/examples/memory.ml";;
 
 stop_logging ();;
