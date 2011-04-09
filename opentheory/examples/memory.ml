@@ -468,31 +468,35 @@ let regions_def = new_recursive_definition state_recursion
 
 export_thm regions_def;;
 
-(***
-> translatePage :: State -> PageDirectory -> VirtualPageAddress 
->   -> Maybe PhysicalPageAddress
-> translatePage s pd (pdi,pti) 
->   = do PageDirectory dirpage <- return (status s pd)
->        pde <- dirpage pdi
->        case pde of
->          Table ppa     -> do PageTable tablepage <- return (status s ppa)
->                              tablepage pti
->          Superpage spa -> return (spa, toSuperpageOffset pti)
-
 let translate_page_def = new_definition
   `!s pd pdi pti.
      translate_page s pd (pdi,pti) =
      case_option
        NONE
-       (\page.
+       (\pdd.
           case_option
             NONE
             (case_directory_contents
-               (\spa. 
-)
-            (dest_page_directory page))
-       (status s pd)`;;
-***)
+               (\spa. SOME (spa,pti))
+               (\ppa.
+                  case_option
+                    NONE
+                    (\tpd. tpd pti)
+                    (dest_page_table (status s ppa))))
+            (pdd pdi))
+       (dest_page_directory (status s pd))`;;
+
+export_thm translate_page_def;;
+
+let translation_def = new_definition
+  `!s vpa (off : offset).
+     translation s (vpa,off) =
+     case_option
+       NONE
+       (\ppa. SOME (ppa,off))
+       (translate_page s (cr3 s) vpa)`;;
+
+export_thm translation_def;;
 
 (* Protection domains *)
 
