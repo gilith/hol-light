@@ -291,6 +291,24 @@ let byte_lt_list = new_axiom
    `!w1 w2.
       byte_bits_lte F (byte_to_list w1) (byte_to_list w2) <=> byte_lt w1 w2`;;
 
+let byte_le_refl = new_axiom
+  `!w. byte_le w w`;;
+
+let byte_le_trans = new_axiom
+  `!w1 w2 w3. byte_le w1 w2 /\ byte_le w2 w3 ==> byte_le w1 w3`;;
+
+let byte_lt_refl = new_axiom
+  `!w. ~byte_lt w w`;;
+
+let byte_lte_trans = new_axiom
+  `!w1 w2 w3. byte_lt w1 w2 /\ byte_le w2 w3 ==> byte_lt w1 w3`;;
+
+let byte_let_trans = new_axiom
+  `!w1 w2 w3. byte_le w1 w2 /\ byte_lt w2 w3 ==> byte_lt w1 w3`;;
+
+let byte_lt_trans = new_axiom
+  `!w1 w2 w3. byte_lt w1 w2 /\ byte_lt w2 w3 ==> byte_lt w1 w3`;;
+
 let byte_reduce_conv =
     REWRITE_CONV
       [byte_to_num_to_byte;

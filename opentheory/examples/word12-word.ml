@@ -291,6 +291,24 @@ let word12_lt_list = new_axiom
    `!w1 w2.
       word12_bits_lte F (word12_to_list w1) (word12_to_list w2) <=> word12_lt w1 w2`;;
 
+let word12_le_refl = new_axiom
+  `!w. word12_le w w`;;
+
+let word12_le_trans = new_axiom
+  `!w1 w2 w3. word12_le w1 w2 /\ word12_le w2 w3 ==> word12_le w1 w3`;;
+
+let word12_lt_refl = new_axiom
+  `!w. ~word12_lt w w`;;
+
+let word12_lte_trans = new_axiom
+  `!w1 w2 w3. word12_lt w1 w2 /\ word12_le w2 w3 ==> word12_lt w1 w3`;;
+
+let word12_let_trans = new_axiom
+  `!w1 w2 w3. word12_le w1 w2 /\ word12_lt w2 w3 ==> word12_lt w1 w3`;;
+
+let word12_lt_trans = new_axiom
+  `!w1 w2 w3. word12_lt w1 w2 /\ word12_lt w2 w3 ==> word12_lt w1 w3`;;
+
 let word12_reduce_conv =
     REWRITE_CONV
       [word12_to_num_to_word12;
