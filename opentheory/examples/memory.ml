@@ -108,7 +108,7 @@ export_thm update_page_data_def;;
 
 new_type_abbrev("page_directory",`:physical_page_address`);;
 
-new_type_abbrev("page_directory_index",`:superpage_address`);;  (*** JEH ***)
+new_type_abbrev("page_directory_index",`:superpage_address`);;
 
 let directory_contents_induct,directory_contents_recursion = define_type
     "directory_contents =
@@ -118,12 +118,19 @@ let directory_contents_induct,directory_contents_recursion = define_type
 export_thm directory_contents_induct;;
 export_thm directory_contents_recursion;;
 
+let case_directory_contents_def =
+  new_recursive_definition directory_contents_recursion
+  `(!s t spa. case_directory_contents s t (Superpage spa) = (s spa : A)) /\
+   (!s t ppa. case_directory_contents s t (Table ppa) = (t ppa : A))`;;
+
+export_thm case_directory_contents_def;;
+
 new_type_abbrev("directory_page_data",
                 `:page_directory_index -> directory_contents option`);;
 
 (* Page tables *)
 
-new_type_abbrev("page_table_index",`:superpage_offset`);;  (*** JEH ***)
+new_type_abbrev("page_table_index",`:superpage_offset`);;
 
 new_type_abbrev("table_page_data",
                 `:page_table_index -> physical_page_address option`);;
@@ -225,27 +232,55 @@ let page_induct,page_recursion = define_type
 export_thm page_induct;;
 export_thm page_recursion;;
 
-let is_normal_def = new_recursive_definition page_recursion
-  `(!pd. is_normal (Environment pd) = F) /\
-   (!pd. is_normal (Normal pd) = T) /\
-   (!pd. is_normal (PageDirectory pd) = F) /\
-   (!pd. is_normal (PageTable pd) = F)`;;
+let dest_environment_def = new_recursive_definition page_recursion
+  `(!pd. dest_environment (Environment pd) = SOME pd) /\
+   (!pd. dest_environment (Normal pd) = NONE) /\
+   (!pd. dest_environment (PageDirectory pd) = NONE) /\
+   (!pd. dest_environment (PageTable pd) = NONE)`;;
+
+export_thm dest_environment_def;;
+
+let dest_normal_def = new_recursive_definition page_recursion
+  `(!pd. dest_normal (Environment pd) = NONE) /\
+   (!pd. dest_normal (Normal pd) = SOME pd) /\
+   (!pd. dest_normal (PageDirectory pd) = NONE) /\
+   (!pd. dest_normal (PageTable pd) = NONE)`;;
+
+export_thm dest_normal_def;;
+
+let dest_page_directory_def = new_recursive_definition page_recursion
+  `(!pd. dest_page_directory (Environment pd) = NONE) /\
+   (!pd. dest_page_directory (Normal pd) = NONE) /\
+   (!pd. dest_page_directory (PageDirectory pd) = SOME pd) /\
+   (!pd. dest_page_directory (PageTable pd) = NONE)`;;
+
+export_thm dest_page_directory_def;;
+
+let dest_page_table_def = new_recursive_definition page_recursion
+  `(!pd. dest_page_table (Environment pd) = NONE) /\
+   (!pd. dest_page_table (Normal pd) = NONE) /\
+   (!pd. dest_page_table (PageDirectory pd) = NONE) /\
+   (!pd. dest_page_table (PageTable pd) = SOME pd)`;;
+
+export_thm dest_page_table_def;;
+
+let is_environment_def = new_definition
+  `!p. is_environment p <=> is_some (dest_environment p)`;;
+
+export_thm is_environment_def;;
+
+let is_normal_def = new_definition
+  `!p. is_normal p <=> is_some (dest_normal p)`;;
 
 export_thm is_normal_def;;
 
-let is_page_directory_def = new_recursive_definition page_recursion
-  `(!pd. is_page_directory (Environment pd) = F) /\
-   (!pd. is_page_directory (Normal pd) = F) /\
-   (!pd. is_page_directory (PageDirectory pd) = T) /\
-   (!pd. is_page_directory (PageTable pd) = F)`;;
+let is_page_directory_def = new_definition
+  `!p. is_page_directory p <=> is_some (dest_page_directory p)`;;
 
 export_thm is_page_directory_def;;
 
-let is_page_table_def = new_recursive_definition page_recursion
-  `(!pd. is_page_table (Environment pd) = F) /\
-   (!pd. is_page_table (Normal pd) = F) /\
-   (!pd. is_page_table (PageDirectory pd) = F) /\
-   (!pd. is_page_table (PageTable pd) = T)`;;
+let is_page_table_def = new_definition
+  `!p. is_page_table p <=> is_some (dest_page_table p)`;;
 
 export_thm is_page_table_def;;
 
@@ -432,6 +467,32 @@ let regions_def = new_recursive_definition state_recursion
   `!c r s g. regions (State c r s g) = g`;;
 
 export_thm regions_def;;
+
+(***
+> translatePage :: State -> PageDirectory -> VirtualPageAddress 
+>   -> Maybe PhysicalPageAddress
+> translatePage s pd (pdi,pti) 
+>   = do PageDirectory dirpage <- return (status s pd)
+>        pde <- dirpage pdi
+>        case pde of
+>          Table ppa     -> do PageTable tablepage <- return (status s ppa)
+>                              tablepage pti
+>          Superpage spa -> return (spa, toSuperpageOffset pti)
+
+let translate_page_def = new_definition
+  `!s pd pdi pti.
+     translate_page s pd (pdi,pti) =
+     case_option
+       NONE
+       (\page.
+          case_option
+            NONE
+            (case_directory_contents
+               (\spa. 
+)
+            (dest_page_directory page))
+       (status s pd)`;;
+***)
 
 (* Protection domains *)
 

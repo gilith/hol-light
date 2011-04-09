@@ -24,6 +24,12 @@ let case_option_def = new_recursive_definition option_RECURSION
 
 export_thm case_option_def;;
 
+let is_some_def = new_recursive_definition option_RECURSION
+  `(is_some (NONE : A option) <=> F) /\
+   (!a. is_some (SOME (a : A)) <=> T)`;;
+
+export_thm is_some_def;;
+
 logfile "option-dest-thm";;
 
 let case_option_id = prove
