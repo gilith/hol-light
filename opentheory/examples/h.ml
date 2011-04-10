@@ -743,6 +743,8 @@ let view_equiv_def = new_definition
 
 export_thm view_equiv_def;;
 
+(* Output *)
+
 new_type_abbrev("output",`:view`);;
 
 (* Well-formedness conditions *)
@@ -1106,6 +1108,29 @@ let action_spec_def = new_recursive_definition action_recursion
 
 export_thm action_spec_def;;
 
+let action_def = new_definition
+  `!a s s'.
+      action a s s' <=> wellformed s /\ wellformed s' /\ action_spec a s s'`;;
+
+export_thm action_def;;
+
+(* Security policy *)
+
+let interferes_def = new_definition
+  `interferes x y <=>
+   (x = EDomain /\ y = EDomain) \/
+   (x = EDomain /\ y = HDomain) \/
+   (x = EDomain /\ y = KDomain) \/
+   (x = HDomain /\ y = HDomain) \/
+   (x = HDomain /\ y = KDomain) \/
+   (x = HDomain /\ y = UDomain) \/
+   (x = KDomain /\ y = KDomain) \/
+   (x = KDomain /\ y = UDomain) \/
+   (x = UDomain /\ y = KDomain) \/
+   (x = UDomain /\ y = UDomain)`;;
+
+export_thm interferes_def;;
+
 logfile "h-thm";;
 
 (* Physical pages *)
@@ -1245,5 +1270,68 @@ export_thm view_distinct;;
 let view_inj = injectivity "view";;
 
 export_thm view_inj;;
+
+let weak_step_consistency = prove
+  (`!s s' t t' a u.
+      view_equiv u s t /\
+      view_equiv (domain a) s t /\
+      action a s s' /\
+      action a t t' ==>
+      view_equiv u s' t'`,
+   REWRITE_TAC [action_def; view_equiv_def] THEN
+   GEN_TAC THEN
+   GEN_TAC THEN
+   GEN_TAC THEN
+   GEN_TAC THEN
+   MATCH_MP_TAC action_induct THEN
+   REPEAT CONJ_TAC THEN
+   REPEAT GEN_TAC THEN
+   SPEC_TAC (`u : domain`, `u : domain`) THEN
+   MATCH_MP_TAC domain_induct THEN
+   REPEAT CONJ_TAC THEN
+   REWRITE_TAC [domain_def; action_spec_def; view_def; view_inj] THEN
+   REWRITE_TAC [view_e_def; e_view_inj] THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   REWRITE_TAC [write_e_def] THEN
+   CHEAT_TAC);;
+
+export_thm weak_step_consistency;;
+
+let output_consistency = prove
+  (`!s s' t t' a.
+      view_equiv (domain a) s t /\
+      action a s s' /\
+      action a t t' ==>
+      view (domain a) s' = view (domain a) t'`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [GSYM view_equiv_def] THEN
+   MATCH_MP_TAC weak_step_consistency THEN
+   EXISTS_TAC `s : state` THEN
+   EXISTS_TAC `t : state` THEN
+   EXISTS_TAC `a : action` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm output_consistency;;
+
+let local_respect = prove
+  (`!s s' a u.
+      ~interferes (domain a) u /\
+      action a s s' ==>
+      view_equiv u s s'`,
+   REWRITE_TAC [action_def; view_equiv_def] THEN
+   GEN_TAC THEN
+   GEN_TAC THEN
+   MATCH_MP_TAC action_induct THEN
+   REPEAT CONJ_TAC THEN
+   REPEAT GEN_TAC THEN
+   SPEC_TAC (`u : domain`, `u : domain`) THEN
+   MATCH_MP_TAC domain_induct THEN
+   REPEAT CONJ_TAC THEN
+   REWRITE_TAC
+     [interferes_def; domain_def; action_spec_def; view_def; view_inj;
+      domain_distinct] THEN
+   CHEAT_TAC);;
+
+export_thm local_respect;;
 
 logfile_end ();;
