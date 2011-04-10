@@ -303,6 +303,43 @@ let length_zipwith = prove
 
 export_thm length_zipwith;;
 
+logfile "list-nub-def";;
+
+let nub_def = new_recursive_definition list_RECURSION
+  `(nub ([] : A list) = []) /\
+   (!h t. nub (CONS h t) = if MEM h t then nub t else CONS h (nub t))`;;
+
+export_thm nub_def;;
+
+logfile "list-nub-thm";;
+
+let length_nub = prove
+  (`!l. LENGTH (nub (l : A list)) <= LENGTH l`,
+   LIST_INDUCT_TAC THEN
+   ASM_SIMP_TAC [LENGTH; nub_def; LE_REFL] THEN
+   BOOL_CASES_TAC `MEM (h : A) t` THENL
+   [ASM_REWRITE_TAC [LE];
+    ASM_REWRITE_TAC [LE_SUC; LENGTH]]);;
+
+export_thm length_nub;;
+
+let mem_nub = prove
+  (`!l x. MEM (x : A) (nub l) <=> MEM x l`,
+   LIST_INDUCT_TAC THEN
+   ASM_SIMP_TAC [MEM; nub_def] THEN
+   GEN_TAC THEN
+   bool_cases_tac `(x : A) = h` THENL
+   [ASM_REWRITE_TAC [] THEN
+    bool_cases_tac `MEM (h : A) t` THENL
+    [ASM_REWRITE_TAC [];
+     ASM_REWRITE_TAC [MEM]];
+    ASM_REWRITE_TAC [] THEN
+    BOOL_CASES_TAC `MEM (h : A) t` THENL
+    [ASM_REWRITE_TAC [];
+     ASM_REWRITE_TAC [MEM]]]);;
+
+export_thm mem_nub;;
+
 (* Conversions for bit blasting *)
 
 let append_conv =

@@ -248,6 +248,14 @@ let dest_normal_def = new_recursive_definition page_recursion
 
 export_thm dest_normal_def;;
 
+let dest_environment_or_normal_def = new_recursive_definition page_recursion
+  `(!pd. dest_environment_or_normal (Environment pd) = SOME pd) /\
+   (!pd. dest_environment_or_normal (Normal pd) = SOME pd) /\
+   (!pd. dest_environment_or_normal (PageDirectory pd) = NONE) /\
+   (!pd. dest_environment_or_normal (PageTable pd) = NONE)`;;
+
+export_thm dest_environment_or_normal_def;;
+
 let dest_page_directory_def = new_recursive_definition page_recursion
   `(!pd. dest_page_directory (Environment pd) = NONE) /\
    (!pd. dest_page_directory (Normal pd) = NONE) /\
@@ -498,6 +506,55 @@ let translation_def = new_definition
 
 export_thm translation_def;;
 
+let table_mapped_in_directory_def = new_definition
+  `!s pd pt.
+     table_mapped_in_directory s pd pt <=>
+     case_option
+       F
+       (\pdd. ?pdi.
+          case_option
+            F
+            (case_directory_contents
+               (\spa. F)
+               (\ppa. ppa = pt))
+            (pdd pdi))
+       (dest_page_directory (status s pd))`;;
+
+export_thm table_mapped_in_directory_def;;
+
+let mapped_page_def = new_definition
+  `!s pd vpa.
+     mapped_page s pd vpa <=>
+     is_some (translate_page s pd vpa)`;;
+
+export_thm mapped_page_def;;
+
+let unmapped_page_def = new_definition
+  `!s ppa.
+     unmapped_page s ppa <=>
+     forall_installed_pages
+       (\pd.
+          ~is_page_directory (status s pd) \/
+          !vpa.
+            case_option
+              T
+              (\ppa'. ~(ppa' = ppa))
+              (translate_page s pd vpa))`;;
+
+export_thm unmapped_page_def;;
+
+let is_normal_page_def = new_definition
+  `!s ppa. is_normal_page s ppa <=> is_normal (status s ppa)`;;
+
+export_thm is_normal_page_def;;
+
+let unmapped_normal_page_def = new_definition
+  `!s ppa.
+     unmapped_normal_page s ppa <=>
+     unmapped_page s ppa /\ is_normal_page s ppa`;;
+
+export_thm unmapped_normal_page_def;;
+
 (* Protection domains *)
 
 let domain_induct,domain_recursion = define_type
@@ -528,6 +585,20 @@ let action_induct,action_recursion = define_type
 export_thm action_induct;;
 export_thm action_recursion;;
 
+let domain_def = new_recursive_definition action_recursion
+  `(!va b. domain (WriteE va b) = EDomain) /\
+   (!pr ppa l. domain (DeriveRegionH pr ppa l) = HDomain) /\
+   (!ppa. domain (AllocatePageDirectoryH ppa) = HDomain) /\
+   (!pd. domain (FreePageDirectoryH pd) = HDomain) /\
+   (!pd ppas pr vr. domain (AddMappingH pd ppas pr vr) = HDomain) /\
+   (!pd vr. domain (RemoveMappingH pd vr) = HDomain) /\
+   (!pr vr. domain (AddKernelMappingH pr vr) = HDomain) /\
+   (!pd. domain (ExecuteH pd) = HDomain) /\
+   (!va b. domain (WriteK va b) = KDomain) /\
+   (!va b. domain (WriteU va b) = UDomain)`;;
+
+export_thm domain_def;;
+
 let e_view_induct,e_view_recursion = define_type
     "e_view =
        EView (virtual_page_address -> page_data option)";;
@@ -539,6 +610,18 @@ let e_observable_pages_def = new_recursive_definition e_view_recursion
   `!f. e_observable_pages (EView f) = f`;;
 
 export_thm e_observable_pages_def;;
+
+let view_e_def = new_definition
+  `!s.
+     view_e s =
+     EView
+       (\vpa.
+          case_option
+            NONE
+            (\ppa. dest_environment (status s ppa))
+            (translate_page s (cr3 s) vpa))`;;
+
+export_thm view_e_def;;
 
 let h_view_induct,h_view_recursion = define_type
     "h_view =
@@ -571,6 +654,19 @@ let reference_pdir_def = new_recursive_definition h_view_recursion
 
 export_thm reference_pdir_def;;
 
+let view_h_def = new_definition
+  `!s.
+     view_h s =
+     HView
+       (cr3 s)
+       (\ppa.
+          let page = status s ppa in
+          if is_normal page then NONE else SOME page)
+       (regions s)
+       (reference s)`;;
+
+export_thm view_h_def;;
+
 let k_view_induct,k_view_recursion = define_type
     "k_view =
        KView
@@ -590,6 +686,23 @@ let k_region_handles_def = new_recursive_definition k_view_recursion
 
 export_thm k_region_handles_def;;
 
+let view_k_def = new_definition
+  `!s.
+     view_k s =
+     KView
+       (\vpa.
+          case_option
+            NONE
+            (\ppa.
+               if is_kernel_page_address vpa then
+                 dest_environment_or_normal (status s ppa)
+               else
+                 dest_environment (status s ppa))
+            (translate_page s (cr3 s) vpa))
+       (regions s)`;;
+
+export_thm view_k_def;;
+
 let u_view_induct,u_view_recursion = define_type
     "u_view =
        UView (virtual_page_address -> page_data option)";;
@@ -602,6 +715,21 @@ let u_observable_pages_def = new_recursive_definition u_view_recursion
 
 export_thm u_observable_pages_def;;
 
+let view_u_def = new_definition
+  `!s.
+     view_u s =
+     UView
+       (\vpa.
+          if is_user_page_address vpa then
+            case_option
+              NONE
+              (\ppa. dest_normal (status s ppa))
+              (translate_page s (cr3 s) vpa)
+          else
+            NONE)`;;
+
+export_thm view_u_def;;
+
 let view_induct,view_recursion = define_type
     "view =
        ViewE e_view
@@ -612,7 +740,381 @@ let view_induct,view_recursion = define_type
 export_thm view_induct;;
 export_thm view_recursion;;
 
+let view_def = new_recursive_definition domain_recursion
+  `(!s. view EDomain s = ViewE (view_e s)) /\
+   (!s. view HDomain s = ViewH (view_h s)) /\
+   (!s. view KDomain s = ViewK (view_k s)) /\
+   (!s. view UDomain s = ViewU (view_u s))`;;
+
+export_thm view_def;;
+
+let view_equiv_def = new_definition
+  `!d s t. view_equiv d s t <=> view d s = view d t`;;
+
+export_thm view_equiv_def;;
+
 new_type_abbrev("output",`:view`);;
+
+(* Well-formedness conditions *)
+
+let cr3_is_page_directory_def = new_definition
+  `!s.
+     cr3_is_page_directory s <=>
+     is_page_directory (status s (cr3 s))`;;
+
+export_thm cr3_is_page_directory_def;;
+
+let reference_is_page_directory_def = new_definition
+  `!s.
+     reference_is_page_directory s <=>
+     is_page_directory (status s (reference s))`;;
+
+export_thm reference_is_page_directory_def;;
+
+let reference_maps_kernel_addresses_def = new_definition
+  `!s.
+     reference_maps_kernel_addresses s <=>
+     !vpa.
+       ~is_kernel_page_address vpa ==>
+       is_none (translate_page s (reference s) vpa)`;;
+
+export_thm reference_maps_kernel_addresses_def;;
+
+let reference_contains_environment_def = new_definition
+  `!s.
+     reference_contains_environment s <=>
+     forall_installed_pages
+       (\ppa.
+          is_environment (status s ppa) ==>
+          ?vpa. translate_page s (reference s) vpa = SOME ppa)`;;
+
+export_thm reference_contains_environment_def;;
+
+let environment_only_in_reference_def = new_definition
+  `!s.
+     environment_only_in_reference s <=>
+     forall_installed_pages
+       (\pd.
+          is_page_directory (status s pd) ==>
+          !vpa.
+            case_option
+              T
+              (\ppa.
+                 is_environment (status s ppa) ==>
+                 mapped_page s (reference s) vpa)
+              (translate_page s pd vpa))`;;
+
+export_thm environment_only_in_reference_def;;
+
+let page_directories_contain_reference_def = new_definition
+  `!s.
+     page_directories_contain_reference s <=>
+     forall_installed_pages
+       (\pd.
+          is_page_directory (status s pd) ==>
+          !vpa.
+            is_user_page_address vpa \/
+            translate_page s (reference s) vpa = translate_page s pd vpa)`;;
+
+export_thm page_directories_contain_reference_def;;
+
+let mapped_pages_are_available_def = new_definition
+  `!s.
+     mapped_pages_are_available s <=>
+     forall_installed_pages
+       (\pd.
+          is_page_directory (status s pd) ==>
+          !vpa.
+            case_option
+              T
+              (\ppa. member_installed_pages ppa)
+              (translate_page s pd vpa))`;;
+
+export_thm mapped_pages_are_available_def;;
+
+let table_pointers_are_page_tables_def = new_definition
+  `!s.
+     table_pointers_are_page_tables s <=>
+     !pd pdi.
+       case_option
+         T
+         (\pdd.
+            case_option
+              T
+              (case_directory_contents
+                 (\spa. T)
+                 (\ppa. is_page_table (status s ppa)))
+              (pdd pdi))
+         (dest_page_directory (status s pd))`;;
+
+export_thm table_pointers_are_page_tables_def;;
+
+let initial_regions_are_regions_def = new_definition
+  `!s.
+     initial_regions_are_regions s <=>
+     initial_regions (regions s) SUBSET all_regions (regions s)`;;
+
+export_thm initial_regions_are_regions_def;;
+
+let regions_are_not_environment_def = new_definition
+  `!s.
+     regions_are_not_environment s <=>
+     !r ppa.
+       r IN all_regions (regions s) /\
+       member_physical_region ppa r ==>
+       ~is_environment (status s ppa)`;;
+
+export_thm regions_are_not_environment_def;;
+
+(* Need extra condition that all regions are subregions of initial regions? *)
+(* Need extra condition that all regions are nonempty? *)
+
+let wellformed_def = new_definition
+  `!s.
+     wellformed s <=>
+     cr3_is_page_directory s /\
+     page_directories_contain_reference s /\
+     mapped_pages_are_available s /\
+     table_pointers_are_page_tables s /\
+     reference_is_page_directory s /\
+     reference_maps_kernel_addresses s /\
+     environment_only_in_reference s /\
+     initial_regions_are_regions s /\
+     regions_are_not_environment s`;;
+
+export_thm wellformed_def;;
+
+(* Operations in the model *)
+
+let write_e_def = new_definition
+  `!va b s s'.
+     write_e va b s s' <=>
+     cr3 s = cr3 s' /\
+     reference s = reference s' /\
+     regions s = regions s' /\
+     case_option
+       F
+       (\ (ppa,off).
+         forall_installed_pages
+           (\ppa'.
+              if ppa' = ppa then
+                case_option
+                  F
+                  (\f.
+                     dest_environment (status s' ppa') =
+                     SOME (update_page_data off b f))
+                  (dest_environment (status s ppa'))
+              else
+                status s ppa' = status s' ppa'))
+       (translation s va)`;;
+
+export_thm write_e_def;;
+
+let derive_region_h_def = new_definition
+  `!pr ppa l s s'.
+     derive_region_h pr ppa l s s' <=>
+     cr3 s = cr3 s' /\
+     reference s = reference s' /\
+     status s = status s' /\
+     initial_regions (regions s) = initial_regions (regions s') /\
+     let r = PhysicalRegion ppa l in
+     is_physical_subregion r pr /\
+     ~(r IN all_regions (regions s)) /\
+     all_regions (regions s') = r INSERT all_regions (regions s)`;;
+
+export_thm derive_region_h_def;;
+
+let allocate_page_directory_h_def = new_definition
+  `!ppa s s'.
+     allocate_page_directory_h ppa s s' <=>
+     cr3 s = cr3 s' /\
+     reference s = reference s' /\
+     regions s = regions s' /\
+     unmapped_normal_page s ppa /\
+     forall_installed_pages
+       (\ppa'.
+          status s' ppa' =
+          (if ppa' = ppa then status s' (reference s')
+           else status s ppa))`;;
+
+export_thm allocate_page_directory_h_def;;
+
+let free_page_directory_h_def = new_definition
+  `!pd s s'.
+     free_page_directory_h pd s s' <=>
+     allocate_page_directory_h pd s' s /\
+     status s' pd = Normal zero_page_data`;;
+
+export_thm free_page_directory_h_def;;
+
+let add_mapping_def = new_definition
+  `!pd pts pr vr s s'.
+     add_mapping pd pts pr vr s s' <=>
+     cr3 s = cr3 s' /\
+     reference s = reference s' /\
+     regions s = regions s' /\
+     is_page_directory (status s pd) /\
+     ALL (unmapped_normal_page s) pts /\
+     ALL (\ppa. ~member_physical_region ppa pr) pts /\
+     forall_physical_region (is_normal_page s) pr /\
+     physical_region_length pr = virtual_region_length vr /\
+     is_user_region vr /\
+     (!vpa.
+        if member_virtual_region vpa vr then
+          is_none (translate_page s pd vpa)
+        else
+          translate_page s' pd vpa = translate_page s pd vpa) /\
+     ALL I (zipwith (\vpa ppa. translate_page s' pd vpa = SOME ppa)
+              (virtual_region_to_list vr) (physical_region_to_list pr)) /\
+     forall_installed_pages
+       (\ppa.
+          if MEM ppa pts then
+            table_mapped_in_directory s' pd ppa
+          else if ppa = pd then
+            is_page_directory (status s' ppa)
+          else if table_mapped_in_directory s pd ppa then
+            is_page_table (status s' ppa)
+          else
+            status s ppa = status s' ppa)`;;
+
+let add_mapping_h_def = new_definition
+  `!pd pts pr vr s s'.
+     add_mapping_h pd pts pr vr s s' <=>
+     LENGTH (nub pts) = LENGTH pts /\
+     pr IN all_regions (regions s) /\
+     ?n. n <= LENGTH pts /\ add_mapping pd (take n pts) pr vr s s'`;;
+
+export_thm add_mapping_h_def;;
+
+let remove_mapping_h_def = new_definition
+  `!pd vr s s'.
+     remove_mapping_h pd vr s s' <=>
+     case_option
+       F
+       (\prs.
+          let pr = PhysicalRegion prs (virtual_region_length vr) in
+          let pts = FILTER (\ppa. is_page_table (status s ppa) /\
+                                  status s' ppa = Normal zero_page_data)
+                      installed_physical_pages in
+          add_mapping pd pts pr vr s' s)
+       (translate_page s pd (virtual_region_start vr))`;;
+
+export_thm remove_mapping_h_def;;
+
+(* Need extra condition that no user data is messed with? *)
+
+let add_kernel_mapping_def = new_definition
+  `!pr vr s s'.
+     add_kernel_mapping_h pr vr s s' <=>
+     cr3 s = cr3 s' /\
+     reference s = reference s' /\
+     regions s = regions s' /\
+     pr IN all_regions (regions s) /\
+     forall_physical_region (is_normal_page s) pr /\
+     physical_region_length pr = virtual_region_length vr /\
+     is_kernel_region vr /\
+     (!vpa.
+        ~member_virtual_region vpa vr ==>
+        translate_page s' (reference s') vpa =
+        translate_page s (reference s) vpa) /\
+     ALL I (zipwith (\vpa ppa. translate_page s' (reference s') vpa = SOME ppa)
+              (virtual_region_to_list vr) (physical_region_to_list pr))`;;
+
+export_thm add_kernel_mapping_h_def;;
+
+let execute_h_def = new_definition
+  `!pd s s'.
+     execute_h pd s s' <=>
+     reference s = reference s' /\
+     status s = status s' /\
+     regions s = regions s' /\
+     cr3 s' = pd`;;
+
+export_thm execute_h_def;;
+
+let write_k_def = new_definition
+  `!va b s s'.
+     write_k va b s s' <=>
+     cr3 s = cr3 s' /\
+     reference s = reference s' /\
+     regions s = regions s' /\
+     is_kernel_address va /\
+     case_option
+       F
+       (\ (ppa,off).
+         forall_installed_pages
+           (\ppa'.
+              if ppa' = ppa then
+                case_option
+                  F
+                  (\f.
+                     dest_normal (status s' ppa') =
+                     SOME (update_page_data off b f))
+                  (dest_normal (status s ppa'))
+              else
+                status s ppa' = status s' ppa'))
+       (translation s va)`;;
+
+export_thm write_k_def;;
+
+let write_u_def = new_definition
+  `!va b s s'.
+     write_u va b s s' <=>
+     cr3 s = cr3 s' /\
+     reference s = reference s' /\
+     regions s = regions s' /\
+     is_user_address va /\
+     case_option
+       F
+       (\ (ppa,off).
+         forall_installed_pages
+           (\ppa'.
+              if ppa' = ppa then
+                case_option
+                  F
+                  (\f.
+                     dest_normal (status s' ppa') =
+                     SOME (update_page_data off b f))
+                  (dest_normal (status s ppa'))
+              else
+                status s ppa' = status s' ppa'))
+       (translation s va)`;;
+
+export_thm write_u_def;;
+
+let action_spec_def = new_recursive_definition action_recursion
+  `(!va b.
+      action_spec (WriteE va b) =
+      write_e va b) /\
+   (!pr ppa l.
+      action_spec (DeriveRegionH pr ppa l) =
+      derive_region_h pr ppa l) /\
+   (!ppa.
+      action_spec (AllocatePageDirectoryH ppa) =
+      allocate_page_directory_h ppa) /\
+   (!pd.
+      action_spec (FreePageDirectoryH pd) =
+      free_page_directory_h pd) /\
+   (!pd ppas pr vr.
+      action_spec (AddMappingH pd ppas pr vr) =
+      add_mapping_h pd ppas pr vr) /\
+   (!pd vr.
+      action_spec (RemoveMappingH pd vr) =
+      remove_mapping_h pd vr) /\
+   (!pr vr.
+      action_spec (AddKernelMappingH pr vr) =
+      add_kernel_mapping_h pr vr) /\
+   (!pd.
+      action_spec (ExecuteH pd) =
+      execute_h pd) /\
+   (!va b.
+      action_spec (WriteK va b) =
+      write_k va b) /\
+   (!va b.
+      action_spec (WriteU va b) =
+      write_u va b)`;;
+
+export_thm action_spec_def;;
 
 logfile "memory-thm";;
 
