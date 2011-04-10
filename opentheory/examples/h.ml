@@ -511,13 +511,7 @@ let table_mapped_in_directory_def = new_definition
      table_mapped_in_directory s pd pt <=>
      case_option
        F
-       (\pdd. ?pdi.
-          case_option
-            F
-            (case_directory_contents
-               (\spa. F)
-               (\ppa. ppa = pt))
-            (pdd pdi))
+       (\pdd. ?pdi. pdd pdi = SOME (Table pt))
        (dest_page_directory (status s pd))`;;
 
 export_thm table_mapped_in_directory_def;;
@@ -534,12 +528,8 @@ let unmapped_page_def = new_definition
      unmapped_page s ppa <=>
      forall_installed_pages
        (\pd.
-          ~is_page_directory (status s pd) \/
-          !vpa.
-            case_option
-              T
-              (\ppa'. ~(ppa' = ppa))
-              (translate_page s pd vpa))`;;
+          is_page_directory (status s pd) ==>
+          !vpa. ~(translate_page s pd vpa = SOME ppa))`;;
 
 export_thm unmapped_page_def;;
 
