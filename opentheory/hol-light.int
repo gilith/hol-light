@@ -66,6 +66,8 @@ const "HOLLight.zipwith" as "Data.List.zipWith"
 type "HOLLight.option" as "Data.Option.option"
 
 const "HOLLight.case_option" as "Data.Option.case"
+const "HOLLight.is_none" as "Data.Option.isNone"
+const "HOLLight.is_some" as "Data.Option.isSome"
 const "HOLLight.NONE" as "Data.Option.none"
 const "HOLLight.SOME" as "Data.Option.some"
 
