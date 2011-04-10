@@ -1271,6 +1271,7 @@ let view_inj = injectivity "view";;
 
 export_thm view_inj;;
 
+(***
 let weak_step_consistency = prove
   (`!s s' t t' a u.
       view_equiv u s t /\
@@ -1333,5 +1334,6 @@ let local_respect = prove
    CHEAT_TAC);;
 
 export_thm local_respect;;
+***)
 
 logfile_end ();;
