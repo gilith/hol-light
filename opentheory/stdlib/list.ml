@@ -42,7 +42,29 @@ let NULL_APPEND = prove
 
 export_thm NULL_APPEND;;
 
-logfile_end ();;
+logfile "list-length-thm";;
+
+let LENGTH_REVERSE = prove
+ (`!l. LENGTH (REVERSE (l : A list)) = LENGTH l`,
+  LIST_INDUCT_TAC THEN
+  ASM_REWRITE_TAC [REVERSE; LENGTH_APPEND; LENGTH] THEN
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  REWRITE_TAC [ADD]);;
+
+export_thm LENGTH_REVERSE;;
+
+logfile "list-member-thm";;
+
+let MEM_REVERSE = prove
+ (`!l x. MEM (x : A) (REVERSE l) <=> MEM x l`,
+  LIST_INDUCT_TAC THEN
+  ASM_REWRITE_TAC [REVERSE] THEN
+  REWRITE_TAC [MEM_APPEND] THEN
+  ONCE_REWRITE_TAC [DISJ_SYM] THEN
+  REWRITE_TAC [GSYM MEM_APPEND] THEN
+  ASM_REWRITE_TAC [APPEND; MEM]);;
+
+export_thm MEM_REVERSE;;
 
 logfile "list-nth-thm";;
 
@@ -305,28 +327,35 @@ export_thm length_zipwith;;
 
 logfile "list-nub-def";;
 
-let nub_def = new_recursive_definition list_RECURSION
-  `(nub ([] : A list) = []) /\
-   (!h t. nub (CONS h t) = if MEM h t then nub t else CONS h (nub t))`;;
+let setify_def = new_recursive_definition list_RECURSION
+  `(setify ([] : A list) = []) /\
+   (!h t.
+      setify (CONS h t) =
+      if MEM h t then setify t else CONS h (setify t))`;;
+
+export_thm setify_def;;
+
+let nub_def = new_definition
+  `!l. nub (l : A list) = REVERSE (setify (REVERSE l))`;;
 
 export_thm nub_def;;
 
 logfile "list-nub-thm";;
 
-let length_nub = prove
-  (`!l. LENGTH (nub (l : A list)) <= LENGTH l`,
+let length_setify = prove
+  (`!l. LENGTH (setify (l : A list)) <= LENGTH l`,
    LIST_INDUCT_TAC THEN
-   ASM_SIMP_TAC [LENGTH; nub_def; LE_REFL] THEN
+   ASM_SIMP_TAC [LENGTH; setify_def; LE_REFL] THEN
    BOOL_CASES_TAC `MEM (h : A) t` THENL
    [ASM_REWRITE_TAC [LE];
     ASM_REWRITE_TAC [LE_SUC; LENGTH]]);;
 
-export_thm length_nub;;
+export_thm length_setify;;
 
-let mem_nub = prove
-  (`!l x. MEM (x : A) (nub l) <=> MEM x l`,
+let mem_setify = prove
+  (`!l x. MEM (x : A) (setify l) <=> MEM x l`,
    LIST_INDUCT_TAC THEN
-   ASM_SIMP_TAC [MEM; nub_def] THEN
+   ASM_SIMP_TAC [MEM; setify_def] THEN
    GEN_TAC THEN
    bool_cases_tac `(x : A) = h` THENL
    [ASM_REWRITE_TAC [] THEN
@@ -338,7 +367,38 @@ let mem_nub = prove
     [ASM_REWRITE_TAC [];
      ASM_REWRITE_TAC [MEM]]]);;
 
+export_thm mem_setify;;
+
+let setify_idempotent = prove
+  (`!l. setify (setify l) = setify (l : A list)`,
+   LIST_INDUCT_TAC THEN
+   ASM_SIMP_TAC [MEM; setify_def] THEN
+   bool_cases_tac `MEM (h : A) t` THENL
+   [ASM_REWRITE_TAC [];
+    ASM_REWRITE_TAC [setify_def; mem_setify]]);;
+
+export_thm setify_idempotent;;
+
+let length_nub = prove
+  (`!l. LENGTH (nub (l : A list)) <= LENGTH l`,
+   GEN_TAC THEN
+   REWRITE_TAC [nub_def; LENGTH_REVERSE] THEN
+   CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM LENGTH_REVERSE])) THEN
+   MATCH_ACCEPT_TAC length_setify);;
+
+export_thm length_nub;;
+
+let mem_nub = prove
+  (`!l x. MEM (x : A) (nub l) <=> MEM x l`,
+   REWRITE_TAC [nub_def; MEM_REVERSE; mem_setify]);;
+
 export_thm mem_nub;;
+
+let nub_idempotent = prove
+  (`!l. nub (nub l) = nub (l : A list)`,
+   REWRITE_TAC [nub_def; REVERSE_REVERSE; setify_idempotent]);;
+
+export_thm nub_idempotent;;
 
 (* Conversions for bit blasting *)
 

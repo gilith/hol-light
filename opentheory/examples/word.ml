@@ -1242,7 +1242,7 @@ let word_lt_refl = prove
   (`!w. ~word_lt w w`,
    REWRITE_TAC [word_lt_def; word_le_refl]);;
 
-export_thm word_le_refl;;
+export_thm word_lt_refl;;
 
 (*PARAMETRIC
 let word_lt_refl = new_axiom
