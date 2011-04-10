@@ -2,7 +2,7 @@
 (* Memory safety for the H interface.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "memory-def";;
+logfile "h-def";;
 
 (* Physical pages *)
 
@@ -1003,7 +1003,7 @@ export_thm remove_mapping_h_def;;
 
 (* Need extra condition that no user data is messed with? *)
 
-let add_kernel_mapping_def = new_definition
+let add_kernel_mapping_h_def = new_definition
   `!pr vr s s'.
      add_kernel_mapping_h pr vr s s' <=>
      cr3 s = cr3 s' /\
@@ -1116,7 +1116,7 @@ let action_spec_def = new_recursive_definition action_recursion
 
 export_thm action_spec_def;;
 
-logfile "memory-thm";;
+logfile "h-thm";;
 
 (* Physical pages *)
 
