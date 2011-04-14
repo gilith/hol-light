@@ -1334,6 +1334,16 @@ let translate_page_inj = prove
 
 export_thm translate_page_inj;;
 
+let status_translate_page = prove
+  (`!s s'.
+      status s = status s' ==>
+      translate_page s = translate_page s'`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC translate_page_inj THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm status_translate_page;;
+
 let translate_page_reference_count = prove
   (`!s s'.
       translate_page s = translate_page s' ==>
@@ -1496,6 +1506,96 @@ let write_e_reference_count_cr3 = prove
    DISCH_THEN (fun th -> REWRITE_TAC [th]));;
 
 export_thm write_e_reference_count_cr3;;
+
+let derive_region_h_cr3 = prove
+  (`!s s' pr ppa l. derive_region_h pr ppa l s s' ==> cr3 s = cr3 s'`,
+   REWRITE_TAC [derive_region_h_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm derive_region_h_cr3;;
+
+let derive_region_h_status = prove
+  (`!s s' pr ppa l. derive_region_h pr ppa l s s' ==> status s = status s'`,
+   REWRITE_TAC [derive_region_h_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm derive_region_h_status;;
+
+let derive_region_h_reference = prove
+  (`!s s' pr ppa l.
+      derive_region_h pr ppa l s s' ==> reference s = reference s'`,
+   REWRITE_TAC [derive_region_h_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm derive_region_h_reference;;
+
+let derive_region_h_translate_page = prove
+  (`!s s' pr ppa l.
+      derive_region_h pr ppa l s s' ==>
+      translate_page s = translate_page s'`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC status_translate_page THEN
+   MATCH_MP_TAC derive_region_h_status THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `ppa : physical_page_address` THEN
+   EXISTS_TAC `l : region_length` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm derive_region_h_translate_page;;
+
+let derive_region_h_translate_page_cr3 = prove
+  (`!s s' pr ppa l.
+      derive_region_h pr ppa l s s' ==>
+      translate_page s (cr3 s) = translate_page s' (cr3 s')`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pr : physical_region`;
+             `ppa : physical_page_address`; `l : region_length`]
+      derive_region_h_translate_page) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pr : physical_region`;
+             `ppa : physical_page_address`; `l : region_length`]
+      derive_region_h_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+export_thm derive_region_h_translate_page_cr3;;
+
+let derive_region_h_reference_count = prove
+  (`!s s' pr ppa l.
+      derive_region_h pr ppa l s s' ==>
+      reference_count s = reference_count s'`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC translate_page_reference_count THEN
+   MATCH_MP_TAC derive_region_h_translate_page THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `ppa : physical_page_address` THEN
+   EXISTS_TAC `l : region_length` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm derive_region_h_reference_count;;
+
+let derive_region_h_reference_count_cr3 = prove
+  (`!s s' pr ppa l.
+      derive_region_h pr ppa l s s' ==>
+      reference_count s (cr3 s) = reference_count s' (cr3 s')`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pr : physical_region`;
+             `ppa : physical_page_address`; `l : region_length`]
+      derive_region_h_reference_count) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pr : physical_region`;
+             `ppa : physical_page_address`; `l : region_length`]
+      derive_region_h_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+export_thm derive_region_h_reference_count_cr3;;
 
 let write_k_status = prove
   (`!s s' va b ppa.
@@ -1834,6 +1934,37 @@ let local_respect_write_e_view_u = prove
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]));;
 
+let local_respect_derive_region_h_view_e = prove
+  (`!s s' pr ppa l. derive_region_h pr ppa l s s' ==> view_e s = view_e s'`,
+   REWRITE_TAC [view_e_def; e_view_inj] THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pr : physical_region`;
+             `ppa : physical_page_address`; `l : region_length`]
+      derive_region_h_translate_page_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   GEN_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pr : physical_region`;
+             `ppa : physical_page_address`; `l : region_length`]
+      derive_region_h_status) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM; option_inj; PAIR_EQ] THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pr : physical_region`;
+             `ppa : physical_page_address`; `l : region_length`]
+      derive_region_h_reference_count_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
 let local_respect_write_k_view_e = prove
   (`!s s' va b. write_k va b s s' ==> view_e s = view_e s'`,
    REWRITE_TAC [view_e_def; e_view_inj] THEN
@@ -1987,7 +2118,12 @@ let local_respect = prove
     EXISTS_TAC `a0 : virtual_address` THEN
     EXISTS_TAC `a1 : byte` THEN
     ASM_REWRITE_TAC [];
-    ALL_TAC;
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC local_respect_derive_region_h_view_e THEN
+    EXISTS_TAC `a0 : physical_region` THEN
+    EXISTS_TAC `a1 : physical_page_address` THEN
+    EXISTS_TAC `a2 : region_length` THEN
+    ASM_REWRITE_TAC [];
     ALL_TAC;
     ALL_TAC;
     ALL_TAC;
