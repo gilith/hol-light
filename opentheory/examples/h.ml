@@ -21,29 +21,6 @@ new_type_abbrev("physical_page_address",
 
 new_type_abbrev("physical_address",`:physical_page_address # offset`);;
 
-new_constant ("installed_physical_pages", `:physical_page_address list`);;
-
-let forall_installed_pages_def = new_definition
-  `!p.
-     forall_installed_pages (p : physical_page_address -> bool) =
-     ALL p installed_physical_pages`;;
-
-export_thm forall_installed_pages_def;;
-
-let exists_installed_pages_def = new_definition
-  `!p.
-     exists_installed_pages (p : physical_page_address -> bool) =
-     EX p installed_physical_pages`;;
-
-export_thm exists_installed_pages_def;;
-
-let member_installed_pages_def = new_definition
-  `!ppa.
-     member_installed_pages (ppa : physical_page_address) =
-     MEM ppa installed_physical_pages`;;
-
-export_thm member_installed_pages_def;;
-
 let physical_page_address_lt_def = new_definition
   `!pdi1 pti1 pdi2 pti2.
      physical_page_address_lt (pdi1,pti1) (pdi2,pti2) <=>
@@ -239,7 +216,8 @@ let dest_environment_def = new_recursive_definition page_recursion
   `(!pd. dest_environment (Environment pd) = SOME pd) /\
    (!pd. dest_environment (Normal pd) = NONE) /\
    (!pd. dest_environment (PageDirectory pd) = NONE) /\
-   (!pd. dest_environment (PageTable pd) = NONE)`;;
+   (!pd. dest_environment (PageTable pd) = NONE) /\
+   (dest_environment NotInstalled = NONE)`;;
 
 export_thm dest_environment_def;;
 
@@ -247,7 +225,8 @@ let dest_normal_def = new_recursive_definition page_recursion
   `(!pd. dest_normal (Environment pd) = NONE) /\
    (!pd. dest_normal (Normal pd) = SOME pd) /\
    (!pd. dest_normal (PageDirectory pd) = NONE) /\
-   (!pd. dest_normal (PageTable pd) = NONE)`;;
+   (!pd. dest_normal (PageTable pd) = NONE) /\
+   (dest_normal NotInstalled = NONE)`;;
 
 export_thm dest_normal_def;;
 
@@ -255,7 +234,8 @@ let dest_environment_or_normal_def = new_recursive_definition page_recursion
   `(!pd. dest_environment_or_normal (Environment pd) = SOME pd) /\
    (!pd. dest_environment_or_normal (Normal pd) = SOME pd) /\
    (!pd. dest_environment_or_normal (PageDirectory pd) = NONE) /\
-   (!pd. dest_environment_or_normal (PageTable pd) = NONE)`;;
+   (!pd. dest_environment_or_normal (PageTable pd) = NONE) /\
+   (dest_environment_or_normal NotInstalled = NONE)`;;
 
 export_thm dest_environment_or_normal_def;;
 
@@ -263,7 +243,8 @@ let dest_page_directory_def = new_recursive_definition page_recursion
   `(!pd. dest_page_directory (Environment pd) = NONE) /\
    (!pd. dest_page_directory (Normal pd) = NONE) /\
    (!pd. dest_page_directory (PageDirectory pd) = SOME pd) /\
-   (!pd. dest_page_directory (PageTable pd) = NONE)`;;
+   (!pd. dest_page_directory (PageTable pd) = NONE) /\
+   (dest_page_directory NotInstalled = NONE)`;;
 
 export_thm dest_page_directory_def;;
 
@@ -271,9 +252,19 @@ let dest_page_table_def = new_recursive_definition page_recursion
   `(!pd. dest_page_table (Environment pd) = NONE) /\
    (!pd. dest_page_table (Normal pd) = NONE) /\
    (!pd. dest_page_table (PageDirectory pd) = NONE) /\
-   (!pd. dest_page_table (PageTable pd) = SOME pd)`;;
+   (!pd. dest_page_table (PageTable pd) = SOME pd) /\
+   (dest_page_table NotInstalled = NONE)`;;
 
 export_thm dest_page_table_def;;
+
+let is_not_installed_def = new_recursive_definition page_recursion
+  `(!pd. is_not_installed (Environment pd) = F) /\
+   (!pd. is_not_installed (Normal pd) = F) /\
+   (!pd. is_not_installed (PageDirectory pd) = F) /\
+   (!pd. is_not_installed (PageTable pd) = F) /\
+   (is_not_installed NotInstalled = T)`;;
+
+export_thm is_not_installed_def;;
 
 let is_environment_def = new_definition
   `!p. is_environment p <=> is_some (dest_environment p)`;;
@@ -301,6 +292,11 @@ let is_page_directory_or_table_def = new_definition
      is_page_directory p \/ is_page_table p`;;
 
 export_thm is_page_directory_or_table_def;;
+
+let is_installed_def = new_definition
+  `!p. is_installed p <=> ~is_not_installed p`;;
+
+export_thm is_installed_def;;
 
 (* Regions of physical memory *)
 
@@ -543,10 +539,9 @@ export_thm mapped_page_def;;
 let unmapped_page_def = new_definition
   `!s ppa.
      unmapped_page s ppa <=>
-     forall_installed_pages
-       (\pd.
-          is_page_directory (status s pd) ==>
-          !vpa. ~(translate_page s pd vpa = SOME ppa))`;;
+     !pd.
+       is_page_directory (status s pd) ==>
+       !vpa. ~(translate_page s pd vpa = SOME ppa)`;;
 
 export_thm unmapped_page_def;;
 
@@ -805,52 +800,48 @@ export_thm reference_maps_kernel_addresses_def;;
 let reference_contains_environment_def = new_definition
   `!s.
      reference_contains_environment s <=>
-     forall_installed_pages
-       (\ppa.
-          is_environment (status s ppa) ==>
-          ?vpa. translate_page s (reference s) vpa = SOME ppa)`;;
+     !ppa.
+       is_environment (status s ppa) ==>
+       ?vpa. translate_page s (reference s) vpa = SOME ppa`;;
 
 export_thm reference_contains_environment_def;;
 
 let environment_only_in_reference_def = new_definition
   `!s.
      environment_only_in_reference s <=>
-     forall_installed_pages
-       (\pd.
-          is_page_directory (status s pd) ==>
-          !vpa.
-            case_option
-              T
-              (\ppa.
-                 is_environment (status s ppa) ==>
-                 mapped_page s (reference s) vpa)
-              (translate_page s pd vpa))`;;
+     !pd.
+       is_page_directory (status s pd) ==>
+       !vpa.
+          case_option
+            T
+            (\ppa.
+               is_environment (status s ppa) ==>
+               mapped_page s (reference s) vpa)
+            (translate_page s pd vpa)`;;
 
 export_thm environment_only_in_reference_def;;
 
 let page_directories_contain_reference_def = new_definition
   `!s.
      page_directories_contain_reference s <=>
-     forall_installed_pages
-       (\pd.
-          is_page_directory (status s pd) ==>
-          !vpa.
-            is_user_page_address vpa \/
-            translate_page s (reference s) vpa = translate_page s pd vpa)`;;
+     !pd.
+       is_page_directory (status s pd) ==>
+       !vpa.
+         is_user_page_address vpa \/
+         translate_page s (reference s) vpa = translate_page s pd vpa`;;
 
 export_thm page_directories_contain_reference_def;;
 
 let mapped_pages_are_available_def = new_definition
   `!s.
      mapped_pages_are_available s <=>
-     forall_installed_pages
-       (\pd.
-          is_page_directory (status s pd) ==>
-          !vpa.
-            case_option
-              T
-              (\ppa. member_installed_pages ppa)
-              (translate_page s pd vpa))`;;
+     !pd.
+       is_page_directory (status s pd) ==>
+       !vpa.
+         case_option
+           T
+           (\ppa. is_installed (status s ppa))
+           (translate_page s pd vpa)`;;
 
 export_thm mapped_pages_are_available_def;;
 
@@ -917,17 +908,16 @@ let write_e_def = new_definition
      case_option
        F
        (\ (ppa,off).
-         forall_installed_pages
-           (\ppa'.
-              if ppa' = ppa then
-                case_option
-                  F
-                  (\f.
-                     dest_environment (status s' ppa') =
-                     SOME (update_page_data off b f))
-                  (dest_environment (status s ppa'))
-              else
-                status s ppa' = status s' ppa'))
+         !ppa'.
+           if ppa' = ppa then
+             case_option
+               F
+               (\f.
+                  dest_environment (status s' ppa') =
+                  SOME (update_page_data off b f))
+               (dest_environment (status s ppa'))
+           else
+             status s ppa' = status s' ppa')
        (translation s va)`;;
 
 export_thm write_e_def;;
@@ -953,11 +943,10 @@ let allocate_page_directory_h_def = new_definition
      reference s = reference s' /\
      regions s = regions s' /\
      unmapped_normal_page s ppa /\
-     forall_installed_pages
-       (\ppa'.
-          status s' ppa' =
-          (if ppa' = ppa then status s' (reference s')
-           else status s ppa))`;;
+     !ppa'.
+       status s' ppa' =
+       (if ppa' = ppa then status s' (reference s')
+        else status s ppa)`;;
 
 export_thm allocate_page_directory_h_def;;
 
@@ -976,8 +965,8 @@ let add_mapping_def = new_definition
      reference s = reference s' /\
      regions s = regions s' /\
      is_page_directory (status s pd) /\
-     ALL (unmapped_normal_page s) pts /\
-     ALL (\ppa. ~member_physical_region ppa pr) pts /\
+     (!pt. pt IN pts ==> unmapped_normal_page s pt) /\
+     (!pt. pt IN pts ==> ~member_physical_region pt pr) /\
      forall_physical_region (is_normal_page s) pr /\
      physical_region_length pr = virtual_region_length vr /\
      is_user_region vr /\
@@ -988,23 +977,24 @@ let add_mapping_def = new_definition
           translate_page s' pd vpa = translate_page s pd vpa) /\
      ALL I (zipwith (\vpa ppa. translate_page s' pd vpa = SOME ppa)
               (virtual_region_to_list vr) (physical_region_to_list pr)) /\
-     forall_installed_pages
-       (\ppa.
-          if MEM ppa pts then
-            table_mapped_in_directory s' pd ppa
-          else if ppa = pd then
-            is_page_directory (status s' ppa)
-          else if table_mapped_in_directory s pd ppa then
-            is_page_table (status s' ppa)
-          else
-            status s ppa = status s' ppa)`;;
+     !ppa.
+       if ppa IN pts then
+         table_mapped_in_directory s' pd ppa
+       else if ppa = pd then
+         is_page_directory (status s' ppa)
+       else if table_mapped_in_directory s pd ppa then
+         is_page_table (status s' ppa)
+       else
+         status s ppa = status s' ppa`;;
 
 let add_mapping_h_def = new_definition
   `!pd pts pr vr s s'.
      add_mapping_h pd pts pr vr s s' <=>
      LENGTH (nub pts) = LENGTH pts /\
      pr IN all_regions (regions s) /\
-     ?n. n <= LENGTH pts /\ add_mapping pd (take n pts) pr vr s s'`;;
+     ?n.
+       n <= LENGTH pts /\
+       add_mapping pd (set_of_list (take n pts)) pr vr s s'`;;
 
 export_thm add_mapping_h_def;;
 
@@ -1015,9 +1005,8 @@ let remove_mapping_h_def = new_definition
        F
        (\prs.
           let pr = PhysicalRegion prs (virtual_region_length vr) in
-          let pts = FILTER (\ppa. is_page_table (status s ppa) /\
-                                  status s' ppa = Normal zero_page_data)
-                      installed_physical_pages in
+          let pts = { ppa | is_page_table (status s ppa) /\
+                            status s' ppa = Normal zero_page_data } in
           add_mapping pd pts pr vr s' s)
        (translate_page s pd (virtual_region_start vr))`;;
 
@@ -1064,17 +1053,16 @@ let write_k_def = new_definition
      case_option
        F
        (\ (ppa,off).
-         forall_installed_pages
-           (\ppa'.
-              if ppa' = ppa then
-                case_option
-                  F
-                  (\f.
-                     dest_normal (status s' ppa') =
-                     SOME (update_page_data off b f))
-                  (dest_normal (status s ppa'))
-              else
-                status s ppa' = status s' ppa'))
+          !ppa'.
+            if ppa' = ppa then
+              case_option
+                F
+                (\f.
+                   dest_normal (status s' ppa') =
+                   SOME (update_page_data off b f))
+                (dest_normal (status s ppa'))
+            else
+              status s ppa' = status s' ppa')
        (translation s va)`;;
 
 export_thm write_k_def;;
@@ -1089,17 +1077,16 @@ let write_u_def = new_definition
      case_option
        F
        (\ (ppa,off).
-         forall_installed_pages
-           (\ppa'.
-              if ppa' = ppa then
-                case_option
-                  F
-                  (\f.
-                     dest_normal (status s' ppa') =
-                     SOME (update_page_data off b f))
-                  (dest_normal (status s ppa'))
-              else
-                status s ppa' = status s' ppa'))
+          !ppa'.
+            if ppa' = ppa then
+              case_option
+                F
+                (\f.
+                   dest_normal (status s' ppa') =
+                   SOME (update_page_data off b f))
+                (dest_normal (status s ppa'))
+            else
+              status s ppa' = status s' ppa')
        (translation s va)`;;
 
 export_thm write_u_def;;
@@ -1303,15 +1290,15 @@ export_thm view_inj;;
 
 let translate_page_inj = prove
   (`!s s'.
-      forall_installed_pages
-        (\ppa.
-           is_page_directory_or_table (status s ppa) \/
-           is_page_directory_or_table (status s' ppa) ==>
-           (status s ppa = status s' ppa)) ==>
+      (!ppa.
+         is_page_directory_or_table (status s ppa) \/
+         is_page_directory_or_table (status s' ppa) ==>
+         (status s ppa = status s' ppa)) ==>
       translate_page s = translate_page s'`,
    REWRITE_TAC [translate_page_def; FUN_EQ_THM] THEN
 
 
+(***
 let write_e_translate_page = prove
   (`!s s' va b.
       write_e va b s s' ==>
@@ -1331,9 +1318,7 @@ let local_respect_write_e_view_u = prove
 
    REWRITE_TAC [write_e_def] THEN
    CHEAT_TAC);;
-   
 
-(***
 let local_respect = prove
   (`!s s' a u.
       ~interferes (domain a) u /\
