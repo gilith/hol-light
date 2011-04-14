@@ -1413,6 +1413,20 @@ let write_e_cr3 = prove
 
 export_thm write_e_cr3;;
 
+let write_e_regions = prove
+  (`!s s' va b. write_e va b s s' ==> regions s = regions s'`,
+   REWRITE_TAC [write_e_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm write_e_regions;;
+
+let write_e_reference = prove
+  (`!s s' va b. write_e va b s s' ==> reference s = reference s'`,
+   REWRITE_TAC [write_e_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm write_e_reference;;
+
 let write_e_translate_page_cr3 = prove
   (`!s s' va b.
       write_e va b s s' ==>
@@ -1483,6 +1497,312 @@ let write_e_reference_count_cr3 = prove
 
 export_thm write_e_reference_count_cr3;;
 
+let write_k_status = prove
+  (`!s s' va b ppa.
+      write_k va b s s' /\
+      (~is_normal (status s ppa) \/
+       ~is_normal (status s' ppa)) ==>
+      status s ppa = status s' ppa`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [write_k_def] THEN
+   DISCH_THEN
+     (fun th ->
+        STRIP_ASSUME_TAC (CONJUNCT1 th) THEN
+        MP_TAC (CONJUNCT2 th)) THEN
+   PAT_ASSUM `case_option X (Y : A -> B) Z` THEN
+   MP_TAC (ISPEC `translation s va` option_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   MP_TAC (ISPEC `a : physical_address` PAIR_SURJECTIVE) THEN
+   STRIP_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> MP_TAC (SPEC `ppa : physical_page_address` th)) THEN
+   bool_cases_tac' `ppa : physical_page_address = x` THENL
+   [ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]);
+    ALL_TAC] THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [] THEN
+   MP_TAC (SPEC `status s x` page_cases) THEN
+   STRIP_TAC THEN
+   MP_TAC (SPEC `status s' x` page_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [is_normal_def; dest_normal_def; case_option_def; page_distinct;
+      page_inj; option_distinct; is_some_def]);;
+
+export_thm write_k_status;;
+
+let write_k_translate_page = prove
+  (`!s s' va b.
+      write_k va b s s' ==>
+      translate_page s = translate_page s'`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC translate_page_inj THEN
+   GEN_TAC THEN
+   DISCH_THEN ASSUME_TAC THEN
+   MATCH_MP_TAC write_k_status THEN
+   EXISTS_TAC `va : virtual_address` THEN
+   EXISTS_TAC `b : byte` THEN
+   ASM_REWRITE_TAC [] THEN
+   POP_ASSUM MP_TAC THEN
+   MP_TAC (SPEC `status s ppa` page_cases) THEN
+   STRIP_TAC THEN
+   MP_TAC (SPEC `status s' ppa` page_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [is_page_directory_or_table_def; is_page_directory_def;
+      is_page_table_def; dest_page_directory_def; is_some_def;
+      dest_page_table_def; dest_normal_def; case_option_def; page_distinct;
+      page_inj; option_distinct; is_normal_def]);;
+
+export_thm write_k_translate_page;;
+
+let write_k_cr3 = prove
+  (`!s s' va b. write_k va b s s' ==> cr3 s = cr3 s'`,
+   REWRITE_TAC [write_k_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm write_k_cr3;;
+
+let write_k_regions = prove
+  (`!s s' va b. write_k va b s s' ==> regions s = regions s'`,
+   REWRITE_TAC [write_k_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm write_k_regions;;
+
+let write_k_reference = prove
+  (`!s s' va b. write_k va b s s' ==> reference s = reference s'`,
+   REWRITE_TAC [write_k_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm write_k_reference;;
+
+let write_k_translate_page_cr3 = prove
+  (`!s s' va b.
+      write_k va b s s' ==>
+      translate_page s (cr3 s) = translate_page s' (cr3 s')`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_k_translate_page) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_k_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+export_thm write_k_translate_page_cr3;;
+
+let write_k_dest_environment = prove
+  (`!s s' va b ppa.
+      write_k va b s s' ==>
+      dest_environment (status s ppa) = dest_environment (status s' ppa)`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`;
+             `ppa : physical_page_address`]
+      write_k_status) THEN
+   ASM_REWRITE_TAC [] THEN
+   MP_TAC (SPEC `status s ppa` page_cases) THEN
+   STRIP_TAC THEN
+   MP_TAC (SPEC `status s' ppa` page_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [dest_normal_def; dest_environment_def; case_option_def; page_distinct;
+      is_some_def; page_inj; option_distinct; is_normal_def] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+export_thm write_k_dest_environment;;
+
+let write_k_reference_count = prove
+  (`!s s' va b.
+      write_k va b s s' ==>
+      reference_count s = reference_count s'`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC translate_page_reference_count THEN
+   MATCH_MP_TAC write_k_translate_page THEN
+   EXISTS_TAC `va : virtual_address` THEN
+   EXISTS_TAC `b : byte` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm write_k_reference_count;;
+
+let write_k_reference_count_cr3 = prove
+  (`!s s' va b.
+      write_k va b s s' ==>
+      reference_count s (cr3 s) = reference_count s' (cr3 s')`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_k_reference_count) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_k_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+export_thm write_k_reference_count_cr3;;
+
+let write_u_status = prove
+  (`!s s' va b ppa.
+      write_u va b s s' /\
+      (~is_normal (status s ppa) \/
+       ~is_normal (status s' ppa)) ==>
+      status s ppa = status s' ppa`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [write_u_def] THEN
+   DISCH_THEN
+     (fun th ->
+        STRIP_ASSUME_TAC (CONJUNCT1 th) THEN
+        MP_TAC (CONJUNCT2 th)) THEN
+   PAT_ASSUM `case_option X (Y : A -> B) Z` THEN
+   MP_TAC (ISPEC `translation s va` option_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   MP_TAC (ISPEC `a : physical_address` PAIR_SURJECTIVE) THEN
+   STRIP_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> MP_TAC (SPEC `ppa : physical_page_address` th)) THEN
+   bool_cases_tac' `ppa : physical_page_address = x` THENL
+   [ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]);
+    ALL_TAC] THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [] THEN
+   MP_TAC (SPEC `status s x` page_cases) THEN
+   STRIP_TAC THEN
+   MP_TAC (SPEC `status s' x` page_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [is_normal_def; dest_normal_def; case_option_def; page_distinct;
+      page_inj; option_distinct; is_some_def]);;
+
+export_thm write_u_status;;
+
+let write_u_translate_page = prove
+  (`!s s' va b.
+      write_u va b s s' ==>
+      translate_page s = translate_page s'`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC translate_page_inj THEN
+   GEN_TAC THEN
+   DISCH_THEN ASSUME_TAC THEN
+   MATCH_MP_TAC write_u_status THEN
+   EXISTS_TAC `va : virtual_address` THEN
+   EXISTS_TAC `b : byte` THEN
+   ASM_REWRITE_TAC [] THEN
+   POP_ASSUM MP_TAC THEN
+   MP_TAC (SPEC `status s ppa` page_cases) THEN
+   STRIP_TAC THEN
+   MP_TAC (SPEC `status s' ppa` page_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [is_page_directory_or_table_def; is_page_directory_def;
+      is_page_table_def; dest_page_directory_def; is_some_def;
+      dest_page_table_def; dest_normal_def; case_option_def; page_distinct;
+      page_inj; option_distinct; is_normal_def]);;
+
+export_thm write_u_translate_page;;
+
+let write_u_cr3 = prove
+  (`!s s' va b. write_u va b s s' ==> cr3 s = cr3 s'`,
+   REWRITE_TAC [write_u_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm write_u_cr3;;
+
+let write_u_regions = prove
+  (`!s s' va b. write_u va b s s' ==> regions s = regions s'`,
+   REWRITE_TAC [write_u_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm write_u_regions;;
+
+let write_u_reference = prove
+  (`!s s' va b. write_u va b s s' ==> reference s = reference s'`,
+   REWRITE_TAC [write_u_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm write_u_reference;;
+
+let write_u_translate_page_cr3 = prove
+  (`!s s' va b.
+      write_u va b s s' ==>
+      translate_page s (cr3 s) = translate_page s' (cr3 s')`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_u_translate_page) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_u_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+export_thm write_u_translate_page_cr3;;
+
+let write_u_dest_environment = prove
+  (`!s s' va b ppa.
+      write_u va b s s' ==>
+      dest_environment (status s ppa) = dest_environment (status s' ppa)`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`;
+             `ppa : physical_page_address`]
+      write_u_status) THEN
+   ASM_REWRITE_TAC [] THEN
+   MP_TAC (SPEC `status s ppa` page_cases) THEN
+   STRIP_TAC THEN
+   MP_TAC (SPEC `status s' ppa` page_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [dest_normal_def; dest_environment_def; case_option_def; page_distinct;
+      is_some_def; page_inj; option_distinct; is_normal_def] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+export_thm write_u_dest_environment;;
+
+let write_u_reference_count = prove
+  (`!s s' va b.
+      write_u va b s s' ==>
+      reference_count s = reference_count s'`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC translate_page_reference_count THEN
+   MATCH_MP_TAC write_u_translate_page THEN
+   EXISTS_TAC `va : virtual_address` THEN
+   EXISTS_TAC `b : byte` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm write_u_reference_count;;
+
+let write_u_reference_count_cr3 = prove
+  (`!s s' va b.
+      write_u va b s s' ==>
+      reference_count s (cr3 s) = reference_count s' (cr3 s')`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_u_reference_count) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_u_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+export_thm write_u_reference_count_cr3;;
+
 let local_respect_write_e_view_u = prove
   (`!s s' va b. write_e va b s s' ==> view_u s = view_u s'`,
    REWRITE_TAC [view_u_def; u_view_inj] THEN
@@ -1514,6 +1834,136 @@ let local_respect_write_e_view_u = prove
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]));;
 
+let local_respect_write_k_view_e = prove
+  (`!s s' va b. write_k va b s s' ==> view_e s = view_e s'`,
+   REWRITE_TAC [view_e_def; e_view_inj] THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_k_translate_page_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   GEN_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`;
+             `x : physical_page_address`]
+      write_k_dest_environment) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM; option_inj; PAIR_EQ] THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_k_reference_count_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+let local_respect_write_k_view_h = prove
+  (`!s s' va b. write_k va b s s' ==> view_h s = view_h s'`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [view_h_def; h_view_inj] THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_k_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_k_reference) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_k_regions) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   GEN_TAC THEN
+   REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`;
+             `x : physical_page_address`]
+      write_k_status) THEN
+   ASM_REWRITE_TAC [] THEN
+   MP_TAC (SPEC `status s x` page_cases) THEN
+   STRIP_TAC THEN
+   MP_TAC (SPEC `status s' x` page_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [is_normal_def; is_some_def;
+      dest_normal_def; case_option_def; page_distinct;
+      page_inj; option_distinct; option_inj]);;
+
+let local_respect_write_u_view_e = prove
+  (`!s s' va b. write_u va b s s' ==> view_e s = view_e s'`,
+   REWRITE_TAC [view_e_def; e_view_inj] THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_u_translate_page_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   GEN_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`;
+             `x : physical_page_address`]
+      write_u_dest_environment) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM; option_inj; PAIR_EQ] THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_u_reference_count_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+let local_respect_write_u_view_h = prove
+  (`!s s' va b. write_u va b s s' ==> view_h s = view_h s'`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [view_h_def; h_view_inj] THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_u_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_u_reference) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_u_regions) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   GEN_TAC THEN
+   REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`;
+             `x : physical_page_address`]
+      write_u_status) THEN
+   ASM_REWRITE_TAC [] THEN
+   MP_TAC (SPEC `status s x` page_cases) THEN
+   STRIP_TAC THEN
+   MP_TAC (SPEC `status s' x` page_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [is_normal_def; is_some_def;
+      dest_normal_def; case_option_def; page_distinct;
+      page_inj; option_distinct; option_inj]);;
+
 (***
 let local_respect = prove
   (`!s s' a u.
@@ -1544,10 +1994,26 @@ let local_respect = prove
     ALL_TAC;
     ALL_TAC;
     ALL_TAC;
-    ALL_TAC;
-    ALL_TAC;
-    ALL_TAC;
-    ALL_TAC]);;
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC local_respect_write_k_view_e THEN
+    EXISTS_TAC `a0 : virtual_address` THEN
+    EXISTS_TAC `a1 : byte` THEN
+    ASM_REWRITE_TAC [];
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC local_respect_write_k_view_h THEN
+    EXISTS_TAC `a0 : virtual_address` THEN
+    EXISTS_TAC `a1 : byte` THEN
+    ASM_REWRITE_TAC [];
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC local_respect_write_u_view_e THEN
+    EXISTS_TAC `a0 : virtual_address` THEN
+    EXISTS_TAC `a1 : byte` THEN
+    ASM_REWRITE_TAC [];
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC local_respect_write_u_view_h THEN
+    EXISTS_TAC `a0 : virtual_address` THEN
+    EXISTS_TAC `a1 : byte` THEN
+    ASM_REWRITE_TAC []]);;
 
 export_thm local_respect;;
 
