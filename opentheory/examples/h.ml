@@ -8,6 +8,8 @@ logfile "h-def";;
 
 new_type_abbrev("region_length",`:num`);;
 
+new_type_abbrev("reference_count",`:num`);;
+
 new_type_abbrev("superpage_address",`:word10`);;
 
 new_type_abbrev("superpage_offset",`:word10`);;
@@ -227,7 +229,8 @@ let page_induct,page_recursion = define_type
        Environment page_data
      | Normal page_data
      | PageDirectory directory_page_data
-     | PageTable table_page_data";;
+     | PageTable table_page_data
+     | NotInstalled";;
 
 export_thm page_induct;;
 export_thm page_recursion;;
@@ -291,6 +294,13 @@ let is_page_table_def = new_definition
   `!p. is_page_table p <=> is_some (dest_page_table p)`;;
 
 export_thm is_page_table_def;;
+
+let is_page_directory_or_table_def = new_definition
+  `!p.
+     is_page_directory_or_table p <=>
+     is_page_directory p \/ is_page_table p`;;
+
+export_thm is_page_directory_or_table_def;;
 
 (* Regions of physical memory *)
 
@@ -506,6 +516,13 @@ let translation_def = new_definition
 
 export_thm translation_def;;
 
+let reference_count_def = new_definition
+  `!s pd ppa.
+     reference_count s pd ppa =
+     CARD { vpa | translate_page s pd vpa = SOME ppa }`;;
+
+export_thm reference_count_def;;
+
 let table_mapped_in_directory_def = new_definition
   `!s pd pt.
      table_mapped_in_directory s pd pt <=>
@@ -591,7 +608,8 @@ export_thm domain_def;;
 
 let e_view_induct,e_view_recursion = define_type
     "e_view =
-       EView (virtual_page_address -> page_data option)";;
+       EView
+         (virtual_page_address -> (page_data # reference_count) option)";;
 
 export_thm e_view_induct;;
 export_thm e_view_recursion;;
@@ -608,7 +626,11 @@ let view_e_def = new_definition
        (\vpa.
           case_option
             NONE
-            (\ppa. dest_environment (status s ppa))
+            (\ppa.
+               case_option
+                 NONE
+                 (\f. SOME (f, reference_count s (cr3 s) ppa))
+                 (dest_environment (status s ppa)))
             (translate_page s (cr3 s) vpa))`;;
 
 export_thm view_e_def;;
@@ -660,7 +682,7 @@ export_thm view_h_def;;
 let k_view_induct,k_view_recursion = define_type
     "k_view =
        KView
-         (virtual_page_address -> page_data option)
+         (virtual_page_address -> (page_data # reference_count) option)
          region_state";;
 
 export_thm k_view_induct;;
@@ -684,10 +706,13 @@ let view_k_def = new_definition
           case_option
             NONE
             (\ppa.
-               if is_kernel_page_address vpa then
-                 dest_environment_or_normal (status s ppa)
-               else
-                 dest_environment (status s ppa))
+               case_option
+                 NONE
+                 (\f. SOME (f, reference_count s (cr3 s) ppa))
+                 (if is_kernel_page_address vpa then
+                    dest_environment_or_normal (status s ppa)
+                  else
+                    dest_environment (status s ppa)))
             (translate_page s (cr3 s) vpa))
        (regions s)`;;
 
@@ -695,7 +720,8 @@ export_thm view_k_def;;
 
 let u_view_induct,u_view_recursion = define_type
     "u_view =
-       UView (virtual_page_address -> page_data option)";;
+       UView
+         (virtual_page_address -> (page_data # reference_count) option)";;
 
 export_thm u_view_induct;;
 export_thm u_view_recursion;;
@@ -713,7 +739,11 @@ let view_u_def = new_definition
           if is_user_page_address vpa then
             case_option
               NONE
-              (\ppa. dest_normal (status s ppa))
+              (\ppa.
+                 case_option
+                   NONE
+                   (\f. SOME (f, reference_count s (cr3 s) ppa))
+                   (dest_normal (status s ppa)))
               (translate_page s (cr3 s) vpa)
           else
             NONE)`;;
@@ -1271,7 +1301,60 @@ let view_inj = injectivity "view";;
 
 export_thm view_inj;;
 
+let translate_page_inj = prove
+  (`!s s'.
+      forall_installed_pages
+        (\ppa.
+           is_page_directory_or_table (status s ppa) \/
+           is_page_directory_or_table (status s' ppa) ==>
+           (status s ppa = status s' ppa)) ==>
+      translate_page s = translate_page s'`,
+   REWRITE_TAC [translate_page_def; FUN_EQ_THM] THEN
+
+
+let write_e_translate_page = prove
+  (`!s s' va b.
+      write_e va b s s' ==>
+      translate_page s = translate_page s'`,
+   REWRITE_TAC [write_e_def] THEN
+
+
+let local_respect_write_e_view_u = prove
+  (`!s s' va b.
+      wellformed s /\ wellformed s' /\ write_e va b s s' ==>
+      view_u s = view_u s'`,
+   REWRITE_TAC [view_u_def; u_view_inj] THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   REPEAT STRIP_TAC THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+
+   REWRITE_TAC [write_e_def] THEN
+   CHEAT_TAC);;
+   
+
 (***
+let local_respect = prove
+  (`!s s' a u.
+      ~interferes (domain a) u /\
+      action a s s' ==>
+      view_equiv u s s'`,
+   REWRITE_TAC [action_def; view_equiv_def] THEN
+   GEN_TAC THEN
+   GEN_TAC THEN
+   MATCH_MP_TAC action_induct THEN
+   REPEAT CONJ_TAC THEN
+   REPEAT GEN_TAC THEN
+   SPEC_TAC (`u : domain`, `u : domain`) THEN
+   MATCH_MP_TAC domain_induct THEN
+   REPEAT CONJ_TAC THEN
+   REWRITE_TAC
+     [interferes_def; domain_def; action_spec_def; view_def; view_inj;
+      domain_distinct] THEN
+   CHEAT_TAC);;
+
+export_thm local_respect;;
+
 let weak_step_consistency = prove
   (`!s s' t t' a u.
       view_equiv u s t /\
@@ -1313,27 +1396,6 @@ let output_consistency = prove
    ASM_REWRITE_TAC []);;
 
 export_thm output_consistency;;
-
-let local_respect = prove
-  (`!s s' a u.
-      ~interferes (domain a) u /\
-      action a s s' ==>
-      view_equiv u s s'`,
-   REWRITE_TAC [action_def; view_equiv_def] THEN
-   GEN_TAC THEN
-   GEN_TAC THEN
-   MATCH_MP_TAC action_induct THEN
-   REPEAT CONJ_TAC THEN
-   REPEAT GEN_TAC THEN
-   SPEC_TAC (`u : domain`, `u : domain`) THEN
-   MATCH_MP_TAC domain_induct THEN
-   REPEAT CONJ_TAC THEN
-   REWRITE_TAC
-     [interferes_def; domain_def; action_spec_def; view_def; view_inj;
-      domain_distinct] THEN
-   CHEAT_TAC);;
-
-export_thm local_respect;;
 ***)
 
 logfile_end ();;
