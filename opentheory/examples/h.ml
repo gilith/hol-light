@@ -792,8 +792,8 @@ let reference_maps_kernel_addresses_def = new_definition
   `!s.
      reference_maps_kernel_addresses s <=>
      !vpa.
-       ~is_kernel_page_address vpa ==>
-       is_none (translate_page s (reference s) vpa)`;;
+       mapped_page s (reference s) vpa ==>
+       is_kernel_page_address vpa`;;
 
 export_thm reference_maps_kernel_addresses_def;;
 
@@ -809,15 +809,13 @@ export_thm reference_contains_environment_def;;
 let environment_only_in_reference_def = new_definition
   `!s.
      environment_only_in_reference s <=>
-     !pd.
-       is_page_directory (status s pd) ==>
-       !vpa.
-          case_option
-            T
-            (\ppa.
-               is_environment (status s ppa) ==>
-               mapped_page s (reference s) vpa)
-            (translate_page s pd vpa)`;;
+     !pd vpa.
+       case_option
+         T
+         (\ppa.
+            is_environment (status s ppa) ==>
+            mapped_page s (reference s) vpa)
+         (translate_page s pd vpa)`;;
 
 export_thm environment_only_in_reference_def;;
 
@@ -835,13 +833,11 @@ export_thm page_directories_contain_reference_def;;
 let mapped_pages_are_available_def = new_definition
   `!s.
      mapped_pages_are_available s <=>
-     !pd.
-       is_page_directory (status s pd) ==>
-       !vpa.
-         case_option
-           T
-           (\ppa. is_installed (status s ppa))
-           (translate_page s pd vpa)`;;
+     !pd vpa.
+        case_option
+          T
+          (\ppa. is_installed (status s ppa))
+          (translate_page s pd vpa)`;;
 
 export_thm mapped_pages_are_available_def;;
 
@@ -1353,6 +1349,26 @@ let translate_page_reference_count = prove
    DISCH_THEN (fun th -> REWRITE_TAC [th]));;
 
 export_thm translate_page_reference_count;;
+
+(***
+let environment_only_kernel_addresses = prove
+  (`!s pd vpa ppa.
+      wellformed s /\
+      translate_page s pd vpa = SOME ppa /\
+      is_environment (status s ppa) ==>
+      is_kernel_page_address vpa`,
+   REPEAT STRIP_TAC
+reference_maps_kernel_addresses_def
+environment_only_in_reference_def
+mapped_page_def
+
+let translate_page_environment_reference = prove
+  (`!s pd vpa ppa.
+      wellformed s /\
+      translate_page s pd vpa = SOME ppa /\
+      is_environment (status s ppa) ==>
+      translate_page s (reference s) vpa = SOME ppa`,
+***)
 
 let write_e_status = prove
   (`!s s' va b ppa.
@@ -1964,6 +1980,39 @@ let local_respect_derive_region_h_view_e = prove
       derive_region_h_reference_count_cr3) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+(***
+let local_respect_execute_h_view_e = prove
+  (`!s s' pd. execute_h pd s s' ==> view_e s = view_e s'`,
+   REWRITE_TAC [view_e_def; e_view_inj] THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pr : physical_region`;
+             `ppa : physical_page_address`; `l : region_length`]
+      derive_region_h_translate_page_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   GEN_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pr : physical_region`;
+             `ppa : physical_page_address`; `l : region_length`]
+      derive_region_h_status) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM; option_inj; PAIR_EQ] THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pr : physical_region`;
+             `ppa : physical_page_address`; `l : region_length`]
+      derive_region_h_reference_count_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+***)
 
 let local_respect_write_k_view_e = prove
   (`!s s' va b. write_k va b s s' ==> view_e s = view_e s'`,
