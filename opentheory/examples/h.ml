@@ -1284,6 +1284,29 @@ let view_inj = injectivity "view";;
 
 export_thm view_inj;;
 
+let user_page_address_not_kernel = prove
+  (`!vpa. is_user_page_address vpa <=> ~is_kernel_page_address vpa`,
+   REWRITE_TAC [is_kernel_page_address_def]);;
+
+export_thm user_page_address_not_kernel;;
+
+let translate_page_is_page_directory = prove
+  (`!s pd vpa.
+      is_some (translate_page s pd vpa) ==>
+      is_page_directory (status s pd)`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (ISPEC `vpa : virtual_page_address` PAIR_SURJECTIVE) THEN
+   STRIP_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [translate_page_def] THEN
+   MP_TAC (SPEC `status s pd` page_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [dest_page_directory_def; is_page_directory_def; is_some_def;
+      case_option_def]);;
+
+export_thm translate_page_is_page_directory;;
+
 let translate_page_inj = prove
   (`!s s'.
       (!ppa.
@@ -1350,17 +1373,24 @@ let translate_page_reference_count = prove
 
 export_thm translate_page_reference_count;;
 
-(***
 let environment_only_kernel_addresses = prove
   (`!s pd vpa ppa.
       wellformed s /\
       translate_page s pd vpa = SOME ppa /\
       is_environment (status s ppa) ==>
       is_kernel_page_address vpa`,
-   REPEAT STRIP_TAC
-reference_maps_kernel_addresses_def
-environment_only_in_reference_def
-mapped_page_def
+   REWRITE_TAC [wellformed_def] THEN
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPEC `s : state` reference_maps_kernel_addresses_def) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN MATCH_MP_TAC THEN
+   MP_TAC (SPEC `s : state` environment_only_in_reference_def) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (MP_TAC o SPECL [`pd : physical_page_address`;
+                               `vpa : virtual_page_address`]) THEN
+   ASM_REWRITE_TAC [case_option_def]);;
+
+export_thm environment_only_kernel_addresses;;
 
 let translate_page_environment_reference = prove
   (`!s pd vpa ppa.
@@ -1368,7 +1398,27 @@ let translate_page_environment_reference = prove
       translate_page s pd vpa = SOME ppa /\
       is_environment (status s ppa) ==>
       translate_page s (reference s) vpa = SOME ppa`,
-***)
+   REWRITE_TAC [wellformed_def] THEN
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPEC `s : state` page_directories_contain_reference_def) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (MP_TAC o SPEC `pd : physical_page_address`) THEN
+   COND_TAC THENL
+   [MATCH_MP_TAC translate_page_is_page_directory THEN
+    EXISTS_TAC `vpa : virtual_page_address` THEN
+    ASM_REWRITE_TAC [is_some_def];
+    ALL_TAC] THEN
+   DISCH_THEN (MP_TAC o SPEC `vpa : virtual_page_address`) THEN
+   ASM_REWRITE_TAC [user_page_address_not_kernel;
+                    TAUT `!x y. ~x \/ y <=> (x ==> y)`] THEN
+   DISCH_THEN MATCH_MP_TAC THEN
+   MATCH_MP_TAC environment_only_kernel_addresses THEN
+   EXISTS_TAC `s : state` THEN
+   EXISTS_TAC `pd : physical_page_address` THEN
+   EXISTS_TAC `ppa : physical_page_address` THEN
+   ASM_REWRITE_TAC [wellformed_def]);;
+
+export_thm translate_page_environment_reference;;
 
 let write_e_status = prove
   (`!s s' va b ppa.
@@ -1983,10 +2033,18 @@ let local_respect_derive_region_h_view_e = prove
 
 (***
 let local_respect_execute_h_view_e = prove
-  (`!s s' pd. execute_h pd s s' ==> view_e s = view_e s'`,
+  (`!s s' pd.
+      wellformed s /\ wellformed s' /\ execute_h pd s s' ==>
+      view_e s = view_e s'`,
    REWRITE_TAC [view_e_def; e_view_inj] THEN
    REWRITE_TAC [FUN_EQ_THM] THEN
    REPEAT STRIP_TAC THEN
+   MP_TAC (ISPEC `translate_page s (cr3 s) x` option_cases) THEN
+   STRIP_TAC THEN
+   MP_TAC (ISPEC `translate_page s' (cr3 s') x` option_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_option_def]
+
    MP_TAC
      (SPECL [`s : state`; `s' : state`; `pr : physical_region`;
              `ppa : physical_page_address`; `l : region_length`]
