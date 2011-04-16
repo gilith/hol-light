@@ -1457,7 +1457,7 @@ let translate_page_environment_reference = prove
 export_thm translate_page_environment_reference;;
 
 let reference_count_environment = prove
-  (`!s pd vpa ppa.
+  (`!s pd ppa.
       wellformed s /\
       is_page_directory (status s pd) /\
       is_environment (status s ppa) ==>
