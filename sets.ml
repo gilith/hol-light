@@ -33,6 +33,8 @@ parse_as_infix("=_c",(12,"right"));;
 (* Set membership.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "set-def";;
+
 let IN = new_definition
   `!P:A->bool. !x. x IN P <=> P x`;;
 
@@ -43,6 +45,8 @@ let IN = new_definition
 let EXTENSION = prove
  (`!s t. (s = t) <=> !x:A. x IN s <=> x IN t`,
   REWRITE_TAC[IN; FUN_EQ_THM]);;
+
+export_thm EXTENSION;;
 
 (* ------------------------------------------------------------------------- *)
 (* General specification.                                                    *)
@@ -68,6 +72,8 @@ let IN_ELIM_THM = prove
   TRY(AP_TERM_TAC THEN REWRITE_TAC[FUN_EQ_THM]) THEN
   REWRITE_TAC[SETSPEC] THEN MESON_TAC[]);;
 
+export_thm IN_ELIM_THM;;
+
 (* ------------------------------------------------------------------------- *)
 (* These two definitions are needed first, for the parsing of enumerations.  *)
 (* ------------------------------------------------------------------------- *)
@@ -88,24 +94,38 @@ let UNIV = new_definition
 let UNION = new_definition
   `s UNION t = {x:A | x IN s \/ x IN t}`;;
 
+export_thm UNION;;
+
 let UNIONS = new_definition
   `UNIONS s = {x:A | ?u. u IN s /\ x IN u}`;;
+
+export_thm UNIONS;;
 
 let INTER = new_definition
   `s INTER t = {x:A | x IN s /\ x IN t}`;;
 
+export_thm INTER;;
+
 let INTERS = new_definition
   `INTERS s = {x:A | !u. u IN s ==> x IN u}`;;
 
+export_thm INTERS;;
+
 let DIFF = new_definition
   `s DIFF t =  {x:A | x IN s /\ ~(x IN t)}`;;
+
+export_thm DIFF;;
 
 let INSERT = prove
  (`x INSERT s = {y:A | y IN s \/ (y = x)}`,
   REWRITE_TAC[EXTENSION; INSERT_DEF; IN_ELIM_THM]);;
 
+export_thm INSERT;;
+
 let DELETE = new_definition
   `s DELETE x = {y:A | y IN s /\ ~(y = x)}`;;
+
+export_thm DELETE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Other basic predicates.                                                   *)
@@ -114,14 +134,22 @@ let DELETE = new_definition
 let SUBSET = new_definition
   `s SUBSET t <=> !x:A. x IN s ==> x IN t`;;
 
+export_thm SUBSET;;
+
 let PSUBSET = new_definition
   `(s:A->bool) PSUBSET t <=> s SUBSET t /\ ~(s = t)`;;
+
+export_thm PSUBSET;;
 
 let DISJOINT = new_definition
   `DISJOINT (s:A->bool) t <=> (s INTER t = EMPTY)`;;
 
+export_thm DISJOINT;;
+
 let SING = new_definition
   `SING s = ?x:A. s = {x}`;;
+
+export_thm SING;;
 
 (* ------------------------------------------------------------------------- *)
 (* Finiteness.                                                               *)
@@ -132,8 +160,14 @@ let FINITE_RULES,FINITE_INDUCT,FINITE_CASES =
     `FINITE (EMPTY:A->bool) /\
      !(x:A) s. FINITE s ==> FINITE (x INSERT s)`;;
 
+export_thm FINITE_RULES;;
+export_thm FINITE_INDUCT;;
+export_thm FINITE_CASES;;
+
 let INFINITE = new_definition
   `INFINITE (s:A->bool) <=> ~(FINITE s)`;;
+
+export_thm INFINITE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Stuff concerned with functions.                                           *)
@@ -142,18 +176,26 @@ let INFINITE = new_definition
 let IMAGE = new_definition
   `IMAGE (f:A->B) s = { y | ?x. x IN s /\ (y = f x)}`;;
 
+export_thm IMAGE;;
+
 let INJ = new_definition
   `INJ (f:A->B) s t <=>
      (!x. x IN s ==> (f x) IN t) /\
      (!x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y))`;;
+
+export_thm INJ;;
 
 let SURJ = new_definition
   `SURJ (f:A->B) s t <=>
      (!x. x IN s ==> (f x) IN t) /\
      (!x. (x IN t) ==> ?y. y IN s /\ (f y = x))`;;
 
+export_thm SURJ;;
+
 let BIJ = new_definition
   `BIJ (f:A->B) s t <=> INJ f s t /\ SURJ f s t`;;
+
+export_thm BIJ;;
 
 (* ------------------------------------------------------------------------- *)
 (* Another funny thing.                                                      *)
@@ -162,8 +204,16 @@ let BIJ = new_definition
 let CHOICE = new_definition
   `CHOICE s = @x:A. x IN s`;;
 
+let CHOICE_DEF = prove
+ (`!s:A->bool. ~(s = EMPTY) ==> (CHOICE s) IN s`,
+  REWRITE_TAC[CHOICE; EXTENSION; NOT_IN_EMPTY; NOT_FORALL_THM; EXISTS_THM]);;
+
+export_thm CHOICE_DEF;;
+
 let REST = new_definition
   `REST (s:A->bool) = s DELETE (CHOICE s)`;;
+
+export_thm REST;;
 
 (* ------------------------------------------------------------------------- *)
 (* Basic membership properties.                                              *)
@@ -173,65 +223,87 @@ let NOT_IN_EMPTY = prove
  (`!x:A. ~(x IN EMPTY)`,
   REWRITE_TAC[IN; EMPTY]);;
 
+export_thm NOT_IN_EMPTY;;
+
 let IN_UNIV = prove
  (`!x:A. x IN UNIV`,
   REWRITE_TAC[UNIV; IN]);;
+
+export_thm IN_UNIV;;
+
+logfile "set-thm";;
 
 let IN_UNION = prove
  (`!s t (x:A). x IN (s UNION t) <=> x IN s \/ x IN t`,
   REWRITE_TAC[IN_ELIM_THM; UNION]);;
 
+export_thm IN_UNION;;
+
 let IN_UNIONS = prove
  (`!s (x:A). x IN (UNIONS s) <=> ?t. t IN s /\ x IN t`,
   REWRITE_TAC[IN_ELIM_THM; UNIONS]);;
+
+export_thm IN_UNIONS;;
 
 let IN_INTER = prove
  (`!s t (x:A). x IN (s INTER t) <=> x IN s /\ x IN t`,
   REWRITE_TAC[IN_ELIM_THM; INTER]);;
 
+export_thm IN_INTER;;
+
 let IN_INTERS = prove
  (`!s (x:A). x IN (INTERS s) <=> !t. t IN s ==> x IN t`,
   REWRITE_TAC[IN_ELIM_THM; INTERS]);;
+
+export_thm IN_INTERS;;
 
 let IN_DIFF = prove
  (`!(s:A->bool) t x. x IN (s DIFF t) <=> x IN s /\ ~(x IN t)`,
   REWRITE_TAC[IN_ELIM_THM; DIFF]);;
 
+export_thm IN_DIFF;;
+
 let IN_INSERT = prove
  (`!x:A. !y s. x IN (y INSERT s) <=> (x = y) \/ x IN s`,
   ONCE_REWRITE_TAC[DISJ_SYM] THEN REWRITE_TAC[IN_ELIM_THM; INSERT]);;
+
+export_thm IN_INSERT;;
 
 let IN_DELETE = prove
  (`!s. !x:A. !y. x IN (s DELETE y) <=> x IN s /\ ~(x = y)`,
   REWRITE_TAC[IN_ELIM_THM; DELETE]);;
 
+export_thm IN_DELETE;;
+
 let IN_SING = prove
  (`!x y. x IN {y:A} <=> (x = y)`,
   REWRITE_TAC[IN_INSERT; NOT_IN_EMPTY]);;
+
+export_thm IN_SING;;
 
 let IN_IMAGE = prove
  (`!y:B. !s f. (y IN (IMAGE f s)) <=> ?x:A. (y = f x) /\ x IN s`,
   ONCE_REWRITE_TAC[CONJ_SYM] THEN REWRITE_TAC[IN_ELIM_THM; IMAGE]);;
 
+export_thm IN_IMAGE;;
+
 let IN_REST = prove
  (`!x:A. !s. x IN (REST s) <=> x IN s /\ ~(x = CHOICE s)`,
   REWRITE_TAC[REST; IN_DELETE]);;
+
+export_thm IN_REST;;
 
 let FORALL_IN_INSERT = prove
  (`!P a s. (!x. x IN (a INSERT s) ==> P x) <=> P a /\ (!x. x IN s ==> P x)`,
   REWRITE_TAC[IN_INSERT] THEN MESON_TAC[]);;
 
+export_thm FORALL_IN_INSERT;;
+
 let EXISTS_IN_INSERT = prove
  (`!P a s. (?x. x IN (a INSERT s) /\ P x) <=> P a \/ ?x. x IN s /\ P x`,
   REWRITE_TAC[IN_INSERT] THEN MESON_TAC[]);;
 
-(* ------------------------------------------------------------------------- *)
-(* Basic property of the choice function.                                    *)
-(* ------------------------------------------------------------------------- *)
-
-let CHOICE_DEF = prove
- (`!s:A->bool. ~(s = EMPTY) ==> (CHOICE s) IN s`,
-  REWRITE_TAC[CHOICE; EXTENSION; NOT_IN_EMPTY; NOT_FORALL_THM; EXISTS_THM]);;
+export_thm EXISTS_IN_INSERT;;
 
 (* ------------------------------------------------------------------------- *)
 (* Tactic to automate some routine set theory by reduction to FOL.           *)
@@ -2563,3 +2635,5 @@ let GE_C = prove
 
 let COUNTABLE = new_definition
   `COUNTABLE t <=> (:num) >=_c t`;;
+
+logfile_end ();;

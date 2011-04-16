@@ -17,7 +17,8 @@ type const_definition =
 
 let (peek_type_op_definition,
      add_type_op_definition,
-     delete_type_op_definition) =
+     delete_type_op_definition,
+     list_type_op_definition) =
     let the_defs = ref ([] : (string * type_op_definition) list) in
     let mem ty = List.mem_assoc ty (!the_defs) in
     let peek ty = if mem ty then Some (List.assoc ty (!the_defs)) else None in
@@ -29,23 +30,26 @@ let (peek_type_op_definition,
         let pred (ty,_) = not (List.mem ty tys) in
         let () = the_defs := List.filter pred (!the_defs) in
         () in
-    (peek,add,delete);;
+    let list () = !the_defs in
+    (peek,add,delete,list);;
 
 let (peek_const_definition,
      add_const_definition,
-     delete_const_definition) =
+     delete_const_definition,
+     list_const_definition) =
     let the_defs = ref ([] : (string * const_definition) list) in
-    let mem ty = List.mem_assoc ty (!the_defs) in
-    let peek ty = if mem ty then Some (List.assoc ty (!the_defs)) else None in
-    let add ty def =
-        if mem ty then failwith "redefinition of type op" else
-        let () = the_defs := (ty,def) :: !the_defs in
+    let mem c = List.mem_assoc c (!the_defs) in
+    let peek c = if mem c then Some (List.assoc c (!the_defs)) else None in
+    let add c def =
+        if mem c then failwith "redefinition of const" else
+        let () = the_defs := (c,def) :: !the_defs in
         () in
-    let delete tys =
-        let pred (ty,_) = not (List.mem ty tys) in
+    let delete cs =
+        let pred (c,_) = not (List.mem c cs) in
         let () = the_defs := List.filter pred (!the_defs) in
         () in
-    (peek,add,delete);;
+    let list () = !the_defs in
+    (peek,add,delete,list);;
 
 let new_basic_definition tm =
     let th = new_basic_definition tm in

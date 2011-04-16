@@ -940,8 +940,7 @@ let allocate_page_directory_h_def = new_definition
      unmapped_normal_page s ppa /\
      !ppa'.
        status s' ppa' =
-       (if ppa' = ppa then status s (reference s)
-        else status s ppa)`;;
+       status s (if ppa' = ppa then reference s else ppa)`;;
 
 export_thm allocate_page_directory_h_def;;
 
@@ -1753,8 +1752,7 @@ let allocate_page_directory_h_translate_page = prove
   (`!s s' pd ppa.
       allocate_page_directory_h ppa s s' ==>
       translate_page s' pd =
-      (if pd = ppa then translate_page s (reference s)
-       else translate_page s pd)`,
+      translate_page s (if pd = ppa then reference s else pd)`,
    REWRITE_TAC [allocate_page_directory_h_def] THEN
    REPEAT STRIP_TAC THEN
    REWRITE_TAC [FUN_EQ_THM] THEN
@@ -1762,6 +1760,8 @@ let allocate_page_directory_h_translate_page = prove
    MP_TAC (ISPEC `x : virtual_page_address` PAIR_SURJECTIVE) THEN
    STRIP_TAC THEN
    POP_ASSUM SUBST_VAR_TAC THEN
+   bool_cases_tac `(pd : page_directory) = ppa` THENL
+   [
    REWRITE_TAC [translate_page_def] THEN
    REPEAT STRIP_TAC THEN
    ASM_REWRITE_
