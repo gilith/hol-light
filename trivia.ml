@@ -13,7 +13,7 @@ needs "class.ml";;
 (* Combinators. We don't bother with S and K, which seem of little use.      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "function-def-comb";;
+logfile "function-def";;
 
 parse_as_infix ("o",(26,"right"));;
 
@@ -27,7 +27,7 @@ let I_DEF = new_definition
 
 export_thm I_DEF;;
 
-logfile "function-comb";;
+logfile "function-thm";;
 
 let o_THM = prove
  (`!f:B->C. !g:A->B. !x:A. (f o g) x = f(g(x))`,

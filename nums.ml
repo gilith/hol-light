@@ -19,7 +19,7 @@ new_type ("ind",0);;
 (* We assert the axiom of infinity as in HOL88, but then we can forget it!   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "function-def-inj-surj";;
+logfile "function-def";;
 
 let ONE_ONE = new_definition
   `ONE_ONE(f:A->B) = !x1 x2. (f x1 = f x2) ==> (x1 = x2)`;;
