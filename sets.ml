@@ -35,16 +35,39 @@ parse_as_infix("=_c",(12,"right"));;
 
 logfile "set-def";;
 
+let set_exists = prove
+  (`?p : A -> bool. (\x. T) p`,
+   EXISTS_TAC `p : A -> bool` THEN
+   REWRITE_TAC []);;
+
+let set_tybij =
+    REWRITE_RULE []
+      (new_type_definition
+        "set" ("GSPEC","dest_set") set_exists);;
+
 let IN = new_definition
-  `!P:A->bool. !x. x IN P <=> P x`;;
+  `!P x. (x : A) IN P <=> dest_set P x`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Axiom of extensionality in this framework.                                *)
 (* ------------------------------------------------------------------------- *)
 
+let EXTENSION_IMP = prove
+ (`!s t. (!x:A. x IN s <=> x IN t) ==> s = t`,
+  REWRITE_TAC[IN; GSYM FUN_EQ_THM] THEN
+  CONV_TAC (DEPTH_CONV ETA_CONV) THEN
+  REPEAT STRIP_TAC THEN
+  ONCE_REWRITE_TAC [GSYM (CONJUNCT1 set_tybij)] THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm EXTENSION_IMP;;
+
 let EXTENSION = prove
  (`!s t. (s = t) <=> !x:A. x IN s <=> x IN t`,
-  REWRITE_TAC[IN; FUN_EQ_THM]);;
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [DISCH_THEN (fun th -> REWRITE_TAC [th]);
+   MATCH_ACCEPT_TAC EXTENSION_IMP]);;
 
 export_thm EXTENSION;;
 
@@ -52,30 +75,24 @@ export_thm EXTENSION;;
 (* General specification.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-let GSPEC = new_definition
-  `GSPEC (p:A->bool) = p`;;
-
 let SETSPEC = new_definition
-  `SETSPEC v P t <=> P /\ (v = t)`;;
+  `!v P t. SETSPEC (v:A) P t <=> P /\ (v = t)`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Rewrite rule for eliminating set-comprehension membership assertions.     *)
 (* ------------------------------------------------------------------------- *)
 
-let IN_ELIM_THM = prove
- (`(!P x. x IN GSPEC (\v. P (SETSPEC v)) <=> P (\p t. p /\ (x = t))) /\
-   (!p x. x IN GSPEC (\v. ?y. SETSPEC v (p y) y) <=> p x) /\
-   (!P x. GSPEC (\v. P (SETSPEC v)) x <=> P (\p t. p /\ (x = t))) /\
-   (!p x. GSPEC (\v. ?y. SETSPEC v (p y) y) x <=> p x) /\
-   (!p x. x IN (\y. p y) <=> p x)`,
-  REPEAT STRIP_TAC THEN REWRITE_TAC[IN; GSPEC] THEN
-  TRY(AP_TERM_TAC THEN REWRITE_TAC[FUN_EQ_THM]) THEN
-  REWRITE_TAC[SETSPEC] THEN MESON_TAC[]);;
+(*** Do we need the first conjunct? ***)
 
 let IN_ELIM_THM = prove
- (`(!P x. (x:A) IN GSPEC (\v. P (SETSPEC v)) <=> P (\p t. p /\ (x = t))) /\
-   (!p x. (x:A) IN GSPEC (\v. ?y. SETSPEC v (p y) y) <=> p x)`,
-  REWRITE_TAC [IN_ELIM_THM]);;
+ (`(!P (x:A). x IN GSPEC (\v. P (SETSPEC v)) <=> P (\p t. p /\ (x = t))) /\
+   (!p (x:A). x IN GSPEC (\v. ?y. SETSPEC v (p y) y) <=> p x)`,
+  REWRITE_TAC[IN; set_tybij] THEN
+  REPEAT STRIP_TAC THENL
+  [AP_TERM_TAC THEN REWRITE_TAC [FUN_EQ_THM; SETSPEC];
+   REWRITE_TAC[SETSPEC] THEN EQ_TAC THENL
+   [STRIP_TAC THEN ASM_REWRITE_TAC [];
+    STRIP_TAC THEN EXISTS_TAC `x:A` THEN ASM_REWRITE_TAC []]]);;
 
 export_thm IN_ELIM_THM;;
 
