@@ -45,7 +45,7 @@ let set_tybij =
       (new_type_definition
         "set" ("GSPEC","dest_set") set_exists);;
 
-let IN = new_definition
+let IN_DEF = new_definition
   `!P x. (x : A) IN P <=> dest_set P x`;;
 
 (* ------------------------------------------------------------------------- *)
@@ -54,7 +54,7 @@ let IN = new_definition
 
 let EXTENSION_IMP = prove
  (`!s t. (!x:A. x IN s <=> x IN t) ==> s = t`,
-  REWRITE_TAC[IN; GSYM FUN_EQ_THM] THEN
+  REWRITE_TAC[IN_DEF; GSYM FUN_EQ_THM] THEN
   CONV_TAC (DEPTH_CONV ETA_CONV) THEN
   REPEAT STRIP_TAC THEN
   ONCE_REWRITE_TAC [GSYM (CONJUNCT1 set_tybij)] THEN
@@ -72,7 +72,7 @@ let EXTENSION = prove
 export_thm EXTENSION;;
 
 (* ------------------------------------------------------------------------- *)
-(* General specification.                                                    *)
+(* General set-comprehension specification.                                  *)
 (* ------------------------------------------------------------------------- *)
 
 let SETSPEC = new_definition
@@ -82,17 +82,12 @@ let SETSPEC = new_definition
 (* Rewrite rule for eliminating set-comprehension membership assertions.     *)
 (* ------------------------------------------------------------------------- *)
 
-(*** Do we need the first conjunct? ***)
-
 let IN_ELIM_THM = prove
- (`(!P (x:A). x IN GSPEC (\v. P (SETSPEC v)) <=> P (\p t. p /\ (x = t))) /\
-   (!p (x:A). x IN GSPEC (\v. ?y. SETSPEC v (p y) y) <=> p x)`,
-  REWRITE_TAC[IN; set_tybij] THEN
-  REPEAT STRIP_TAC THENL
-  [AP_TERM_TAC THEN REWRITE_TAC [FUN_EQ_THM; SETSPEC];
-   REWRITE_TAC[SETSPEC] THEN EQ_TAC THENL
-   [STRIP_TAC THEN ASM_REWRITE_TAC [];
-    STRIP_TAC THEN EXISTS_TAC `x:A` THEN ASM_REWRITE_TAC []]]);;
+ (`!P (x:A). x IN GSPEC (\v. P (SETSPEC v)) <=> P (\p t. p /\ (x = t))`,
+  REWRITE_TAC[IN_DEF; set_tybij] THEN
+  REPEAT STRIP_TAC THEN
+  AP_TERM_TAC THEN
+  REWRITE_TAC [FUN_EQ_THM; SETSPEC]);;
 
 export_thm IN_ELIM_THM;;
 
@@ -101,64 +96,51 @@ export_thm IN_ELIM_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let EMPTY = new_definition
-  `EMPTY = (\x:A. F)`;;
+  `EMPTY = { x:A | F }`;;
 
-let NOT_IN_EMPTY = prove
- (`!x:A. ~(x IN EMPTY)`,
-  REWRITE_TAC[IN; EMPTY]);;
+export_thm EMPTY;;
 
-export_thm NOT_IN_EMPTY;;
+let INSERT = new_definition
+  `!x s. x INSERT s = { y:A | y = x \/ y IN s }`;;
 
-let INSERT_DEF = new_definition
-  `x INSERT s = \y:A. y IN s \/ (y = x)`;;
+export_thm INSERT;;
 
 (* ------------------------------------------------------------------------- *)
 (* The other basic operations.                                               *)
 (* ------------------------------------------------------------------------- *)
 
 let UNIV = new_definition
-  `UNIV = (\x:A. T)`;;
+  `UNIV = { x:A | T }`;;
 
-let IN_UNIV = prove
- (`!x:A. x IN UNIV`,
-  REWRITE_TAC[UNIV; IN]);;
-
-export_thm IN_UNIV;;
+export_thm UNIV;;
 
 let UNION = new_definition
-  `s UNION t = {x:A | x IN s \/ x IN t}`;;
+  `!s t. s UNION t = {x:A | x IN s \/ x IN t}`;;
 
 export_thm UNION;;
 
 let UNIONS = new_definition
-  `UNIONS s = {x:A | ?u. u IN s /\ x IN u}`;;
+  `!s. UNIONS s = {x:A | ?u. u IN s /\ x IN u}`;;
 
 export_thm UNIONS;;
 
 let INTER = new_definition
-  `s INTER t = {x:A | x IN s /\ x IN t}`;;
+  `!s t. s INTER t = {x:A | x IN s /\ x IN t}`;;
 
 export_thm INTER;;
 
 let INTERS = new_definition
-  `INTERS s = {x:A | !u. u IN s ==> x IN u}`;;
+  `!s. INTERS s = {x:A | !u. u IN s ==> x IN u}`;;
 
 export_thm INTERS;;
 
 let DIFF = new_definition
-  `s DIFF t =  {x:A | x IN s /\ ~(x IN t)}`;;
+  `!s t. s DIFF t =  {x:A | x IN s /\ ~(x IN t)}`;;
 
 export_thm DIFF;;
 
-let INSERT = prove
- (`x INSERT s = {y:A | y IN s \/ (y = x)}`,
-  REWRITE_TAC[EXTENSION; INSERT_DEF; IN_ELIM_THM] THEN
-  REWRITE_TAC[IN]);;
-
-export_thm INSERT;;
-
 let DELETE = new_definition
-  `s DELETE x = {y:A | y IN s /\ ~(y = x)}`;;
+  `!s x. s DELETE x = {y:A | y IN s /\ ~(y = x)}`;;
 
 export_thm DELETE;;
 
@@ -167,22 +149,22 @@ export_thm DELETE;;
 (* ------------------------------------------------------------------------- *)
 
 let SUBSET = new_definition
-  `s SUBSET t <=> !x:A. x IN s ==> x IN t`;;
+  `!s t. s SUBSET t <=> !x:A. x IN s ==> x IN t`;;
 
 export_thm SUBSET;;
 
 let PSUBSET = new_definition
-  `(s:A->bool) PSUBSET t <=> s SUBSET t /\ ~(s = t)`;;
+  `!s t. (s : A set) PSUBSET t <=> s SUBSET t /\ ~(s = t)`;;
 
 export_thm PSUBSET;;
 
 let DISJOINT = new_definition
-  `DISJOINT (s:A->bool) t <=> (s INTER t = EMPTY)`;;
+  `!s t. DISJOINT (s : A set) t <=> (s INTER t = EMPTY)`;;
 
 export_thm DISJOINT;;
 
 let SING = new_definition
-  `SING s = ?x:A. s = {x}`;;
+  `!s. SING s = ?x:A. s = {x}`;;
 
 export_thm SING;;
 
@@ -191,26 +173,28 @@ export_thm SING;;
 (* ------------------------------------------------------------------------- *)
 
 let IMAGE = new_definition
-  `IMAGE (f:A->B) s = { y | ?x. x IN s /\ (y = f x)}`;;
+  `!f s. IMAGE (f:A->B) s = { y | ?x. x IN s /\ (y = f x)}`;;
 
 export_thm IMAGE;;
 
 let INJ = new_definition
-  `INJ (f:A->B) s t <=>
+  `!f s t.
+     INJ (f:A->B) s t <=>
      (!x. x IN s ==> (f x) IN t) /\
      (!x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y))`;;
 
 export_thm INJ;;
 
 let SURJ = new_definition
-  `SURJ (f:A->B) s t <=>
+  `!f s t.
+     SURJ (f:A->B) s t <=>
      (!x. x IN s ==> (f x) IN t) /\
      (!x. (x IN t) ==> ?y. y IN s /\ (f y = x))`;;
 
 export_thm SURJ;;
 
 let BIJ = new_definition
-  `BIJ (f:A->B) s t <=> INJ f s t /\ SURJ f s t`;;
+  `!f s t. BIJ (f:A->B) s t <=> INJ f s t /\ SURJ f s t`;;
 
 export_thm BIJ;;
 
@@ -218,17 +202,18 @@ export_thm BIJ;;
 (* Another funny thing.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-let CHOICE = new_definition
-  `CHOICE s = @x:A. x IN s`;;
+let CHOICE_DEF = new_definition
+  `!s. CHOICE s = @x:A. x IN s`;;
 
-let CHOICE_DEF = prove
- (`!s:A->bool. ~(s = EMPTY) ==> (CHOICE s) IN s`,
-  REWRITE_TAC[CHOICE; EXTENSION; NOT_IN_EMPTY; NOT_FORALL_THM; EXISTS_THM]);;
+let CHOICE = prove
+ (`!s : A set. ~(s = EMPTY) ==> (CHOICE s) IN s`,
+  REWRITE_TAC
+    [CHOICE_DEF; EXTENSION; EMPTY; IN_ELIM_THM; NOT_FORALL_THM; EXISTS_THM]);;
 
-export_thm CHOICE_DEF;;
+export_thm CHOICE;;
 
 let REST = new_definition
-  `REST (s:A->bool) = s DELETE (CHOICE s)`;;
+  `!s. REST (s : A set) = s DELETE (CHOICE s)`;;
 
 export_thm REST;;
 
@@ -238,45 +223,70 @@ export_thm REST;;
 
 logfile "set-thm";;
 
+let IN_ELIM = prove
+ (`!p (x:A). x IN GSPEC (\v. ?y. SETSPEC v (p y) y) <=> p x`,
+  REWRITE_TAC[IN_ELIM_THM] THEN
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   ASM_REWRITE_TAC [];
+   STRIP_TAC THEN
+   EXISTS_TAC `x:A` THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm IN_ELIM;;
+
+let NOT_IN_EMPTY = prove
+ (`!x:A. ~(x IN EMPTY)`,
+  REWRITE_TAC[IN_ELIM; EMPTY]);;
+
+export_thm NOT_IN_EMPTY;;
+
+let IN_UNIV = prove
+ (`!x:A. x IN UNIV`,
+  REWRITE_TAC[IN_ELIM; UNIV]);;
+
+export_thm IN_UNIV;;
+
 let IN_UNION = prove
  (`!s t (x:A). x IN (s UNION t) <=> x IN s \/ x IN t`,
-  REWRITE_TAC[IN_ELIM_THM; UNION]);;
+  REWRITE_TAC[IN_ELIM; UNION]);;
 
 export_thm IN_UNION;;
 
 let IN_UNIONS = prove
  (`!s (x:A). x IN (UNIONS s) <=> ?t. t IN s /\ x IN t`,
-  REWRITE_TAC[IN_ELIM_THM; UNIONS]);;
+  REWRITE_TAC[IN_ELIM; UNIONS]);;
 
 export_thm IN_UNIONS;;
 
 let IN_INTER = prove
  (`!s t (x:A). x IN (s INTER t) <=> x IN s /\ x IN t`,
-  REWRITE_TAC[IN_ELIM_THM; INTER]);;
+  REWRITE_TAC[IN_ELIM; INTER]);;
 
 export_thm IN_INTER;;
 
 let IN_INTERS = prove
  (`!s (x:A). x IN (INTERS s) <=> !t. t IN s ==> x IN t`,
-  REWRITE_TAC[IN_ELIM_THM; INTERS]);;
+  REWRITE_TAC[IN_ELIM; INTERS]);;
 
 export_thm IN_INTERS;;
 
 let IN_DIFF = prove
- (`!(s:A->bool) t x. x IN (s DIFF t) <=> x IN s /\ ~(x IN t)`,
-  REWRITE_TAC[IN_ELIM_THM; DIFF]);;
+ (`!s t (x:A). x IN (s DIFF t) <=> x IN s /\ ~(x IN t)`,
+  REWRITE_TAC[IN_ELIM; DIFF]);;
 
 export_thm IN_DIFF;;
 
 let IN_INSERT = prove
  (`!x:A. !y s. x IN (y INSERT s) <=> (x = y) \/ x IN s`,
-  ONCE_REWRITE_TAC[DISJ_SYM] THEN REWRITE_TAC[IN_ELIM_THM; INSERT]);;
+  REWRITE_TAC[IN_ELIM; INSERT]);;
 
 export_thm IN_INSERT;;
 
 let IN_DELETE = prove
  (`!s. !x:A. !y. x IN (s DELETE y) <=> x IN s /\ ~(x = y)`,
-  REWRITE_TAC[IN_ELIM_THM; DELETE]);;
+  REWRITE_TAC[IN_ELIM; DELETE]);;
 
 export_thm IN_DELETE;;
 
@@ -288,7 +298,7 @@ export_thm IN_SING;;
 
 let IN_IMAGE = prove
  (`!y:B. !s f. (y IN (IMAGE f s)) <=> ?x:A. (y = f x) /\ x IN s`,
-  ONCE_REWRITE_TAC[CONJ_SYM] THEN REWRITE_TAC[IN_ELIM_THM; IMAGE]);;
+  ONCE_REWRITE_TAC[CONJ_SYM] THEN REWRITE_TAC[IN_ELIM; IMAGE]);;
 
 export_thm IN_IMAGE;;
 
@@ -299,14 +309,39 @@ let IN_REST = prove
 export_thm IN_REST;;
 
 let FORALL_IN_INSERT = prove
- (`!P a s. (!x. x IN (a INSERT s) ==> P x) <=> P a /\ (!x. x IN s ==> P x)`,
-  REWRITE_TAC[IN_INSERT] THEN MESON_TAC[]);;
+ (`!P a s. (!x. (x:A) IN (a INSERT s) ==> P x) <=> P a /\ (!x. x IN s ==> P x)`,
+  REWRITE_TAC[IN_INSERT] THEN
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THENL
+   [FIRST_X_ASSUM (MP_TAC o SPEC `a:A`) THEN
+    REWRITE_TAC [];
+    FIRST_X_ASSUM (MP_TAC o SPEC `x:A`) THEN
+    ASM_REWRITE_TAC []];
+   REPEAT STRIP_TAC THENL
+   [ASM_REWRITE_TAC [];
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC]]);;
 
 export_thm FORALL_IN_INSERT;;
 
 let EXISTS_IN_INSERT = prove
- (`!P a s. (?x. x IN (a INSERT s) /\ P x) <=> P a \/ ?x. x IN s /\ P x`,
-  REWRITE_TAC[IN_INSERT] THEN MESON_TAC[]);;
+ (`!P a s. (?x. (x:A) IN (a INSERT s) /\ P x) <=> P a \/ ?x. x IN s /\ P x`,
+  REWRITE_TAC[IN_INSERT] THEN
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THENL
+   [DISJ1_TAC THEN
+    FIRST_X_ASSUM (fun th -> REWRITE_TAC [SYM th]) THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    DISJ2_TAC THEN
+    EXISTS_TAC `x:A` THEN
+    ASM_REWRITE_TAC []];
+   REPEAT STRIP_TAC THENL
+   [EXISTS_TAC `a:A` THEN
+    ASM_REWRITE_TAC [];
+    EXISTS_TAC `x:A` THEN
+    ASM_REWRITE_TAC []]]);;
 
 export_thm EXISTS_IN_INSERT;;
 
@@ -333,8 +368,11 @@ let SET_RULE tm = prove(tm,SET_TAC[]);;
 (* ------------------------------------------------------------------------- *)
 
 let NOT_EQUAL_SETS = prove
- (`!s:A->bool. !t. ~(s = t) <=> ?x. x IN t <=> ~(x IN s)`,
-  SET_TAC[]);;
+ (`!s : A set. !t. ~(s = t) <=> ?x. x IN t <=> ~(x IN s)`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC (TAUT `!x y. (x <=> ~y) ==> (~x <=> y)`) THEN
+  REWRITE_TAC [NOT_EXISTS_THM; TAUT `!x y. ~(x <=> ~y) <=> (y <=> x)`] THEN
+  MATCH_ACCEPT_TAC EXTENSION);;
 
 export_thm NOT_EQUAL_SETS;;
 
@@ -343,8 +381,8 @@ export_thm NOT_EQUAL_SETS;;
 (* ------------------------------------------------------------------------- *)
 
 let MEMBER_NOT_EMPTY = prove
- (`!s:A->bool. (?x. x IN s) <=> ~(s = EMPTY)`,
-  SET_TAC[]);;
+ (`!s : A set. (?x. x IN s) <=> ~(s = EMPTY)`,
+  REWRITE_TAC [NOT_EQUAL_SETS; NOT_IN_EMPTY]);;
 
 export_thm MEMBER_NOT_EMPTY;;
 
@@ -353,20 +391,20 @@ export_thm MEMBER_NOT_EMPTY;;
 (* ------------------------------------------------------------------------- *)
 
 let UNIV_NOT_EMPTY = prove
- (`~(UNIV:A->bool = EMPTY)`,
-  SET_TAC[]);;
+ (`~(UNIV : A set = EMPTY)`,
+  REWRITE_TAC [GSYM MEMBER_NOT_EMPTY; IN_UNIV]);;
 
 export_thm UNIV_NOT_EMPTY;;
 
 let EMPTY_NOT_UNIV = prove
- (`~(EMPTY:A->bool = UNIV)`,
-  SET_TAC[]);;
+ (`~(EMPTY : A set = UNIV)`,
+  ACCEPT_TAC (GSYM UNIV_NOT_EMPTY));;
 
 export_thm EMPTY_NOT_UNIV;;
 
 let EQ_UNIV = prove
- (`(!x:A. x IN s) <=> (s = UNIV)`,
-  SET_TAC[]);;
+ (`!s. (!x:A. x IN s) <=> (s = UNIV)`,
+  REWRITE_TAC [EXTENSION; IN_UNIV]);;
 
 export_thm EQ_UNIV;;
 
@@ -375,62 +413,82 @@ export_thm EQ_UNIV;;
 (* ------------------------------------------------------------------------- *)
 
 let SUBSET_TRANS = prove
- (`!(s:A->bool) t u. s SUBSET t /\ t SUBSET u ==> s SUBSET u`,
-  SET_TAC[]);;
+ (`!(s : A set) t u. s SUBSET t /\ t SUBSET u ==> s SUBSET u`,
+  REWRITE_TAC [SUBSET] THEN
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  FIRST_X_ASSUM ACCEPT_TAC);;
 
 export_thm SUBSET_TRANS;;
 
 let SUBSET_REFL = prove
- (`!s:A->bool. s SUBSET s`,
-  SET_TAC[]);;
+ (`!s : A set. s SUBSET s`,
+  REWRITE_TAC [SUBSET]);;
 
 export_thm SUBSET_REFL;;
 
 let SUBSET_ANTISYM = prove
- (`!(s:A->bool) t. s SUBSET t /\ t SUBSET s ==> s = t`,
-  SET_TAC[]);;
+ (`!(s : A set) t. s SUBSET t /\ t SUBSET s ==> s = t`,
+  REWRITE_TAC [EXTENSION; SUBSET] THEN
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [FIRST_ASSUM MATCH_ACCEPT_TAC;
+   FIRST_ASSUM MATCH_ACCEPT_TAC]);;
 
 export_thm SUBSET_ANTISYM;;
 
 let SUBSET_ANTISYM_EQ = prove
- (`!(s:A->bool) t. s SUBSET t /\ t SUBSET s <=> s = t`,
-  SET_TAC[]);;
+ (`!(s : A set) t. s SUBSET t /\ t SUBSET s <=> s = t`,
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [MATCH_ACCEPT_TAC SUBSET_ANTISYM;
+   DISCH_THEN (fun th -> REWRITE_TAC [th; SUBSET_REFL])]);;
 
 export_thm SUBSET_ANTISYM_EQ;;
 
 let EMPTY_SUBSET = prove
- (`!s:A->bool. EMPTY SUBSET s`,
-  SET_TAC[]);;
+ (`!s : A set. EMPTY SUBSET s`,
+  REWRITE_TAC [SUBSET; NOT_IN_EMPTY]);;
 
 export_thm EMPTY_SUBSET;;
 
 let SUBSET_EMPTY = prove
- (`!s:A->bool. s SUBSET EMPTY <=> (s = EMPTY)`,
-  SET_TAC[]);;
+ (`!s : A set. s SUBSET EMPTY <=> (s = EMPTY)`,
+  REWRITE_TAC [SUBSET; NOT_IN_EMPTY; EXTENSION]);;
 
 export_thm SUBSET_EMPTY;;
 
 let SUBSET_UNIV = prove
- (`!s:A->bool. s SUBSET UNIV`,
-  SET_TAC[]);;
+ (`!s : A set. s SUBSET UNIV`,
+  REWRITE_TAC [SUBSET; IN_UNIV]);;
 
 export_thm SUBSET_UNIV;;
 
 let UNIV_SUBSET = prove
- (`!s:A->bool. UNIV SUBSET s <=> (s = UNIV)`,
-  SET_TAC[]);;
+ (`!s : A set. UNIV SUBSET s <=> (s = UNIV)`,
+  REWRITE_TAC [SUBSET; IN_UNIV; EXTENSION]);;
 
 export_thm UNIV_SUBSET;;
 
 let SING_SUBSET = prove
- (`!s x. {x} SUBSET s <=> x IN s`,
-  SET_TAC[]);;
+ (`!s x. {x} SUBSET s <=> (x:A) IN s`,
+  REWRITE_TAC [SUBSET; IN_SING] THEN
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [DISCH_THEN MATCH_MP_TAC THEN
+   REFL_TAC;
+   STRIP_TAC THEN
+   GEN_TAC THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
 
 export_thm SING_SUBSET;;
 
 let SUBSET_RESTRICT = prove
- (`!s P. {x | x IN s /\ P x} SUBSET s`,
-  SIMP_TAC[SUBSET; IN_ELIM_THM]);;
+ (`!s P. {x | (x:A) IN s /\ P x} SUBSET s`,
+  REWRITE_TAC [SUBSET; IN_ELIM] THEN
+  REPEAT STRIP_TAC);;
 
 export_thm SUBSET_RESTRICT;;
 
@@ -439,7 +497,7 @@ export_thm SUBSET_RESTRICT;;
 (* ------------------------------------------------------------------------- *)
 
 let PSUBSET_TRANS = prove
- (`!(s:A->bool) t u. s PSUBSET t /\ t PSUBSET u ==> s PSUBSET u`,
+ (`!(s : A set) t u. s PSUBSET t /\ t PSUBSET u ==> s PSUBSET u`,
   SET_TAC[]);;
 
 export_thm PSUBSET_TRANS;;
