@@ -496,51 +496,91 @@ export_thm SUBSET_RESTRICT;;
 (* Proper subset.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
+let PSUBSET_NOT_SUBSET = prove
+ (`!(s : A set) t. s PSUBSET t <=> s SUBSET t /\ ~(t SUBSET s)`,
+  REWRITE_TAC [PSUBSET; GSYM SUBSET_ANTISYM_EQ] THEN
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   UNDISCH_TAC `~(s SUBSET (t : A set) /\ t SUBSET s)` THEN
+   ASM_REWRITE_TAC [];
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm PSUBSET_NOT_SUBSET;;
+
 let PSUBSET_TRANS = prove
  (`!(s : A set) t u. s PSUBSET t /\ t PSUBSET u ==> s PSUBSET u`,
-  SET_TAC[]);;
+  REPEAT GEN_TAC THEN
+  CONV_TAC (RAND_CONV (REWRITE_CONV [PSUBSET])) THEN
+  REWRITE_TAC [PSUBSET_NOT_SUBSET] THEN
+  REPEAT STRIP_TAC THENL
+  [MATCH_MP_TAC SUBSET_TRANS THEN
+   EXISTS_TAC `t : A set` THEN
+   ASM_REWRITE_TAC [];
+   UNDISCH_TAC `s SUBSET (t : A set)` THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm PSUBSET_TRANS;;
 
 let PSUBSET_SUBSET_TRANS = prove
- (`!(s:A->bool) t u. s PSUBSET t /\ t SUBSET u ==> s PSUBSET u`,
-  SET_TAC[]);;
+ (`!(s : A set) t u. s PSUBSET t /\ t SUBSET u ==> s PSUBSET u`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (RAND_CONV (REWRITE_CONV [PSUBSET])) THEN
+  REWRITE_TAC [PSUBSET_NOT_SUBSET] THEN
+  REPEAT STRIP_TAC THENL
+  [MATCH_MP_TAC SUBSET_TRANS THEN
+   EXISTS_TAC `t : A set` THEN
+   ASM_REWRITE_TAC [];
+   UNDISCH_TAC `~(t SUBSET (s : A set))` THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm PSUBSET_SUBSET_TRANS;;
 
 let SUBSET_PSUBSET_TRANS = prove
- (`!(s:A->bool) t u. s SUBSET t /\ t PSUBSET u ==> s PSUBSET u`,
-  SET_TAC[]);;
+ (`!(s : A set) t u. s SUBSET t /\ t PSUBSET u ==> s PSUBSET u`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (RAND_CONV (REWRITE_CONV [PSUBSET])) THEN
+  REWRITE_TAC [PSUBSET_NOT_SUBSET] THEN
+  REPEAT STRIP_TAC THENL
+  [MATCH_MP_TAC SUBSET_TRANS THEN
+   EXISTS_TAC `t : A set` THEN
+   ASM_REWRITE_TAC [];
+   UNDISCH_TAC `s SUBSET (t : A set)` THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm SUBSET_PSUBSET_TRANS;;
 
 let PSUBSET_IRREFL = prove
- (`!s:A->bool. ~(s PSUBSET s)`,
-  SET_TAC[]);;
+ (`!s : A set. ~(s PSUBSET s)`,
+  REWRITE_TAC [PSUBSET]);;
 
 export_thm PSUBSET_IRREFL;;
 
 let NOT_PSUBSET_EMPTY = prove
- (`!s:A->bool. ~(s PSUBSET EMPTY)`,
-  SET_TAC[]);;
+ (`!s : A set. ~(s PSUBSET EMPTY)`,
+  REWRITE_TAC [PSUBSET_NOT_SUBSET; EMPTY_SUBSET]);;
 
 export_thm NOT_PSUBSET_EMPTY;;
 
 let NOT_UNIV_PSUBSET = prove
- (`!s:A->bool. ~(UNIV PSUBSET s)`,
-  SET_TAC[]);;
+ (`!s : A set. ~(UNIV PSUBSET s)`,
+  REWRITE_TAC [PSUBSET_NOT_SUBSET; SUBSET_UNIV]);;
 
 export_thm NOT_UNIV_PSUBSET;;
 
 let PSUBSET_UNIV = prove
- (`!s:A->bool. s PSUBSET UNIV <=> ?x. ~(x IN s)`,
-  SET_TAC[]);;
+ (`!s : A set. s PSUBSET UNIV <=> ?x. ~(x IN s)`,
+  REWRITE_TAC [PSUBSET; GSYM EQ_UNIV; SUBSET_UNIV; NOT_FORALL_THM]);;
 
 export_thm PSUBSET_UNIV;;
 
 let PSUBSET_ALT = prove
- (`!s t:A->bool. s PSUBSET t <=> s SUBSET t /\ (?a. a IN t /\ ~(a IN s))`,
-  REWRITE_TAC[PSUBSET] THEN SET_TAC[]);;
+ (`!s t : A set. s PSUBSET t <=> s SUBSET t /\ (?a. a IN t /\ ~(a IN s))`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [PSUBSET_NOT_SUBSET] THEN
+  AP_TERM_TAC THEN
+  REWRITE_TAC [SUBSET; NOT_FORALL_THM; NOT_IMP]);;
 
 export_thm PSUBSET_ALT;;
 
@@ -549,27 +589,31 @@ export_thm PSUBSET_ALT;;
 (* ------------------------------------------------------------------------- *)
 
 let UNION_ASSOC = prove
- (`!(s:A->bool) t u. (s UNION t) UNION u = s UNION (t UNION u)`,
-  SET_TAC[]);;
+ (`!(s : A set) t u. (s UNION t) UNION u = s UNION (t UNION u)`,
+  REWRITE_TAC [EXTENSION; IN_UNION; DISJ_ASSOC]);;
 
 export_thm UNION_ASSOC;;
 
 let UNION_IDEMPOT = prove
- (`!s:A->bool. s UNION s = s`,
-  SET_TAC[]);;
+ (`!s : A set. s UNION s = s`,
+  REWRITE_TAC [EXTENSION; IN_UNION]);;
 
 export_thm UNION_IDEMPOT;;
 
 let UNION_COMM = prove
- (`!(s:A->bool) t. s UNION t = t UNION s`,
-  SET_TAC[]);;
+ (`!(s : A set) t. s UNION t = t UNION s`,
+  REWRITE_TAC [EXTENSION; IN_UNION] THEN
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC DISJ_SYM);;
 
 export_thm UNION_COMM;;
 
 let SUBSET_UNION = prove
- (`(!s:A->bool. !t. s SUBSET (s UNION t)) /\
-   (!s:A->bool. !t. s SUBSET (t UNION s))`,
-  SET_TAC[]);;
+ (`(!s : A set. !t. s SUBSET (s UNION t)) /\
+   (!s : A set. !t. s SUBSET (t UNION s))`,
+  REWRITE_TAC [SUBSET; IN_UNION] THEN
+  REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm SUBSET_UNION;;
 
