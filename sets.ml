@@ -618,34 +618,58 @@ let SUBSET_UNION = prove
 export_thm SUBSET_UNION;;
 
 let SUBSET_UNION_ABSORPTION = prove
- (`!s:A->bool. !t. s SUBSET t <=> (s UNION t = t)`,
-  SET_TAC[]);;
+ (`!s : A set. !t. s SUBSET t <=> (s UNION t = t)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [SUBSET; EXTENSION; IN_UNION] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    STRIP_TAC THEN
+    DISJ2_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `x:A`) THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm SUBSET_UNION_ABSORPTION;;
 
 let UNION_EMPTY = prove
- (`(!s:A->bool. EMPTY UNION s = s) /\
-   (!s:A->bool. s UNION EMPTY = s)`,
-  SET_TAC[]);;
+ (`(!s : A set. EMPTY UNION s = s) /\
+   (!s : A set. s UNION EMPTY = s)`,
+  REWRITE_TAC [EXTENSION; NOT_IN_EMPTY; IN_UNION]);;
 
 export_thm UNION_EMPTY;;
 
 let UNION_UNIV = prove
- (`(!s:A->bool. UNIV UNION s = UNIV) /\
-   (!s:A->bool. s UNION UNIV = UNIV)`,
-  SET_TAC[]);;
+ (`(!s : A set. UNIV UNION s = UNIV) /\
+   (!s : A set. s UNION UNIV = UNIV)`,
+  REWRITE_TAC [EXTENSION; IN_UNIV; IN_UNION]);;
 
 export_thm UNION_UNIV;;
 
 let EMPTY_UNION = prove
- (`!s:A->bool. !t. (s UNION t = EMPTY) <=> (s = EMPTY) /\ (t = EMPTY)`,
-  SET_TAC[]);;
+ (`!s : A set. !t. (s UNION t = EMPTY) <=> (s = EMPTY) /\ (t = EMPTY)`,
+  REWRITE_TAC
+    [EXTENSION; IN_UNION; NOT_IN_EMPTY; DE_MORGAN_THM; FORALL_AND_THM]);;
 
 export_thm EMPTY_UNION;;
 
 let UNION_SUBSET = prove
- (`!s t u. (s UNION t) SUBSET u <=> s SUBSET u /\ t SUBSET u`,
-  SET_TAC[]);;
+ (`!(s : A set) t u. (s UNION t) SUBSET u <=> s SUBSET u /\ t SUBSET u`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [SUBSET; IN_UNION] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [];
+   REPEAT STRIP_TAC THENL
+   [UNDISCH_THEN `!x. (x:A) IN s ==> x IN u` MATCH_MP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    UNDISCH_THEN `!x. (x:A) IN t ==> x IN u` MATCH_MP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC]]);;
 
 export_thm UNION_SUBSET;;
 
@@ -654,53 +678,78 @@ export_thm UNION_SUBSET;;
 (* ------------------------------------------------------------------------- *)
 
 let INTER_ASSOC = prove
- (`!(s:A->bool) t u. (s INTER t) INTER u = s INTER (t INTER u)`,
-  SET_TAC[]);;
+ (`!(s : A set) t u. (s INTER t) INTER u = s INTER (t INTER u)`,
+  REWRITE_TAC [EXTENSION; IN_INTER; CONJ_ASSOC]);;
 
 export_thm INTER_ASSOC;;
 
 let INTER_IDEMPOT = prove
- (`!s:A->bool. s INTER s = s`,
-  SET_TAC[]);;
+ (`!s : A set. s INTER s = s`,
+  REWRITE_TAC [EXTENSION; IN_INTER]);;
 
 export_thm INTER_IDEMPOT;;
 
 let INTER_COMM = prove
- (`!(s:A->bool) t. s INTER t = t INTER s`,
-  SET_TAC[]);;
+ (`!(s : A set) t. s INTER t = t INTER s`,
+  REWRITE_TAC [EXTENSION; IN_INTER] THEN
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC CONJ_SYM);;
 
 export_thm INTER_COMM;;
 
 let INTER_SUBSET = prove
- (`(!s:A->bool. !t. (s INTER t) SUBSET s) /\
-   (!s:A->bool. !t. (t INTER s) SUBSET s)`,
-  SET_TAC[]);;
+ (`(!s : A set. !t. (s INTER t) SUBSET s) /\
+   (!s : A set. !t. (t INTER s) SUBSET s)`,
+  REWRITE_TAC [SUBSET; IN_INTER] THEN
+  REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm INTER_SUBSET;;
 
 let SUBSET_INTER_ABSORPTION = prove
- (`!s:A->bool. !t. s SUBSET t <=> (s INTER t = s)`,
-  SET_TAC[]);;
+ (`!s : A set. !t. s SUBSET t <=> (s INTER t = s)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [SUBSET; EXTENSION; IN_INTER] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC;
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `x:A`) THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm SUBSET_INTER_ABSORPTION;;
 
 let INTER_EMPTY = prove
- (`(!s:A->bool. EMPTY INTER s = EMPTY) /\
-   (!s:A->bool. s INTER EMPTY = EMPTY)`,
-  SET_TAC[]);;
+ (`(!s : A set. EMPTY INTER s = EMPTY) /\
+   (!s : A set. s INTER EMPTY = EMPTY)`,
+  REWRITE_TAC [EXTENSION; NOT_IN_EMPTY; IN_INTER]);;
 
 export_thm INTER_EMPTY;;
 
 let INTER_UNIV = prove
- (`(!s:A->bool. UNIV INTER s = s) /\
-   (!s:A->bool. s INTER UNIV = s)`,
-  SET_TAC[]);;
+ (`(!s : A set. UNIV INTER s = s) /\
+   (!s : A set. s INTER UNIV = s)`,
+  REWRITE_TAC [EXTENSION; IN_UNIV; IN_INTER]);;
 
 export_thm INTER_UNIV;;
 
 let SUBSET_INTER = prove
- (`!s t u. s SUBSET (t INTER u) <=> s SUBSET t /\ s SUBSET u`,
-  SET_TAC[]);;
+ (`!(s : A set) t u. s SUBSET (t INTER u) <=> s SUBSET t /\ s SUBSET u`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [SUBSET; IN_INTER] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `x:A`) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC;
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
 
 export_thm SUBSET_INTER;;
 
