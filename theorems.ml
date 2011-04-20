@@ -157,6 +157,18 @@ let RIGHT_OR_DISTRIB = prove
 
 export_thm RIGHT_OR_DISTRIB;;
 
+let LEFT_AND_DISTRIB = prove
+ (`!p q r. p \/ (q /\ r) <=> (p \/ q) /\ (p \/ r)`,
+  ITAUT_TAC);;
+
+export_thm LEFT_AND_DISTRIB;;
+
+let RIGHT_AND_DISTRIB = prove
+ (`!p q r. (p /\ q) \/ r <=> (p \/ r) /\ (q \/ r)`,
+  ITAUT_TAC);;
+
+export_thm RIGHT_AND_DISTRIB;;
+
 (* ------------------------------------------------------------------------- *)
 (* Degenerate cases of quantifiers.                                          *)
 (* ------------------------------------------------------------------------- *)

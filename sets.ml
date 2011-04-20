@@ -757,49 +757,72 @@ export_thm SUBSET_INTER;;
 (* Distributivity.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-let UNION_OVER_INTER = prove
- (`!s:A->bool. !t u. s INTER (t UNION u) = (s INTER t) UNION (s INTER u)`,
-  SET_TAC[]);;
+let LEFT_UNION_DISTRIB = prove
+ (`!s : A set. !t u. s INTER (t UNION u) = (s INTER t) UNION (s INTER u)`,
+  REWRITE_TAC [EXTENSION; IN_INTER; IN_UNION] THEN
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC LEFT_OR_DISTRIB);;
 
-export_thm UNION_OVER_INTER;;
+export_thm LEFT_UNION_DISTRIB;;
 
-let INTER_OVER_UNION = prove
- (`!s:A->bool. !t u. s UNION (t INTER u) = (s UNION t) INTER (s UNION u)`,
-  SET_TAC[]);;
+let RIGHT_UNION_DISTRIB = prove
+ (`!s : A set. !t u. (s UNION t) INTER u = (s INTER u) UNION (t INTER u)`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [INTER_COMM] THEN
+  MATCH_ACCEPT_TAC LEFT_UNION_DISTRIB);;
 
-export_thm INTER_OVER_UNION;;
+export_thm RIGHT_UNION_DISTRIB;;
+
+let LEFT_INTER_DISTRIB = prove
+ (`!s : A set. !t u. s UNION (t INTER u) = (s UNION t) INTER (s UNION u)`,
+  REWRITE_TAC [EXTENSION; IN_INTER; IN_UNION] THEN
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC LEFT_AND_DISTRIB);;
+
+export_thm LEFT_INTER_DISTRIB;;
+
+let RIGHT_INTER_DISTRIB = prove
+ (`!s : A set. !t u. (s INTER t) UNION u = (s UNION u) INTER (t UNION u)`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [UNION_COMM] THEN
+  MATCH_ACCEPT_TAC LEFT_INTER_DISTRIB);;
+
+export_thm RIGHT_INTER_DISTRIB;;
 
 (* ------------------------------------------------------------------------- *)
 (* Disjoint sets.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
 let IN_DISJOINT = prove
- (`!s:A->bool. !t. DISJOINT s t <=> ~(?x. x IN s /\ x IN t)`,
-  SET_TAC[]);;
+ (`!s : A set. !t. DISJOINT s t <=> ~(?x. x IN s /\ x IN t)`,
+  REWRITE_TAC [DISJOINT; EXTENSION; IN_INTER; NOT_IN_EMPTY; NOT_EXISTS_THM]);;
 
 export_thm IN_DISJOINT;;
 
 let DISJOINT_SYM = prove
- (`!s:A->bool. !t. DISJOINT s t <=> DISJOINT t s`,
-  SET_TAC[]);;
+ (`!s : A set. !t. DISJOINT s t <=> DISJOINT t s`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [DISJOINT] THEN
+  CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [INTER_COMM])) THEN
+  REFL_TAC);;
 
 export_thm DISJOINT_SYM;;
 
 let DISJOINT_EMPTY = prove
- (`!s:A->bool. DISJOINT EMPTY s /\ DISJOINT s EMPTY`,
-  SET_TAC[]);;
+ (`!s : A set. DISJOINT EMPTY s /\ DISJOINT s EMPTY`,
+  REWRITE_TAC [DISJOINT; INTER_EMPTY]);;
 
 export_thm DISJOINT_EMPTY;;
 
 let DISJOINT_EMPTY_REFL = prove
- (`!s:A->bool. (s = EMPTY) <=> (DISJOINT s s)`,
-  SET_TAC[]);;
+ (`!s : A set. (s = EMPTY) <=> (DISJOINT s s)`,
+  REWRITE_TAC [DISJOINT; INTER_IDEMPOT]);;
 
 export_thm DISJOINT_EMPTY_REFL;;
 
 let DISJOINT_UNION = prove
- (`!s:A->bool. !t u. DISJOINT (s UNION t) u <=> DISJOINT s u /\ DISJOINT t u`,
-  SET_TAC[]);;
+ (`!s : A set. !t u. DISJOINT (s UNION t) u <=> DISJOINT s u /\ DISJOINT t u`,
+  REWRITE_TAC [DISJOINT; RIGHT_UNION_DISTRIB; EMPTY_UNION]);;
 
 export_thm DISJOINT_UNION;;
 
@@ -808,38 +831,42 @@ export_thm DISJOINT_UNION;;
 (* ------------------------------------------------------------------------- *)
 
 let DIFF_EMPTY = prove
- (`!s:A->bool. s DIFF EMPTY = s`,
-  SET_TAC[]);;
+ (`!s : A set. s DIFF EMPTY = s`,
+  REWRITE_TAC [EXTENSION; IN_DIFF; NOT_IN_EMPTY]);;
 
 export_thm DIFF_EMPTY;;
 
 let EMPTY_DIFF = prove
- (`!s:A->bool. EMPTY DIFF s = EMPTY`,
-  SET_TAC[]);;
+ (`!s : A set. EMPTY DIFF s = EMPTY`,
+  REWRITE_TAC [EXTENSION; IN_DIFF; NOT_IN_EMPTY]);;
 
 export_thm EMPTY_DIFF;;
 
 let DIFF_UNIV = prove
- (`!s:A->bool. s DIFF UNIV = EMPTY`,
-  SET_TAC[]);;
+ (`!s : A set. s DIFF UNIV = EMPTY`,
+  REWRITE_TAC [EXTENSION; IN_DIFF; NOT_IN_EMPTY; IN_UNIV]);;
 
 export_thm DIFF_UNIV;;
 
 let DIFF_DIFF = prove
- (`!s:A->bool. !t. (s DIFF t) DIFF t = s DIFF t`,
-  SET_TAC[]);;
+ (`!s : A set. !t. (s DIFF t) DIFF t = s DIFF t`,
+  REWRITE_TAC [EXTENSION; IN_DIFF; GSYM CONJ_ASSOC]);;
 
 export_thm DIFF_DIFF;;
 
 let DIFF_EQ_EMPTY = prove
- (`!s:A->bool. s DIFF s = EMPTY`,
-  SET_TAC[]);;
+ (`!s : A set. s DIFF s = EMPTY`,
+  REWRITE_TAC [EXTENSION; IN_DIFF; NOT_IN_EMPTY; DE_MORGAN_THM] THEN
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [DISJ_SYM] THEN
+  MATCH_ACCEPT_TAC EXCLUDED_MIDDLE);;
 
 export_thm DIFF_EQ_EMPTY;;
 
 let SUBSET_DIFF = prove
- (`!s t. (s DIFF t) SUBSET s`,
-  SET_TAC[]);;
+ (`!(s : A set) t. (s DIFF t) SUBSET s`,
+  REWRITE_TAC [SUBSET; IN_DIFF] THEN
+  REPEAT STRIP_TAC);;
 
 export_thm SUBSET_DIFF;;
 
@@ -849,97 +876,176 @@ export_thm SUBSET_DIFF;;
 
 let COMPONENT = prove
  (`!x:A. !s. x IN (x INSERT s)`,
-  SET_TAC[]);;
+  REWRITE_TAC [IN_INSERT]);;
 
 export_thm COMPONENT;;
 
 let DECOMPOSITION = prove
- (`!s:A->bool. !x. x IN s <=> ?t. (s = x INSERT t) /\ ~(x IN t)`,
+ (`!s : A set. !x. x IN s <=> ?t. (s = x INSERT t) /\ ~(x IN t)`,
   REPEAT GEN_TAC THEN EQ_TAC THEN STRIP_TAC THEN
   ASM_REWRITE_TAC[IN_INSERT] THEN EXISTS_TAC `s DELETE x:A` THEN
-  POP_ASSUM MP_TAC THEN SET_TAC[]);;
+  REWRITE_TAC [EXTENSION; IN_INSERT; IN_DELETE] THEN
+  GEN_TAC THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_ACCEPT_TAC EXCLUDED_MIDDLE;
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm DECOMPOSITION;;
 
 let SET_CASES = prove
- (`!s:A->bool. (s = EMPTY) \/ ?x:A. ?t. (s = x INSERT t) /\ ~(x IN t)`,
-  MESON_TAC[MEMBER_NOT_EMPTY; DECOMPOSITION]);;
+ (`!s : A set. (s = EMPTY) \/ ?x:A. ?t. (s = x INSERT t) /\ ~(x IN t)`,
+  GEN_TAC THEN
+  MATCH_MP_TAC (TAUT `!x y. (~x ==> y) ==> x \/ y`) THEN
+  REWRITE_TAC [GSYM MEMBER_NOT_EMPTY] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `x:A` THEN
+  ASM_REWRITE_TAC [GSYM DECOMPOSITION]);;
 
 export_thm SET_CASES;;
 
 let ABSORPTION = prove
  (`!x:A. !s. x IN s <=> (x INSERT s = s)`,
-  SET_TAC[]);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [EXTENSION; IN_INSERT] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   EQ_TAC THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [];
+   DISCH_THEN (MP_TAC o SPEC `x:A`) THEN
+   REWRITE_TAC []]);;
 
 export_thm ABSORPTION;;
 
 let INSERT_INSERT = prove
  (`!x:A. !s. x INSERT (x INSERT s) = x INSERT s`,
-  SET_TAC[]);;
+  REWRITE_TAC [EXTENSION; IN_INSERT; DISJ_ASSOC]);;
 
 export_thm INSERT_INSERT;;
 
 let INSERT_COMM = prove
  (`!x:A. !y s. x INSERT (y INSERT s) = y INSERT (x INSERT s)`,
-  SET_TAC[]);;
+  REWRITE_TAC [EXTENSION; IN_INSERT; DISJ_ASSOC] THEN
+  REPEAT GEN_TAC THEN
+  AP_THM_TAC THEN
+  AP_TERM_TAC THEN
+  MATCH_ACCEPT_TAC DISJ_SYM);;
 
 export_thm INSERT_COMM;;
 
+let INSERT_UNION_EQ = prove
+ (`!x:A. !s t. (x INSERT s) UNION t = x INSERT (s UNION t)`,
+  REWRITE_TAC [EXTENSION; IN_INSERT; IN_UNION; DISJ_ASSOC]);;
+
+export_thm INSERT_UNION_EQ;;
+
+let INSERT_UNION_SING = prove
+ (`!x:A. !s. (x INSERT EMPTY) UNION s = x INSERT s`,
+  REWRITE_TAC [INSERT_UNION_EQ; UNION_EMPTY]);;
+
+export_thm INSERT_UNION_SING;;
+
 let INSERT_UNIV = prove
  (`!x:A. x INSERT UNIV = UNIV`,
-  SET_TAC[]);;
+  ONCE_REWRITE_TAC [GSYM INSERT_UNION_SING] THEN
+  REWRITE_TAC [UNION_UNIV]);;
 
 export_thm INSERT_UNIV;;
 
 let NOT_INSERT_EMPTY = prove
  (`!x:A. !s. ~(x INSERT s = EMPTY)`,
-  SET_TAC[]);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [EXTENSION; IN_INSERT; NOT_IN_EMPTY; NOT_FORALL_THM] THEN
+  EXISTS_TAC `x:A` THEN
+  REWRITE_TAC []);;
 
 export_thm NOT_INSERT_EMPTY;;
 
 let NOT_EMPTY_INSERT = prove
  (`!x:A. !s. ~(EMPTY = x INSERT s)`,
-  SET_TAC[]);;
+  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+  ACCEPT_TAC NOT_INSERT_EMPTY);;
 
 export_thm NOT_EMPTY_INSERT;;
 
 let INSERT_UNION = prove
  (`!x:A. !s t. (x INSERT s) UNION t =
                if x IN t then s UNION t else x INSERT (s UNION t)`,
-  REPEAT GEN_TAC THEN COND_CASES_TAC THEN
-  POP_ASSUM MP_TAC THEN SET_TAC[]);;
+  REPEAT GEN_TAC THEN
+  COND_CASES_TAC THEN
+  ASM_REWRITE_TAC [EXTENSION; IN_UNION; IN_INSERT] THEN
+  GEN_TAC THEN
+  ASM_CASES_TAC `x' = (x:A)` THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm INSERT_UNION;;
-
-let INSERT_UNION_EQ = prove
- (`!x:A. !s t. (x INSERT s) UNION t = x INSERT (s UNION t)`,
-  SET_TAC[]);;
-
-export_thm INSERT_UNION_EQ;;
 
 let INSERT_INTER = prove
  (`!x:A. !s t. (x INSERT s) INTER t =
                if x IN t then x INSERT (s INTER t) else s INTER t`,
-  REPEAT GEN_TAC THEN COND_CASES_TAC THEN
-  POP_ASSUM MP_TAC THEN SET_TAC[]);;
+  REPEAT GEN_TAC THEN
+  COND_CASES_TAC THEN
+  ASM_REWRITE_TAC [EXTENSION; IN_INTER; IN_INSERT] THEN
+  GEN_TAC THEN
+  ASM_CASES_TAC `x' = (x:A)` THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm INSERT_INTER;;
 
 let DISJOINT_INSERT = prove
- (`!(x:A) s t. DISJOINT (x INSERT s) t <=> (DISJOINT s t) /\ ~(x IN t)`,
-  SET_TAC[]);;
+ (`!(x:A) s t. DISJOINT (x INSERT s) t <=> ~(x IN t) /\ (DISJOINT s t)`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [GSYM INSERT_UNION_SING] THEN
+  REWRITE_TAC [DISJOINT_UNION] THEN
+  AP_THM_TAC THEN
+  AP_TERM_TAC THEN
+  REWRITE_TAC [DISJOINT; EXTENSION; IN_INSERT; IN_INTER; NOT_IN_EMPTY] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `x:A`) THEN
+   ASM_REWRITE_TAC [];
+   REPEAT STRIP_TAC THEN
+   UNDISCH_TAC `(x' : A) IN t` THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm DISJOINT_INSERT;;
 
 let INSERT_SUBSET = prove
  (`!x:A. !s t. (x INSERT s) SUBSET t <=> (x IN t /\ s SUBSET t)`,
-  SET_TAC[]);;
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [GSYM INSERT_UNION_SING] THEN
+  REWRITE_TAC [UNION_SUBSET] THEN
+  AP_THM_TAC THEN
+  AP_TERM_TAC THEN
+  REWRITE_TAC [SUBSET; IN_INSERT; NOT_IN_EMPTY] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `x:A`) THEN
+   ASM_REWRITE_TAC [];
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm INSERT_SUBSET;;
 
 let SUBSET_INSERT = prove
  (`!x:A. !s. ~(x IN s) ==> !t. s SUBSET (x INSERT t) <=> s SUBSET t`,
-  SET_TAC[]);;
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [SUBSET; IN_INSERT] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `x':A`) THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC (TAUT `!x y. ~x ==> (x \/ y ==> y)`) THEN
+   STRIP_TAC THEN
+   UNDISCH_TAC `(x' : A) IN s` THEN
+   ASM_REWRITE_TAC [];
+   REPEAT STRIP_TAC THEN
+   DISJ2_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
 
 export_thm SUBSET_INSERT;;
 
