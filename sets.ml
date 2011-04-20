@@ -1052,35 +1052,52 @@ export_thm SUBSET_INSERT;;
 let INSERT_DIFF = prove
  (`!s t. !x:A. (x INSERT s) DIFF t =
                if x IN t then s DIFF t else x INSERT (s DIFF t)`,
-  REPEAT GEN_TAC THEN COND_CASES_TAC THEN
-  POP_ASSUM MP_TAC THEN SET_TAC[]);;
+  REPEAT GEN_TAC THEN COND_CASES_TAC THENL
+  [REWRITE_TAC [EXTENSION; IN_INSERT; IN_DIFF; RIGHT_OR_DISTRIB] THEN
+   GEN_TAC THEN
+   MATCH_MP_TAC (TAUT `!x y. ~x ==> (x \/ y <=> y)`) THEN
+   MATCH_MP_TAC (TAUT `!x y. (x ==> y) ==> ~(x /\ ~y)`) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [];
+   REWRITE_TAC [EXTENSION; IN_INSERT; IN_DIFF; RIGHT_OR_DISTRIB] THEN
+   GEN_TAC THEN
+   EQ_TAC THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm INSERT_DIFF;;
 
 let INSERT_AC = prove
- (`(x INSERT (y INSERT s) = y INSERT (x INSERT s)) /\
-   (x INSERT (x INSERT s) = x INSERT s)`,
+ (`!(x:A) y s.
+     (x INSERT (y INSERT s) = y INSERT (x INSERT s)) /\
+     (x INSERT (x INSERT s) = x INSERT s)`,
   REWRITE_TAC[INSERT_COMM; INSERT_INSERT]);;
 
 export_thm INSERT_AC;;
 
 let INTER_ACI = prove
- (`(p INTER q = q INTER p) /\
-   ((p INTER q) INTER r = p INTER q INTER r) /\
-   (p INTER q INTER r = q INTER p INTER r) /\
-   (p INTER p = p) /\
-   (p INTER p INTER q = p INTER q)`,
-  SET_TAC[]);;
+ (`!(p : A set) q r.
+     (p INTER q = q INTER p) /\
+     ((p INTER q) INTER r = p INTER q INTER r) /\
+     (p INTER q INTER r = q INTER p INTER r) /\
+     (p INTER p = p) /\
+     (p INTER p INTER q = p INTER q)`,
+  PURE_REWRITE_TAC [EXTENSION; IN_INTER; GSYM FORALL_AND_THM] THEN
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC CONJ_ACI);;
 
 export_thm INTER_ACI;;
 
 let UNION_ACI = prove
- (`(p UNION q = q UNION p) /\
-   ((p UNION q) UNION r = p UNION q UNION r) /\
-   (p UNION q UNION r = q UNION p UNION r) /\
-   (p UNION p = p) /\
-   (p UNION p UNION q = p UNION q)`,
-  SET_TAC[]);;
+ (`!(p : A set) q r.
+     (p UNION q = q UNION p) /\
+     ((p UNION q) UNION r = p UNION q UNION r) /\
+     (p UNION q UNION r = q UNION p UNION r) /\
+     (p UNION p = p) /\
+     (p UNION p UNION q = p UNION q)`,
+  PURE_REWRITE_TAC [EXTENSION; IN_UNION; GSYM FORALL_AND_THM] THEN
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC DISJ_ACI);;
 
 export_thm UNION_ACI;;
 
