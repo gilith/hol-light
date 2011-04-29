@@ -2225,167 +2225,233 @@ export_thm FINITE_INDUCT;;
 export_thm FINITE_CASES;;
 
 let INFINITE = new_definition
-  `INFINITE (s:A->bool) <=> ~(FINITE s)`;;
+  `INFINITE (s:A set) <=> ~(FINITE s)`;;
 
 export_thm INFINITE;;
-
-(* ------------------------------------------------------------------------- *)
-(* Stronger form of induction is sometimes handy.                            *)
-(* ------------------------------------------------------------------------- *)
-
-logfile "set-finite-thm";;
-
-let FINITE_INDUCT_STRONG = prove
- (`!P:(A->bool)->bool.
-        P {} /\ (!x s. P s /\ ~(x IN s) /\ FINITE s ==> P(x INSERT s))
-        ==> !s. FINITE s ==> P s`,
-  GEN_TAC THEN STRIP_TAC THEN
-  SUBGOAL_THEN `!s:A->bool. FINITE s ==> FINITE s /\ P s` MP_TAC THENL
-   [ALL_TAC; MESON_TAC[]] THEN
-  MATCH_MP_TAC FINITE_INDUCT THEN ASM_SIMP_TAC[FINITE_RULES] THEN
-  REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[] THEN ASM_CASES_TAC `x:A IN s` THENL
-   [SUBGOAL_THEN `x:A INSERT s = s` (fun th -> ASM_REWRITE_TAC[th]) THEN
-    UNDISCH_TAC `x:A IN s` THEN SET_TAC[];
-    FIRST_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[]]);;
-
-export_thm FINITE_INDUCT_STRONG;;
 
 (* ------------------------------------------------------------------------- *)
 (* Basic combining theorems for finite sets.                                 *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "set-finite-thm";;
+
 let FINITE_EMPTY = prove
- (`FINITE {}`,
+ (`FINITE ({} : A set)`,
   REWRITE_TAC[FINITE_RULES]);;
 
 export_thm FINITE_EMPTY;;
 
 let FINITE_SUBSET = prove
- (`!(s:A->bool) t. FINITE t /\ s SUBSET t ==> FINITE s`,
+ (`!(s:A set) t. FINITE t /\ s SUBSET t ==> FINITE s`,
   ONCE_REWRITE_TAC[SWAP_FORALL_THM] THEN
   REWRITE_TAC[IMP_CONJ] THEN REWRITE_TAC[RIGHT_FORALL_IMP_THM] THEN
-  MATCH_MP_TAC FINITE_INDUCT THEN CONJ_TAC THENL
-   [MESON_TAC[SUBSET_EMPTY; FINITE_RULES]; ALL_TAC] THEN
-  X_GEN_TAC `x:A` THEN X_GEN_TAC `u:A->bool` THEN DISCH_TAC THEN
-  X_GEN_TAC `t:A->bool` THEN DISCH_TAC THEN
-  SUBGOAL_THEN `FINITE((x:A) INSERT (t DELETE x))` ASSUME_TAC THENL
-   [MATCH_MP_TAC(CONJUNCT2 FINITE_RULES) THEN
-    FIRST_ASSUM MATCH_MP_TAC THEN
-    UNDISCH_TAC `t SUBSET (x:A INSERT u)` THEN SET_TAC[];
-    ASM_CASES_TAC `x:A IN t` THENL
-     [SUBGOAL_THEN `x:A INSERT (t DELETE x) = t` SUBST_ALL_TAC THENL
-       [UNDISCH_TAC `x:A IN t` THEN SET_TAC[]; ASM_REWRITE_TAC[]];
-      FIRST_ASSUM MATCH_MP_TAC THEN
-      UNDISCH_TAC `t SUBSET x:A INSERT u` THEN
-      UNDISCH_TAC `~(x:A IN t)` THEN SET_TAC[]]]);;
+  MATCH_MP_TAC FINITE_INDUCT THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [SUBSET_EMPTY] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [FINITE_EMPTY];
+   X_GEN_TAC `x:A` THEN X_GEN_TAC `u:A set` THEN DISCH_TAC THEN
+   X_GEN_TAC `t:A set` THEN DISCH_TAC THEN
+   ASM_CASES_TAC `(x : A) IN t` THENL
+   [MP_TAC (SPECL [`x:A`; `t: A set`] INSERT_DELETE) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [SYM th]) THEN
+    MATCH_MP_TAC (CONJUNCT2 FINITE_RULES) THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC [GSYM SUBSET_INSERT_DELETE];
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    UNDISCH_TAC `t SUBSET ((x:A) INSERT u)` THEN
+    ASM_REWRITE_TAC [SUBSET; IN_INSERT] THEN
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `x':A`) THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC (TAUT `!x y. ~x ==> (x \/ y ==> y)`) THEN
+    STRIP_TAC THEN
+    UNDISCH_TAC `(x' : A) IN t` THEN
+    ASM_REWRITE_TAC []]]);;
 
 export_thm FINITE_SUBSET;;
 
 let FINITE_UNION_IMP = prove
- (`!(s:A->bool) t. FINITE s /\ FINITE t ==> FINITE (s UNION t)`,
+ (`!(s:A set) t. FINITE s /\ FINITE t ==> FINITE (s UNION t)`,
   REWRITE_TAC[IMP_CONJ] THEN REWRITE_TAC[RIGHT_FORALL_IMP_THM] THEN
   MATCH_MP_TAC FINITE_INDUCT THEN REWRITE_TAC[UNION_EMPTY] THEN
-  SUBGOAL_THEN `!x s t. (x:A INSERT s) UNION t = x INSERT (s UNION t)`
-  (fun th -> REWRITE_TAC[th]) THENL
-   [SET_TAC[];
-    MESON_TAC[FINITE_RULES]]);;
+  REPEAT STRIP_TAC THEN
+  ONCE_REWRITE_TAC [GSYM INSERT_UNION_SING] THEN
+  REWRITE_TAC [UNION_ASSOC] THEN
+  ONCE_REWRITE_TAC [INSERT_UNION_SING] THEN
+  MATCH_MP_TAC (CONJUNCT2 FINITE_RULES) THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  FIRST_ASSUM ACCEPT_TAC);;
 
 export_thm FINITE_UNION_IMP;;
 
 let FINITE_UNION = prove
- (`!(s:A->bool) t. FINITE(s UNION t) <=> FINITE(s) /\ FINITE(t)`,
+ (`!(s:A set) t. FINITE(s UNION t) <=> FINITE(s) /\ FINITE(t)`,
   REPEAT GEN_TAC THEN EQ_TAC THENL
-   [REPEAT STRIP_TAC THEN MATCH_MP_TAC FINITE_SUBSET THEN
-    EXISTS_TAC `(s:A->bool) UNION t` THEN ASM_REWRITE_TAC[] THEN SET_TAC[];
+   [REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC FINITE_SUBSET THEN
+    EXISTS_TAC `(s:A set) UNION t` THEN
+    ASM_REWRITE_TAC [SUBSET_UNION];
     MATCH_ACCEPT_TAC FINITE_UNION_IMP]);;
 
 export_thm FINITE_UNION;;
 
 let FINITE_INTER = prove
- (`!(s:A->bool) t. FINITE s \/ FINITE t ==> FINITE (s INTER t)`,
-  MESON_TAC[INTER_SUBSET; FINITE_SUBSET]);;
+ (`!(s:A set) t. FINITE s \/ FINITE t ==> FINITE (s INTER t)`,
+  REPEAT STRIP_TAC THENL
+  [MATCH_MP_TAC FINITE_SUBSET THEN
+   EXISTS_TAC `s : A set` THEN
+   ASM_REWRITE_TAC [INTER_SUBSET];
+   MATCH_MP_TAC FINITE_SUBSET THEN
+   EXISTS_TAC `t : A set` THEN
+   ASM_REWRITE_TAC [INTER_SUBSET]]);;
 
 export_thm FINITE_INTER;;
 
 let FINITE_INSERT = prove
- (`!(s:A->bool) x. FINITE (x INSERT s) <=> FINITE s`,
-  REPEAT GEN_TAC THEN EQ_TAC THEN DISCH_TAC THENL
-   [MATCH_MP_TAC FINITE_SUBSET THEN
-    EXISTS_TAC `x:A INSERT s` THEN ASM_REWRITE_TAC[] THEN SET_TAC[];
-    MATCH_MP_TAC(CONJUNCT2 FINITE_RULES) THEN
-    ASM_REWRITE_TAC[]]);;
+ (`!(s : A set) x. FINITE (x INSERT s) <=> FINITE s`,
+  REPEAT GEN_TAC THEN EQ_TAC THENL
+  [STRIP_TAC THEN
+   MATCH_MP_TAC FINITE_SUBSET THEN
+   EXISTS_TAC `(x:A) INSERT s` THEN
+   ASM_REWRITE_TAC [] THEN
+   ONCE_REWRITE_TAC [GSYM INSERT_UNION_SING] THEN
+   REWRITE_TAC [SUBSET_UNION];
+   MATCH_ACCEPT_TAC (CONJUNCT2 FINITE_RULES)]);;
 
 export_thm FINITE_INSERT;;
 
 let FINITE_SING = prove
- (`!a. FINITE {a}`,
-  REWRITE_TAC[FINITE_INSERT; FINITE_RULES]);;
+ (`!(a : A). FINITE {a}`,
+  REWRITE_TAC [FINITE_INSERT; FINITE_EMPTY]);;
 
 export_thm FINITE_SING;;
 
 let FINITE_DELETE_IMP = prove
- (`!(s:A->bool) x. FINITE s ==> FINITE (s DELETE x)`,
-  REPEAT STRIP_TAC THEN MATCH_MP_TAC FINITE_SUBSET THEN
-  ASM_REWRITE_TAC[] THEN ASM SET_TAC[]);;
+ (`!(s:A set) x. FINITE s ==> FINITE (s DELETE x)`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC FINITE_SUBSET THEN
+  EXISTS_TAC `s : A set` THEN
+  ASM_REWRITE_TAC [DELETE_SUBSET]);;
 
 export_thm FINITE_DELETE_IMP;;
 
 let FINITE_DELETE = prove
- (`!(s:A->bool) x. FINITE (s DELETE x) <=> FINITE s`,
-  REPEAT GEN_TAC THEN EQ_TAC THEN REWRITE_TAC[FINITE_DELETE_IMP] THEN
-  ASM_CASES_TAC `x:A IN s` THENL
-   [SUBGOAL_THEN `s = x INSERT (s DELETE x:A)`
-    (fun th -> GEN_REWRITE_TAC (RAND_CONV o RAND_CONV) [th]) THEN
-    REWRITE_TAC[FINITE_INSERT] THEN POP_ASSUM MP_TAC THEN SET_TAC[];
-    SUBGOAL_THEN `s DELETE x:A = s` (fun th -> REWRITE_TAC[th]) THEN
-    POP_ASSUM MP_TAC THEN SET_TAC[]]);;
+ (`!(s : A set) x. FINITE (s DELETE x) <=> FINITE s`,
+  REPEAT GEN_TAC THEN EQ_TAC THENL
+  [ASM_CASES_TAC `(x:A) IN s` THENL
+   [STRIP_TAC THEN
+    MP_TAC (SPECL [`x:A`; `s : A set`] INSERT_DELETE) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [SYM th]) THEN
+    ASM_REWRITE_TAC [FINITE_INSERT];
+    MP_TAC (SPECL [`x:A`; `s : A set`] DELETE_NON_ELEMENT) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th])];
+   MATCH_ACCEPT_TAC FINITE_DELETE_IMP]);;
 
 export_thm FINITE_DELETE;;
 
 let FINITE_FINITE_UNIONS = prove
- (`!s. FINITE(s) ==> (FINITE(UNIONS s) <=> (!t. t IN s ==> FINITE(t)))`,
+ (`!(s : (A set) set).
+     FINITE(s) ==> (FINITE(UNIONS s) <=> (!t. t IN s ==> FINITE(t)))`,
   MATCH_MP_TAC FINITE_INDUCT THEN
-  REWRITE_TAC[IN_INSERT; NOT_IN_EMPTY; UNIONS_0; UNIONS_INSERT] THEN
-  REWRITE_TAC[FINITE_UNION; FINITE_RULES] THEN MESON_TAC[]);;
+  CONJ_TAC THENL
+  [REWRITE_TAC [NOT_IN_EMPTY; UNIONS_0; FINITE_EMPTY];
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [IN_INSERT; UNIONS_INSERT; FINITE_UNION] THEN
+   POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THENL
+    [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     FIRST_ASSUM ACCEPT_TAC];
+    REPEAT STRIP_TAC THENL
+    [FIRST_X_ASSUM MATCH_MP_TAC THEN
+     REWRITE_TAC [];
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     ASM_REWRITE_TAC []]]]);;
 
 export_thm FINITE_FINITE_UNIONS;;
 
 let FINITE_IMAGE_EXPAND = prove
  (`!(f:A->B) s. FINITE s ==> FINITE {y | ?x. x IN s /\ (y = f x)}`,
   GEN_TAC THEN MATCH_MP_TAC FINITE_INDUCT THEN
-  REWRITE_TAC[NOT_IN_EMPTY; REWRITE_RULE[] EMPTY_GSPEC; FINITE_RULES] THEN
-  REPEAT GEN_TAC THEN
-  SUBGOAL_THEN `{y | ?z. z IN (x INSERT s) /\ (y = (f:A->B) z)} =
-                {y | ?z. z IN s /\ (y = f z)} UNION {(f x)}`
-  (fun th -> REWRITE_TAC[th]) THENL
-   [REWRITE_TAC[EXTENSION; IN_ELIM_THM; IN_INSERT; IN_UNION; NOT_IN_EMPTY] THEN
-    MESON_TAC[];
-    REWRITE_TAC[FINITE_UNION; FINITE_INSERT; FINITE_RULES]]);;
+  CONJ_TAC THENL
+  [REWRITE_TAC [NOT_IN_EMPTY; EMPTY_GSPEC; FINITE_EMPTY];
+   REPEAT GEN_TAC THEN
+   SUBGOAL_THEN `{y | ?z. z IN (x INSERT s) /\ (y = (f:A->B) z)} =
+                 {y | ?z. z IN s /\ (y = f z)} UNION {(f x)}`
+     (fun th -> REWRITE_TAC [th]) THENL
+   [REWRITE_TAC [EXTENSION; IN_ELIM_THM; IN_INSERT; IN_UNION; NOT_IN_EMPTY] THEN
+    GEN_TAC THEN
+    EQ_TAC THENL
+    [REPEAT STRIP_TAC THENL
+     [DISJ2_TAC THEN
+      ASM_REWRITE_TAC [];
+      DISJ1_TAC THEN
+      EXISTS_TAC `x':B` THEN
+      ASM_REWRITE_TAC [] THEN
+      EXISTS_TAC `z:A` THEN
+      ASM_REWRITE_TAC []];
+     REPEAT STRIP_TAC THENL
+     [EXISTS_TAC `x':B` THEN
+      ASM_REWRITE_TAC [] THEN
+      EXISTS_TAC `z:A` THEN
+      ASM_REWRITE_TAC [];
+      EXISTS_TAC `x':B` THEN
+      ASM_REWRITE_TAC [] THEN
+      EXISTS_TAC `x:A` THEN
+      ASM_REWRITE_TAC []]];
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [FINITE_UNION; FINITE_INSERT; FINITE_EMPTY]]]);;
 
 export_thm FINITE_IMAGE_EXPAND;;
 
 let FINITE_IMAGE = prove
  (`!(f:A->B) s. FINITE s ==> FINITE (IMAGE f s)`,
-  REWRITE_TAC[IMAGE; FINITE_IMAGE_EXPAND]);;
+  REWRITE_TAC [IMAGE; FINITE_IMAGE_EXPAND]);;
 
 export_thm FINITE_IMAGE;;
 
 let FINITE_IMAGE_INJ_GENERAL = prove
  (`!(f:A->B) A s. (!x y. x IN s /\ y IN s /\ (f(x) = f(y)) ==> (x = y)) /\
                   FINITE A ==> FINITE {x | x IN s /\ f(x) IN A}`,
-  GEN_TAC THEN ONCE_REWRITE_TAC[SWAP_FORALL_THM] THEN GEN_TAC THEN
-  REWRITE_TAC[IMP_CONJ] THEN REWRITE_TAC[RIGHT_FORALL_IMP_THM] THEN
-  DISCH_TAC THEN MATCH_MP_TAC FINITE_INDUCT THEN CONJ_TAC THENL
-   [SUBGOAL_THEN `{x | x IN s /\ (f:A->B) x IN EMPTY} = EMPTY`
-    SUBST1_TAC THEN REWRITE_TAC[FINITE_RULES] THEN
-    REWRITE_TAC[EXTENSION; IN_ELIM_THM; NOT_IN_EMPTY]; ALL_TAC] THEN
-  X_GEN_TAC `y:B` THEN X_GEN_TAC `t:B->bool` THEN
+  GEN_TAC THEN
+  ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
+  GEN_TAC THEN
+  REWRITE_TAC [IMP_CONJ] THEN
+  REWRITE_TAC [RIGHT_FORALL_IMP_THM] THEN
   DISCH_TAC THEN
-  SUBGOAL_THEN `{x | x IN s /\ (f:A->B) x IN (y INSERT t)} =
-                if (?x. x IN s /\ (f x = y))
-                then (@x. x IN s /\ (f x = y)) INSERT {x | x IN s /\ f x IN t}
-                else {x | x IN s /\ f x IN t}`
-  SUBST1_TAC THENL
+  MATCH_MP_TAC FINITE_INDUCT THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [NOT_IN_EMPTY; EMPTY_GSPEC; FINITE_EMPTY];
+   X_GEN_TAC `y:B` THEN
+   X_GEN_TAC `t : B set` THEN
+   DISCH_TAC THEN
+   SUBGOAL_THEN
+     `{x | x IN s /\ (f:A->B) x IN (y INSERT t)} =
+      if (?x. x IN s /\ (f x = y))
+      then (@x. x IN s /\ (f x = y)) INSERT {x | x IN s /\ f x IN t}
+      else {x | x IN s /\ f x IN t}`
+     (fun th -> ONCE_REWRITE_TAC [th]) THENL
+  [COND_CASES_TAC THENL
+   [FIRST_X_ASSUM (MP_TAC o SELECT_RULE) THEN
+    SPEC_TAC (`@x. x IN s /\ ((f:A->B) x = y)`,`z:A`) THEN
+    REWRITE_TAC [EXTENSION; IN_ELIM_THM; IN_INSERT] THEN
+    REPEAT STRIP_TAC THEN
+    EQ_TAC***
+    ABBREV_TAC `z = @x. x IN s /\ ((f:A->B) x = y)` THEN
+   [ASM_
+
+
+   [ALL_TAC; ASM_MESON_TAC[]] THEN
+  FIRST_ASSUM(MP_TAC o SELECT_RULE) THEN
+  ABBREV_TAC `z = @x. x IN s /\ ((f:A->B) x = y)` THEN
+  ASM_MESON_TAC[]);;
+
    [ALL_TAC; COND_CASES_TAC THEN ASM_REWRITE_TAC[FINITE_INSERT]] THEN
   COND_CASES_TAC THEN ASM_REWRITE_TAC[EXTENSION; IN_ELIM_THM; IN_INSERT] THENL
    [ALL_TAC; ASM_MESON_TAC[]] THEN
@@ -2516,6 +2582,30 @@ let FINITE_RESTRICT = prove
   MESON_TAC[SUBSET_RESTRICT; FINITE_SUBSET]);;
 
 export_thm FINITE_RESTRICT;;
+
+(* ------------------------------------------------------------------------- *)
+(* Stronger form of induction is sometimes handy.                            *)
+(* ------------------------------------------------------------------------- *)
+
+let FINITE_INDUCT_STRONG = prove
+ (`!P:(A set)->bool.
+        P {} /\ (!x s. P s /\ ~(x IN s) /\ FINITE s ==> P(x INSERT s))
+        ==> !s. FINITE s ==> P s`,
+  GEN_TAC THEN STRIP_TAC THEN
+  SUBGOAL_THEN `!s:A set. FINITE s ==> FINITE s /\ P s` MP_TAC THENL
+  [ASM_REWRITE_TAC [FINITE_RULES] THEN
+   REPEAT STRIP_TAC
+
+
+   [ALL_TAC; MESON_TAC[]] THEN
+  MATCH_MP_TAC FINITE_INDUCT THEN
+ ASM_SIMP_TAC[FINITE_RULES] THEN
+  REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[] THEN ASM_CASES_TAC `x:A IN s` THENL
+   [SUBGOAL_THEN `x:A INSERT s = s` (fun th -> ASM_REWRITE_TAC[th]) THEN
+    UNDISCH_TAC `x:A IN s` THEN SET_TAC[];
+    FIRST_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[]]);;
+
+export_thm FINITE_INDUCT_STRONG;;
 
 (* ------------------------------------------------------------------------- *)
 (* Recursion over finite sets; based on Ching-Tsun's code (archive 713).     *)
