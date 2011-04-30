@@ -2641,32 +2641,50 @@ let FINITE_SUBSET_IMAGE = prove
 
 export_thm FINITE_SUBSET_IMAGE;;
 
-(***
 let EXISTS_FINITE_SUBSET_IMAGE = prove
- (`!P f s.
+ (`!P (f:A->B) s.
     (?t. FINITE t /\ t SUBSET IMAGE f s /\ P t) <=>
     (?t. FINITE t /\ t SUBSET s /\ P (IMAGE f t))`,
-  REWRITE_TAC[FINITE_SUBSET_IMAGE; CONJ_ASSOC] THEN MESON_TAC[]);;
+  REWRITE_TAC[FINITE_SUBSET_IMAGE; CONJ_ASSOC] THEN
+  REPEAT (STRIP_TAC ORELSE EQ_TAC) THENL
+  [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   EXISTS_TAC `s' : A set` THEN
+   ASM_REWRITE_TAC [];
+   EXISTS_TAC `IMAGE (f : A -> B) t` THEN
+   ASM_REWRITE_TAC [] THEN
+   EXISTS_TAC `t : A set` THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm EXISTS_FINITE_SUBSET_IMAGE;;
 
 let FINITE_SUBSET_IMAGE_IMP = prove
- (`!f:A->B s t.
+ (`!(f:A->B) s t.
         FINITE(t) /\ t SUBSET (IMAGE f s)
         ==> ?s'. FINITE s' /\ s' SUBSET s /\ t SUBSET (IMAGE f s')`,
-  MESON_TAC[SUBSET_REFL; FINITE_SUBSET_IMAGE]);;
+  REWRITE_TAC [FINITE_SUBSET_IMAGE] THEN
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  EXISTS_TAC `s' : A set` THEN
+  ASM_REWRITE_TAC [SUBSET_REFL]);;
 
 export_thm FINITE_SUBSET_IMAGE_IMP;;
 
 let FINITE_DIFF = prove
- (`!s t. FINITE s ==> FINITE(s DIFF t)`,
-  MESON_TAC[FINITE_SUBSET; DIFF_SUBSET]);;
+ (`!(s : A set) t. FINITE s ==> FINITE(s DIFF t)`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC FINITE_SUBSET THEN
+  EXISTS_TAC `s : A set` THEN
+  ASM_REWRITE_TAC [DIFF_SUBSET]);;
 
 export_thm FINITE_DIFF;;
 
 let FINITE_RESTRICT = prove
- (`!s:A->bool P. FINITE s ==> FINITE {x | x IN s /\ P x}`,
-  MESON_TAC[SUBSET_RESTRICT; FINITE_SUBSET]);;
+ (`!(s:A set) P. FINITE s ==> FINITE {x | x IN s /\ P x}`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC FINITE_SUBSET THEN
+  EXISTS_TAC `s : A set` THEN
+  ASM_REWRITE_TAC [SUBSET; IN_ELIM] THEN
+  REPEAT STRIP_TAC);;
 
 export_thm FINITE_RESTRICT;;
 
@@ -2674,6 +2692,7 @@ export_thm FINITE_RESTRICT;;
 (* Stronger form of induction is sometimes handy.                            *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 let FINITE_INDUCT_STRONG = prove
  (`!P:(A set)->bool.
         P {} /\ (!x s. P s /\ ~(x IN s) /\ FINITE s ==> P(x INSERT s))
