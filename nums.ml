@@ -165,7 +165,7 @@ let OPENTHEORY_NUMERAL = prove
    GEN_TAC THEN REFL_TAC);;
 
 let NUMERAL = new_definition
- `NUMERAL (n:num) = n`;;
+ `!(n:num). NUMERAL n = n`;;
 
 delete_const_definition ["NUMERAL"];;
 replace_proof NUMERAL (read_proof OPENTHEORY_NUMERAL);;
