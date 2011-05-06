@@ -148,7 +148,7 @@ let mk_rewrites =
     let pth = ITAUT `p ==> q ==> r <=> p /\ q ==> r` in
     REWR_CONV pth
   and IMP_EXISTS_RULE =
-    let pth = ITAUT `(!x. P x ==> Q) <=> (?x. P x) ==> Q` in
+    let pth = ITAUT `(!(x:A). P x ==> Q) <=> (?x. P x) ==> Q` in
     let cnv = REWR_CONV pth in
     fun v th -> CONV_RULE cnv (GEN v th) in
   let collect_condition oldhyps th =

@@ -595,13 +595,13 @@ export_thm UNIQUE_SKOLEM_THM;;
 
 let COND_CONG =
   TAUT `(g = g') ==>
-        (g' ==> (t = t')) ==>
+        (g' ==> ((t:A) = t')) ==>
         (~g' ==> (e = e')) ==>
         ((if g then t else e) = (if g' then t' else e'))` in
   extend_basic_congs [COND_CONG];;
 
 let COND_EQ_CLAUSE = prove
- (`(if x = x then y else z) = y`,
+ (`(if (x:A) = x then (y:B) else z) = y`,
   REWRITE_TAC[]) in
  extend_basic_rewrites [COND_EQ_CLAUSE];;
 

@@ -288,7 +288,7 @@ let WF_MEASURE = prove
 export_thm WF_MEASURE;;
 
 let MEASURE_LE = prove
- (`!m a b. (!y. MEASURE m y a ==> MEASURE m y b) <=> m(a) <= m(b)`,
+ (`!m a b. (!y. MEASURE m (y:A) a ==> MEASURE m y b) <=> m(a) <= m(b)`,
     REWRITE_TAC[MEASURE] THEN MESON_TAC[NOT_LE; LTE_TRANS; LT_REFL]);;
 
 export_thm MEASURE_LE;;
@@ -380,7 +380,7 @@ let WF_REC_TAIL_GENERAL = prove
   MP_TAC THENL
    [FIRST_ASSUM(MATCH_MP_TAC o MATCH_MP WF_REC) THEN
     REPEAT STRIP_TAC THEN MATCH_MP_TAC(MESON[]
-     `(a = b) /\ (a /\ b ==> (x = y) /\ (f x = g x))
+     `(a = b) /\ (a /\ b ==> (x = y) /\ ((f:A->B) x = g x))
       ==> ((if a then f x else d) = (if b then g y else d))`) THEN
     REPEAT STRIP_TAC THENL
      [SUBGOAL_THEN
@@ -421,11 +421,11 @@ let WF_REC_TAIL_GENERAL = prove
 let WF_INDUCT_TAC =
   let qqconv =
     let pth = prove
-     (`(!x. P x ==> !y. Q x y) <=> !y x. P x ==> Q x y`, MESON_TAC[]) in
+     (`(!x. P x ==> !y. Q (x:A) (y:B)) <=> !y x. P x ==> Q x y`, MESON_TAC[]) in
     GEN_REWRITE_CONV I [pth]
   and eqconv =
     let pth = prove
-     (`(!m. P m ==> (m = e) ==> Q) <=> (P e ==> Q)`, MESON_TAC[]) in
+     (`(!m. P (m:A) ==> (m = e) ==> Q) <=> (P e ==> Q)`, MESON_TAC[]) in
     REWR_CONV pth in
   let rec qqconvs tm =
     try (qqconv THENC BINDER_CONV qqconvs) tm

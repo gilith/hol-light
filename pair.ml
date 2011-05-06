@@ -49,7 +49,7 @@ delete_const_definition ["GEQ"];;
 delete_proof GEQ_DEF;;
 
 let _SEQPATTERN = new_definition
- `_SEQPATTERN = \r s x. if ?y. r x y then r x else s x`;;
+ `_SEQPATTERN = \r s x. if ?y. r (x:A) (y:B) then r x else s x`;;
 
 let _UNGUARDED_PATTERN = new_definition
  `_UNGUARDED_PATTERN = \p r. p /\ r`;;
@@ -58,10 +58,10 @@ let _GUARDED_PATTERN = new_definition
  `_GUARDED_PATTERN = \p g r. p /\ g /\ r`;;
 
 let _MATCH = new_definition
- `_MATCH =  \e r. if (?!) (r e) then (@) (r e) else @z. F`;;
+ `_MATCH =  \e (r:A->B->bool). if (?!) (r e) then (@) (r e) else @z. F`;;
 
 let _FUNCTION = new_definition
- `_FUNCTION = \r x. if (?!) (r x) then (@) (r x) else @z. F`;;
+ `_FUNCTION = \r x. if (?!) ((r:A->B->bool) x) then (@) (r x) else @z. F`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Pair type.                                                                *)
@@ -149,7 +149,7 @@ let PAIR = prove
 export_thm PAIR;;
 
 let pair_INDUCT = prove
- (`!P. (!x y. P (x,y)) ==> !p. P p`,
+ (`!P. (!(x:A) (y:B). P (x,y)) ==> !p. P p`,
   REPEAT STRIP_TAC THEN
   GEN_REWRITE_TAC RAND_CONV [GSYM PAIR] THEN
   FIRST_ASSUM MATCH_ACCEPT_TAC);;
@@ -286,7 +286,7 @@ let GEN_BETA_CONV =
   and DEGEQ_RULE = CONV_RULE(REWR_CONV GEQ_DEF) in
   let GABS_RULE =
     let pth = prove
-     (`(?) P ==> P (GABS P)`,
+     (`(?) (P:A->bool) ==> P (GABS P)`,
       SIMP_TAC[GABS_DEF; SELECT_AX; ETA_AX]) in
     MATCH_MP pth in
   let rec create_iterated_projections tm =
@@ -325,7 +325,8 @@ let GEN_BETA_CONV =
 (* Add this to the basic "rewrites" and pairs to the inductive type store.   *)
 (* ------------------------------------------------------------------------- *)
 
-extend_basic_convs("GEN_BETA_CONV",(`GABS (\a. b) c`,GEN_BETA_CONV));;
+extend_basic_convs("GEN_BETA_CONV",
+                   (`GABS ((\a. b) : (A->B)->bool) c`,GEN_BETA_CONV));;
 
 inductive_type_store :=
  ("prod",(1,pair_INDUCT,pair_RECURSION))::(!inductive_type_store);;
@@ -337,19 +338,19 @@ inductive_type_store :=
 logfile "pair-thm";;
 
 let FORALL_PAIR_THM = prove
- (`!P. (!p. P p) <=> (!p1 p2. P(p1,p2))`,
+ (`!P. (!p. P p) <=> (!p1 p2. P((p1:A),(p2:B)))`,
   MESON_TAC[PAIR]);;
 
 export_thm FORALL_PAIR_THM;;
 
 let EXISTS_PAIR_THM = prove
- (`!P. (?p. P p) <=> ?p1 p2. P(p1,p2)`,
+ (`!P. (?p. P p) <=> ?p1 p2. P((p1:A),(p2:B))`,
   MESON_TAC[PAIR]);;
 
 export_thm EXISTS_PAIR_THM;;
 
 let LAMBDA_PAIR_THM = prove
- (`!t. (\p. t p) = (\(x,y). t(x,y))`,
+ (`!(t:A#B->C). (\p. t p) = (\(x,y). t(x,y))`,
   REWRITE_TAC[FORALL_PAIR_THM; FUN_EQ_THM]);;
 
 export_thm LAMBDA_PAIR_THM;;
@@ -361,14 +362,14 @@ logfile_end ();;
 (* ------------------------------------------------------------------------- *)
 
 let FORALL_PAIRED_THM = prove
- (`!P. (!(x,y). P x y) <=> (!x y. P x y)`,
+ (`!P. (!(x,y). P x y) <=> (!x y. P (x:A) (y:B))`,
   GEN_TAC THEN GEN_REWRITE_TAC (LAND_CONV o RATOR_CONV) [FORALL_DEF] THEN
   REWRITE_TAC[FUN_EQ_THM; FORALL_PAIR_THM]);;
 
 export_thm FORALL_PAIRED_THM;;
 
 let EXISTS_PAIRED_THM = prove
- (`!P. (?(x,y). P x y) <=> (?x y. P x y)`,
+ (`!P. (?(x,y). P x y) <=> (?x y. P (x:A) (y:B))`,
   GEN_TAC THEN MATCH_MP_TAC(TAUT `(~p <=> ~q) ==> (p <=> q)`) THEN
   REWRITE_TAC[REWRITE_RULE[ETA_AX] NOT_EXISTS_THM; FORALL_PAIR_THM]);;
 
@@ -379,14 +380,14 @@ export_thm EXISTS_PAIRED_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let FORALL_TRIPLED_THM = prove
- (`!P. (!(x,y,z). P x y z) <=> (!x y z. P x y z)`,
+ (`!P. (!(x,y,z). P x y z) <=> (!x y z. P (x:A) (y:B) (z:C))`,
   GEN_TAC THEN GEN_REWRITE_TAC (LAND_CONV o RATOR_CONV) [FORALL_DEF] THEN
   REWRITE_TAC[FUN_EQ_THM; FORALL_PAIR_THM]);;
 
 export_thm FORALL_TRIPLED_THM;;
 
 let EXISTS_TRIPLED_THM = prove
- (`!P. (?(x,y,z). P x y z) <=> (?x y z. P x y z)`,
+ (`!P. (?(x,y,z). P x y z) <=> (?x y z. P (x:A) (y:B) (z:C))`,
   GEN_TAC THEN MATCH_MP_TAC(TAUT `(~p <=> ~q) ==> (p <=> q)`) THEN
   REWRITE_TAC[REWRITE_RULE[ETA_AX] NOT_EXISTS_THM; FORALL_PAIR_THM]);;
 
@@ -422,11 +423,11 @@ let (LET_TAC:tactic) =
     with Failure _ -> false
   and PROVE_DEPAIRING_EXISTS =
     let pth = prove
-     (`((x,y) = a) <=> (x = FST a) /\ (y = SND a)`,
+     (`((x,y) = a) <=> ((x:A) = FST a) /\ ((y:B) = SND a)`,
       MESON_TAC[PAIR; PAIR_EQ]) in
     let rewr1_CONV = GEN_REWRITE_CONV TOP_DEPTH_CONV [pth]
     and rewr2_RULE =
-        let pth1 = TAUT `(x = x) <=> T` in
+        let pth1 = TAUT `((x:A) = x) <=> T` in
         let pth2 = TAUT `a /\ T <=> a` in
         GEN_REWRITE_RULE (LAND_CONV o DEPTH_CONV) [pth1; pth2] in
     fun tm ->

@@ -246,7 +246,7 @@ extend_basic_rewrites
    EXISTS_SIMP;
    BETA_THM;
    let IMP_EQ_CLAUSE = prove
-    (`((x = x) ==> p) <=> p`,
+    (`(((x:A) = x) ==> p) <=> p`,
      REWRITE_TAC[EQT_INTRO(SPEC_ALL EQ_REFL); IMP_CLAUSES]) in
    IMP_EQ_CLAUSE];;
 
@@ -315,7 +315,7 @@ let FORALL_UNWIND_THM2 = prove
 export_thm FORALL_UNWIND_THM2;;
 
 let FORALL_UNWIND_THM1 = prove
- (`!P a. (!x. a = x ==> P x) <=> P a`,
+ (`!P (a:A). (!x. a = x ==> P x) <=> P a`,
   REPEAT GEN_TAC THEN CONV_TAC(LAND_CONV(ONCE_DEPTH_CONV SYM_CONV)) THEN
   MATCH_ACCEPT_TAC FORALL_UNWIND_THM2);;
 
