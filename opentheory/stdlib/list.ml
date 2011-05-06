@@ -197,12 +197,14 @@ let length_drop = prove
   (`!n l. n <= LENGTH (l : A list) ==> LENGTH (drop n l) = LENGTH l - n`,
    MATCH_MP_TAC num_INDUCTION THEN
    CONJ_TAC THENL
-   [REWRITE_TAC [LENGTH; drop_def; SUB];
+   [REWRITE_TAC [LENGTH; drop_def; SUB_0];
     GEN_TAC THEN
     STRIP_TAC THEN
     LIST_INDUCT_TAC THENL
     [REWRITE_TAC [LENGTH; LE; NOT_SUC];
-     ASM_REWRITE_TAC [LENGTH; LE_SUC; drop_def; SUB_SUC]]]);;
+     ASM_REWRITE_TAC [LENGTH; LE_SUC; drop_def] THEN
+     DISCH_THEN (fun th -> MP_TAC th THEN MP_TAC (MATCH_MP SUB_SUC th)) THEN
+     DISCH_THEN (fun th -> ASM_REWRITE_TAC [th])]]);;
 
 export_thm length_drop;;
 
@@ -236,8 +238,15 @@ let nth_drop = prove
     LIST_INDUCT_TAC THENL
     [REWRITE_TAC [LENGTH; LE; NOT_SUC];
      POP_ASSUM (K ALL_TAC) THEN
-     REWRITE_TAC [LENGTH; LE_SUC; drop_def; SUB_SUC; ADD; EL; TL] THEN
-     FIRST_ASSUM MATCH_ACCEPT_TAC]]);;
+     REWRITE_TAC [LENGTH; LE_SUC; drop_def; ADD; EL] THEN
+     REPEAT STRIP_TAC THEN
+     POP_ASSUM MP_TAC THEN
+     MP_TAC (SPECL [`LENGTH (t : A list)`; `n:num`] SUB_SUC) THEN
+     ASM_REWRITE_TAC [] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     STRIP_TAC THEN
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     ASM_REWRITE_TAC []]]);;
 
 export_thm nth_drop;;
 
