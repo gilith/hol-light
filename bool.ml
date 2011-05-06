@@ -73,14 +73,14 @@ let PROVE_HYP ath bth =
 (* Rules for T                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def-true";;
+logfile "bool-def";;
 
 let T_DEF = new_basic_definition
  `T = ((\p:bool. p) = (\p:bool. p))`;;
 
 export_thm T_DEF;;
 
-logfile "bool-int-true";;
+logfile "bool-int";;
 
 let TRUTH = EQ_MP (SYM T_DEF) (REFL `\p:bool. p`);;
 
@@ -102,7 +102,7 @@ let EQT_INTRO =
 (* Rules for /\                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def-and";;
+logfile "bool-def";;
 
 let AND_DEF = new_basic_definition
  `(/\) = \p q. (\f:bool->bool->bool. f p q) = (\f. f T T)`;;
@@ -161,7 +161,7 @@ let CONJUNCTS = striplist CONJ_PAIR;;
 (* Rules for ==>                                                             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def-imp";;
+logfile "bool-def";;
 
 let IMP_DEF = new_basic_definition
   `(==>) = \p q. p /\ q <=> p`;;
@@ -235,7 +235,7 @@ let IMP_TRANS =
 (* Rules for !                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def-forall";;
+logfile "bool-def";;
 
 let FORALL_DEF = new_basic_definition
  `(!) = \P:A->bool. P = \x. T`;;
@@ -307,7 +307,7 @@ let GEN_ALL th =
 (* Rules for ?                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def-exists";;
+logfile "bool-def";;
 
 let EXISTS_DEF = new_basic_definition
  `(?) = \P:A->bool. !q. (!x. P x ==> q) ==> q`;;
@@ -358,7 +358,7 @@ let SIMPLE_CHOOSE v th =
 (* Rules for \/                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def-or";;
+logfile "bool-def";;
 
 let OR_DEF = new_basic_definition
  `(\/) = \p q. !r. (p ==> r) ==> (q ==> r) ==> r`;;
@@ -414,14 +414,14 @@ let SIMPLE_DISJ_CASES th1 th2 =
 (* Rules for negation and falsity.                                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def-false";;
+logfile "bool-def";;
 
 let F_DEF = new_basic_definition
  `F = !p:bool. p`;;
 
 export_thm F_DEF;;
 
-logfile "bool-def-not";;
+logfile "bool-def";;
 
 let NOT_DEF = new_basic_definition
  `(~) = \p. p ==> F`;;
@@ -478,7 +478,7 @@ let CONTR =
 (* Rules for unique existence.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def-exists-unique";;
+logfile "bool-def";;
 
 let EXISTS_UNIQUE_DEF = new_basic_definition
  `(?!) = \P:A->bool. ((?) P) /\ (!x y. P x /\ P y ==> x = y)`;;

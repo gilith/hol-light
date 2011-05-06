@@ -41,7 +41,7 @@ make_overloadable "&" `:num->A`;;
 
 do_list overload_interface
  ["+",`(+):num->num->num`; "-",`(-):num->num->num`;
-  "*",`(*):num->num->num`; "<",`(<):num->num->bool`;
+  "*",`( * ):num->num->num`; "<",`(<):num->num->bool`;
   "<=",`(<=):num->num->bool`; ">",`(>):num->num->bool`;
   ">=",`(>=):num->num->bool`];;
 
@@ -52,7 +52,7 @@ let prioritize_num() = prioritize_overload(mk_type("num",[]));;
 (* ------------------------------------------------------------------------- *)
 
 let dist = new_definition
-  `dist(m,n) = (m - n) + (n - m)`;;
+  `!m n. dist(m,n) = if m <= n then n - m else m - n`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Some easy theorems.                                                       *)

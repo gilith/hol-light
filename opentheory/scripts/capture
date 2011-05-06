@@ -10,7 +10,7 @@ then
     echo '#use "opentheory/haskell/all.ml";;'
 fi) | ocaml &> $log
 
-if grep '^Exception:\|^Error:\|^Error in included file' $log
+if grep '^Exception:\|^Error:\|^Error in included file\|Warning: inventing type variables' $log
 then
     cat $log
     exit 1

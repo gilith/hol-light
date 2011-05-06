@@ -585,6 +585,7 @@ let ideal_cofactors parms = snd(RING_AND_IDEAL_CONV parms);;
 (* you care. This also applies to EVEN and ODD.                              *)
 (* ------------------------------------------------------------------------- *)
 
+(*** This doesn't look like it works with our under-specified versions
 let NUM_SIMPLIFY_CONV =
   let pre_tm = `PRE`
   and div_tm = `(DIV):num->num->num`
@@ -696,5 +697,6 @@ let NUM_RING =
   fun tm -> let th = initconv tm in
             if rand(concl th) = t_tm then th
             else EQ_MP (SYM th) (rawring(rand(concl th)));;
+***)
 
 logfile_end ();;

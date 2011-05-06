@@ -297,7 +297,7 @@ export_thm MEASURE_LE;;
 (* Trivially, a WF relation is irreflexive.                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "relation-well-founded-trivial";;
+logfile "relation-well-founded-thm";;
 
 let WF_REFL = prove
  (`!(<<) (x:A). WF(<<) ==> ~(x << x)`,
@@ -320,8 +320,6 @@ export_thm WF_FALSE;;
 (* ------------------------------------------------------------------------- *)
 (* Tail recursion.                                                           *)
 (* ------------------------------------------------------------------------- *)
-
-logfile "relation-well-founded-tail";;
 
 let WF_REC_TAIL = prove
  (`!P g h. ?f:A->B. !x. f x = if P(x) then f(g x) else h x`,
@@ -353,8 +351,6 @@ let WF_REC_TAIL = prove
      [SIMP_TAC[LEFT_IMP_EXISTS_THM] THEN
       INDUCT_TAC THEN ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[LT_0];
       ASM_MESON_TAC[LT]]]);;
-
-export_thm WF_REC_TAIL;;
 
 (* ------------------------------------------------------------------------- *)
 (* A more general mix of tail and wellfounded recursion.                     *)
@@ -417,8 +413,6 @@ let WF_REC_TAIL_GENERAL = prove
     DISCH_THEN(fun th -> ASSUME_TAC(GSYM th) THEN MP_TAC th) THEN
     MATCH_MP_TAC MONO_FORALL THEN X_GEN_TAC `x:A` THEN
     ASM_CASES_TAC `P (f:A->B) (x:A) :bool` THEN ASM_MESON_TAC[]]);;
-
-export_thm WF_REC_TAIL_GENERAL;;
 
 (* ------------------------------------------------------------------------- *)
 (* Tactic to apply WF induction on a free "measured" term in the goal.       *)

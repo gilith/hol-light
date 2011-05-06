@@ -13,7 +13,7 @@ needs "recursion.ml";;
 (* Constants implementing (or at least tagging) syntactic sugar.             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def-let";;
+logfile "bool-def";;
 
 let LET_OPENTHEORY_DEF = new_basic_definition
  `LET = \(f:A->B) x. f x`;;
@@ -137,7 +137,7 @@ let SND = prove
 
 export_thm SND;;
 
-logfile "pair-induct";;
+logfile "pair-thm";;
 
 let PAIR = prove
  (`!x:A#B. FST x,SND x = x`,
@@ -334,7 +334,7 @@ inductive_type_store :=
 (* Convenient rules to eliminate binders over pairs.                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "pair-abs";;
+logfile "pair-thm";;
 
 let FORALL_PAIR_THM = prove
  (`!P. (!p. P p) <=> (!p1 p2. P(p1,p2))`,

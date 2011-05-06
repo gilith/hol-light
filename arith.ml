@@ -36,16 +36,13 @@ parse_as_infix("MOD",(22,"left"));;
 
 logfile "natural-pre";;
 
-let PRE = new_recursive_definition num_RECURSION
+let PRE_DEF = new_recursive_definition num_RECURSION
  `(PRE 0 = 0) /\
   (!n. PRE (SUC n) = n)`;;
 
-let PRE_0,PRE_SUC = CONJ_PAIR PRE;;
+let PRE = CONJUNCT2 PRE_DEF;;
 
-export_thm PRE_0;;
-export_thm PRE_SUC;;
-
-let PRE = CONJ PRE_0 PRE_SUC;;
+export_thm PRE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Addition.                                                                 *)
@@ -1087,43 +1084,30 @@ export_thm EVEN_ODD_DECOMPOSITION;;
 
 logfile "natural-sub-def";;
 
-let SUB = new_recursive_definition num_RECURSION
+let SUB_DEF = new_recursive_definition num_RECURSION
  `(!m. m - 0 = m) /\
   (!m n. m - (SUC n) = PRE(m - n))`;;
 
-export_thm SUB;;
+let ADD_SUB_LEMMA = prove
+ (`!m n. PRE (SUC m - n) = m - n`,
+  GEN_TAC THEN INDUCT_TAC THEN ASM_REWRITE_TAC[SUB_DEF; PRE]);;
+
+let ADD_SUB = prove
+ (`!m n. (m + n) - n = m`,
+  GEN_TAC THEN INDUCT_TAC THEN
+  ASM_REWRITE_TAC[SUB_DEF; ADD_CLAUSES; ADD_SUB_LEMMA]);;
+
+export_thm ADD_SUB;;
 
 logfile "natural-sub-thm";;
 
 let SUB_0 = prove
- (`!m. (0 - m = 0) /\ (m - 0 = m)`,
-  REWRITE_TAC[SUB] THEN INDUCT_TAC THEN ASM_REWRITE_TAC[SUB; PRE]);;
+ (`!m. m - 0 = m`,
+  GEN_TAC THEN
+  CONV_TAC (LAND_CONV (LAND_CONV (ONCE_REWRITE_CONV [GSYM ADD_0]))) THEN
+  REWRITE_TAC [ADD_SUB]);;
 
 export_thm SUB_0;;
-
-let SUB_PRESUC = prove
- (`!m n. PRE(SUC m - n) = m - n`,
-  GEN_TAC THEN INDUCT_TAC THEN ASM_REWRITE_TAC[SUB; PRE]);;
-
-export_thm SUB_PRESUC;;
-
-let SUB_SUC = prove
- (`!m n. SUC m - SUC n = m - n`,
-  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[SUB; PRE; SUB_PRESUC]);;
-
-export_thm SUB_SUC;;
-
-let SUB_REFL = prove
- (`!n. n - n = 0`,
-  INDUCT_TAC THEN ASM_REWRITE_TAC[SUB_SUC; SUB_0]);;
-
-export_thm SUB_REFL;;
-
-let ADD_SUB = prove
- (`!m n. (m + n) - n = m`,
-  GEN_TAC THEN INDUCT_TAC THEN ASM_REWRITE_TAC[ADD_CLAUSES; SUB_SUC; SUB_0]);;
-
-export_thm ADD_SUB;;
 
 let ADD_SUB2 = prove
  (`!m n. (m + n) - m = n`,
@@ -1131,83 +1115,146 @@ let ADD_SUB2 = prove
 
 export_thm ADD_SUB2;;
 
-let SUB_EQ_0 = prove
- (`!m n. (m - n = 0) <=> m <= n`,
-  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[SUB_SUC; LE_SUC; SUB_0] THEN
-  REWRITE_TAC[LE; LE_0]);;
-
-export_thm SUB_EQ_0;;
-
-let ADD_SUBR2 = prove
- (`!m n. m - (m + n) = 0`,
-  REWRITE_TAC[SUB_EQ_0; LE_ADD]);;
-
-export_thm ADD_SUBR2;;
-
-let ADD_SUBR = prove
- (`!m n. n - (m + n) = 0`,
-  ONCE_REWRITE_TAC[ADD_SYM] THEN MATCH_ACCEPT_TAC ADD_SUBR2);;
-
-export_thm ADD_SUBR;;
-
 let SUB_ADD = prove
  (`!m n. n <= m ==> ((m - n) + n = m)`,
-  REWRITE_TAC[LE_EXISTS] THEN REPEAT STRIP_TAC THEN
-  ASM_REWRITE_TAC[ONCE_REWRITE_RULE[ADD_SYM] ADD_SUB] THEN
+  REWRITE_TAC [LE_EXISTS] THEN REPEAT STRIP_TAC THEN
+  POP_ASSUM SUBST_VAR_TAC THEN
+  REWRITE_TAC [ADD_SUB2] THEN
   MATCH_ACCEPT_TAC ADD_SYM);;
 
 export_thm SUB_ADD;;
 
 let SUB_ADD_LCANCEL = prove
- (`!m n p. (m + n) - (m + p) = n - p`,
-  INDUCT_TAC THEN ASM_REWRITE_TAC[ADD_CLAUSES; SUB_0; SUB_SUC]);;
+ (`!m n p. p <= n ==> (m + n) - (m + p) = n - p`,
+  REWRITE_TAC [LE_EXISTS] THEN
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM SUBST_VAR_TAC THEN
+  REWRITE_TAC [ADD_SUB2; ADD_ASSOC]);;
 
 export_thm SUB_ADD_LCANCEL;;
 
 let SUB_ADD_RCANCEL = prove
- (`!m n p. (m + p) - (n + p) = m - n`,
+ (`!m n p. n <= m ==> (m + p) - (n + p) = m - n`,
   ONCE_REWRITE_TAC[ADD_SYM] THEN MATCH_ACCEPT_TAC SUB_ADD_LCANCEL);;
 
 export_thm SUB_ADD_RCANCEL;;
 
+let SUB_SUB = prove
+ (`!m n p. n + p <= m ==> m - (n + p) = (m - n) - p`,
+  REWRITE_TAC [LE_EXISTS] THEN REPEAT STRIP_TAC THEN
+  POP_ASSUM SUBST_VAR_TAC THEN
+  REWRITE_TAC [ADD_SUB2] THEN
+  REWRITE_TAC [GSYM ADD_ASSOC; ADD_SUB2]);;
+
+export_thm SUB_ADD;;
+
+let SUB_REFL = prove
+ (`!n. n - n = 0`,
+  GEN_TAC THEN
+  CONV_TAC (LAND_CONV (LAND_CONV (ONCE_REWRITE_CONV [GSYM ADD_0]))) THEN
+  REWRITE_TAC [ADD_SUB2]);;
+
+export_thm SUB_REFL;;
+
+let SUB_EQ_0 = prove
+ (`!m n. n <= m ==> (m - n = 0 <=> m = n)`,
+  REWRITE_TAC [LE_EXISTS] THEN
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM SUBST_VAR_TAC THEN
+  REWRITE_TAC [ADD_SUB2; EQ_ADD_LCANCEL_0]);;
+
+export_thm SUB_EQ_0;;
+
+let SUC_SUB1 = prove
+ (`!n. SUC n - 1 = n`,
+  REWRITE_TAC[ADD1; ADD_SUB]);;
+
+export_thm SUC_SUB1;;
+
+let SUB1 = prove
+ (`!n. ~(n = 0) ==> PRE n = n - 1`,
+  INDUCT_TAC THENL
+  [REWRITE_TAC [];
+   REWRITE_TAC [PRE; SUC_SUB1]]);;
+
+export_thm SUB1;;
+
+let SUB_SUC_PRE = prove
+  (`!m n. n < m ==> m - SUC n = PRE (m - n)`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPECL [`m:num`; `n:num`; `1`] SUB_SUB) THEN
+   ASM_REWRITE_TAC [GSYM ADD1; GSYM LT_SUC_LE; LT_SUC] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC SUB1 THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [GSYM LE_SUC_LT; LE_EXISTS] THEN
+   DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+   REWRITE_TAC [ADD1; GSYM ADD_ASSOC; ADD_SUB2] THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   REWRITE_TAC [GSYM ADD1; NOT_SUC]);;
+
+export_thm SUB_SUC_PRE;;
+
+let SUB_SUC = prove
+ (`!m n. n <= m ==> SUC m - SUC n = m - n`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`m:num`; `n:num`; `1`] SUB_ADD_RCANCEL) THEN
+  ASM_REWRITE_TAC [ADD1]);;
+
+export_thm SUB_SUC;;
+
+let SUB_PRESUC = prove
+ (`!m n. n <= m ==> PRE (SUC m - n) = m - n`,
+  GEN_TAC THEN INDUCT_TAC THENL
+  [REWRITE_TAC [SUB_0; PRE];
+   POP_ASSUM (K ALL_TAC) THEN
+   REWRITE_TAC [LE_SUC_LT] THEN
+   STRIP_TAC THEN
+   MP_TAC (SPECL [`m:num`; `n:num`] SUB_SUC_PRE) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC SUB_SUC THEN
+   MATCH_MP_TAC LT_IMP_LE THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm SUB_PRESUC;;
+
 let LEFT_SUB_DISTRIB = prove
- (`!m n p. m * (n - p) = m * n - m * p`,
-  REPEAT GEN_TAC THEN CONV_TAC SYM_CONV THEN
-  DISJ_CASES_TAC(SPECL [`n:num`; `p:num`] LE_CASES) THENL
-   [FIRST_ASSUM(fun th -> REWRITE_TAC[REWRITE_RULE[GSYM SUB_EQ_0] th]) THEN
-    ASM_REWRITE_TAC[MULT_CLAUSES; SUB_EQ_0; LE_MULT_LCANCEL];
-    POP_ASSUM(CHOOSE_THEN SUBST1_TAC o REWRITE_RULE[LE_EXISTS]) THEN
-    REWRITE_TAC[LEFT_ADD_DISTRIB] THEN
-    REWRITE_TAC[ONCE_REWRITE_RULE[ADD_SYM] ADD_SUB]]);;
+ (`!m n p. p <= n ==> m * (n - p) = m * n - m * p`,
+  REWRITE_TAC [LE_EXISTS] THEN
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM SUBST_VAR_TAC THEN
+  REWRITE_TAC [ADD_SUB2; LEFT_ADD_DISTRIB]);;
 
 export_thm LEFT_SUB_DISTRIB;;
 
 let RIGHT_SUB_DISTRIB = prove
- (`!m n p. (m - n) * p = m * p - n * p`,
+ (`!m n p. n <= m ==> (m - n) * p = m * p - n * p`,
   ONCE_REWRITE_TAC[MULT_SYM] THEN MATCH_ACCEPT_TAC LEFT_SUB_DISTRIB);;
 
 export_thm RIGHT_SUB_DISTRIB;;
 
-let SUC_SUB1 = prove
- (`!n. SUC n - 1 = n`,
-  REWRITE_TAC[ONE; SUB_SUC; SUB_0]);;
-
-export_thm SUC_SUB1;;
-
 let EVEN_SUB = prove
- (`!m n. EVEN(m - n) <=> m <= n \/ (EVEN(m) <=> EVEN(n))`,
-  REPEAT GEN_TAC THEN ASM_CASES_TAC `m <= n:num` THENL
-   [ASM_MESON_TAC[SUB_EQ_0; EVEN]; ALL_TAC] THEN
-  DISJ_CASES_TAC(SPECL [`m:num`; `n:num`] LE_CASES) THEN ASM_SIMP_TAC[] THEN
-  FIRST_ASSUM(MP_TAC o AP_TERM `EVEN` o MATCH_MP SUB_ADD) THEN
-  ASM_MESON_TAC[EVEN_ADD]);;
+ (`!m n. n <= m ==> (EVEN (m - n) <=> (EVEN(m) <=> EVEN(n)))`,
+  REWRITE_TAC [LE_EXISTS] THEN
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM SUBST_VAR_TAC THEN
+  REWRITE_TAC [ADD_SUB2; EVEN_ADD] THEN
+  BOOL_CASES_TAC `EVEN n` THEN
+  REWRITE_TAC []);;
 
 export_thm EVEN_SUB;;
 
 let ODD_SUB = prove
- (`!m n. ODD(m - n) <=> n < m /\ ~(ODD m <=> ODD n)`,
-  REWRITE_TAC[GSYM NOT_EVEN; EVEN_SUB; DE_MORGAN_THM; NOT_LE] THEN
-  CONV_TAC TAUT);;
+ (`!m n. n <= m ==> (ODD (m - n) <=> ~(ODD m <=> ODD n))`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`m:num`; `n:num`] EVEN_SUB) THEN
+  ASM_REWRITE_TAC [GSYM NOT_EVEN] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  BOOL_CASES_TAC `EVEN n` THEN
+  REWRITE_TAC []);;
 
 export_thm ODD_SUB;;
 
@@ -1385,7 +1432,7 @@ export_thm EXP_MONO_EQ;;
 
 logfile "natural-div-mod-def";;
 
-let DIVMOD_EXIST = prove
+let DIVMOD_EXIST_LEMMA = prove
  (`!m n. ~(n = 0) ==> ?q r. (m = q * n + r) /\ r < n`,
   REPEAT STRIP_TAC THEN MP_TAC(SPEC `\r. ?q. m = q * n + r` num_WOP) THEN
   BETA_TAC THEN DISCH_THEN(MP_TAC o fst o EQ_IMP_RULE) THEN
@@ -1405,24 +1452,24 @@ let DIVMOD_EXIST = prove
   REWRITE_TAC[MULT_CLAUSES; ADD_ASSOC; LT_ADDR] THEN
   ASM_REWRITE_TAC[GSYM NOT_LE; LE]);;
 
-let DIVMOD_EXIST_0 = prove
+let DIVMOD_EXIST_0_LEMMA = prove
  (`!m n. ?q r. if n = 0 then q = 0 /\ r = m
                else m = q * n + r /\ r < n`,
   REPEAT GEN_TAC THEN ASM_CASES_TAC `n = 0` THEN
-  ASM_SIMP_TAC[DIVMOD_EXIST; RIGHT_EXISTS_AND_THM; EXISTS_REFL]);;
+  ASM_SIMP_TAC[DIVMOD_EXIST_LEMMA; RIGHT_EXISTS_AND_THM; EXISTS_REFL]);;
 
-let DIVISION_0 =  new_specification ["DIV"; "MOD"]
-  (REWRITE_RULE[SKOLEM_THM] DIVMOD_EXIST_0);;
+let DIVISION_0_LEMMA = new_specification ["DIV"; "MOD"]
+  (REWRITE_RULE [SKOLEM_THM] DIVMOD_EXIST_0_LEMMA);;
 
 let DIVISION_DEF_DIV = prove
  (`!m n. ~(n = 0) ==> m DIV n * n + m MOD n = m`,
-  MESON_TAC[DIVISION_0]);;
+  MESON_TAC[DIVISION_0_LEMMA]);;
 
 export_thm DIVISION_DEF_DIV;;
 
 let DIVISION_DEF_MOD = prove
  (`!m n. ~(n = 0) ==> m MOD n < n`,
-  MESON_TAC[DIVISION_0]);;
+  MESON_TAC[DIVISION_0_LEMMA]);;
 
 export_thm DIVISION_DEF_MOD;;
 
@@ -1849,6 +1896,7 @@ export_thm DIV_MOD;;
 (* We have versions that introduce universal or existential quantifiers.     *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 let PRE_ELIM_THM = prove
  (`P(PRE n) <=> !m. n = SUC m \/ m = 0 /\ n = 0 ==> P m`,
   SPEC_TAC(`n:num`,`n:num`) THEN INDUCT_TAC THEN
@@ -1881,6 +1929,7 @@ let DIVMOD_ELIM_THM' = prove
         ?q r. (n = 0 /\ q = 0 /\ r = m \/ m = q * n + r /\ r < n) /\ P q r`,
   MP_TAC(INST [`\x:num y:num. ~P x y`,`P:num->num->bool`] DIVMOD_ELIM_THM) THEN
   MESON_TAC[]);;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Crude but useful conversion for cancelling down equations.                *)
