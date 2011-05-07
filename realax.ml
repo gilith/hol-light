@@ -60,63 +60,133 @@ let dist = new_definition
 
 let DIST_REFL = prove
  (`!n. dist(n,n) = 0`,
-  REWRITE_TAC[dist; SUB_REFL; ADD_CLAUSES]);;
+  REWRITE_TAC[dist; SUB_REFL; LE_REFL]);;
 
 let DIST_LZERO = prove
  (`!n. dist(0,n) = n`,
-  REWRITE_TAC[dist; SUB_0; ADD_CLAUSES]);;
-
-let DIST_RZERO = prove
- (`!n. dist(n,0) = n`,
-  REWRITE_TAC[dist; SUB_0; ADD_CLAUSES]);;
+  REWRITE_TAC[dist; LE_0; SUB_0]);;
 
 let DIST_SYM = prove
  (`!m n. dist(m,n) = dist(n,m)`,
-  REWRITE_TAC[dist] THEN MATCH_ACCEPT_TAC ADD_SYM);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[dist] THEN
+  ASM_CASES_TAC `n <= m` THENL
+  [ASM_CASES_TAC `m <= n` THENL
+   [MP_TAC (SPECL [`m:num`; `n:num`] LE_ANTISYM) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REFL_TAC;
+    ASM_REWRITE_TAC []];
+   ASM_CASES_TAC `m <= n` THENL
+   [ASM_REWRITE_TAC [];
+    MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
+    ASM_REWRITE_TAC []]]);;
+
+let DIST_RZERO = prove
+ (`!n. dist(n,0) = n`,
+  ONCE_REWRITE_TAC [DIST_SYM] THEN
+  ACCEPT_TAC DIST_LZERO);;
 
 let DIST_LADD = prove
- (`!m p n. dist(m + n,m + p) = dist(n,p)`,
-  REWRITE_TAC[dist; SUB_ADD_LCANCEL]);;
+ (`!m n p. dist(m + n,m + p) = dist(n,p)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[dist; LE_ADD_LCANCEL] THEN
+  ASM_CASES_TAC `n <= p` THENL
+  [ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC SUB_ADD_LCANCEL THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC SUB_ADD_LCANCEL THEN
+   MP_TAC (SPECL [`n:num`; `p:num`] LE_CASES) THEN
+   ASM_REWRITE_TAC []]);;
 
 let DIST_RADD = prove
- (`!m p n. dist(m + p,n + p) = dist(m,n)`,
-  REWRITE_TAC[dist; SUB_ADD_RCANCEL]);;
-
-let DIST_LADD_0 = prove
- (`!m n. dist(m + n,m) = n`,
-  REWRITE_TAC[dist; ADD_SUB2; ADD_SUBR2; ADD_CLAUSES]);;
+ (`!p m n. dist(m + p,n + p) = dist(m,n)`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  MATCH_ACCEPT_TAC DIST_LADD);;
 
 let DIST_RADD_0 = prove
  (`!m n. dist(m,m + n) = n`,
-  ONCE_REWRITE_TAC[DIST_SYM] THEN MATCH_ACCEPT_TAC DIST_LADD_0);;
+  REWRITE_TAC[dist; LE_ADD; ADD_SUB2]);;
+
+let DIST_LADD_0 = prove
+ (`!m n. dist(m + n,m) = n`,
+  ONCE_REWRITE_TAC [DIST_SYM] THEN
+  ACCEPT_TAC DIST_RADD_0);;
 
 let DIST_LMUL = prove
  (`!m n p. m * dist(n,p) = dist(m * n,m * p)`,
-  REWRITE_TAC[dist; LEFT_ADD_DISTRIB; LEFT_SUB_DISTRIB]);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [dist] THEN
+  ASM_CASES_TAC `m = 0` THENL
+  [ASM_REWRITE_TAC [MULT; LE_REFL; SUB_REFL];
+   ASM_REWRITE_TAC [LE_MULT_LCANCEL] THEN
+   COND_CASES_TAC THENL
+   [ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LEFT_SUB_DISTRIB THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LEFT_SUB_DISTRIB THEN
+    MP_TAC (SPECL [`n:num`; `p:num`] LE_CASES) THEN
+    ASM_REWRITE_TAC []]]);;
 
 let DIST_RMUL = prove
- (`!m n p. dist(m,n) * p = dist(m * p,n * p)`,
-  REWRITE_TAC[dist; RIGHT_ADD_DISTRIB; RIGHT_SUB_DISTRIB]);;
+ (`!p m n. dist(m,n) * p = dist(m * p,n * p)`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [MULT_SYM] THEN
+  MATCH_ACCEPT_TAC DIST_LMUL);;
 
 let DIST_EQ_0 = prove
  (`!m n. (dist(m,n) = 0) <=> (m = n)`,
-  REWRITE_TAC[dist; ADD_EQ_0; SUB_EQ_0; LE_ANTISYM]);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [dist] THEN
+  COND_CASES_TAC THENL
+  [CONV_TAC (RAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
+   MATCH_MP_TAC SUB_EQ_0 THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   MATCH_MP_TAC SUB_EQ_0 THEN
+   MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
+   ASM_REWRITE_TAC []]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Simplifying theorem about the distance operation.                         *)
 (* ------------------------------------------------------------------------- *)
 
 let DIST_ELIM_THM = prove
- (`P(dist(x,y)) <=> !d. ((x = y + d) ==> P(d)) /\ ((y = x + d) ==> P(d))`,
-  DISJ_CASES_TAC(SPECL [`x:num`; `y:num`] LE_CASES) THEN
-  POP_ASSUM(X_CHOOSE_THEN `e:num` SUBST1_TAC o REWRITE_RULE[LE_EXISTS]) THEN
-  REWRITE_TAC[dist; ADD_SUB; ADD_SUB2; ADD_SUBR; ADD_SUBR2] THEN
-  REWRITE_TAC[ADD_CLAUSES; EQ_ADD_LCANCEL] THEN
-  GEN_REWRITE_TAC (RAND_CONV o ONCE_DEPTH_CONV) [EQ_SYM_EQ] THEN
-  REWRITE_TAC[GSYM ADD_ASSOC; EQ_ADD_LCANCEL_0; ADD_EQ_0] THEN
-  ASM_CASES_TAC `e = 0` THEN ASM_REWRITE_TAC[] THEN
-  EQ_TAC THEN REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[] THEN
-  FIRST_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[]);;
+ (`!P x y.
+     P (dist(x,y)) <=> !d. ((x = y + d) ==> P(d)) /\ ((y = x + d) ==> P(d))`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [dist] THEN
+  COND_CASES_TAC THENL
+  [ASM_CASES_TAC `y <= x` THENL
+   [MP_TAC (SPECL [`x:num`; `y:num`] LE_ANTISYM) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [SUB_REFL] THEN
+    CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+    REWRITE_TAC [EQ_ADD_LCANCEL_0; FORALL_UNWIND_THM2];
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [LE_EXISTS; NOT_EXISTS_THM] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [LE_EXISTS] THEN
+    DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+    REWRITE_TAC [ADD_SUB2; EQ_ADD_LCANCEL] THEN
+    CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+    REWRITE_TAC [FORALL_UNWIND_THM2]];
+   ASM_CASES_TAC `y <= x` THENL
+   [UNDISCH_TAC `~(x <= y)` THEN
+    REWRITE_TAC [LE_EXISTS; NOT_EXISTS_THM] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [LE_EXISTS] THEN
+    DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+    REWRITE_TAC [ADD_SUB2; EQ_ADD_LCANCEL] THEN
+    CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+    REWRITE_TAC [FORALL_UNWIND_THM2];
+    MP_TAC (SPECL [`x:num`; `y:num`] LE_CASES) THEN
+    ASM_REWRITE_TAC []]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Now some more theorems.                                                   *)
@@ -124,8 +194,7 @@ let DIST_ELIM_THM = prove
 
 let DIST_LE_CASES,DIST_ADDBOUND,DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV =
   let DIST_ELIM_TAC =
-    let conv =
-      HIGHER_REWRITE_CONV[SUB_ELIM_THM; COND_ELIM_THM; DIST_ELIM_THM] false in
+    let conv = HIGHER_REWRITE_CONV[COND_ELIM_THM; DIST_ELIM_THM] false in
     CONV_TAC conv THEN TRY GEN_TAC THEN CONJ_TAC THEN
     DISCH_THEN(fun th -> SUBST_ALL_TAC th THEN
                          (let l,r = dest_eq (concl th) in
@@ -249,7 +318,7 @@ let BOUNDS_IGNORE = prove
 (* ------------------------------------------------------------------------- *)
 
 let is_nadd = new_definition
-  `is_nadd x <=> (?B. !m n. dist(m * x(n),n * x(m)) <= B * (m + n))`;;
+  `!x. is_nadd x <=> (?B. !m n. dist(m * x(n),n * x(m)) <= B * (m + n))`;;
 
 let is_nadd_0 = prove
  (`is_nadd (\n. 0)`,
