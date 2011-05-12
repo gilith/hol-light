@@ -7,7 +7,7 @@
 (*              (c) Copyright, John Harrison 1998-2007                       *)
 (* ========================================================================= *)
 
-needs "int.ml";;
+needs "calc_num.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Infix symbols for set operations.                                         *)
@@ -905,6 +905,17 @@ let DIFF_SUBSET = prove
   REPEAT STRIP_TAC);;
 
 export_thm DIFF_SUBSET;;
+
+let DIFF_SUBSET_EMPTY = prove
+ (`!s (t : A set). s DIFF t = {} <=> s SUBSET t`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [EXTENSION; IN_DIFF; SUBSET; NOT_IN_EMPTY] THEN
+  AP_TERM_TAC THEN
+  ABS_TAC THEN
+  BOOL_CASES_TAC `(x:A) IN s` THEN
+  REWRITE_TAC []);;
+
+export_thm DIFF_SUBSET_EMPTY;;
 
 let SUBSET_DIFF = prove
  (`!(s : A set) t u. s SUBSET (t DIFF u) <=> s SUBSET t /\ DISJOINT s u`,
@@ -3360,16 +3371,23 @@ export_thm FINITE_HAS_SIZE;;
 (* This is often more useful as a rewrite.                                   *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 let HAS_SIZE_CLAUSES = prove
- (`(s HAS_SIZE 0 <=> (s = {})) /\
-   (s HAS_SIZE (SUC n) <=>
+ (`(!s. (s:A set) HAS_SIZE 0 <=> (s = {})) /\
+   (!s n. (s:A set) HAS_SIZE (SUC n) <=>
         ?a t. t HAS_SIZE n /\ ~(a IN t) /\ (s = a INSERT t))`,
-  let lemma = SET_RULE `a IN s ==> (s = a INSERT (s DELETE a))` in
   REWRITE_TAC[HAS_SIZE_0] THEN REPEAT STRIP_TAC THEN EQ_TAC THENL
    [REWRITE_TAC[HAS_SIZE_SUC; GSYM MEMBER_NOT_EMPTY] THEN
-    MESON_TAC[lemma; IN_DELETE];
-    SIMP_TAC[LEFT_IMP_EXISTS_THM; HAS_SIZE; CARD_CLAUSES; FINITE_INSERT]]);;
+    STRIP_TAC THEN
+    POP_ASSUM
+      (fun th ->
+         FIRST_ASSUM (fun th' -> STRIP_ASSUME_TAC (MATCH_MP th th'))) THEN
+    EXISTS_TAC `x:A` THEN
+    EXISTS_TAC `s DELETE (x:A)` THEN
+    ASM_REWRITE_TAC [IN_DELETE] THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    MATCH_MP_TAC INSERT_DELETE THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    SIMP_TAC [LEFT_IMP_EXISTS_THM; HAS_SIZE; CARD_CLAUSES; FINITE_INSERT]]);;
 
 export_thm HAS_SIZE_CLAUSES;;
 
@@ -3379,14 +3397,14 @@ export_thm HAS_SIZE_CLAUSES;;
 
 let HAS_SIZE_CONV =
   let pth = prove
-   (`(~(a IN {}) /\ P <=> P) /\
+   (`(~((a:A) IN {}) /\ P <=> P) /\
      (~(a IN {b}) /\ P <=> ~(a = b) /\ P) /\
      (~(a IN (b INSERT cs)) /\ P <=> ~(a = b) /\ ~(a IN cs) /\ P)`,
-    SET_TAC[])
+    REWRITE_TAC [NOT_IN_EMPTY; IN_INSERT; DE_MORGAN_THM; CONJ_ASSOC])
   and qth = prove
    (`((?s. s HAS_SIZE 0 /\ P s) <=> P {}) /\
      ((?s. s HAS_SIZE (SUC n) /\ P s) <=>
-      (?a s. s HAS_SIZE n /\ ~(a IN s) /\ P(a INSERT s)))`,
+      (?(a:A) s. s HAS_SIZE n /\ ~(a IN s) /\ P(a INSERT s)))`,
     REWRITE_TAC[HAS_SIZE_CLAUSES] THEN MESON_TAC[]) in
   let qconv_0 = GEN_REWRITE_CONV I [CONJUNCT1 qth]
   and qconv_1 = GEN_REWRITE_CONV I [CONJUNCT2 qth]
@@ -3419,28 +3437,26 @@ let HAS_SIZE_CONV =
 (* ------------------------------------------------------------------------- *)
 
 let CARD_SUBSET_EQ = prove
- (`!(a:A->bool) b. FINITE b /\ a SUBSET b /\ (CARD a = CARD b) ==> (a = b)`,
+ (`!(a:A set) b. FINITE b /\ a SUBSET b /\ (CARD a = CARD b) ==> (a = b)`,
   REPEAT STRIP_TAC THEN
-  MP_TAC(SPECL [`a:A->bool`; `b DIFF (a:A->bool)`] CARD_UNION) THEN
-  SUBGOAL_THEN `FINITE(a:A->bool)` ASSUME_TAC THENL
-   [ASM_MESON_TAC[FINITE_SUBSET]; ALL_TAC] THEN
-  SUBGOAL_THEN `FINITE(b:A->bool DIFF a)` ASSUME_TAC THENL
-   [MATCH_MP_TAC FINITE_SUBSET THEN EXISTS_TAC `b:A->bool` THEN
-    ASM_REWRITE_TAC[] THEN SET_TAC[]; ALL_TAC] THEN
-  SUBGOAL_THEN `a:A->bool INTER (b DIFF a) = EMPTY` ASSUME_TAC THENL
-   [SET_TAC[]; ALL_TAC] THEN
-  ASM_REWRITE_TAC[] THEN
-  SUBGOAL_THEN `a UNION (b:A->bool DIFF a) = b` ASSUME_TAC THENL
-   [UNDISCH_TAC `a:A->bool SUBSET b` THEN SET_TAC[]; ALL_TAC] THEN
-  ASM_REWRITE_TAC[] THEN
-  REWRITE_TAC[ARITH_RULE `(a = a + b) <=> (b = 0)`] THEN DISCH_TAC THEN
-  SUBGOAL_THEN `b:A->bool DIFF a = EMPTY` MP_TAC THENL
-   [REWRITE_TAC[GSYM HAS_SIZE_0] THEN
-    ASM_REWRITE_TAC[HAS_SIZE];
-    UNDISCH_TAC `a:A->bool SUBSET b` THEN SET_TAC[]]);;
+  MATCH_MP_TAC SUBSET_ANTISYM THEN
+  ASM_REWRITE_TAC [] THEN
+  REWRITE_TAC [GSYM DIFF_SUBSET_EMPTY; GSYM HAS_SIZE_0; HAS_SIZE] THEN
+  SUBGOAL_THEN `FINITE((b:A set) DIFF a)` ASSUME_TAC THENL
+   [MATCH_MP_TAC FINITE_DIFF THEN
+    ASM_REWRITE_TAC[];
+    ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC `CARD (b:A set) - CARD (a:A set)` THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC CARD_DIFF THEN
+   ASM_REWRITE_TAC [];
+   ASM_REWRITE_TAC [SUB_REFL]]);;
 
 export_thm CARD_SUBSET_EQ;;
 
+(***
 let CARD_SUBSET = prove
  (`!(a:A->bool) b. a SUBSET b /\ FINITE(b) ==> CARD(a) <= CARD(b)`,
   REPEAT STRIP_TAC THEN

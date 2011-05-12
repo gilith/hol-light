@@ -4,7 +4,7 @@
 (*              (c) Copyright, John Harrison 1998-2007                       *)
 (* ========================================================================= *)
 
-needs "calc_num.ml";;
+needs "sets.ml";;
 
 let SEMIRING_NORMALIZERS_CONV =
   let SEMIRING_PTHS = prove
