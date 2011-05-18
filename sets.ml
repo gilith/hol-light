@@ -3165,6 +3165,20 @@ let CARD_CLAUSES = prove
 
 export_thm CARD_CLAUSES;;
 
+let CARD_EMPTY = prove
+ (`CARD (EMPTY : A set) = 0`,
+  REWRITE_TAC [CARD_CLAUSES]);;
+
+export_thm CARD_EMPTY;;
+
+let CARD_SING = prove
+ (`!(x:A). CARD (x INSERT EMPTY) = 1`,
+  GEN_TAC THEN
+  MP_TAC (SPECL [`x:A`; `EMPTY : A set`] (CONJUNCT2 CARD_CLAUSES)) THEN
+  REWRITE_TAC [FINITE_EMPTY; NOT_IN_EMPTY; CARD_EMPTY; ONE]);;
+
+export_thm CARD_SING;;
+
 let CARD_UNION = prove
  (`!(s:A set) t. FINITE(s) /\ FINITE(t) /\ DISJOINT s t
          ==> (CARD (s UNION t) = CARD s + CARD t)`,
@@ -3302,6 +3316,12 @@ let HAS_SIZE_0 = prove
    ASM_REWRITE_TAC [FINITE_EMPTY; CARD_CLAUSES]]);;
 
 export_thm HAS_SIZE_0;;
+
+let HAS_SIZE_SING = prove
+ (`!(x:A). (x INSERT EMPTY) HAS_SIZE 1`,
+  REWRITE_TAC [HAS_SIZE; FINITE_SING; CARD_SING]);;
+
+export_thm HAS_SIZE_SING;;
 
 let HAS_SIZE_SUC = prove
  (`!(s:A set) n. s HAS_SIZE (SUC n) <=>
@@ -4102,53 +4122,161 @@ export_thm CROSS_EQ_EMPTY;;
 (* Cardinality of functions with bounded domain (support) and range.         *)
 (* ------------------------------------------------------------------------- *)
 
-(***
+logfile "set-thm";;
+
+let EMPTY_FUNSPACE = prove
+ (`!d (t : B set).
+     {f | (!x. (x:A) IN {} ==> f x IN t) /\ (!x. ~(x IN {}) ==> f x = d)} =
+     (\x. d) INSERT EMPTY`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [EXTENSION; IN_ELIM_THM; IN_SING; NOT_IN_EMPTY] THEN
+  X_GEN_TAC `g : A -> B` THEN
+  ONCE_REWRITE_TAC [CONJ_SYM] THEN
+  REWRITE_TAC [UNWIND_THM1] THEN
+  REWRITE_TAC [FUN_EQ_THM]);;
+
+export_thm EMPTY_FUNSPACE;;
+
+let INSERT_FUNSPACE = prove
+ (`!d a (s : A set) (t : B set).
+    {(f:A->B) | (!x. x IN a INSERT s ==> f x IN t) /\
+                (!x. ~(x IN a INSERT s) ==> (f x = d))} =
+    IMAGE (\ (b,g) x. if x = a then b else g(x))
+      (t CROSS
+       {f | (!x. x IN s ==> f x IN t) /\
+            (!x. ~(x IN s) ==> (f x = d))})`,
+  REPEAT STRIP_TAC THEN
+  ASM_CASES_TAC `(a:A) IN s` THENL
+  [MP_TAC (SPECL [`a : A`; `s : A set`] ABSORPTION) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   REWRITE_TAC
+     [EXTENSION; IN_IMAGE; FORALL_PAIR_THM; IN_ELIM_THM; EXISTS_PAIR_THM;
+      IN_CROSS] THEN
+   X_GEN_TAC `g : A -> B` THEN
+   REWRITE_TAC [ONCE_REWRITE_RULE [CONJ_SYM] UNWIND_THM1] THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    EXISTS_TAC `(g : A -> B) a` THEN
+    EXISTS_TAC `g : A -> B` THEN
+    REPEAT STRIP_TAC THENL
+    [REWRITE_TAC [FUN_EQ_THM] THEN
+     GEN_TAC THEN
+     COND_CASES_TAC THEN
+     ASM_REWRITE_TAC [];
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     ASM_REWRITE_TAC [];
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     ASM_REWRITE_TAC [];
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     ASM_REWRITE_TAC []];
+    STRIP_TAC THEN
+    FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    REWRITE_TAC [] THEN
+    REPEAT STRIP_TAC THENL
+    [COND_CASES_TAC THENL
+     [ASM_REWRITE_TAC [];
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
+      ASM_REWRITE_TAC []];
+     COND_CASES_TAC THENL
+     [UNDISCH_TAC `~((x:A) IN s)` THEN
+      ASM_REWRITE_TAC [];
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
+      ASM_REWRITE_TAC []]]];
+   REWRITE_TAC
+     [EXTENSION; IN_IMAGE; FORALL_PAIR_THM; IN_ELIM_THM; EXISTS_PAIR_THM;
+      IN_CROSS; IN_INSERT] THEN
+   X_GEN_TAC `g : A -> B` THEN
+   REWRITE_TAC [ONCE_REWRITE_RULE [CONJ_SYM] UNWIND_THM1] THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    EXISTS_TAC `(g : A -> B) a` THEN
+    EXISTS_TAC `\x. if x = a then d else (g : A -> B) x` THEN
+    REPEAT STRIP_TAC THENL
+    [REWRITE_TAC [FUN_EQ_THM] THEN
+     GEN_TAC THEN
+     COND_CASES_TAC THEN
+     ASM_REWRITE_TAC [];
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     REWRITE_TAC [];
+     REWRITE_TAC [] THEN
+     COND_CASES_TAC THENL
+     [UNDISCH_TAC `(x:A) IN s` THEN
+      ASM_REWRITE_TAC [];
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
+      ASM_REWRITE_TAC []];
+     REWRITE_TAC [] THEN
+     COND_CASES_TAC THENL
+     [ASM_REWRITE_TAC [];
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
+      ASM_REWRITE_TAC []]];
+    STRIP_TAC THEN
+    FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    REWRITE_TAC [DE_MORGAN_THM] THEN
+    REPEAT STRIP_TAC THENL
+    [ASM_REWRITE_TAC [];
+     COND_CASES_TAC THENL
+     [UNDISCH_TAC `(x:A) IN s` THEN
+      ASM_REWRITE_TAC [];
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
+      ASM_REWRITE_TAC []];
+     ASM_REWRITE_TAC [] THEN
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     ASM_REWRITE_TAC []]]]);;
+
+export_thm INSERT_FUNSPACE;;
+
+logfile "set-size-thm";;
+
 let HAS_SIZE_FUNSPACE = prove
- (`!d n t:B->bool m s:A->bool.
+ (`!d (s : A set) (t : B set) m n.
         s HAS_SIZE m /\ t HAS_SIZE n
         ==> {f | (!x. x IN s ==> f(x) IN t) /\ (!x. ~(x IN s) ==> (f x = d))}
             HAS_SIZE (n EXP m)`,
-  GEN_TAC THEN GEN_TAC THEN GEN_TAC THEN INDUCT_TAC THEN
-  REWRITE_TAC[HAS_SIZE_CLAUSES] THENL
-   [REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[NOT_IN_EMPTY; EXP] THEN
-    CONV_TAC HAS_SIZE_CONV THEN EXISTS_TAC `(\x. d):A->B` THEN
-    REWRITE_TAC[EXTENSION; IN_ELIM_THM; IN_SING] THEN REWRITE_TAC[FUN_EQ_THM];
-    REWRITE_TAC[LEFT_IMP_EXISTS_THM; LEFT_AND_EXISTS_THM]] THEN
-  MAP_EVERY X_GEN_TAC [`s0:A->bool`; `a:A`; `s:A->bool`] THEN
-  STRIP_TAC THEN FIRST_X_ASSUM(MP_TAC o SPEC `s:A->bool`) THEN
-  ASM_REWRITE_TAC[] THEN STRIP_TAC THEN
-  SUBGOAL_THEN
-   `{f:A->B | (!x. x IN a INSERT s ==> f x IN t) /\
-              (!x. ~(x IN a INSERT s) ==> (f x = d))} =
-    IMAGE (\(b,g) x. if x = a then b else g(x))
-          {b,g | b IN t /\
-                 g IN {f | (!x. x IN s ==> f x IN t) /\
-                           (!x. ~(x IN s) ==> (f x = d))}}`
-  SUBST1_TAC THENL
-   [REWRITE_TAC[EXTENSION; IN_IMAGE; FORALL_PAIR_THM; IN_ELIM_THM;
-                EXISTS_PAIR_THM] THEN
-    REWRITE_TAC[PAIR_EQ; CONJ_ASSOC; ONCE_REWRITE_RULE[CONJ_SYM]
-     UNWIND_THM1] THEN
-    X_GEN_TAC `f:A->B` THEN REWRITE_TAC[IN_INSERT] THEN EQ_TAC THENL
-     [STRIP_TAC THEN MAP_EVERY EXISTS_TAC
-       [`(f:A->B) a`; `\x. if x IN s then (f:A->B) x else d`] THEN
-      REWRITE_TAC[FUN_EQ_THM] THEN ASM_MESON_TAC[];
-      DISCH_THEN(X_CHOOSE_THEN `b:B` (X_CHOOSE_THEN `g:A->B`
-        STRIP_ASSUME_TAC)) THEN
-      ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]];
-    ALL_TAC] THEN
-  MATCH_MP_TAC HAS_SIZE_IMAGE_INJ THEN ASM_SIMP_TAC[EXP; HAS_SIZE_PRODUCT] THEN
-  REWRITE_TAC[FORALL_PAIR_THM; IN_ELIM_THM; PAIR_EQ; CONJ_ASSOC] THEN
-  REWRITE_TAC[ONCE_REWRITE_RULE[CONJ_SYM] UNWIND_THM1] THEN
-  CONV_TAC(ONCE_DEPTH_CONV GEN_BETA_CONV) THEN
-  REWRITE_TAC[FUN_EQ_THM] THEN REPEAT GEN_TAC THEN
-  STRIP_TAC THEN CONJ_TAC THENL
-   [FIRST_X_ASSUM(MP_TAC o SPEC `a:A`) THEN REWRITE_TAC[];
-    X_GEN_TAC `x:A` THEN FIRST_X_ASSUM(MP_TAC o SPEC `x:A`) THEN
-    ASM_MESON_TAC[]]);;
+  REPEAT GEN_TAC THEN
+  SPEC_TAC (`s : A set`, `s : A set`) THEN
+  SPEC_TAC (`m : num`, `m : num`) THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [HAS_SIZE_CLAUSES] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [EXP; EMPTY_FUNSPACE; HAS_SIZE_SING] THEN
+   NO_TAC;
+   ALL_TAC] THEN
+  REWRITE_TAC [HAS_SIZE_CLAUSES] THEN
+  GEN_TAC THEN
+  DISCH_THEN
+    (CONJUNCTS_THEN2
+       (X_CHOOSE_THEN `a : A` (X_CHOOSE_THEN `u : A set` STRIP_ASSUME_TAC))
+       STRIP_ASSUME_TAC) THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  REWRITE_TAC [INSERT_FUNSPACE] THEN
+  MATCH_MP_TAC HAS_SIZE_IMAGE_INJ THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [FORALL_PAIR_THM; IN_CROSS; PAIR_EQ; IN_ELIM] THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   REPEAT STRIP_TAC THENL
+   [POP_ASSUM (MP_TAC o SPEC `a:A`) THEN
+    REWRITE_TAC [];
+    ASM_CASES_TAC `(x:A) = a` THENL
+    [POP_ASSUM SUBST_VAR_TAC THEN
+     UNDISCH_TAC `!x. ~(x IN u) ==> (p2' : A -> B) x = d` THEN
+     DISCH_THEN (MP_TAC o SPEC `a : A`) THEN
+     ASM_REWRITE_TAC [] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     FIRST_X_ASSUM (MP_TAC o SPEC `x : A`) THEN
+     ASM_REWRITE_TAC []]];
+   REWRITE_TAC [EXP] THEN
+   MATCH_MP_TAC HAS_SIZE_CROSS THEN
+   ASM_REWRITE_TAC [] THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm HAS_SIZE_FUNSPACE;;
 
+(***
 let CARD_FUNSPACE = prove
  (`!s t. FINITE s /\ FINITE t
          ==> (CARD {f | (!x. x IN s ==> f(x) IN t) /\
