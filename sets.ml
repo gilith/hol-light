@@ -4226,6 +4226,29 @@ let INSERT_FUNSPACE = prove
 
 export_thm INSERT_FUNSPACE;;
 
+logfile "set-finite-thm";;
+
+let FINITE_FUNSPACE = prove
+ (`!d (s : A set) (t : B set).
+     FINITE s /\ FINITE t
+         ==> FINITE {f | (!x. x IN s ==> f(x) IN t) /\
+                         (!x. ~(x IN s) ==> (f x = d))}`,
+  REPEAT STRIP_TAC THEN
+  UNDISCH_TAC `FINITE (s : A set)` THEN
+  SPEC_TAC (`s : A set`, `s : A set`) THEN
+  MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [EMPTY_FUNSPACE; FINITE_SING] THEN
+   NO_TAC;
+   ALL_TAC] THEN
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [INSERT_FUNSPACE] THEN
+  MATCH_MP_TAC FINITE_IMAGE THEN
+  MATCH_MP_TAC FINITE_CROSS THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm FINITE_FUNSPACE;;
+
 logfile "set-size-thm";;
 
 let HAS_SIZE_FUNSPACE = prove
@@ -4276,89 +4299,135 @@ let HAS_SIZE_FUNSPACE = prove
 
 export_thm HAS_SIZE_FUNSPACE;;
 
-(***
 let CARD_FUNSPACE = prove
- (`!s t. FINITE s /\ FINITE t
+ (`!d (s : A set) (t : B set).
+     FINITE s /\ FINITE t
          ==> (CARD {f | (!x. x IN s ==> f(x) IN t) /\
                         (!x. ~(x IN s) ==> (f x = d))} =
               (CARD t) EXP (CARD s))`,
-  MESON_TAC[HAS_SIZE_FUNSPACE; HAS_SIZE]);;
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`d : B`; `s : A set`; `t : B set`;
+                 `CARD (s : A set)`; `CARD (t : B set)`] HAS_SIZE_FUNSPACE) THEN
+  ASM_REWRITE_TAC [HAS_SIZE] THEN
+  DISCH_THEN (ACCEPT_TAC o CONJUNCT2));;
 
 export_thm CARD_FUNSPACE;;
-
-let FINITE_FUNSPACE = prove
- (`!s t. FINITE s /\ FINITE t
-         ==> FINITE {f | (!x. x IN s ==> f(x) IN t) /\
-                         (!x. ~(x IN s) ==> (f x = d))}`,
-  MESON_TAC[HAS_SIZE_FUNSPACE; HAS_SIZE]);;
-
-export_thm FINITE_FUNSPACE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Hence cardinality of powerset.                                            *)
 (* ------------------------------------------------------------------------- *)
 
-let HAS_SIZE_POWERSET = prove
- (`!(s:A->bool) n. s HAS_SIZE n ==> {t | t SUBSET s} HAS_SIZE (2 EXP n)`,
-  REPEAT STRIP_TAC THEN SUBGOAL_THEN
-   `{f | (!x:A. x IN s ==> f(x) IN UNIV) /\ (!x. ~(x IN s) ==> (f x = F))}
-    HAS_SIZE (2 EXP n)`
-  MP_TAC THENL
-   [MATCH_MP_TAC HAS_SIZE_FUNSPACE THEN ASM_REWRITE_TAC[] THEN
-    CONV_TAC HAS_SIZE_CONV THEN MAP_EVERY EXISTS_TAC [`T`; `F`] THEN
-    REWRITE_TAC[EXTENSION; IN_UNIV; IN_INSERT; NOT_IN_EMPTY] THEN
-    ACCEPT_TAC EXCLUDED_MIDDLE;
-    REWRITE_TAC [IN_UNIV; CONTRAPOS_THM] THEN
-    MATCH_MP_TAC (TAUT `!X Y. (X <=> Y) ==> Y ==> X`) THEN
-    MATCH_MP_TAC EQ_TRANS THEN
-    EXISTS_TAC
-      `IMAGE (\f. {(x:A) | f x}) {f | (!x:A. f x ==> x IN s)}
-         HAS_SIZE (2 EXP n)` THEN
-    CONJ_TAC THENL
-    [AP_THM_TAC THEN
-     AP_TERM_TAC THEN
-     REWRITE_TAC [EXTENSION; IN_ELIM_THM; SUBSET; IN_IMAGE] THEN
-     GEN_TAC THEN
-     EQ_TAC THENL
-     [STRIP_TAC THEN
-      EXISTS_TAC `\y. (y:A) IN x` THEN
-      ASM_REWRITE_TAC [] THEN
-      REWRITE_TAC [EXTENSION; IN_ELIM_THM];
-      REPEAT STRIP_TAC THEN
-      FIRST_X_ASSUM MATCH_MP_TAC THEN
-      FIRST_X_ASSUM (fun th -> REWRITE_TAC [SYM (SPEC `x'':A` th)]) THEN
-      FIRST_ASSUM ACCEPT_TAC];
-     MATCH_MP_TAC HAS_SIZE_IMAGE_INJ_EQ THEN
-     REPEAT STRIP_TAC THEN
-     REWRITE_TAC [FUN_EQ_THM] THEN
-     POP_ASSUM MP_TAC THEN
-     REWRITE_TAC [IN_ELIM_THM; EXTENSION]]]);;
+logfile "set-thm";;
 
-export_thm HAS_SIZE_POWERSET;;
+let IMAGE_POWERSET = prove
+ (`!(s : A set).
+     {t | t SUBSET s} =
+     IMAGE (\p. {x | p x})
+       {p | (!x:A. x IN s ==> p x IN UNIV) /\
+            (!x. ~(x IN s) ==> (p x = F))}`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [EXTENSION] THEN
+  X_GEN_TAC `t : A set` THEN
+  REWRITE_TAC
+    [IN_ELIM; IN_IMAGE; IN_UNIV; EXTENSION; SUBSET; CONTRAPOS_THM] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   EXISTS_TAC `\x. (x:A) IN t` THEN
+   REWRITE_TAC [] THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   DISCH_THEN (X_CHOOSE_THEN `p : A -> bool` STRIP_ASSUME_TAC) THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   FIRST_X_ASSUM (SUBST1_TAC o SYM o SPEC `x : A`) THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
 
-let CARD_POWERSET = prove
- (`!s:A->bool. FINITE s ==> (CARD {t | t SUBSET s} = 2 EXP (CARD s))`,
-  MESON_TAC[HAS_SIZE_POWERSET; HAS_SIZE]);;
+export_thm IMAGE_POWERSET;;
 
-export_thm CARD_POWERSET;;
+let INSERT_BOOL = prove
+ (`UNIV = T INSERT (F INSERT EMPTY)`,
+  REWRITE_TAC [EXTENSION; IN_UNIV; IN_INSERT; NOT_IN_EMPTY] THEN
+  ACCEPT_TAC EXCLUDED_MIDDLE);;
+
+export_thm INSERT_BOOL;;
+
+logfile "set-finite-thm";;
+
+let FINITE_BOOL = prove
+ (`FINITE (UNIV : bool set)`,
+  REWRITE_TAC [INSERT_BOOL; FINITE_INSERT; FINITE_EMPTY]);;
+
+export_thm FINITE_BOOL;;
 
 let FINITE_POWERSET = prove
- (`!s:A->bool. FINITE s ==> FINITE {t | t SUBSET s}`,
-  MESON_TAC[HAS_SIZE_POWERSET; HAS_SIZE]);;
+ (`!(s : A set). FINITE s ==> FINITE {t | t SUBSET s}`,
+  REPEAT STRIP_TAC THEN
+  PURE_REWRITE_TAC [IMAGE_POWERSET] THEN
+  MATCH_MP_TAC FINITE_IMAGE THEN
+  MATCH_MP_TAC FINITE_FUNSPACE THEN
+  ASM_REWRITE_TAC [FINITE_BOOL]);;
 
 export_thm FINITE_POWERSET;;
 
 let FINITE_UNIONS = prove
- (`!s:(A->bool)->bool.
-        FINITE(UNIONS s) <=> FINITE s /\ (!t. t IN s ==> FINITE t)`,
-  GEN_TAC THEN ASM_CASES_TAC `FINITE(s:(A->bool)->bool)` THEN
-  ASM_SIMP_TAC[FINITE_FINITE_UNIONS] THEN
-  DISCH_THEN(MP_TAC o MATCH_MP FINITE_POWERSET) THEN
-  POP_ASSUM MP_TAC THEN REWRITE_TAC[CONTRAPOS_THM] THEN
-  MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ_ALT] FINITE_SUBSET) THEN SET_TAC[]);;
+ (`!(s : (A set) set).
+     FINITE (UNIONS s) <=> FINITE s /\ (!t. t IN s ==> FINITE t)`,
+  GEN_TAC THEN
+  ASM_CASES_TAC `FINITE (s : (A set) set)` THENL
+  [MP_TAC (SPEC `s : (A set) set` FINITE_FINITE_UNIONS) THEN
+   ASM_REWRITE_TAC [];
+   ASM_REWRITE_TAC [] THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [CONTRAPOS_THM] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC FINITE_SUBSET THEN
+   EXISTS_TAC `{(t : A set) | t SUBSET (UNIONS s)}` THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC FINITE_POWERSET THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    REWRITE_TAC [SUBSET; IN_ELIM; IN_UNIONS] THEN
+    X_GEN_TAC `t : A set` THEN
+    REPEAT STRIP_TAC THEN
+    EXISTS_TAC `t : A set` THEN
+    ASM_REWRITE_TAC []]]);;
 
 export_thm FINITE_UNIONS;;
 
+logfile "set-size-thm";;
+
+let HAS_SIZE_BOOL = prove
+ (`(UNIV : bool set) HAS_SIZE 2`,
+  CONV_TAC HAS_SIZE_CONV THEN
+  EXISTS_TAC `T` THEN
+  EXISTS_TAC `F` THEN
+  REWRITE_TAC [INSERT_BOOL]);;
+
+export_thm HAS_SIZE_BOOL;;
+
+let HAS_SIZE_POWERSET = prove
+ (`!(s:A set) n. s HAS_SIZE n ==> {t | t SUBSET s} HAS_SIZE (2 EXP n)`,
+  REPEAT STRIP_TAC THEN
+  PURE_REWRITE_TAC [IMAGE_POWERSET] THEN
+  MATCH_MP_TAC HAS_SIZE_IMAGE_INJ THEN
+  CONJ_TAC THENL
+  [X_GEN_TAC `p : A -> bool` THEN
+   X_GEN_TAC `q : A -> bool` THEN
+   REWRITE_TAC [EXTENSION; IN_ELIM; FUN_EQ_THM] THEN
+   STRIP_TAC;
+   MATCH_MP_TAC HAS_SIZE_FUNSPACE THEN
+   ASM_REWRITE_TAC [HAS_SIZE_BOOL]]);;
+
+export_thm HAS_SIZE_POWERSET;;
+
+let CARD_POWERSET = prove
+ (`!(s : A set). FINITE s ==> (CARD {t | t SUBSET s} = 2 EXP (CARD s))`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`s : A set`; `CARD (s : A set)`] HAS_SIZE_POWERSET) THEN
+  ASM_REWRITE_TAC [HAS_SIZE] THEN
+  DISCH_THEN (ACCEPT_TAC o CONJUNCT2));;
+
+export_thm CARD_POWERSET;;
+
+(***
 (* ------------------------------------------------------------------------- *)
 (* Set of numbers is infinite.                                               *)
 (* ------------------------------------------------------------------------- *)
