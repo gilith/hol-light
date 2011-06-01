@@ -245,7 +245,7 @@ let derive_nonschematic_inductive_relations =
 (* Part 2: Tactic-integrated tools for proving monotonicity automatically.   *)
 (* ========================================================================= *)
 
-logfile "bool-int-mono";;
+logfile "bool-int";;
 
 let MONO_AND =
     ITAUT `!A B C D. (A ==> B) /\ (C ==> D) ==> (A /\ C ==> B /\ D)`;;

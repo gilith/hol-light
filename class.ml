@@ -31,7 +31,7 @@ let ETA_CONV =
         else fail()
     with Failure _ -> failwith "ETA_CONV";;
 
-logfile "bool-extensionality";;
+logfile "bool-ext";;
 
 let EQ_EXT = prove
  (`!(f:A->B) g. (!x. f x = g x) ==> f = g`,
@@ -71,7 +71,7 @@ export_thm SELECT_AX;;
 (* Useful for compatibility. (The old EXISTS_DEF.)                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-choice-exists";;
+logfile "bool-class";;
 
 let EXISTS_THM = prove
  (`(?) = \P:A->bool. P ((@) P)`,
@@ -117,7 +117,7 @@ let SELECT_CONV =
 (* Some basic theorems.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-choice-select";;
+logfile "bool-class";;
 
 let SELECT_REFL = prove
  (`!x:A. (@y. y = x) = x`,
@@ -198,7 +198,7 @@ let new_type_definition tyname (absname,repname) th =
 (* Derive excluded middle (the proof is from Beeson's book).                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-choice-cases";;
+logfile "bool-class";;
 
 let EXCLUDED_MIDDLE = prove
  (`!t. t \/ ~t`,
@@ -307,7 +307,7 @@ let REFUTE_THEN =
 (* Infinite de Morgan laws.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-choice-quant";;
+logfile "bool-class";;
 
 let NOT_EXISTS_THM = prove
  (`!P. ~(?x:A. P x) <=> (!x. ~(P x))`,
@@ -419,7 +419,7 @@ export_thm RIGHT_EXISTS_IMP_THM;;
 (* The conditional.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def-cond";;
+logfile "bool-def";;
 
 let COND_DEF = new_definition
   `COND = \t t1 t2. @x:A. ((t <=> T) ==> (x = t1)) /\
@@ -427,7 +427,7 @@ let COND_DEF = new_definition
 
 export_thm COND_DEF;;
 
-logfile "bool-choice-cond-alt";;
+logfile "bool-class";;
 
 let COND_CLAUSES = prove
  (`!(t1:A) t2. ((if T then t1 else t2) = t1) /\
@@ -454,7 +454,7 @@ let dest_cond tm =
 
 extend_basic_rewrites [COND_CLAUSES];;
 
-logfile "bool-choice-cond-thm";;
+logfile "bool-class";;
 
 let COND_EXPAND = prove
  (`!b t1 t2. (if b then t1 else t2) <=> (~b \/ t1) /\ (b \/ t2)`,
@@ -544,7 +544,7 @@ let (COND_CASES_TAC :tactic) =
 (* Skolemization.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-choice-skolem";;
+logfile "bool-class";;
 
 let SKOLEM_THM = prove
  (`!P. (!x:A. ?y:B. P x y) <=> (?y. !x. P x (y x))`,
@@ -609,7 +609,7 @@ let COND_EQ_CLAUSE = prove
 (* We can now treat "bool" as an enumerated type for some purposes.          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-choice-induct";;
+logfile "bool-class";;
 
 let bool_INDUCT = prove
  (`!P. P F /\ P T ==> !x. P x`,

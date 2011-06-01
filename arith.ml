@@ -629,6 +629,22 @@ let EQ_IMP_LE = prove
 export_thm EQ_IMP_LE;;
 
 (* ------------------------------------------------------------------------- *)
+(* Ordering and succession.                                                  *)
+(* ------------------------------------------------------------------------- *)
+
+let SUC_LT = prove
+ (`!n. n < SUC n`,
+  REWRITE_TAC [LT_SUC_LE; LE_REFL]);;
+
+export_thm SUC_LT;;
+
+let SUC_LE = prove
+ (`!n. n <= SUC n`,
+  REWRITE_TAC [LE_LT; SUC_LT]);;
+
+export_thm SUC_LE;;
+
+(* ------------------------------------------------------------------------- *)
 (* Often useful to shuffle between different versions of "0 < n".            *)
 (* ------------------------------------------------------------------------- *)
 
@@ -1973,7 +1989,7 @@ let LE_IMP =
 (* Maximum and minimum of natural numbers.                                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-min-max";;
+logfile "natural-min-max-def";;
 
 let MAX = new_definition
   `!m n. MAX m n = if m <= n then n else m`;;
@@ -2000,6 +2016,44 @@ let MINIMAL = prove
   REWRITE_TAC[GSYM num_WOP]);;
 
 export_thm MINIMAL;;
+
+logfile "natural-min-max-thm";;
+
+let MAX_REFL = prove
+ (`!n. MAX n n = n`,
+  REWRITE_TAC [MAX; LE_REFL]);;
+
+export_thm MAX_REFL;;
+
+let MAX_COMM = prove
+ (`!m n. MAX m n = MAX n m`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MAX] THEN
+  REPEAT COND_CASES_TAC THENL
+  [ASM_REWRITE_TAC [GSYM LE_ANTISYM];
+   REFL_TAC;
+   REFL_TAC;
+   MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm MAX_COMM;;
+
+let LE_MAX1 = prove
+ (`!m n. m <= MAX m n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MAX] THEN
+  COND_CASES_TAC THEN
+  REWRITE_TAC [LE_REFL]);;
+
+export_thm LE_MAX1;;
+
+let LE_MAX2 = prove
+ (`!m n. n <= MAX m n`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [MAX_COMM] THEN
+  MATCH_ACCEPT_TAC LE_MAX1);;
+
+export_thm LE_MAX2;;
 
 (* ------------------------------------------------------------------------- *)
 (* A common lemma for transitive relations.                                  *)

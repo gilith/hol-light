@@ -4427,91 +4427,119 @@ let CARD_POWERSET = prove
 
 export_thm CARD_POWERSET;;
 
-(***
 (* ------------------------------------------------------------------------- *)
 (* Set of numbers is infinite.                                               *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "set-thm";;
+
+let EMPTY_NUMSEG_LT = prove
+  (`{m | m < 0} = EMPTY`,
+   REWRITE_TAC [EXTENSION; NOT_IN_EMPTY; IN_ELIM; LT]);;
+
+export_thm EMPTY_NUMSEG_LT;;
+
+let INSERT_NUMSEG_LT = prove
+  (`!n. {m | m < SUC n} = n INSERT {m | m < n}`,
+   REWRITE_TAC [EXTENSION; IN_INSERT; IN_ELIM; LT]);;
+
+export_thm INSERT_NUMSEG_LT;;
+
+logfile "set-finite-thm";;
+
+let FINITE_NUMSEG_LT = prove
+ (`!(n:num). FINITE {m | m < n}`,
+  INDUCT_TAC THENL
+  [REWRITE_TAC [EMPTY_NUMSEG_LT; FINITE_EMPTY];
+   ASM_REWRITE_TAC [INSERT_NUMSEG_LT; FINITE_INSERT]]);;
+
+export_thm FINITE_NUMSEG_LT;;
+
+let FINITE_NUMSEG_LE = prove
+ (`!n. FINITE {m | m <= n}`,
+  REWRITE_TAC [GSYM LT_SUC_LE; FINITE_NUMSEG_LT]);;
+
+export_thm FINITE_NUMSEG_LE;;
+
+let num_FINITE = prove
+ (`!(s : num set). FINITE s <=> ?a. !x. x IN s ==> x <= a`,
+  GEN_TAC THEN
+  EQ_TAC THENL
+  [SPEC_TAC (`s : num set`,`s : num set`) THEN
+   MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
+   REWRITE_TAC [IN_INSERT; NOT_IN_EMPTY] THEN
+   REPEAT STRIP_TAC THEN
+   EXISTS_TAC `MAX x a` THEN
+   REPEAT STRIP_TAC THENL
+   [ASM_REWRITE_TAC [LE_MAX1];
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `a:num` THEN
+    REWRITE_TAC [LE_MAX2] THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   STRIP_TAC THEN
+   MATCH_MP_TAC FINITE_SUBSET THEN
+   EXISTS_TAC `{m:num | m <= a}` THEN
+   REWRITE_TAC [FINITE_NUMSEG_LE] THEN
+   REWRITE_TAC [SUBSET; IN_ELIM] THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm num_FINITE;;
+
+let num_FINITE_AVOID = prove
+ (`!(s : num set). FINITE s ==> ?a. ~(a IN s)`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPEC `s : num set` num_FINITE) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `SUC a` THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM (MP_TAC o SPEC `SUC a`) THEN
+  ASM_REWRITE_TAC [NOT_LE; LT]);;
+
+export_thm num_FINITE_AVOID;;
+
+let num_INFINITE = prove
+ (`INFINITE (UNIV : num set)`,
+  REWRITE_TAC [INFINITE] THEN
+  STRIP_TAC THEN
+  MP_TAC (SPEC `UNIV : num set` num_FINITE_AVOID) THEN
+  ASM_REWRITE_TAC [IN_UNIV]);;
+
+export_thm num_INFINITE;;
+
+logfile "set-size-thm";;
+
 let HAS_SIZE_NUMSEG_LT = prove
  (`!n. {m | m < n} HAS_SIZE n`,
   INDUCT_TAC THENL
-   [SUBGOAL_THEN `{m | m < 0} = {}`
-       (fun th -> REWRITE_TAC[HAS_SIZE_0; th]) THEN
-    REWRITE_TAC[EXTENSION; NOT_IN_EMPTY; IN_ELIM_THM; LT];
-    SUBGOAL_THEN `{m | m < SUC n} = n INSERT {m | m < n}` SUBST1_TAC THENL
-     [REWRITE_TAC[EXTENSION; IN_ELIM_THM; IN_INSERT] THEN ARITH_TAC;
-      ALL_TAC] THEN
-    RULE_ASSUM_TAC(REWRITE_RULE[HAS_SIZE]) THEN
-    ASM_SIMP_TAC[HAS_SIZE; CARD_CLAUSES; FINITE_INSERT] THEN
-    REWRITE_TAC[IN_ELIM_THM; LT_REFL]]);;
+  [REWRITE_TAC [EMPTY_NUMSEG_LT; HAS_SIZE_CLAUSES];
+   REWRITE_TAC [INSERT_NUMSEG_LT; HAS_SIZE_CLAUSES] THEN
+   EXISTS_TAC `n:num` THEN
+   EXISTS_TAC `{m | m < n}` THEN
+   ASM_REWRITE_TAC [IN_ELIM; LT_REFL]]);;
 
 export_thm HAS_SIZE_NUMSEG_LT;;
 
 let CARD_NUMSEG_LT = prove
  (`!n. CARD {m | m < n} = n`,
-  REWRITE_TAC[REWRITE_RULE[HAS_SIZE] HAS_SIZE_NUMSEG_LT]);;
+  REWRITE_TAC [REWRITE_RULE [HAS_SIZE] HAS_SIZE_NUMSEG_LT]);;
 
 export_thm CARD_NUMSEG_LT;;
 
-let FINITE_NUMSEG_LT = prove
- (`!n:num. FINITE {m | m < n}`,
-  REWRITE_TAC[REWRITE_RULE[HAS_SIZE] HAS_SIZE_NUMSEG_LT]);;
-
-export_thm FINITE_NUMSEG_LT;;
-
 let HAS_SIZE_NUMSEG_LE = prove
  (`!n. {m | m <= n} HAS_SIZE (n + 1)`,
-  REWRITE_TAC[GSYM LT_SUC_LE; HAS_SIZE_NUMSEG_LT; ADD1]);;
+  REWRITE_TAC [GSYM LT_SUC_LE; HAS_SIZE_NUMSEG_LT; ADD1]);;
 
 export_thm HAS_SIZE_NUMSEG_LE;;
 
-let FINITE_NUMSEG_LE = prove
- (`!n. FINITE {m | m <= n}`,
-  REWRITE_TAC[REWRITE_RULE[HAS_SIZE] HAS_SIZE_NUMSEG_LE]);;
-
-export_thm FINITE_NUMSEG_LE;;
-
 let CARD_NUMSEG_LE = prove
  (`!n. CARD {m | m <= n} = n + 1`,
-  REWRITE_TAC[REWRITE_RULE[HAS_SIZE] HAS_SIZE_NUMSEG_LE]);;
+  REWRITE_TAC [REWRITE_RULE[HAS_SIZE] HAS_SIZE_NUMSEG_LE]);;
 
 export_thm CARD_NUMSEG_LE;;
 
-let num_FINITE = prove
- (`!s:num->bool. FINITE s <=> ?a. !x. x IN s ==> x <= a`,
-  GEN_TAC THEN EQ_TAC THENL
-   [SPEC_TAC(`s:num->bool`,`s:num->bool`) THEN
-    MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
-    REWRITE_TAC[IN_INSERT; NOT_IN_EMPTY] THEN MESON_TAC[LE_CASES; LE_TRANS];
-    DISCH_THEN(X_CHOOSE_TAC `n:num`) THEN MATCH_MP_TAC FINITE_SUBSET THEN
-    EXISTS_TAC `{m:num | m <= n}` THEN REWRITE_TAC[FINITE_NUMSEG_LE] THEN
-    ASM_SIMP_TAC[SUBSET; IN_ELIM_THM]]);;
-
-export_thm num_FINITE;;
-
-let num_FINITE_AVOID = prove
- (`!s:num->bool. FINITE(s) ==> ?a. ~(a IN s)`,
-  MESON_TAC[num_FINITE; LT; NOT_LT]);;
-
-export_thm num_FINITE_AVOID;;
-
-let num_INFINITE = prove
- (`INFINITE(:num)`,
-  REWRITE_TAC[INFINITE] THEN MESON_TAC[num_FINITE_AVOID; IN_UNIV]);;
-
-export_thm num_INFINITE;;
-
-(* ------------------------------------------------------------------------- *)
-(* Set of strings is infinite.                                               *)
-(* ------------------------------------------------------------------------- *)
-
-let string_INFINITE = prove
- (`INFINITE(:string)`,
-  MP_TAC num_INFINITE THEN REWRITE_TAC[INFINITE; CONTRAPOS_THM] THEN
-  DISCH_THEN(MP_TAC o ISPEC `LENGTH:string->num` o MATCH_MP FINITE_IMAGE) THEN
-  MATCH_MP_TAC EQ_IMP THEN AP_TERM_TAC THEN
-  REWRITE_TAC[EXTENSION; IN_UNIV; IN_IMAGE] THEN MESON_TAC[LENGTH_REPLICATE]);;
-
+(***
 (* ------------------------------------------------------------------------- *)
 (* Non-trivial intervals of reals are infinite.                              *)
 (* ------------------------------------------------------------------------- *)
@@ -4580,198 +4608,106 @@ let real_INFINITE = prove
   DISCH_THEN(MP_TAC o SPEC `{x:real | &0 <= x}` o
         MATCH_MP(REWRITE_RULE[IMP_CONJ] FINITE_SUBSET)) THEN
   REWRITE_TAC[FINITE_REAL_INTERVAL; SUBSET_UNIV]);;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Indexing of finite sets.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "set-size-thm";;
+
 let HAS_SIZE_INDEX = prove
- (`!s n. s HAS_SIZE n
-         ==> ?f:num->A. (!m. m < n ==> f(m) IN s) /\
-                        (!x. x IN s ==> ?!m. m < n /\ (f m = x))`,
-  ONCE_REWRITE_TAC[SWAP_FORALL_THM] THEN INDUCT_TAC THEN
-  SIMP_TAC[HAS_SIZE_0; HAS_SIZE_SUC; LT; NOT_IN_EMPTY] THEN
-  X_GEN_TAC `s:A->bool` THEN REWRITE_TAC[EXTENSION; NOT_IN_EMPTY] THEN
-  REWRITE_TAC[NOT_FORALL_THM] THEN
-  DISCH_THEN(CONJUNCTS_THEN2 (X_CHOOSE_TAC `a:A`) (MP_TAC o SPEC `a:A`)) THEN
-  ASM_REWRITE_TAC[] THEN DISCH_TAC THEN
-  FIRST_X_ASSUM(MP_TAC o SPEC `s DELETE (a:A)`) THEN ASM_REWRITE_TAC[] THEN
-  DISCH_THEN(X_CHOOSE_THEN `f:num->A` STRIP_ASSUME_TAC) THEN
-  EXISTS_TAC `\m:num. if m < n then f(m) else a:A` THEN CONJ_TAC THENL
-   [GEN_TAC THEN REWRITE_TAC[] THEN COND_CASES_TAC THEN
-    ASM_MESON_TAC[IN_DELETE]; ALL_TAC] THEN
-  X_GEN_TAC `x:A` THEN DISCH_TAC THEN ASM_REWRITE_TAC[] THEN
-  FIRST_X_ASSUM(MP_TAC o SPEC `x:A`) THEN
-  ASM_REWRITE_TAC[IN_DELETE] THEN
-  CONV_TAC(ONCE_DEPTH_CONV COND_ELIM_CONV) THEN
-  ASM_CASES_TAC `a:A = x` THEN ASM_SIMP_TAC[] THEN
-  ASM_MESON_TAC[LT_REFL; IN_DELETE]);;
+ (`!s n.
+     s HAS_SIZE n ==>
+     ?(f : num -> A).
+       (!m. m < n ==> f(m) IN s) /\
+                      (!x. x IN s ==> ?!m. m < n /\ (f m = x))`,
+  ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
+  INDUCT_TAC THENL
+  [GEN_TAC THEN
+   REWRITE_TAC [HAS_SIZE_0] THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   REWRITE_TAC [NOT_IN_EMPTY; LT];
+   GEN_TAC THEN
+   REWRITE_TAC [HAS_SIZE_SUC; GSYM MEMBER_NOT_EMPTY] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `x : A`) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `s DELETE (x:A)`) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `\m. if (m:num) = n then (x:A) else f m` THEN
+   CONJ_TAC THENL
+   [GEN_TAC THEN
+    ASM_CASES_TAC `(m:num) = n` THENL
+    [ASM_REWRITE_TAC [];
+     ASM_REWRITE_TAC [LT] THEN
+     STRIP_TAC THEN
+     FIRST_X_ASSUM (MP_TAC o SPEC `m:num`) THEN
+     ASM_REWRITE_TAC [IN_DELETE] THEN
+     STRIP_TAC];
+    REWRITE_TAC [EXISTS_UNIQUE_THM] THEN
+    X_GEN_TAC `y:A` THEN
+    STRIP_TAC THEN
+    CONJ_TAC THENL
+    [ASM_CASES_TAC `(y:A) = x` THENL
+     [POP_ASSUM SUBST_VAR_TAC THEN
+      EXISTS_TAC `n:num` THEN
+      REWRITE_TAC [SUC_LT];
+      FIRST_X_ASSUM (MP_TAC o SPEC `y:A`) THEN
+      ASM_REWRITE_TAC [IN_DELETE; EXISTS_UNIQUE_THM] THEN
+      DISCH_THEN (STRIP_ASSUME_TAC o CONJUNCT1) THEN
+      EXISTS_TAC `m:num` THEN
+      CONJ_TAC THENL
+      [MATCH_MP_TAC LT_TRANS THEN
+       EXISTS_TAC `n:num` THEN
+       ASM_REWRITE_TAC [SUC_LT];
+       COND_CASES_TAC THENL
+       [UNDISCH_TAC `m < n` THEN
+        ASM_REWRITE_TAC [LT_REFL];
+        FIRST_ASSUM ACCEPT_TAC]]];
+     ASM_CASES_TAC `(y:A) = x` THENL
+     [POP_ASSUM SUBST_VAR_TAC THEN
+      X_GEN_TAC `m1:num` THEN
+      X_GEN_TAC `m2:num` THEN
+      REWRITE_TAC [LT] THEN
+      COND_CASES_TAC THENL
+      [POP_ASSUM SUBST_VAR_TAC THEN
+       COND_CASES_TAC THENL
+       [POP_ASSUM SUBST_VAR_TAC THEN
+        REWRITE_TAC [];
+        REWRITE_TAC [] THEN
+        STRIP_TAC THEN
+        FIRST_X_ASSUM (MP_TAC o SPEC `m2:num`) THEN
+        ASM_REWRITE_TAC [IN_DELETE]];
+       REWRITE_TAC [] THEN
+       STRIP_TAC THEN
+       FIRST_X_ASSUM (MP_TAC o SPEC `m1:num`) THEN
+       ASM_REWRITE_TAC [IN_DELETE]];
+      X_GEN_TAC `m1:num` THEN
+      X_GEN_TAC `m2:num` THEN
+      REWRITE_TAC [LT] THEN
+      COND_CASES_TAC THENL
+      [ASM_REWRITE_TAC [];
+       COND_CASES_TAC THENL
+       [ASM_REWRITE_TAC [];
+        REWRITE_TAC [] THEN
+        STRIP_TAC THEN
+        FIRST_X_ASSUM (MP_TAC o SPEC `y:A`) THEN
+        ASM_REWRITE_TAC [IN_DELETE; EXISTS_UNIQUE_THM] THEN
+        DISCH_THEN (MATCH_MP_TAC o CONJUNCT2) THEN
+        ASM_REWRITE_TAC []]]]]]]);;
 
 export_thm HAS_SIZE_INDEX;;
-
-(* ------------------------------------------------------------------------- *)
-(* Mapping between finite sets and lists.                                    *)
-(* ------------------------------------------------------------------------- *)
-
-logfile "set-list-def";;
-
-let set_of_list = new_recursive_definition list_RECURSION
-  `(set_of_list ([]:A list) = {}) /\
-   (set_of_list (CONS (h:A) t) = h INSERT (set_of_list t))`;;
-
-export_thm set_of_list;;
-
-let list_of_set = new_definition
-  `list_of_set s = @l. (set_of_list l = s) /\ (LENGTH l = CARD s)`;;
-
-let LIST_OF_SET_PROPERTIES = prove
- (`!s:A->bool. FINITE(s)
-               ==> (set_of_list(list_of_set s) = s) /\
-                   (LENGTH(list_of_set s) = CARD s)`,
-  REWRITE_TAC[list_of_set] THEN
-  CONV_TAC(BINDER_CONV(RAND_CONV SELECT_CONV)) THEN
-  MATCH_MP_TAC FINITE_INDUCT_STRONG THEN REPEAT STRIP_TAC THENL
-   [EXISTS_TAC `[]:A list` THEN REWRITE_TAC[CARD_CLAUSES; LENGTH; set_of_list];
-    EXISTS_TAC `CONS (x:A) l` THEN ASM_REWRITE_TAC[LENGTH] THEN
-    ASM_REWRITE_TAC[set_of_list] THEN
-    FIRST_ASSUM(fun th -> REWRITE_TAC
-     [MATCH_MP (CONJUNCT2 CARD_CLAUSES) th]) THEN
-    ASM_REWRITE_TAC[]]);;
-
-export_thm LIST_OF_SET_PROPERTIES;;
-
-logfile "set-list-thm";;
-
-let SET_OF_LIST_OF_SET = prove
- (`!s. FINITE(s) ==> (set_of_list(list_of_set s) = s)`,
-  MESON_TAC[LIST_OF_SET_PROPERTIES]);;
-
-export_thm SET_OF_LIST_OF_SET;;
-
-let LENGTH_LIST_OF_SET = prove
- (`!s. FINITE(s) ==> (LENGTH(list_of_set s) = CARD s)`,
-  MESON_TAC[LIST_OF_SET_PROPERTIES]);;
-
-export_thm LENGTH_LIST_OF_SET;;
-
-let MEM_LIST_OF_SET = prove
- (`!s:A->bool. FINITE(s) ==> !x. MEM x (list_of_set s) <=> x IN s`,
-  GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP SET_OF_LIST_OF_SET) THEN
-  DISCH_THEN(fun th -> GEN_REWRITE_TAC (BINDER_CONV o funpow 2 RAND_CONV)
-    [GSYM th]) THEN
-  SPEC_TAC(`list_of_set(s:A->bool)`,`l:A list`) THEN
-  LIST_INDUCT_TAC THEN REWRITE_TAC[MEM; set_of_list; NOT_IN_EMPTY] THEN
-  ASM_REWRITE_TAC[IN_INSERT]);;
-
-export_thm MEM_LIST_OF_SET;;
-
-let FINITE_SET_OF_LIST = prove
- (`!l. FINITE(set_of_list l)`,
-  LIST_INDUCT_TAC THEN ASM_SIMP_TAC[set_of_list; FINITE_RULES]);;
-
-export_thm FINITE_SET_OF_LIST;;
-
-let IN_SET_OF_LIST = prove
- (`!x l. x IN (set_of_list l) <=> MEM x l`,
-  GEN_TAC THEN LIST_INDUCT_TAC THEN
-  REWRITE_TAC[IN_INSERT; NOT_IN_EMPTY; MEM; set_of_list] THEN
-  ASM_MESON_TAC[]);;
-
-export_thm IN_SET_OF_LIST;;
-
-let SET_OF_LIST_APPEND = prove
- (`!l1 l2. set_of_list(APPEND l1 l2) = set_of_list(l1) UNION set_of_list(l2)`,
-  REWRITE_TAC[EXTENSION; IN_SET_OF_LIST; IN_UNION; MEM_APPEND]);;
-
-export_thm SET_OF_LIST_APPEND;;
-
-let SET_OF_LIST_MAP = prove
- (`!f l. set_of_list(MAP f l) = IMAGE f (set_of_list l)`,
-  GEN_TAC THEN LIST_INDUCT_TAC THEN
-  ASM_REWRITE_TAC[set_of_list; MAP; IMAGE_CLAUSES]);;
-
-export_thm SET_OF_LIST_MAP;;
-
-let SET_OF_LIST_EQ_EMPTY = prove
- (`!l. set_of_list l = {} <=> l = []`,
-  LIST_INDUCT_TAC THEN
-  REWRITE_TAC[set_of_list; NOT_CONS_NIL; NOT_INSERT_EMPTY]);;
-
-export_thm SET_OF_LIST_EQ_EMPTY;;
-
-(* ------------------------------------------------------------------------- *)
-(* Mappings from finite set enumerations to lists (no "setification").       *)
-(* ------------------------------------------------------------------------- *)
-
-let dest_setenum =
-  let fn = splitlist (dest_binary "INSERT") in
-  fun tm -> let l,n = fn tm in
-            if is_const n & fst(dest_const n) = "EMPTY" then l
-            else failwith "dest_setenum: not a finite set enumeration";;
-
-let is_setenum = can dest_setenum;;
-
-let mk_setenum =
-  let insert_atm = `(INSERT):A->(A->bool)->(A->bool)`
-  and nil_atm = `(EMPTY):A->bool` in
-  fun (l,ty) ->
-    let insert_tm = inst [ty,aty] insert_atm
-    and nil_tm = inst [ty,aty] nil_atm in
-    itlist (mk_binop insert_tm) l nil_tm;;
-
-let mk_fset l = mk_setenum(l,type_of(hd l));;
-
-(* ------------------------------------------------------------------------- *)
-(* Pairwise property over sets and lists.                                    *)
-(* ------------------------------------------------------------------------- *)
-
-let pairwise = new_definition
-  `!r s. pairwise r s <=> !x y. (x:A) IN s /\ y IN s /\ ~(x = y) ==> r x y`;;
-
-let PAIRWISE = new_recursive_definition list_RECURSION
-  `(PAIRWISE (r:A->A->bool) [] <=> T) /\
-   (PAIRWISE (r:A->A->bool) (CONS h t) <=> ALL (r h) t /\ PAIRWISE r t)`;;
-
-let PAIRWISE_EMPTY = prove
- (`!r. pairwise r {} <=> T`,
-  REWRITE_TAC[pairwise; NOT_IN_EMPTY] THEN MESON_TAC[]);;
-
-let PAIRWISE_SING = prove
- (`!r x. pairwise r {x} <=> T`,
-  REWRITE_TAC[pairwise; IN_SING] THEN MESON_TAC[]);;
-
-let PAIRWISE_MONO = prove
- (`!r s t. pairwise r s /\ t SUBSET s ==> pairwise r t`,
-  REWRITE_TAC[pairwise] THEN SET_TAC[]);;
-
-(* ------------------------------------------------------------------------- *)
-(* Some additional properties of "set_of_list".                              *)
-(* ------------------------------------------------------------------------- *)
-
-let CARD_SET_OF_LIST_LE = prove
- (`!l. CARD(set_of_list l) <= LENGTH l`,
-  LIST_INDUCT_TAC THEN
-  SIMP_TAC[LENGTH; set_of_list; CARD_CLAUSES; FINITE_SET_OF_LIST] THEN
-  ASM_ARITH_TAC);;
-
-export_thm CARD_SET_OF_LIST_LE;;
-
-let HAS_SIZE_SET_OF_LIST = prove
- (`!l. (set_of_list l) HAS_SIZE (LENGTH l) <=> PAIRWISE (\x y. ~(x = y)) l`,
-  REWRITE_TAC[HAS_SIZE; FINITE_SET_OF_LIST] THEN LIST_INDUCT_TAC THEN
-  ASM_SIMP_TAC[CARD_CLAUSES; LENGTH; set_of_list; PAIRWISE; ALL;
-               FINITE_SET_OF_LIST; GSYM ALL_MEM; IN_SET_OF_LIST] THEN
-  COND_CASES_TAC THEN ASM_REWRITE_TAC[SUC_INJ] THEN
-  ASM_MESON_TAC[CARD_SET_OF_LIST_LE; ARITH_RULE `~(SUC n <= n)`]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Classic result on function of finite set into itself.                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-size-thm";;
-
+(***
 let SURJECTIVE_IFF_INJECTIVE_GEN = prove
- (`!s t f:A->B.
+ (`!s t (f:A->B).
         FINITE s /\ FINITE t /\ (CARD s = CARD t) /\ (IMAGE f s) SUBSET t
         ==> ((!y. y IN t ==> ?x. x IN s /\ (f x = y)) <=>
              (!x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y)))`,

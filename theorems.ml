@@ -13,7 +13,7 @@ needs "simp.ml";;
 (* More stuff about equality.                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-int-eq";;
+logfile "bool-int";;
 
 let EQ_REFL = prove
  (`!x:A. x = x`,
@@ -71,7 +71,7 @@ export_thm ABS_SIMP;;
 (* A few "big name" intuitionistic tautologies.                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-int-and";;
+logfile "bool-int";;
 
 let CONJ_ASSOC = prove
  (`!t1 t2 t3. t1 /\ t2 /\ t3 <=> (t1 /\ t2) /\ t3`,
@@ -96,7 +96,7 @@ let CONJ_ACI = prove
 
 export_thm CONJ_ACI;;
 
-logfile "bool-int-or";;
+logfile "bool-int";;
 
 let DISJ_ASSOC = prove
  (`!t1 t2 t3. t1 \/ t2 \/ t3 <=> (t1 \/ t2) \/ t3`,
@@ -121,7 +121,7 @@ let DISJ_ACI = prove
 
 export_thm DISJ_ACI;;
 
-logfile "bool-int-imp";;
+logfile "bool-int";;
 
 let IMP_CONJ = prove
  (`!p q r. p /\ q ==> r <=> p ==> q ==> r`,
@@ -143,7 +143,7 @@ export_thm IMP_CONJ_ALT;;
 (* A couple of "distribution" tautologies are useful.                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-int-or-dist";;
+logfile "bool-int";;
 
 let LEFT_OR_DISTRIB = prove
  (`!p q r. p /\ (q \/ r) <=> p /\ q \/ p /\ r`,
@@ -173,7 +173,7 @@ export_thm RIGHT_AND_DISTRIB;;
 (* Degenerate cases of quantifiers.                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-int-quant-triv";;
+logfile "bool-int";;
 
 let FORALL_SIMP = prove
  (`!t. (!x:A. t) = t`,
@@ -191,7 +191,7 @@ export_thm EXISTS_SIMP;;
 (* I also use this a lot (as a prelude to congruence reasoning).             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-int-rewr";;
+logfile "bool-int";;
 
 let EQ_IMP = ITAUT `!a b. (a <=> b) ==> a ==> b`;;
 
@@ -257,7 +257,7 @@ extend_basic_congs
 (* Rewrite rule for unique existence.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-int-quant";;
+logfile "bool-int";;
 
 let EXISTS_UNIQUE_THM = prove
  (`!P. (?!x:A. P x) <=> (?x. P x) /\ (!x x'. P x /\ P x' ==> (x = x'))`,
