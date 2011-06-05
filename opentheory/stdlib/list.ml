@@ -602,8 +602,13 @@ let el_conv =
     rewr_conv;;
 
 let take_conv =
-    let zero_conv = REWR_CONV take_0 in***
-    let suc_conv = REWR_CONV (CONJUNCT2 take_def) in
+    let zero_conv = REWR_CONV take_0 in
+    let side_conv = RAND_CONV length_conv THENC NUM_LE_CONV in
+    let suc_th = SPEC_ALL take_suc in
+    let suc_conv tm =
+        let th = PART_MATCH (lhs o rand) suc_th tm in
+        let th' = side_conv (lhand (concl th)) in
+        MP th (EQT_ELIM th') in
     let rec rewr_conv tm =
         (zero_conv ORELSEC
          (RATOR_CONV (RAND_CONV num_CONV) THENC
@@ -612,8 +617,13 @@ let take_conv =
     rewr_conv;;
 
 let drop_conv =
-    let zero_conv = REWR_CONV (CONJUNCT1 drop_def) in
-    let suc_conv = REWR_CONV (CONJUNCT2 drop_def) in
+    let zero_conv = REWR_CONV drop_0 in
+    let side_conv = RAND_CONV length_conv THENC NUM_LE_CONV in
+    let suc_th = SPEC_ALL drop_suc in
+    let suc_conv tm =
+        let th = PART_MATCH (lhs o rand) suc_th tm in
+        let th' = side_conv (lhand (concl th)) in
+        MP th (EQT_ELIM th') in
     let rec rewr_conv tm =
         (zero_conv ORELSEC
          (RATOR_CONV (RAND_CONV num_CONV) THENC
@@ -622,15 +632,23 @@ let drop_conv =
     rewr_conv;;
 
 let zipwith_conv =
-    let nil_conv = REWR_CONV (CONJUNCT1 zipwith_def) in
-    let cons_conv = REWR_CONV (CONJUNCT2 zipwith_def) in
+    let nil_conv = REWR_CONV zipwith_nil in
+    let side_conv =
+        LAND_CONV length_conv THENC
+        RAND_CONV length_conv THENC
+        NUM_EQ_CONV in
+    let cons_th = SPEC_ALL zipwith_cons in
+    let cons_conv tm =
+        let th = PART_MATCH (lhs o rand) cons_th tm in
+        let th' = side_conv (lhand (concl th)) in
+        MP th (EQT_ELIM th') in
     fun c ->
       let rec rewr_conv tm =
           (nil_conv ORELSEC
            (cons_conv THENC
             RATOR_CONV (RAND_CONV c) THENC
             RAND_CONV rewr_conv)) tm in
-      rewr_conv;;
+    rewr_conv;;
 
 let list_eq_conv =
     let nil_conv = REWR_CONV (EQT_INTRO (ISPEC `[] : A list` EQ_REFL)) in
