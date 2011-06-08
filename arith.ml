@@ -1140,6 +1140,13 @@ let SUB_ADD = prove
 
 export_thm SUB_ADD;;
 
+let SUB_ADD2 = prove
+ (`!m n. n <= m ==> (n + (m - n) = m)`,
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  ACCEPT_TAC SUB_ADD);;
+
+export_thm SUB_ADD2;;
+
 let SUB_ADD_LCANCEL = prove
  (`!m n p. p <= n ==> (m + n) - (m + p) = n - p`,
   REWRITE_TAC [LE_EXISTS] THEN
@@ -1187,6 +1194,41 @@ let SUC_SUB1 = prove
 
 export_thm SUC_SUB1;;
 
+let SUB_SUC = prove
+ (`!m n. n <= m ==> SUC m - SUC n = m - n`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`m:num`; `n:num`; `1`] SUB_ADD_RCANCEL) THEN
+  ASM_REWRITE_TAC [ADD1]);;
+
+export_thm SUB_SUC;;
+
+let SUC_SUB = prove
+ (`!m n. n <= m ==> SUC (m - n) = SUC m - n`,
+  REWRITE_TAC [LE_EXISTS] THEN
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM SUBST_VAR_TAC THEN
+  REWRITE_TAC [ADD_SUB2] THEN
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  ONCE_REWRITE_TAC [GSYM (CONJUNCT2 ADD)] THEN
+  REWRITE_TAC [ADD_SUB]);;
+
+export_thm SUC_SUB;;
+
+let SUB_SUC_CANCEL = prove
+ (`!m n. n < m ==> SUC (m - SUC n) = m - n`,
+  INDUCT_TAC THENL
+  [REWRITE_TAC [LT];
+   POP_ASSUM (K ALL_TAC) THEN
+   REWRITE_TAC [LT_SUC_LE] THEN
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPECL [`m:num`; `n:num`] SUB_SUC) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MATCH_MP_TAC SUC_SUB THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm SUB_SUC_CANCEL;;
+
 let SUB1 = prove
  (`!n. ~(n = 0) ==> PRE n = n - 1`,
   INDUCT_TAC THENL
@@ -1211,14 +1253,6 @@ let SUB_SUC_PRE = prove
    REWRITE_TAC [GSYM ADD1; NOT_SUC]);;
 
 export_thm SUB_SUC_PRE;;
-
-let SUB_SUC = prove
- (`!m n. n <= m ==> SUC m - SUC n = m - n`,
-  REPEAT STRIP_TAC THEN
-  MP_TAC (SPECL [`m:num`; `n:num`; `1`] SUB_ADD_RCANCEL) THEN
-  ASM_REWRITE_TAC [ADD1]);;
-
-export_thm SUB_SUC;;
 
 let SUB_PRESUC = prove
  (`!m n. n <= m ==> PRE (SUC m - n) = m - n`,

@@ -363,7 +363,10 @@ let mod_div_exp_2 = prove
    AP_TERM_TAC THEN
    REWRITE_TAC [GSYM EXP_ADD] THEN
    AP_TERM_TAC THEN
-   ASM_ARITH_TAC);;
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC SUB_ADD2 THEN
+   MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
+   ASM_REWRITE_TAC []);;
 
 (* Exported theorems *)
 
@@ -531,7 +534,7 @@ let word_to_list_to_word = prove
    MATCH_MP_TAC num_INDUCTION THEN
    CONJ_TAC THENL
    [REWRITE_TAC
-      [SUB; interval_def; MAP; nil_to_word_to_num; GSYM word_size_def;
+      [SUB_0; interval_def; MAP; nil_to_word_to_num; GSYM word_size_def;
        word_to_num_div_bound];
     ALL_TAC] THEN
    REPEAT STRIP_TAC THEN
@@ -542,9 +545,8 @@ let word_to_list_to_word = prove
     ASM_REWRITE_TAC [LE; LE_REFL];
     ALL_TAC] THEN
    REWRITE_TAC [interval_def; MAP; cons_to_word_to_num] THEN
-   KNOW_TAC `word_width - k = SUC (word_width - SUC k)` THENL
-   [ASM_ARITH_TAC;
-    ALL_TAC] THEN
+   MP_TAC (SPECL [`word_width`; `k : num`] SUB_SUC_CANCEL) THEN
+   ASM_REWRITE_TAC [GSYM LE_SUC_LT] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
    REWRITE_TAC [word_bit_div; cond_mod_2] THEN
