@@ -546,9 +546,11 @@ let word_to_list_to_word = prove
     ALL_TAC] THEN
    REWRITE_TAC [interval_def; MAP; cons_to_word_to_num] THEN
    MP_TAC (SPECL [`word_width`; `k : num`] SUB_SUC_CANCEL) THEN
-   ASM_REWRITE_TAC [GSYM LE_SUC_LT] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   COND_TAC THENL
+   [ASM_REWRITE_TAC [GSYM LE_SUC_LT];
+    ALL_TAC] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   DISCH_THEN SUBST1_TAC THEN
    REWRITE_TAC [word_bit_div; cond_mod_2] THEN
    ONCE_REWRITE_TAC [MULT_SYM] THEN
    REWRITE_TAC [EXP] THEN
@@ -581,6 +583,7 @@ let word_to_list_to_word = new_axiom
   `!w. list_to_word (word_to_list w) = w`;;
 *)
 
+(***
 let word_to_list_inj = prove
   (`!w1 w2. word_to_list w1 = word_to_list w2 ==> w1 = w2`,
    REPEAT STRIP_TAC THEN
@@ -1492,5 +1495,6 @@ let prove_word_list_cases n =
         REWRITE_TAC [LENGTH_EQ_NIL] in
     prove (goal,tac);;
 *)
+***)
 
 logfile_end ();;
