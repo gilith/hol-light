@@ -583,7 +583,6 @@ let word_to_list_to_word = new_axiom
   `!w. list_to_word (word_to_list w) = w`;;
 *)
 
-(***
 let word_to_list_inj = prove
   (`!w1 w2. word_to_list w1 = word_to_list w2 ==> w1 = w2`,
    REPEAT STRIP_TAC THEN
@@ -612,6 +611,7 @@ let word_to_list_inj_eq = new_axiom
   `!w1 w2. word_to_list w1 = word_to_list w2 <=> w1 = w2`;;
 *)
 
+(***
 let list_to_word_bit = prove
   (`!l n.
       word_bit (list_to_word l) n =
@@ -647,7 +647,7 @@ let list_to_word_bit = prove
     EXISTS_TAC `word_size` THEN
     REWRITE_TAC [word_to_num_bound] THEN
     REWRITE_TAC [word_size_def; le_exp_2] THEN
-    ASM_ARITH_TAC;
+    ASM_REWRITE_TAC [GSYM NOT_LT];
     ALL_TAC] THEN
    ASM_REWRITE_TAC [] THEN
    LIST_INDUCT_TAC THENL
@@ -656,13 +656,29 @@ let list_to_word_bit = prove
     REWRITE_TAC [div_exp_2_lt; LT_NZ; exp_2_nz];
     ALL_TAC] THEN
    POP_ASSUM (K ALL_TAC) THEN
-   REWRITE_TAC [LENGTH; cons_to_word_to_num] THEN
-   REWRITE_TAC [LT_SUC; EL; TL] THEN
+   REWRITE_TAC [LENGTH; cons_to_word_to_num; LT_SUC] THEN
+   MP_TAC (ISPECL [`h : bool`; `t : bool list`; `n : num`] EL_SUC) THEN
+   MATCH_MP_TAC
+     (TAUT `!x y z w.
+              ((x /\ y <=> x /\ z) ==> w) ==>
+              ((x ==> (y <=> z)) ==> w)`) THEN
+   DISCH_THEN SUBST1_TAC THEN
    REWRITE_TAC [word_size_def; mod_div_exp_2; GSYM NOT_LT] THEN
-   ASM_REWRITE_TAC [odd_mod_exp_2; SUB_EQ_0; GSYM NOT_LT] THEN
+   ASM_REWRITE_TAC [odd_mod_exp_2] THEN
+   MP_TAC (SPECL [`word_width`; `SUC n`] SUB_EQ_0) THEN
+   COND_TAC THENL
+   [MATCH_MP_TAC LT_IMP_LE THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    ALL_TAC] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [
+***
+; GSYM NOT_LT] THEN
    FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `t : bool list` th)) THEN
    KNOW_TAC `n < word_width` THENL
-   [ASM_ARITH_TAC;
+   [MATCH_MP_TAC LT_TRANS THEN
+    EXISTS_TAC `SUC n` THEN
+    ASM_REWRITE_TAC [SUC_LT];
     ALL_TAC] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
    DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
