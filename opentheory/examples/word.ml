@@ -611,7 +611,6 @@ let word_to_list_inj_eq = new_axiom
   `!w1 w2. word_to_list w1 = word_to_list w2 <=> w1 = w2`;;
 *)
 
-(***
 let list_to_word_bit = prove
   (`!l n.
       word_bit (list_to_word l) n =
@@ -665,15 +664,17 @@ let list_to_word_bit = prove
    DISCH_THEN SUBST1_TAC THEN
    REWRITE_TAC [word_size_def; mod_div_exp_2; GSYM NOT_LT] THEN
    ASM_REWRITE_TAC [odd_mod_exp_2] THEN
-   MP_TAC (SPECL [`word_width`; `SUC n`] SUB_EQ_0) THEN
-   COND_TAC THENL
-   [MATCH_MP_TAC LT_IMP_LE THEN
-    FIRST_ASSUM ACCEPT_TAC;
+   SUBGOAL_THEN `~(word_width - SUC n = 0)` (fun th -> REWRITE_TAC [th]) THENL
+   [MP_TAC (SPECL [`word_width`; `SUC n`] SUB_EQ_0) THEN
+    COND_TAC THENL
+    [MATCH_MP_TAC LT_IMP_LE THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     ALL_TAC] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    STRIP_TAC THEN
+    UNDISCH_TAC `SUC n < word_width` THEN
+    ASM_REWRITE_TAC [NOT_LT; LE_REFL];
     ALL_TAC] THEN
-   DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [
-***
-; GSYM NOT_LT] THEN
    FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `t : bool list` th)) THEN
    KNOW_TAC `n < word_width` THENL
    [MATCH_MP_TAC LT_TRANS THEN
@@ -710,6 +711,7 @@ let list_to_word_bit = new_axiom
       (n < word_width /\ n < LENGTH l /\ EL n l)`;;
 *)
 
+(***
 let short_list_to_word_to_list = prove
   (`!l.
       LENGTH l <= word_width ==>
@@ -721,7 +723,9 @@ let short_list_to_word_to_list = prove
    REWRITE_TAC [LENGTH_MAP; length_interval] THEN
    CONJ_TAC THENL
    [REWRITE_TAC [LENGTH_APPEND; LENGTH_REPLICATE] THEN
-    ASM_ARITH_TAC;
+    MATCH_MP_TAC EQ_SYM THEN
+    MATCH_MP_TAC SUB_ADD2 THEN
+    FIRST_ASSUM ACCEPT_TAC;
     ALL_TAC] THEN
    REPEAT STRIP_TAC THEN
    MP_TAC (ISPECL [`word_bit (list_to_word l)`; `interval 0 word_width`;
@@ -735,6 +739,9 @@ let short_list_to_word_to_list = prove
    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
    REWRITE_TAC [list_to_word_bit] THEN
    ASM_REWRITE_TAC [EL_APPEND] THEN
+
+***
+
    bool_cases_tac `i < LENGTH (l : bool list)` THENL
    [ASM_REWRITE_TAC [];
     ALL_TAC] THEN
