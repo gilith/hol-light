@@ -890,7 +890,6 @@ let list_to_word_to_list = new_axiom
   `!l. LENGTH l = word_width <=> word_to_list (list_to_word l) = l`;;
 *)
 
-(***
 let word_shl_list = prove
   (`!l n.
       word_shl (list_to_word l) n =
@@ -956,7 +955,8 @@ let short_word_shr_list = prove
     ALL_TAC] THEN
    ASM_REWRITE_TAC [] THEN
    KNOW_TAC `n <= LENGTH (l : bool list)` THENL
-   [ASM_ARITH_TAC;
+   [MATCH_MP_TAC LT_IMP_LE THEN
+    ASM_REWRITE_TAC [GSYM NOT_LE];
     ALL_TAC] THEN
    POP_ASSUM (K ALL_TAC) THEN
    POP_ASSUM MP_TAC THEN
@@ -965,7 +965,7 @@ let short_word_shr_list = prove
    LIST_INDUCT_TAC THENL
    [REWRITE_TAC [LE; LENGTH] THEN
     REPEAT STRIP_TAC THEN
-    ASM_REWRITE_TAC [nil_to_word_to_num; drop_def] THEN
+    ASM_REWRITE_TAC [nil_to_word_to_num; drop_0] THEN
     NUM_REDUCE_TAC THEN
     MATCH_MP_TAC MOD_0 THEN
     ACCEPT_TAC word_size_nonzero;
@@ -975,16 +975,21 @@ let short_word_shr_list = prove
    STRIP_TAC THENL
    [DISCH_THEN (K ALL_TAC) THEN
     DISCH_THEN (K ALL_TAC) THEN
-    ASM_REWRITE_TAC [EXP; DIV_1; drop_def] THEN
+    ASM_REWRITE_TAC [EXP; DIV_1; drop_0] THEN
     MATCH_MP_TAC MOD_LT THEN
     MATCH_ACCEPT_TAC word_to_num_bound;
     ALL_TAC] THEN
    POP_ASSUM SUBST_VAR_TAC THEN
-   REWRITE_TAC [LENGTH; LE_SUC; cons_to_word_to_num; drop_def] THEN
+   REWRITE_TAC [LENGTH; LE_SUC; cons_to_word_to_num] THEN
    REPEAT STRIP_TAC THEN
+   MP_TAC (ISPECL [`n' : num`; `h : bool`; `t : bool list`] drop_suc) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
    FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `n' : num` th)) THEN
    COND_TAC THENL
-   [ASM_ARITH_TAC;
+   [MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `SUC (LENGTH (t : bool list))` THEN
+    ASM_REWRITE_TAC [SUC_LE];
     ALL_TAC] THEN
    COND_TAC THENL
    [FIRST_ASSUM ACCEPT_TAC;
@@ -1079,7 +1084,8 @@ let word_shr_list = prove
     FIRST_ASSUM ACCEPT_TAC;
     ASM_REWRITE_TAC [] THEN
     MATCH_MP_TAC long_word_shr_list THEN
-    ASM_ARITH_TAC]);;
+    MATCH_MP_TAC LT_IMP_LE THEN
+    ASM_REWRITE_TAC [GSYM NOT_LE]]);;
 
 export_thm word_shr_list;;
 
@@ -1170,6 +1176,7 @@ let num_to_word_list = new_axiom
         else CONS (ODD n) (word_to_list (num_to_word (n DIV 2))))`;;
 *)
 
+(***
 let word_lte_list = prove
   (`!q w1 w2.
       word_bits_lte q (word_to_list w1) (word_to_list w2) <=>
