@@ -752,7 +752,7 @@ let LT_ADD_LCANCEL = prove
 export_thm LT_ADD_LCANCEL;;
 
 let LT_ADD_RCANCEL = prove
- (`!m n p. (m + p) < (n + p) <=> (m < n)`,
+ (`!m n p. (n + m) < (p + m) <=> (n < p)`,
   ONCE_REWRITE_TAC[ADD_SYM] THEN MATCH_ACCEPT_TAC LT_ADD_LCANCEL);;
 
 export_thm LT_ADD_RCANCEL;;

@@ -711,7 +711,6 @@ let list_to_word_bit = new_axiom
       (n < word_width /\ n < LENGTH l /\ EL n l)`;;
 *)
 
-(***
 let short_list_to_word_to_list = prove
   (`!l.
       LENGTH l <= word_width ==>
@@ -738,18 +737,51 @@ let short_list_to_word_to_list = prove
    ASM_REWRITE_TAC [ADD] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
    REWRITE_TAC [list_to_word_bit] THEN
-   ASM_REWRITE_TAC [EL_APPEND] THEN
-
-***
-
+   MP_TAC (ISPECL [`i : num`; `l : bool list`;
+                   `REPLICATE (word_width - LENGTH (l : bool list)) F`]
+                  EL_APPEND) THEN
+   COND_TAC THENL
+   [REWRITE_TAC [LENGTH_REPLICATE] THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `word_width` THEN
+    ASM_REWRITE_TAC [] THEN
+    MP_TAC (SPEC `word_width` LE_REFL) THEN
+    MATCH_MP_TAC EQ_IMP THEN
+    AP_TERM_TAC THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    MATCH_MP_TAC SUB_ADD2 THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    ALL_TAC] THEN
+   DISCH_THEN SUBST1_TAC THEN
    bool_cases_tac `i < LENGTH (l : bool list)` THENL
    [ASM_REWRITE_TAC [];
     ALL_TAC] THEN
    ASM_REWRITE_TAC [] THEN
+   UNDISCH_TAC `i < word_width` THEN
+   POP_ASSUM MP_TAC THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REWRITE_TAC [NOT_LT; LE_EXISTS] THEN
+   DISCH_THEN (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC) THEN
+   REWRITE_TAC [ADD_SUB2] THEN
+   STRIP_TAC THEN
    MP_TAC (ISPECL [`word_width - LENGTH (l : bool list)`; `F`;
-                   `i - LENGTH (l : bool list)`] nth_replicate) THEN
+                   `d : num`] nth_replicate) THEN
    COND_TAC THENL
-   [ASM_ARITH_TAC;
+   [MP_TAC (SPEC `LENGTH (l : bool list)` LT_ADD_LCANCEL) THEN
+    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `word_width` THEN
+    ASM_REWRITE_TAC [] THEN
+    MP_TAC (SPEC `word_width` LE_REFL) THEN
+    MATCH_MP_TAC EQ_IMP THEN
+    AP_TERM_TAC THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    ONCE_REWRITE_TAC [ADD_SYM] THEN
+    MATCH_MP_TAC SUB_ADD THEN
+    MATCH_MP_TAC LT_IMP_LE THEN
+    MATCH_MP_TAC LET_TRANS THEN
+    EXISTS_TAC `LENGTH (l : bool list) + d` THEN
+    ASM_REWRITE_TAC [LE_ADD];
     DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
 
 export_thm short_list_to_word_to_list;;
@@ -788,7 +820,9 @@ let long_list_to_word_to_list = prove
    REWRITE_TAC [list_to_word_bit] THEN
    ASM_REWRITE_TAC [] THEN
    KNOW_TAC `i < LENGTH (l : bool list)` THENL
-   [ASM_ARITH_TAC;
+   [MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `word_width` THEN
+    ASM_REWRITE_TAC [];
     ALL_TAC] THEN
    STRIP_TAC THEN
    ASM_REWRITE_TAC [] THEN
@@ -819,7 +853,8 @@ let list_to_word_to_list_eq = prove
     FIRST_ASSUM ACCEPT_TAC;
     ASM_REWRITE_TAC [] THEN
     MATCH_MP_TAC long_list_to_word_to_list THEN
-    ASM_ARITH_TAC]);;
+    MP_TAC (SPECL [`word_width`; `LENGTH (l : bool list)`] LE_CASES) THEN
+    ASM_REWRITE_TAC []]);;
 
 export_thm list_to_word_to_list_eq;;
 
@@ -855,6 +890,7 @@ let list_to_word_to_list = new_axiom
   `!l. LENGTH l = word_width <=> word_to_list (list_to_word l) = l`;;
 *)
 
+(***
 let word_shl_list = prove
   (`!l n.
       word_shl (list_to_word l) n =
