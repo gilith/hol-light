@@ -1176,7 +1176,6 @@ let num_to_word_list = new_axiom
         else CONS (ODD n) (word_to_list (num_to_word (n DIV 2))))`;;
 *)
 
-(***
 let word_lte_list = prove
   (`!q w1 w2.
       word_bits_lte q (word_to_list w1) (word_to_list w2) <=>
@@ -1281,13 +1280,12 @@ let word_lte_list = prove
      REWRITE_TAC [GSYM NOT_LT; CONTRAPOS_THM] THEN
      REWRITE_TAC [GSYM LE_SUC_LT; ADD1] THEN
      STRIP_TAC THEN
-     
-     
-     
-GSYM ADD1; LT_SUC_LE]
-   
-
-   ARITH_TAC);;
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `2 * (n + 1)` THEN
+     ASM_REWRITE_TAC [LE_MULT_LCANCEL] THEN
+     MATCH_MP_TAC EQ_IMP_LE THEN
+     REWRITE_TAC [LEFT_ADD_DISTRIB; GSYM ADD_ASSOC] THEN
+     NUM_REDUCE_TAC]]);;
 
 export_thm word_lte_list;;
 
@@ -1298,6 +1296,7 @@ let word_lte_list = new_axiom
       (if q then word_le w1 w2 else word_lt w1 w2)`;;
 *)
 
+(***
 let word_le_list = prove
   (`!w1 w2.
       word_bits_lte T (word_to_list w1) (word_to_list w2) <=> word_le w1 w2`,
