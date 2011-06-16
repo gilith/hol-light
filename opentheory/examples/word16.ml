@@ -60,7 +60,10 @@ let byte_to_word16_list = prove
    [REWRITE_TAC [GSYM list_to_byte_bit; byte_to_list_to_byte] THEN
     REWRITE_TAC [byte_bit_div] THEN
     MATCH_MP_TAC (ITAUT `x ==> (y /\ x <=> y)`) THEN
-    ASM_ARITH_TAC;
+    POP_ASSUM (MP_TAC o REWRITE_RULE [GSYM LE_SUC_LT]) THEN
+    REWRITE_TAC [LE_EXISTS] THEN
+    DISCH_THEN (CHOOSE_THEN SUBST1_TAC) THEN
+    REWRITE_TAC [ADD_SUB2; ADD; GSYM ADD_SUC; NOT_SUC];
     REWRITE_TAC [length_byte_to_list; CONJ_ASSOC]]);;
 
 export_thm byte_to_word16_list;;
@@ -83,7 +86,10 @@ let word16_to_byte_list = prove
    [REWRITE_TAC [GSYM list_to_word16_bit; word16_to_list_to_word16] THEN
     REWRITE_TAC [word16_bit_div] THEN
     MATCH_MP_TAC (ITAUT `x ==> (y /\ x <=> y)`) THEN
-    ASM_ARITH_TAC;
+    POP_ASSUM (MP_TAC o REWRITE_RULE [GSYM LE_SUC_LT]) THEN
+    REWRITE_TAC [LE_EXISTS] THEN
+    DISCH_THEN (CHOOSE_THEN SUBST1_TAC) THEN
+    REWRITE_TAC [ADD_SUB2; ADD; GSYM ADD_SUC; NOT_SUC];
     REWRITE_TAC [length_word16_to_list; CONJ_ASSOC]]);;
 
 export_thm word16_to_byte_list;;

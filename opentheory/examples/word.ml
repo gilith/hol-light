@@ -1296,7 +1296,6 @@ let word_lte_list = new_axiom
       (if q then word_le w1 w2 else word_lt w1 w2)`;;
 *)
 
-(***
 let word_le_list = prove
   (`!w1 w2.
       word_bits_lte T (word_to_list w1) (word_to_list w2) <=> word_le w1 w2`,
@@ -1601,6 +1600,5 @@ let prove_word_list_cases n =
         REWRITE_TAC [LENGTH_EQ_NIL] in
     prove (goal,tac);;
 *)
-***)
 
 logfile_end ();;
