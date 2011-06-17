@@ -435,8 +435,8 @@ export_thm is_kernel_region_def;;
 let region_state_induct,region_state_recursion = define_type
     "region_state =
        RegionState
-         (physical_region -> bool)
-         (physical_region -> bool)";;
+         (physical_region set)
+         (physical_region set)";;
 
 export_thm region_state_induct;;
 export_thm region_state_recursion;;
