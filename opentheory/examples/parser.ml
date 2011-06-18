@@ -22,7 +22,7 @@ export_thm case_stream_def;;
 let length_stream_def = new_recursive_definition stream_recursion
   `(length_stream Error = 0) /\
    (length_stream Eof = 0) /\
-   (!a s. length_stream (Stream a s) = SUC (length_stream s))`;;
+   (!(a:A) s. length_stream (Stream a s) = SUC (length_stream s))`;;
 
 export_thm length_stream_def;;
 
@@ -59,7 +59,7 @@ let append_stream_def = new_recursive_definition list_RECURSION
 export_thm append_stream_def;;
 
 let list_to_stream_def = new_definition
-  `!l. list_to_stream l = append_stream l Eof`;;
+  `!(l : A list). list_to_stream l = append_stream l Eof`;;
 
 export_thm list_to_stream_def;;
 
@@ -934,7 +934,7 @@ let parse_stream_append = prove
     [ASM_REWRITE_TAC [option_distinct];
      ASM_REWRITE_TAC [option_inj; PAIR_EQ] THEN
      STRIP_TAC THEN
-     PAT_ASSUM `is_proper_suffix_stream X Y` THEN
+     PAT_ASSUM `is_proper_suffix_stream (X : A stream) Y` THEN
      ASM_REWRITE_TAC [is_proper_suffix_stream_refl]];
     ASM_REWRITE_TAC [parse_def; parse_stream_def; append_stream_def] THEN
     STRIP_TAC THEN
