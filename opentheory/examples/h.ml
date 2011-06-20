@@ -1760,6 +1760,8 @@ let allocate_page_directory_h_translate_page = prove
    MP_TAC (ISPEC `x : virtual_page_address` PAIR_SURJECTIVE) THEN
    STRIP_TAC THEN
    POP_ASSUM SUBST_VAR_TAC THEN
+   COND_CASES_TAC
+
    bool_cases_tac `(pd : page_directory) = ppa` THENL
    [
    REWRITE_TAC [translate_page_def] THEN
