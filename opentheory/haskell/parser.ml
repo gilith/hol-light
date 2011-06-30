@@ -160,7 +160,7 @@ let case_streamH = prove
 export_thm case_streamH;;
 *)
 
-logfile "haskell-parser-haskell";;
+logfile "haskell-parser-src";;
 
 let streamH_induct = prove
   (`!P.

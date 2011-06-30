@@ -4705,31 +4705,66 @@ export_thm HAS_SIZE_INDEX;;
 (* Classic result on function of finite set into itself.                     *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 let SURJECTIVE_IFF_INJECTIVE_GEN = prove
  (`!s t (f:A->B).
         FINITE s /\ FINITE t /\ (CARD s = CARD t) /\ (IMAGE f s) SUBSET t
         ==> ((!y. y IN t ==> ?x. x IN s /\ (f x = y)) <=>
              (!x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y)))`,
-  REPEAT STRIP_TAC THEN EQ_TAC THEN REPEAT STRIP_TAC THENL
-   [ASM_CASES_TAC `x:A = y` THEN ASM_REWRITE_TAC[] THEN
-    SUBGOAL_THEN `CARD s <= CARD (IMAGE (f:A->B) (s DELETE y))` MP_TAC THENL
-     [ASM_REWRITE_TAC[] THEN MATCH_MP_TAC CARD_SUBSET THEN
-      ASM_SIMP_TAC[FINITE_IMAGE; FINITE_DELETE] THEN
-      REWRITE_TAC[SUBSET; IN_IMAGE; IN_DELETE] THEN ASM_MESON_TAC[];
-      REWRITE_TAC[NOT_LE] THEN MATCH_MP_TAC LET_TRANS THEN
-      EXISTS_TAC `CARD(s DELETE (y:A))` THEN
-      ASM_SIMP_TAC[CARD_IMAGE_LE; FINITE_DELETE] THEN
-      ASM_SIMP_TAC[CARD_DELETE; ARITH_RULE `x - 1 < x <=> ~(x = 0)`] THEN
-      ASM_MESON_TAC[CARD_EQ_0; MEMBER_NOT_EMPTY]];
-    SUBGOAL_THEN `IMAGE (f:A->B) s = t` MP_TAC THENL
-     [ALL_TAC; ASM_MESON_TAC[EXTENSION; IN_IMAGE]] THEN
-    ASM_MESON_TAC[CARD_SUBSET_EQ; CARD_IMAGE_INJ]]);;
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   ONCE_REWRITE_TAC [GSYM NOT_CLAUSES] THEN
+   STRIP_TAC THEN
+   SUBGOAL_THEN `CARD s <= CARD (IMAGE (f:A->B) (s DELETE y))` MP_TAC THENL
+   [ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC CARD_SUBSET THEN
+    ASM_SIMP_TAC [FINITE_IMAGE; FINITE_DELETE] THEN
+    REWRITE_TAC [SUBSET; IN_IMAGE; IN_DELETE] THEN
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `x' : B`) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (X_CHOOSE_THEN `z : A` STRIP_ASSUME_TAC) THEN
+    POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_CASES_TAC `(z : A) = y` THENL
+    [EXISTS_TAC `x : A` THEN
+     ASM_REWRITE_TAC [];
+     EXISTS_TAC `z : A` THEN
+     ASM_REWRITE_TAC []];
+    REWRITE_TAC [NOT_LE] THEN
+    MATCH_MP_TAC LET_TRANS THEN
+    EXISTS_TAC `CARD (s DELETE (y:A))` THEN
+    ASM_SIMP_TAC [CARD_IMAGE_LE; FINITE_DELETE] THEN
+    ASM_SIMP_TAC [CARD_DELETE] THEN
+    REWRITE_TAC [GSYM LE_SUC_LT] THEN
+    MATCH_MP_TAC EQ_IMP_LE THEN
+    REWRITE_TAC [ONE] THEN
+    CONV_TAC (RAND_CONV (REWR_CONV (GSYM SUB_0))) THEN
+    MATCH_MP_TAC SUB_SUC_CANCEL THEN
+    REWRITE_TAC [GSYM NOT_LE; LE] THEN
+    FIRST_X_ASSUM
+      (fun th -> CONV_TAC (RAND_CONV (LAND_CONV (REWR_CONV (SYM th))))) THEN
+    ASM_SIMP_TAC [CARD_EQ_0] THEN
+    REWRITE_TAC [GSYM MEMBER_NOT_EMPTY] THEN
+    EXISTS_TAC `x : A` THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   REPEAT STRIP_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   SUBGOAL_THEN `IMAGE (f:A->B) s = t` MP_TAC THENL
+   [MATCH_MP_TAC CARD_SUBSET_EQ THEN
+    ASM_REWRITE_TAC [] THEN
+    FIRST_X_ASSUM (fun th -> CONV_TAC (RAND_CONV (REWR_CONV (SYM th)))) THEN
+    MATCH_MP_TAC CARD_IMAGE_INJ THEN
+    ASM_REWRITE_TAC [];
+    DISCH_THEN (SUBST1_TAC o SYM) THEN
+    REWRITE_TAC [IN_IMAGE] THEN
+    STRIP_TAC THEN
+    EXISTS_TAC `x : A` THEN
+    ASM_REWRITE_TAC []]]);;
 
 export_thm SURJECTIVE_IFF_INJECTIVE_GEN;;
 
 let SURJECTIVE_IFF_INJECTIVE = prove
- (`!s f:A->A.
+ (`!s (f:A->A).
         FINITE s /\ (IMAGE f s) SUBSET s
         ==> ((!y. y IN s ==> ?x. x IN s /\ (f x = y)) <=>
              (!x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y)))`,
@@ -4738,21 +4773,30 @@ let SURJECTIVE_IFF_INJECTIVE = prove
 export_thm SURJECTIVE_IFF_INJECTIVE;;
 
 let IMAGE_IMP_INJECTIVE_GEN = prove
- (`!s t f:A->B.
+ (`!s t (f:A->B).
         FINITE s /\ (CARD s = CARD t) /\ (IMAGE f s = t)
         ==> !x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y)`,
-  REPEAT GEN_TAC THEN DISCH_THEN(ASSUME_TAC o GSYM) THEN
-  MP_TAC(ISPECL [`s:A->bool`; `t:B->bool`; `f:A->B`]
+  REPEAT GEN_TAC THEN DISCH_THEN (ASSUME_TAC o GSYM) THEN
+  MP_TAC(ISPECL [`s:A set`; `t:B set`; `f:A->B`]
                 SURJECTIVE_IFF_INJECTIVE_GEN) THEN
   ASM_SIMP_TAC[SUBSET_REFL; FINITE_IMAGE] THEN
-  ASM_MESON_TAC[EXTENSION; IN_IMAGE]);;
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  REWRITE_TAC [IN_IMAGE] THEN
+  REPEAT STRIP_TAC THEN
+  EXISTS_TAC `x : A` THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm IMAGE_IMP_INJECTIVE_GEN;;
 
 let IMAGE_IMP_INJECTIVE = prove
- (`!s f. FINITE s /\ (IMAGE f s = s)
+ (`!s (f : A -> A). FINITE s /\ (IMAGE f s = s)
        ==> !x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y)`,
-  MESON_TAC[IMAGE_IMP_INJECTIVE_GEN]);;
+  REPEAT STRIP_TAC THEN
+  MP_TAC (ISPECL [`s : A set`; `s : A set`; `f : A -> A`]
+            IMAGE_IMP_INJECTIVE_GEN) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN MATCH_MP_TAC THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm IMAGE_IMP_INJECTIVE;;
 
@@ -4760,6 +4804,7 @@ export_thm IMAGE_IMP_INJECTIVE;;
 (* Converse relation between cardinality and injection.                      *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 let CARD_LE_INJ = prove
  (`!s t. FINITE s /\ FINITE t /\ CARD s <= CARD t
    ==> ?f:A->B. (IMAGE f s) SUBSET t /\
