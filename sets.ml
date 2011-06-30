@@ -4804,27 +4804,82 @@ export_thm IMAGE_IMP_INJECTIVE;;
 (* Converse relation between cardinality and injection.                      *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 let CARD_LE_INJ = prove
  (`!s t. FINITE s /\ FINITE t /\ CARD s <= CARD t
-   ==> ?f:A->B. (IMAGE f s) SUBSET t /\
+   ==> ?(f:A->B). (IMAGE f s) SUBSET t /\
                 !x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y)`,
-  REWRITE_TAC[IMP_CONJ] THEN REWRITE_TAC[RIGHT_FORALL_IMP_THM] THEN
+  REWRITE_TAC [IMP_CONJ] THEN
+  REWRITE_TAC [RIGHT_FORALL_IMP_THM] THEN
   MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
-  REWRITE_TAC[IMAGE_CLAUSES; EMPTY_SUBSET; NOT_IN_EMPTY] THEN
-  SIMP_TAC[CARD_CLAUSES] THEN
-  MAP_EVERY X_GEN_TAC [`x:A`; `s:A->bool`] THEN STRIP_TAC THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [IMAGE_CLAUSES; EMPTY_SUBSET; NOT_IN_EMPTY];
+   ALL_TAC] THEN
+  MAP_EVERY X_GEN_TAC [`x:A`; `s : A set`] THEN
+  STRIP_TAC THEN
+  ASM_SIMP_TAC [CARD_CLAUSES] THEN
   MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
-  REWRITE_TAC[CARD_CLAUSES; LE; NOT_SUC] THEN
-  MAP_EVERY X_GEN_TAC [`y:B`; `t:B->bool`] THEN
-  SIMP_TAC[CARD_CLAUSES] THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [CARD_EMPTY; LE; NOT_SUC];
+   ALL_TAC] THEN
+  MAP_EVERY X_GEN_TAC [`y:B`; `t:B set`] THEN
   DISCH_THEN(CONJUNCTS_THEN2 (K ALL_TAC) STRIP_ASSUME_TAC) THEN
-  REWRITE_TAC[LE_SUC] THEN STRIP_TAC THEN
-  FIRST_X_ASSUM(MP_TAC o SPEC `t:B->bool`) THEN ASM_REWRITE_TAC[] THEN
-  DISCH_THEN(X_CHOOSE_THEN `f:A->B` STRIP_ASSUME_TAC) THEN
+  ASM_SIMP_TAC [CARD_CLAUSES] THEN
+  REWRITE_TAC [LE_SUC] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM (MP_TAC o SPEC `t:B set`) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `f:A->B` STRIP_ASSUME_TAC) THEN
   EXISTS_TAC `\z:A. if z = x then (y:B) else f(z)` THEN
-  REWRITE_TAC[IN_INSERT; SUBSET; IN_IMAGE] THEN
-  ASM_MESON_TAC[SUBSET; IN_IMAGE]);;
+  REWRITE_TAC [IMAGE_CLAUSES] THEN
+  CONJ_TAC THENL
+  [UNDISCH_TAC `IMAGE (f : A -> B) s SUBSET t` THEN
+   REWRITE_TAC [SUBSET; IN_IMAGE; IN_INSERT] THEN
+   STRIP_TAC THEN
+   X_GEN_TAC `z : B` THEN
+   MATCH_MP_TAC (TAUT `(Y ==> (~X ==> Z)) ==> (X \/ Y ==> X \/ Z)`) THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `w : A` (CONJUNCTS_THEN2 SUBST_VAR_TAC ASSUME_TAC)) THEN
+   COND_CASES_TAC THENL
+   [REWRITE_TAC [];
+    STRIP_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    EXISTS_TAC `w : A` THEN
+    ASM_REWRITE_TAC []];
+   X_GEN_TAC `w : A` THEN
+   COND_CASES_TAC THENL
+   [DISCH_THEN (K ALL_TAC) THEN
+    POP_ASSUM SUBST_VAR_TAC THEN
+    X_GEN_TAC `z : A` THEN
+    COND_CASES_TAC THENL
+    [ASM_REWRITE_TAC [];
+     ASM_REWRITE_TAC [IN_INSERT] THEN
+     REPEAT STRIP_TAC THEN
+     UNDISCH_TAC `IMAGE (f : A -> B) s SUBSET t` THEN
+     REWRITE_TAC [SUBSET; IN_IMAGE; NOT_FORALL_THM] THEN
+     EXISTS_TAC `y : B` THEN
+     ASM_REWRITE_TAC [] THEN
+     EXISTS_TAC `z : A` THEN
+     ASM_REWRITE_TAC []];
+    ASM_REWRITE_TAC [IN_INSERT] THEN
+    STRIP_TAC THEN
+    X_GEN_TAC `z : A` THEN
+    COND_CASES_TAC THENL
+    [DISCH_THEN (K ALL_TAC) THEN
+     POP_ASSUM (K ALL_TAC) THEN
+     STRIP_TAC THEN
+     SUBGOAL_THEN `F` CONTR_TAC THEN
+     UNDISCH_TAC `IMAGE (f : A -> B) s SUBSET t` THEN
+     REWRITE_TAC [SUBSET; IN_IMAGE; NOT_FORALL_THM] THEN
+     EXISTS_TAC `y : B` THEN
+     ASM_REWRITE_TAC [] THEN
+     EXISTS_TAC `w : A` THEN
+     ASM_REWRITE_TAC [];
+     REWRITE_TAC [] THEN
+     REPEAT STRIP_TAC THEN
+     FIRST_X_ASSUM (MP_TAC o SPEC `w : A`) THEN
+     ASM_REWRITE_TAC [] THEN
+     DISCH_THEN (MP_TAC o SPEC `z : A`) THEN
+     ASM_REWRITE_TAC []]]]);;
 
 export_thm CARD_LE_INJ;;
 
@@ -4835,16 +4890,43 @@ export_thm CARD_LE_INJ;;
 logfile "set-thm";;
 
 let FORALL_IN_CLAUSES = prove
- (`(!P. (!x. x IN {} ==> P x) <=> T) /\
-   (!P a s. (!x. x IN (a INSERT s) ==> P x) <=> P a /\ (!x. x IN s ==> P x))`,
-  REWRITE_TAC[IN_INSERT; NOT_IN_EMPTY] THEN MESON_TAC[]);;
+ (`(!P. (!(x:A). x IN {} ==> P x) <=> T) /\
+   (!P a s.
+      (!(x:A). x IN (a INSERT s) ==> P x) <=> P a /\ (!x. x IN s ==> P x))`,
+  REWRITE_TAC [IN_INSERT; NOT_IN_EMPTY] THEN
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THENL
+   [FIRST_X_ASSUM MATCH_MP_TAC THEN
+    REWRITE_TAC [];
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC []];
+   REPEAT STRIP_TAC THENL
+   [ASM_REWRITE_TAC [];
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC []]]);;
 
 export_thm FORALL_IN_CLAUSES;;
 
 let EXISTS_IN_CLAUSES = prove
- (`(!P. (?x. x IN {} /\ P x) <=> F) /\
-   (!P a s. (?x. x IN (a INSERT s) /\ P x) <=> P a \/ (?x. x IN s /\ P x))`,
-  REWRITE_TAC[IN_INSERT; NOT_IN_EMPTY] THEN MESON_TAC[]);;
+ (`(!P. (?(x:A). x IN {} /\ P x) <=> F) /\
+   (!P a s.
+      (?(x:A). x IN (a INSERT s) /\ P x) <=> P a \/ (?x. x IN s /\ P x))`,
+  REWRITE_TAC [IN_INSERT; NOT_IN_EMPTY] THEN
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THENL
+   [DISJ1_TAC THEN
+    FIRST_X_ASSUM (SUBST1_TAC o SYM) THEN
+    FIRST_X_ASSUM ACCEPT_TAC;
+    DISJ2_TAC THEN
+    EXISTS_TAC `x : A` THEN
+    ASM_REWRITE_TAC []];
+   REPEAT STRIP_TAC THENL
+   [EXISTS_TAC `a : A` THEN
+    ASM_REWRITE_TAC [];
+    EXISTS_TAC `x : A` THEN
+    ASM_REWRITE_TAC []]]);;
 
 export_thm EXISTS_IN_CLAUSES;;
 
@@ -4854,6 +4936,7 @@ export_thm EXISTS_IN_CLAUSES;;
 
 logfile "function-thm";;
 
+(***
 let SURJECTIVE_ON_RIGHT_INVERSE = prove
  (`!f t. (!y. y IN t ==> ?x. x IN s /\ (f(x) = y)) <=>
          (?g. !y. y IN t ==> g(y) IN s /\ (f(g(y)) = y))`,
