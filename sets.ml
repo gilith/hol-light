@@ -4935,7 +4935,7 @@ export_thm EXISTS_IN_CLAUSES;;
 (* ------------------------------------------------------------------------- *)
 
 let SURJECTIVE_ON_RIGHT_INVERSE = prove
- (`!(f:A->B) t. (!y. y IN t ==> ?x. x IN s /\ (f(x) = y)) <=>
+ (`!(f:A->B) s t. (!y. y IN t ==> ?x. x IN s /\ (f(x) = y)) <=>
          (?g. !y. y IN t ==> g(y) IN s /\ (f(g(y)) = y))`,
   REWRITE_TAC [RIGHT_IMP_EXISTS_THM; SKOLEM_THM]);;
 
@@ -5040,33 +5040,40 @@ let BIJECTIVE_ON_LEFT_RIGHT_INVERSE = prove
 
 export_thm BIJECTIVE_ON_LEFT_RIGHT_INVERSE;;
 
-(***
 let SURJECTIVE_RIGHT_INVERSE = prove
- (`(!y. ?x. f(x) = y) <=> (?g. !y. f(g(y)) = y)`,
-  MESON_TAC [SURJECTIVE_ON_RIGHT_INVERSE; IN_UNIV]);;
+ (`!(f : A -> B). (!y. ?x. f(x) = y) <=> (?g. !y. f(g(y)) = y)`,
+  GEN_TAC THEN
+  MP_TAC (SPECL [`f : A -> B`; `UNIV : A set`; `UNIV : B set`]
+                SURJECTIVE_ON_RIGHT_INVERSE) THEN
+  REWRITE_TAC [IN_UNIV]);;
 
 export_thm SURJECTIVE_RIGHT_INVERSE;;
 
 let INJECTIVE_LEFT_INVERSE = prove
- (`(!x y. (f x = f y) ==> (x = y)) <=> (?g. !x. g(f(x)) = x)`,
-  let th = REWRITE_RULE[IN_UNIV]
-   (ISPECL [`f:A->B`; `UNIV:A->bool`] INJECTIVE_ON_LEFT_INVERSE) in
-  REWRITE_TAC[th]);;
+ (`!(f : A -> B). (!x y. (f x = f y) ==> (x = y)) <=> (?g. !x. g(f(x)) = x)`,
+  GEN_TAC THEN
+  MP_TAC (SPECL [`f : A -> B`; `UNIV : A set`]
+                INJECTIVE_ON_LEFT_INVERSE) THEN
+  REWRITE_TAC [IN_UNIV]);;
 
 export_thm INJECTIVE_LEFT_INVERSE;;
 
 let BIJECTIVE_LEFT_RIGHT_INVERSE = prove
- (`!f:A->B.
+ (`!(f : A -> B).
        (!x y. f(x) = f(y) ==> x = y) /\ (!y. ?x. f x = y) <=>
        ?g. (!y. f(g(y)) = y) /\ (!x. g(f(x)) = x)`,
   GEN_TAC THEN
-  MP_TAC(ISPECL [`f:A->B`; `(:A)`; `(:B)`] BIJECTIVE_ON_LEFT_RIGHT_INVERSE) THEN
-  REWRITE_TAC[IN_UNIV]);;
+  MP_TAC (SPECL [`f : A -> B`; `UNIV : A set`; `UNIV : B set`]
+                BIJECTIVE_ON_LEFT_RIGHT_INVERSE) THEN
+  REWRITE_TAC [IN_UNIV]);;
 
 export_thm BIJECTIVE_LEFT_RIGHT_INVERSE;;
 
+logfile "function-thm";;
+
+(***
 let FUNCTION_FACTORS_RIGHT = prove
- (`!f g. (!x. ?y. g(y) = f(x)) <=> ?h. f = g o h`,
+ (`!(f : A -> C) (g : B -> C). (!x. ?y. g(y) = f(x)) <=> ?h. f = g o h`,
   REWRITE_TAC[FUN_EQ_THM; o_THM; GSYM SKOLEM_THM] THEN MESON_TAC[]);;
 
 export_thm FUNCTION_FACTORS_RIGHT;;
