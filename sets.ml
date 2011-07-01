@@ -5167,12 +5167,26 @@ export_thm SURJECTIVE_EXISTS_THM;;
 
 logfile "set-thm";;
 
-(***
 let SURJECTIVE_IMAGE_THM = prove
- (`!f:A->B. (!y. ?x. f x = y) <=> (!P. IMAGE f {x | P(f x)} = {x | P x})`,
-  GEN_TAC THEN REWRITE_TAC[EXTENSION; IN_IMAGE; IN_ELIM_THM] THEN
-  EQ_TAC THENL [ALL_TAC; DISCH_THEN(MP_TAC o SPEC `\y:B. T`)] THEN
-  MESON_TAC[]);;
+ (`!(f:A->B). (!y. ?x. f x = y) <=> (!P. IMAGE f {x | P(f x)} = {x | P x})`,
+  GEN_TAC THEN
+  REWRITE_TAC [EXTENSION; IN_IMAGE; IN_ELIM] THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   GEN_TAC THEN
+   X_GEN_TAC `y : B` THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `y : B`) THEN
+   DISCH_THEN (X_CHOOSE_THEN `z : A` SUBST_VAR_TAC) THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    ASM_REWRITE_TAC [];
+    REPEAT STRIP_TAC THEN
+    EXISTS_TAC `z : A` THEN
+    ASM_REWRITE_TAC []];
+   DISCH_THEN (MP_TAC o SPEC `\ (y:B). T`) THEN
+   REWRITE_TAC [] THEN
+   CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+   DISCH_THEN ACCEPT_TAC]);;
 
 export_thm SURJECTIVE_IMAGE_THM;;
 
@@ -5180,8 +5194,9 @@ export_thm SURJECTIVE_IMAGE_THM;;
 (* Injectivity and surjectivity of image under a function.                   *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 let INJECTIVE_ON_IMAGE = prove
- (`!f:A->B u.
+ (`!(f:A->B) u.
     (!s t. s SUBSET u /\ t SUBSET u /\ IMAGE f s = IMAGE f t ==> s = t) <=>
     (!x y. x IN u /\ y IN u /\ f x = f y ==> x = y)`,
   REPEAT GEN_TAC THEN EQ_TAC THENL [DISCH_TAC; SET_TAC[]] THEN
