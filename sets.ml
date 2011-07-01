@@ -5071,38 +5071,103 @@ export_thm BIJECTIVE_LEFT_RIGHT_INVERSE;;
 
 logfile "function-thm";;
 
-(***
 let FUNCTION_FACTORS_RIGHT = prove
  (`!(f : A -> C) (g : B -> C). (!x. ?y. g(y) = f(x)) <=> ?h. f = g o h`,
-  REWRITE_TAC[FUN_EQ_THM; o_THM; GSYM SKOLEM_THM] THEN MESON_TAC[]);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [FUN_EQ_THM; o_THM; GSYM SKOLEM_THM] THEN
+  CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+  REFL_TAC);;
 
 export_thm FUNCTION_FACTORS_RIGHT;;
 
 let FUNCTION_FACTORS_LEFT = prove
- (`!f g. (!x y. (g x = g y) ==> (f x = f y)) <=> ?h. f = h o g`,
-  let lemma = prove
-   (`(f = h o g) <=> !y x. (y = g x) ==> (h y = f x)`,
-    REWRITE_TAC[FUN_EQ_THM; o_THM] THEN MESON_TAC[]) in
-  REWRITE_TAC[lemma; GSYM SKOLEM_THM] THEN MESON_TAC[]);;
+ (`!(f : A -> C) (g : A -> B).
+     (!x y. (g x = g y) ==> (f x = f y)) <=> ?h. f = h o g`,
+  REPEAT GEN_TAC THEN
+  SUBGOAL_THEN
+   `!h. ((f : A -> C) = h o (g : A -> B)) <=> !y x. (y = g x) ==> (h y = f x)`
+   (fun th -> REWRITE_TAC [th]) THENL
+  [GEN_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM; o_THM] THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    FIRST_ASSUM MATCH_ACCEPT_TAC;
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    REFL_TAC];
+   REWRITE_TAC [GSYM SKOLEM_THM] THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    EXISTS_TAC `(f : A -> C) (@z. y = (g : A -> B) z)` THEN
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    CONV_TAC SELECT_CONV THEN
+    EXISTS_TAC `x : A` THEN
+    REFL_TAC;
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `(g : A -> B) x`) THEN
+    STRIP_TAC THEN
+    FIRST_X_ASSUM
+      (fun th ->
+         MP_TAC (SPEC `x : A` th) THEN
+         MP_TAC (SPEC `y : A` th)) THEN
+     ASM_REWRITE_TAC [] THEN
+     DISCH_THEN SUBST_VAR_TAC THEN
+     MATCH_ACCEPT_TAC EQ_SYM]]);;
 
 export_thm FUNCTION_FACTORS_LEFT;;
 
 let SURJECTIVE_FORALL_THM = prove
- (`!f:A->B. (!y. ?x. f x = y) <=> (!P. (!x. P(f x)) <=> (!y. P y))`,
-  GEN_TAC THEN EQ_TAC THENL [MESON_TAC[]; ALL_TAC] THEN
-  DISCH_THEN(fun th -> ONCE_REWRITE_TAC[GSYM th]) THEN MESON_TAC[]);;
+ (`!(f:A->B). (!y. ?x. f x = y) <=> (!P. (!x. P(f x)) <=> (!y. P y))`,
+  GEN_TAC THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `y : B`) THEN
+    DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+    FIRST_ASSUM MATCH_ACCEPT_TAC;
+    REPEAT STRIP_TAC THEN
+    FIRST_ASSUM MATCH_ACCEPT_TAC];
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+   GEN_TAC THEN
+   EXISTS_TAC `x : A` THEN
+   REFL_TAC]);;
 
 export_thm SURJECTIVE_FORALL_THM;;
 
 let SURJECTIVE_EXISTS_THM = prove
- (`!f:A->B. (!y. ?x. f x = y) <=> (!P. (?x. P(f x)) <=> (?y. P y))`,
-  GEN_TAC THEN EQ_TAC THENL [MESON_TAC[]; ALL_TAC] THEN
-  DISCH_THEN(MP_TAC o SPEC `\y:B. !x:A. ~(f x = y)`) THEN MESON_TAC[]);;
+ (`!(f:A->B). (!y. ?x. f x = y) <=> (!P. (?x. P(f x)) <=> (?y. P y))`,
+  GEN_TAC THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    EXISTS_TAC `(f : A -> B) x` THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `y : B`) THEN
+    DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+    EXISTS_TAC `x : A` THEN
+    FIRST_ASSUM ACCEPT_TAC];
+    DISCH_THEN (MP_TAC o SPEC `\y:B. !x:A. ~(f x = y)`) THEN
+    REWRITE_TAC [GSYM NOT_FORALL_THM; GSYM NOT_EXISTS_THM] THEN
+    MATCH_MP_TAC (TAUT `((Y <=> X) ==> Z) ==> ((~X <=> ~Y) ==> Z)`) THEN
+    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [th]) THEN
+    GEN_TAC THEN
+    EXISTS_TAC `x : A` THEN
+    REFL_TAC]);;
 
 export_thm SURJECTIVE_EXISTS_THM;;
 
 logfile "set-thm";;
 
+(***
 let SURJECTIVE_IMAGE_THM = prove
  (`!f:A->B. (!y. ?x. f x = y) <=> (!P. IMAGE f {x | P(f x)} = {x | P x})`,
   GEN_TAC THEN REWRITE_TAC[EXTENSION; IN_IMAGE; IN_ELIM_THM] THEN
