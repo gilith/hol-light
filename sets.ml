@@ -4934,44 +4934,116 @@ export_thm EXISTS_IN_CLAUSES;;
 (* Useful general properties of functions.                                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "function-thm";;
-
-(***
 let SURJECTIVE_ON_RIGHT_INVERSE = prove
- (`!f t. (!y. y IN t ==> ?x. x IN s /\ (f(x) = y)) <=>
+ (`!(f:A->B) t. (!y. y IN t ==> ?x. x IN s /\ (f(x) = y)) <=>
          (?g. !y. y IN t ==> g(y) IN s /\ (f(g(y)) = y))`,
-  REWRITE_TAC[RIGHT_IMP_EXISTS_THM; SKOLEM_THM]);;
+  REWRITE_TAC [RIGHT_IMP_EXISTS_THM; SKOLEM_THM]);;
 
 export_thm SURJECTIVE_ON_RIGHT_INVERSE;;
 
 let INJECTIVE_ON_LEFT_INVERSE = prove
- (`!f s. (!x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y)) <=>
-         (?g. !x. x IN s ==> (g(f(x)) = x))`,
-  let lemma = MESON[]
-   `(!x. x IN s ==> (g(f(x)) = x)) <=>
-    (!y x. x IN s /\ (y = f x) ==> (g y = x))` in
-  REWRITE_TAC[lemma; GSYM SKOLEM_THM] THEN MESON_TAC[]);;
+ (`!(f:A->B) s.
+     (!x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y)) <=>
+     (?g. !x. x IN s ==> (g (f x) = x))`,
+  REPEAT GEN_TAC THEN
+  SUBGOAL_THEN
+    `!(g : B -> A).
+       (!x. x IN s ==> (g (f x) = x)) <=>
+       (!y x. x IN s /\ (y = f x) ==> (g y = x))`
+    (fun th -> REWRITE_TAC [th]) THENL
+  [GEN_TAC THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    POP_ASSUM SUBST1_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC []];
+   REWRITE_TAC [GSYM SKOLEM_THM] THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    EXISTS_TAC `@z. z IN s /\ (f : A -> B) z = y` THEN
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    CONV_TAC SELECT_CONV THEN
+    EXISTS_TAC `x : A` THEN
+    ASM_REWRITE_TAC [];
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `(f : A -> B) x`) THEN
+    STRIP_TAC THEN
+    FIRST_X_ASSUM
+      (fun th ->
+         MP_TAC (SPEC `x : A` th) THEN
+         MP_TAC (SPEC `y : A` th)) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REFL_TAC]]);;
 
 export_thm INJECTIVE_ON_LEFT_INVERSE;;
 
 let BIJECTIVE_ON_LEFT_RIGHT_INVERSE = prove
- (`!f s t.
+ (`!(f : A -> B) s t.
         (!x. x IN s ==> f(x) IN t)
         ==> ((!x y. x IN s /\ y IN s /\ f(x) = f(y) ==> x = y) /\
              (!y. y IN t ==> ?x. x IN s /\ f x = y) <=>
             ?g. (!y. y IN t ==> g(y) IN s) /\
                 (!y. y IN t ==> (f(g(y)) = y)) /\
                 (!x. x IN s ==> (g(f(x)) = x)))`,
-  REPEAT GEN_TAC THEN DISCH_TAC THEN
-  REWRITE_TAC[INJECTIVE_ON_LEFT_INVERSE; SURJECTIVE_ON_RIGHT_INVERSE] THEN
-  REWRITE_TAC[RIGHT_AND_EXISTS_THM] THEN AP_TERM_TAC THEN ABS_TAC THEN
-  EQ_TAC THEN ASM_MESON_TAC[]);;
+  REPEAT GEN_TAC THEN
+  DISCH_TAC THEN
+  REWRITE_TAC [INJECTIVE_ON_LEFT_INVERSE; SURJECTIVE_ON_RIGHT_INVERSE] THEN
+  REWRITE_TAC [RIGHT_AND_EXISTS_THM] THEN
+  AP_TERM_TAC THEN
+  ABS_TAC THEN
+  EQ_TAC THENL
+  [DISCH_THEN (CONJUNCTS_THEN2 (X_CHOOSE_THEN `h : B -> A` STRIP_ASSUME_TAC)
+                               STRIP_ASSUME_TAC) THEN
+   REPEAT STRIP_TAC THENL
+   [FIRST_X_ASSUM (MP_TAC o SPEC `y : B`) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (CONJUNCTS_THEN2 ACCEPT_TAC (K ALL_TAC));
+    FIRST_X_ASSUM (MP_TAC o SPEC `y : B`) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (CONJUNCTS_THEN2 (K ALL_TAC) ACCEPT_TAC);
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `(h : B -> A) (f (x : A))` THEN
+    CONJ_TAC THENL
+    [SUBGOAL_THEN `(f : A -> B) x IN t` MP_TAC THENL
+     [FIRST_X_ASSUM MATCH_MP_TAC THEN
+      FIRST_ASSUM ACCEPT_TAC;
+      SPEC_TAC (`(f : A -> B) x`,`y : B`) THEN
+      REPEAT STRIP_TAC THEN
+      MATCH_MP_TAC EQ_TRANS THEN
+      EXISTS_TAC `(h : B -> A) ((f : A -> B) ((g : B -> A) y))` THEN
+      CONJ_TAC THENL
+      [MATCH_MP_TAC EQ_SYM THEN
+       FIRST_X_ASSUM MATCH_MP_TAC THEN
+       FIRST_X_ASSUM (MP_TAC o SPEC `y : B`) THEN
+       ASM_REWRITE_TAC [] THEN
+       DISCH_THEN (CONJUNCTS_THEN2 ACCEPT_TAC (K ALL_TAC));
+       AP_TERM_TAC THEN
+       FIRST_X_ASSUM (MP_TAC o SPEC `y : B`) THEN
+       ASM_REWRITE_TAC [] THEN
+       DISCH_THEN (CONJUNCTS_THEN2 (K ALL_TAC) ACCEPT_TAC)]];
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
+      FIRST_ASSUM ACCEPT_TAC]];
+   REPEAT STRIP_TAC THENL
+   [EXISTS_TAC `g : B -> A` THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC]]);;
 
 export_thm BIJECTIVE_ON_LEFT_RIGHT_INVERSE;;
 
+(***
 let SURJECTIVE_RIGHT_INVERSE = prove
  (`(!y. ?x. f(x) = y) <=> (?g. !y. f(g(y)) = y)`,
-  MESON_TAC[SURJECTIVE_ON_RIGHT_INVERSE; IN_UNIV]);;
+  MESON_TAC [SURJECTIVE_ON_RIGHT_INVERSE; IN_UNIV]);;
 
 export_thm SURJECTIVE_RIGHT_INVERSE;;
 
