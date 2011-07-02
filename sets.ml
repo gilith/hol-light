@@ -5250,24 +5250,58 @@ let INJECTIVE_IMAGE = prove
 
 export_thm INJECTIVE_IMAGE;;
 
-(***
 let SURJECTIVE_ON_IMAGE = prove
  (`!(f:A->B) u v.
         (!t. t SUBSET v ==> ?s. s SUBSET u /\ IMAGE f s = t) <=>
         (!y. y IN v ==> ?x. x IN u /\ f x = y)`,
-  REPEAT GEN_TAC THEN EQ_TAC THENL
-   [DISCH_TAC THEN X_GEN_TAC `y:B` THEN DISCH_TAC THEN
-    FIRST_X_ASSUM(MP_TAC o SPEC `{y:B}`) THEN ASM SET_TAC[];
-    DISCH_TAC THEN X_GEN_TAC `t:B->bool` THEN DISCH_TAC THEN
-    EXISTS_TAC `{x | x IN u /\ (f:A->B) x IN t}` THEN ASM SET_TAC[]]);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [EXTENSION; SUBSET; IN_IMAGE] THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   X_GEN_TAC `y:B` THEN
+   DISCH_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `{y:B}`) THEN
+   REWRITE_TAC [IN_SING] THEN
+   MATCH_MP_TAC (TAUT `X /\ (Y ==> Z) ==> ((X ==> Y) ==> Z)`) THEN
+   CONJ_TAC THENL
+   [GEN_TAC THEN
+    DISCH_THEN SUBST_VAR_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    STRIP_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `y : B`) THEN
+    ASM_REWRITE_TAC [] THEN
+    STRIP_TAC THEN
+    EXISTS_TAC `x : A` THEN
+    ASM_REWRITE_TAC [] THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   DISCH_TAC THEN
+   X_GEN_TAC `t : B set` THEN
+   DISCH_TAC THEN
+   EXISTS_TAC `{x | x IN u /\ (f:A->B) x IN t}` THEN
+   REWRITE_TAC [IN_ELIM] THEN
+   REPEAT STRIP_TAC THEN
+   EQ_TAC THENL
+   [DISCH_THEN (X_CHOOSE_THEN `z : A` STRIP_ASSUME_TAC) THEN
+    ASM_REWRITE_TAC [];
+    STRIP_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `x : B`) THEN
+    ASM_REWRITE_TAC [] THEN
+    STRIP_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `x : B`) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (X_CHOOSE_THEN `z : A` STRIP_ASSUME_TAC) THEN
+    EXISTS_TAC `z : A` THEN
+    ASM_REWRITE_TAC []]]);;
 
 export_thm SURJECTIVE_ON_IMAGE;;
 
 let SURJECTIVE_IMAGE = prove
- (`!f:A->B. (!t. ?s. IMAGE f s = t) <=> (!y. ?x. f x = y)`,
+ (`!(f:A->B). (!t. ?s. IMAGE f s = t) <=> (!y. ?x. f x = y)`,
   GEN_TAC THEN
-  MP_TAC(ISPECL [`f:A->B`; `(:A)`; `(:B)`] SURJECTIVE_ON_IMAGE) THEN
-  REWRITE_TAC[IN_UNIV; SUBSET_UNIV]);;
+  MP_TAC (ISPECL [`f:A->B`; `UNIV : A set`; `UNIV : B set`]
+                 SURJECTIVE_ON_IMAGE) THEN
+  REWRITE_TAC [IN_UNIV; SUBSET_UNIV]);;
 
 export_thm SURJECTIVE_IMAGE;;
 
@@ -5277,9 +5311,11 @@ export_thm SURJECTIVE_IMAGE;;
 
 logfile "set-size-thm";;
 
+(***
 let CARD_EQ_BIJECTION = prove
  (`!s t. FINITE s /\ FINITE t /\ CARD s = CARD t
-   ==> ?f:A->B. (!x. x IN s ==> f(x) IN t) /\
+   ==> ?(f : A -> B).
+                (!x. x IN s ==> f(x) IN t) /\
                 (!y. y IN t ==> ?x. x IN s /\ f x = y) /\
                 !x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y)`,
   MP_TAC CARD_LE_INJ THEN REPEAT(MATCH_MP_TAC MONO_FORALL THEN GEN_TAC) THEN
