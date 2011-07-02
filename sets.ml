@@ -5194,28 +5194,65 @@ export_thm SURJECTIVE_IMAGE_THM;;
 (* Injectivity and surjectivity of image under a function.                   *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 let INJECTIVE_ON_IMAGE = prove
  (`!(f:A->B) u.
     (!s t. s SUBSET u /\ t SUBSET u /\ IMAGE f s = IMAGE f t ==> s = t) <=>
     (!x y. x IN u /\ y IN u /\ f x = f y ==> x = y)`,
-  REPEAT GEN_TAC THEN EQ_TAC THENL [DISCH_TAC; SET_TAC[]] THEN
-  MAP_EVERY X_GEN_TAC [`x:A`; `y:A`] THEN STRIP_TAC THEN
-  FIRST_X_ASSUM(MP_TAC o SPECL [`{x:A}`; `{y:A}`]) THEN
-  ASM_REWRITE_TAC[SING_SUBSET; IMAGE_CLAUSES] THEN SET_TAC[]);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [SUBSET; IN_IMAGE; EXTENSION] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPECL [`(x:A) INSERT EMPTY`;
+                                  `(y:A) INSERT EMPTY`]) THEN
+   REWRITE_TAC [IN_SING] THEN
+   MATCH_MP_TAC (TAUT `(X /\ (Y ==> Z)) ==> ((X ==> Y) ==> Z)`) THEN
+   REPEAT STRIP_TAC THENL
+   [ASM_REWRITE_TAC [];
+    ASM_REWRITE_TAC [];
+    ONCE_REWRITE_TAC [CONJ_SYM] THEN
+    REWRITE_TAC [UNWIND_THM2] THEN
+    ASM_REWRITE_TAC [];
+    FIRST_X_ASSUM (MP_TAC o SPEC `x : A`) THEN
+    REWRITE_TAC []];
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `(f : A -> B) x`) THEN
+   MATCH_MP_TAC (TAUT `(Y ==> W /\ (X ==> Z)) /\ (Z ==> X /\ (W ==> Y)) ==>
+                       ((W <=> X) ==> (Y <=> Z))`) THEN
+   CONJ_TAC THENL
+   [STRIP_TAC THEN
+    CONJ_TAC THENL
+    [EXISTS_TAC `x : A` THEN
+     ASM_REWRITE_TAC [];
+     DISCH_THEN (X_CHOOSE_THEN `z : A` STRIP_ASSUME_TAC) THEN
+     SUBGOAL_THEN `(x : A) = z` (fun th -> ASM_REWRITE_TAC [th]) THEN
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     ASM_REWRITE_TAC [] THEN
+     CONJ_TAC THEN
+     FIRST_X_ASSUM (fun th -> MATCH_MP_TAC th THEN FIRST_ASSUM ACCEPT_TAC)];
+    STRIP_TAC THEN
+    CONJ_TAC THENL
+    [EXISTS_TAC `x : A` THEN
+     ASM_REWRITE_TAC [];
+     DISCH_THEN (X_CHOOSE_THEN `z : A` STRIP_ASSUME_TAC) THEN
+     SUBGOAL_THEN `(x : A) = z` (fun th -> ASM_REWRITE_TAC [th]) THEN
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     ASM_REWRITE_TAC [] THEN
+     CONJ_TAC THEN
+     FIRST_X_ASSUM (fun th -> MATCH_MP_TAC th THEN FIRST_ASSUM ACCEPT_TAC)]]]);;
 
 export_thm INJECTIVE_ON_IMAGE;;
 
 let INJECTIVE_IMAGE = prove
- (`!f:A->B.
+ (`!(f:A->B).
     (!s t. IMAGE f s = IMAGE f t ==> s = t) <=> (!x y. f x = f y ==> x = y)`,
-  GEN_TAC THEN MP_TAC(ISPECL [`f:A->B`; `(:A)`] INJECTIVE_ON_IMAGE) THEN
+  GEN_TAC THEN MP_TAC(ISPECL [`f:A->B`; `UNIV : A set`] INJECTIVE_ON_IMAGE) THEN
   REWRITE_TAC[IN_UNIV; SUBSET_UNIV]);;
 
 export_thm INJECTIVE_IMAGE;;
 
+(***
 let SURJECTIVE_ON_IMAGE = prove
- (`!f:A->B u v.
+ (`!(f:A->B) u v.
         (!t. t SUBSET v ==> ?s. s SUBSET u /\ IMAGE f s = t) <=>
         (!y. y IN v ==> ?x. x IN u /\ f x = y)`,
   REPEAT GEN_TAC THEN EQ_TAC THENL
