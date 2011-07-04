@@ -5457,7 +5457,6 @@ export_thm BIJECTIONS_CARD_EQ;;
 
 logfile "set-finite-thm";;
 
-(***
 let WF_FINITE = prove
  (`!(<<). (!x. ~(x << x)) /\ (!x y z. x << y /\ y << z ==> x << z) /\
           (!x:A. FINITE {y | y << x})
@@ -5473,20 +5472,40 @@ let WF_FINITE = prove
    EXISTS_TAC `(s : num -> A) y` THEN
    ASM_REWRITE_TAC [];
    ALL_TAC] THEN
-  MP_TAC (ISPECL [`f: `s:num->A` INFINITE_IMAGE_INJ) THEN ANTS_TAC THENL
-   [ASM_MESON_TAC[LT_CASES]; ALL_TAC] THEN
-  DISCH_THEN(MP_TAC o SPEC `(:num)`) THEN
-  REWRITE_TAC[num_INFINITE] THEN REWRITE_TAC[INFINITE] THEN
+  MP_TAC (ISPECL [`s : num -> A`; `UNIV : num set`] INFINITE_IMAGE_INJ) THEN
+  ANTS_TAC THENL
+  [REWRITE_TAC [num_INFINITE] THEN
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPECL [`x : num`; `y : num`] LT_CASES) THEN
+   STRIP_TAC THENL
+   [SUBGOAL_THEN `((s : num -> A) y << s x) : bool` MP_TAC THENL
+    [FIRST_X_ASSUM MATCH_MP_TAC THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     ASM_REWRITE_TAC []];
+    SUBGOAL_THEN `((s : num -> A) x << s y) : bool` MP_TAC THENL
+    [FIRST_X_ASSUM MATCH_MP_TAC THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     ASM_REWRITE_TAC []]];
+   ALL_TAC] THEN
+  REWRITE_TAC [INFINITE] THEN
   MATCH_MP_TAC FINITE_SUBSET THEN
   EXISTS_TAC `s(0) INSERT {y:A | y << s(0)}` THEN
-  ASM_REWRITE_TAC[FINITE_INSERT] THEN
-  REWRITE_TAC[SUBSET; FORALL_IN_IMAGE; IN_UNIV; IN_INSERT] THEN
-  INDUCT_TAC THEN REWRITE_TAC[IN_ELIM_THM] THEN ASM_MESON_TAC[LT_0]);;
+  ASM_REWRITE_TAC [FINITE_INSERT] THEN
+  REWRITE_TAC [SUBSET; FORALL_IN_IMAGE; IN_UNIV; IN_INSERT] THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [];
+   DISJ2_TAC THEN
+   REWRITE_TAC [IN_ELIM] THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   MATCH_ACCEPT_TAC LT_0]);;
+
+export_thm WF_FINITE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Cardinal comparisons (more theory in Examples/card.ml)                    *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 let le_c = new_definition
   `s <=_c t <=> ?f. (!x. x IN s ==> f(x) IN t) /\
                     (!x y. x IN s /\ y IN s /\ (f(x) = f(y)) ==> (x = y))`;;

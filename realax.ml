@@ -51,13 +51,20 @@ let prioritize_num() = prioritize_overload(mk_type("num",[]));;
 (* Absolute distance function on the naturals.                               *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-distance-def";;
+
 let dist = new_definition
-  `!m n. dist(m,n) = if m <= n then n - m else m - n`;;
+  `!m n. dist m n = if m <= n then n - m else m - n`;;
+
+export_thm dist;;
 
 (* ------------------------------------------------------------------------- *)
 (* Some easy theorems.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-distance-thm";;
+
+(***
 let DIST_REFL = prove
  (`!n. dist(n,n) = 0`,
   REWRITE_TAC[dist; SUB_REFL; LE_REFL]);;
@@ -2038,3 +2045,4 @@ do_list reduce_interface
   "inv",`hreal_inv:hreal->hreal`];;
 
 do_list remove_interface ["**"; "++"; "<<="; "==="; "fn"; "afn"];;
+***)
