@@ -369,15 +369,14 @@ export_thm BOUNDS_IGNORE;;
 (* Define type of nearly additive functions.                                 *)
 (* ------------------------------------------------------------------------- *)
 
-(***
+logfile "real-positive-def";;
+
 let is_nadd = new_definition
   `!x. is_nadd x <=> (?B. !m n. dist (m * x n) (n * x m) <= B * (m + n))`;;
 
 let is_nadd_0 = prove
  (`is_nadd (\n. 0)`,
   REWRITE_TAC[is_nadd; MULT_CLAUSES; DIST_REFL; LE_0]);;
-
-export_thm is_nadd_0;;
 
 let nadd_abs,nadd_rep =
   new_basic_type_definition "nadd" ("mk_nadd","dest_nadd") is_nadd_0;;
@@ -390,10 +389,8 @@ override_interface ("afn",`mk_nadd`);;
 (* ------------------------------------------------------------------------- *)
 
 let NADD_CAUCHY = prove
- (`!x. ?B. !m n. dist(m * fn x n) (n * fn x m) <= B * (m + n)`,
+ (`!x. ?B. !m n. dist (m * fn x n) (n * fn x m) <= B * (m + n)`,
   REWRITE_TAC[GSYM is_nadd; nadd_rep; nadd_abs; ETA_AX]);;
-
-export_thm NADD_CAUCHY;;
 
 let NADD_BOUND = prove
  (`!x. ?A B. !n. fn x n <= A * n + B`,
@@ -405,11 +402,10 @@ let NADD_BOUND = prove
   REWRITE_TAC[LEFT_ADD_DISTRIB; RIGHT_ADD_DISTRIB; MULT_CLAUSES] THEN
   REWRITE_TAC[ADD_AC; MULT_AC]);;
 
-export_thm NADD_BOUND;;
-
 let NADD_MULTIPLICATIVE = prove
  (`!x. ?B. !m n. dist (fn x (m * n)) (m * fn x n) <= B * m + B`,
-  GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
+  GEN_TAC THEN
+  X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
   EXISTS_TAC `B + fn x 0` THEN REPEAT GEN_TAC THEN
   ASM_CASES_TAC `n = 0` THENL
    [MATCH_MP_TAC (LE_IMP DIST_ADDBOUND) THEN
@@ -418,19 +414,19 @@ let NADD_MULTIPLICATIVE = prove
     REWRITE_TAC[GSYM EXISTS_REFL]; UNDISCH_TAC `~(n = 0)`] THEN
   REWRITE_TAC[TAUT `(~a ==> b) <=> a \/ b`; GSYM LE_MULT_LCANCEL;
               DIST_LMUL] THEN
-  REWRITE_TAC[MULT_ASSOC] THEN GEN_REWRITE_TAC
-   (LAND_CONV o RAND_CONV o RAND_CONV o LAND_CONV) [MULT_SYM] THEN
+  REWRITE_TAC[MULT_ASSOC] THEN
+  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV o LAND_CONV) [MULT_SYM] THEN
   POP_ASSUM(MATCH_MP_TAC o LE_IMP) THEN
   REWRITE_TAC[LE_EXISTS; RIGHT_ADD_DISTRIB; LEFT_ADD_DISTRIB; MULT_AC] THEN
   CONV_TAC(ONCE_DEPTH_CONV NUM_CANCEL_CONV) THEN
   REWRITE_TAC[GSYM EXISTS_REFL]);;
 
-export_thm NADD_MULTIPLICATIVE;;
-
 let NADD_ADDITIVE = prove
  (`!x. ?B. !m n. dist (fn x (m + n)) (fn x m + fn x n) <= B`,
-  GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
-  EXISTS_TAC `3 * B + fn x 0` THEN REPEAT GEN_TAC THEN
+  GEN_TAC THEN
+  X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
+  EXISTS_TAC `3 * B + fn x 0` THEN
+  REPEAT GEN_TAC THEN
   ASM_CASES_TAC `m + n = 0` THENL
    [RULE_ASSUM_TAC(REWRITE_RULE[ADD_EQ_0]) THEN ONCE_REWRITE_TAC[DIST_SYM] THEN
     ASM_REWRITE_TAC[ADD_CLAUSES; DIST_LADD_0; LE_ADDR];
@@ -438,7 +434,7 @@ let NADD_ADDITIVE = prove
     REWRITE_TAC[LE_ADD] THEN UNDISCH_TAC `~(m + n = 0)`] THEN
   REWRITE_TAC[TAUT `(~a ==> b) <=> a \/ b`; GSYM LE_MULT_LCANCEL] THEN
   REWRITE_TAC[DIST_LMUL; LEFT_ADD_DISTRIB] THEN
-  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV o LAND_CONV) [RIGHT_ADD_DISTRIB] THEN
+  GEN_REWRITE_TAC (LAND_CONV o LAND_CONV) [RIGHT_ADD_DISTRIB] THEN
   MATCH_MP_TAC(LE_IMP DIST_ADD2) THEN
   SUBGOAL_THEN `(m + n) * 3 * B = B * (m + m + n) + B * (n + m + n)`
   SUBST1_TAC THENL
@@ -446,8 +442,6 @@ let NADD_ADDITIVE = prove
     REWRITE_TAC[RIGHT_ADD_DISTRIB; LEFT_ADD_DISTRIB; MULT_CLAUSES] THEN
     REWRITE_TAC[MULT_AC] THEN CONV_TAC NUM_CANCEL_CONV THEN REFL_TAC;
     MATCH_MP_TAC LE_ADD2 THEN ASM_REWRITE_TAC[]]);;
-
-export_thm NADD_ADDITIVE;;
 
 let NADD_SUC = prove
  (`!x. ?B. !n. dist (fn x (SUC n)) (fn x n) <= B`,
@@ -457,8 +451,6 @@ let NADD_SUC = prove
   EXISTS_TAC `fn x n + fn x 1` THEN
   ASM_REWRITE_TAC[ADD1] THEN MATCH_MP_TAC LE_ADD2 THEN
   ASM_REWRITE_TAC[DIST_LADD_0; LE_REFL]);;
-
-export_thm NADD_SUC;;
 
 let NADD_DIST_LEMMA = prove
  (`!x. ?B. !m n. dist (fn x (m + n)) (fn x m) <= B * n`,
@@ -471,8 +463,6 @@ let NADD_DIST_LEMMA = prove
   GEN_REWRITE_TAC RAND_CONV [ADD_SYM] THEN
   MATCH_MP_TAC LE_ADD2 THEN ASM_REWRITE_TAC[GSYM ADD1; MULT_CLAUSES]);;
 
-export_thm NADD_DIST_LEMMA;;
-
 let NADD_DIST = prove
  (`!x. ?B. !m n. dist (fn x m) (fn x n) <= B * dist m n`,
   GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_DIST_LEMMA) THEN
@@ -482,26 +472,23 @@ let NADD_DIST = prove
    [ONCE_REWRITE_TAC[DIST_SYM]; ALL_TAC] THEN
   ASM_REWRITE_TAC[DIST_LADD_0]);;
 
-export_thm NADD_DIST;;
-
 let NADD_ALTMUL = prove
  (`!x y. ?A B. !n. dist (n * fn x (fn y n)) (fn x n * fn y n) <= A * n + B`,
   REPEAT GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
   MP_TAC(SPEC `y:nadd` NADD_BOUND) THEN
   DISCH_THEN(X_CHOOSE_THEN `M:num` (X_CHOOSE_TAC `L:num`)) THEN
   MAP_EVERY EXISTS_TAC [`B * (1 + M)`; `B * L`] THEN GEN_TAC THEN
-  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV o RAND_CONV) [MULT_SYM] THEN
+  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [MULT_SYM] THEN
   MATCH_MP_TAC LE_TRANS THEN  EXISTS_TAC `B * (n + fn y n)` THEN
   ASM_REWRITE_TAC[] THEN REWRITE_TAC[LEFT_ADD_DISTRIB; RIGHT_ADD_DISTRIB] THEN
   REWRITE_TAC[MULT_CLAUSES; GSYM ADD_ASSOC; LE_ADD_LCANCEL] THEN
   ASM_REWRITE_TAC[GSYM LEFT_ADD_DISTRIB; GSYM MULT_ASSOC; LE_MULT_LCANCEL]);;
 
-export_thm NADD_ALTMUL;;
-
 (* ------------------------------------------------------------------------- *)
 (* Definition of the equivalence relation and proof that it *is* one.        *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 override_interface ("===",`(nadd_eq):nadd->nadd->bool`);;
 
 let nadd_eq = new_definition
