@@ -371,7 +371,7 @@ export_thm BOUNDS_IGNORE;;
 
 (***
 let is_nadd = new_definition
-  `!x. is_nadd x <=> (?B. !m n. dist(m * x(n),n * x(m)) <= B * (m + n))`;;
+  `!x. is_nadd x <=> (?B. !m n. dist (m * x n) (n * x m) <= B * (m + n))`;;
 
 let is_nadd_0 = prove
  (`is_nadd (\n. 0)`,
@@ -390,7 +390,7 @@ override_interface ("afn",`mk_nadd`);;
 (* ------------------------------------------------------------------------- *)
 
 let NADD_CAUCHY = prove
- (`!x. ?B. !m n. dist(m * fn x n,n * fn x m) <= B * (m + n)`,
+ (`!x. ?B. !m n. dist(m * fn x n) (n * fn x m) <= B * (m + n)`,
   REWRITE_TAC[GSYM is_nadd; nadd_rep; nadd_abs; ETA_AX]);;
 
 export_thm NADD_CAUCHY;;
@@ -408,7 +408,7 @@ let NADD_BOUND = prove
 export_thm NADD_BOUND;;
 
 let NADD_MULTIPLICATIVE = prove
- (`!x. ?B. !m n. dist(fn x (m * n),m * fn x n) <= B * m + B`,
+ (`!x. ?B. !m n. dist (fn x (m * n)) (m * fn x n) <= B * m + B`,
   GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
   EXISTS_TAC `B + fn x 0` THEN REPEAT GEN_TAC THEN
   ASM_CASES_TAC `n = 0` THENL
@@ -428,7 +428,7 @@ let NADD_MULTIPLICATIVE = prove
 export_thm NADD_MULTIPLICATIVE;;
 
 let NADD_ADDITIVE = prove
- (`!x. ?B. !m n. dist(fn x (m + n),fn x m + fn x n) <= B`,
+ (`!x. ?B. !m n. dist (fn x (m + n)) (fn x m + fn x n) <= B`,
   GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
   EXISTS_TAC `3 * B + fn x 0` THEN REPEAT GEN_TAC THEN
   ASM_CASES_TAC `m + n = 0` THENL
@@ -450,7 +450,7 @@ let NADD_ADDITIVE = prove
 export_thm NADD_ADDITIVE;;
 
 let NADD_SUC = prove
- (`!x. ?B. !n. dist(fn x (SUC n),fn x n) <= B`,
+ (`!x. ?B. !n. dist (fn x (SUC n)) (fn x n) <= B`,
   GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_ADDITIVE) THEN
   EXISTS_TAC `B + fn x 1` THEN GEN_TAC THEN
   MATCH_MP_TAC(LE_IMP DIST_TRIANGLE) THEN
@@ -461,7 +461,7 @@ let NADD_SUC = prove
 export_thm NADD_SUC;;
 
 let NADD_DIST_LEMMA = prove
- (`!x. ?B. !m n. dist(fn x (m + n),fn x m) <= B * n`,
+ (`!x. ?B. !m n. dist (fn x (m + n)) (fn x m) <= B * n`,
   GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_SUC) THEN
   EXISTS_TAC `B:num` THEN GEN_TAC THEN
   INDUCT_TAC THEN REWRITE_TAC[ADD_CLAUSES; DIST_REFL; LE_0] THEN
@@ -474,7 +474,7 @@ let NADD_DIST_LEMMA = prove
 export_thm NADD_DIST_LEMMA;;
 
 let NADD_DIST = prove
- (`!x. ?B. !m n. dist(fn x m,fn x n) <= B * dist(m,n)`,
+ (`!x. ?B. !m n. dist (fn x m) (fn x n) <= B * dist m n`,
   GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_DIST_LEMMA) THEN
   EXISTS_TAC `B:num` THEN REPEAT GEN_TAC THEN
   DISJ_CASES_THEN MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
@@ -485,7 +485,7 @@ let NADD_DIST = prove
 export_thm NADD_DIST;;
 
 let NADD_ALTMUL = prove
- (`!x y. ?A B. !n. dist(n * fn x (fn y n),fn x n * fn y n) <= A * n + B`,
+ (`!x y. ?A B. !n. dist (n * fn x (fn y n)) (fn x n * fn y n) <= A * n + B`,
   REPEAT GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
   MP_TAC(SPEC `y:nadd` NADD_BOUND) THEN
   DISCH_THEN(X_CHOOSE_THEN `M:num` (X_CHOOSE_TAC `L:num`)) THEN
@@ -505,7 +505,7 @@ export_thm NADD_ALTMUL;;
 override_interface ("===",`(nadd_eq):nadd->nadd->bool`);;
 
 let nadd_eq = new_definition
-  `x === y <=> ?B. !n. dist(fn x n,fn y n) <= B`;;
+  `x === y <=> ?B. !n. dist (fn x n) (fn y n) <= B`;;
 
 let NADD_EQ_REFL = prove
  (`!x. x === x`,
@@ -815,7 +815,7 @@ let NADD_MUL = prove
     MATCH_MP_TAC LE_ADD2 THEN
     ONCE_REWRITE_TAC[DIST_SYM] THEN ASM_REWRITE_TAC[] THEN
     MATCH_MP_TAC LE_TRANS THEN
-    EXISTS_TAC `C * dist(m * fn y n,n * fn y m)` THEN
+    EXISTS_TAC `C * dist (m * fn y n) (n * fn y m)` THEN
     ASM_REWRITE_TAC[LE_MULT_LCANCEL];
     MATCH_MP_TAC EQ_IMP_LE THEN
     REWRITE_TAC[LEFT_ADD_DISTRIB; RIGHT_ADD_DISTRIB; MULT_ASSOC; ADD_AC]]);;
@@ -875,7 +875,7 @@ let NADD_MUL_WELLDEF_LEMMA = prove
   X_CHOOSE_TAC `B2:num` (SPEC `x:nadd` NADD_DIST) THEN
   EXISTS_TAC `B2 * B1` THEN X_GEN_TAC `n:num` THEN
   MATCH_MP_TAC LE_TRANS THEN
-  EXISTS_TAC `B2 * dist(fn y n,fn y' n)` THEN
+  EXISTS_TAC `B2 * dist (fn y n) (fn y' n)` THEN
   ASM_REWRITE_TAC[LE_MULT_LCANCEL]);;
 
 export_thm NADD_MUL_WELLDEF_LEMMA;;
@@ -1232,7 +1232,7 @@ let NADD_MUL_LINV_LEMMA0 = prove
 export_thm NADD_MUL_LINV_LEMMA0;;
 
 let NADD_MUL_LINV_LEMMA1 = prove
- (`!x n. ~(fn x n = 0) ==> dist(fn x n * nadd_rinv(x) n, n * n) <= fn x n`,
+ (`!x n. ~(fn x n = 0) ==> dist (fn x n * nadd_rinv(x) n) (n * n) <= fn x n`,
   REPEAT GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP DIVISION) THEN
   DISCH_THEN(CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC o SPEC `n * n`) THEN
   REWRITE_TAC[nadd_rinv] THEN
@@ -1244,7 +1244,7 @@ export_thm NADD_MUL_LINV_LEMMA1;;
 
 let NADD_MUL_LINV_LEMMA2 = prove
  (`!x. ~(x === &0) ==> ?N. !n. N <= n ==>
-         dist(fn x n * nadd_rinv(x) n, n * n) <= fn x n`,
+         dist (fn x n * nadd_rinv(x) n) (n * n) <= fn x n`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_NONZERO) THEN
   DISCH_THEN(X_CHOOSE_TAC `N:num`) THEN EXISTS_TAC `N:num` THEN
   REPEAT STRIP_TAC THEN MATCH_MP_TAC NADD_MUL_LINV_LEMMA1 THEN
@@ -1254,8 +1254,8 @@ export_thm NADD_MUL_LINV_LEMMA2;;
 
 let NADD_MUL_LINV_LEMMA3 = prove
  (`!x. ~(x === &0) ==> ?N. !m n. N <= n ==>
-        dist(m * fn x m * fn x n * nadd_rinv(x) n,
-             m * fn x m * n * n) <= m * fn x m * fn x n`,
+        dist (m * fn x m * fn x n * nadd_rinv(x) n)
+             (m * fn x m * n * n) <= m * fn x m * fn x n`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA2) THEN
   DISCH_THEN(X_CHOOSE_TAC `N:num`) THEN EXISTS_TAC `N:num` THEN
   REPEAT STRIP_TAC THEN REWRITE_TAC[GSYM DIST_LMUL; MULT_ASSOC] THEN
@@ -1266,8 +1266,8 @@ export_thm NADD_MUL_LINV_LEMMA3;;
 
 let NADD_MUL_LINV_LEMMA4 = prove
  (`!x. ~(x === &0) ==> ?N. !m n. N <= m /\ N <= n ==>
-        (fn x m * fn x n) * dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <=
-          (m * n) * dist(m * fn x n,n * fn x m) + (fn x m * fn x n) * (m + n)`,
+        (fn x m * fn x n) * dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <=
+          (m * n) * dist (m * fn x n) (n * fn x m) + (fn x m * fn x n) * (m + n)`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA3) THEN
   DISCH_THEN(X_CHOOSE_TAC `N:num`) THEN EXISTS_TAC `N:num` THEN
   REPEAT STRIP_TAC THEN REWRITE_TAC[DIST_LMUL; LEFT_ADD_DISTRIB] THEN
@@ -1281,7 +1281,7 @@ export_thm NADD_MUL_LINV_LEMMA4;;
 
 let NADD_MUL_LINV_LEMMA5 = prove
  (`!x. ~(x === &0) ==> ?B N. !m n. N <= m /\ N <= n ==>
-        (fn x m * fn x n) * dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <=
+        (fn x m * fn x n) * dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <=
         B * (m * n) * (m + n)`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA4) THEN
   DISCH_THEN(X_CHOOSE_TAC `N1:num`) THEN
@@ -1290,7 +1290,7 @@ let NADD_MUL_LINV_LEMMA5 = prove
     (SPEC `x:nadd` NADD_UBOUND) THEN
   EXISTS_TAC `B1 + B2 * B2` THEN EXISTS_TAC `N1 + N2` THEN
   REPEAT STRIP_TAC THEN MATCH_MP_TAC LE_TRANS THEN
-  EXISTS_TAC `(m * n) * dist(m * fn x n,n * fn x m) +
+  EXISTS_TAC `(m * n) * dist (m * fn x n) (n * fn x m) +
               (fn x m * fn x n) * (m + n)` THEN
   CONJ_TAC THENL
    [FIRST_ASSUM MATCH_MP_TAC THEN CONJ_TAC THEN
@@ -1314,7 +1314,7 @@ export_thm NADD_MUL_LINV_LEMMA5;;
 
 let NADD_MUL_LINV_LEMMA6 = prove
  (`!x. ~(x === &0) ==> ?B N. !m n. N <= m /\ N <= n ==>
-        (m * n) * dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <=
+        (m * n) * dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <=
         B * (m * n) * (m + n)`,
   GEN_TAC THEN DISCH_TAC THEN
   FIRST_ASSUM(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA5) THEN
@@ -1324,7 +1324,7 @@ let NADD_MUL_LINV_LEMMA6 = prove
   EXISTS_TAC `B1 * B2 * B2` THEN EXISTS_TAC `N1 + N2` THEN
   REPEAT STRIP_TAC THEN MATCH_MP_TAC LE_TRANS THEN
   EXISTS_TAC `(B2 * B2) * (fn x m * fn x n) *
-              dist (m * nadd_rinv x n,n * nadd_rinv x m)` THEN
+              dist (m * nadd_rinv x n) (n * nadd_rinv x m)` THEN
   CONJ_TAC THENL
    [REWRITE_TAC[MULT_ASSOC; LE_MULT_RCANCEL] THEN DISJ1_TAC THEN
     ONCE_REWRITE_TAC[AC MULT_AC `((a * b) * c) * d = (a * c) * (b * d)`] THEN
@@ -1340,7 +1340,7 @@ export_thm NADD_MUL_LINV_LEMMA6;;
 
 let NADD_MUL_LINV_LEMMA7 = prove
  (`!x. ~(x === &0) ==> ?B N. !m n. N <= m /\ N <= n ==>
-        dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <= B * (m + n)`,
+        dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <= B * (m + n)`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA6) THEN
   DISCH_THEN(X_CHOOSE_THEN `B:num` (X_CHOOSE_TAC `N:num`)) THEN
   MAP_EVERY EXISTS_TAC [`B:num`; `N + 1`] THEN
@@ -1364,7 +1364,7 @@ export_thm NADD_MUL_LINV_LEMMA7;;
 
 let NADD_MUL_LINV_LEMMA7a = prove
  (`!x. ~(x === &0) ==> !N. ?A B. !m n. m <= N ==>
-        dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <= A * n + B`,
+        dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <= A * n + B`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA0) THEN
   DISCH_THEN(X_CHOOSE_THEN `A0:num` (X_CHOOSE_TAC `B0:num`)) THEN
   INDUCT_TAC THENL
@@ -1396,7 +1396,7 @@ export_thm NADD_MUL_LINV_LEMMA7a;;
 
 let NADD_MUL_LINV_LEMMA8 = prove
  (`!x. ~(x === &0) ==>
-        ?B. !m n. dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <= B * (m + n)`,
+        ?B. !m n. dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <= B * (m + n)`,
   GEN_TAC THEN DISCH_TAC THEN
   FIRST_ASSUM(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA7) THEN
   DISCH_THEN(X_CHOOSE_THEN `B0:num` (X_CHOOSE_TAC `N:num`)) THEN
@@ -1454,7 +1454,7 @@ let NADD_MUL_LINV = prove
   FIRST_ASSUM(X_CHOOSE_TAC `N:num` o MATCH_MP NADD_MUL_LINV_LEMMA2) THEN
   X_CHOOSE_THEN `A':num` (X_CHOOSE_TAC `B':num`)
     (SPEC `x:nadd` NADD_BOUND) THEN
-  SUBGOAL_THEN `?A2 B2. !n. dist(fn x n * nadd_rinv x n,n * n) <= A2 * n + B2`
+  SUBGOAL_THEN `?A2 B2. !n. dist (fn x n * nadd_rinv x n) (n * n) <= A2 * n + B2`
   STRIP_ASSUME_TAC THENL
    [EXISTS_TAC `A':num` THEN ONCE_REWRITE_TAC[BOUNDS_IGNORE] THEN
     MAP_EVERY EXISTS_TAC [`B':num`; `N:num`] THEN REPEAT STRIP_TAC THEN
