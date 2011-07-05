@@ -369,7 +369,7 @@ export_thm BOUNDS_IGNORE;;
 (* Define type of nearly additive functions.                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "real-positive-def";;
+logfile "real-def";;
 
 let is_nadd = new_definition
   `!x. is_nadd x <=> (?B. !m n. dist (m * x n) (n * x m) <= B * (m + n))`;;
