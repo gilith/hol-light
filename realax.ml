@@ -282,7 +282,8 @@ export_thm DIST_TRIANGLES_LE;;
 (* Useful lemmas about bounds.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-(***
+logfile "natural-order-thm";;
+
 let BOUNDS_LINEAR = prove
  (`!A B C. (!n. A * n <= B * n + C) <=> A <= B`,
   REPEAT GEN_TAC THEN EQ_TAC THENL
@@ -368,6 +369,7 @@ export_thm BOUNDS_IGNORE;;
 (* Define type of nearly additive functions.                                 *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 let is_nadd = new_definition
   `!x. is_nadd x <=> (?B. !m n. dist(m * x(n),n * x(m)) <= B * (m + n))`;;
 
