@@ -1378,7 +1378,6 @@ let NADD_INV_WELLDEF = prove
 (* Definition of the new type.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 let hreal_tybij =
   define_quotient_type "hreal" ("mk_hreal","dest_hreal") `(===)`;;
 
@@ -1445,45 +1444,31 @@ let HREAL_LE_EXISTS_DEF = prove
   REPEAT GEN_TAC THEN EQ_TAC THEN REWRITE_TAC[HREAL_LE_EXISTS] THEN
   DISCH_THEN(CHOOSE_THEN SUBST1_TAC) THEN REWRITE_TAC[HREAL_LE_ADD]);;
 
-export_thm HREAL_LE_EXISTS_DEF;;
-
 let HREAL_EQ_ADD_LCANCEL = prove
  (`!m n p. (m + n = m + p) <=> (n = p)`,
   REPEAT GEN_TAC THEN EQ_TAC THEN REWRITE_TAC[HREAL_ADD_LCANCEL] THEN
   DISCH_THEN SUBST1_TAC THEN REFL_TAC);;
 
-export_thm HREAL_EQ_ADD_LCANCEL;;
-
 let HREAL_EQ_ADD_RCANCEL = prove
  (`!m n p. (m + p = n + p) <=> (m = n)`,
   ONCE_REWRITE_TAC[HREAL_ADD_SYM] THEN REWRITE_TAC[HREAL_EQ_ADD_LCANCEL]);;
-
-export_thm HREAL_EQ_ADD_RCANCEL;;
 
 let HREAL_LE_ADD_LCANCEL = prove
  (`!m n p. (m + n <= m + p) <=> (n <= p)`,
   REWRITE_TAC[HREAL_LE_EXISTS_DEF; GSYM HREAL_ADD_ASSOC;
     HREAL_EQ_ADD_LCANCEL]);;
 
-export_thm HREAL_LE_ADD_LCANCEL;;
-
 let HREAL_LE_ADD_RCANCEL = prove
  (`!m n p. (m + p <= n + p) <=> (m <= n)`,
   ONCE_REWRITE_TAC[HREAL_ADD_SYM] THEN MATCH_ACCEPT_TAC HREAL_LE_ADD_LCANCEL);;
-
-export_thm HREAL_LE_ADD_RCANCEL;;
 
 let HREAL_ADD_RID = prove
  (`!n. n + &0 = n`,
   ONCE_REWRITE_TAC[HREAL_ADD_SYM] THEN MATCH_ACCEPT_TAC HREAL_ADD_LID);;
 
-export_thm HREAL_ADD_RID;;
-
 let HREAL_ADD_RDISTRIB = prove
  (`!m n p. (m + n) * p = m * p + n * p`,
   ONCE_REWRITE_TAC[HREAL_MUL_SYM] THEN MATCH_ACCEPT_TAC HREAL_ADD_LDISTRIB);;
-
-export_thm HREAL_ADD_RDISTRIB;;
 
 let HREAL_MUL_LZERO = prove
  (`!m. &0 * m = &0`,
@@ -1493,13 +1478,9 @@ let HREAL_MUL_LZERO = prove
   REWRITE_TAC[HREAL_EQ_ADD_RCANCEL] THEN
   DISCH_THEN(ACCEPT_TAC o SYM));;
 
-export_thm HREAL_MUL_LZERO;;
-
 let HREAL_MUL_RZERO = prove
  (`!m. m * &0 = &0`,
   ONCE_REWRITE_TAC[HREAL_MUL_SYM] THEN MATCH_ACCEPT_TAC HREAL_MUL_LZERO);;
-
-export_thm HREAL_MUL_RZERO;;
 
 let HREAL_ADD_AC = prove
  (`(m + n = n + m) /\
@@ -1508,8 +1489,6 @@ let HREAL_ADD_AC = prove
   REWRITE_TAC[HREAL_ADD_ASSOC; EQT_INTRO(SPEC_ALL HREAL_ADD_SYM)] THEN
   AP_THM_TAC THEN AP_TERM_TAC THEN MATCH_ACCEPT_TAC HREAL_ADD_SYM);;
 
-export_thm HREAL_ADD_AC;;
-
 let HREAL_LE_ADD2 = prove
  (`!a b c d. a <= b /\ c <= d ==> a + c <= b + d`,
   REPEAT GEN_TAC THEN REWRITE_TAC[HREAL_LE_EXISTS_DEF] THEN
@@ -1517,58 +1496,52 @@ let HREAL_LE_ADD2 = prove
     (X_CHOOSE_TAC `d2:hreal`)) THEN
   EXISTS_TAC `d1 + d2` THEN ASM_REWRITE_TAC[HREAL_ADD_AC]);;
 
-export_thm HREAL_LE_ADD2;;
-
 let HREAL_LE_MUL_RCANCEL_IMP = prove
  (`!a b c. a <= b ==> a * c <= b * c`,
   REPEAT GEN_TAC THEN REWRITE_TAC[HREAL_LE_EXISTS_DEF] THEN
   DISCH_THEN(X_CHOOSE_THEN `d:hreal` SUBST1_TAC) THEN
   EXISTS_TAC `d * c` THEN REWRITE_TAC[HREAL_ADD_RDISTRIB]);;
 
-export_thm HREAL_LE_MUL_RCANCEL_IMP;;
-
 (* ------------------------------------------------------------------------- *)
 (* Define operations on representatives of signed reals.                     *)
 (* ------------------------------------------------------------------------- *)
 
 let treal_of_num = new_definition
-  `treal_of_num n = (&n, &0)`;;
+  `!n. treal_of_num n = (&n, &0)`;;
 
 let treal_neg = new_definition
-  `treal_neg ((x:hreal),(y:hreal)) = (y,x)`;;
+  `!x y. treal_neg ((x:hreal),(y:hreal)) = (y,x)`;;
 
 let treal_add = new_definition
-  `(x1,y1) treal_add (x2,y2) = (x1 + x2, y1 + y2)`;;
+  `!x1 y1 x2 y2. (x1,y1) treal_add (x2,y2) = (x1 + x2, y1 + y2)`;;
 
 let treal_mul = new_definition
-  `(x1,y1) treal_mul (x2,y2) = ((x1 * x2) + (y1 * y2),(x1 * y2) + (y1 * x2))`;;
+  `!x1 y1 x2 y2.
+     (x1,y1) treal_mul (x2,y2) = ((x1 * x2) + (y1 * y2),(x1 * y2) + (y1 * x2))`;;
 
 let treal_le = new_definition
-  `(x1,y1) treal_le (x2,y2) <=> x1 + y2 <= x2 + y1`;;
+  `!x1 y1 x2 y2. (x1,y1) treal_le (x2,y2) <=> x1 + y2 <= x2 + y1`;;
 
 let treal_inv = new_definition
-  `treal_inv(x,y) = if x = y then (&0, &0)
-                    else if y <= x then (inv(@d. x = y + d), &0)
-                    else (&0, inv(@d. y = x + d))`;;
+  `!x y.
+     treal_inv(x,y) = if x = y then (&0, &0)
+                      else if y <= x then (inv(@d. x = y + d), &0)
+                      else (&0, inv(@d. y = x + d))`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Define the equivalence relation and prove it *is* one.                    *)
 (* ------------------------------------------------------------------------- *)
 
 let treal_eq = new_definition
-  `(x1,y1) treal_eq (x2,y2) <=> (x1 + y2 = x2 + y1)`;;
+  `!x1 y1 x2 y2. (x1,y1) treal_eq (x2,y2) <=> (x1 + y2 = x2 + y1)`;;
 
 let TREAL_EQ_REFL = prove
  (`!x. x treal_eq x`,
   REWRITE_TAC[FORALL_PAIR_THM; treal_eq]);;
 
-export_thm TREAL_EQ_REFL;;
-
 let TREAL_EQ_SYM = prove
  (`!x y. x treal_eq y <=> y treal_eq x`,
   REWRITE_TAC[FORALL_PAIR_THM; treal_eq; EQ_SYM_EQ]);;
-
-export_thm TREAL_EQ_SYM;;
 
 let TREAL_EQ_TRANS = prove
  (`!x y z. x treal_eq y /\ y treal_eq z ==> x treal_eq z`,
@@ -1579,8 +1552,6 @@ let TREAL_EQ_TRANS = prove
   REWRITE_TAC[HREAL_ADD_ASSOC; HREAL_EQ_ADD_RCANCEL] THEN
   DISCH_THEN(MATCH_ACCEPT_TAC o ONCE_REWRITE_RULE[HREAL_ADD_SYM]));;
 
-export_thm TREAL_EQ_TRANS;;
-
 (* ------------------------------------------------------------------------- *)
 (* Useful to avoid unnecessary use of the equivalence relation.              *)
 (* ------------------------------------------------------------------------- *)
@@ -1588,8 +1559,6 @@ export_thm TREAL_EQ_TRANS;;
 let TREAL_EQ_AP = prove
  (`!x y. (x = y) ==> x treal_eq y`,
   SIMP_TAC[TREAL_EQ_REFL]);;
-
-export_thm TREAL_EQ_AP;;
 
 (* ------------------------------------------------------------------------- *)
 (* Commutativity properties for injector.                                    *)
@@ -1599,13 +1568,9 @@ let TREAL_OF_NUM_EQ = prove
  (`!m n. (treal_of_num m treal_eq treal_of_num n) <=> (m = n)`,
   REWRITE_TAC[treal_of_num; treal_eq; HREAL_OF_NUM_EQ; HREAL_ADD_RID]);;
 
-export_thm TREAL_OF_NUM_EQ;;
-
 let TREAL_OF_NUM_LE = prove
  (`!m n. (treal_of_num m treal_le treal_of_num n) <=> m <= n`,
   REWRITE_TAC[treal_of_num; treal_le; HREAL_OF_NUM_LE; HREAL_ADD_RID]);;
-
-export_thm TREAL_OF_NUM_LE;;
 
 let TREAL_OF_NUM_ADD = prove
  (`!m n. (treal_of_num m treal_add treal_of_num n) treal_eq
@@ -1613,16 +1578,12 @@ let TREAL_OF_NUM_ADD = prove
   REWRITE_TAC[treal_of_num; treal_eq; treal_add;
    HREAL_OF_NUM_ADD; HREAL_ADD_RID; ADD_CLAUSES]);;
 
-export_thm TREAL_OF_NUM_ADD;;
-
 let TREAL_OF_NUM_MUL = prove
  (`!m n. (treal_of_num m treal_mul treal_of_num n) treal_eq
          (treal_of_num(m * n))`,
   REWRITE_TAC[treal_of_num; treal_eq; treal_mul;
    HREAL_OF_NUM_MUL; HREAL_MUL_RZERO; HREAL_MUL_LZERO; HREAL_ADD_RID;
    HREAL_ADD_LID; HREAL_ADD_RID; MULT_CLAUSES]);;
-
-export_thm TREAL_OF_NUM_MUL;;
 
 (* ------------------------------------------------------------------------- *)
 (* Strong forms of equality are useful to simplify welldefinedness proofs.   *)
@@ -1632,13 +1593,9 @@ let TREAL_ADD_SYM_EQ = prove
  (`!x y. x treal_add y = y treal_add x`,
   REWRITE_TAC[FORALL_PAIR_THM; treal_add; PAIR_EQ; HREAL_ADD_SYM]);;
 
-export_thm TREAL_ADD_SYM_EQ;;
-
 let TREAL_MUL_SYM_EQ = prove
  (`!x y. x treal_mul y = y treal_mul x`,
   REWRITE_TAC[FORALL_PAIR_THM; treal_mul; HREAL_MUL_SYM; HREAL_ADD_SYM]);;
-
-export_thm TREAL_MUL_SYM_EQ;;
 
 (* ------------------------------------------------------------------------- *)
 (* Prove the properties of operations on representatives.                    *)
@@ -1649,34 +1606,24 @@ let TREAL_ADD_SYM = prove
   REPEAT GEN_TAC THEN MATCH_MP_TAC TREAL_EQ_AP THEN
   MATCH_ACCEPT_TAC TREAL_ADD_SYM_EQ);;
 
-export_thm TREAL_ADD_SYM;;
-
 let TREAL_ADD_ASSOC = prove
  (`!x y z. (x treal_add (y treal_add z)) treal_eq
            ((x treal_add y) treal_add z)`,
   SIMP_TAC[FORALL_PAIR_THM; TREAL_EQ_AP; treal_add; HREAL_ADD_ASSOC]);;
-
-export_thm TREAL_ADD_ASSOC;;
 
 let TREAL_ADD_LID = prove
  (`!x. ((treal_of_num 0) treal_add x) treal_eq x`,
   REWRITE_TAC[FORALL_PAIR_THM; treal_of_num; treal_add; treal_eq;
               HREAL_ADD_LID]);;
 
-export_thm TREAL_ADD_LID;;
-
 let TREAL_ADD_LINV = prove
  (`!x. ((treal_neg x) treal_add x) treal_eq (treal_of_num 0)`,
   REWRITE_TAC[FORALL_PAIR_THM; treal_neg; treal_add; treal_eq; treal_of_num;
               HREAL_ADD_LID; HREAL_ADD_RID; HREAL_ADD_SYM]);;
 
-export_thm TREAL_ADD_LINV;;
-
 let TREAL_MUL_SYM = prove
  (`!x y. (x treal_mul y) treal_eq (y treal_mul x)`,
   SIMP_TAC[TREAL_EQ_AP; TREAL_MUL_SYM_EQ]);;
-
-export_thm TREAL_MUL_SYM;;
 
 let TREAL_MUL_ASSOC = prove
  (`!x y z. (x treal_mul (y treal_mul z)) treal_eq
@@ -1684,14 +1631,10 @@ let TREAL_MUL_ASSOC = prove
   SIMP_TAC[FORALL_PAIR_THM; TREAL_EQ_AP; treal_mul; HREAL_ADD_LDISTRIB;
            HREAL_ADD_RDISTRIB; GSYM HREAL_MUL_ASSOC; HREAL_ADD_AC]);;
 
-export_thm TREAL_MUL_ASSOC;;
-
 let TREAL_MUL_LID = prove
  (`!x. ((treal_of_num 1) treal_mul x) treal_eq x`,
   SIMP_TAC[FORALL_PAIR_THM; treal_of_num; treal_mul; treal_eq] THEN
   REWRITE_TAC[HREAL_MUL_LZERO; HREAL_MUL_LID; HREAL_ADD_LID; HREAL_ADD_RID]);;
-
-export_thm TREAL_MUL_LID;;
 
 let TREAL_ADD_LDISTRIB = prove
  (`!x y z. (x treal_mul (y treal_add z)) treal_eq
@@ -1699,19 +1642,13 @@ let TREAL_ADD_LDISTRIB = prove
   SIMP_TAC[FORALL_PAIR_THM; TREAL_EQ_AP; treal_mul; treal_add;
            HREAL_ADD_LDISTRIB; PAIR_EQ; HREAL_ADD_AC]);;
 
-export_thm TREAL_ADD_LDISTRIB;;
-
 let TREAL_LE_REFL = prove
  (`!x. x treal_le x`,
   REWRITE_TAC[FORALL_PAIR_THM; treal_le; HREAL_LE_REFL]);;
 
-export_thm TREAL_LE_REFL;;
-
 let TREAL_LE_ANTISYM = prove
  (`!x y. x treal_le y /\ y treal_le x <=> (x treal_eq y)`,
   REWRITE_TAC[FORALL_PAIR_THM; treal_le; treal_eq; HREAL_LE_ANTISYM]);;
-
-export_thm TREAL_LE_ANTISYM;;
 
 let TREAL_LE_TRANS = prove
  (`!x y z. x treal_le y /\ y treal_le z ==> x treal_le z`,
@@ -1722,13 +1659,9 @@ let TREAL_LE_TRANS = prove
   REWRITE_TAC[HREAL_ADD_ASSOC; HREAL_LE_ADD_RCANCEL] THEN
   DISCH_THEN(MATCH_ACCEPT_TAC o ONCE_REWRITE_RULE[HREAL_ADD_SYM]));;
 
-export_thm TREAL_LE_TRANS;;
-
 let TREAL_LE_TOTAL = prove
  (`!x y. x treal_le y \/ y treal_le x`,
   REWRITE_TAC[FORALL_PAIR_THM; treal_le; HREAL_LE_TOTAL]);;
-
-export_thm TREAL_LE_TOTAL;;
 
 let TREAL_LE_LADD_IMP = prove
  (`!x y z. (y treal_le z) ==> (x treal_add y) treal_le (x treal_add z)`,
@@ -1736,8 +1669,6 @@ let TREAL_LE_LADD_IMP = prove
   REWRITE_TAC[GSYM HREAL_ADD_ASSOC; HREAL_LE_ADD_LCANCEL] THEN
   ONCE_REWRITE_TAC[HREAL_ADD_SYM] THEN
   REWRITE_TAC[GSYM HREAL_ADD_ASSOC; HREAL_LE_ADD_LCANCEL]);;
-
-export_thm TREAL_LE_LADD_IMP;;
 
 let TREAL_LE_MUL = prove
  (`!x y. (treal_of_num 0) treal_le x /\ (treal_of_num 0) treal_le y
@@ -1752,13 +1683,9 @@ let TREAL_LE_MUL = prove
   ASM_REWRITE_TAC[HREAL_LE_ADD_LCANCEL] THEN
   MATCH_MP_TAC HREAL_LE_MUL_RCANCEL_IMP THEN ASM_REWRITE_TAC[]);;
 
-export_thm TREAL_LE_MUL;;
-
 let TREAL_INV_0 = prove
  (`treal_inv (treal_of_num 0) treal_eq (treal_of_num 0)`,
   REWRITE_TAC[treal_inv; treal_eq; treal_of_num]);;
-
-export_thm TREAL_INV_0;;
 
 let TREAL_MUL_LINV = prove
  (`!x. ~(x treal_eq treal_of_num 0) ==>
@@ -1786,8 +1713,6 @@ let TREAL_MUL_LINV = prove
   ASM_REWRITE_TAC[HREAL_ADD_RID] THEN
   PURE_ONCE_REWRITE_TAC[EQ_SYM_EQ] THEN ASM_REWRITE_TAC[]);;
 
-export_thm TREAL_MUL_LINV;;
-
 (* ------------------------------------------------------------------------- *)
 (* Show that the operations respect the equivalence relation.                *)
 (* ------------------------------------------------------------------------- *)
@@ -1797,14 +1722,10 @@ let TREAL_OF_NUM_WELLDEF = prove
   REPEAT GEN_TAC THEN DISCH_THEN SUBST1_TAC THEN
   MATCH_ACCEPT_TAC TREAL_EQ_REFL);;
 
-export_thm TREAL_OF_NUM_WELLDEF;;
-
 let TREAL_NEG_WELLDEF = prove
  (`!x1 x2. x1 treal_eq x2 ==> (treal_neg x1) treal_eq (treal_neg x2)`,
   REWRITE_TAC[FORALL_PAIR_THM; treal_neg; treal_eq] THEN REPEAT STRIP_TAC THEN
   ONCE_REWRITE_TAC[HREAL_ADD_SYM] THEN ASM_REWRITE_TAC[]);;
-
-export_thm TREAL_NEG_WELLDEF;;
 
 let TREAL_ADD_WELLDEFR = prove
  (`!x1 x2 y. x1 treal_eq x2 ==> (x1 treal_add y) treal_eq (x2 treal_add y)`,
@@ -1813,8 +1734,6 @@ let TREAL_ADD_WELLDEFR = prove
   ONCE_REWRITE_TAC[HREAL_ADD_SYM] THEN
   REWRITE_TAC[HREAL_EQ_ADD_RCANCEL; HREAL_ADD_ASSOC]);;
 
-export_thm TREAL_ADD_WELLDEFR;;
-
 let TREAL_ADD_WELLDEF = prove
  (`!x1 x2 y1 y2. x1 treal_eq x2 /\ y1 treal_eq y2 ==>
      (x1 treal_add y1) treal_eq (x2 treal_add y2)`,
@@ -1822,8 +1741,6 @@ let TREAL_ADD_WELLDEF = prove
   MATCH_MP_TAC TREAL_EQ_TRANS THEN EXISTS_TAC `x1 treal_add y2` THEN
   CONJ_TAC THENL [ONCE_REWRITE_TAC[TREAL_ADD_SYM_EQ]; ALL_TAC] THEN
   MATCH_MP_TAC TREAL_ADD_WELLDEFR THEN ASM_REWRITE_TAC[]);;
-
-export_thm TREAL_ADD_WELLDEF;;
 
 let TREAL_MUL_WELLDEFR = prove
  (`!x1 x2 y. x1 treal_eq x2 ==> (x1 treal_mul y) treal_eq (x2 treal_mul y)`,
@@ -1834,8 +1751,6 @@ let TREAL_MUL_WELLDEFR = prove
   ASM_REWRITE_TAC[] THEN AP_TERM_TAC THEN
   ONCE_REWRITE_TAC[HREAL_ADD_SYM] THEN POP_ASSUM SUBST1_TAC THEN REFL_TAC);;
 
-export_thm TREAL_MUL_WELLDEFR;;
-
 let TREAL_MUL_WELLDEF = prove
  (`!x1 x2 y1 y2. x1 treal_eq x2 /\ y1 treal_eq y2 ==>
      (x1 treal_mul y1) treal_eq (x2 treal_mul y2)`,
@@ -1844,13 +1759,9 @@ let TREAL_MUL_WELLDEF = prove
   CONJ_TAC THENL [ONCE_REWRITE_TAC[TREAL_MUL_SYM_EQ]; ALL_TAC] THEN
   MATCH_MP_TAC TREAL_MUL_WELLDEFR THEN ASM_REWRITE_TAC[]);;
 
-export_thm TREAL_MUL_WELLDEF;;
-
 let TREAL_EQ_IMP_LE = prove
  (`!x y. x treal_eq y ==> x treal_le y`,
   SIMP_TAC[FORALL_PAIR_THM; treal_eq; treal_le; HREAL_LE_REFL]);;
-
-export_thm TREAL_EQ_IMP_LE;;
 
 let TREAL_LE_WELLDEF = prove
  (`!x1 x2 y1 y2. x1 treal_eq x2 /\ y1 treal_eq y2 ==>
@@ -1868,8 +1779,6 @@ let TREAL_LE_WELLDEF = prove
       ASM_REWRITE_TAC[] THEN MATCH_MP_TAC TREAL_EQ_IMP_LE;
       MATCH_MP_TAC TREAL_EQ_IMP_LE THEN ONCE_REWRITE_TAC[TREAL_EQ_SYM]]] THEN
   ASM_REWRITE_TAC[]);;
-
-export_thm TREAL_LE_WELLDEF;;
 
 let TREAL_INV_WELLDEF = prove
  (`!x y. x treal_eq y ==> (treal_inv x) treal_eq (treal_inv y)`,
@@ -1922,8 +1831,6 @@ let TREAL_INV_WELLDEF = prove
         [HREAL_ADD_SYM] THEN
       REWRITE_TAC[HREAL_EQ_ADD_LCANCEL; TREAL_EQ_REFL]]]);;
 
-export_thm TREAL_INV_WELLDEF;;
-
 (* ------------------------------------------------------------------------- *)
 (* Now define the quotient type -- the reals at last!                        *)
 (* ------------------------------------------------------------------------- *)
@@ -1960,7 +1867,7 @@ let [REAL_ADD_SYM; REAL_ADD_ASSOC; REAL_ADD_LID; REAL_ADD_LINV;
      REAL_ADD_LDISTRIB;
      REAL_LE_REFL; REAL_LE_ANTISYM; REAL_LE_TRANS; REAL_LE_TOTAL;
      REAL_LE_LADD_IMP; REAL_LE_MUL;
-     REAL_INV_0; REAL_MUL_LINV;
+     REAL_MUL_LINV;
      REAL_OF_NUM_EQ; REAL_OF_NUM_LE; REAL_OF_NUM_ADD; REAL_OF_NUM_MUL] =
   map
     (lift_theorem real_tybij (TREAL_EQ_REFL,TREAL_EQ_SYM,TREAL_EQ_TRANS)
@@ -1971,8 +1878,28 @@ let [REAL_ADD_SYM; REAL_ADD_ASSOC; REAL_ADD_LID; REAL_ADD_LINV;
      TREAL_ADD_LDISTRIB;
      TREAL_LE_REFL; TREAL_LE_ANTISYM; TREAL_LE_TRANS; TREAL_LE_TOTAL;
      TREAL_LE_LADD_IMP; TREAL_LE_MUL;
-     TREAL_INV_0; TREAL_MUL_LINV;
+     TREAL_MUL_LINV;
      TREAL_OF_NUM_EQ; TREAL_OF_NUM_LE; TREAL_OF_NUM_ADD; TREAL_OF_NUM_MUL];;
+
+export_thm REAL_ADD_SYM;;
+export_thm REAL_ADD_ASSOC;;
+export_thm REAL_ADD_LID;;
+export_thm REAL_ADD_LINV;;
+export_thm REAL_MUL_SYM;;
+export_thm REAL_MUL_ASSOC;;
+export_thm REAL_MUL_LID;;
+export_thm REAL_ADD_LDISTRIB;;
+export_thm REAL_LE_REFL;;
+export_thm REAL_LE_ANTISYM;;
+export_thm REAL_LE_TRANS;;
+export_thm REAL_LE_TOTAL;;
+export_thm REAL_LE_LADD_IMP;;
+export_thm REAL_LE_MUL;;
+export_thm REAL_MUL_LINV;;
+export_thm REAL_OF_NUM_EQ;;
+export_thm REAL_OF_NUM_LE;;
+export_thm REAL_OF_NUM_ADD;;
+export_thm REAL_OF_NUM_MUL;;
 
 (* ------------------------------------------------------------------------- *)
 (* Set up a friendly interface.                                              *)
@@ -1999,32 +1926,50 @@ let prioritize_real() = prioritize_overload(mk_type("real",[]));;
 (* ------------------------------------------------------------------------- *)
 
 let real_sub = new_definition
-  `x - y = x + --y`;;
+  `!x y. x - y = x + --y`;;
+
+export_thm real_sub;;
 
 let real_lt = new_definition
-  `x < y <=> ~(y <= x)`;;
+  `!x y. x < y <=> ~(y <= x)`;;
+
+export_thm real_lt;;
 
 let real_ge = new_definition
-  `x >= y <=> y <= x`;;
+  `!x y. x >= y <=> y <= x`;;
+
+export_thm real_ge;;
 
 let real_gt = new_definition
-  `x > y <=> y < x`;;
+  `!x y. x > y <=> y < x`;;
+
+export_thm real_gt;;
 
 let real_abs = new_definition
-  `abs(x) = if &0 <= x then x else --x`;;
+  `!x. abs(x) = if &0 <= x then x else --x`;;
+
+export_thm real_abs;;
 
 let real_pow = new_recursive_definition num_RECURSION
-  `(x pow 0 = &1) /\
-   (!n. x pow (SUC n) = x * (x pow n))`;;
+  `(!x. x pow 0 = &1) /\
+   (!x n. x pow (SUC n) = x * (x pow n))`;;
+
+export_thm real_pow;;
 
 let real_div = new_definition
-  `x / y = x * inv(y)`;;
+  `!x y. x / y = x * inv(y)`;;
+
+export_thm real_div;;
 
 let real_max = new_definition
-  `real_max m n = if m <= n then n else m`;;
+  `!m n. real_max m n = if m <= n then n else m`;;
+
+export_thm real_max;;
 
 let real_min = new_definition
-  `real_min m n = if m <= n then m else n`;;
+  `!m n. real_min m n = if m <= n then m else n`;;
+
+export_thm real_min;;
 
 (*----------------------------------------------------------------------------*)
 (* Derive the supremum property for an arbitrary bounded nonempty set         *)
@@ -2063,8 +2008,6 @@ let REAL_HREAL_LEMMA1 = prove
     GEN_REWRITE_TAC RAND_CONV [GSYM HREAL_ADD_LID] THEN
     REWRITE_TAC[HREAL_LE_ADD]]);;
 
-export_thm REAL_HREAL_LEMMA1;;
-
 let REAL_HREAL_LEMMA2 = prove
  (`?h r. (!x:hreal. h(r x) = x) /\
          (!x. &0 <= x ==> (r(h x) = x)) /\
@@ -2079,8 +2022,6 @@ let REAL_HREAL_LEMMA2 = prove
   ASM_REWRITE_TAC[GEN_REWRITE_RULE (LAND_CONV o BINDER_CONV) [EQ_SYM_EQ]
     (SPEC_ALL SELECT_REFL); GSYM EXISTS_REFL] THEN
   GEN_TAC THEN DISCH_THEN(ACCEPT_TAC o SYM o SELECT_RULE));;
-
-export_thm REAL_HREAL_LEMMA2;;
 
 let REAL_COMPLETE_SOMEPOS = prove
  (`!P. (?x. P x /\ &0 <= x) /\
@@ -2128,8 +2069,7 @@ let REAL_COMPLETE_SOMEPOS = prove
     ASM_REWRITE_TAC[] THEN FIRST_ASSUM MATCH_MP_TAC THEN
     ASM_REWRITE_TAC[]]);;
 
-export_thm REAL_COMPLETE_SOMEPOS;;
-
+(***
 let REAL_COMPLETE = prove
  (`!P. (?x. P x) /\
        (?M. !x. P x ==> x <= M)
