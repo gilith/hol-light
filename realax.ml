@@ -488,24 +488,19 @@ let NADD_ALTMUL = prove
 (* Definition of the equivalence relation and proof that it *is* one.        *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 override_interface ("===",`(nadd_eq):nadd->nadd->bool`);;
 
 let nadd_eq = new_definition
-  `x === y <=> ?B. !n. dist (fn x n) (fn y n) <= B`;;
+  `!x y. x === y <=> ?B. !n. dist (fn x n) (fn y n) <= B`;;
 
 let NADD_EQ_REFL = prove
  (`!x. x === x`,
   GEN_TAC THEN REWRITE_TAC[nadd_eq; DIST_REFL; LE_0]);;
 
-export_thm NADD_EQ_REFL;;
-
 let NADD_EQ_SYM = prove
  (`!x y. x === y <=> y === x`,
   REPEAT GEN_TAC THEN REWRITE_TAC[nadd_eq] THEN
   GEN_REWRITE_TAC (RAND_CONV o ONCE_DEPTH_CONV) [DIST_SYM] THEN REFL_TAC);;
-
-export_thm NADD_EQ_SYM;;
 
 let NADD_EQ_TRANS = prove
  (`!x y z. x === y /\ y === z ==> x === z`,
@@ -516,8 +511,6 @@ let NADD_EQ_TRANS = prove
   MATCH_MP_TAC (LE_IMP DIST_TRIANGLE) THEN EXISTS_TAC `fn y n` THEN
   MATCH_MP_TAC LE_ADD2 THEN ASM_REWRITE_TAC[]);;
 
-export_thm NADD_EQ_TRANS;;
-
 (* ------------------------------------------------------------------------- *)
 (* Injection of the natural numbers.                                         *)
 (* ------------------------------------------------------------------------- *)
@@ -525,29 +518,23 @@ export_thm NADD_EQ_TRANS;;
 override_interface ("&",`nadd_of_num:num->nadd`);;
 
 let nadd_of_num = new_definition
-  `&k = afn(\n. k * n)`;;
+  `!k. &k = afn(\n. k * n)`;;
 
 let NADD_OF_NUM = prove
  (`!k. fn(&k) = \n. k * n`,
   REWRITE_TAC[nadd_of_num; GSYM nadd_rep; is_nadd] THEN
   REWRITE_TAC[DIST_REFL; LE_0; MULT_AC]);;
 
-export_thm NADD_OF_NUM;;
-
 let NADD_OF_NUM_WELLDEF = prove
  (`!m n. (m = n) ==> &m === &n`,
   REPEAT GEN_TAC THEN DISCH_THEN SUBST1_TAC THEN
   MATCH_ACCEPT_TAC NADD_EQ_REFL);;
-
-export_thm NADD_OF_NUM_WELLDEF;;
 
 let NADD_OF_NUM_EQ = prove
  (`!m n. (&m === &n) <=> (m = n)`,
   REPEAT GEN_TAC THEN EQ_TAC THEN REWRITE_TAC[NADD_OF_NUM_WELLDEF] THEN
   REWRITE_TAC[nadd_eq; NADD_OF_NUM] THEN
   REWRITE_TAC[GSYM DIST_RMUL; BOUNDS_LINEAR_0; DIST_EQ_0]);;
-
-export_thm NADD_OF_NUM_EQ;;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of (reflexive) ordering and the only special property needed.  *)
@@ -556,7 +543,7 @@ export_thm NADD_OF_NUM_EQ;;
 override_interface ("<<=",`nadd_le:nadd->nadd->bool`);;
 
 let nadd_le = new_definition
-  `x <<= y <=> ?B. !n. fn x n <= fn y n + B`;;
+  `!x y. x <<= y <=> ?B. !n. fn x n <= fn y n + B`;;
 
 let NADD_LE_WELLDEF_LEMMA = prove
  (`!x x' y y'. x === x' /\ y === y' /\ x <<= y ==> x' <<= y'`,
@@ -570,8 +557,6 @@ let NADD_LE_WELLDEF_LEMMA = prove
   REWRITE_TAC[ADD_ASSOC; LE_ADD_RCANCEL] THEN
   FIRST_ASSUM(MATCH_MP_TAC o LE_IMP) THEN ASM_REWRITE_TAC[LE_ADD_RCANCEL]);;
 
-export_thm NADD_LE_WELLDEF_LEMMA;;
-
 let NADD_LE_WELLDEF = prove
  (`!x x' y y'. x === x' /\ y === y' ==> (x <<= y <=> x' <<= y')`,
   REPEAT STRIP_TAC THEN EQ_TAC THEN DISCH_TAC THEN
@@ -581,13 +566,9 @@ let NADD_LE_WELLDEF = prove
     ONCE_REWRITE_TAC[NADD_EQ_SYM]] THEN
   ASM_REWRITE_TAC[]);;
 
-export_thm NADD_LE_WELLDEF;;
-
 let NADD_LE_REFL = prove
  (`!x. x <<= x`,
   REWRITE_TAC[nadd_le; LE_ADD]);;
-
-export_thm NADD_LE_REFL;;
 
 let NADD_LE_TRANS = prove
  (`!x y z. x <<= y /\ y <<= z ==> x <<= z`,
@@ -597,8 +578,6 @@ let NADD_LE_TRANS = prove
   EXISTS_TAC `B2 + B1` THEN GEN_TAC THEN
   FIRST_ASSUM(MATCH_MP_TAC o LE_IMP) THEN
   ASM_REWRITE_TAC[ADD_ASSOC; LE_ADD_RCANCEL]);;
-
-export_thm NADD_LE_TRANS;;
 
 let NADD_LE_ANTISYM = prove
  (`!x y. x <<= y /\ y <<= x <=> (x === y)`,
@@ -612,8 +591,6 @@ let NADD_LE_ANTISYM = prove
     DISCH_THEN(X_CHOOSE_TAC `B:num`) THEN
     CONJ_TAC THEN EXISTS_TAC `B:num` THEN ASM_REWRITE_TAC[]]);;
 
-export_thm NADD_LE_ANTISYM;;
-
 let NADD_LE_TOTAL_LEMMA = prove
  (`!x y. ~(x <<= y) ==> !B. ?n. ~(n = 0) /\ fn y n + B < fn x n`,
   REPEAT GEN_TAC THEN REWRITE_TAC[nadd_le; NOT_FORALL_THM; NOT_EXISTS_THM] THEN
@@ -623,8 +600,6 @@ let NADD_LE_TOTAL_LEMMA = prove
   ASM_CASES_TAC `n = 0` THEN ASM_REWRITE_TAC[NOT_LT; ADD_ASSOC; LE_ADDR] THEN
   CONV_TAC CONTRAPOS_CONV THEN REWRITE_TAC[NOT_LT] THEN
   DISCH_THEN(MATCH_MP_TAC o LE_IMP) THEN REWRITE_TAC[ADD_ASSOC; LE_ADD]);;
-
-export_thm NADD_LE_TOTAL_LEMMA;;
 
 let NADD_LE_TOTAL = prove
  (`!x y. x <<= y \/ y <<= x`,
@@ -648,20 +623,14 @@ let NADD_LE_TOTAL = prove
   CONJ_TAC THEN GEN_REWRITE_TAC (RAND_CONV o RAND_CONV) [MULT_SYM] THEN
   RULE_ASSUM_TAC(REWRITE_RULE[DIST_LE_CASES]) THEN ASM_REWRITE_TAC[]);;
 
-export_thm NADD_LE_TOTAL;;
-
 let NADD_ARCH = prove
  (`!x. ?n. x <<= &n`,
   REWRITE_TAC[nadd_le; NADD_OF_NUM; NADD_BOUND]);;
-
-export_thm NADD_ARCH;;
 
 let NADD_OF_NUM_LE = prove
  (`!m n. (&m <<= &n) <=> m <= n`,
   REPEAT GEN_TAC THEN REWRITE_TAC[nadd_le; NADD_OF_NUM] THEN
   REWRITE_TAC[BOUNDS_LINEAR]);;
-
-export_thm NADD_OF_NUM_LE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Addition.                                                                 *)
@@ -670,7 +639,7 @@ export_thm NADD_OF_NUM_LE;;
 override_interface ("++",`nadd_add:nadd->nadd->nadd`);;
 
 let nadd_add = new_definition
-  `x ++ y = afn(\n. fn x n + fn y n)`;;
+  `!x y. x ++ y = afn(\n. fn x n + fn y n)`;;
 
 let NADD_ADD = prove
  (`!x y. fn(x ++ y) = \n. fn x n + fn y n`,
@@ -683,8 +652,6 @@ let NADD_ADD = prove
   MATCH_MP_TAC (LE_IMP DIST_ADD2) THEN REWRITE_TAC[RIGHT_ADD_DISTRIB] THEN
   MATCH_MP_TAC LE_ADD2 THEN ASM_REWRITE_TAC[]);;
 
-export_thm NADD_ADD;;
-
 let NADD_ADD_WELLDEF = prove
  (`!x x' y y'. x === x' /\ y === y' ==> (x ++ y === x' ++ y')`,
   REPEAT GEN_TAC THEN REWRITE_TAC[nadd_eq; NADD_ADD] THEN
@@ -693,8 +660,6 @@ let NADD_ADD_WELLDEF = prove
   EXISTS_TAC `B1 + B2` THEN X_GEN_TAC `n:num` THEN
   MATCH_MP_TAC (LE_IMP DIST_ADD2) THEN
   MATCH_MP_TAC LE_ADD2 THEN ASM_REWRITE_TAC[]);;
-
-export_thm NADD_ADD_WELLDEF;;
 
 (* ------------------------------------------------------------------------- *)
 (* Basic properties of addition.                                             *)
@@ -706,34 +671,24 @@ let NADD_ADD_SYM = prove
   GEN_REWRITE_TAC (RAND_CONV o ONCE_DEPTH_CONV) [ADD_SYM] THEN
   REWRITE_TAC[NADD_EQ_REFL]);;
 
-export_thm NADD_ADD_SYM;;
-
 let NADD_ADD_ASSOC = prove
  (`!x y z. (x ++ (y ++ z)) === ((x ++ y) ++ z)`,
   REPEAT GEN_TAC THEN ONCE_REWRITE_TAC[nadd_add] THEN
   REWRITE_TAC[NADD_ADD; ADD_ASSOC; NADD_EQ_REFL]);;
-
-export_thm NADD_ADD_ASSOC;;
 
 let NADD_ADD_LID = prove
  (`!x. (&0 ++ x) === x`,
   GEN_TAC THEN REWRITE_TAC[nadd_eq; NADD_ADD; NADD_OF_NUM] THEN
   REWRITE_TAC[MULT_CLAUSES; ADD_CLAUSES; DIST_REFL; LE_0]);;
 
-export_thm NADD_ADD_LID;;
-
 let NADD_ADD_LCANCEL = prove
  (`!x y z. (x ++ y) === (x ++ z) ==> y === z`,
   REPEAT GEN_TAC THEN REWRITE_TAC[nadd_eq; NADD_ADD; DIST_LADD]);;
-
-export_thm NADD_ADD_LCANCEL;;
 
 let NADD_LE_ADD = prove
  (`!x y. x <<= (x ++ y)`,
   REPEAT GEN_TAC THEN REWRITE_TAC[nadd_le; NADD_ADD] THEN
   EXISTS_TAC `0` THEN REWRITE_TAC[ADD_CLAUSES; LE_ADD]);;
-
-export_thm NADD_LE_ADD;;
 
 let NADD_LE_EXISTS = prove
  (`!x y. x <<= y ==> ?d. y === x ++ d`,
@@ -763,14 +718,10 @@ let NADD_LE_EXISTS = prove
     REWRITE_TAC[GSYM DIST_LMUL; DIST_ADDBOUND; LE_MULT_LCANCEL];
     ASM_REWRITE_TAC[DIST_RADD_0; LE_REFL]]);;
 
-export_thm NADD_LE_EXISTS;;
-
 let NADD_OF_NUM_ADD = prove
  (`!m n. &m ++ &n === &(m + n)`,
   REWRITE_TAC[nadd_eq; NADD_OF_NUM; NADD_ADD] THEN
   REWRITE_TAC[RIGHT_ADD_DISTRIB; DIST_REFL; LE_0]);;
-
-export_thm NADD_OF_NUM_ADD;;
 
 (* ------------------------------------------------------------------------- *)
 (* Multiplication.                                                           *)
@@ -779,7 +730,7 @@ export_thm NADD_OF_NUM_ADD;;
 override_interface ("**",`nadd_mul:nadd->nadd->nadd`);;
 
 let nadd_mul = new_definition
-  `x ** y = afn(\n. fn x (fn y n))`;;
+  `!x y. x ** y = afn(\n. fn x (fn y n))`;;
 
 let NADD_MUL = prove
  (`!x y. fn(x ** y) = \n. fn x (fn y n)`,
@@ -807,8 +758,6 @@ let NADD_MUL = prove
     MATCH_MP_TAC EQ_IMP_LE THEN
     REWRITE_TAC[LEFT_ADD_DISTRIB; RIGHT_ADD_DISTRIB; MULT_ASSOC; ADD_AC]]);;
 
-export_thm NADD_MUL;;
-
 (* ------------------------------------------------------------------------- *)
 (* Properties of multiplication.                                             *)
 (* ------------------------------------------------------------------------- *)
@@ -827,24 +776,18 @@ let NADD_MUL_SYM = prove
   EXISTS_TAC `fn x n * fn y n` THEN
   MATCH_MP_TAC LE_ADD2 THEN ASM_REWRITE_TAC[] THEN
   ONCE_REWRITE_TAC [DIST_SYM] THEN
-  GEN_REWRITE_TAC (LAND_CONV o funpow 2 RAND_CONV) [MULT_SYM] THEN
+  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [MULT_SYM] THEN
   ASM_REWRITE_TAC[]);;
-
-export_thm NADD_MUL_SYM;;
 
 let NADD_MUL_ASSOC = prove
  (`!x y z. (x ** (y ** z)) === ((x ** y) ** z)`,
   REPEAT GEN_TAC THEN ONCE_REWRITE_TAC[nadd_mul] THEN
   REWRITE_TAC[NADD_MUL; NADD_EQ_REFL]);;
 
-export_thm NADD_MUL_ASSOC;;
-
 let NADD_MUL_LID = prove
  (`!x. (&1 ** x) === x`,
   REWRITE_TAC[NADD_OF_NUM; nadd_mul; MULT_CLAUSES] THEN
   REWRITE_TAC[nadd_abs; NADD_EQ_REFL; ETA_AX]);;
-
-export_thm NADD_MUL_LID;;
 
 let NADD_LDISTRIB = prove
  (`!x y z. x ** (y ++ z) === (x ** y) ++ (x ** z)`,
@@ -852,8 +795,6 @@ let NADD_LDISTRIB = prove
   REWRITE_TAC[NADD_ADD; NADD_MUL] THEN
   X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_ADDITIVE) THEN
   EXISTS_TAC `B:num` THEN ASM_REWRITE_TAC[]);;
-
-export_thm NADD_LDISTRIB;;
 
 let NADD_MUL_WELLDEF_LEMMA = prove
  (`!x y y'. y === y' ==> (x ** y) === (x ** y')`,
@@ -865,8 +806,6 @@ let NADD_MUL_WELLDEF_LEMMA = prove
   EXISTS_TAC `B2 * dist (fn y n) (fn y' n)` THEN
   ASM_REWRITE_TAC[LE_MULT_LCANCEL]);;
 
-export_thm NADD_MUL_WELLDEF_LEMMA;;
-
 let NADD_MUL_WELLDEF = prove
  (`!x x' y y'. x === x' /\ y === y'
                ==> (x ** y) === (x' ** y')`,
@@ -877,14 +816,10 @@ let NADD_MUL_WELLDEF = prove
     EXISTS_TAC `y ** x` THEN REWRITE_TAC[NADD_MUL_SYM]; ALL_TAC] THEN
   MATCH_MP_TAC NADD_MUL_WELLDEF_LEMMA THEN ASM_REWRITE_TAC[]);;
 
-export_thm NADD_MUL_WELLDEF;;
-
 let NADD_OF_NUM_MUL = prove
  (`!m n. &m ** &n === &(m * n)`,
   REWRITE_TAC[nadd_eq; NADD_OF_NUM; NADD_MUL] THEN
   REWRITE_TAC[MULT_ASSOC; DIST_REFL; LE_0]);;
-
-export_thm NADD_OF_NUM_MUL;;
 
 (* ------------------------------------------------------------------------- *)
 (* A few handy lemmas.                                                       *)
@@ -895,16 +830,12 @@ let NADD_LE_0 = prove
   GEN_TAC THEN
   REWRITE_TAC[nadd_le; NADD_OF_NUM; MULT_CLAUSES; LE_0]);;
 
-export_thm NADD_LE_0;;
-
 let NADD_EQ_IMP_LE = prove
  (`!x y. x === y ==> x <<= y`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC[nadd_eq; nadd_le; DIST_LE_CASES] THEN
   DISCH_THEN(X_CHOOSE_TAC `B:num`) THEN EXISTS_TAC `B:num` THEN
   ASM_REWRITE_TAC[]);;
-
-export_thm NADD_EQ_IMP_LE;;
 
 let NADD_LE_LMUL = prove
  (`!x y z. y <<= z ==> (x ** y) <<= (x ** z)`,
@@ -920,13 +851,9 @@ let NADD_LE_LMUL = prove
   MATCH_MP_TAC NADD_MUL_WELLDEF THEN
   ASM_REWRITE_TAC[NADD_EQ_REFL]);;
 
-export_thm NADD_LE_LMUL;;
-
 let NADD_LE_RMUL = prove
  (`!x y z. x <<= y ==> (x ** z) <<= (y ** z)`,
   MESON_TAC[NADD_LE_LMUL; NADD_LE_WELLDEF; NADD_MUL_SYM]);;
-
-export_thm NADD_LE_RMUL;;
 
 let NADD_LE_RADD = prove
  (`!x y z. x ++ z <<= y ++ z <=> x <<= y`,
@@ -937,20 +864,14 @@ let NADD_LE_RADD = prove
   GEN_REWRITE_TAC (LAND_CONV o funpow 2 BINDER_CONV o RAND_CONV)
     [ADD_SYM] THEN REFL_TAC);;
 
-export_thm NADD_LE_RADD;;
-
 let NADD_LE_LADD = prove
  (`!x y z. x ++ y <<= x ++ z <=> y <<= z`,
   MESON_TAC[NADD_LE_RADD; NADD_ADD_SYM; NADD_LE_WELLDEF]);;
-
-export_thm NADD_LE_LADD;;
 
 let NADD_RDISTRIB = prove
  (`!x y z. (x ++ y) ** z === x ** z ++ y ** z`,
   MESON_TAC[NADD_LDISTRIB; NADD_MUL_SYM; NADD_ADD_WELLDEF;
     NADD_EQ_TRANS; NADD_EQ_REFL; NADD_EQ_SYM]);;
-
-export_thm NADD_RDISTRIB;;
 
 (* ------------------------------------------------------------------------- *)
 (* The Archimedean property in a more useful form.                           *)
@@ -976,8 +897,6 @@ let NADD_ARCH_MULT = prove
   REWRITE_TAC[LE_MULT_RCANCEL] THEN DISJ1_TAC THEN
   MATCH_MP_TAC LT_IMP_LE THEN ONCE_REWRITE_TAC[ADD_SYM] THEN
   FIRST_ASSUM ACCEPT_TAC);;
-
-export_thm NADD_ARCH_MULT;;
 
 let NADD_ARCH_ZERO = prove
  (`!x k. (!n. &n ** x <<= k) ==> (x === &0)`,
@@ -1005,8 +924,6 @@ let NADD_ARCH_ZERO = prove
     ASM_MESON_TAC[NADD_LE_TRANS; NADD_LE_WELLDEF; NADD_EQ_REFL;
       NADD_ADD_LID]]);;
 
-export_thm NADD_ARCH_ZERO;;
-
 let NADD_ARCH_LEMMA = prove
  (`!x y z. (!n. &n ** x <<= &n ** y ++ z) ==> x <<= y`,
   REPEAT STRIP_TAC THEN
@@ -1023,8 +940,6 @@ let NADD_ARCH_LEMMA = prove
       NADD_LE_LADD; NADD_EQ_REFL];
     ASM_MESON_TAC[NADD_ADD_LID; NADD_ADD_WELLDEF; NADD_EQ_TRANS;
       NADD_ADD_SYM]]);;
-
-export_thm NADD_ARCH_LEMMA;;
 
 (* ------------------------------------------------------------------------- *)
 (* Completeness.                                                             *)
@@ -1135,8 +1050,6 @@ let NADD_COMPLETE = prove
       ASM_REWRITE_TAC[] THEN MATCH_MP_TAC NADD_LE_LMUL THEN
       FIRST_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[]]]);;
 
-export_thm NADD_COMPLETE;;
-
 (* ------------------------------------------------------------------------- *)
 (* A bit more on nearly-multiplicative functions.                            *)
 (* ------------------------------------------------------------------------- *)
@@ -1152,8 +1065,6 @@ let NADD_UBOUND = prove
   GEN_REWRITE_TAC LAND_CONV [GSYM(el 3 (CONJUNCTS MULT_CLAUSES))] THEN
   ASM_REWRITE_TAC[LE_MULT_LCANCEL]);;
 
-export_thm NADD_UBOUND;;
-
 let NADD_NONZERO = prove
  (`!x. ~(x === &0) ==> ?N. !n. N <= n ==> ~(fn x n = 0)`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_ARCH_MULT) THEN
@@ -1164,8 +1075,6 @@ let NADD_NONZERO = prove
   FIRST_ASSUM(UNDISCH_TAC o check is_forall o concl) THEN
   REWRITE_TAC[NOT_FORALL_THM; NOT_LE; GSYM LE_SUC_LT; ADD1] THEN
   EXISTS_TAC `n:num` THEN ASM_REWRITE_TAC[MULT_CLAUSES; ADD_CLAUSES]);;
-
-export_thm NADD_NONZERO;;
 
 let NADD_LBOUND = prove
  (`!x. ~(x === &0) ==> ?A N. !n. N <= n ==> n <= A * fn x n`,
@@ -1184,14 +1093,12 @@ let NADD_LBOUND = prove
   REWRITE_TAC[GSYM(REWRITE_CONV[ARITH_SUC] `SUC 0`)] THEN
   ASM_REWRITE_TAC[GSYM NOT_LT; LT]);;
 
-export_thm NADD_LBOUND;;
-
 (* ------------------------------------------------------------------------- *)
 (* Auxiliary function for the multiplicative inverse.                        *)
 (* ------------------------------------------------------------------------- *)
 
 let nadd_rinv = new_definition
- `nadd_rinv(x) = \n. (n * n) DIV (fn x n)`;;
+ `!x. nadd_rinv(x) = \n. (n * n) DIV (fn x n)`;;
 
 let NADD_MUL_LINV_LEMMA0 = prove
  (`!x. ~(x === &0) ==> ?A B. !n. nadd_rinv x n <= A * n + B`,
@@ -1216,8 +1123,6 @@ let NADD_MUL_LINV_LEMMA0 = prove
     DISCH_THEN(fun t -> GEN_REWRITE_TAC RAND_CONV [CONJUNCT1(SPEC_ALL t)]) THEN
     GEN_REWRITE_TAC LAND_CONV [MULT_SYM] THEN REWRITE_TAC[LE_ADD]]);;
 
-export_thm NADD_MUL_LINV_LEMMA0;;
-
 let NADD_MUL_LINV_LEMMA1 = prove
  (`!x n. ~(fn x n = 0) ==> dist (fn x n * nadd_rinv(x) n) (n * n) <= fn x n`,
   REPEAT GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP DIVISION) THEN
@@ -1227,8 +1132,6 @@ let NADD_MUL_LINV_LEMMA1 = prove
   REWRITE_TAC[DIST_RADD_0] THEN MATCH_MP_TAC LT_IMP_LE THEN
   FIRST_ASSUM MATCH_ACCEPT_TAC);;
 
-export_thm NADD_MUL_LINV_LEMMA1;;
-
 let NADD_MUL_LINV_LEMMA2 = prove
  (`!x. ~(x === &0) ==> ?N. !n. N <= n ==>
          dist (fn x n * nadd_rinv(x) n) (n * n) <= fn x n`,
@@ -1236,8 +1139,6 @@ let NADD_MUL_LINV_LEMMA2 = prove
   DISCH_THEN(X_CHOOSE_TAC `N:num`) THEN EXISTS_TAC `N:num` THEN
   REPEAT STRIP_TAC THEN MATCH_MP_TAC NADD_MUL_LINV_LEMMA1 THEN
   FIRST_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[]);;
-
-export_thm NADD_MUL_LINV_LEMMA2;;
 
 let NADD_MUL_LINV_LEMMA3 = prove
  (`!x. ~(x === &0) ==> ?N. !m n. N <= n ==>
@@ -1248,8 +1149,6 @@ let NADD_MUL_LINV_LEMMA3 = prove
   REPEAT STRIP_TAC THEN REWRITE_TAC[GSYM DIST_LMUL; MULT_ASSOC] THEN
   REWRITE_TAC[LE_MULT_LCANCEL] THEN DISJ2_TAC THEN
   FIRST_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[]);;
-
-export_thm NADD_MUL_LINV_LEMMA3;;
 
 let NADD_MUL_LINV_LEMMA4 = prove
  (`!x. ~(x === &0) ==> ?N. !m n. N <= m /\ N <= n ==>
@@ -1263,8 +1162,6 @@ let NADD_MUL_LINV_LEMMA4 = prove
    [ANTE_RES_THEN(MP_TAC o SPEC `m:num`) (ASSUME `N <= n`);
     ANTE_RES_THEN(MP_TAC o SPEC `n:num`) (ASSUME `N <= m`)] THEN
   MATCH_MP_TAC EQ_IMP THEN REWRITE_TAC[MULT_AC]);;
-
-export_thm NADD_MUL_LINV_LEMMA4;;
 
 let NADD_MUL_LINV_LEMMA5 = prove
  (`!x. ~(x === &0) ==> ?B N. !m n. N <= m /\ N <= n ==>
@@ -1297,8 +1194,6 @@ let NADD_MUL_LINV_LEMMA5 = prove
     MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `N1 + N2` THEN
     ASM_REWRITE_TAC[LE_ADD; LE_ADDR]]);;
 
-export_thm NADD_MUL_LINV_LEMMA5;;
-
 let NADD_MUL_LINV_LEMMA6 = prove
  (`!x. ~(x === &0) ==> ?B N. !m n. N <= m /\ N <= n ==>
         (m * n) * dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <=
@@ -1323,8 +1218,6 @@ let NADD_MUL_LINV_LEMMA6 = prove
   MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `N1 + N2` THEN
   ASM_REWRITE_TAC[LE_ADD; LE_ADDR]);;
 
-export_thm NADD_MUL_LINV_LEMMA6;;
-
 let NADD_MUL_LINV_LEMMA7 = prove
  (`!x. ~(x === &0) ==> ?B N. !m n. N <= m /\ N <= n ==>
         dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <= B * (m + n)`,
@@ -1346,8 +1239,6 @@ let NADD_MUL_LINV_LEMMA7 = prove
     MATCH_MP_TAC LE_MULT2 THEN CONJ_TAC THEN
     MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `N + 1` THEN
     ASM_REWRITE_TAC[LE_ADDR]]);;
-
-export_thm NADD_MUL_LINV_LEMMA7;;
 
 let NADD_MUL_LINV_LEMMA7a = prove
  (`!x. ~(x === &0) ==> !N. ?A B. !m n. m <= N ==>
@@ -1379,8 +1270,6 @@ let NADD_MUL_LINV_LEMMA7a = prove
         REWRITE_TAC[ADD_ASSOC; LE_ADD_RCANCEL] THEN
         REWRITE_TAC[RIGHT_ADD_DISTRIB; GSYM ADD_ASSOC; LE_ADD]]]]);;
 
-export_thm NADD_MUL_LINV_LEMMA7a;;
-
 let NADD_MUL_LINV_LEMMA8 = prove
  (`!x. ~(x === &0) ==>
         ?B. !m n. dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <= B * (m + n)`,
@@ -1411,14 +1300,12 @@ let NADD_MUL_LINV_LEMMA8 = prove
     REWRITE_TAC[LEFT_ADD_DISTRIB; RIGHT_ADD_DISTRIB; GSYM ADD_ASSOC;
       LE_ADD]]);;
 
-export_thm NADD_MUL_LINV_LEMMA8;;
-
 (* ------------------------------------------------------------------------- *)
 (* Now the multiplicative inverse proper.                                    *)
 (* ------------------------------------------------------------------------- *)
 
 let nadd_inv = new_definition
-  `nadd_inv(x) = if x === &0 then &0 else afn(nadd_rinv x)`;;
+  `!x. nadd_inv(x) = if x === &0 then &0 else afn(nadd_rinv x)`;;
 
 override_interface ("inv",`nadd_inv:nadd->nadd`);;
 
@@ -1428,8 +1315,6 @@ let NADD_INV = prove
   ASM_CASES_TAC `x === &0` THEN ASM_REWRITE_TAC[NADD_OF_NUM; MULT_CLAUSES] THEN
   REWRITE_TAC[GSYM nadd_rep; is_nadd] THEN
   MATCH_MP_TAC NADD_MUL_LINV_LEMMA8 THEN POP_ASSUM ACCEPT_TAC);;
-
-export_thm NADD_INV;;
 
 let NADD_MUL_LINV = prove
  (`!x. ~(x === &0) ==> inv(x) ** x === &1`,
@@ -1453,16 +1338,12 @@ let NADD_MUL_LINV = prove
     REWRITE_TAC[RIGHT_ADD_DISTRIB] THEN
     ONCE_REWRITE_TAC[AC ADD_AC `(a + b) + c + d = (a + c) + (b + d)`] THEN
     MATCH_MP_TAC LE_ADD2 THEN ASM_REWRITE_TAC[] THEN
-    GEN_REWRITE_TAC (LAND_CONV o RAND_CONV o LAND_CONV) [MULT_SYM] THEN
+    GEN_REWRITE_TAC (LAND_CONV o LAND_CONV) [MULT_SYM] THEN
     ASM_REWRITE_TAC[NADD_INV]]);;
-
-export_thm NADD_MUL_LINV;;
 
 let NADD_INV_0 = prove
  (`inv(&0) === &0`,
   REWRITE_TAC[nadd_inv; NADD_EQ_REFL]);;
-
-export_thm NADD_INV_0;;
 
 (* ------------------------------------------------------------------------- *)
 (* Welldefinedness follows from already established principles because if    *)
@@ -1493,12 +1374,11 @@ let NADD_INV_WELLDEF = prove
   ASM_MESON_TAC[NADD_MUL_LINV; NADD_MUL_WELLDEF; NADD_EQ_REFL;
     NADD_MUL_LID; NADD_EQ_TRANS; NADD_EQ_SYM]);;
 
-export_thm NADD_INV_WELLDEF;;
-
 (* ------------------------------------------------------------------------- *)
 (* Definition of the new type.                                               *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 let hreal_tybij =
   define_quotient_type "hreal" ("mk_hreal","dest_hreal") `(===)`;;
 
