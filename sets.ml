@@ -3262,27 +3262,49 @@ let FINITE_INDUCT_DELETE = prove
  (`!P. P {} /\
        (!s. FINITE s /\ ~(s = {}) ==> ?x. x IN s /\ (P(s DELETE x) ==> P s))
        ==> !(s:A set). FINITE s ==> P s`,
-  GEN_TAC THEN STRIP_TAC THEN GEN_TAC THEN WF_INDUCT_TAC `CARD(s:A set)` THEN
-  ASM_CASES_TAC `(s:A set) = {}` THENL
-  [ASM_REWRITE_TAC [];
+  GEN_TAC THEN
+  STRIP_TAC THEN
+  GEN_TAC THEN
+  SUBGOAL_THEN `!n (s:A set). FINITE s ==> CARD s = n ==> P s`
+    (fun th ->
+       MP_TAC (SPECL [`CARD (s : A set)`; `s : A set`] th) THEN
+       REWRITE_TAC []) THEN
+  INDUCT_TAC THENL
+  [GEN_TAC THEN
    STRIP_TAC THEN
-   UNDISCH_THEN
-     `!s. FINITE s /\ ~(s = {}) ==> ?x:A. x IN s /\ (P(s DELETE x) ==> P s)`
-     (MP_TAC o SPEC `s:A set`) THEN
-  ASM_REWRITE_TAC [] THEN
-  DISCH_THEN
-    (X_CHOOSE_THEN `x:A` (CONJUNCTS_THEN2 ASSUME_TAC MATCH_MP_TAC)) THEN
-  FIRST_X_ASSUM (MP_TAC o SPEC `s DELETE (x:A)`) THEN
-  ASM_REWRITE_TAC [FINITE_DELETE] THEN
-  DISCH_THEN MATCH_MP_TAC THEN
-  MP_TAC (SPECL [`x:A`; `s:A set`] CARD_DELETE) THEN
-  ASM_REWRITE_TAC [] THEN
-  DISCH_THEN SUBST1_TAC THEN
-  MP_TAC (SPEC `CARD (s:A set)` num_CASES) THEN
-  STRIP_TAC THENL
-  [MP_TAC (SPECL [`s:A set`] CARD_EQ_0) THEN
-   ASM_REWRITE_TAC [];
-   ASM_REWRITE_TAC [SUC_SUB1; LT_SUC_LE; LE_REFL]]]);;
+   MP_TAC (SPEC `s : A set` CARD_EQ_0) THEN
+   ANTS_TAC THENL
+   [FIRST_ASSUM ACCEPT_TAC;
+    DISCH_THEN SUBST1_TAC THEN
+    DISCH_THEN SUBST1_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   GEN_TAC THEN
+   STRIP_TAC THEN
+   ASM_CASES_TAC `(s : A set) = {}` THENL
+   [ASM_REWRITE_TAC [CARD_EMPTY; NOT_SUC];
+    FIRST_X_ASSUM
+      (fun th ->
+         MP_TAC (SPEC `s : A set` th) THEN
+         ANTS_TAC THENL
+         [CONJ_TAC THEN
+          FIRST_ASSUM ACCEPT_TAC;
+          ALL_TAC]) THEN
+    STRIP_TAC THEN
+    MP_TAC (SPECL [`x : A`; `s : A set`] INSERT_DELETE) THEN
+    ANTS_TAC THENL
+    [FIRST_ASSUM ACCEPT_TAC;
+     DISCH_THEN
+       (fun th ->
+          CONV_TAC
+            (LAND_CONV (LAND_CONV (RAND_CONV (REWR_CONV (SYM th)))))) THEN
+     MP_TAC (SPECL [`x : A`; `s DELETE (x : A)`] (CONJUNCT2 CARD_CLAUSES)) THEN
+     ASM_REWRITE_TAC [FINITE_DELETE; IN_DELETE] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     REWRITE_TAC [SUC_INJ] THEN
+     STRIP_TAC THEN
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     FIRST_X_ASSUM (MP_TAC o SPEC `s DELETE (x : A)`) THEN
+     ASM_REWRITE_TAC [FINITE_DELETE]]]]);;
 
 export_thm FINITE_INDUCT_DELETE;;
 
@@ -5450,56 +5472,6 @@ let BIJECTIONS_CARD_EQ = prove
    REFL_TAC]);;
 
 export_thm BIJECTIONS_CARD_EQ;;
-
-(* ------------------------------------------------------------------------- *)
-(* Transitive relation with finitely many predecessors is wellfounded.       *)
-(* ------------------------------------------------------------------------- *)
-
-logfile "set-finite-thm";;
-
-let WF_FINITE = prove
- (`!(<<). (!x. ~(x << x)) /\ (!x y z. x << y /\ y << z ==> x << z) /\
-          (!x:A. FINITE {y | y << x})
-          ==> WF (<<)`,
-  REPEAT STRIP_TAC THEN
-  REWRITE_TAC [WF_DCHAIN] THEN
-  DISCH_THEN (X_CHOOSE_THEN `s:num->A` STRIP_ASSUME_TAC) THEN
-  SUBGOAL_THEN `!m n. m < n ==> (s:num->A) n << s m` ASSUME_TAC THENL
-  [MATCH_MP_TAC TRANSITIVE_STEPWISE_LT THEN
-   ASM_REWRITE_TAC [] THEN
-   REPEAT STRIP_TAC THEN
-   FIRST_X_ASSUM MATCH_MP_TAC THEN
-   EXISTS_TAC `(s : num -> A) y` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  MP_TAC (ISPECL [`s : num -> A`; `UNIV : num set`] INFINITE_IMAGE_INJ) THEN
-  ANTS_TAC THENL
-  [REWRITE_TAC [num_INFINITE] THEN
-   REPEAT STRIP_TAC THEN
-   MP_TAC (SPECL [`x : num`; `y : num`] LT_CASES) THEN
-   STRIP_TAC THENL
-   [SUBGOAL_THEN `((s : num -> A) y << s x) : bool` MP_TAC THENL
-    [FIRST_X_ASSUM MATCH_MP_TAC THEN
-     FIRST_ASSUM ACCEPT_TAC;
-     ASM_REWRITE_TAC []];
-    SUBGOAL_THEN `((s : num -> A) x << s y) : bool` MP_TAC THENL
-    [FIRST_X_ASSUM MATCH_MP_TAC THEN
-     FIRST_ASSUM ACCEPT_TAC;
-     ASM_REWRITE_TAC []]];
-   ALL_TAC] THEN
-  REWRITE_TAC [INFINITE] THEN
-  MATCH_MP_TAC FINITE_SUBSET THEN
-  EXISTS_TAC `s(0) INSERT {y:A | y << s(0)}` THEN
-  ASM_REWRITE_TAC [FINITE_INSERT] THEN
-  REWRITE_TAC [SUBSET; FORALL_IN_IMAGE; IN_UNIV; IN_INSERT] THEN
-  INDUCT_TAC THENL
-  [REWRITE_TAC [];
-   DISJ2_TAC THEN
-   REWRITE_TAC [IN_ELIM] THEN
-   FIRST_X_ASSUM MATCH_MP_TAC THEN
-   MATCH_ACCEPT_TAC LT_0]);;
-
-export_thm WF_FINITE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Cardinal comparisons (more theory in Examples/card.ml)                    *)

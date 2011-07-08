@@ -7,7 +7,7 @@
 (*              (c) Copyright, John Harrison 1998-2007                       *)
 (* ========================================================================= *)
 
-needs "arith.ml";;
+needs "sets.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of wellfoundedness for arbitrary (infix) relation <<           *)
@@ -439,5 +439,53 @@ let WF_INDUCT_TAC =
     let th2 = CONV_RULE(LAND_CONV qqconvs) (DISCH_ALL th1) in
     (MATCH_MP_TAC th2 THEN MAP_EVERY X_GEN_TAC fvs THEN
      CONV_TAC(LAND_CONV qqconvs) THEN DISCH_THEN ASSUME_TAC) gl;;
+
+(* ------------------------------------------------------------------------- *)
+(* Transitive relation with finitely many predecessors is wellfounded.       *)
+(* ------------------------------------------------------------------------- *)
+
+let WF_FINITE = prove
+ (`!(<<). (!x. ~(x << x)) /\ (!x y z. x << y /\ y << z ==> x << z) /\
+          (!x:A. FINITE {y | y << x})
+          ==> WF (<<)`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [WF_DCHAIN] THEN
+  DISCH_THEN (X_CHOOSE_THEN `s:num->A` STRIP_ASSUME_TAC) THEN
+  SUBGOAL_THEN `!m n. m < n ==> (s:num->A) n << s m` ASSUME_TAC THENL
+  [MATCH_MP_TAC TRANSITIVE_STEPWISE_LT THEN
+   ASM_REWRITE_TAC [] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   EXISTS_TAC `(s : num -> A) y` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  MP_TAC (ISPECL [`s : num -> A`; `UNIV : num set`] INFINITE_IMAGE_INJ) THEN
+  ANTS_TAC THENL
+  [REWRITE_TAC [num_INFINITE] THEN
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPECL [`x : num`; `y : num`] LT_CASES) THEN
+   STRIP_TAC THENL
+   [SUBGOAL_THEN `((s : num -> A) y << s x) : bool` MP_TAC THENL
+    [FIRST_X_ASSUM MATCH_MP_TAC THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     ASM_REWRITE_TAC []];
+    SUBGOAL_THEN `((s : num -> A) x << s y) : bool` MP_TAC THENL
+    [FIRST_X_ASSUM MATCH_MP_TAC THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     ASM_REWRITE_TAC []]];
+   ALL_TAC] THEN
+  REWRITE_TAC [INFINITE] THEN
+  MATCH_MP_TAC FINITE_SUBSET THEN
+  EXISTS_TAC `s(0) INSERT {y:A | y << s(0)}` THEN
+  ASM_REWRITE_TAC [FINITE_INSERT] THEN
+  REWRITE_TAC [SUBSET; FORALL_IN_IMAGE; IN_UNIV; IN_INSERT] THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [];
+   DISJ2_TAC THEN
+   REWRITE_TAC [IN_ELIM] THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   MATCH_ACCEPT_TAC LT_0]);;
+
+export_thm WF_FINITE;;
 
 logfile_end ();;

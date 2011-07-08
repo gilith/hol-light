@@ -345,7 +345,7 @@ let mod_div_exp_2 = prove
       (x MOD (2 EXP m)) DIV (2 EXP n) =
       (if m <= n then 0 else (x DIV (2 EXP n)) MOD (2 EXP (m - n)))`,
    REPEAT GEN_TAC THEN
-   bool_cases_tac `m <= n` THENL
+   bool_cases_tac `m <= (n : num)` THENL
    [ASM_REWRITE_TAC [] THEN
     MATCH_MP_TAC DIV_LT THEN
     MATCH_MP_TAC LTE_TRANS THEN

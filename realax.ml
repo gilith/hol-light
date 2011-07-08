@@ -282,7 +282,7 @@ export_thm DIST_TRIANGLES_LE;;
 (* Useful lemmas about bounds.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-order-thm";;
+logfile "natural-mult-order";;
 
 let BOUNDS_LINEAR = prove
  (`!A B C. (!n. A * n <= B * n + C) <=> A <= B`,
@@ -342,6 +342,8 @@ let BOUNDS_NOTZERO = prove
     INDUCT_TAC THEN REWRITE_TAC[MULT_CLAUSES; LE_ADD]]);;
 
 export_thm BOUNDS_NOTZERO;;
+
+logfile "natural-add-order";;
 
 let BOUNDS_IGNORE = prove
  (`!P Q. (?B. !i. P(i) <= Q(i) + B) <=>
@@ -2130,6 +2132,7 @@ let REAL_COMPLETE = prove
            REWRITE_TAC[ONCE_REWRITE_RULE[REAL_ADD_SYM] REAL_ADD_LID]]]]]);;
 
 export_thm REAL_COMPLETE;;
+***)
 
 do_list reduce_interface
  ["+",`hreal_add:hreal->hreal->hreal`;
@@ -2138,4 +2141,3 @@ do_list reduce_interface
   "inv",`hreal_inv:hreal->hreal`];;
 
 do_list remove_interface ["**"; "++"; "<<="; "==="; "fn"; "afn"];;
-***)

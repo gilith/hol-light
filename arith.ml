@@ -874,7 +874,7 @@ export_thm LE_SQUARE_REFL;;
 (* Useful "without loss of generality" lemmas.                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-set";;
+logfile "natural-order-thm";;
 
 let WLOG_LE = prove
  (`!P. (!m n. P m n <=> P n m) /\ (!m n. m <= n ==> P m n) ==> !m n. P m n`,
@@ -2088,6 +2088,72 @@ let LE_MAX2 = prove
   MATCH_ACCEPT_TAC LE_MAX1);;
 
 export_thm LE_MAX2;;
+
+let MAX_L0 = prove
+ (`!n. MAX 0 n = n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MAX; LE_0; LE_REFL]);;
+
+export_thm MAX_L0;;
+
+let MAX_R0 = prove
+ (`!n. MAX n 0 = n`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [MAX_COMM] THEN
+  MATCH_ACCEPT_TAC MAX_L0);;
+
+export_thm MAX_R0;;
+
+let MIN_REFL = prove
+ (`!n. MIN n n = n`,
+  REWRITE_TAC [MIN; LE_REFL]);;
+
+export_thm MIN_REFL;;
+
+let MIN_COMM = prove
+ (`!m n. MIN m n = MIN n m`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MIN] THEN
+  REPEAT COND_CASES_TAC THENL
+  [ASM_REWRITE_TAC [GSYM LE_ANTISYM];
+   REFL_TAC;
+   REFL_TAC;
+   MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm MIN_COMM;;
+
+let MIN_LE2 = prove
+ (`!m n. MIN m n <= n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MIN] THEN
+  COND_CASES_TAC THEN
+  REWRITE_TAC [LE_REFL]);;
+
+export_thm MIN_LE2;;
+
+let MIN_LE1 = prove
+ (`!m n. MIN m n <= m`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [MIN_COMM] THEN
+  MATCH_ACCEPT_TAC MIN_LE2);;
+
+export_thm MIN_LE1;;
+
+let MIN_L0 = prove
+ (`!n. MIN 0 n = 0`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MIN; LE_0]);;
+
+export_thm MIN_L0;;
+
+let MIN_R0 = prove
+ (`!n. MIN n 0 = 0`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [MIN_COMM] THEN
+  MATCH_ACCEPT_TAC MIN_L0);;
+
+export_thm MIN_R0;;
 
 (* ------------------------------------------------------------------------- *)
 (* A common lemma for transitive relations.                                  *)

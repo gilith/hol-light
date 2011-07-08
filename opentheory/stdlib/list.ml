@@ -340,7 +340,7 @@ let nth_drop = prove
      MP_TAC (SPECL [`n:num`; `h:A`; `t:A list`] drop_suc) THEN
      ASM_REWRITE_TAC [] THEN
      DISCH_THEN SUBST1_TAC THEN
-     MP_TAC (SPECL [`h:A`; `t:A list`; `n + i`] EL_SUC) THEN
+     MP_TAC (SPECL [`h:A`; `t:A list`; `n + i : num`] EL_SUC) THEN
      SUBGOAL_THEN `n + i < LENGTH (t : A list)`
        (fun th -> REWRITE_TAC [th]) THENL
      [POP_ASSUM MP_TAC THEN

@@ -910,7 +910,13 @@ logfile "list-append-thm";;
 let SET_OF_LIST_APPEND = prove
  (`!(l1 : A list) l2.
      set_of_list (APPEND l1 l2) = set_of_list l1 UNION set_of_list l2`,
-  REWRITE_TAC [EXTENSION; IN_SET_OF_LIST; IN_UNION; MEM_APPEND]);;
+  ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
+  GEN_TAC THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [APPEND; set_of_list; UNION_EMPTY];
+   ASM_REWRITE_TAC [APPEND; set_of_list] THEN
+   ONCE_REWRITE_TAC [GSYM INSERT_UNION_SING] THEN
+   REWRITE_TAC [UNION_ASSOC]]);;
 
 export_thm SET_OF_LIST_APPEND;;
 
@@ -1015,7 +1021,6 @@ let HAS_SIZE_SET_OF_LIST = prove
                FINITE_SET_OF_LIST; GSYM ALL_MEM; IN_SET_OF_LIST] THEN
   COND_CASES_TAC THEN ASM_REWRITE_TAC[SUC_INJ] THEN
   ASM_MESON_TAC[CARD_SET_OF_LIST_LE; ARITH_RULE `~(SUC n <= n)`]);;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Type of characters, like the HOL88 "ascii" type.                          *)
@@ -1026,7 +1031,6 @@ let char_INDUCT,char_RECURSION = define_type
 
 new_type_abbrev("string",`:char list`);;
 
-(***
 (* ------------------------------------------------------------------------- *)
 (* Set of strings is infinite.                                               *)
 (* ------------------------------------------------------------------------- *)
