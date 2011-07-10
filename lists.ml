@@ -535,7 +535,7 @@ let SET_OF_LIST_FILTER = prove
     EXISTS_TAC `set_of_list (t : A list)` THEN
     ASM_REWRITE_TAC [UNION_SUBSET; SUBSET_UNION]]]);;
 
-export_thm LENGTH_FILTER;;
+export_thm SET_OF_LIST_FILTER;;
 
 (* ------------------------------------------------------------------------- *)
 (* Last.                                                                     *)
@@ -558,11 +558,26 @@ let LAST_CLAUSES = prove
 export_thm LAST_CLAUSES;;
 
 let LAST_APPEND = prove
- (`!(p:A list) q. LAST(APPEND p q) = if q = [] then LAST p else LAST q`,
+ (`!(p:A list) q. LAST (APPEND p q) = if q = [] then LAST p else LAST q`,
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[APPEND; LAST; APPEND_EQ_NIL] THEN
   MESON_TAC[]);;
 
 export_thm LAST_APPEND;;
+
+let LAST_SET_OF_LIST = prove
+ (`!(l : A list). ~(l = []) ==> LAST l IN set_of_list l`,
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [];
+   STRIP_TAC THEN
+   REWRITE_TAC [LAST; set_of_list; IN_INSERT] THEN
+   COND_CASES_TAC THENL
+   [DISJ1_TAC THEN
+    REFL_TAC;
+    DISJ2_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    FIRST_ASSUM ACCEPT_TAC]]);;
+
+export_thm LAST_SET_OF_LIST;;
 
 (* ------------------------------------------------------------------------- *)
 (* Reverse.                                                                  *)
@@ -761,6 +776,21 @@ let nth_map = prove
 
 export_thm nth_map;;
 
+let EL_SET_OF_LIST = prove
+ (`!(l : A list) i. i < LENGTH l ==> EL i l IN set_of_list l`,
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [LENGTH; LT];
+   REWRITE_TAC [LENGTH; set_of_list; IN_INSERT] THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [EL_0];
+    POP_ASSUM (K ALL_TAC) THEN
+    REWRITE_TAC [LT_SUC] THEN
+    STRIP_TAC THEN
+    DISJ2_TAC THEN
+    ASM_SIMP_TAC [EL_SUC]]]);;
+
+export_thm EL_SET_OF_LIST;;
+
 (* ------------------------------------------------------------------------- *)
 (* Replicate.                                                                *)
 (* ------------------------------------------------------------------------- *)
@@ -799,6 +829,18 @@ let nth_replicate = prove
      ASM_REWRITE_TAC [LENGTH_REPLICATE]]]);;
 
 export_thm nth_replicate;;
+
+let SET_OF_LIST_REPLICATE = prove
+ (`!n (x : A). set_of_list (REPLICATE n x) = if n = 0 then {} else {x}`,
+  INDUCT_TAC THENL
+  [REWRITE_TAC [REPLICATE; set_of_list];
+   GEN_TAC THEN
+   ASM_REWRITE_TAC [REPLICATE; set_of_list; NOT_SUC] THEN
+   COND_CASES_TAC THENL
+   [REFL_TAC;
+    REWRITE_TAC [INSERT_INSERT]]]);;
+
+export_thm SET_OF_LIST_REPLICATE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Member.                                                                   *)
@@ -1319,6 +1361,12 @@ let mem_setify = prove
 
 export_thm mem_setify;;
 
+let set_of_list_setify = prove
+  (`!(l : A list). set_of_list (setify l) = set_of_list l`,
+   REWRITE_TAC [EXTENSION; GSYM IN_SET_OF_LIST; mem_setify]);;
+
+export_thm set_of_list_setify;;
+
 let setify_idempotent = prove
   (`!l. setify (setify l) = setify (l : A list)`,
    LIST_INDUCT_TAC THEN
@@ -1343,6 +1391,12 @@ let mem_nub = prove
    REWRITE_TAC [nub_def; MEM_REVERSE; mem_setify]);;
 
 export_thm mem_nub;;
+
+let set_of_list_nub = prove
+  (`!(l : A list). set_of_list (nub l) = set_of_list l`,
+   REWRITE_TAC [EXTENSION; GSYM IN_SET_OF_LIST; mem_nub]);;
+
+export_thm set_of_list_nub;;
 
 let nub_idempotent = prove
   (`!l. nub (nub l) = nub (l : A list)`,

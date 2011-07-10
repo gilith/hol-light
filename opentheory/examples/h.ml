@@ -1006,8 +1006,6 @@ let remove_mapping_h_def = new_definition
 
 export_thm remove_mapping_h_def;;
 
-(* Need extra condition that no user data is messed with? *)
-
 let add_kernel_mapping_h_def = new_definition
   `!pr vr s s'.
      add_kernel_mapping_h pr vr s s' <=>
@@ -1023,7 +1021,12 @@ let add_kernel_mapping_h_def = new_definition
         translate_page s' (reference s') vpa =
         translate_page s (reference s) vpa) /\
      ALL I (zipwith (\vpa ppa. translate_page s' (reference s') vpa = SOME ppa)
-              (virtual_region_to_list vr) (physical_region_to_list pr))`;;
+              (virtual_region_to_list vr) (physical_region_to_list pr)) /\
+     !ppa.
+       if table_mapped_in_directory s (reference s) ppa then
+         is_page_table (status s' ppa)
+       else
+         status s ppa = status s' ppa`;;
 
 export_thm add_kernel_mapping_h_def;;
 
