@@ -2071,8 +2071,7 @@ let REAL_COMPLETE_SOMEPOS = prove
     ASM_REWRITE_TAC[] THEN FIRST_ASSUM MATCH_MP_TAC THEN
     ASM_REWRITE_TAC[]]);;
 
-(***
-let REAL_COMPLETE = prove
+let REAL_COMPLETE_LEMMA = prove
  (`!P. (?x. P x) /\
        (?M. !x. P x ==> x <= M)
        ==> ?M. (!x. P x ==> x <= M) /\
@@ -2131,8 +2130,54 @@ let REAL_COMPLETE = prove
            REWRITE_TAC[GSYM REAL_ADD_ASSOC; REAL_ADD_LINV] THEN
            REWRITE_TAC[ONCE_REWRITE_RULE[REAL_ADD_SYM] REAL_ADD_LID]]]]]);;
 
+let SUP_EXISTS = prove
+ (`!s. ~(s = {}) /\
+       (?m. !x. x IN s ==> x <= m)
+       ==> ?y. (!x. x IN s ==> x <= y) /\
+               !m. (!x. x IN s ==> x <= m) ==> y <= m`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPEC `\z. (z:real) IN s` REAL_COMPLETE_LEMMA) THEN
+  REWRITE_TAC [] THEN
+  ANTS_TAC THENL
+  [CONJ_TAC THENL
+   [ASM_REWRITE_TAC [MEMBER_NOT_EMPTY];
+    EXISTS_TAC `m : real` THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   DISCH_THEN (X_CHOOSE_THEN `y:real` STRIP_ASSUME_TAC) THEN
+   EXISTS_TAC `y:real` THEN
+   ASM_REWRITE_TAC []]);;
+
+let sup_def =
+    let th0 = SUP_EXISTS in
+    let th1 = ONCE_REWRITE_RULE [RIGHT_IMP_EXISTS_THM] th0 in
+    let th2 = ONCE_REWRITE_RULE [SKOLEM_THM] th1 in
+    new_specification ["sup"] th2;;
+
+export_thm sup_def;;
+
+logfile "real-thm";;
+
+let REAL_COMPLETE = prove
+ (`!P. (?x. P x) /\
+       (?M. !x. P x ==> x <= M)
+       ==> ?M. (!x. P x ==> x <= M) /\
+               !M'. (!x. P x ==> x <= M') ==> M <= M'`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPEC `{ (y:real) | P y }` sup_def) THEN
+  ANTS_TAC THENL
+  [ASM_REWRITE_TAC [EXTENSION; IN_ELIM; NOT_IN_EMPTY; NOT_FORALL_THM] THEN
+   CONJ_TAC THENL
+   [EXISTS_TAC `x : real` THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    EXISTS_TAC `M : real` THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   REWRITE_TAC [IN_ELIM] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `sup { y | P y }` THEN
+   CONJ_TAC THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
+
 export_thm REAL_COMPLETE;;
-***)
 
 do_list reduce_interface
  ["+",`hreal_add:hreal->hreal->hreal`;
@@ -2141,3 +2186,5 @@ do_list reduce_interface
   "inv",`hreal_inv:hreal->hreal`];;
 
 do_list remove_interface ["**"; "++"; "<<="; "==="; "fn"; "afn"];;
+
+logfile_end ();;
