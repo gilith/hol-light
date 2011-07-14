@@ -341,11 +341,9 @@ let parse_preterm =
     fun () -> let count = !gcounter in
               (gcounter := count + 1;
                Varp("GEN%PVAR%"^(string_of_int count),dpty)) in
-  let pvariant avoid s =
-    let rec inc i =
-        let si = s^(string_of_int i) in
-        if mem si avoid then inc (i + 1) else si in
-    Varp((if mem s avoid then inc 0 else s), dpty) in
+  let pvariant avoid =
+    let rec variant s = if mem s avoid then variant (s ^ "'") else s in
+    fun s -> Varp(variant s, dpty) in
   let pmk_exists(v,ptm) = Combp(Varp("?",dpty),Absp(v,ptm)) in
   let pmk_list els =
     itlist (fun x y -> Combp(Combp(Varp("CONS",dpty),x),y))
