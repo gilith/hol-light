@@ -345,7 +345,7 @@ let parse_preterm =
     let rec inc i =
         let si = s^(string_of_int i) in
         if mem si avoid then inc (i + 1) else si in
-    Varp((if mem s avoid then inc 0 else inc 0), dpty) in
+    Varp((if mem s avoid then inc 0 else s), dpty) in
   let pmk_exists(v,ptm) = Combp(Varp("?",dpty),Absp(v,ptm)) in
   let pmk_list els =
     itlist (fun x y -> Combp(Combp(Varp("CONS",dpty),x),y))
@@ -364,10 +364,11 @@ let parse_preterm =
     match ptm with
       Varp(v,_) -> v
     | _ -> failwith "pvarname: not a Varp" in
+  let sortvars = let cmp v1 v2 = pvarname v1 <= pvarname v2 in sort cmp in
   let pmk_setcompr (fabs,bvs,babs) =
     let avoid = map pvarname (pfrees babs (pfrees fabs bvs)) in
     let v = pvariant avoid "v" in
-    let bod = itlist (curry pmk_exists) bvs
+    let bod = itlist (curry pmk_exists) (sortvars bvs)
                      (Combp(Combp(Varp("/\\",dpty),Combp(Combp(Varp("=",dpty),v),fabs)),babs)) in
     Combp(Varp("GSPEC",dpty),Absp(v,bod)) in
   let pmk_setabs (fabs,babs) =
@@ -400,7 +401,7 @@ let parse_preterm =
        Combp(Combp(Combp(Varp("_GUARDED_PATTERN",dpty),pmk_geq pat x),
                    hd guards),
              pmk_geq res y) in
-    Absp(x,Absp(y,itlist (curry pmk_exists) vs bod)) in
+    Absp(x,Absp(y,itlist (curry pmk_exists) (sortvars vs) bod)) in
   let pretype = parse_pretype
   and string inp =
     match inp with
