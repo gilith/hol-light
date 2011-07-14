@@ -341,6 +341,11 @@ let parse_preterm =
     fun () -> let count = !gcounter in
               (gcounter := count + 1;
                Varp("GEN%PVAR%"^(string_of_int count),dpty)) in
+  let pvariant avoid s =
+    let rec inc i =
+        let si = s^(string_of_int i) in
+        if mem si avoid then inc (i + 1) else si in
+    Varp((if mem s avoid then inc 0 else inc 0), dpty) in
   let pmk_exists(v,ptm) = Combp(Varp("?",dpty),Absp(v,ptm)) in
   let pmk_list els =
     itlist (fun x y -> Combp(Combp(Varp("CONS",dpty),x),y))
@@ -355,10 +360,15 @@ let parse_preterm =
     let ns = map (fun i -> Char.code(String.get s i))
                  (0--(String.length s - 1)) in
     pmk_list(map pmk_char ns) in
+  let pvarname ptm =
+    match ptm with
+      Varp(v,_) -> v
+    | _ -> failwith "pvarname: not a Varp" in
   let pmk_setcompr (fabs,bvs,babs) =
-    let v = pgenvar() in
+    let avoid = map pvarname (pfrees babs (pfrees fabs bvs)) in
+    let v = pvariant avoid "v" in
     let bod = itlist (curry pmk_exists) bvs
-                     (Combp(Combp(Combp(Varp("SETSPEC",dpty),v),babs),fabs)) in
+                     (Combp(Combp(Varp("/\\",dpty),Combp(Combp(Varp("=",dpty),v),fabs)),babs)) in
     Combp(Varp("GSPEC",dpty),Absp(v,bod)) in
   let pmk_setabs (fabs,babs) =
     let evs =

@@ -72,22 +72,12 @@ let EXTENSION = prove
 export_thm EXTENSION;;
 
 (* ------------------------------------------------------------------------- *)
-(* General set-comprehension specification.                                  *)
-(* ------------------------------------------------------------------------- *)
-
-let SETSPEC = new_definition
-  `!v P t. SETSPEC (v:A) P t <=> P /\ (v = t)`;;
-
-(* ------------------------------------------------------------------------- *)
 (* Rewrite rule for eliminating set-comprehension membership assertions.     *)
 (* ------------------------------------------------------------------------- *)
 
 let IN_ELIM_THM = prove
- (`!P (x:A). x IN GSPEC (\v. P (SETSPEC v)) <=> P (\p t. p /\ (x = t))`,
-  REWRITE_TAC[IN_DEF; set_tybij] THEN
-  REPEAT STRIP_TAC THEN
-  AP_TERM_TAC THEN
-  REWRITE_TAC [FUN_EQ_THM; SETSPEC]);;
+ (`!p (x:A). x IN GSPEC p <=> p x`,
+  REWRITE_TAC[IN_DEF; set_tybij]);;
 
 export_thm IN_ELIM_THM;;
 
@@ -178,23 +168,25 @@ let IMAGE = new_definition
 export_thm IMAGE;;
 
 let INJ = new_definition
-  `!f s t.
-     INJ (f:A->B) s t <=>
-     (!x. x IN s ==> (f x) IN t) /\
-     (!x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y))`;;
+  `!s t.
+     INJ s t =
+     { (f:A->B) |
+       (!x. x IN s ==> (f x) IN t) /\
+       (!x y. x IN s /\ y IN s /\ (f x = f y) ==> (x = y)) }`;;
 
 export_thm INJ;;
 
 let SURJ = new_definition
-  `!f s t.
-     SURJ (f:A->B) s t <=>
-     (!x. x IN s ==> (f x) IN t) /\
-     (!x. (x IN t) ==> ?y. y IN s /\ (f y = x))`;;
+  `!s t.
+     SURJ s t =
+     { (f:A->B) |
+       (!x. x IN s ==> (f x) IN t) /\
+       (!x. (x IN t) ==> ?y. y IN s /\ (f y = x)) }`;;
 
 export_thm SURJ;;
 
 let BIJ = new_definition
-  `!f s t. BIJ (f:A->B) s t <=> INJ f s t /\ SURJ f s t`;;
+  `!(s : A set) (t : B set). BIJ s t = (INJ s t) INTER (SURJ s t)`;;
 
 export_thm BIJ;;
 
@@ -224,27 +216,23 @@ export_thm REST;;
 logfile "set-thm";;
 
 let IN_ELIM = prove
- (`!p (x:A). x IN GSPEC (\v. ?y. SETSPEC v (p y) y) <=> p x`,
+ (`!p (x:A). x IN GSPEC (\v. ?y. v = y /\ p y) <=> p x`,
   REWRITE_TAC[IN_ELIM_THM] THEN
-  REPEAT STRIP_TAC THEN
-  EQ_TAC THENL
-  [STRIP_TAC THEN
-   ASM_REWRITE_TAC [];
-   STRIP_TAC THEN
-   EXISTS_TAC `x:A` THEN
-   ASM_REWRITE_TAC []]);;
+  ACCEPT_TAC UNWIND_THM1);;
 
 export_thm IN_ELIM;;
 
 let NOT_IN_EMPTY = prove
  (`!x:A. ~(x IN EMPTY)`,
-  REWRITE_TAC[IN_ELIM; EMPTY]);;
+  PURE_REWRITE_TAC[IN_ELIM; EMPTY] THEN
+  REWRITE_TAC []);;
 
 export_thm NOT_IN_EMPTY;;
 
 let IN_UNIV = prove
  (`!x:A. x IN UNIV`,
-  REWRITE_TAC[IN_ELIM; UNIV]);;
+  PURE_REWRITE_TAC[IN_ELIM; UNIV] THEN
+  REWRITE_TAC []);;
 
 export_thm IN_UNIV;;
 
@@ -2030,8 +2018,8 @@ export_thm SURJECTIVE_IMAGE_EQ;;
 (* ------------------------------------------------------------------------- *)
 
 let EMPTY_GSPEC = prove
- (`{(x:A) | F} = {}`,
-  REWRITE_TAC [EXTENSION; NOT_IN_EMPTY; IN_ELIM]);;
+ (`GSPEC (\ (x:A). F) = {}`,
+  REWRITE_TAC [EXTENSION; NOT_IN_EMPTY; IN_ELIM_THM]);;
 
 export_thm EMPTY_GSPEC;;
 
@@ -4153,7 +4141,6 @@ let EMPTY_FUNSPACE = prove
   REPEAT GEN_TAC THEN
   REWRITE_TAC [EXTENSION; IN_ELIM_THM; IN_SING; NOT_IN_EMPTY] THEN
   X_GEN_TAC `g : A -> B` THEN
-  ONCE_REWRITE_TAC [CONJ_SYM] THEN
   REWRITE_TAC [UNWIND_THM1] THEN
   REWRITE_TAC [FUN_EQ_THM]);;
 
@@ -4176,7 +4163,7 @@ let INSERT_FUNSPACE = prove
      [EXTENSION; IN_IMAGE; FORALL_PAIR_THM; IN_ELIM_THM; EXISTS_PAIR_THM;
       IN_CROSS] THEN
    X_GEN_TAC `g : A -> B` THEN
-   REWRITE_TAC [ONCE_REWRITE_RULE [CONJ_SYM] UNWIND_THM1] THEN
+   REWRITE_TAC [UNWIND_THM1] THEN
    EQ_TAC THENL
    [STRIP_TAC THEN
     EXISTS_TAC `(g : A -> B) a` THEN
@@ -4209,7 +4196,7 @@ let INSERT_FUNSPACE = prove
      [EXTENSION; IN_IMAGE; FORALL_PAIR_THM; IN_ELIM_THM; EXISTS_PAIR_THM;
       IN_CROSS; IN_INSERT] THEN
    X_GEN_TAC `g : A -> B` THEN
-   REWRITE_TAC [ONCE_REWRITE_RULE [CONJ_SYM] UNWIND_THM1] THEN
+   REWRITE_TAC [UNWIND_THM1] THEN
    EQ_TAC THENL
    [STRIP_TAC THEN
     EXISTS_TAC `(g : A -> B) a` THEN
@@ -4348,7 +4335,7 @@ let IMAGE_POWERSET = prove
        {p | (!x:A. x IN s ==> p x IN UNIV) /\
             (!x. ~(x IN s) ==> (p x = F))}`,
   REPEAT STRIP_TAC THEN
-  REWRITE_TAC [EXTENSION] THEN
+  ONCE_REWRITE_TAC [EXTENSION] THEN
   X_GEN_TAC `t : A set` THEN
   REWRITE_TAC
     [IN_ELIM; IN_IMAGE; IN_UNIV; EXTENSION; SUBSET; CONTRAPOS_THM] THEN
