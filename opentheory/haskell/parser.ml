@@ -2,6 +2,7 @@
 (* A type of Haskell parsers.                                                *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 logfile "haskell-parser-def";;
 
 let streamH_exists = prove
@@ -159,9 +160,13 @@ let case_streamH = prove
 
 export_thm case_streamH;;
 *)
+***)
 
 logfile "haskell-parser-src";;
 
+export_thm stream_induct;;
+
+(***
 let streamH_induct = prove
   (`!P.
       P ErrorH /\ P EofH /\ (!h t. P t ==> P (StreamH (h : A) t)) ==>
@@ -319,5 +324,6 @@ export_thm is_parserH;;
 ***)
 
 logfile "haskell-parser-test";;
+***)
 
 logfile_end ();;

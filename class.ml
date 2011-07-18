@@ -15,8 +15,15 @@ needs "ind_defs.ml";;
 
 logfile "axiom-extensionality";;
 
-let ETA_AX = new_axiom
-  `!t:A->B. (\x. t x) = t`;;
+let ETA_AX =
+  let axiom = new_axiom
+    `(\t. (\x. t x) = (t : A -> B)) = (\t. T)`
+  in
+  prove
+    (`!(t:A->B). (\x. t x) = t`,
+     PURE_REWRITE_TAC [FORALL_DEF] THEN
+     CONV_TAC BETA_CONV THEN
+     ACCEPT_TAC axiom);;
 
 export_thm ETA_AX;;
 

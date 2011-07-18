@@ -436,6 +436,10 @@ const "HOLLight.length_stream" as "Parser.Stream.length"
 const "HOLLight.Stream" as "Parser.Stream.stream"
 const "HOLLight.stream_to_list" as "Parser.Stream.toList"
 
-###############################################################################
-# The HOL Light Haskell theories.
-###############################################################################
+# System
+
+# System.H
+
+type "HOLLight.action" as "System.H.action"
+
+const "HOLLight.action" as "System.H.action"
