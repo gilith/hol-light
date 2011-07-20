@@ -238,7 +238,7 @@ let IMP_TRANS =
 logfile "bool-def";;
 
 let FORALL_DEF = new_basic_definition
- `(!) = \P:A->bool. P = \x. T`;;
+ `(!) = \p. (p : A -> bool) = \x. T`;;
 
 export_thm FORALL_DEF;;
 

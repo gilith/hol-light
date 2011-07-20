@@ -11,8 +11,11 @@
 type "HOLLight.bool" as "bool"
 type "HOLLight.fun" as "->"
 type "HOLLight.ind" as "ind"
+
 const "HOLLight.=" as "="
 const "HOLLight.GEQ" as "="
+const "HOLLight.@" as "select"
+const "HOLLight.GABS" as "select"
 
 # Data
 
@@ -27,9 +30,6 @@ const "HOLLight.\\/" as "Data.Bool.\\/"
 const "HOLLight.~" as "Data.Bool.~"
 const "HOLLight.COND" as "Data.Bool.cond"
 const "HOLLight.F" as "Data.Bool.F"
-const "HOLLight.LET" as "Data.Bool.let"
-const "HOLLight.@" as "Data.Bool.select"
-const "HOLLight.GABS" as "Data.Bool.select"
 const "HOLLight.T" as "Data.Bool.T"
 
 # Data.List
@@ -195,6 +195,7 @@ const "HOLLight.MEASURE" as "Relation.measure"
 
 # Unwanted
 
+const "HOLLight.LET" as "Unwanted.id"
 const "HOLLight.LET_END" as "Unwanted.id"
 const "HOLLight.NUMERAL" as "Unwanted.id"
 

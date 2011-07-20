@@ -16,13 +16,32 @@ needs "ind_defs.ml";;
 logfile "axiom-extensionality";;
 
 let ETA_AX =
-  let axiom = new_axiom
-    `(\t. (\x. t x) = (t : A -> B)) = (\t. T)`
+  let axiom =
+      let ty0 = mk_vartype "A" in
+      let ty1 = mk_vartype "B" in
+      let ty2 = mk_fun_ty ty0 ty1 in
+      let ty3 = mk_type ("bool",[]) in
+      let ty4 = mk_fun_ty ty2 ty3 in
+      let tm0 = mk_var ("a",ty4) in
+      let tm1 = mk_var ("b",ty2) in
+      let tm2 = mk_var ("c",ty3) in
+      let tm3 = mk_abs (tm2,tm2) in
+      let tm4 = mk_eq (tm3,tm3) in
+      let tm5 = mk_abs (tm1,tm4) in
+      let tm6 = mk_eq (tm0,tm5) in
+      let tm7 = mk_abs (tm0,tm6) in
+      let tm8 = mk_var ("d",ty2) in
+      let tm9 = mk_var ("e",ty0) in
+      let tm10 = mk_comb (tm8,tm9) in
+      let tm11 = mk_abs (tm9,tm10) in
+      let tm12 = mk_eq (tm11,tm8) in
+      let tm13 = mk_abs (tm8,tm12) in
+      let tm14 = mk_comb (tm7,tm13) in
+      new_axiom tm14
   in
   prove
     (`!(t:A->B). (\x. t x) = t`,
-     PURE_REWRITE_TAC [FORALL_DEF] THEN
-     CONV_TAC BETA_CONV THEN
+     PURE_REWRITE_TAC [FORALL_DEF; T_DEF] THEN
      ACCEPT_TAC axiom);;
 
 export_thm ETA_AX;;
@@ -69,8 +88,65 @@ let is_select = is_binder "@";;
 let dest_select = dest_binder "@";;
 let mk_select = mk_binder "@";;
 
-let SELECT_AX = new_axiom
- `!P (x:A). P x ==> P((@) P)`;;
+let SELECT_AX =
+  let axiom =
+      let ty0 = mk_vartype "A" in
+      let ty1 = mk_type ("bool",[]) in
+      let ty2 = mk_fun_ty ty0 ty1 in
+      let ty3 = mk_fun_ty ty2 ty1 in
+      let ty4 = mk_fun_ty ty1 ty1 in
+      let ty5 = mk_fun_ty ty1 ty4 in
+      let tm0 = mk_var ("a",ty3) in
+      let tm1 = mk_var ("b",ty2) in
+      let tm2 = mk_var ("c",ty1) in
+      let tm3 = mk_abs (tm2,tm2) in
+      let tm4 = mk_eq (tm3,tm3) in
+      let tm5 = mk_abs (tm1,tm4) in
+      let tm6 = mk_eq (tm0,tm5) in
+      let tm7 = mk_abs (tm0,tm6) in
+      let tm8 = mk_var ("d",ty2) in
+      let tm9 = mk_var ("e",ty2) in
+      let tm10 = mk_var ("f",ty0) in
+      let tm11 = mk_abs (tm10,tm4) in
+      let tm12 = mk_eq (tm9,tm11) in
+      let tm13 = mk_abs (tm9,tm12) in
+      let tm14 = mk_var ("g",ty0) in
+      let tm15 = mk_var ("h",ty1) in
+      let tm16 = mk_var ("i",ty1) in
+      let tm17 = mk_var ("j",ty1) in
+      let tm18 = mk_var ("k",ty1) in
+      let tm19 = mk_var ("l",ty5) in
+      let tm20 = mk_comb (tm19,tm17) in
+      let tm21 = mk_comb (tm20,tm18) in
+      let tm22 = mk_abs (tm19,tm21) in
+      let tm23 = mk_var ("m",ty5) in
+      let tm24 = mk_comb (tm23,tm4) in
+      let tm25 = mk_comb (tm24,tm4) in
+      let tm26 = mk_abs (tm23,tm25) in
+      let tm27 = mk_eq (tm22,tm26) in
+      let tm28 = mk_abs (tm18,tm27) in
+      let tm29 = mk_abs (tm17,tm28) in
+      let tm30 = mk_comb (tm29,tm15) in
+      let tm31 = mk_comb (tm30,tm16) in
+      let tm32 = mk_eq (tm31,tm15) in
+      let tm33 = mk_abs (tm16,tm32) in
+      let tm34 = mk_abs (tm15,tm33) in
+      let tm35 = mk_comb (tm8,tm14) in
+      let tm36 = mk_comb (tm34,tm35) in
+      let tm37 = mk_const ("@",[]) in
+      let tm38 = mk_comb (tm37,tm8) in
+      let tm39 = mk_comb (tm8,tm38) in
+      let tm40 = mk_comb (tm36,tm39) in
+      let tm41 = mk_abs (tm14,tm40) in
+      let tm42 = mk_comb (tm13,tm41) in
+      let tm43 = mk_abs (tm8,tm42) in
+      let tm44 = mk_comb (tm7,tm43) in
+      new_axiom tm44
+  in
+  prove
+    (`!p (x:A). p x ==> p ((@) p)`,
+     PURE_REWRITE_TAC [FORALL_DEF; IMP_DEF; AND_DEF; T_DEF] THEN
+     ACCEPT_TAC axiom);;
 
 export_thm SELECT_AX;;
 

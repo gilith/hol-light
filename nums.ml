@@ -22,19 +22,129 @@ new_type ("ind",0);;
 logfile "function-def";;
 
 let ONE_ONE = new_definition
-  `ONE_ONE(f:A->B) = !x1 x2. (f x1 = f x2) ==> (x1 = x2)`;;
+  `!(f:A->B). ONE_ONE f = !x1 x2. (f x1 = f x2) ==> (x1 = x2)`;;
 
 export_thm ONE_ONE;;
 
 let ONTO = new_definition
-  `ONTO(f:A->B) = !y. ?x. y = f x`;;
+  `!(f:A->B). ONTO f = !y. ?x. y = f x`;;
 
 export_thm ONTO;;
 
 logfile "axiom-infinity";;
 
-let INFINITY_AX = new_axiom
-  `?f:ind->ind. ONE_ONE f /\ ~(ONTO f)`;;
+let INFINITY_AX =
+  let axiom =
+      let ty0 = mk_type ("ind",[]) in
+      let ty1 = mk_fun_ty ty0 ty0 in
+      let ty2 = mk_type ("bool",[]) in
+      let ty3 = mk_fun_ty ty1 ty2 in
+      let ty4 = mk_fun_ty ty2 ty2 in
+      let ty5 = mk_fun_ty ty2 ty4 in
+      let ty6 = mk_fun_ty ty0 ty2 in
+      let tm0 = mk_var ("a",ty3) in
+      let tm1 = mk_var ("b",ty4) in
+      let tm2 = mk_var ("c",ty2) in
+      let tm3 = mk_var ("d",ty2) in
+      let tm4 = mk_abs (tm3,tm3) in
+      let tm5 = mk_eq (tm4,tm4) in
+      let tm6 = mk_abs (tm2,tm5) in
+      let tm7 = mk_eq (tm1,tm6) in
+      let tm8 = mk_abs (tm1,tm7) in
+      let tm9 = mk_var ("e",ty2) in
+      let tm10 = mk_var ("f",ty2) in
+      let tm11 = mk_var ("g",ty2) in
+      let tm12 = mk_var ("h",ty2) in
+      let tm13 = mk_var ("i",ty2) in
+      let tm14 = mk_var ("j",ty5) in
+      let tm15 = mk_comb (tm14,tm12) in
+      let tm16 = mk_comb (tm15,tm13) in
+      let tm17 = mk_abs (tm14,tm16) in
+      let tm18 = mk_var ("k",ty5) in
+      let tm19 = mk_comb (tm18,tm5) in
+      let tm20 = mk_comb (tm19,tm5) in
+      let tm21 = mk_abs (tm18,tm20) in
+      let tm22 = mk_eq (tm17,tm21) in
+      let tm23 = mk_abs (tm13,tm22) in
+      let tm24 = mk_abs (tm12,tm23) in
+      let tm25 = mk_comb (tm24,tm10) in
+      let tm26 = mk_comb (tm25,tm11) in
+      let tm27 = mk_eq (tm26,tm10) in
+      let tm28 = mk_abs (tm11,tm27) in
+      let tm29 = mk_abs (tm10,tm28) in
+      let tm30 = mk_var ("l",ty3) in
+      let tm31 = mk_var ("m",ty1) in
+      let tm32 = mk_abs (tm31,tm5) in
+      let tm33 = mk_eq (tm30,tm32) in
+      let tm34 = mk_abs (tm30,tm33) in
+      let tm35 = mk_var ("n",ty1) in
+      let tm36 = mk_comb (tm0,tm35) in
+      let tm37 = mk_comb (tm29,tm36) in
+      let tm38 = mk_comb (tm37,tm9) in
+      let tm39 = mk_abs (tm35,tm38) in
+      let tm40 = mk_comb (tm34,tm39) in
+      let tm41 = mk_comb (tm29,tm40) in
+      let tm42 = mk_comb (tm41,tm9) in
+      let tm43 = mk_abs (tm9,tm42) in
+      let tm44 = mk_comb (tm8,tm43) in
+      let tm45 = mk_abs (tm0,tm44) in
+      let tm46 = mk_var ("o",ty1) in
+      let tm47 = mk_var ("p",ty6) in
+      let tm48 = mk_var ("q",ty0) in
+      let tm49 = mk_abs (tm48,tm5) in
+      let tm50 = mk_eq (tm47,tm49) in
+      let tm51 = mk_abs (tm47,tm50) in
+      let tm52 = mk_var ("r",ty0) in
+      let tm53 = mk_var ("s",ty0) in
+      let tm54 = mk_comb (tm46,tm52) in
+      let tm55 = mk_comb (tm46,tm53) in
+      let tm56 = mk_eq (tm54,tm55) in
+      let tm57 = mk_comb (tm29,tm56) in
+      let tm58 = mk_eq (tm52,tm53) in
+      let tm59 = mk_comb (tm57,tm58) in
+      let tm60 = mk_abs (tm53,tm59) in
+      let tm61 = mk_comb (tm51,tm60) in
+      let tm62 = mk_abs (tm52,tm61) in
+      let tm63 = mk_comb (tm51,tm62) in
+      let tm64 = mk_comb (tm24,tm63) in
+      let tm65 = mk_var ("t",ty2) in
+      let tm66 = mk_comb (tm29,tm65) in
+      let tm67 = mk_comb (tm8,tm4) in
+      let tm68 = mk_comb (tm66,tm67) in
+      let tm69 = mk_abs (tm65,tm68) in
+      let tm70 = mk_var ("u",ty0) in
+      let tm71 = mk_var ("v",ty6) in
+      let tm72 = mk_var ("w",ty2) in
+      let tm73 = mk_var ("x",ty0) in
+      let tm74 = mk_comb (tm71,tm73) in
+      let tm75 = mk_comb (tm29,tm74) in
+      let tm76 = mk_comb (tm75,tm72) in
+      let tm77 = mk_abs (tm73,tm76) in
+      let tm78 = mk_comb (tm51,tm77) in
+      let tm79 = mk_comb (tm29,tm78) in
+      let tm80 = mk_comb (tm79,tm72) in
+      let tm81 = mk_abs (tm72,tm80) in
+      let tm82 = mk_comb (tm8,tm81) in
+      let tm83 = mk_abs (tm71,tm82) in
+      let tm84 = mk_var ("y",ty0) in
+      let tm85 = mk_comb (tm46,tm84) in
+      let tm86 = mk_eq (tm70,tm85) in
+      let tm87 = mk_abs (tm84,tm86) in
+      let tm88 = mk_comb (tm83,tm87) in
+      let tm89 = mk_abs (tm70,tm88) in
+      let tm90 = mk_comb (tm51,tm89) in
+      let tm91 = mk_comb (tm69,tm90) in
+      let tm92 = mk_comb (tm64,tm91) in
+      let tm93 = mk_abs (tm46,tm92) in
+      let tm94 = mk_comb (tm45,tm93) in
+      new_axiom tm94
+  in
+  prove
+    (`?(f:ind->ind). ONE_ONE f /\ ~(ONTO f)`,
+     PURE_REWRITE_TAC
+       [EXISTS_DEF; FORALL_DEF; IMP_DEF; AND_DEF; T_DEF; NOT_DEF;
+        F_DEF; ONE_ONE; ONTO] THEN
+     ACCEPT_TAC axiom);;
 
 export_thm INFINITY_AX;;
 

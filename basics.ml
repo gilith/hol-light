@@ -28,6 +28,8 @@ let dest_fun_ty ty =
     Tyapp("fun",[ty1;ty2]) -> (ty1,ty2)
   | _ -> failwith "dest_fun_ty";;
 
+let is_fun_ty = can dest_fun_ty;;
+
 let rec occurs_in ty bigty =
   bigty = ty or
   is_type bigty & exists (occurs_in ty) (snd(dest_type bigty));;

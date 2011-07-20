@@ -13,18 +13,15 @@ needs "recursion.ml";;
 (* Constants implementing (or at least tagging) syntactic sugar.             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def";;
+let OPENTHEORY_LET_DEF = prove
+  (`!(f:A->B) x. f x = f x`,
+   GEN_TAC THEN GEN_TAC THEN REFL_TAC);;
 
-let LET_OPENTHEORY_DEF = new_basic_definition
- `LET = \(f:A->B) x. f x`;;
+let LET_DEF = new_definition
+  `!(f:A->B) x. LET f x = f x`;;
 
-export_thm LET_OPENTHEORY_DEF;;
-
-logfile_end ();;
-
-let LET_DEF = prove
-  (`!(f:A->B) x. LET f x = f x`,
-   REWRITE_TAC [LET_OPENTHEORY_DEF]);;
+delete_const_definition ["LET"];;
+replace_proof LET_DEF (read_proof OPENTHEORY_LET_DEF);;
 
 let OPENTHEORY_LET_END_DEF = prove
   (`!(t:A). t = t`,
