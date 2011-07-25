@@ -116,6 +116,8 @@ const "HOLLight.<" as "Number.Natural.<"
 const "HOLLight.<=" as "Number.Natural.<="
 const "HOLLight.>=" as "Number.Natural.>="
 const "HOLLight.>" as "Number.Natural.>"
+const "HOLLight.BIT0" as "Number.Natural.bit0"
+const "HOLLight.BIT1" as "Number.Natural.bit1"
 const "HOLLight.dist" as "Number.Natural.distance"
 const "HOLLight.DIV" as "Number.Natural.div"
 const "HOLLight.EVEN" as "Number.Natural.even"
@@ -128,12 +130,7 @@ const "HOLLight.MOD" as "Number.Natural.mod"
 const "HOLLight.ODD" as "Number.Natural.odd"
 const "HOLLight.PRE" as "Number.Natural.pre"
 const "HOLLight.SUC" as "Number.Natural.suc"
-
-# Number.Numeral
-
-const "HOLLight.BIT0" as "Number.Numeral.bit0"
-const "HOLLight.BIT1" as "Number.Numeral.bit1"
-const "HOLLight._0" as "Number.Numeral.zero"
+const "HOLLight._0" as "Number.Natural.zero"
 
 # Number.Real
 

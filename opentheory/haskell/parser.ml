@@ -2,47 +2,25 @@
 (* A type of Haskell parsers.                                                *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "haskell-parser-src";;
+
+let datatype_stream =
+    CONJ (CONJ stream_induct stream_recursion) case_stream_def;;
+
+export_thm datatype_stream;;
+
+let value_length_stream = prove
+  (`!(s : A stream).
+       length_stream s =
+         case_stream 0 0 (\a s. length_stream s + 1) s`,
+   GEN_TAC THEN
+   MP_TAC (SPEC `s : A stream` stream_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [length_stream_def; case_stream_def; ADD1]);;
+
+export_thm value_length_stream;;
+
 (***
-logfile "haskell-parser-def";;
-
-let streamH_exists = prove
-  (`?s. (\x. T) (s : A stream)`,
-   REWRITE_TAC []);;
-
-let streamH_tybij =
-    REWRITE_RULE []
-    (new_type_definition "streamH"
-       ("mk_streamH","dest_streamH") streamH_exists);;
-
-export_thm streamH_tybij;;
-
-let ErrorH_def = new_definition
-  `ErrorH = mk_streamH (Error : A stream)`;;
-
-export_thm ErrorH_def;;
-
-let EofH_def = new_definition
-  `EofH = mk_streamH (Eof : A stream)`;;
-
-export_thm EofH_def;;
-
-let StreamH_def = new_definition
-  `!a s. StreamH a s = mk_streamH (Stream (a : A) (dest_streamH s))`;;
-
-export_thm StreamH_def;;
-
-let case_streamH_def = new_definition
-  `!e b f s.
-     case_streamH (e : B) b f (s : A streamH) =
-     case_stream e b (\h t. f h (mk_streamH t)) (dest_streamH s)`;;
-
-export_thm case_streamH_def;;
-
-let length_streamH_def = new_definition
-  `!s. length_streamH (s : A streamH) = length_stream (dest_streamH s)`;;
-
-export_thm length_streamH_def;;
-
 let is_proper_suffix_streamH_def = new_definition
   `!s s'.
      is_proper_suffix_streamH (s : A streamH) s' <=>
@@ -160,13 +138,7 @@ let case_streamH = prove
 
 export_thm case_streamH;;
 *)
-***)
 
-logfile "haskell-parser-src";;
-
-export_thm stream_induct;;
-
-(***
 let streamH_induct = prove
   (`!P.
       P ErrorH /\ P EofH /\ (!h t. P t ==> P (StreamH (h : A) t)) ==>
