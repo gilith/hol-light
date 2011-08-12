@@ -913,7 +913,7 @@ let parse_stream_exists = prove
    REWRITE_TAC [case_stream_def]);;
 
 let parse_stream_def = new_specification ["parse_stream"]
-  (REWRITE_RULE[SKOLEM_THM] parse_stream_exists);;
+  (REWRITE_RULE [SKOLEM_THM] parse_stream_exists);;
 
 export_thm parse_stream_def;;
 
