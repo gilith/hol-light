@@ -36,7 +36,7 @@ const "HOLLight.T" as "Data.Bool.T"
 
 type "HOLLight.list" as "Data.List.list"
 
-const "HOLLight.case_list" as "Data.List.case"
+const "HOLLight.case_list" as "Data.List.case.[].::"
 const "HOLLight.CONS" as "Data.List.::"
 const "HOLLight.NIL" as "Data.List.[]"
 const "HOLLight.APPEND" as "Data.List.@"
@@ -67,7 +67,7 @@ const "HOLLight.zipwith" as "Data.List.zipWith"
 
 type "HOLLight.option" as "Data.Option.option"
 
-const "HOLLight.case_option" as "Data.Option.case"
+const "HOLLight.case_option" as "Data.Option.case.none.some"
 const "HOLLight.is_none" as "Data.Option.isNone"
 const "HOLLight.is_some" as "Data.Option.isSome"
 const "HOLLight.NONE" as "Data.Option.none"
@@ -424,7 +424,7 @@ const "HOLLight.parse_strong_inverse" as "Parser.strongInverse"
 type "HOLLight.stream" as "Parser.Stream.stream"
 
 const "HOLLight.append_stream" as "Parser.Stream.append"
-const "HOLLight.case_stream" as "Parser.Stream.case"
+const "HOLLight.case_stream" as "Parser.Stream.case.error.eof.stream"
 const "HOLLight.Eof" as "Parser.Stream.eof"
 const "HOLLight.Error" as "Parser.Stream.error"
 const "HOLLight.list_to_stream" as "Parser.Stream.fromList"
