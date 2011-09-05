@@ -233,16 +233,19 @@ let (log_reset,log_term,log_thm,log_clear) =
     and log_type ty =
         let ob = Type_object ty in
         if saved ob then () else
-        if is_type ty then
-          let (n,l) = dest_type ty in
-          let () = log_type_op n in
-          let () = log_list log_type l in
-          let () = log_command "opType" in
-          ()
-        else
-          let () = log_type_var (dest_vartype ty) in
-          let () = log_command "varType" in
-          ()
+        let () =
+            if is_type ty then
+              let (n,l) = dest_type ty in
+              let () = log_type_op n in
+              let () = log_list log_type l in
+              let () = log_command "opType" in
+              ()
+            else
+              let () = log_type_var (dest_vartype ty) in
+              let () = log_command "varType" in
+              () in
+        let _ = save_dict ob in
+        ()
     and log_const_def th =
         let (c,tm) = dest_eq (concl th) in
         let (c,_) = dest_const c in
