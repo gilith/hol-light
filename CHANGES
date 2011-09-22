@@ -1,3 +1,295 @@
+Mon 29th Aug 2011       calc_rat.ml
+
+Changed REAL_RAT_DIV_CONV not to fail if it is given a canonical rational;
+instead used CHANGED_CONV in the depth conversion in REAL_RAT_REDUCE_CONV. This
+is consistent with the use of REAL_RAT_NEG_CONV, makes REAL_RAT_DIV_CONV a more
+convenient building block, and agrees with the current documentation.
+
+Wed 24th Aug 2011       real.ml, int.ml
+
+Added theorems about the real and integer sign function:
+
+  REAL_SGN_CASES =
+    |- !x. real_sgn x = &0 \/ real_sgn x = &1 \/ real_sgn x = -- &1
+
+  REAL_SGN_EQ =
+    |- (!x. real_sgn x = &0 <=> x = &0) /\
+       (!x. real_sgn x = &1 <=> x > &0) /\
+       (!x. real_sgn x = -- &1 <=> x < &0)
+
+with INT_SGN_CASES and INT_SGN_EQ being the same for integers.
+
+Wed 24th Aug 2011       sets.ml
+
+Added two natural theorems about intersections of unions
+
+  INTERS_UNION =
+   |- !s t. INTERS (s UNION t) = INTERS s INTER INTERS t
+
+  INTERS_OVER_UNIONS;;
+   |- !f s.
+        INTERS {UNIONS (f x) | x IN s} =
+        UNIONS {INTERS {g x | x IN s} | g | !x. x IN s ==> g x IN f x}
+
+Thu 18th Aug 2011       100/inclusion_exclusion.ml
+
+Added versions of inclusion-exclusion for additive real functions
+(INCLUSION_EXCLUSION_REAL_RESTRICTED_INDEXED,
+INCLUSION_EXCLUSION_REAL_RESTRICTED, INCLUSION_EXCLUSION_REAL_INDEXED and
+INCLUSION_EXCLUSION_REAL), deriving the cardinality version from those. Renamed
+the old INCLUSION_EXCLUSION_REAL as INCLUSION_EXCLUSION_REAL_FUNCTION and
+commented it out together with its dependency on Library/products.ml
+
+Sun 31st Jul 2011       IsabelleLight/* [new files]
+
+Installed "Isabelle Light" from Petros Papapanagiotou and Jacques Fleuriot,
+which consists of implementations of Isabelle-style tactics and other
+user-friendly shortcuts.
+
+Sun 10th Jul 2011       100/fourier.ml [new file]
+
+Added a file with some material on L_p spaces and Fourier series.
+
+Tue 28th Jun 2011       pair.ml, parser.ml
+
+Fixed a LET_TAC bug pointed out by Vu Khac Ky: failures were occurring if the
+same variable was used on the left and right of a pattern (except if they are a
+trivial let, i.e. corresponding lefts and rights exactly equal), e.g.
+
+  g `v IN V DIFF (let k,ul = (P:num#(real^3)list->num#(real^3)list) (k,ul) in
+     (Q:num#(real^3)list->real^3->bool) (k,ul)) ==> F`;;
+  e LET_TAC;;
+
+Now the abbreviating variables are renamed as necessary to avoid clashes with
+free variables of the goal or each other (some of this would previously happen
+later in the ABBREV_TAC step anyway in some cases, but not this one).
+
+Looking at such corner cases made me add a parsing warning if there are
+multiple uses of the same variable in different arms of a simultaneous let
+binding, e.g. `let x = 1 and x = 2 in x = 42`, in which case the first one is
+hidden.
+
+Thu  9th Jun 2011       realarith.ml
+
+Made a change in the variable-choosing heuristic in Fourier-Motzkin, motivated
+by the disastrous slowness of this trivial example:
+
+  time REAL_ARITH
+  `c < e / &3 /\ i1 < e / &12 /\ i3 < e / &12 /\ i2 < e / &12 /\ i4 < e / &12
+     ==> (i1 + i2) + (c + i3 + i4) <= &2 * e / &3`;;
+
+The previous heuristic chose a variable that minimized the number of
+inequalities after elimination, which is p * n + z where p, n and z are the
+number of current inequalities where that variable occurs positively,
+negatively and not at all respectively. The downside is that it doesn't take
+any account of the complexity of the resulting inequalities, so in a
+prototypical example like the above
+
+ x1 < e /\ .... /\ xn < e ==> x1 + ... + xn < n * e
+
+all variables give equal blowup of n, and so e may get chosen from among the
+available alternatives. That's something of a disaster since from that point on
+you get doubly exponential blowup per stage. The new heuristic is simply p * n,
+counting the number of new inequalities created by the elimination step. It
+makes this sort of example, which is probably pretty common, dramatically
+better. It also seems to lead to a small but notable average speedup.
+
+Mon 23rd May 2011       Library/floor.ml, Library/sets.ml
+
+Added
+
+  COUNTABLE_RESTRICT = |- !s P. COUNTABLE s ==> COUNTABLE {x | x IN s /\ P x}
+
+  RATIONAL_APPROXIMATION_STRADDLE =
+    |- !x e. &0 < e
+             ==> ?a b. rational a /\ rational b /\
+                       a < x /\ x < b /\ abs(b - a) < e
+
+Sun 22nd May 2011       sets.ml
+
+Added the following duality for unions and intersections:
+
+  DIFF_INTERS = |- !u s. u DIFF INTERS s = UNIONS {u DIFF t | t IN s}
+
+  INTERS_UNIONS = |- !s. INTERS s = UNIV DIFF (UNIONS {UNIV DIFF t | t IN s})
+
+  UNIONS_INTERS = |- !s. UNIONS s = UNIV DIFF (INTERS {UNIV DIFF t | t IN s})
+
+Thu 12th May 2011       Library/floor.ml
+
+  FRAC_UNIQUE = |- !x a. integer(x - a) /\ &0 <= a /\ a < &1 <=> frac x = a
+
+  REAL_FRAC_EQ = |- !x. frac x = x <=> &0 <= x /\ x < &1
+
+Tue  5th Apr 2011       Library/floor.ml
+
+  REAL_FLOOR_LE =
+    |- !x n. integer n ==> (floor x <= n <=> x - &1 < n)
+
+  HAS_SIZE_INTSEG_INT =
+    |- !a b.
+           integer a /\ integer b
+           ==> {x | integer x /\ a <= x /\ x <= b} HAS_SIZE
+               (if b < a then 0 else num_of_int(int_of_real(b - a + &1)))
+
+  CARD_INTSEG_INT =
+    |- !a b.
+           integer a /\ integer b
+           ==> CARD {x | integer x /\ a <= x /\ x <= b} =
+               (if b < a then 0 else num_of_int(int_of_real(b - a + &1)))
+
+  REAL_CARD_INTSEG_INT =
+    |- !a b.
+           integer a /\ integer b
+           ==> &(CARD {x | integer x /\ a <= x /\ x <= b}) =
+               (if b < a then &0 else b - a + &1)
+
+Tue  5th Apr 2011       sets.ml
+
+Added
+
+  POWERSET_CLAUSES =
+   |- {s | s SUBSET {}} = {{}} /\
+      (!a t.
+           {s | s SUBSET a INSERT t} =
+           {s | s SUBSET t} UNION IMAGE (\s. a INSERT s) {s | s SUBSET t})
+
+Fri  1st Apr 2011       Makefile, pa_j_3.1x_6.02.2.ml [new file]
+
+Once again there is an incompatibility with the latest version of camlp5, this
+time 6.02.2, as was reported by Kevin S. Van Horn. Made yet another appropriate
+version of pa_j.ml, and put another case split in the Makefile.
+
+Fri  1st Apr 2011       Minisat/minisat_parse.ml
+
+Rewrote readTrace_aux in a slightly different style, avoiding wrapping
+an exception handler round the recursive calls, since this had the effect of
+making it not be tail-recursive.
+
+Thu 31st Mar 2011       sets.ml
+
+Added the following
+
+  IMAGE_INJECTIVE_IMAGE_OF_SUBSET =
+   |- !f s.
+         ?t. t SUBSET s /\
+             IMAGE f s = IMAGE f t /\
+             (!x y. x IN t /\ y IN t /\ f x = f y ==> x = y)
+
+Tue 22nd Mar 2011       sets.ml
+
+Added the following, a natural dual of EXISTS_SUBSET_IMAGE:
+
+  FORALL_SUBSET_IMAGE =
+   |- !P f s.
+          (!t. t SUBSET IMAGE f s ==> P t) <=>
+          (!t. t SUBSET s ==> P (IMAGE f t))
+
+Tue 15th Mar 2011       fusion.ml
+
+Made a small but significant change to the kernel, based on an observation by
+Ondrej Kuncar, optimizing the pointer-EQ shortcut in "orda" so that it does not
+require an empty environment but merely one full of identical pairs. This can
+substantially speed up many derived rules by allowing efficient use of
+proformas even inside bound variables.
+
+Sat  5th Mar 2011       bool.ml
+
+Noticed that GEN is not constant-time, which is bad. On closer inspection the
+problem was that the abstraction that's used to instantiate the proforma is
+created separately from the abstracted input theorem, so the pointer-EQ
+subterms are hidden under an abstraction. As well as fixing that, made it more
+efficient in two other ways: used EQ_MP instead of PROVE_HYP, and added partial
+evaluation based on the first argument.
+
+Fri 25th Feb 2011       Library/poly.ml
+
+Fixed an error where override_interface was used for "divides", hiding
+all the other desired overloadings. Also added many new polynomial
+theorems from Jesse Bingham's e-transcendence proof:
+
+  HD_POLY_ADD
+  HD_POLY_CMUL
+  HD_POLY_EXP
+  HD_POLY_EXP_X_SUC
+  HD_POLY_MUL
+  HD_POLY_MUL_X
+  ITERATE_RADD_POLYADD
+  MONOIDAL_POLY_ADD
+  NOT_POLY_CMUL_NIL
+  NOT_POLY_EXP_NIL
+  NOT_POLY_EXP_X_NIL
+  NOT_POLY_MUL_NIL
+  POLYDIFF_ADD
+  POLY_ADD_ASSOC
+  POLY_ADD_IDENT
+  POLY_ADD_LENGTH
+  POLY_ADD_NEUTRAL
+  POLY_ADD_SYM
+  POLY_CMUL_LENGTH
+  POLY_CMUL_LID
+  POLY_CMUL_POLY_DIFF
+  POLY_DIFF_AUX_ADD_LEMMA
+  POLY_DIFF_AUX_POLY_CMUL
+  POLY_EXP_X_LENGTH
+  POLY_EXP_X_REC
+  POLY_MUL_LENGTH
+  POLY_MUL_LENGTH2
+  POLY_MUL_LID
+  POLY_MUL_RID
+  POLY_SUM_EQUIV
+  TL_POLY_CMUL
+  TL_POLY_EXP_X_SUC
+  TL_POLY_MUL_X
+
+Fri 25th Feb 2011       fusion.ml, ind_defs.ml, simp.ml, define.ml, Library/analysis.ml, Library/transc.ml
+
+Removed a few unused variables in these files, after noticing OCaml warnings
+about them. It makes things minutely smaller and faster, I suppose.
+
+Tue 22nd Feb 2011       lists.ml
+
+Added two additional list lemmas taken from Jesse Bingham's e-transcendence
+proof, which seem to be quite generally useful.
+
+  ALL_EL = |- !P l. (!i. i < LENGTH l ==> P (EL i l)) <=> ALL P l
+
+  CONS_HD_TL = |- !l. ~(l = []) ==> l = CONS (HD l) (TL l)
+
+Thu 17th Feb 2011       Examples/sos.ml
+
+Renamed a few of the ML operations on vectors since the existing names
+can lead to annoying name clashes with the names of theorems in the
+Multivariate/vectors.ml theories.
+
+ vector_0       -> vec_0
+ dim            -> vec_dim
+ vector_const   -> vec_const
+ vector_1       -> vec_1
+ vector_cmul    -> vec_cmul
+ vector_neg     -> vec_neg
+ vector_add     -> vec_add
+ vector_sub     -> vec_sub
+ vector_dot     -> vec_dot
+ vector_of_list -> vec_of_list
+
+Of course, it is arguable that all this should be hidden anyway, but
+since this file is still somewhat experimental I don't want to tidy up
+and modularize the namespace just yet.
+
+Mon 14th Feb 2011       int.ml, Library/floor.ml
+
+Removed the constant "is_int" and replaced it with "integer", moving the
+definition of that back from the "Library/floor.ml" file to the "int.ml"
+file. Kept the theorem "is_int" for compatibility, with just the different
+constant, and removed the now redundant/meaningless INTEGER_IS_INT.
+
+Tue  8th Feb 2011       Makefile, pa_j_3.1x_6.02.1.ml [new file]
+
+Added (directly from Ondrej Kuncar) an updated version of pa_j for the latest
+sub-version of camlp5, and modified the Makefile to use it as needed (though
+this selection logic is starting to get ugly).
+
 Tue 21st Dec 2010       real.ml, database.ml
 
 Added a lemma from Valentina Bruno used in the Multivariate complex analysis

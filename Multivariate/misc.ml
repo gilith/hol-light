@@ -316,6 +316,81 @@ let REAL_INF_ASCLOSE = prove
   REWRITE_TAC[REAL_ARITH `abs(x - l) <= e <=> l - e <= x /\ x <= l + e`] THEN
   REWRITE_TAC[REAL_INF_BOUNDS]);;
 
+let SUP_UNIQUE_FINITE = prove
+ (`!s. FINITE s /\ ~(s = {})
+       ==> (sup s = a <=> a IN s /\ !y. y IN s ==> y <= a)`,
+   ASM_SIMP_TAC[GSYM REAL_LE_ANTISYM; REAL_LE_SUP_FINITE; REAL_SUP_LE_FINITE;
+               NOT_INSERT_EMPTY; FINITE_INSERT; FINITE_EMPTY] THEN
+   MESON_TAC[REAL_LE_REFL; REAL_LE_TRANS; REAL_LE_ANTISYM]);;
+
+let INF_UNIQUE_FINITE = prove
+ (`!s. FINITE s /\ ~(s = {})
+       ==> (inf s = a <=> a IN s /\ !y. y IN s ==> a <= y)`,
+   ASM_SIMP_TAC[GSYM REAL_LE_ANTISYM; REAL_LE_INF_FINITE; REAL_INF_LE_FINITE;
+               NOT_INSERT_EMPTY; FINITE_INSERT; FINITE_EMPTY] THEN
+   MESON_TAC[REAL_LE_REFL; REAL_LE_TRANS; REAL_LE_ANTISYM]);;
+
+let SUP_INSERT_FINITE = prove
+ (`!x s. FINITE s ==> sup(x INSERT s) = if s = {} then x else max x (sup s)`,
+  REPEAT STRIP_TAC THEN COND_CASES_TAC THEN
+  ASM_SIMP_TAC[SUP_UNIQUE_FINITE;  FINITE_INSERT; FINITE_EMPTY;
+               NOT_INSERT_EMPTY; FORALL_IN_INSERT; NOT_IN_EMPTY] THEN
+  REWRITE_TAC[IN_SING; REAL_LE_REFL] THEN
+  REWRITE_TAC[real_max] THEN COND_CASES_TAC THEN
+  ASM_SIMP_TAC[SUP_FINITE; IN_INSERT; REAL_LE_REFL] THEN
+  ASM_MESON_TAC[SUP_FINITE; REAL_LE_TOTAL; REAL_LE_TRANS]);;
+
+let INF_INSERT_FINITE = prove
+ (`!x s. FINITE s ==> inf(x INSERT s) = if s = {} then x else min x (inf s)`,
+  REPEAT STRIP_TAC THEN COND_CASES_TAC THEN
+  ASM_SIMP_TAC[INF_UNIQUE_FINITE;  FINITE_INSERT; FINITE_EMPTY;
+               NOT_INSERT_EMPTY; FORALL_IN_INSERT; NOT_IN_EMPTY] THEN
+  REWRITE_TAC[IN_SING; REAL_LE_REFL] THEN
+  REWRITE_TAC[real_min] THEN COND_CASES_TAC THEN
+  ASM_SIMP_TAC[INF_FINITE; IN_INSERT; REAL_LE_REFL] THEN
+  ASM_MESON_TAC[INF_FINITE; REAL_LE_TOTAL; REAL_LE_TRANS]);;
+
+let REAL_SUP_EQ_INF = prove
+ (`!s. ~(s = {}) /\ (?B. !x. x IN s ==> abs(x) <= B)
+       ==> (sup s = inf s <=> ?a. s = {a})`,
+  REPEAT STRIP_TAC THEN EQ_TAC THENL
+   [DISCH_TAC THEN EXISTS_TAC `sup s` THEN MATCH_MP_TAC
+     (SET_RULE `~(s = {}) /\ (!x. x IN s ==> x = a) ==> s = {a}`) THEN
+    ASM_REWRITE_TAC[GSYM REAL_LE_ANTISYM] THEN
+    ASM_MESON_TAC[SUP; REAL_ABS_BOUNDS; INF];
+    STRIP_TAC THEN
+    ASM_SIMP_TAC[SUP_INSERT_FINITE; INF_INSERT_FINITE; FINITE_EMPTY]]);;
+
+let EPSILON_DELTA_MINIMAL = prove
+ (`!P:real->A->bool Q.
+        FINITE {x | Q x} /\
+        (!d e x. Q x /\ &0 < e /\ e < d ==> P d x ==> P e x) /\
+        (!x. Q x ==> ?d. &0 < d /\ P d x)
+        ==> ?d. &0 < d /\ !x. Q x ==> P d x`,
+  REWRITE_TAC[IMP_IMP] THEN REPEAT STRIP_TAC THEN
+  ASM_CASES_TAC `{x:A | Q x} = {}` THENL
+   [FIRST_X_ASSUM(MP_TAC o GEN_REWRITE_RULE I [EXTENSION]) THEN
+    REWRITE_TAC[NOT_IN_EMPTY; IN_ELIM_THM] THEN
+    DISCH_TAC THEN EXISTS_TAC `&1` THEN ASM_REWRITE_TAC[REAL_LT_01];
+    FIRST_X_ASSUM(MP_TAC o
+     GEN_REWRITE_RULE BINDER_CONV [RIGHT_IMP_EXISTS_THM]) THEN
+    REWRITE_TAC[SKOLEM_THM; LEFT_IMP_EXISTS_THM] THEN
+    X_GEN_TAC `d:A->real` THEN DISCH_TAC THEN
+    EXISTS_TAC `inf(IMAGE d {x:A | Q x})` THEN
+    ASM_SIMP_TAC[REAL_LT_INF_FINITE; FINITE_IMAGE; IMAGE_EQ_EMPTY] THEN
+    ASM_SIMP_TAC[FORALL_IN_IMAGE; FORALL_IN_GSPEC] THEN
+    X_GEN_TAC `a:A` THEN DISCH_TAC THEN
+    SUBGOAL_THEN
+     `&0 < inf(IMAGE d {x:A | Q x}) /\ inf(IMAGE d {x | Q x}) <= d a`
+    MP_TAC THENL
+     [ASM_SIMP_TAC[REAL_LT_INF_FINITE; REAL_INF_LE_FINITE;
+                   FINITE_IMAGE; IMAGE_EQ_EMPTY] THEN
+      REWRITE_TAC[EXISTS_IN_IMAGE; FORALL_IN_IMAGE; IN_ELIM_THM] THEN
+      ASM_MESON_TAC[REAL_LE_REFL];
+      REWRITE_TAC[REAL_LE_LT] THEN STRIP_TAC THEN ASM_SIMP_TAC[] THEN
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
+      EXISTS_TAC `(d:A->real) a` THEN ASM_SIMP_TAC[]]]);;
+
 (* ------------------------------------------------------------------------- *)
 (* A generic notion of "hull" (convex, affine, conic hull and closure).      *)
 (* ------------------------------------------------------------------------- *)

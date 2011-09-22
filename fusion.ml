@@ -464,14 +464,14 @@ module Hol : Hol_kernel = struct
   let rec ordav env x1 x2 =
     match env with
       [] -> Pervasives.compare x1 x2
-    | (t1,t2 as tp)::oenv -> if Pervasives.compare x1 t1 = 0
-                             then if Pervasives.compare x2 t2 = 0
-                                  then 0 else -1
-                             else if Pervasives.compare x2 t2 = 0 then 1
-                             else ordav oenv x1 x2
+    | (t1,t2)::oenv -> if Pervasives.compare x1 t1 = 0
+                       then if Pervasives.compare x2 t2 = 0
+                            then 0 else -1
+                       else if Pervasives.compare x2 t2 = 0 then 1
+                       else ordav oenv x1 x2
 
   let rec orda env tm1 tm2 =
-    if tm1 == tm2 & env = [] then 0 else
+    if tm1 == tm2 & forall (fun (x,y) -> x = y) env then 0 else
     match (tm1,tm2) with
       Var(x1,ty1),Var(x2,ty2) -> ordav env tm1 tm2
     | Const(x1,ty1),Const(x2,ty2) -> Pervasives.compare tm1 tm2
@@ -532,7 +532,7 @@ module Hol : Hol_kernel = struct
 
   let TRANS (Sequent((asl1,c1),_) as th1) (Sequent((asl2,c2),_) as th2) =
     match (c1,c2) with
-      Comb((Comb(Const("=",_),l) as eql),m1),Comb(Comb(Const("=",_),m2),r)
+      Comb((Comb(Const("=",_),_) as eql),m1),Comb(Comb(Const("=",_),m2),r)
         when alphaorder m1 m2 = 0 -> Sequent((term_union asl1 asl2,Comb(eql,r)),
                                              ref (Trans_proof (th1,th2)))
     | _ -> failwith "TRANS"
@@ -627,7 +627,7 @@ module Hol : Hol_kernel = struct
 
   let new_basic_definition tm =
     match tm with
-      Comb(Comb(Const("=",_),(Var(cname,ty) as l)),r) ->
+      Comb(Comb(Const("=",_),Var(cname,ty)),r) ->
         if not(freesin [] r) then failwith "new_definition: term not closed"
         else if not (subset (type_vars_in_term r) (tyvars ty))
         then failwith "new_definition: Type variables not reflected in constant"

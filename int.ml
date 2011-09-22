@@ -13,18 +13,23 @@
 needs "calc_rat.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Representing predicate.                                                   *)
+(* Representing predicate. The "is_int" variant is useful for backwards      *)
+(* compatibility with former definition of "is_int" constant, now removed.   *)
 (* ------------------------------------------------------------------------- *)
 
-let is_int = new_definition
-  `is_int(x) <=> ?n. (x = &n) \/ (x = --(&n))`;;
+let integer = new_definition
+  `integer(x) <=> ?n. abs(x) = &n`;;
+
+let is_int = prove
+ (`integer(x) <=> ?n. x = &n \/ x = -- &n`,
+  REWRITE_TAC[integer] THEN AP_TERM_TAC THEN ABS_TAC THEN REAL_ARITH_TAC);;
 
 (* ------------------------------------------------------------------------- *)
 (* Type of integers.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
 let int_tybij = new_type_definition "int" ("int_of_real","real_of_int")
- (prove(`?x. is_int x`,
+ (prove(`?x. integer x`,
        EXISTS_TAC `&0` THEN
        REWRITE_TAC[is_int; REAL_OF_NUM_EQ; EXISTS_OR_THM; GSYM EXISTS_REFL]));;
 
@@ -494,6 +499,8 @@ let INT_RNEG_UNIQ = INT_OF_REAL_THM REAL_RNEG_UNIQ;;
 let INT_SGN = INT_OF_REAL_THM real_sgn;;
 let INT_SGN_0 = INT_OF_REAL_THM REAL_SGN_0;;
 let INT_SGN_ABS = INT_OF_REAL_THM REAL_SGN_ABS;;
+let INT_SGN_CASES = INT_OF_REAL_THM REAL_SGN_CASES;;                               
+let INT_SGN_EQ = INT_OF_REAL_THM REAL_SGN_EQ;;
 let INT_SGN_MUL = INT_OF_REAL_THM REAL_SGN_MUL;;
 let INT_SGN_NEG = INT_OF_REAL_THM REAL_SGN_NEG;;
 let INT_SOS_EQ_0 = INT_OF_REAL_THM REAL_SOS_EQ_0;;
@@ -1063,7 +1070,7 @@ let cong = new_definition
 (* ------------------------------------------------------------------------- *)
 
 let real_mod = new_definition
-  `real_mod n (x:real) y = ?q. is_int q /\ x - y = q * n`;;
+  `real_mod n (x:real) y = ?q. integer q /\ x - y = q * n`;;
 
 overload_interface ("mod",`real_mod`);;
 

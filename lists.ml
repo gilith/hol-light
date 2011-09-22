@@ -95,6 +95,13 @@ let case_list_id = prove
 
 export_thm case_list_id;;
 
+let CONS_HD_TL = prove
+ (`!(l : A list). ~(l = []) ==> CONS (HD l) (TL l) = l`,
+  LIST_INDUCT_TAC THEN
+  REWRITE_TAC [NOT_CONS_NIL; HD; TL]);;
+
+export_thm CONS_HD_TL;;
+
 (* ------------------------------------------------------------------------- *)
 (* Length.                                                                   *)
 (* ------------------------------------------------------------------------- *)
@@ -469,6 +476,48 @@ export_thm MONO_ALL;;
 
 monotonicity_theorems := [MONO_ALL] @ !monotonicity_theorems;;
 
+let ALL_SET_OF_LIST = prove
+ (`!P l. ALL P l <=> !(x:A). x IN set_of_list l ==> P x`,
+  GEN_TAC THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [set_of_list; ALL; NOT_IN_EMPTY];
+   REWRITE_TAC [set_of_list; ALL; IN_INSERT] THEN
+   FIRST_X_ASSUM SUBST1_TAC THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THENL
+    [ASM_REWRITE_TAC [];
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     FIRST_ASSUM ACCEPT_TAC];
+    REPEAT STRIP_TAC THENL
+    [FIRST_X_ASSUM MATCH_MP_TAC THEN
+     REWRITE_TAC [];
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     ASM_REWRITE_TAC []]]]);;
+
+export_thm ALL_SET_OF_LIST;;
+
+let EX_SET_OF_LIST = prove
+ (`!P l. EX P l <=> ?(x:A). x IN set_of_list l /\ P x`,
+  GEN_TAC THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [set_of_list; EX; NOT_IN_EMPTY];
+   REWRITE_TAC [set_of_list; EX; IN_INSERT] THEN
+   FIRST_X_ASSUM SUBST1_TAC THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THENL
+    [EXISTS_TAC `h:A` THEN
+     ASM_REWRITE_TAC [];
+     EXISTS_TAC `x:A` THEN
+     ASM_REWRITE_TAC []];
+    REPEAT STRIP_TAC THENL
+    [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+     ASM_REWRITE_TAC [];
+     DISJ2_TAC THEN
+     EXISTS_TAC `x:A` THEN
+     ASM_REWRITE_TAC []]]]);;
+
+export_thm EX_SET_OF_LIST;;
+
 (* ------------------------------------------------------------------------- *)
 (* Filter.                                                                   *)
 (* ------------------------------------------------------------------------- *)
@@ -551,7 +600,7 @@ export_thm LAST;;
 logfile "list-last-thm";;
 
 let LAST_CLAUSES = prove
- (`(!h. LAST [h:A] = h) /\
+ (`(!(h:A). LAST [h] = h) /\
    (!h k t. LAST (CONS (h:A) (CONS k t)) = LAST (CONS k t))`,
   REWRITE_TAC[LAST; NOT_CONS_NIL]);;
 
@@ -790,6 +839,68 @@ let EL_SET_OF_LIST = prove
     ASM_SIMP_TAC [EL_SUC]]]);;
 
 export_thm EL_SET_OF_LIST;;
+
+let SET_OF_LIST_EL = prove
+ (`!(x : A) l. x IN set_of_list l <=> ?i. i < LENGTH l /\ x = EL i l`,
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [SPEC_TAC (`l : A list`,`l : A list`) THEN
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [set_of_list; NOT_IN_EMPTY];
+    REWRITE_TAC [set_of_list; IN_INSERT] THEN
+    STRIP_TAC THENL
+    [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+     EXISTS_TAC `0` THEN
+     REWRITE_TAC [LENGTH; LT_0; EL_0];
+     FIRST_X_ASSUM
+       (fun th -> FIRST_X_ASSUM (fun th' -> STRIP_ASSUME_TAC (MP th th'))) THEN
+     FIRST_X_ASSUM SUBST_VAR_TAC THEN
+     EXISTS_TAC `SUC i` THEN
+     ASM_REWRITE_TAC [LENGTH; LT_SUC] THEN
+     MATCH_MP_TAC EQ_SYM THEN
+     MATCH_MP_TAC EL_SUC THEN
+     FIRST_ASSUM ACCEPT_TAC]];
+   STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   MATCH_MP_TAC EL_SET_OF_LIST THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm SET_OF_LIST_EL;;
+
+let ALL_EL = prove
+ (`!P (l : A list). ALL P l <=> !i. i < LENGTH l ==> P (EL i l)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [ALL_SET_OF_LIST] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   MATCH_MP_TAC EL_SET_OF_LIST THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   REWRITE_TAC [SET_OF_LIST_EL] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm ALL_EL;;
+
+let EX_EL = prove
+ (`!P (l : A list). EX P l <=> ?i. i < LENGTH l /\ P (EL i l)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [EX_SET_OF_LIST] THEN
+  EQ_TAC THENL
+  [REWRITE_TAC [SET_OF_LIST_EL] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   EXISTS_TAC `i:num` THEN
+   ASM_REWRITE_TAC [];
+   REPEAT STRIP_TAC THEN
+   EXISTS_TAC `EL i (l : A list)` THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC EL_SET_OF_LIST THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm EX_EL;;
 
 (* ------------------------------------------------------------------------- *)
 (* Replicate.                                                                *)
