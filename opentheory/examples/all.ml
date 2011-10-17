@@ -4,7 +4,11 @@
 
 start_logging ();;
 
+loads "opentheory/examples/divides.ml";;
+loads "opentheory/examples/gcd.ml";;
+
 loads "opentheory/examples/modular.ml";;
+
 loads "opentheory/examples/word.ml";;
 loads "opentheory/examples/byte.ml";;
 loads "opentheory/examples/word16.ml";;
