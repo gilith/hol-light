@@ -80,6 +80,18 @@ let divides_antisym = prove
 
 export_thm divides_antisym;;
 
+let divides_trans = prove
+  (`!a b c. divides a b /\ divides b c ==> divides a c`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [divides_def] THEN
+   STRIP_TAC THEN
+   REPEAT (FIRST_X_ASSUM SUBST_VAR_TAC) THEN
+   EXISTS_TAC `c'' * (c' : num)` THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_ACCEPT_TAC MULT_ASSOC);;
+
+export_thm divides_trans;;
+
 let divides_add = prove
   (`!a b c. divides a b /\ divides a c ==> divides a (b + c)`,
    REPEAT GEN_TAC THEN
@@ -109,5 +121,64 @@ let divides_sub = prove
     FIRST_ASSUM ACCEPT_TAC]);;
 
 export_thm divides_sub;;
+
+let gcd_induction = prove
+  (`!p : num -> num -> bool.
+      (!n. p 0 n) /\
+      (!m n. n < m /\ p n m ==> p m n) /\
+      (!m n. p m n ==> p m (n + m)) ==>
+      (!m n. p m n)`,
+   REPEAT STRIP_TAC THEN
+   WF_INDUCT_TAC `(m : num) + m + n` THEN
+   ASM_CASES_TAC `m = 0` THENL
+   [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    FIRST_ASSUM MATCH_ACCEPT_TAC;
+    ALL_TAC] THEN
+   ASM_CASES_TAC `(m : num) <= n` THENL
+   [POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [LE_EXISTS] THEN
+    DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+    ONCE_REWRITE_TAC [ADD_SYM] THEN
+    UNDISCH_THEN `!(m : num) n. p m n ==> p m (n + m)` MATCH_MP_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    REWRITE_TAC [LT_ADD_LCANCEL] THEN
+    ASM_REWRITE_TAC [LT_ADDR; LT_NZ];
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [NOT_LE] THEN
+    STRIP_TAC THEN
+    UNDISCH_THEN `!(m : num) n. n < m /\ p n m ==> p m n` MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+    ASM_REWRITE_TAC [ADD_ASSOC; LT_ADD_RCANCEL]]);;
+
+export_thm gcd_induction;;
+
+let gcd_exists = prove
+  (`!a b. ?g.
+      divides g a /\ divides g b /\
+      !c. divides c a /\ divides c b ==> divides c g`,
+   MATCH_MP_TAC gcd_induction THEN
+   REPEAT STRIP_TAC THENL
+   [EXISTS_TAC `g:num` THEN
+    ASM_REWRITE_TAC [] THEN
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC [];
+    EXISTS_TAC `b : num` THEN
+    REWRITE_TAC [divides_zero; divides_refl];
+    EXISTS_TAC `g : num` THEN
+    ASM_REWRITE_TAC [] THEN
+    REPEAT STRIP_TAC THENL
+    [MATCH_MP_TAC divides_add THEN
+     ASM_REWRITE_TAC [];
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     ASM_REWRITE_TAC [] THEN
+     SUBGOAL_THEN `divides c ((a + b) - b)`
+       (fun th -> MP_TAC th THEN REWRITE_TAC [ADD_SUB]) THEN
+     MATCH_MP_TAC divides_sub THEN
+     ASM_REWRITE_TAC [LE_ADDR]]]);;
+
+export_thm gcd_exists;;
 
 logfile_end ();;
