@@ -66,19 +66,19 @@ let divides_refl = prove
 
 export_thm divides_refl;;
 
-(***
 let divides_antisym = prove
   (`!a b. divides a b /\ divides b a ==> a = b`,
    REPEAT GEN_TAC THEN
-   REWRITE_TAC [divides_def] THEN
-   STRIP_TAC THEN
-   FIRST_X_ASSUM SUBST_VAR_TAC THEN
-
-   EXISTS_TAC `1` THEN
-   REWRITE_TAC [MULT_CLAUSES]);;
+   ASM_CASES_TAC `b = 0` THENL
+   [ASM_REWRITE_TAC [zero_divides; divides_zero];
+    REWRITE_TAC [divides_def] THEN
+    STRIP_TAC THEN
+    FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    ASM_REWRITE_TAC [MULTR_EQ; MULT_ASSOC; MULT_EQ_1] THEN
+    STRIP_TAC]);;
 
 export_thm divides_antisym;;
-***)
 
 let divides_add = prove
   (`!a b c. divides a b /\ divides a c ==> divides a (b + c)`,

@@ -347,6 +347,22 @@ let EQ_MULTR = prove
 
 export_thm EQ_MULTR;;
 
+let MULTL_EQ = prove
+ (`!m n. (m * n = m) <=> (m = 0) \/ (n = 1)`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
+  MATCH_ACCEPT_TAC EQ_MULTL);;
+
+export_thm MULTL_EQ;;
+
+let MULTR_EQ = prove
+ (`!m n. (n * m = m) <=> (m = 0) \/ (n = 1)`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
+  MATCH_ACCEPT_TAC EQ_MULTR);;
+
+export_thm MULTR_EQ;;
+
 let MULT_2 = prove
  (`!n. 2 * n = n + n`,
   GEN_TAC THEN REWRITE_TAC[BIT0_THM; MULT_CLAUSES; RIGHT_ADD_DISTRIB]);;
