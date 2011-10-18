@@ -83,6 +83,15 @@ export_thm gcd_greatest;;
 logfile "natural-gcd-thm";;
 
 (***
+let gcd_unique = prove
+  (`!a b g.
+      divides g a /\ divides g b /\
+      (!c. divides c a /\ divides c b ==> divides c g) ==>
+      gcd a b = g`,
+   REPEAT STRIP_TAC THEN
+***)
+
+(***
 let gcd_recursion = prove
   (`!a b.
       gcd a b =

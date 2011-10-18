@@ -66,6 +66,20 @@ let divides_refl = prove
 
 export_thm divides_refl;;
 
+(***
+let divides_antisym = prove
+  (`!a b. divides a b /\ divides b a ==> a = b`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [divides_def] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+
+   EXISTS_TAC `1` THEN
+   REWRITE_TAC [MULT_CLAUSES]);;
+
+export_thm divides_antisym;;
+***)
+
 let divides_add = prove
   (`!a b c. divides a b /\ divides a c ==> divides a (b + c)`,
    REPEAT GEN_TAC THEN
