@@ -97,7 +97,10 @@ type opentheory_object =
    | Const_object of string
    | Var_object of term
    | Term_object of term
-   | Thm_object of (term list * term);;
+   | Thm_object of thm
+   | List_object of opentheory_object list
+   | Name_object of string
+   | Num_object of int;;
 
 let log_num n = log_raw (string_of_int n);;
 
@@ -205,9 +208,9 @@ let (log_reset,log_term,log_thm,log_clear) =
         let () = log_list log_type_var tyVars in
         let () = log_thm exists_th in
         let () = log_command "defineTypeOp" in
-        let ra_k = save_dict (Thm_object (dest_thm ra)) in
+        let ra_k = save_dict (Thm_object ra) in
         let () = log_command "pop" in
-        let ar_k = save_dict (Thm_object (dest_thm ar)) in
+        let ar_k = save_dict (Thm_object ar) in
         let () = log_command "pop" in
         let rep_k = save_dict (Const_object repTm) in
         let () = log_command "pop" in
@@ -252,7 +255,7 @@ let (log_reset,log_term,log_thm,log_clear) =
         let () = log_const_name c in
         let () = log_term tm in
         let () = log_command "defineConst" in
-        let th_k = save_dict (Thm_object (dest_thm th)) in
+        let th_k = save_dict (Thm_object th) in
         let () = log_command "pop" in
         let c_k = save_dict (Const_object c) in
         let () = log_command "pop" in
@@ -342,7 +345,7 @@ let (log_reset,log_term,log_thm,log_clear) =
         let ins = ([], map conv tmins) in
         log_inst ins
     and log_thm th =
-        let ob = Thm_object (dest_thm th) in
+        let ob = Thm_object th in
         if saved ob then () else
         let () =
             match read_proof th with
