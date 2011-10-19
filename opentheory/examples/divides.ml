@@ -160,13 +160,13 @@ let gcd_exists = prove
       !c. divides c a /\ divides c b ==> divides c g`,
    MATCH_MP_TAC gcd_induction THEN
    REPEAT STRIP_TAC THENL
-   [EXISTS_TAC `g:num` THEN
+   [EXISTS_TAC `b : num` THEN
+    REWRITE_TAC [divides_zero; divides_refl];
+    EXISTS_TAC `g:num` THEN
     ASM_REWRITE_TAC [] THEN
     REPEAT STRIP_TAC THEN
     FIRST_X_ASSUM MATCH_MP_TAC THEN
     ASM_REWRITE_TAC [];
-    EXISTS_TAC `b : num` THEN
-    REWRITE_TAC [divides_zero; divides_refl];
     EXISTS_TAC `g : num` THEN
     ASM_REWRITE_TAC [] THEN
     REPEAT STRIP_TAC THENL
@@ -174,7 +174,7 @@ let gcd_exists = prove
      ASM_REWRITE_TAC [];
      FIRST_X_ASSUM MATCH_MP_TAC THEN
      ASM_REWRITE_TAC [] THEN
-     SUBGOAL_THEN `divides c ((a + b) - b)`
+     SUBGOAL_THEN `divides c ((b + a) - a)`
        (fun th -> MP_TAC th THEN REWRITE_TAC [ADD_SUB]) THEN
      MATCH_MP_TAC divides_sub THEN
      ASM_REWRITE_TAC [LE_ADDR]]]);;

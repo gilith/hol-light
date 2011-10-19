@@ -203,9 +203,37 @@ let gcd_recursion = prove
 
 export_thm gcd_recursion;;
 
-(***
 let egcd_exists = prove
-  (`!a b. ?s t. s * a + gcd a b = t * b`
-***)
+  (`!a b. ?s t. s * a + gcd a b = t * b \/ t * b + gcd a b = s * a`,
+   MATCH_MP_TAC gcd_induction THEN
+   REPEAT STRIP_TAC THENL
+   [EXISTS_TAC `0` THEN
+    EXISTS_TAC `1` THEN
+    DISJ1_TAC THEN
+    REWRITE_TAC [zero_gcd; ONE_MULT; ZERO_MULT; ADD];
+    EXISTS_TAC `t : num` THEN
+    EXISTS_TAC `s : num` THEN
+    DISJ2_TAC THEN
+    ONCE_REWRITE_TAC [gcd_comm] THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    EXISTS_TAC `t : num` THEN
+    EXISTS_TAC `s : num` THEN
+    DISJ1_TAC THEN
+    ONCE_REWRITE_TAC [gcd_comm] THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    EXISTS_TAC `(t : num) + s` THEN
+    EXISTS_TAC `t : num` THEN
+    DISJ1_TAC THEN
+    ASM_REWRITE_TAC
+      [gcd_addr; RIGHT_ADD_DISTRIB; GSYM ADD_ASSOC; LEFT_ADD_DISTRIB] THEN
+    MATCH_ACCEPT_TAC ADD_SYM;
+    EXISTS_TAC `(t : num) + s` THEN
+    EXISTS_TAC `t : num` THEN
+    DISJ2_TAC THEN
+    CONV_TAC (LAND_CONV (LAND_CONV (RAND_CONV (REWR_CONV ADD_SYM)))) THEN
+    ASM_REWRITE_TAC
+      [gcd_addr; RIGHT_ADD_DISTRIB; LEFT_ADD_DISTRIB; GSYM ADD_ASSOC]]);;
+
+export_thm egcd_exists;;
 
 logfile_end ();;
