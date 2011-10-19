@@ -582,6 +582,22 @@ let stop_logging () =
         ()
     | _ -> ();;
 
+let start_logging_to h =
+  match (!log_state) with
+    Not_logging ->
+      let () = log_reset () in
+      let () = log_state := Active_logging h in
+      ()
+    | _ -> ();;
+
+let stop_logging_to () =
+  match (!log_state) with
+    Active_logging h ->
+      let () = close_out h in
+      let () = log_state := Not_logging in
+      ()
+    | _ -> ();;
+
 (* ------------------------------------------------------------------------- *)
 (* Exporting theorems.                                                       *)
 (* ------------------------------------------------------------------------- *)
