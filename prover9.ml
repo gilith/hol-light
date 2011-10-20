@@ -107,3 +107,4 @@ loads "class.ml";;
 loads "canon.ml";;
 loads "sets.ml";;
 loads "Examples/prover9.ml";;
+loads "prover9main.ml";;
