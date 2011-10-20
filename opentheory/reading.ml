@@ -5,9 +5,6 @@
 
 (* for the moment, we only read term-forming commands and axiom proofs *)
 
-needs "basics.ml";;
-needs "equal.ml";;
-
 module Intmap = Map.Make(struct type t = int let compare = compare end);;
 
 type state =
