@@ -10,6 +10,8 @@ loads "opentheory/examples/prime.ml";;
 
 loads "opentheory/examples/modular.ml";;
 
+loads "opentheory/examples/gfp.ml";;
+
 loads "opentheory/examples/word.ml";;
 loads "opentheory/examples/byte.ml";;
 loads "opentheory/examples/word16.ml";;
