@@ -162,6 +162,42 @@ let divides_two = prove
 
 export_thm divides_two;;
 
+let divides_div = prove
+  (`!a b. ~(a = 0) ==> (divides a b <=> (b DIV a) * a = b)`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [divides_def] THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    MP_TAC (SPECL [`a : num`; `c : num`] DIV_MULT) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (SUBST1_TAC o ONCE_REWRITE_RULE [MULT_SYM]) THEN
+    REFL_TAC;
+    STRIP_TAC THEN
+    EXISTS_TAC `b DIV a` THEN
+    FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm divides_div;;
+
+let divides_mod = prove
+  (`!a b. ~(a = 0) ==> (divides a b <=> b MOD a = 0)`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPECL [`a : num`; `b : num`] divides_div) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC (SPECL [`b : num`; `a : num`] DIVISION_DEF_DIV) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    UNDISCH_TAC `b DIV a * a + b MOD a = b` THEN
+    ASM_REWRITE_TAC [EQ_ADD_LCANCEL_0];
+    STRIP_TAC THEN
+    UNDISCH_TAC `b DIV a * a + b MOD a = b` THEN
+    ASM_REWRITE_TAC [ADD_0]]);;
+
+export_thm divides_mod;;
+
 let gcd_induction = prove
   (`!p : num -> num -> bool.
       (!n. p 0 n) /\
