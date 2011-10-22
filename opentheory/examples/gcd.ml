@@ -35,6 +35,14 @@ let gcd_unique = prove
 
 export_thm gcd_unique;;
 
+let gcd_is_one = prove
+  (`!a b. (!c. divides c a /\ divides c b ==> c = 1) ==> gcd a b = 1`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC gcd_unique THEN
+   ASM_REWRITE_TAC [divides_one; one_divides]);;
+
+export_thm gcd_is_one;;
+
 let gcd_refl = prove
   (`!a. gcd a a = a`,
    REPEAT STRIP_TAC THEN
@@ -83,6 +91,26 @@ let gcd_assoc = prove
      REWRITE_TAC [gcd_divides2]]]);;
 
 export_thm gcd_assoc;;
+
+let divides_gcd = prove
+  (`!a b. gcd a b = a <=> divides a b`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [DISCH_THEN (SUBST1_TAC o SYM) THEN
+    MATCH_ACCEPT_TAC gcd_divides2;
+    STRIP_TAC THEN
+    MATCH_MP_TAC gcd_unique THEN
+    ASM_REWRITE_TAC [divides_refl] THEN
+    REPEAT STRIP_TAC]);;
+
+export_thm divides_gcd;;
+
+let gcd_divides = prove
+  (`!a b. gcd b a = a <=> divides a b`,
+   ONCE_REWRITE_TAC [gcd_comm] THEN
+   ACCEPT_TAC divides_gcd);;
+
+export_thm gcd_divides;;
 
 let zero_gcd = prove
   (`!a. gcd 0 a = a`,
@@ -204,35 +232,20 @@ let gcd_recursion = prove
 export_thm gcd_recursion;;
 
 let egcd_exists = prove
-  (`!a b. ?s t. s * a + gcd a b = t * b \/ t * b + gcd a b = s * a`,
+  (`!a b. ?s t. dist (s * a) (t * b) = gcd a b`,
    MATCH_MP_TAC gcd_induction THEN
    REPEAT STRIP_TAC THENL
    [EXISTS_TAC `0` THEN
     EXISTS_TAC `1` THEN
-    DISJ1_TAC THEN
-    REWRITE_TAC [zero_gcd; ONE_MULT; ZERO_MULT; ADD];
+    REWRITE_TAC [zero_gcd; ONE_MULT; ZERO_MULT; DIST_LZERO];
     EXISTS_TAC `t : num` THEN
     EXISTS_TAC `s : num` THEN
-    DISJ2_TAC THEN
-    ONCE_REWRITE_TAC [gcd_comm] THEN
+    ONCE_REWRITE_TAC [gcd_comm; DIST_SYM] THEN
     FIRST_ASSUM ACCEPT_TAC;
+    EXISTS_TAC `(s : num) + t` THEN
     EXISTS_TAC `t : num` THEN
-    EXISTS_TAC `s : num` THEN
-    DISJ1_TAC THEN
-    ONCE_REWRITE_TAC [gcd_comm] THEN
-    FIRST_ASSUM ACCEPT_TAC;
-    EXISTS_TAC `(t : num) + s` THEN
-    EXISTS_TAC `t : num` THEN
-    DISJ1_TAC THEN
     ASM_REWRITE_TAC
-      [gcd_addr; RIGHT_ADD_DISTRIB; GSYM ADD_ASSOC; LEFT_ADD_DISTRIB] THEN
-    MATCH_ACCEPT_TAC ADD_SYM;
-    EXISTS_TAC `(t : num) + s` THEN
-    EXISTS_TAC `t : num` THEN
-    DISJ2_TAC THEN
-    CONV_TAC (LAND_CONV (LAND_CONV (RAND_CONV (REWR_CONV ADD_SYM)))) THEN
-    ASM_REWRITE_TAC
-      [gcd_addr; RIGHT_ADD_DISTRIB; LEFT_ADD_DISTRIB; GSYM ADD_ASSOC]]);;
+      [gcd_addr; RIGHT_ADD_DISTRIB; LEFT_ADD_DISTRIB; DIST_RADD]]);;
 
 export_thm egcd_exists;;
 

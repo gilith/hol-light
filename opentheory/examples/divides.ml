@@ -25,6 +25,22 @@ let symmetry_reduction = prove
     FIRST_X_ASSUM MATCH_MP_TAC THEN
     FIRST_ASSUM ACCEPT_TAC]);;
 
+let divides_le = prove
+  (`!a b. ~(b = 0) /\ divides a b ==> a <= b`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [divides_def] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   CONV_TAC (LAND_CONV (REWR_CONV (GSYM ONE_MULT))) THEN
+   ASM_REWRITE_TAC [LE_MULT_RCANCEL] THEN
+   DISJ1_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [MULT_EQ_0; DE_MORGAN_THM] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [ONE; LE_SUC_LT; LT_NZ]);;
+
+export_thm divides_le;;
+
 let divides_zero = prove
   (`!a. divides a 0`,
    GEN_TAC THEN
@@ -121,6 +137,30 @@ let divides_sub = prove
     FIRST_ASSUM ACCEPT_TAC]);;
 
 export_thm divides_sub;;
+
+let divides_two = prove
+  (`!a. divides a 2 <=> a = 1 \/ a = 2`,
+   GEN_TAC THEN
+   ASM_CASES_TAC `a = 0` THENL
+   [ASM_REWRITE_TAC [zero_divides; TWO; ONE; NOT_SUC];
+    ALL_TAC] THEN
+   ASM_CASES_TAC `a = 1` THENL
+   [ASM_REWRITE_TAC [one_divides];
+    ALL_TAC] THEN
+   ASM_CASES_TAC `a = 2` THENL
+   [ASM_REWRITE_TAC [divides_refl];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC (SPECL [`a : num`; `2`] divides_le) THEN
+   ASM_REWRITE_TAC [] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REPEAT (POP_ASSUM MP_TAC) THEN
+   REWRITE_TAC [TWO; ONE; LE; NOT_SUC] THEN
+   REPEAT (DISCH_THEN (SUBST1_TAC o EQF_INTRO)) THEN
+   REWRITE_TAC []);;
+
+export_thm divides_two;;
 
 let gcd_induction = prove
   (`!p : num -> num -> bool.

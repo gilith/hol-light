@@ -6,6 +6,7 @@ start_logging ();;
 
 loads "opentheory/examples/divides.ml";;
 loads "opentheory/examples/gcd.ml";;
+loads "opentheory/examples/prime.ml";;
 
 loads "opentheory/examples/modular.ml";;
 
