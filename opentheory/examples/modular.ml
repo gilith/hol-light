@@ -428,6 +428,19 @@ let modular_to_num_div_bound = new_axiom
   `!x. modular_to_num x DIV modulus = 0`;;
 *)
 
+let modular_to_num_mod_bound = prove
+  (`!x. modular_to_num x MOD modulus = modular_to_num x`,
+   GEN_TAC THEN
+   MATCH_MP_TAC MOD_LT THEN
+   REWRITE_TAC [modular_to_num_bound]);;
+
+export_thm modular_to_num_mod_bound;;
+
+(*PARAMETRIC
+let modular_to_num_mod_bound = new_axiom
+  `!x. modular_to_num x MOD modulus = modular_to_num x`;;
+*)
+
 let modular_add_to_num = prove
   (`!x y.
       modular_to_num (modular_add x y) =

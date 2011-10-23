@@ -97,6 +97,9 @@ let byte_to_num_bound = new_axiom
 let byte_to_num_div_bound = new_axiom
   `!x. byte_to_num x DIV byte_size = 0`;;
 
+let byte_to_num_mod_bound = new_axiom
+  `!x. byte_to_num x MOD byte_size = byte_to_num x`;;
+
 let byte_add_to_num = new_axiom
    `!x y.
       byte_to_num (byte_add x y) =

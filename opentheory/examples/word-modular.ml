@@ -85,6 +85,9 @@ let word_to_num_bound = new_axiom
 let word_to_num_div_bound = new_axiom
   `!x. word_to_num x DIV word_size = 0`;;
 
+let word_to_num_mod_bound = new_axiom
+  `!x. word_to_num x MOD word_size = word_to_num x`;;
+
 let word_add_to_num = new_axiom
    `!x y.
       word_to_num (word_add x y) =
@@ -180,6 +183,9 @@ let word_to_num_bound = new_axiom
 
 let word_to_num_div_bound = new_axiom
   `!x. word_to_num x DIV word_size = 0`;;
+
+let word_to_num_mod_bound = new_axiom
+  `!x. word_to_num x MOD word_size = word_to_num x`;;
 
 let word_add_to_num = new_axiom
    `!x y.

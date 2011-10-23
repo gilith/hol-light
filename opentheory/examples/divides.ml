@@ -198,6 +198,15 @@ let divides_mod = prove
 
 export_thm divides_mod;;
 
+let divides_even = prove
+  (`!a. divides 2 a <=> EVEN a`,
+   GEN_TAC THEN
+   REWRITE_TAC [EVEN_MOD] THEN
+   MATCH_MP_TAC divides_mod THEN
+   NUM_REDUCE_TAC);;
+
+export_thm divides_even;;
+
 let gcd_induction = prove
   (`!p : num -> num -> bool.
       (!n. p 0 n) /\

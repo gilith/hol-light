@@ -85,6 +85,9 @@ let gfp_to_num_bound = new_axiom
 let gfp_to_num_div_bound = new_axiom
   `!x. gfp_to_num x DIV oddprime = 0`;;
 
+let gfp_to_num_mod_bound = new_axiom
+  `!x. gfp_to_num x MOD oddprime = gfp_to_num x`;;
+
 let gfp_add_to_num = new_axiom
    `!x y.
       gfp_to_num (gfp_add x y) =
@@ -180,6 +183,9 @@ let gfp_to_num_bound = new_axiom
 
 let gfp_to_num_div_bound = new_axiom
   `!x. gfp_to_num x DIV oddprime = 0`;;
+
+let gfp_to_num_mod_bound = new_axiom
+  `!x. gfp_to_num x MOD oddprime = gfp_to_num x`;;
 
 let gfp_add_to_num = new_axiom
    `!x y.

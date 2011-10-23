@@ -33,6 +33,18 @@ let prime_two = prove
 
 export_thm prime_two;;
 
+let prime_even = prove
+  (`!p. prime p /\ EVEN p ==> p = 2`,
+   GEN_TAC THEN
+   REWRITE_TAC [prime_def; GSYM divides_even] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `2`) THEN
+   ASM_REWRITE_TAC [] THEN
+   NUM_REDUCE_TAC THEN
+   MATCH_ACCEPT_TAC EQ_SYM);;
+
+export_thm prime_even;;
+
 let gcd_prime = prove
   (`!p n. prime p /\ ~divides p n ==> gcd p n = 1`,
    REWRITE_TAC [prime_def] THEN

@@ -97,6 +97,9 @@ let word12_to_num_bound = new_axiom
 let word12_to_num_div_bound = new_axiom
   `!x. word12_to_num x DIV word12_size = 0`;;
 
+let word12_to_num_mod_bound = new_axiom
+  `!x. word12_to_num x MOD word12_size = word12_to_num x`;;
+
 let word12_add_to_num = new_axiom
    `!x y.
       word12_to_num (word12_add x y) =

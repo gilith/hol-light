@@ -37,13 +37,13 @@ let oddprime_nonzero = new_axiom
 
 loads "opentheory/examples/gfp-modular.ml";;
 
-(***
-logfile "gfp-inverse-def";;
+logfile "gfp-thm";;
 
 (*PARAMETRIC
-(* gfp-inverse-def *)
+(* gfp-thm *)
 *)
 
+(***
 let gfp_inverse_exists = prove
   (`!n : gfp. ~(n = num_to_gfp 0) ==> ?m. gfp_mult m n = num_to_gfp 1`,
    REPEAT STRIP_TAC THEN
@@ -52,8 +52,27 @@ let gfp_inverse_exists = prove
    [REWRITE_TAC [oddprime_prime] THEN
     MP_TAC (SPECL [`oddprime`; `gfp_to_num n`] divides_mod) THEN
     REWRITE_TAC [oddprime_nonzero] THEN
-    DISCH_THEN SUBST1_TAC ...
+    DISCH_THEN SUBST1_TAC THEN
+    STRIP_TAC THEN
+    UNDISCH_TAC `~(n = num_to_gfp 0)` THEN
+    REWRITE_TAC [] THEN
+    MATCH_MP_TAC gfp_to_num_inj
+    ...
 
+(*PARAMETRIC
+let gfp_inverse_exists = new_axiom
+   `!n : gfp. ~(n = num_to_gfp 0) ==> ?m. gfp_mult m n = num_to_gfp 1`;;
+*)
+
+export_thm gfp_inverse_exists;;
+***)
+
+(***
+logfile "gfp-inverse-def";;
+
+(*PARAMETRIC
+(* gfp-inverse-def *)
+*)
 
 let gfp_inverse_def =
     let th0 = ONCE_REWRITE_RULE [RIGHT_IMP_EXISTS_THM] gfp_inverse_exists in
