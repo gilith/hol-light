@@ -132,7 +132,33 @@ let gfp_inverse_exists = prove
     UNDISCH_TAC `~(n = num_to_gfp 0)` THEN
     REWRITE_TAC [] THEN
     MATCH_MP_TAC gfp_to_num_inj THEN
-    ASM_REWRITE_TAC [num_to_gfp_to_num]
+    ASM_REWRITE_TAC [num_to_gfp_to_num; zero_mod_oddprime];
+    ALL_TAC] THEN
+   STRIP_TAC THEN
+   MP_TAC (SPECL [`oddprime`; `gfp_to_num n`] egcd_exists) THEN
+   POP_ASSUM SUBST1_TAC THEN
+   REWRITE_TAC [DIST_CASES] THEN
+   STRIP_TAC THENL
+   [EXISTS_TAC `num_to_gfp t` THEN
+    CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV (GSYM gfp_to_num_to_gfp)))) THEN
+    REWRITE_TAC [GSYM num_to_gfp_mult] THEN
+    POP_ASSUM (SUBST1_TAC o SYM) THEN
+    REWRITE_TAC [num_to_gfp_add; num_to_gfp_mult] THEN
+    REWRITE_TAC [num_to_gfp_oddprime; gfp_mult_zero; zero_gfp_add];
+    EXISTS_TAC `gfp_neg (num_to_gfp t)` THEN
+    CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV (GSYM gfp_to_num_to_gfp)))) THEN
+    
+
+    REWRITE_TAC [GSYM num_to_gfp_mult] THEN
+    POP_ASSUM (SUBST1_TAC o SYM) THEN
+    REWRITE_TAC [num_to_gfp_add; num_to_gfp_mult] THEN
+    REWRITE_TAC [num_to_gfp_oddprime; gfp_mult_zero; zero_gfp_add];
+    
+
+     
+
+     MATCH_MP_TAC gfp_to_num_inj
+
     ...
 
 (*PARAMETRIC

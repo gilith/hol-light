@@ -14,6 +14,9 @@ let byte_size_nonzero = new_axiom
 
 (* byte-mod *)
 
+let mod_refl_byte_size = new_axiom
+  `byte_size MOD byte_size = 0`;;
+
 let mod_lt_byte_size = new_axiom
   `!n. n < byte_size ==> n MOD byte_size = n`;;
 
@@ -29,7 +32,7 @@ let mod_mod_refl_byte_size = new_axiom
 let mod_add_mod_byte_size = new_axiom
   `!m n. (m MOD byte_size + n MOD byte_size) MOD byte_size = (m + n) MOD byte_size`;;
 
-let mod_mult_mod2_byte_size = new_axiom
+let mod_mult_mod_byte_size = new_axiom
   `!m n. (m MOD byte_size * n MOD byte_size) MOD byte_size = (m * n) MOD byte_size`;;
 
 (* byte-def *)
@@ -108,8 +111,78 @@ let byte_add_to_num = new_axiom
       byte_to_num (byte_add x y) =
       (byte_to_num x + byte_to_num y) MOD byte_size`;;
 
+let byte_mult_to_num = new_axiom
+   `!x y.
+      byte_to_num (byte_mult x y) =
+      (byte_to_num x * byte_to_num y) MOD byte_size`;;
+
 let byte_lt_alt = new_axiom
    `!x y. byte_lt x y = byte_to_num x < byte_to_num y`;;
+
+let num_to_byte_byte_size = new_axiom
+   `num_to_byte byte_size = num_to_byte 0`;;
+
+let byte_add_comm = new_axiom
+   `!x y. byte_add x y = byte_add y x`;;
+
+let byte_add_assoc = new_axiom
+   `!x y z. byte_add (byte_add x y) z = byte_add x (byte_add y z)`;;
+
+let zero_byte_add = new_axiom
+   `!x. byte_add (num_to_byte 0) x = x`;;
+
+let byte_add_zero = new_axiom
+   `!x. byte_add x (num_to_byte 0) = x`;;
+
+let byte_neg_add = new_axiom
+   `!x. byte_add (byte_neg x) x = num_to_byte 0`;;
+
+let byte_add_neg = new_axiom
+   `!x. byte_add x (byte_neg x) = num_to_byte 0`;;
+
+let byte_add_left_cancel = new_axiom
+   `!x y z. byte_add x y = byte_add x z <=> y = z`;;
+
+let byte_add_right_cancel = new_axiom
+   `!x y z. byte_add y x = byte_add z x <=> y = z`;;
+
+let byte_neg_neg = new_axiom
+   `!x. byte_neg (byte_neg x) = x`;;
+
+let byte_mult_comm = new_axiom
+   `!x y. byte_mult x y = byte_mult y x`;;
+
+let byte_mult_assoc = new_axiom
+   `!x y z.
+      byte_mult (byte_mult x y) z = byte_mult x (byte_mult y z)`;;
+
+let byte_add_left_distrib = new_axiom
+   `!x y z.
+      byte_mult x (byte_add y z) =
+      byte_add (byte_mult x y) (byte_mult x z)`;;
+
+let byte_add_right_distrib = new_axiom
+   `!x y z.
+      byte_mult (byte_add y z) x =
+      byte_add (byte_mult y x) (byte_mult z x)`;;
+
+let zero_byte_mult = new_axiom
+   `!x. byte_mult (num_to_byte 0) x = num_to_byte 0`;;
+
+let byte_mult_zero = new_axiom
+   `!x. byte_mult x (num_to_byte 0) = num_to_byte 0`;;
+
+let one_byte_mult = new_axiom
+   `!x. byte_mult (num_to_byte 1) x = x`;;
+
+let byte_mult_one = new_axiom
+   `!x. byte_mult x (num_to_byte 1) = x`;;
+
+let byte_neg_mult = new_axiom
+   `!x y. byte_mult (byte_neg x) y = byte_neg (byte_mult x y)`;;
+
+let byte_mult_neg = new_axiom
+   `!x y. byte_mult x (byte_neg y) = byte_neg (byte_mult x y)`;;
 
 (* byte-bits-def *)
 

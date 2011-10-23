@@ -2,6 +2,9 @@
 
 (* gfp-mod *)
 
+let mod_refl_oddprime = new_axiom
+  `oddprime MOD oddprime = 0`;;
+
 let mod_lt_oddprime = new_axiom
   `!n. n < oddprime ==> n MOD oddprime = n`;;
 
@@ -17,7 +20,7 @@ let mod_mod_refl_oddprime = new_axiom
 let mod_add_mod_oddprime = new_axiom
   `!m n. (m MOD oddprime + n MOD oddprime) MOD oddprime = (m + n) MOD oddprime`;;
 
-let mod_mult_mod2_oddprime = new_axiom
+let mod_mult_mod_oddprime = new_axiom
   `!m n. (m MOD oddprime * n MOD oddprime) MOD oddprime = (m * n) MOD oddprime`;;
 
 (* gfp-def *)
@@ -96,14 +99,87 @@ let gfp_add_to_num = new_axiom
       gfp_to_num (gfp_add x y) =
       (gfp_to_num x + gfp_to_num y) MOD oddprime`;;
 
+let gfp_mult_to_num = new_axiom
+   `!x y.
+      gfp_to_num (gfp_mult x y) =
+      (gfp_to_num x * gfp_to_num y) MOD oddprime`;;
+
 let gfp_lt_alt = new_axiom
    `!x y. gfp_lt x y = gfp_to_num x < gfp_to_num y`;;
+
+let num_to_gfp_oddprime = new_axiom
+   `num_to_gfp oddprime = num_to_gfp 0`;;
+
+let gfp_add_comm = new_axiom
+   `!x y. gfp_add x y = gfp_add y x`;;
+
+let gfp_add_assoc = new_axiom
+   `!x y z. gfp_add (gfp_add x y) z = gfp_add x (gfp_add y z)`;;
+
+let zero_gfp_add = new_axiom
+   `!x. gfp_add (num_to_gfp 0) x = x`;;
+
+let gfp_add_zero = new_axiom
+   `!x. gfp_add x (num_to_gfp 0) = x`;;
+
+let gfp_neg_add = new_axiom
+   `!x. gfp_add (gfp_neg x) x = num_to_gfp 0`;;
+
+let gfp_add_neg = new_axiom
+   `!x. gfp_add x (gfp_neg x) = num_to_gfp 0`;;
+
+let gfp_add_left_cancel = new_axiom
+   `!x y z. gfp_add x y = gfp_add x z <=> y = z`;;
+
+let gfp_add_right_cancel = new_axiom
+   `!x y z. gfp_add y x = gfp_add z x <=> y = z`;;
+
+let gfp_neg_neg = new_axiom
+   `!x. gfp_neg (gfp_neg x) = x`;;
+
+let gfp_mult_comm = new_axiom
+   `!x y. gfp_mult x y = gfp_mult y x`;;
+
+let gfp_mult_assoc = new_axiom
+   `!x y z.
+      gfp_mult (gfp_mult x y) z = gfp_mult x (gfp_mult y z)`;;
+
+let gfp_add_left_distrib = new_axiom
+   `!x y z.
+      gfp_mult x (gfp_add y z) =
+      gfp_add (gfp_mult x y) (gfp_mult x z)`;;
+
+let gfp_add_right_distrib = new_axiom
+   `!x y z.
+      gfp_mult (gfp_add y z) x =
+      gfp_add (gfp_mult y x) (gfp_mult z x)`;;
+
+let zero_gfp_mult = new_axiom
+   `!x. gfp_mult (num_to_gfp 0) x = num_to_gfp 0`;;
+
+let gfp_mult_zero = new_axiom
+   `!x. gfp_mult x (num_to_gfp 0) = num_to_gfp 0`;;
+
+let one_gfp_mult = new_axiom
+   `!x. gfp_mult (num_to_gfp 1) x = x`;;
+
+let gfp_mult_one = new_axiom
+   `!x. gfp_mult x (num_to_gfp 1) = x`;;
+
+let gfp_neg_mult = new_axiom
+   `!x y. gfp_mult (gfp_neg x) y = gfp_neg (gfp_mult x y)`;;
+
+let gfp_mult_neg = new_axiom
+   `!x y. gfp_mult x (gfp_neg y) = gfp_neg (gfp_mult x y)`;;
 
 (*PARAMETRIC
 (* gfp *)
 
 (* gfp-mod *)
 
+let mod_refl_oddprime = new_axiom
+  `oddprime MOD oddprime = 0`;;
+
 let mod_lt_oddprime = new_axiom
   `!n. n < oddprime ==> n MOD oddprime = n`;;
 
@@ -119,7 +195,7 @@ let mod_mod_refl_oddprime = new_axiom
 let mod_add_mod_oddprime = new_axiom
   `!m n. (m MOD oddprime + n MOD oddprime) MOD oddprime = (m + n) MOD oddprime`;;
 
-let mod_mult_mod2_oddprime = new_axiom
+let mod_mult_mod_oddprime = new_axiom
   `!m n. (m MOD oddprime * n MOD oddprime) MOD oddprime = (m * n) MOD oddprime`;;
 
 (* gfp-def *)
@@ -198,6 +274,76 @@ let gfp_add_to_num = new_axiom
       gfp_to_num (gfp_add x y) =
       (gfp_to_num x + gfp_to_num y) MOD oddprime`;;
 
+let gfp_mult_to_num = new_axiom
+   `!x y.
+      gfp_to_num (gfp_mult x y) =
+      (gfp_to_num x * gfp_to_num y) MOD oddprime`;;
+
 let gfp_lt_alt = new_axiom
    `!x y. gfp_lt x y = gfp_to_num x < gfp_to_num y`;;
+
+let num_to_gfp_oddprime = new_axiom
+   `num_to_gfp oddprime = num_to_gfp 0`;;
+
+let gfp_add_comm = new_axiom
+   `!x y. gfp_add x y = gfp_add y x`;;
+
+let gfp_add_assoc = new_axiom
+   `!x y z. gfp_add (gfp_add x y) z = gfp_add x (gfp_add y z)`;;
+
+let zero_gfp_add = new_axiom
+   `!x. gfp_add (num_to_gfp 0) x = x`;;
+
+let gfp_add_zero = new_axiom
+   `!x. gfp_add x (num_to_gfp 0) = x`;;
+
+let gfp_neg_add = new_axiom
+   `!x. gfp_add (gfp_neg x) x = num_to_gfp 0`;;
+
+let gfp_add_neg = new_axiom
+   `!x. gfp_add x (gfp_neg x) = num_to_gfp 0`;;
+
+let gfp_add_left_cancel = new_axiom
+   `!x y z. gfp_add x y = gfp_add x z <=> y = z`;;
+
+let gfp_add_right_cancel = new_axiom
+   `!x y z. gfp_add y x = gfp_add z x <=> y = z`;;
+
+let gfp_neg_neg = new_axiom
+   `!x. gfp_neg (gfp_neg x) = x`;;
+
+let gfp_mult_comm = new_axiom
+   `!x y. gfp_mult x y = gfp_mult y x`;;
+
+let gfp_mult_assoc = new_axiom
+   `!x y z.
+      gfp_mult (gfp_mult x y) z = gfp_mult x (gfp_mult y z)`;;
+
+let gfp_add_left_distrib = new_axiom
+   `!x y z.
+      gfp_mult x (gfp_add y z) =
+      gfp_add (gfp_mult x y) (gfp_mult x z)`;;
+
+let gfp_add_right_distrib = new_axiom
+   `!x y z.
+      gfp_mult (gfp_add y z) x =
+      gfp_add (gfp_mult y x) (gfp_mult z x)`;;
+
+let zero_gfp_mult = new_axiom
+   `!x. gfp_mult (num_to_gfp 0) x = num_to_gfp 0`;;
+
+let gfp_mult_zero = new_axiom
+   `!x. gfp_mult x (num_to_gfp 0) = num_to_gfp 0`;;
+
+let one_gfp_mult = new_axiom
+   `!x. gfp_mult (num_to_gfp 1) x = x`;;
+
+let gfp_mult_one = new_axiom
+   `!x. gfp_mult x (num_to_gfp 1) = x`;;
+
+let gfp_neg_mult = new_axiom
+   `!x y. gfp_mult (gfp_neg x) y = gfp_neg (gfp_mult x y)`;;
+
+let gfp_mult_neg = new_axiom
+   `!x y. gfp_mult x (gfp_neg y) = gfp_neg (gfp_mult x y)`;;
 *)

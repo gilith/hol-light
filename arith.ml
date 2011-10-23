@@ -1929,6 +1929,15 @@ let DIV_REFL = prove
 
 export_thm DIV_REFL;;
 
+let MOD_REFL = prove
+ (`!n. ~(n = 0) ==> (n MOD n = 0)`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC MOD_UNIQ THEN
+  EXISTS_TAC `1` THEN
+  ASM_REWRITE_TAC [ONE_MULT; LT_NZ; ADD_0]);;
+
+export_thm MOD_REFL;;
+
 let MOD_LE = prove
  (`!m n. ~(n = 0) ==> m MOD n <= m`,
   REPEAT GEN_TAC THEN

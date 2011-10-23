@@ -1131,9 +1131,9 @@ let num_to_word_cons = prove
    REWRITE_TAC [word_to_list_to_word] THEN
    REWRITE_TAC [num_to_word_to_num] THEN
    ONCE_REWRITE_TAC [GSYM mod_add_mod_word_size] THEN
-   ONCE_REWRITE_TAC [GSYM mod_mult_mod2_word_size] THEN
+   ONCE_REWRITE_TAC [GSYM mod_mult_mod_word_size] THEN
    REWRITE_TAC [mod_mod_refl_word_size] THEN
-   REWRITE_TAC [mod_mult_mod2_word_size] THEN
+   REWRITE_TAC [mod_mult_mod_word_size] THEN
    REWRITE_TAC [mod_add_mod_word_size] THEN
    AP_THM_TAC THEN
    AP_TERM_TAC THEN

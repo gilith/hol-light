@@ -14,6 +14,9 @@ let word12_size_nonzero = new_axiom
 
 (* word12-mod *)
 
+let mod_refl_word12_size = new_axiom
+  `word12_size MOD word12_size = 0`;;
+
 let mod_lt_word12_size = new_axiom
   `!n. n < word12_size ==> n MOD word12_size = n`;;
 
@@ -29,7 +32,7 @@ let mod_mod_refl_word12_size = new_axiom
 let mod_add_mod_word12_size = new_axiom
   `!m n. (m MOD word12_size + n MOD word12_size) MOD word12_size = (m + n) MOD word12_size`;;
 
-let mod_mult_mod2_word12_size = new_axiom
+let mod_mult_mod_word12_size = new_axiom
   `!m n. (m MOD word12_size * n MOD word12_size) MOD word12_size = (m * n) MOD word12_size`;;
 
 (* word12-def *)
@@ -108,8 +111,78 @@ let word12_add_to_num = new_axiom
       word12_to_num (word12_add x y) =
       (word12_to_num x + word12_to_num y) MOD word12_size`;;
 
+let word12_mult_to_num = new_axiom
+   `!x y.
+      word12_to_num (word12_mult x y) =
+      (word12_to_num x * word12_to_num y) MOD word12_size`;;
+
 let word12_lt_alt = new_axiom
    `!x y. word12_lt x y = word12_to_num x < word12_to_num y`;;
+
+let num_to_word12_word12_size = new_axiom
+   `num_to_word12 word12_size = num_to_word12 0`;;
+
+let word12_add_comm = new_axiom
+   `!x y. word12_add x y = word12_add y x`;;
+
+let word12_add_assoc = new_axiom
+   `!x y z. word12_add (word12_add x y) z = word12_add x (word12_add y z)`;;
+
+let zero_word12_add = new_axiom
+   `!x. word12_add (num_to_word12 0) x = x`;;
+
+let word12_add_zero = new_axiom
+   `!x. word12_add x (num_to_word12 0) = x`;;
+
+let word12_neg_add = new_axiom
+   `!x. word12_add (word12_neg x) x = num_to_word12 0`;;
+
+let word12_add_neg = new_axiom
+   `!x. word12_add x (word12_neg x) = num_to_word12 0`;;
+
+let word12_add_left_cancel = new_axiom
+   `!x y z. word12_add x y = word12_add x z <=> y = z`;;
+
+let word12_add_right_cancel = new_axiom
+   `!x y z. word12_add y x = word12_add z x <=> y = z`;;
+
+let word12_neg_neg = new_axiom
+   `!x. word12_neg (word12_neg x) = x`;;
+
+let word12_mult_comm = new_axiom
+   `!x y. word12_mult x y = word12_mult y x`;;
+
+let word12_mult_assoc = new_axiom
+   `!x y z.
+      word12_mult (word12_mult x y) z = word12_mult x (word12_mult y z)`;;
+
+let word12_add_left_distrib = new_axiom
+   `!x y z.
+      word12_mult x (word12_add y z) =
+      word12_add (word12_mult x y) (word12_mult x z)`;;
+
+let word12_add_right_distrib = new_axiom
+   `!x y z.
+      word12_mult (word12_add y z) x =
+      word12_add (word12_mult y x) (word12_mult z x)`;;
+
+let zero_word12_mult = new_axiom
+   `!x. word12_mult (num_to_word12 0) x = num_to_word12 0`;;
+
+let word12_mult_zero = new_axiom
+   `!x. word12_mult x (num_to_word12 0) = num_to_word12 0`;;
+
+let one_word12_mult = new_axiom
+   `!x. word12_mult (num_to_word12 1) x = x`;;
+
+let word12_mult_one = new_axiom
+   `!x. word12_mult x (num_to_word12 1) = x`;;
+
+let word12_neg_mult = new_axiom
+   `!x y. word12_mult (word12_neg x) y = word12_neg (word12_mult x y)`;;
+
+let word12_mult_neg = new_axiom
+   `!x y. word12_mult x (word12_neg y) = word12_neg (word12_mult x y)`;;
 
 (* word12-bits-def *)
 
