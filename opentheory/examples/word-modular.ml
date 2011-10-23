@@ -5,6 +5,9 @@
 let mod_lt_word_size = new_axiom
   `!n. n < word_size ==> n MOD word_size = n`;;
 
+let zero_mod_word_size = new_axiom
+  `0 MOD word_size = 0`;;
+
 let lt_mod_word_size = new_axiom
   `!n. n MOD word_size < word_size`;;
 
@@ -103,6 +106,9 @@ let word_lt_alt = new_axiom
 
 let mod_lt_word_size = new_axiom
   `!n. n < word_size ==> n MOD word_size = n`;;
+
+let zero_mod_word_size = new_axiom
+  `0 MOD word_size = 0`;;
 
 let lt_mod_word_size = new_axiom
   `!n. n MOD word_size < word_size`;;

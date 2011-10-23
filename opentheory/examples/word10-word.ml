@@ -17,6 +17,9 @@ let word10_size_nonzero = new_axiom
 let mod_lt_word10_size = new_axiom
   `!n. n < word10_size ==> n MOD word10_size = n`;;
 
+let zero_mod_word10_size = new_axiom
+  `0 MOD word10_size = 0`;;
+
 let lt_mod_word10_size = new_axiom
   `!n. n MOD word10_size < word10_size`;;
 

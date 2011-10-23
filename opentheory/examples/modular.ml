@@ -10,7 +10,7 @@
 
 new_constant ("modulus", `:num`);;
 
-let modulus_positive = new_axiom `~(modulus = 0)`;;
+let modulus_nonzero = new_axiom `~(modulus = 0)`;;
 
 logfile "modular-mod";;
 
@@ -31,12 +31,24 @@ let mod_lt_modulus = new_axiom
   `!n. n < modulus ==> n MOD modulus = n`;;
 *)
 
+let zero_mod_modulus = prove
+  (`0 MOD modulus = 0`,
+   MATCH_MP_TAC mod_lt_modulus THEN
+   REWRITE_TAC [LT_NZ; modulus_nonzero]);;
+
+export_thm zero_mod_modulus;;
+
+(*PARAMETRIC
+let zero_mod_modulus = new_axiom
+  `0 MOD modulus = 0`;;
+*)
+
 let lt_mod_modulus = prove
   (`!n. n MOD modulus < modulus`,
    GEN_TAC THEN
    MP_TAC (SPECL [`n:num`; `modulus:num`] DIVISION) THEN
    COND_TAC THENL
-   [REWRITE_TAC [modulus_positive];
+   [REWRITE_TAC [modulus_nonzero];
     DISCH_THEN (ACCEPT_TAC o CONJUNCT2)]);;
 
 export_thm lt_mod_modulus;;
@@ -51,7 +63,7 @@ let mod_mod_refl_modulus = prove
    GEN_TAC THEN
    MP_TAC (SPECL [`n:num`; `modulus:num`] MOD_MOD_REFL) THEN
    COND_TAC THENL
-   [REWRITE_TAC [modulus_positive];
+   [REWRITE_TAC [modulus_nonzero];
     DISCH_THEN ACCEPT_TAC]);;
 
 export_thm mod_mod_refl_modulus;;
@@ -66,7 +78,7 @@ let mod_add_mod_modulus = prove
    REPEAT GEN_TAC THEN
    MP_TAC (SPECL [`m:num`; `n:num`; `modulus:num`] MOD_ADD_MOD) THEN
    COND_TAC THENL
-   [REWRITE_TAC [modulus_positive];
+   [REWRITE_TAC [modulus_nonzero];
     DISCH_THEN ACCEPT_TAC]);;
 
 export_thm mod_add_mod_modulus;;
@@ -81,7 +93,7 @@ let mod_mult_mod2_modulus = prove
    REPEAT GEN_TAC THEN
    MP_TAC (SPECL [`m:num`; `modulus`; `n:num`] MOD_MULT_MOD2) THEN
    COND_TAC THENL
-   [REWRITE_TAC [modulus_positive];
+   [REWRITE_TAC [modulus_nonzero];
     DISCH_THEN ACCEPT_TAC]);;
 
 export_thm mod_mult_mod2_modulus;;

@@ -5,6 +5,9 @@
 let mod_lt_oddprime = new_axiom
   `!n. n < oddprime ==> n MOD oddprime = n`;;
 
+let zero_mod_oddprime = new_axiom
+  `0 MOD oddprime = 0`;;
+
 let lt_mod_oddprime = new_axiom
   `!n. n MOD oddprime < oddprime`;;
 
@@ -103,6 +106,9 @@ let gfp_lt_alt = new_axiom
 
 let mod_lt_oddprime = new_axiom
   `!n. n < oddprime ==> n MOD oddprime = n`;;
+
+let zero_mod_oddprime = new_axiom
+  `0 MOD oddprime = 0`;;
 
 let lt_mod_oddprime = new_axiom
   `!n. n MOD oddprime < oddprime`;;

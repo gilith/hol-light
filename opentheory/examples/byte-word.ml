@@ -17,6 +17,9 @@ let byte_size_nonzero = new_axiom
 let mod_lt_byte_size = new_axiom
   `!n. n < byte_size ==> n MOD byte_size = n`;;
 
+let zero_mod_byte_size = new_axiom
+  `0 MOD byte_size = 0`;;
+
 let lt_mod_byte_size = new_axiom
   `!n. n MOD byte_size < byte_size`;;
 

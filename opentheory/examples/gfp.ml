@@ -43,6 +43,81 @@ logfile "gfp-thm";;
 (* gfp-thm *)
 *)
 
+let oddprime_not_one = prove
+  (`~(oddprime = 1)`,
+   STRIP_TAC THEN
+   MP_TAC oddprime_prime THEN
+   ASM_REWRITE_TAC [prime_one]);;
+
+export_thm oddprime_not_one;;
+
+(*PARAMETRIC
+let oddprime_not_one = new_axiom
+  `~(oddprime = 1)`;;
+*)
+
+let oddprime_not_two = prove
+  (`~(oddprime = 2)`,
+   STRIP_TAC THEN
+   MP_TAC oddprime_odd THEN
+   ASM_REWRITE_TAC [ODD; TWO; ONE; EVEN]);;
+
+export_thm oddprime_not_two;;
+
+(*PARAMETRIC
+let oddprime_not_two = new_axiom
+  `~(oddprime = 2)`;;
+*)
+
+let one_lt_oddprime = prove
+  (`1 < oddprime`,
+   REWRITE_TAC [LT_LE; oddprime_not_one] THEN
+   REWRITE_TAC [ONE; LE_SUC_LT] THEN
+   REWRITE_TAC [LT_NZ; oddprime_nonzero]);;
+
+export_thm one_lt_oddprime;;
+
+(*PARAMETRIC
+let one_lt_oddprime = new_axiom
+  `1 < oddprime`;;
+*)
+
+let two_lt_oddprime = prove
+  (`2 < oddprime`,
+   REWRITE_TAC [LT_LE; oddprime_not_two] THEN
+   REWRITE_TAC [TWO; LE_SUC_LT; one_lt_oddprime]);;
+
+export_thm two_lt_oddprime;;
+
+(*PARAMETRIC
+let two_lt_oddprime = new_axiom
+  `2 < oddprime`;;
+*)
+
+let one_mod_oddprime = prove
+  (`1 MOD oddprime = 1`,
+   MATCH_MP_TAC mod_lt_oddprime THEN
+   ACCEPT_TAC one_lt_oddprime);;
+
+export_thm one_mod_oddprime;;
+
+(*PARAMETRIC
+let one_mod_oddprime = new_axiom
+  `1 MOD oddprime = 1`;;
+*)
+
+let two_mod_oddprime = prove
+  (`2 MOD oddprime = 2`,
+   MATCH_MP_TAC mod_lt_oddprime THEN
+   ACCEPT_TAC two_lt_oddprime);;
+
+export_thm two_mod_oddprime;;
+
+(*PARAMETRIC
+let two_mod_oddprime = new_axiom
+  `2 MOD oddprime = 1`;;
+*)
+
 (***
 let gfp_inverse_exists = prove
   (`!n : gfp. ~(n = num_to_gfp 0) ==> ?m. gfp_mult m n = num_to_gfp 1`,
@@ -51,12 +126,13 @@ let gfp_inverse_exists = prove
    ANTS_TAC THENL
    [REWRITE_TAC [oddprime_prime] THEN
     MP_TAC (SPECL [`oddprime`; `gfp_to_num n`] divides_mod) THEN
-    REWRITE_TAC [oddprime_nonzero] THEN
+    REWRITE_TAC [oddprime_nonzero; gfp_to_num_mod_bound] THEN
     DISCH_THEN SUBST1_TAC THEN
     STRIP_TAC THEN
     UNDISCH_TAC `~(n = num_to_gfp 0)` THEN
     REWRITE_TAC [] THEN
-    MATCH_MP_TAC gfp_to_num_inj
+    MATCH_MP_TAC gfp_to_num_inj THEN
+    ASM_REWRITE_TAC [num_to_gfp_to_num]
     ...
 
 (*PARAMETRIC
