@@ -116,10 +116,10 @@ let gfp_add_comm = new_axiom
 let gfp_add_assoc = new_axiom
    `!x y z. gfp_add (gfp_add x y) z = gfp_add x (gfp_add y z)`;;
 
-let zero_gfp_add = new_axiom
+let gfp_add_left_zero = new_axiom
    `!x. gfp_add (num_to_gfp 0) x = x`;;
 
-let gfp_add_zero = new_axiom
+let gfp_add_right_zero = new_axiom
    `!x. gfp_add x (num_to_gfp 0) = x`;;
 
 let gfp_add_left_neg = new_axiom
@@ -174,16 +174,16 @@ let gfp_add_right_distrib = new_axiom
       gfp_mult (gfp_add y z) x =
       gfp_add (gfp_mult y x) (gfp_mult z x)`;;
 
-let zero_gfp_mult = new_axiom
+let gfp_mult_left_zero = new_axiom
    `!x. gfp_mult (num_to_gfp 0) x = num_to_gfp 0`;;
 
-let gfp_mult_zero = new_axiom
+let gfp_mult_right_zero = new_axiom
    `!x. gfp_mult x (num_to_gfp 0) = num_to_gfp 0`;;
 
-let one_gfp_mult = new_axiom
+let gfp_mult_left_one = new_axiom
    `!x. gfp_mult (num_to_gfp 1) x = x`;;
 
-let gfp_mult_one = new_axiom
+let gfp_mult_right_one = new_axiom
    `!x. gfp_mult x (num_to_gfp 1) = x`;;
 
 let gfp_mult_left_neg = new_axiom
@@ -311,10 +311,10 @@ let gfp_add_comm = new_axiom
 let gfp_add_assoc = new_axiom
    `!x y z. gfp_add (gfp_add x y) z = gfp_add x (gfp_add y z)`;;
 
-let zero_gfp_add = new_axiom
+let gfp_add_left_zero = new_axiom
    `!x. gfp_add (num_to_gfp 0) x = x`;;
 
-let gfp_add_zero = new_axiom
+let gfp_add_right_zero = new_axiom
    `!x. gfp_add x (num_to_gfp 0) = x`;;
 
 let gfp_add_left_neg = new_axiom
@@ -369,16 +369,16 @@ let gfp_add_right_distrib = new_axiom
       gfp_mult (gfp_add y z) x =
       gfp_add (gfp_mult y x) (gfp_mult z x)`;;
 
-let zero_gfp_mult = new_axiom
+let gfp_mult_left_zero = new_axiom
    `!x. gfp_mult (num_to_gfp 0) x = num_to_gfp 0`;;
 
-let gfp_mult_zero = new_axiom
+let gfp_mult_right_zero = new_axiom
    `!x. gfp_mult x (num_to_gfp 0) = num_to_gfp 0`;;
 
-let one_gfp_mult = new_axiom
+let gfp_mult_left_one = new_axiom
    `!x. gfp_mult (num_to_gfp 1) x = x`;;
 
-let gfp_mult_one = new_axiom
+let gfp_mult_right_one = new_axiom
    `!x. gfp_mult x (num_to_gfp 1) = x`;;
 
 let gfp_mult_left_neg = new_axiom

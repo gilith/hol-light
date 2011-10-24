@@ -128,10 +128,10 @@ let byte_add_comm = new_axiom
 let byte_add_assoc = new_axiom
    `!x y z. byte_add (byte_add x y) z = byte_add x (byte_add y z)`;;
 
-let zero_byte_add = new_axiom
+let byte_add_left_zero = new_axiom
    `!x. byte_add (num_to_byte 0) x = x`;;
 
-let byte_add_zero = new_axiom
+let byte_add_right_zero = new_axiom
    `!x. byte_add x (num_to_byte 0) = x`;;
 
 let byte_add_left_neg = new_axiom
@@ -186,16 +186,16 @@ let byte_add_right_distrib = new_axiom
       byte_mult (byte_add y z) x =
       byte_add (byte_mult y x) (byte_mult z x)`;;
 
-let zero_byte_mult = new_axiom
+let byte_mult_left_zero = new_axiom
    `!x. byte_mult (num_to_byte 0) x = num_to_byte 0`;;
 
-let byte_mult_zero = new_axiom
+let byte_mult_right_zero = new_axiom
    `!x. byte_mult x (num_to_byte 0) = num_to_byte 0`;;
 
-let one_byte_mult = new_axiom
+let byte_mult_left_one = new_axiom
    `!x. byte_mult (num_to_byte 1) x = x`;;
 
-let byte_mult_one = new_axiom
+let byte_mult_right_one = new_axiom
    `!x. byte_mult x (num_to_byte 1) = x`;;
 
 let byte_mult_left_neg = new_axiom

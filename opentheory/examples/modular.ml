@@ -562,7 +562,7 @@ let modular_add_assoc = new_axiom
    `!x y z. modular_add (modular_add x y) z = modular_add x (modular_add y z)`;;
 *)
 
-let zero_modular_add = prove
+let modular_add_left_zero = prove
   (`!x. modular_add (num_to_modular 0) x = x`,
    GEN_TAC THEN
    MATCH_MP_TAC modular_to_num_inj THEN
@@ -570,23 +570,23 @@ let zero_modular_add = prove
      [modular_add_to_num; num_to_modular_to_num; zero_mod_modulus; ADD;
       modular_to_num_mod_bound]);;
 
-export_thm zero_modular_add;;
+export_thm modular_add_left_zero;;
 
 (*PARAMETRIC
-let zero_modular_add = new_axiom
+let modular_add_left_zero = new_axiom
    `!x. modular_add (num_to_modular 0) x = x`;;
 *)
 
-let modular_add_zero = prove
+let modular_add_right_zero = prove
   (`!x. modular_add x (num_to_modular 0) = x`,
    GEN_TAC THEN
    ONCE_REWRITE_TAC [modular_add_comm] THEN
-   MATCH_ACCEPT_TAC zero_modular_add);;
+   MATCH_ACCEPT_TAC modular_add_left_zero);;
 
-export_thm modular_add_zero;;
+export_thm modular_add_right_zero;;
 
 (*PARAMETRIC
-let modular_add_zero = new_axiom
+let modular_add_right_zero = new_axiom
    `!x. modular_add x (num_to_modular 0) = x`;;
 *)
 
@@ -632,7 +632,7 @@ let modular_add_left_cancel = prove
    REPEAT GEN_TAC THEN
    EQ_TAC THENL
    [STRIP_TAC THEN
-    ONCE_REWRITE_TAC [GSYM zero_modular_add] THEN
+    ONCE_REWRITE_TAC [GSYM modular_add_left_zero] THEN
     ONCE_REWRITE_TAC [GSYM (SPEC `x : modular` modular_add_left_neg)] THEN
     ASM_REWRITE_TAC [modular_add_assoc];
     DISCH_THEN SUBST_VAR_TAC THEN
@@ -661,7 +661,7 @@ let modular_add_right_cancel = new_axiom
 let modular_add_left_cancel_zero = prove
   (`!x y. modular_add x y = x <=> y = num_to_modular 0`,
    REPEAT GEN_TAC THEN
-   CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV (GSYM modular_add_zero)))) THEN
+   CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV (GSYM modular_add_right_zero)))) THEN
    REWRITE_TAC [modular_add_left_cancel]);;
 
 export_thm modular_add_left_cancel_zero;;
@@ -714,7 +714,7 @@ let modular_neg_zero = prove
   (`modular_neg (num_to_modular 0) = num_to_modular 0`,
    ONCE_REWRITE_TAC
      [GSYM (SPEC `num_to_modular 0` modular_add_left_cancel)] THEN
-   REWRITE_TAC [modular_add_right_neg; modular_add_zero]);;
+   REWRITE_TAC [modular_add_right_neg; modular_add_right_zero]);;
 
 export_thm modular_neg_zero;;
 
@@ -750,7 +750,8 @@ let modular_neg_add = prove
    REWRITE_TAC [modular_add_right_neg] THEN
    ONCE_REWRITE_TAC [modular_add_assoc] THEN
    CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV (GSYM modular_add_assoc)))) THEN
-   REWRITE_TAC [modular_add_right_neg; modular_add_left_neg; zero_modular_add]);;
+   REWRITE_TAC
+     [modular_add_right_neg; modular_add_left_neg; modular_add_left_zero]);;
 
 export_thm modular_neg_add;;
 
@@ -837,7 +838,7 @@ let modular_add_right_distrib = new_axiom
       modular_add (modular_mult y x) (modular_mult z x)`;;
 *)
 
-let zero_modular_mult = prove
+let modular_mult_left_zero = prove
   (`!x. modular_mult (num_to_modular 0) x = num_to_modular 0`,
    GEN_TAC THEN
    MATCH_MP_TAC modular_to_num_inj THEN
@@ -845,27 +846,27 @@ let zero_modular_mult = prove
      [modular_mult_to_num; num_to_modular_to_num; zero_mod_modulus;
       ZERO_MULT; modular_to_num_mod_bound]);;
 
-export_thm zero_modular_mult;;
+export_thm modular_mult_left_zero;;
 
 (*PARAMETRIC
-let zero_modular_mult = new_axiom
+let modular_mult_left_zero = new_axiom
    `!x. modular_mult (num_to_modular 0) x = num_to_modular 0`;;
 *)
 
-let modular_mult_zero = prove
+let modular_mult_right_zero = prove
   (`!x. modular_mult x (num_to_modular 0) = num_to_modular 0`,
    GEN_TAC THEN
    ONCE_REWRITE_TAC [modular_mult_comm] THEN
-   MATCH_ACCEPT_TAC zero_modular_mult);;
+   MATCH_ACCEPT_TAC modular_mult_left_zero);;
 
-export_thm modular_mult_zero;;
+export_thm modular_mult_right_zero;;
 
 (*PARAMETRIC
-let modular_mult_zero = new_axiom
+let modular_mult_right_zero = new_axiom
    `!x. modular_mult x (num_to_modular 0) = num_to_modular 0`;;
 *)
 
-let one_modular_mult = prove
+let modular_mult_left_one = prove
   (`!x. modular_mult (num_to_modular 1) x = x`,
    GEN_TAC THEN
    MATCH_MP_TAC modular_to_num_inj THEN
@@ -874,23 +875,23 @@ let one_modular_mult = prove
    REWRITE_TAC [mod_mod_refl_modulus] THEN
    REWRITE_TAC [mod_mult_mod_modulus; ONE_MULT; modular_to_num_mod_bound]);;
 
-export_thm one_modular_mult;;
+export_thm modular_mult_left_one;;
 
 (*PARAMETRIC
-let one_modular_mult = new_axiom
+let modular_mult_left_one = new_axiom
    `!x. modular_mult (num_to_modular 1) x = x`;;
 *)
 
-let modular_mult_one = prove
+let modular_mult_right_one = prove
   (`!x. modular_mult x (num_to_modular 1) = x`,
    GEN_TAC THEN
    ONCE_REWRITE_TAC [modular_mult_comm] THEN
-   MATCH_ACCEPT_TAC one_modular_mult);;
+   MATCH_ACCEPT_TAC modular_mult_left_one);;
 
-export_thm modular_mult_one;;
+export_thm modular_mult_right_one;;
 
 (*PARAMETRIC
-let modular_mult_one = new_axiom
+let modular_mult_right_one = new_axiom
    `!x. modular_mult x (num_to_modular 1) = x`;;
 *)
 
@@ -901,7 +902,7 @@ let modular_mult_left_neg = prove
    REWRITE_TAC [modular_add_right_neg] THEN
    REWRITE_TAC
      [GSYM modular_add_right_distrib; modular_add_right_neg;
-      zero_modular_mult]);;
+      modular_mult_left_zero]);;
 
 export_thm modular_mult_left_neg;;
 

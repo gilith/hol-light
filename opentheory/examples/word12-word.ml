@@ -128,10 +128,10 @@ let word12_add_comm = new_axiom
 let word12_add_assoc = new_axiom
    `!x y z. word12_add (word12_add x y) z = word12_add x (word12_add y z)`;;
 
-let zero_word12_add = new_axiom
+let word12_add_left_zero = new_axiom
    `!x. word12_add (num_to_word12 0) x = x`;;
 
-let word12_add_zero = new_axiom
+let word12_add_right_zero = new_axiom
    `!x. word12_add x (num_to_word12 0) = x`;;
 
 let word12_add_left_neg = new_axiom
@@ -186,16 +186,16 @@ let word12_add_right_distrib = new_axiom
       word12_mult (word12_add y z) x =
       word12_add (word12_mult y x) (word12_mult z x)`;;
 
-let zero_word12_mult = new_axiom
+let word12_mult_left_zero = new_axiom
    `!x. word12_mult (num_to_word12 0) x = num_to_word12 0`;;
 
-let word12_mult_zero = new_axiom
+let word12_mult_right_zero = new_axiom
    `!x. word12_mult x (num_to_word12 0) = num_to_word12 0`;;
 
-let one_word12_mult = new_axiom
+let word12_mult_left_one = new_axiom
    `!x. word12_mult (num_to_word12 1) x = x`;;
 
-let word12_mult_one = new_axiom
+let word12_mult_right_one = new_axiom
    `!x. word12_mult x (num_to_word12 1) = x`;;
 
 let word12_mult_left_neg = new_axiom

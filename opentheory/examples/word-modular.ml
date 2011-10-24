@@ -116,10 +116,10 @@ let word_add_comm = new_axiom
 let word_add_assoc = new_axiom
    `!x y z. word_add (word_add x y) z = word_add x (word_add y z)`;;
 
-let zero_word_add = new_axiom
+let word_add_left_zero = new_axiom
    `!x. word_add (num_to_word 0) x = x`;;
 
-let word_add_zero = new_axiom
+let word_add_right_zero = new_axiom
    `!x. word_add x (num_to_word 0) = x`;;
 
 let word_add_left_neg = new_axiom
@@ -174,16 +174,16 @@ let word_add_right_distrib = new_axiom
       word_mult (word_add y z) x =
       word_add (word_mult y x) (word_mult z x)`;;
 
-let zero_word_mult = new_axiom
+let word_mult_left_zero = new_axiom
    `!x. word_mult (num_to_word 0) x = num_to_word 0`;;
 
-let word_mult_zero = new_axiom
+let word_mult_right_zero = new_axiom
    `!x. word_mult x (num_to_word 0) = num_to_word 0`;;
 
-let one_word_mult = new_axiom
+let word_mult_left_one = new_axiom
    `!x. word_mult (num_to_word 1) x = x`;;
 
-let word_mult_one = new_axiom
+let word_mult_right_one = new_axiom
    `!x. word_mult x (num_to_word 1) = x`;;
 
 let word_mult_left_neg = new_axiom
@@ -311,10 +311,10 @@ let word_add_comm = new_axiom
 let word_add_assoc = new_axiom
    `!x y z. word_add (word_add x y) z = word_add x (word_add y z)`;;
 
-let zero_word_add = new_axiom
+let word_add_left_zero = new_axiom
    `!x. word_add (num_to_word 0) x = x`;;
 
-let word_add_zero = new_axiom
+let word_add_right_zero = new_axiom
    `!x. word_add x (num_to_word 0) = x`;;
 
 let word_add_left_neg = new_axiom
@@ -369,16 +369,16 @@ let word_add_right_distrib = new_axiom
       word_mult (word_add y z) x =
       word_add (word_mult y x) (word_mult z x)`;;
 
-let zero_word_mult = new_axiom
+let word_mult_left_zero = new_axiom
    `!x. word_mult (num_to_word 0) x = num_to_word 0`;;
 
-let word_mult_zero = new_axiom
+let word_mult_right_zero = new_axiom
    `!x. word_mult x (num_to_word 0) = num_to_word 0`;;
 
-let one_word_mult = new_axiom
+let word_mult_left_one = new_axiom
    `!x. word_mult (num_to_word 1) x = x`;;
 
-let word_mult_one = new_axiom
+let word_mult_right_one = new_axiom
    `!x. word_mult x (num_to_word 1) = x`;;
 
 let word_mult_left_neg = new_axiom
