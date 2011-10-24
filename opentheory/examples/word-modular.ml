@@ -122,10 +122,10 @@ let zero_word_add = new_axiom
 let word_add_zero = new_axiom
    `!x. word_add x (num_to_word 0) = x`;;
 
-let word_neg_add = new_axiom
+let word_add_left_neg = new_axiom
    `!x. word_add (word_neg x) x = num_to_word 0`;;
 
-let word_add_neg = new_axiom
+let word_add_right_neg = new_axiom
    `!x. word_add x (word_neg x) = num_to_word 0`;;
 
 let word_add_left_cancel = new_axiom
@@ -134,8 +134,28 @@ let word_add_left_cancel = new_axiom
 let word_add_right_cancel = new_axiom
    `!x y z. word_add y x = word_add z x <=> y = z`;;
 
+let word_add_left_cancel_zero = new_axiom
+   `!x y. word_add x y = x <=> y = num_to_word 0`;;
+
+let word_add_right_cancel_zero = new_axiom
+   `!x y. word_add y x = x <=> y = num_to_word 0`;;
+
 let word_neg_neg = new_axiom
    `!x. word_neg (word_neg x) = x`;;
+
+let word_neg_inj = new_axiom
+   `!x y. word_neg x = word_neg y ==> x = y`;;
+
+let word_neg_zero = new_axiom
+   `word_neg (num_to_word 0) = num_to_word 0`;;
+
+let word_neg_is_zero = new_axiom
+   `!x. word_neg x = num_to_word 0 <=> x = num_to_word 0`;;
+
+let word_neg_add = new_axiom
+   `!x y.
+      word_add (word_neg x) (word_neg y) =
+      word_neg (word_add x y)`;;
 
 let word_mult_comm = new_axiom
    `!x y. word_mult x y = word_mult y x`;;
@@ -166,10 +186,10 @@ let one_word_mult = new_axiom
 let word_mult_one = new_axiom
    `!x. word_mult x (num_to_word 1) = x`;;
 
-let word_neg_mult = new_axiom
+let word_mult_left_neg = new_axiom
    `!x y. word_mult (word_neg x) y = word_neg (word_mult x y)`;;
 
-let word_mult_neg = new_axiom
+let word_mult_right_neg = new_axiom
    `!x y. word_mult x (word_neg y) = word_neg (word_mult x y)`;;
 
 (*PARAMETRIC
@@ -297,10 +317,10 @@ let zero_word_add = new_axiom
 let word_add_zero = new_axiom
    `!x. word_add x (num_to_word 0) = x`;;
 
-let word_neg_add = new_axiom
+let word_add_left_neg = new_axiom
    `!x. word_add (word_neg x) x = num_to_word 0`;;
 
-let word_add_neg = new_axiom
+let word_add_right_neg = new_axiom
    `!x. word_add x (word_neg x) = num_to_word 0`;;
 
 let word_add_left_cancel = new_axiom
@@ -309,8 +329,28 @@ let word_add_left_cancel = new_axiom
 let word_add_right_cancel = new_axiom
    `!x y z. word_add y x = word_add z x <=> y = z`;;
 
+let word_add_left_cancel_zero = new_axiom
+   `!x y. word_add x y = x <=> y = num_to_word 0`;;
+
+let word_add_right_cancel_zero = new_axiom
+   `!x y. word_add y x = x <=> y = num_to_word 0`;;
+
 let word_neg_neg = new_axiom
    `!x. word_neg (word_neg x) = x`;;
+
+let word_neg_inj = new_axiom
+   `!x y. word_neg x = word_neg y ==> x = y`;;
+
+let word_neg_zero = new_axiom
+   `word_neg (num_to_word 0) = num_to_word 0`;;
+
+let word_neg_is_zero = new_axiom
+   `!x. word_neg x = num_to_word 0 <=> x = num_to_word 0`;;
+
+let word_neg_add = new_axiom
+   `!x y.
+      word_add (word_neg x) (word_neg y) =
+      word_neg (word_add x y)`;;
 
 let word_mult_comm = new_axiom
    `!x y. word_mult x y = word_mult y x`;;
@@ -341,9 +381,9 @@ let one_word_mult = new_axiom
 let word_mult_one = new_axiom
    `!x. word_mult x (num_to_word 1) = x`;;
 
-let word_neg_mult = new_axiom
+let word_mult_left_neg = new_axiom
    `!x y. word_mult (word_neg x) y = word_neg (word_mult x y)`;;
 
-let word_mult_neg = new_axiom
+let word_mult_right_neg = new_axiom
    `!x y. word_mult x (word_neg y) = word_neg (word_mult x y)`;;
 *)

@@ -37,10 +37,10 @@ let oddprime_nonzero = new_axiom
 
 loads "opentheory/examples/gfp-modular.ml";;
 
-logfile "gfp-thm";;
+logfile "gfp-mod";;
 
 (*PARAMETRIC
-(* gfp-thm *)
+(* gfp-mod *)
 *)
 
 let oddprime_not_one = prove
@@ -118,7 +118,12 @@ let two_mod_oddprime = new_axiom
   `2 MOD oddprime = 1`;;
 *)
 
-(***
+logfile "gfp-inverse-def";;
+
+(*PARAMETRIC
+(* gfp-inverse-def *)
+*)
+
 let gfp_inverse_exists = prove
   (`!n : gfp. ~(n = num_to_gfp 0) ==> ?m. gfp_mult m n = num_to_gfp 1`,
    REPEAT STRIP_TAC THEN
@@ -147,45 +152,41 @@ let gfp_inverse_exists = prove
     REWRITE_TAC [num_to_gfp_oddprime; gfp_mult_zero; zero_gfp_add];
     EXISTS_TAC `gfp_neg (num_to_gfp t)` THEN
     CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV (GSYM gfp_to_num_to_gfp)))) THEN
-    
+    ONCE_REWRITE_TAC
+      [GSYM (SPEC `gfp_neg (num_to_gfp 1)` gfp_add_right_cancel)] THEN
+    REWRITE_TAC [gfp_mult_left_neg; gfp_neg_add; gfp_add_right_neg] THEN
+    REWRITE_TAC [GSYM num_to_gfp_mult; GSYM num_to_gfp_add] THEN
+    POP_ASSUM SUBST1_TAC THEN
+    REWRITE_TAC
+      [num_to_gfp_mult; num_to_gfp_oddprime; gfp_mult_zero; gfp_neg_zero]]);;
 
-    REWRITE_TAC [GSYM num_to_gfp_mult] THEN
-    POP_ASSUM (SUBST1_TAC o SYM) THEN
-    REWRITE_TAC [num_to_gfp_add; num_to_gfp_mult] THEN
-    REWRITE_TAC [num_to_gfp_oddprime; gfp_mult_zero; zero_gfp_add];
-    
-
-     
-
-     MATCH_MP_TAC gfp_to_num_inj
-
-    ...
-
-(*PARAMETRIC
-let gfp_inverse_exists = new_axiom
-   `!n : gfp. ~(n = num_to_gfp 0) ==> ?m. gfp_mult m n = num_to_gfp 1`;;
-*)
-
-export_thm gfp_inverse_exists;;
-***)
-
-(***
-logfile "gfp-inverse-def";;
-
-(*PARAMETRIC
-(* gfp-inverse-def *)
-*)
-
-let gfp_inverse_def =
+let gfp_mult_left_inverse =
     let th0 = ONCE_REWRITE_RULE [RIGHT_IMP_EXISTS_THM] gfp_inverse_exists in
     let th1 = REWRITE_RULE [SKOLEM_THM] th0 in
     new_specification ["gfp_inverse"] th1;;
 
+export_thm gfp_mult_left_inverse;;
+
 (*PARAMETRIC
 new_constant ("gfp_inverse", `:gfp -> gfp`);;
+
+let gfp_mult_left_inverse = new_axiom
+   `!n. ~(n = num_to_gfp 0) ==> gfp_mult (gfp_inverse n) n = num_to_gfp 1`;;
 *)
 
-export_thm gfp_inverse_def;;
-***)
+logfile "gfp-inverse-thm";;
+
+let gfp_mult_right_inverse = prove
+  (`!n. ~(n = num_to_gfp 0) ==> gfp_mult n (gfp_inverse n) = num_to_gfp 1`,
+   GEN_TAC THEN
+   ONCE_REWRITE_TAC [gfp_mult_comm] THEN
+   MATCH_ACCEPT_TAC gfp_mult_left_inverse);;
+
+export_thm gfp_mult_right_inverse;;
+
+(*PARAMETRIC
+let gfp_mult_right_inverse = prove
+   `!n. ~(n = num_to_gfp 0) ==> gfp_mult n (gfp_inverse n) = num_to_gfp 1`;;
+*)
 
 logfile_end ();;

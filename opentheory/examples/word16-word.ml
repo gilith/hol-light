@@ -134,10 +134,10 @@ let zero_word16_add = new_axiom
 let word16_add_zero = new_axiom
    `!x. word16_add x (num_to_word16 0) = x`;;
 
-let word16_neg_add = new_axiom
+let word16_add_left_neg = new_axiom
    `!x. word16_add (word16_neg x) x = num_to_word16 0`;;
 
-let word16_add_neg = new_axiom
+let word16_add_right_neg = new_axiom
    `!x. word16_add x (word16_neg x) = num_to_word16 0`;;
 
 let word16_add_left_cancel = new_axiom
@@ -146,8 +146,28 @@ let word16_add_left_cancel = new_axiom
 let word16_add_right_cancel = new_axiom
    `!x y z. word16_add y x = word16_add z x <=> y = z`;;
 
+let word16_add_left_cancel_zero = new_axiom
+   `!x y. word16_add x y = x <=> y = num_to_word16 0`;;
+
+let word16_add_right_cancel_zero = new_axiom
+   `!x y. word16_add y x = x <=> y = num_to_word16 0`;;
+
 let word16_neg_neg = new_axiom
    `!x. word16_neg (word16_neg x) = x`;;
+
+let word16_neg_inj = new_axiom
+   `!x y. word16_neg x = word16_neg y ==> x = y`;;
+
+let word16_neg_zero = new_axiom
+   `word16_neg (num_to_word16 0) = num_to_word16 0`;;
+
+let word16_neg_is_zero = new_axiom
+   `!x. word16_neg x = num_to_word16 0 <=> x = num_to_word16 0`;;
+
+let word16_neg_add = new_axiom
+   `!x y.
+      word16_add (word16_neg x) (word16_neg y) =
+      word16_neg (word16_add x y)`;;
 
 let word16_mult_comm = new_axiom
    `!x y. word16_mult x y = word16_mult y x`;;
@@ -178,10 +198,10 @@ let one_word16_mult = new_axiom
 let word16_mult_one = new_axiom
    `!x. word16_mult x (num_to_word16 1) = x`;;
 
-let word16_neg_mult = new_axiom
+let word16_mult_left_neg = new_axiom
    `!x y. word16_mult (word16_neg x) y = word16_neg (word16_mult x y)`;;
 
-let word16_mult_neg = new_axiom
+let word16_mult_right_neg = new_axiom
    `!x y. word16_mult x (word16_neg y) = word16_neg (word16_mult x y)`;;
 
 (* word16-bits-def *)
