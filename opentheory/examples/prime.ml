@@ -61,4 +61,16 @@ let gcd_prime = prove
 
 export_thm gcd_prime;;
 
+(***
+let prime_divisor = prove
+  (`!n. ~(n = 1) ==> ?p. prime p /\ divides p n`,
+
+export_thm prime_divisor;;
+
+let large_prime = prove
+  (`!n. ?p. n <= p /\ prime p`,
+
+export_thm large_prime;;
+***)
+
 logfile_end ();;
