@@ -9,6 +9,39 @@ needs "basics.ml";;
 needs "equal.ml";;
 
 module Intmap = Map.Make(struct type t = int let compare = compare end);;
+module Stringmap = Map.Make(String);;
+
+#load "str.cma";;
+
+let constmap,typemap =
+  let int = open_in "opentheory/hol-light.int" in
+  let rex =
+    Str.regexp "\\(const\\|type\\) \"HOLLight\\.\\(.*\\)\" as \"\\(.*\\)\""
+  in
+  let rx2 = Str.regexp "\\\\\\(.\\)" in
+  let rec read ((c,t) as acc) =
+    try let l = input_line int in
+    (* parser.ml redefines || *)
+      if Pervasives.(||) (String.length l = 0) (String.get l 0 = '#') then
+        read acc
+      else
+        if not (Str.string_match rex l 0) then
+          failwith "hol-light.int line bad format"
+        else
+          let ct = Str.matched_group 1 l in
+          let hl = Str.matched_group 2 l in
+          let ot = Str.matched_group 3 l in
+          let hl = Str.global_replace rx2 "\1" hl in
+          match ct with
+          | "const" ->
+            read (Stringmap.add ot hl c,t)
+          | "type" ->
+            read (c,Stringmap.add ot hl t)
+          | _ -> failwith "shouldn't happen (reading hol-light.int)"
+    with End_of_file -> acc in
+  let res = read (Stringmap.empty,Stringmap.empty) in
+  let () = close_in int in
+  res;;
 
 type state =
   { stack:opentheory_object list
@@ -40,9 +73,11 @@ let read_article_from {axiom=axiom} h =
     | ("cons",({stack=List_object t::h::os} as st))
       -> {st with stack=List_object (h::t)::os}
     | ("const",({stack=Name_object n::os} as st))
-      -> {st with stack=Const_object n::os}
+      -> {st with stack=Const_object (Stringmap.find n constmap)::os}
     | ("constTerm",({stack=Type_object ty::Const_object c::os} as st))
-      -> {st with stack=Term_object(mk_mconst(c,ty))::os}
+      -> {st with stack=try Term_object(mk_mconst(c,ty))::os
+         with Failure _ -> failwith ("Could not create constant "^c)
+      }
     | ("def",({stack=Num_object k::x::os;dict=dict} as st))
       -> {st with stack=x::os;dict=Intmap.add k x dict}
     | ("nil",({stack=os} as st))
@@ -70,7 +105,7 @@ let read_article_from {axiom=axiom} h =
          let th = List.fold_left ft th hs in
       {st with stack=os;thms=th::thms}
     | ("typeOp",({stack=Name_object n::os} as st))
-      -> {st with stack=Type_op_object n::os}
+      -> {st with stack=Type_op_object (Stringmap.find n typemap)::os}
     | ("var",({stack=Type_object t::Name_object n::os} as st))
       -> {st with stack=Var_object(mk_var(n,t))::os}
     | ("varTerm",({stack=Var_object t::os} as st))
