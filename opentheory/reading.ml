@@ -3,8 +3,6 @@
 (* Ramana Kumar                                                              *)
 (* ========================================================================= *)
 
-(* for the moment, we only read term-forming commands and axiom proofs *)
-
 module Intmap = Map.Make(struct type t = int let compare = compare end);;
 module Stringmap = Map.Make(String);;
 
@@ -63,10 +61,18 @@ let read_article_from {axiom=axiom} h =
   let step = function
     | ("absTerm",({stack=Term_object b::Var_object v::os} as st))
       -> {st with stack=Term_object(mk_abs(v,b))::os}
+    | ("absThm",({stack=Thm_object th::Var_object v::os} as st))
+      -> {st with stack=Thm_object (ABS v th)::os}
     | ("appTerm",({stack=Term_object x::Term_object f::os} as st))
       -> {st with stack=Term_object(mk_comb(f,x))::os}
+    | ("appThm",({stack=Thm_object xy::Thm_object fg::os} as st))
+      -> {st with stack=Thm_object (MK_COMB(fg,xy))::os}
+    | ("assume",({stack=Term_object t::os} as st))
+      -> {st with stack=Thm_object (ASSUME t)::os}
     | ("axiom",({stack=Term_object t::List_object ts::os; thms=thms} as st))
       -> {st with stack=Thm_object (axiom thms (unwrap_term_list ts,t))::os}
+    | ("betaConv",({stack=Term_object t::os} as st))
+      -> {st with stack=Thm_object (BETA_CONV t)::os}
     | ("cons",({stack=List_object t::h::os} as st))
       -> {st with stack=List_object (h::t)::os}
     | ("const",({stack=Name_object n::os} as st))
@@ -75,8 +81,12 @@ let read_article_from {axiom=axiom} h =
       -> {st with stack=try Term_object(mk_mconst(c,ty))::os
          with Failure _ -> failwith ("Could not create constant "^c)
       }
+    | ("deductAntisym",({stack=Thm_object g::Thm_object f::os} as st))
+      -> {st with stack=Thm_object (DEDUCT_ANTISYM_RULE f g)::os}
     | ("def",({stack=Num_object k::x::os;dict=dict} as st))
       -> {st with stack=x::os;dict=Intmap.add k x dict}
+    | ("eqMp",({stack=Thm_object f::Thm_object fg::os} as st))
+      -> {st with stack=Thm_object (EQ_MP fg f)::os}
     | ("nil",({stack=os} as st))
       -> {st with stack=List_object []::os}
     | ("opType",({stack=List_object ts::Type_op_object t::os} as st))
@@ -85,8 +95,20 @@ let read_article_from {axiom=axiom} h =
       -> {st with stack=os}
     | ("ref",({stack=Num_object k::os;dict=dict} as st))
       -> {st with stack=Intmap.find k dict::os}
+    | ("refl",({stack=Term_object t::os} as st))
+      -> {st with stack=Thm_object (REFL t)::os}
     | ("remove",({stack=Num_object k::os;dict=dict} as st))
       -> {st with stack=Intmap.find k dict::os;dict=Intmap.remove k dict}
+    | ("subst",
+       ({stack=Thm_object th::List_object[List_object tys;List_object tms]::os}
+       as st))
+    -> let tys = List.map
+         (function List_object [Name_object a; Type_object t] -> (mk_vartype a,t)) tys in
+       let tms = List.map
+         (function List_object [Var_object v; Term_object t] -> (v,t)) tms in
+       let th = INST_TYPE tys th in
+       let th = INST tms th in
+       {st with stack=Thm_object th::os}
     | ("thm",({stack=Term_object c::List_object hs::Thm_object th::os;thms=thms} as st))
       -> let th = EQ_MP (ALPHA (concl th) c) th in
          let ft th = function
