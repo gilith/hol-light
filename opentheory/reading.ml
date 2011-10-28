@@ -53,8 +53,19 @@ let read_article_from {axiom=axiom} h =
     | ("remove",({stack=Num_object k::os;dict=dict} as st))
       -> {st with stack=Intmap.find k dict::os;dict=Intmap.remove k dict}
     | ("thm",({stack=Term_object c::List_object hs::Thm_object th::os;thms=thms} as st))
-      (* NEED TO REPLACE ASSUMPTIONS WITH hs*)
-      -> {st with stack=os;thms=(EQ_MP (ALPHA (concl th) c) th)::thms}
+      -> let th = EQ_MP (ALPHA (concl th) c) th in
+         let ft th = function
+          | Term_object h ->
+              let c  = concl th in
+              let th = DISCH h th in
+              let c' = concl th in
+              if aconv c c' then
+                ADD_ASSUM h th
+              else
+                UNDISCH (EQ_MP (LAND_CONV (C ALPHA h) c') th)
+          | _ -> failwith "thm: not a list of terms" in
+         let th = List.fold_left ft th hs in
+      {st with stack=os;thms=th::thms}
     | ("typeOp",({stack=Name_object n::os} as st))
       -> {st with stack=Type_op_object n::os}
     | ("var",({stack=Type_object t::Name_object n::os} as st))
