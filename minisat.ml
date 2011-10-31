@@ -78,7 +78,7 @@ let needs s =
   let s' = file_on_path (!load_path) s in
   let fileid = (Filename.basename s',Digest.file s') in
   if List.mem fileid (!loaded_files)
-  then Format.print_string("File \""^s^"\" already loaded\n") else loadt s;;
+  then () (* Format.print_string("File \""^s^"\" already loaded\n") *) else loadt s;;
 
 (* ------------------------------------------------------------------------- *)
 (* Various tweaks to OCaml and general library functions.                    *)
@@ -86,6 +86,7 @@ let needs s =
 
 loads "system.ml";;     (* Set up proper parsing and load bignums            *)
 loads "lib.ml";;        (* Various useful general library functions          *)
+verbose := false;;
 
 (* ------------------------------------------------------------------------- *)
 (* The logical core.                                                         *)
@@ -142,3 +143,7 @@ loads "Minisat/sat_tools.ml";;
 loads "Minisat/minisat_parse.ml";;
 loads "Minisat/minisat_resolve.ml";;
 loads "Minisat/minisat_prove.ml";;
+
+loads "opentheory/reading.ml";;
+loads "opentheory/io.ml";;
+loads "minisatmain.ml";;
