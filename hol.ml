@@ -148,7 +148,7 @@ loads "grobner.ml";;    (* Groebner basis procedure for most semirings.      *)
 loads "ind_types.ml";;  (* Tools for defining inductive types                *)
 loads "lists.ml";;      (* Theory of lists                                   *)
 loads "realax.ml";;     (* Definition of real numbers                        *)
-(***
+(* Not yet ported to OpenTheory
 loads "calc_int.ml";;   (* Calculation with integer-valued reals             *)
 loads "realarith.ml";;  (* Universal linear real decision procedure          *)
 loads "real.ml";;       (* Derived properties of reals                       *)
@@ -164,4 +164,4 @@ loads "define.ml";;     (* Support for general recursive definitions         *)
 
 loads "help.ml";;       (* Online help using the entries in Help directory   *)
 loads "database.ml";;   (* List of name-theorem pairs for search system      *)
-***)
+*)

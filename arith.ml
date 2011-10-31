@@ -217,11 +217,16 @@ export_thm ADD1;;
 
 logfile "natural-mult-def";;
 
-let MULT = new_recursive_definition num_RECURSION
- `(!n. 0 * n = 0) /\
-  (!m n. (SUC m) * n = (m * n) + n)`;;
+let (ZERO_MULT,SUC_MULT) =
+    let def = new_recursive_definition num_RECURSION
+        `(!n. 0 * n = 0) /\
+         (!m n. (SUC m) * n = (m * n) + n)` in
+    (CONJUNCT1 def, CONJUNCT2 def);;
 
-export_thm MULT;;
+export_thm ZERO_MULT;;
+export_thm SUC_MULT;;
+
+let MULT = CONJ ZERO_MULT SUC_MULT;;
 
 logfile "natural-mult-thm";;
 
@@ -237,6 +242,18 @@ let MULT_SUC = prove
 
 export_thm MULT_SUC;;
 
+let MULT_1 = prove
+ (`!m. m * 1 = m`,
+  REWRITE_TAC [ONE; MULT_SUC; MULT_0; ADD_0]);;
+
+export_thm MULT_1;;
+
+let ONE_MULT = prove
+ (`!m. 1 * m = m`,
+  REWRITE_TAC [ONE; SUC_MULT; ZERO_MULT; ADD]);;
+
+export_thm ONE_MULT;;
+
 let MULT_CLAUSES = prove
  (`(!n. 0 * n = 0) /\
    (!m. m * 0 = 0) /\
@@ -244,9 +261,7 @@ let MULT_CLAUSES = prove
    (!m. m * 1 = m) /\
    (!m n. (SUC m) * n = (m * n) + n) /\
    (!m n. m * (SUC n) = m + (m * n))`,
-  REWRITE_TAC[BIT1_THM; MULT; MULT_0; MULT_SUC; ADD_CLAUSES]);;
-
-export_thm MULT_CLAUSES;;
+  REWRITE_TAC [ZERO_MULT; MULT_0; ONE_MULT; MULT_1; SUC_MULT; MULT_SUC]);;
 
 let MULT_SYM = prove
  (`!m n. m * n = n * m`,
@@ -272,14 +287,26 @@ let MULT_ASSOC = prove
 
 export_thm MULT_ASSOC;;
 
+let MULT_LASSOC = prove
+ (`!m n p. m * (n * p) = n * (m * p)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MULT_ASSOC] THEN
+  AP_THM_TAC THEN
+  AP_TERM_TAC THEN
+  MATCH_ACCEPT_TAC MULT_SYM);;
+
+export_thm MULT_LASSOC;;
+
 let MULT_AC = prove
  (`!m n p.
      (m * n = n * m) /\
      ((m * n) * p = m * (n * p)) /\
      (m * (n * p) = n * (m * p))`,
-  MESON_TAC[MULT_ASSOC; MULT_SYM]);;
-
-export_thm MULT_AC;;
+  REPEAT STRIP_TAC THENL
+  [MATCH_ACCEPT_TAC MULT_SYM;
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_ACCEPT_TAC MULT_ASSOC;
+   MATCH_ACCEPT_TAC MULT_LASSOC]);;
 
 let MULT_EQ_0 = prove
  (`!m n. (m * n = 0) <=> (m = 0) \/ (n = 0)`,
@@ -301,6 +328,40 @@ let EQ_MULT_RCANCEL = prove
   ONCE_REWRITE_TAC[MULT_SYM; DISJ_SYM] THEN MATCH_ACCEPT_TAC EQ_MULT_LCANCEL);;
 
 export_thm EQ_MULT_RCANCEL;;
+
+let EQ_MULTL = prove
+ (`!m n. (m = m * n) <=> (m = 0) \/ (n = 1)`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (LAND_CONV (LAND_CONV (REWR_CONV (GSYM MULT_1)))) THEN
+  REWRITE_TAC [EQ_MULT_LCANCEL] THEN
+  AP_TERM_TAC THEN
+  MATCH_ACCEPT_TAC EQ_SYM_EQ);;
+
+export_thm EQ_MULTL;;
+
+let EQ_MULTR = prove
+ (`!m n. (m = n * m) <=> (m = 0) \/ (n = 1)`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [MULT_SYM] THEN
+  MATCH_ACCEPT_TAC EQ_MULTL);;
+
+export_thm EQ_MULTR;;
+
+let MULTL_EQ = prove
+ (`!m n. (m * n = m) <=> (m = 0) \/ (n = 1)`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
+  MATCH_ACCEPT_TAC EQ_MULTL);;
+
+export_thm MULTL_EQ;;
+
+let MULTR_EQ = prove
+ (`!m n. (n * m = m) <=> (m = 0) \/ (n = 1)`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
+  MATCH_ACCEPT_TAC EQ_MULTR);;
+
+export_thm MULTR_EQ;;
 
 let MULT_2 = prove
  (`!n. 2 * n = n + n`,
@@ -1868,6 +1929,15 @@ let DIV_REFL = prove
 
 export_thm DIV_REFL;;
 
+let MOD_REFL = prove
+ (`!n. ~(n = 0) ==> (n MOD n = 0)`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC MOD_UNIQ THEN
+  EXISTS_TAC `1` THEN
+  ASM_REWRITE_TAC [ONE_MULT; LT_NZ; ADD_0]);;
+
+export_thm MOD_REFL;;
+
 let MOD_LE = prove
  (`!m n. ~(n = 0) ==> m MOD n <= m`,
   REPEAT GEN_TAC THEN
@@ -1940,46 +2010,6 @@ let DIV_MOD = prove
   REWRITE_TAC[MULT_AC] THEN MESON_TAC[ADD_SYM; MULT_SYM; LE_ADD_RCANCEL]);;
 
 export_thm DIV_MOD;;
-
-(* ------------------------------------------------------------------------- *)
-(* Theorems for eliminating cutoff subtraction, predecessor, DIV and MOD.    *)
-(* We have versions that introduce universal or existential quantifiers.     *)
-(* ------------------------------------------------------------------------- *)
-
-(***
-let PRE_ELIM_THM = prove
- (`P(PRE n) <=> !m. n = SUC m \/ m = 0 /\ n = 0 ==> P m`,
-  SPEC_TAC(`n:num`,`n:num`) THEN INDUCT_TAC THEN
-  REWRITE_TAC[NOT_SUC; SUC_INJ; PRE] THEN MESON_TAC[]);;
-
-let PRE_ELIM_THM' = prove
- (`P(PRE n) <=> ?m. (n = SUC m \/ m = 0 /\ n = 0) /\ P m`,
-  MP_TAC(INST [`\x:num. ~P x`,`P:num->bool`] PRE_ELIM_THM) THEN MESON_TAC[]);;
-
-let SUB_ELIM_THM = prove
- (`P(a - b) <=> !d. a = b + d \/ a < b /\ d = 0 ==> P d`,
-  DISJ_CASES_TAC(SPECL [`a:num`; `b:num`] LTE_CASES) THENL
-   [ASM_MESON_TAC[NOT_LT; SUB_EQ_0; LT_IMP_LE; LE_ADD]; ALL_TAC] THEN
-  FIRST_ASSUM(X_CHOOSE_THEN `e:num` SUBST1_TAC o REWRITE_RULE[LE_EXISTS]) THEN
-  SIMP_TAC[ADD_SUB2; GSYM NOT_LE; LE_ADD; EQ_ADD_LCANCEL] THEN MESON_TAC[]);;
-
-let SUB_ELIM_THM' = prove
- (`P(a - b) <=> ?d. (a = b + d \/ a < b /\ d = 0) /\ P d`,
-  MP_TAC(INST [`\x:num. ~P x`,`P:num->bool`] SUB_ELIM_THM) THEN MESON_TAC[]);;
-
-let DIVMOD_ELIM_THM = prove
- (`P (m DIV n) (m MOD n) <=>
-        !q r. n = 0 /\ q = 0 /\ r = m \/ m = q * n + r /\ r < n ==> P q r`,
-  ASM_CASES_TAC `n = 0` THEN ASM_REWRITE_TAC[] THENL
-   [ASM_MESON_TAC[DIVISION_0; LT];
-    FIRST_ASSUM(MP_TAC o MATCH_MP DIVISION) THEN MESON_TAC[DIVMOD_UNIQ]]);;
-
-let DIVMOD_ELIM_THM' = prove
- (`P (m DIV n) (m MOD n) <=>
-        ?q r. (n = 0 /\ q = 0 /\ r = m \/ m = q * n + r /\ r < n) /\ P q r`,
-  MP_TAC(INST [`\x:num y:num. ~P x y`,`P:num->num->bool`] DIVMOD_ELIM_THM) THEN
-  MESON_TAC[]);;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Crude but useful conversion for cancelling down equations.                *)

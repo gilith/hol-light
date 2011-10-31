@@ -14,8 +14,14 @@ let word16_size_nonzero = new_axiom
 
 (* word16-mod *)
 
+let mod_refl_word16_size = new_axiom
+  `word16_size MOD word16_size = 0`;;
+
 let mod_lt_word16_size = new_axiom
   `!n. n < word16_size ==> n MOD word16_size = n`;;
+
+let zero_mod_word16_size = new_axiom
+  `0 MOD word16_size = 0`;;
 
 let lt_mod_word16_size = new_axiom
   `!n. n MOD word16_size < word16_size`;;
@@ -26,7 +32,7 @@ let mod_mod_refl_word16_size = new_axiom
 let mod_add_mod_word16_size = new_axiom
   `!m n. (m MOD word16_size + n MOD word16_size) MOD word16_size = (m + n) MOD word16_size`;;
 
-let mod_mult_mod2_word16_size = new_axiom
+let mod_mult_mod_word16_size = new_axiom
   `!m n. (m MOD word16_size * n MOD word16_size) MOD word16_size = (m * n) MOD word16_size`;;
 
 (* word16-def *)
@@ -97,13 +103,106 @@ let word16_to_num_bound = new_axiom
 let word16_to_num_div_bound = new_axiom
   `!x. word16_to_num x DIV word16_size = 0`;;
 
+let word16_to_num_mod_bound = new_axiom
+  `!x. word16_to_num x MOD word16_size = word16_to_num x`;;
+
 let word16_add_to_num = new_axiom
    `!x y.
       word16_to_num (word16_add x y) =
       (word16_to_num x + word16_to_num y) MOD word16_size`;;
 
+let word16_mult_to_num = new_axiom
+   `!x y.
+      word16_to_num (word16_mult x y) =
+      (word16_to_num x * word16_to_num y) MOD word16_size`;;
+
 let word16_lt_alt = new_axiom
    `!x y. word16_lt x y = word16_to_num x < word16_to_num y`;;
+
+let num_to_word16_word16_size = new_axiom
+   `num_to_word16 word16_size = num_to_word16 0`;;
+
+let word16_add_comm = new_axiom
+   `!x y. word16_add x y = word16_add y x`;;
+
+let word16_add_assoc = new_axiom
+   `!x y z. word16_add (word16_add x y) z = word16_add x (word16_add y z)`;;
+
+let word16_add_left_zero = new_axiom
+   `!x. word16_add (num_to_word16 0) x = x`;;
+
+let word16_add_right_zero = new_axiom
+   `!x. word16_add x (num_to_word16 0) = x`;;
+
+let word16_add_left_neg = new_axiom
+   `!x. word16_add (word16_neg x) x = num_to_word16 0`;;
+
+let word16_add_right_neg = new_axiom
+   `!x. word16_add x (word16_neg x) = num_to_word16 0`;;
+
+let word16_add_left_cancel = new_axiom
+   `!x y z. word16_add x y = word16_add x z <=> y = z`;;
+
+let word16_add_right_cancel = new_axiom
+   `!x y z. word16_add y x = word16_add z x <=> y = z`;;
+
+let word16_add_left_cancel_zero = new_axiom
+   `!x y. word16_add x y = x <=> y = num_to_word16 0`;;
+
+let word16_add_right_cancel_zero = new_axiom
+   `!x y. word16_add y x = x <=> y = num_to_word16 0`;;
+
+let word16_neg_neg = new_axiom
+   `!x. word16_neg (word16_neg x) = x`;;
+
+let word16_neg_inj = new_axiom
+   `!x y. word16_neg x = word16_neg y ==> x = y`;;
+
+let word16_neg_zero = new_axiom
+   `word16_neg (num_to_word16 0) = num_to_word16 0`;;
+
+let word16_neg_is_zero = new_axiom
+   `!x. word16_neg x = num_to_word16 0 <=> x = num_to_word16 0`;;
+
+let word16_neg_add = new_axiom
+   `!x y.
+      word16_add (word16_neg x) (word16_neg y) =
+      word16_neg (word16_add x y)`;;
+
+let word16_mult_comm = new_axiom
+   `!x y. word16_mult x y = word16_mult y x`;;
+
+let word16_mult_assoc = new_axiom
+   `!x y z.
+      word16_mult (word16_mult x y) z = word16_mult x (word16_mult y z)`;;
+
+let word16_add_left_distrib = new_axiom
+   `!x y z.
+      word16_mult x (word16_add y z) =
+      word16_add (word16_mult x y) (word16_mult x z)`;;
+
+let word16_add_right_distrib = new_axiom
+   `!x y z.
+      word16_mult (word16_add y z) x =
+      word16_add (word16_mult y x) (word16_mult z x)`;;
+
+let word16_mult_left_zero = new_axiom
+   `!x. word16_mult (num_to_word16 0) x = num_to_word16 0`;;
+
+let word16_mult_right_zero = new_axiom
+   `!x. word16_mult x (num_to_word16 0) = num_to_word16 0`;;
+
+let word16_mult_left_one = new_axiom
+   `!x. word16_mult (num_to_word16 1) x = x`;;
+
+let word16_mult_right_one = new_axiom
+   `!x. word16_mult x (num_to_word16 1) = x`;;
+
+let word16_mult_left_neg = new_axiom
+   `!x y. word16_mult (word16_neg x) y = word16_neg (word16_mult x y)`;;
+
+let word16_mult_right_neg = new_axiom
+   `!x y. word16_mult x (word16_neg y) = word16_neg (word16_mult x y)`;;
 
 (* word16-bits-def *)
 

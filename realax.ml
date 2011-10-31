@@ -222,7 +222,8 @@ export_thm DIST_ELIM_THM;;
 (* Now some more theorems.                                                   *)
 (* ------------------------------------------------------------------------- *)
 
-let DIST_LE_CASES,DIST_ADDBOUND,DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV =
+let DIST_CASES,DIST_LE_CASES,DIST_ADDBOUND,
+    DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV =
   let DIST_ELIM_TAC =
     let conv = HIGHER_REWRITE_CONV[COND_ELIM_THM; DIST_ELIM_THM] false in
     CONV_TAC conv THEN TRY GEN_TAC THEN CONJ_TAC THEN
@@ -236,7 +237,16 @@ let DIST_LE_CASES,DIST_ADDBOUND,DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV =
     DISCH_THEN(CHOOSE_THEN SUBST_ALL_TAC) THEN POP_ASSUM MP_TAC THEN
     CONV_TAC(LAND_CONV NUM_CANCEL_CONV) THEN
     REWRITE_TAC[ADD_CLAUSES; NOT_SUC] in
-  let DIST_LE_CASES = prove
+  let DIST_CASES = prove
+   (`!m n p. dist m n = p <=> m + p = n \/ n + p = m`,
+    REPEAT GEN_TAC THEN
+    REPEAT DIST_ELIM_TAC THEN
+    REWRITE_TAC
+      [EQ_ADD_LCANCEL; GSYM ADD_ASSOC; ADD_EQ_0; EQ_ADD_LCANCEL_0] THEN
+    EQ_TAC THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [])
+  and DIST_LE_CASES = prove
    (`!m n p. dist m n <= p <=> (m <= n + p) /\ (n <= m + p)`,
     REPEAT GEN_TAC THEN REPEAT DIST_ELIM_TAC THEN
     REWRITE_TAC[GSYM ADD_ASSOC; LE_ADD; LE_ADD_LCANCEL])
@@ -250,8 +260,10 @@ let DIST_LE_CASES,DIST_ADDBOUND,DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV =
      (!m n p q. dist (m + n) (p + q) <= dist m p + dist n q) /\
      (!m n p q. dist m p <= dist (m + n) (p + q) + dist n q)`,
     DIST_ELIM_TAC') in
-  DIST_LE_CASES,DIST_ADDBOUND,DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV;;
+  DIST_CASES,DIST_LE_CASES,DIST_ADDBOUND,
+  DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV;;
 
+export_thm DIST_CASES;;
 export_thm DIST_LE_CASES;;
 export_thm DIST_ADDBOUND;;
 export_thm DIST_TRIANGLE;;

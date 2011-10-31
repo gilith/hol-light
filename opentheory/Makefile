@@ -18,6 +18,7 @@ default: example-theories
 
 THEORY_INTERPRETATIONS = \
   examples/byte-word.ml \
+  examples/gfp-modular.ml \
   examples/word-modular.ml \
   examples/word10-word.ml \
   examples/word12-word.ml \
@@ -25,6 +26,9 @@ THEORY_INTERPRETATIONS = \
 
 examples/byte-word.ml: examples/word.ml examples/word-modular.ml
 	scripts/instantiate -r "word/byte" $< > $@
+
+examples/gfp-modular.ml: examples/modular.ml
+	scripts/instantiate -r "modulus/oddprime:modular/gfp" -x $< > $@
 
 examples/word-modular.ml: examples/modular.ml
 	scripts/instantiate -r "modulus/word_size:modular/word" -x $< > $@

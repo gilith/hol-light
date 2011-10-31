@@ -14,8 +14,14 @@ let word10_size_nonzero = new_axiom
 
 (* word10-mod *)
 
+let mod_refl_word10_size = new_axiom
+  `word10_size MOD word10_size = 0`;;
+
 let mod_lt_word10_size = new_axiom
   `!n. n < word10_size ==> n MOD word10_size = n`;;
+
+let zero_mod_word10_size = new_axiom
+  `0 MOD word10_size = 0`;;
 
 let lt_mod_word10_size = new_axiom
   `!n. n MOD word10_size < word10_size`;;
@@ -26,7 +32,7 @@ let mod_mod_refl_word10_size = new_axiom
 let mod_add_mod_word10_size = new_axiom
   `!m n. (m MOD word10_size + n MOD word10_size) MOD word10_size = (m + n) MOD word10_size`;;
 
-let mod_mult_mod2_word10_size = new_axiom
+let mod_mult_mod_word10_size = new_axiom
   `!m n. (m MOD word10_size * n MOD word10_size) MOD word10_size = (m * n) MOD word10_size`;;
 
 (* word10-def *)
@@ -97,13 +103,106 @@ let word10_to_num_bound = new_axiom
 let word10_to_num_div_bound = new_axiom
   `!x. word10_to_num x DIV word10_size = 0`;;
 
+let word10_to_num_mod_bound = new_axiom
+  `!x. word10_to_num x MOD word10_size = word10_to_num x`;;
+
 let word10_add_to_num = new_axiom
    `!x y.
       word10_to_num (word10_add x y) =
       (word10_to_num x + word10_to_num y) MOD word10_size`;;
 
+let word10_mult_to_num = new_axiom
+   `!x y.
+      word10_to_num (word10_mult x y) =
+      (word10_to_num x * word10_to_num y) MOD word10_size`;;
+
 let word10_lt_alt = new_axiom
    `!x y. word10_lt x y = word10_to_num x < word10_to_num y`;;
+
+let num_to_word10_word10_size = new_axiom
+   `num_to_word10 word10_size = num_to_word10 0`;;
+
+let word10_add_comm = new_axiom
+   `!x y. word10_add x y = word10_add y x`;;
+
+let word10_add_assoc = new_axiom
+   `!x y z. word10_add (word10_add x y) z = word10_add x (word10_add y z)`;;
+
+let word10_add_left_zero = new_axiom
+   `!x. word10_add (num_to_word10 0) x = x`;;
+
+let word10_add_right_zero = new_axiom
+   `!x. word10_add x (num_to_word10 0) = x`;;
+
+let word10_add_left_neg = new_axiom
+   `!x. word10_add (word10_neg x) x = num_to_word10 0`;;
+
+let word10_add_right_neg = new_axiom
+   `!x. word10_add x (word10_neg x) = num_to_word10 0`;;
+
+let word10_add_left_cancel = new_axiom
+   `!x y z. word10_add x y = word10_add x z <=> y = z`;;
+
+let word10_add_right_cancel = new_axiom
+   `!x y z. word10_add y x = word10_add z x <=> y = z`;;
+
+let word10_add_left_cancel_zero = new_axiom
+   `!x y. word10_add x y = x <=> y = num_to_word10 0`;;
+
+let word10_add_right_cancel_zero = new_axiom
+   `!x y. word10_add y x = x <=> y = num_to_word10 0`;;
+
+let word10_neg_neg = new_axiom
+   `!x. word10_neg (word10_neg x) = x`;;
+
+let word10_neg_inj = new_axiom
+   `!x y. word10_neg x = word10_neg y ==> x = y`;;
+
+let word10_neg_zero = new_axiom
+   `word10_neg (num_to_word10 0) = num_to_word10 0`;;
+
+let word10_neg_is_zero = new_axiom
+   `!x. word10_neg x = num_to_word10 0 <=> x = num_to_word10 0`;;
+
+let word10_neg_add = new_axiom
+   `!x y.
+      word10_add (word10_neg x) (word10_neg y) =
+      word10_neg (word10_add x y)`;;
+
+let word10_mult_comm = new_axiom
+   `!x y. word10_mult x y = word10_mult y x`;;
+
+let word10_mult_assoc = new_axiom
+   `!x y z.
+      word10_mult (word10_mult x y) z = word10_mult x (word10_mult y z)`;;
+
+let word10_add_left_distrib = new_axiom
+   `!x y z.
+      word10_mult x (word10_add y z) =
+      word10_add (word10_mult x y) (word10_mult x z)`;;
+
+let word10_add_right_distrib = new_axiom
+   `!x y z.
+      word10_mult (word10_add y z) x =
+      word10_add (word10_mult y x) (word10_mult z x)`;;
+
+let word10_mult_left_zero = new_axiom
+   `!x. word10_mult (num_to_word10 0) x = num_to_word10 0`;;
+
+let word10_mult_right_zero = new_axiom
+   `!x. word10_mult x (num_to_word10 0) = num_to_word10 0`;;
+
+let word10_mult_left_one = new_axiom
+   `!x. word10_mult (num_to_word10 1) x = x`;;
+
+let word10_mult_right_one = new_axiom
+   `!x. word10_mult x (num_to_word10 1) = x`;;
+
+let word10_mult_left_neg = new_axiom
+   `!x y. word10_mult (word10_neg x) y = word10_neg (word10_mult x y)`;;
+
+let word10_mult_right_neg = new_axiom
+   `!x y. word10_mult x (word10_neg y) = word10_neg (word10_mult x y)`;;
 
 (* word10-bits-def *)
 
