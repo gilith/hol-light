@@ -103,6 +103,10 @@ const "HOLLight.o" as "Function.o"
 const "HOLLight.ONE_ONE" as "Function.injective"
 const "HOLLight.ONTO" as "Function.surjective"
 
+# Function.Combinator
+
+const "HOLLight.K" as "Function.Combinator.k"
+
 # Number
 
 # Number.Natural
