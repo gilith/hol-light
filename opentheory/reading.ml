@@ -76,11 +76,11 @@ let read_article_from {axiom=axiom} h =
     | ("cons",({stack=List_object t::h::os} as st))
       -> {st with stack=List_object (h::t)::os}
     | ("const",({stack=Name_object n::os} as st))
-      -> {st with stack=Const_object (Stringmap.find n constmap)::os}
+      -> {st with stack=Const_object (try Stringmap.find n constmap
+      with Not_found -> failwith ("No interpretation for constant "^n))::os}
     | ("constTerm",({stack=Type_object ty::Const_object c::os} as st))
-      -> {st with stack=try Term_object(mk_mconst(c,ty))::os
-         with Failure _ -> failwith ("Could not create constant "^c)
-      }
+      -> {st with stack=Term_object(try mk_mconst(c,ty)
+          with Failure _ -> failwith ("Could not create constant "^c))::os}
     | ("deductAntisym",({stack=Thm_object g::Thm_object f::os} as st))
       -> {st with stack=Thm_object (DEDUCT_ANTISYM_RULE f g)::os}
     | ("def",({stack=Num_object k::x::os;dict=dict} as st))
@@ -124,7 +124,8 @@ let read_article_from {axiom=axiom} h =
          let th = List.fold_left ft th hs in
       {st with stack=os;thms=th::thms}
     | ("typeOp",({stack=Name_object n::os} as st))
-      -> {st with stack=Type_op_object (Stringmap.find n typemap)::os}
+      -> {st with stack=Type_op_object (try Stringmap.find n typemap
+      with Not_found -> failwith ("No interpretation for type "^n))::os}
     | ("var",({stack=Type_object t::Name_object n::os} as st))
       -> {st with stack=Var_object(mk_var(n,t))::os}
     | ("varTerm",({stack=Var_object t::os} as st))
