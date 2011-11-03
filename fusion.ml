@@ -102,7 +102,6 @@ module type Hol_kernel =
               string -> string * string -> thm -> thm * thm
 
       val read_proof : thm -> proof
-      val replace_proof : thm -> proof -> unit
       val delete_proof : thm -> unit
 end;;
 

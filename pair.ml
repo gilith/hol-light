@@ -13,25 +13,23 @@ needs "recursion.ml";;
 (* Constants implementing (or at least tagging) syntactic sugar.             *)
 (* ------------------------------------------------------------------------- *)
 
-let OPENTHEORY_LET_DEF = prove
-  (`!(f:A->B) x. f x = f x`,
-   GEN_TAC THEN GEN_TAC THEN REFL_TAC);;
+let LET_DEF =
+  let OPENTHEORY_LET_DEF = new_basic_definition
+        `LET = \f. (f : A -> B)` in
+  let () = delete_const_definition ["LET"] in
+  let () = delete_proof OPENTHEORY_LET_DEF in
+  prove
+  (`!(f : A -> B) x. LET f x = f x`,
+   REWRITE_TAC [OPENTHEORY_LET_DEF]);;
 
-let LET_DEF = new_definition
-  `!(f:A->B) x. LET f x = f x`;;
-
-delete_const_definition ["LET"];;
-replace_proof LET_DEF (read_proof OPENTHEORY_LET_DEF);;
-
-let OPENTHEORY_LET_END_DEF = prove
-  (`!(t:A). t = t`,
-   GEN_TAC THEN REFL_TAC);;
-
-let LET_END_DEF = new_definition
- `LET_END (t:A) = t`;;
-
-delete_const_definition ["LET_END"];;
-replace_proof LET_END_DEF (read_proof OPENTHEORY_LET_END_DEF);;
+let LET_END_DEF =
+  let OPENTHEORY_LET_END_DEF = new_basic_definition
+        `LET_END = \t. (t : A)` in
+  let () = delete_const_definition ["LET_END"] in
+  let () = delete_proof OPENTHEORY_LET_END_DEF in
+  prove
+  (`!(t : A). LET_END t = t`,
+   REWRITE_TAC [OPENTHEORY_LET_END_DEF]);;
 
 let GABS_DEF = new_definition
  `GABS (P:A->bool) = (@) P`;;
