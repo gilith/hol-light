@@ -298,8 +298,6 @@ let num_RECURSION =
   let avs = fst(strip_forall(concl num_Axiom)) in
   GENL avs (EXISTENCE (SPECL avs num_Axiom));;
 
-export_thm num_RECURSION;;
-
 (* ------------------------------------------------------------------------- *)
 (* Cases theorem.                                                            *)
 (* ------------------------------------------------------------------------- *)
@@ -319,8 +317,6 @@ let num_RECURSION_STD = prove
   REPEAT GEN_TAC THEN
   MP_TAC(ISPECL [`e:Z`; `(\z n. (f:num->Z->Z) n z)`] num_RECURSION) THEN
   REWRITE_TAC[]);;
-
-export_thm num_RECURSION_STD;;
 
 inductive_type_store :=
  ("num",(2,num_INDUCTION,num_RECURSION_STD))::(!inductive_type_store);;

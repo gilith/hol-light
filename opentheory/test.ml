@@ -5,30 +5,38 @@
 start_logging ();;
 
 (* ------------------------------------------------------------------------- *)
-(* Setup                                                                     *)
+(* Setup.                                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 new_constant ("a", `:bool`);;
 
 new_constant ("b", `:bool`);;
 
-let unwanted_id = new_definition
-  `unwanted_id = \x. (x : bool)`;;
+new_constant ("c", `:bool`);;
 
-delete_const_definition ["unwanted_id"];;
-delete_proof unwanted_id;;
+let test_ab_ax = new_axiom `a = b`;;
+
+let test_bc_ax = new_axiom `b = c`;;
+
+let opentheory_unwanted_id_def =
+  let th = new_basic_definition `unwanted_id = \z. (z : bool)` in
+  let () = delete_const_definition ["unwanted_id"] in
+  let () = delete_proof th in
+  th;;
+
+let unwanted_id_def = prove
+  (`!(z : bool). unwanted_id z = z`,
+   REWRITE_TAC [opentheory_unwanted_id_def]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Testing the argument order of the eqMp command                            *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "example5";;
+logfile "example4";;
 
-let test_ax1 = new_axiom `a = b`;;
+let test_ax = new_axiom `a`;;
 
-let test_ax2 = new_axiom `a`;;
-
-let test_th = EQ_MP test_ax1 test_ax2;;
+let test_th = EQ_MP test_ab_ax test_ax;;
 
 export_thm test_th;;
 
@@ -52,13 +60,9 @@ logfile_end ();;
 
 (* Clean removal of appTerm *)
 
-logfile "example4";;
+logfile "example5";;
 
-let test_ax1 = new_axiom `a = I b`;;
-
-let test_ax2 = new_axiom `a`;;
-
-let test_th = EQ_MP test_ax1 test_ax2;;
+let test_th = REFL `unwanted_id a`;;
 
 export_thm test_th;;
 
@@ -68,13 +72,74 @@ logfile_end ();;
 
 logfile "example6";;
 
-let test_ax1 = new_axiom `a <=> b`;;
+let test_th =
+    TRANS
+      (MK_COMB (REFL `unwanted_id`, test_ab_ax))
+      (MK_COMB (REFL `unwanted_id`, test_bc_ax));;
 
-let test_th1 = REFL `unwanted_id`;;
+export_thm test_th;;
 
-let test_th2 = MK_COMB (test_th1,test_ax1);;
+logfile_end ();;
 
-export_thm test_th2;;
+(* Unclean removal using basic definition *)
+
+logfile "example7";;
+
+let test_th =
+  let conv = RATOR_CONV (K opentheory_unwanted_id_def) THENC BETA_CONV in
+  TRANS
+    (TRANS
+      (conv `unwanted_id a`)
+      test_ab_ax)
+    (TRANS
+      test_bc_ax
+      (SYM (conv `unwanted_id c`)));;
+
+export_thm test_th;;
+
+logfile_end ();;
+
+(* Unclean removal when unwanted_id is air-dropped in using betaConv *)
+
+logfile "example8";;
+
+let test_th =
+    let conv th = RATOR_CONV (ABS_CONV (RAND_CONV (K th))) in
+    let atm = `(\f. f a) unwanted_id` in
+    let ctm = `(\f. f c) unwanted_id` in
+    TRANS
+      (TRANS
+        (SYM (BETA_CONV atm))
+        (conv test_ab_ax atm))
+      (TRANS
+        (SYM (conv (SYM test_bc_ax) ctm))
+        (BETA_CONV ctm));;
+
+export_thm test_th;;
+
+logfile_end ();;
+
+(* Unclean removal when unwanted_id is air-dropped in using subst *)
+
+logfile "example9";;
+
+let test_th =
+    let f = `f : bool -> bool` in
+    let th10 = ASSUME (mk_comb (f,`a`)) in
+    let th11 = AP_TERM f test_ab_ax in
+    let th12 = EQ_MP th11 th10 in
+    let th13 = AP_TERM f test_bc_ax in
+    let th14 = EQ_MP th13 th12 in
+    let th15 = INST [(`unwanted_id`,f)] th14 in
+    let th20 = ASSUME (mk_comb (f,`c`)) in
+    let th21 = AP_TERM f (SYM test_bc_ax) in
+    let th22 = EQ_MP th21 th20 in
+    let th23 = AP_TERM f (SYM test_ab_ax) in
+    let th24 = EQ_MP th23 th22 in
+    let th25 = INST [(`unwanted_id`,f)] th24 in
+    DEDUCT_ANTISYM_RULE th25 th15;;
+
+export_thm test_th;;
 
 logfile_end ();;
 
