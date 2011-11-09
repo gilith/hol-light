@@ -294,7 +294,7 @@ export_thm DIST_TRIANGLES_LE;;
 (* Useful lemmas about bounds.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-mult-order";;
+logfile "natural-mult-thm";;
 
 let BOUNDS_LINEAR = prove
  (`!A B C. (!n. A * n <= B * n + C) <=> A <= B`,
@@ -355,7 +355,7 @@ let BOUNDS_NOTZERO = prove
 
 export_thm BOUNDS_NOTZERO;;
 
-logfile "natural-add-order";;
+logfile "natural-add-thm";;
 
 let BOUNDS_IGNORE = prove
  (`!P Q. (?B. !i. P(i) <= Q(i) + B) <=>

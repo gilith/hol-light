@@ -233,7 +233,7 @@ export_thm num_INDUCTION;;
 (* Recursion.                                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-recursion";;
+logfile "natural-thm";;
 
 let num_Axiom = prove
  (`!(e:A) f. ?!fn. (fn _0 = e) /\
@@ -292,8 +292,6 @@ let (INDUCT_TAC:tactic) =
   MATCH_MP_TAC num_INDUCTION THEN
   CONJ_TAC THENL [ALL_TAC; GEN_TAC THEN DISCH_TAC];;
 
-logfile "natural-cases";;
-
 let num_RECURSION =
   let avs = fst(strip_forall(concl num_Axiom)) in
   GENL avs (EXISTENCE (SPECL avs num_Axiom));;
@@ -325,16 +323,21 @@ inductive_type_store :=
 (* "Bitwise" binary representation of numerals.                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-numeral-def";;
+logfile "natural-numeral";;
 
-let BIT0_DEF = new_recursive_definition num_RECURSION
- `(BIT0 0 = 0) /\
-  (!n. BIT0 (SUC n) = SUC(SUC(BIT0 n)))`;;
+let (BIT0_ZERO,BIT0_SUC) =
+  let def = new_recursive_definition num_RECURSION
+    `(BIT0 0 = 0) /\
+     (!n. BIT0 (SUC n) = SUC(SUC(BIT0 n)))` in
+  (CONJUNCT1 def, CONJUNCT2 def);;
 
-export_thm BIT0_DEF;;
+export_thm BIT0_ZERO;;
+export_thm BIT0_SUC;;
+
+let BIT0_DEF = CONJ BIT0_ZERO BIT0_SUC;;
 
 let BIT1_DEF = new_definition
- `BIT1 n = SUC (BIT0 n)`;;
+ `!n. BIT1 n = SUC (BIT0 n)`;;
 
 export_thm BIT1_DEF;;
 

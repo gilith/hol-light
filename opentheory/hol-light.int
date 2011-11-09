@@ -396,6 +396,10 @@ const "HOLLight.num_to_modular" as "Number.Modular.fromNatural"
 const "HOLLight.modulus" as "Number.Modular.modulus"
 const "HOLLight.modular_to_num" as "Number.Modular.toNatural"
 
+# Number.Natural
+
+const "HOLLight.divides" as "Number.Natural.divides"
+
 # Parser
 
 type "HOLLight.parser" as "Parser.parser"

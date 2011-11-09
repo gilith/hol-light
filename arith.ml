@@ -34,13 +34,13 @@ parse_as_infix("MOD",(22,"left"));;
 (* The predecessor function.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-pre";;
+logfile "natural-dest";;
 
-let PRE_DEF = new_recursive_definition num_RECURSION
- `(PRE 0 = 0) /\
-  (!n. PRE (SUC n) = n)`;;
-
-let PRE = CONJUNCT2 PRE_DEF;;
+let PRE =
+    let def = new_recursive_definition num_RECURSION
+          `(PRE 0 = 0) /\
+           (!n. PRE (SUC n) = n)` in
+    CONJUNCT2 def;;
 
 export_thm PRE;;
 
@@ -50,11 +50,16 @@ export_thm PRE;;
 
 logfile "natural-add-def";;
 
-let ADD = new_recursive_definition num_RECURSION
- `(!n. 0 + n = n) /\
-  (!m n. (SUC m) + n = SUC(m + n))`;;
+let (ZERO_ADD,SUC_ADD) =
+  let def = new_recursive_definition num_RECURSION
+    `(!n. 0 + n = n) /\
+     (!m n. (SUC m) + n = SUC(m + n))` in
+  (CONJUNCT1 def, CONJUNCT2 def);;
 
-export_thm ADD;;
+export_thm ZERO_ADD;;
+export_thm SUC_ADD;;
+
+let ADD = CONJ ZERO_ADD SUC_ADD;;
 
 logfile "natural-add-thm";;
 
@@ -77,8 +82,6 @@ let ADD_CLAUSES = prove
    (!m n. m + (SUC n) = SUC(m + n))`,
   REWRITE_TAC[ADD; ADD_0; ADD_SUC]);;
 
-export_thm ADD_CLAUSES;;
-
 let ADD_SYM = prove
  (`!m n. m + n = n + m`,
   INDUCT_TAC THEN ASM_REWRITE_TAC[ADD_CLAUSES]);;
@@ -97,8 +100,6 @@ let ADD_AC = prove
      ((m + n) + p = m + (n + p)) /\
      (m + (n + p) = n + (m + p))`,
   MESON_TAC[ADD_ASSOC; ADD_SYM]);;
-
-export_thm ADD_AC;;
 
 let ADD_EQ_0 = prove
  (`!m n. (m + n = 0) <=> (m = 0) /\ (n = 0)`,
@@ -134,19 +135,13 @@ export_thm EQ_ADD_RCANCEL_0;;
 (* Now define "bitwise" binary representation of numerals.                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-add-numeral";;
-
 let BIT0 = prove
  (`!n. BIT0 n = n + n`,
   INDUCT_TAC THEN ASM_REWRITE_TAC[BIT0_DEF; ADD_CLAUSES]);;
 
-export_thm BIT0;;
-
 let BIT1 = prove
  (`!n. BIT1 n = SUC(n + n)`,
   REWRITE_TAC[BIT1_DEF; BIT0]);;
-
-export_thm BIT1;;
 
 let BIT0_THM = prove
  (`!n. NUMERAL (BIT0 n) = NUMERAL n + NUMERAL n`,
@@ -160,21 +155,15 @@ let BIT1_THM = prove
 (* Following is handy before num_CONV arrives.                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-numeral-thm";;
-
 let ONE = prove
  (`1 = SUC 0`,
   REWRITE_TAC [NUMERAL; REWRITE_RULE [NUMERAL] BIT1_DEF;
                REWRITE_RULE [NUMERAL] BIT0_DEF]);;
 
-export_thm ONE;;
-
 let TWO = prove
  (`2 = SUC 1`,
   REWRITE_TAC [NUMERAL; REWRITE_RULE [NUMERAL] BIT1_DEF;
                REWRITE_RULE [NUMERAL] BIT0_DEF]);;
-
-export_thm TWO;;
 
 (* ------------------------------------------------------------------------- *)
 (* Syntax operations on numerals.                                            *)
@@ -203,7 +192,7 @@ let is_numeral = can dest_numeral;;
 (* One immediate consequence.                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-add-suc";;
+logfile "natural-add-thm";;
 
 let ADD1 = prove
  (`!m. SUC m = m + 1`,
@@ -384,11 +373,16 @@ export_thm MULT_EQ_1;;
 
 logfile "natural-exp-def";;
 
-let EXP = new_recursive_definition num_RECURSION
- `(!m. m EXP 0 = 1) /\
-  (!m n. m EXP (SUC n) = m * (m EXP n))`;;
+let (EXP_0,EXP_SUC) =
+  let def = new_recursive_definition num_RECURSION
+    `(!m. m EXP 0 = 1) /\
+     (!m n. m EXP (SUC n) = m * (m EXP n))` in
+  (CONJUNCT1 def, CONJUNCT2 def);;
 
-export_thm EXP;;
+export_thm EXP_0;;
+export_thm EXP_SUC;;
+
+let EXP = CONJ EXP_0 EXP_SUC;;
 
 logfile "natural-exp-thm";;
 
@@ -459,25 +453,35 @@ export_thm EXP_MULT;;
 
 logfile "natural-order-def";;
 
-let LE = new_recursive_definition num_RECURSION
- `(!m. (m <= 0) <=> (m = 0)) /\
-  (!m n. (m <= SUC n) <=> (m = SUC n) \/ (m <= n))`;;
+let (LE_ZERO,LE_SUC) =
+  let def = new_recursive_definition num_RECURSION
+    `(!m. (m <= 0) <=> (m = 0)) /\
+     (!m n. (m <= SUC n) <=> (m = SUC n) \/ (m <= n))` in
+  (CONJUNCT1 def, CONJUNCT2 def);;
 
-export_thm LE;;
+export_thm LE_ZERO;;
+export_thm LE_SUC;;
 
-let LT = new_recursive_definition num_RECURSION
- `(!m. (m < 0) <=> F) /\
-  (!m n. (m < SUC n) <=> (m = n) \/ (m < n))`;;
+let LE = CONJ LE_ZERO LE_SUC;;
 
-export_thm LT;;
+let (LT_ZERO,LT_SUC) =
+  let def = new_recursive_definition num_RECURSION
+    `(!m. (m < 0) <=> F) /\
+     (!m n. (m < SUC n) <=> (m = n) \/ (m < n))` in
+  (CONJUNCT1 def, CONJUNCT2 def);;
+
+export_thm LT_ZERO;;
+export_thm LT_SUC;;
+
+let LT = CONJ LT_ZERO LT_SUC;;
 
 let GE = new_definition
-  `m >= n <=> n <= m`;;
+  `!m n. m >= n <=> n <= m`;;
 
 export_thm GE;;
 
 let GT = new_definition
-  `m > n <=> n < m`;;
+  `!m n. m > n <=> n < m`;;
 
 export_thm GT;;
 
@@ -725,13 +729,11 @@ let LE_1 = prove
    (!n. 1 <= n ==> ~(n = 0))`,
   REWRITE_TAC[LT_NZ; GSYM NOT_LT; ONE; LT]);;
 
-export_thm LE_1;;
-
 (* ------------------------------------------------------------------------- *)
 (* Relate the orderings to arithmetic operations.                            *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-add-order";;
+logfile "natural-add-thm";;
 
 let LE_EXISTS = prove
  (`!m n. (m <= n) <=> (?d. n = m + d)`,
@@ -855,7 +857,7 @@ export_thm LT_ADD2;;
 (* And multiplication.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-mult-order";;
+logfile "natural-mult-thm";;
 
 let LT_MULT = prove
  (`!m n. (0 < m * n) <=> (0 < m) /\ (0 < n)`,
@@ -935,13 +937,9 @@ export_thm LE_SQUARE_REFL;;
 (* Useful "without loss of generality" lemmas.                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-order-thm";;
-
 let WLOG_LE = prove
  (`!P. (!m n. P m n <=> P n m) /\ (!m n. m <= n ==> P m n) ==> !m n. P m n`,
   MESON_TAC[LE_CASES]);;
-
-export_thm WLOG_LE;;
 
 let WLOG_LT = prove
  (`!P.
@@ -949,11 +947,11 @@ let WLOG_LT = prove
      ==> !m y. P m y`,
   MESON_TAC[LT_CASES]);;
 
-export_thm WLOG_LT;;
-
 (* ------------------------------------------------------------------------- *)
 (* Existence of least and greatest elements of (finite) set.                 *)
 (* ------------------------------------------------------------------------- *)
+
+logfile "natural-order-thm";;
 
 let num_WF = prove
  (`!P. (!n. (!m. m < n ==> P m) ==> P n) ==> !n. P n`,
@@ -994,21 +992,31 @@ export_thm num_MAX;;
 (* Oddness and evenness (recursively rather than inductively!)               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-even-odd-def";;
+logfile "natural-div-def";;
 
-let EVEN = new_recursive_definition num_RECURSION
-  `(EVEN 0 <=> T) /\
-   (!n. EVEN (SUC n) <=> ~(EVEN n))`;;
+let (EVEN_ZERO,EVEN_SUC) =
+  let def = new_recursive_definition num_RECURSION
+    `(EVEN 0 <=> T) /\
+     (!n. EVEN (SUC n) <=> ~(EVEN n))` in
+  (CONJUNCT1 def, CONJUNCT2 def);;
 
-export_thm EVEN;;
+export_thm EVEN_ZERO;;
+export_thm EVEN_SUC;;
 
-let ODD = new_recursive_definition num_RECURSION
-  `(ODD 0 <=> F) /\
-   (!n. ODD (SUC n) <=> ~(ODD n))`;;
+let EVEN = CONJ EVEN_ZERO EVEN_SUC;;
 
-export_thm ODD;;
+let (ODD_ZERO,ODD_SUC) =
+  let def = new_recursive_definition num_RECURSION
+    `(ODD 0 <=> F) /\
+     (!n. ODD (SUC n) <=> ~(ODD n))` in
+  (CONJUNCT1 def, CONJUNCT2 def);;
 
-logfile "natural-even-odd-thm";;
+export_thm ODD_ZERO;;
+export_thm ODD_SUC;;
+
+let ODD = CONJ ODD_ZERO ODD_SUC;;
+
+logfile "natural-div-thm";;
 
 let NOT_EVEN = prove
  (`!n. ~(EVEN n) <=> ODD n`,
@@ -1111,8 +1119,6 @@ let EVEN_EXISTS_LEMMA = prove
       REWRITE_TAC[MULT_2] THEN REWRITE_TAC[ADD_CLAUSES];
       EXISTS_TAC `m:num` THEN ASM_REWRITE_TAC[]]]);;
 
-export_thm EVEN_EXISTS_LEMMA;;
-
 let EVEN_EXISTS = prove
  (`!n. EVEN n <=> ?m. n = 2 * m`,
   GEN_TAC THEN EQ_TAC THEN DISCH_TAC THENL
@@ -1161,18 +1167,17 @@ export_thm EVEN_ODD_DECOMPOSITION;;
 
 logfile "natural-sub-def";;
 
-let SUB_DEF = new_recursive_definition num_RECURSION
- `(!m. m - 0 = m) /\
-  (!m n. m - (SUC n) = PRE(m - n))`;;
-
-let ADD_SUB_LEMMA = prove
- (`!m n. PRE (SUC m - n) = m - n`,
-  GEN_TAC THEN INDUCT_TAC THEN ASM_REWRITE_TAC[SUB_DEF; PRE]);;
-
-let ADD_SUB = prove
- (`!m n. (m + n) - n = m`,
-  GEN_TAC THEN INDUCT_TAC THEN
-  ASM_REWRITE_TAC[SUB_DEF; ADD_CLAUSES; ADD_SUB_LEMMA]);;
+let ADD_SUB =
+  let SUB_DEF = new_recursive_definition num_RECURSION
+    `(!m. m - 0 = m) /\
+     (!m n. m - (SUC n) = PRE(m - n))` in
+  let ADD_SUB_LEMMA = prove
+    (`!m n. PRE (SUC m - n) = m - n`,
+     GEN_TAC THEN INDUCT_TAC THEN ASM_REWRITE_TAC[SUB_DEF; PRE]) in
+  prove
+  (`!m n. (m + n) - n = m`,
+   GEN_TAC THEN INDUCT_TAC THEN
+   ASM_REWRITE_TAC[SUB_DEF; ADD_CLAUSES; ADD_SUB_LEMMA]);;
 
 export_thm ADD_SUB;;
 
@@ -1347,6 +1352,8 @@ let RIGHT_SUB_DISTRIB = prove
 
 export_thm RIGHT_SUB_DISTRIB;;
 
+logfile "natural-div-thm";;
+
 let EVEN_SUB = prove
  (`!m n. n <= m ==> (EVEN (m - n) <=> (EVEN(m) <=> EVEN(n)))`,
   REWRITE_TAC [LE_EXISTS] THEN
@@ -1375,11 +1382,16 @@ export_thm ODD_SUB;;
 
 logfile "natural-factorial-def";;
 
-let FACT = new_recursive_definition num_RECURSION
-  `(FACT 0 = 1) /\
-   (!n. FACT (SUC n) = (SUC n) * FACT(n))`;;
+let (FACT_ZERO,FACT_SUC) =
+  let def = new_recursive_definition num_RECURSION
+    `(FACT 0 = 1) /\
+     (!n. FACT (SUC n) = (SUC n) * FACT(n))` in
+  (CONJUNCT1 def, CONJUNCT2 def);;
 
-export_thm FACT;;
+export_thm FACT_ZERO;;
+export_thm FACT_SUC;;
+
+let FACT = CONJ FACT_ZERO FACT_SUC;;
 
 logfile "natural-factorial-thm";;
 
@@ -1388,13 +1400,9 @@ let FACT_LT = prove
   INDUCT_TAC THEN ASM_REWRITE_TAC[FACT; LT_MULT] THEN
   REWRITE_TAC[ONE; LT_0]);;
 
-export_thm FACT_LT;;
-
 let FACT_LE = prove
  (`!n. 1 <= FACT n`,
   REWRITE_TAC[ONE; LE_SUC_LT; FACT_LT]);;
-
-export_thm FACT_LE;;
 
 let FACT_NZ = prove
  (`!n. ~(FACT n = 0)`,
@@ -1421,7 +1429,7 @@ export_thm FACT_MONO;;
 (* More complicated theorems about exponential.                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-exp-order";;
+logfile "natural-exp-thm";;
 
 let EXP_LT_0 = prove
  (`!n x. 0 < x EXP n <=> ~(x = 0) \/ (n = 0)`,
@@ -1541,7 +1549,7 @@ export_thm EXP_MONO_EQ;;
 (* Division and modulus, via existence proof of their basic property.        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-div-mod-def";;
+logfile "natural-div-def";;
 
 let DIVMOD_EXIST_LEMMA = prove
  (`!m n. ~(n = 0) ==> ?q r. (m = q * n + r) /\ r < n`,
@@ -1588,7 +1596,7 @@ let DIVISION = prove
  (`!m n. ~(n = 0) ==> (m = m DIV n * n + m MOD n) /\ m MOD n < n`,
   MESON_TAC[DIVISION_DEF_DIV; DIVISION_DEF_MOD]);;
 
-logfile "natural-div-mod-thm";;
+logfile "natural-div-thm";;
 
 let DIVMOD_UNIQ_LEMMA = prove
  (`!m n q1 r1 q2 r2. ((m = q1 * n + r1) /\ r1 < n) /\
@@ -1614,7 +1622,7 @@ let DIVMOD_UNIQ_LEMMA = prove
     REPEAT (UNDISCH_TAC `r2 < n`) THEN
     ASM_CASES_TAC `n = 0` THEN ASM_REWRITE_TAC[GSYM NOT_LE; LE_0]]);;
 
-let DIVMOD_UNIQ = prove
+let DIVMOD_UNIQ_LEMMA2 = prove
  (`!m n q r. (m = q * n + r) /\ r < n ==> (m DIV n = q) /\ (m MOD n = r)`,
   REPEAT GEN_TAC THEN DISCH_THEN(CONJUNCTS_THEN ASSUME_TAC o GSYM) THEN
   MATCH_MP_TAC DIVMOD_UNIQ_LEMMA THEN
@@ -1623,21 +1631,28 @@ let DIVMOD_UNIQ = prove
   DISCH_TAC THEN UNDISCH_TAC `r < n` THEN
   ASM_REWRITE_TAC[GSYM NOT_LE; LE_0]);;
 
-export_thm DIVMOD_UNIQ;;
-
 let MOD_UNIQ = prove
  (`!m n q r. (m = q * n + r) /\ r < n ==> (m MOD n = r)`,
   REPEAT GEN_TAC THEN
-  DISCH_THEN(fun th -> REWRITE_TAC[MATCH_MP DIVMOD_UNIQ th]));;
+  DISCH_THEN(fun th -> REWRITE_TAC[MATCH_MP DIVMOD_UNIQ_LEMMA2 th]));;
 
 export_thm MOD_UNIQ;;
 
 let DIV_UNIQ = prove
  (`!m n q r. (m = q * n + r) /\ r < n ==> (m DIV n = q)`,
   REPEAT GEN_TAC THEN
-  DISCH_THEN(fun th -> REWRITE_TAC[MATCH_MP DIVMOD_UNIQ th]));;
+  DISCH_THEN(fun th -> REWRITE_TAC[MATCH_MP DIVMOD_UNIQ_LEMMA2 th]));;
 
 export_thm DIV_UNIQ;;
+
+let DIVMOD_UNIQ = prove
+ (`!m n q r. (m = q * n + r) /\ r < n ==> (m DIV n = q) /\ (m MOD n = r)`,
+  REPEAT GEN_TAC THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (CONJ (SPECL [`m:num`; `n:num`; `q:num`; `r:num`] DIV_UNIQ)
+          (SPECL [`m:num`; `n:num`; `q:num`; `r:num`] MOD_UNIQ)) THEN
+  ASM_REWRITE_TAC []);;
 
 let DIV_MULT,MOD_MULT = (CONJ_PAIR o prove)
  (`(!m n. ~(m = 0) ==> (m * n) DIV m = n) /\
@@ -2072,7 +2087,7 @@ export_thm MIN;;
 parse_as_binder "minimal";;
 
 let minimal = new_definition
-  `(minimal) (P:num->bool) = @n. P n /\ !m. m < n ==> ~(P m)`;;
+  `!P. (minimal) (P:num->bool) = @n. P n /\ !m. m < n ==> ~(P m)`;;
 
 let MINIMAL = prove
  (`!P. (?n. P n) <=> P((minimal) P) /\ (!m. m < (minimal) P ==> ~(P m))`,
