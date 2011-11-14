@@ -25,8 +25,6 @@ let REFL_CLAUSE = prove
  (`!x:A. (x = x) <=> T`,
   GEN_TAC THEN MATCH_ACCEPT_TAC(EQT_INTRO(SPEC_ALL EQ_REFL)));;
 
-export_thm REFL_CLAUSE;;
-
 let EQ_SYM = prove
  (`!(x:A) y. (x = y) ==> (y = x)`,
   REPEAT GEN_TAC THEN DISCH_THEN(ACCEPT_TAC o SYM));;
@@ -71,13 +69,13 @@ export_thm ABS_SIMP;;
 (* A few "big name" intuitionistic tautologies.                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-int";;
-
-let CONJ_ASSOC = prove
- (`!t1 t2 t3. t1 /\ t2 /\ t3 <=> (t1 /\ t2) /\ t3`,
+let CONJ_ASSOC' = prove
+ (`!t1 t2 t3. (t1 /\ t2) /\ t3 <=> t1 /\ (t2 /\ t3)`,
   ITAUT_TAC);;
 
-export_thm CONJ_ASSOC;;
+export_thm CONJ_ASSOC';;
+
+let CONJ_ASSOC = GSYM CONJ_ASSOC';;
 
 let CONJ_SYM = prove
  (`!t1 t2. t1 /\ t2 <=> t2 /\ t1`,
@@ -85,24 +83,52 @@ let CONJ_SYM = prove
 
 export_thm CONJ_SYM;;
 
-let CONJ_ACI = prove
- (`!p q r.
-     (p /\ q <=> q /\ p) /\
-     ((p /\ q) /\ r <=> p /\ (q /\ r)) /\
-     (p /\ (q /\ r) <=> q /\ (p /\ r)) /\
-     (p /\ p <=> p) /\
-     (p /\ (p /\ q) <=> p /\ q)`,
+let CONJ_REFL = prove
+ (`!t. t /\ t <=> t`,
   ITAUT_TAC);;
 
-export_thm CONJ_ACI;;
+export_thm CONJ_REFL;;
 
-logfile "bool-int";;
+let CONJ_ACI =
+  let th1 = CONJ_SYM
+  and th2 = CONJ_ASSOC'
+  and th3 = prove
+    (`!p q r. p /\ (q /\ r) <=> q /\ (p /\ r)`,
+     REPEAT GEN_TAC THEN
+     PURE_REWRITE_TAC [CONJ_ASSOC] THEN
+     AP_THM_TAC THEN
+     AP_TERM_TAC THEN
+     MATCH_ACCEPT_TAC CONJ_SYM)
+  and th4 = CONJ_REFL
+  and th5 = prove
+    (`!p q. p /\ (p /\ q) <=> p /\ q`,
+     REPEAT GEN_TAC THEN
+     PURE_REWRITE_TAC [CONJ_ASSOC] THEN
+     AP_THM_TAC THEN
+     AP_TERM_TAC THEN
+     MATCH_ACCEPT_TAC CONJ_REFL) in
+  prove
+   (`!p q r.
+       (p /\ q <=> q /\ p) /\
+       ((p /\ q) /\ r <=> p /\ (q /\ r)) /\
+       (p /\ (q /\ r) <=> q /\ (p /\ r)) /\
+       (p /\ p <=> p) /\
+       (p /\ (p /\ q) <=> p /\ q)`,
+    REPEAT GEN_TAC THEN
+    REPEAT CONJ_TAC THENL
+    [MATCH_ACCEPT_TAC th1;
+     MATCH_ACCEPT_TAC th2;
+     MATCH_ACCEPT_TAC th3;
+     MATCH_ACCEPT_TAC th4;
+     MATCH_ACCEPT_TAC th5]);;
 
-let DISJ_ASSOC = prove
- (`!t1 t2 t3. t1 \/ t2 \/ t3 <=> (t1 \/ t2) \/ t3`,
+let DISJ_ASSOC' = prove
+ (`!t1 t2 t3. (t1 \/ t2) \/ t3 <=> t1 \/ (t2 \/ t3)`,
   ITAUT_TAC);;
 
-export_thm DISJ_ASSOC;;
+export_thm DISJ_ASSOC';;
+
+let DISJ_ASSOC = GSYM DISJ_ASSOC';;
 
 let DISJ_SYM = prove
  (`!t1 t2. t1 \/ t2 <=> t2 \/ t1`,
@@ -110,40 +136,64 @@ let DISJ_SYM = prove
 
 export_thm DISJ_SYM;;
 
-let DISJ_ACI = prove
- (`!p q r.
-     (p \/ q <=> q \/ p) /\
-     ((p \/ q) \/ r <=> p \/ (q \/ r)) /\
-     (p \/ (q \/ r) <=> q \/ (p \/ r)) /\
-     (p \/ p <=> p) /\
-     (p \/ (p \/ q) <=> p \/ q)`,
+let DISJ_REFL = prove
+ (`!t. t \/ t <=> t`,
   ITAUT_TAC);;
 
-export_thm DISJ_ACI;;
+export_thm DISJ_REFL;;
 
-logfile "bool-int";;
+let DISJ_ACI =
+  let th1 = DISJ_SYM
+  and th2 = DISJ_ASSOC'
+  and th3 = prove
+    (`!p q r. p \/ (q \/ r) <=> q \/ (p \/ r)`,
+     REPEAT GEN_TAC THEN
+     PURE_REWRITE_TAC [DISJ_ASSOC] THEN
+     AP_THM_TAC THEN
+     AP_TERM_TAC THEN
+     MATCH_ACCEPT_TAC DISJ_SYM)
+  and th4 = DISJ_REFL
+  and th5 = prove
+    (`!p q. p \/ (p \/ q) <=> p \/ q`,
+     REPEAT GEN_TAC THEN
+     PURE_REWRITE_TAC [DISJ_ASSOC] THEN
+     AP_THM_TAC THEN
+     AP_TERM_TAC THEN
+     MATCH_ACCEPT_TAC DISJ_REFL) in
+  prove
+   (`!p q r.
+       (p \/ q <=> q \/ p) /\
+       ((p \/ q) \/ r <=> p \/ (q \/ r)) /\
+       (p \/ (q \/ r) <=> q \/ (p \/ r)) /\
+       (p \/ p <=> p) /\
+       (p \/ (p \/ q) <=> p \/ q)`,
+    REPEAT GEN_TAC THEN
+    REPEAT CONJ_TAC THENL
+    [MATCH_ACCEPT_TAC th1;
+     MATCH_ACCEPT_TAC th2;
+     MATCH_ACCEPT_TAC th3;
+     MATCH_ACCEPT_TAC th4;
+     MATCH_ACCEPT_TAC th5]);;
 
-let IMP_CONJ = prove
- (`!p q r. p /\ q ==> r <=> p ==> q ==> r`,
+let IMP_REFL = ITAUT `!t. t ==> t`;;
+
+export_thm IMP_REFL;;
+
+let IMP_IMP = prove
+ (`!p q r. p ==> q ==> r <=> p /\ q ==> r`,
   ITAUT_TAC);;
-
-export_thm IMP_CONJ;;
-
-let IMP_IMP = GSYM IMP_CONJ;;
 
 export_thm IMP_IMP;;
+
+let IMP_CONJ = GSYM IMP_IMP;;
 
 let IMP_CONJ_ALT = prove
  (`!p q r. p /\ q ==> r <=> q ==> p ==> r`,
   ITAUT_TAC);;
 
-export_thm IMP_CONJ_ALT;;
-
 (* ------------------------------------------------------------------------- *)
 (* A couple of "distribution" tautologies are useful.                        *)
 (* ------------------------------------------------------------------------- *)
-
-logfile "bool-int";;
 
 let LEFT_OR_DISTRIB = prove
  (`!p q r. p /\ (q \/ r) <=> p /\ q \/ p /\ r`,
@@ -173,8 +223,6 @@ export_thm RIGHT_AND_DISTRIB;;
 (* Degenerate cases of quantifiers.                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-int";;
-
 let FORALL_SIMP = prove
  (`!t. (!x:A. t) = t`,
   ITAUT_TAC);;
@@ -191,8 +239,6 @@ export_thm EXISTS_SIMP;;
 (* I also use this a lot (as a prelude to congruence reasoning).             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-int";;
-
 let EQ_IMP = ITAUT `!a b. (a <=> b) ==> a ==> b`;;
 
 export_thm EQ_IMP;;
@@ -201,39 +247,133 @@ export_thm EQ_IMP;;
 (* Start building up the basic rewrites; we add a few more later.            *)
 (* ------------------------------------------------------------------------- *)
 
-let EQ_CLAUSES = prove
- (`!t. ((T <=> t) <=> t) /\ ((t <=> T) <=> t) /\
-       ((F <=> t) <=> ~t) /\ ((t <=> F) <=> ~t)`,
-  ITAUT_TAC);;
+let TRUE_EQ_THM = ITAUT `!t. ((T <=> t) <=> t)`;;
 
-export_thm EQ_CLAUSES;;
+export_thm TRUE_EQ_THM;;
+
+let EQ_TRUE_THM = ITAUT `!t. ((t <=> T) <=> t)`;;
+
+export_thm EQ_TRUE_THM;;
+
+let FALSE_EQ_THM = ITAUT `!t. ((F <=> t) <=> ~t)`;;
+
+export_thm FALSE_EQ_THM;;
+
+let EQ_FALSE_THM = ITAUT `!t. ((t <=> F) <=> ~t)`;;
+
+export_thm EQ_FALSE_THM;;
+
+let EQ_CLAUSES = prove
+  (`!t. ((T <=> t) <=> t) /\ ((t <=> T) <=> t) /\
+        ((F <=> t) <=> ~t) /\ ((t <=> F) <=> ~t)`,
+    REPEAT GEN_TAC THEN
+    REPEAT CONJ_TAC THENL
+    [MATCH_ACCEPT_TAC TRUE_EQ_THM;
+     MATCH_ACCEPT_TAC EQ_TRUE_THM;
+     MATCH_ACCEPT_TAC FALSE_EQ_THM;
+     MATCH_ACCEPT_TAC EQ_FALSE_THM]);;
+
+let NOT_TRUE_THM = ITAUT `~T <=> F`;;
+
+export_thm NOT_TRUE_THM;;
+
+let NOT_FALSE_THM = ITAUT `~F <=> T`;;
+
+export_thm NOT_FALSE_THM;;
 
 let NOT_CLAUSES_WEAK = prove
- (`(~T <=> F) /\ (~F <=> T)`,
-  ITAUT_TAC);;
+  (`(~T <=> F) /\ (~F <=> T)`,
+    REPEAT GEN_TAC THEN
+    REPEAT CONJ_TAC THENL
+    [MATCH_ACCEPT_TAC NOT_TRUE_THM;
+     MATCH_ACCEPT_TAC NOT_FALSE_THM]);;
 
-export_thm NOT_CLAUSES_WEAK;;
+let TRUE_AND_THM = ITAUT `!t. (T /\ t <=> t)`;;
+
+export_thm TRUE_AND_THM;;
+
+let AND_TRUE_THM = ITAUT `!t. (t /\ T <=> t)`;;
+
+export_thm AND_TRUE_THM;;
+
+let FALSE_AND_THM = ITAUT `!t. (F /\ t <=> F)`;;
+
+export_thm FALSE_AND_THM;;
+
+let AND_FALSE_THM = ITAUT `!t. (t /\ F <=> F)`;;
+
+export_thm AND_FALSE_THM;;
 
 let AND_CLAUSES = prove
- (`!t. (T /\ t <=> t) /\ (t /\ T <=> t) /\ (F /\ t <=> F) /\
-       (t /\ F <=> F) /\ (t /\ t <=> t)`,
-  ITAUT_TAC);;
+  (`!t. (T /\ t <=> t) /\ (t /\ T <=> t) /\ (F /\ t <=> F) /\
+        (t /\ F <=> F) /\ (t /\ t <=> t)`,
+    REPEAT GEN_TAC THEN
+    REPEAT CONJ_TAC THENL
+    [MATCH_ACCEPT_TAC TRUE_AND_THM;
+     MATCH_ACCEPT_TAC AND_TRUE_THM;
+     MATCH_ACCEPT_TAC FALSE_AND_THM;
+     MATCH_ACCEPT_TAC AND_FALSE_THM;
+     MATCH_ACCEPT_TAC CONJ_REFL]);;
 
-export_thm AND_CLAUSES;;
+let TRUE_OR_THM = ITAUT `!t. (T \/ t <=> T)`;;
+
+export_thm TRUE_OR_THM;;
+
+let OR_TRUE_THM = ITAUT `!t. (t \/ T <=> T)`;;
+
+export_thm OR_TRUE_THM;;
+
+let FALSE_OR_THM = ITAUT `!t. (F \/ t <=> t)`;;
+
+export_thm FALSE_OR_THM;;
+
+let OR_FALSE_THM = ITAUT `!t. (t \/ F <=> t)`;;
+
+export_thm OR_FALSE_THM;;
 
 let OR_CLAUSES = prove
- (`!t. (T \/ t <=> T) /\ (t \/ T <=> T) /\ (F \/ t <=> t) /\
-       (t \/ F <=> t) /\ (t \/ t <=> t)`,
-  ITAUT_TAC);;
+  (`!t. (T \/ t <=> T) /\ (t \/ T <=> T) /\ (F \/ t <=> t) /\
+        (t \/ F <=> t) /\ (t \/ t <=> t)`,
+    REPEAT GEN_TAC THEN
+    REPEAT CONJ_TAC THENL
+    [MATCH_ACCEPT_TAC TRUE_OR_THM;
+     MATCH_ACCEPT_TAC OR_TRUE_THM;
+     MATCH_ACCEPT_TAC FALSE_OR_THM;
+     MATCH_ACCEPT_TAC OR_FALSE_THM;
+     MATCH_ACCEPT_TAC DISJ_REFL]);;
 
-export_thm OR_CLAUSES;;
+let TRUE_IMP_THM = ITAUT `!t. (T ==> t <=> t)`;;
+
+export_thm TRUE_IMP_THM;;
+
+let IMP_TRUE_THM = ITAUT `!t. (t ==> T <=> T)`;;
+
+export_thm IMP_TRUE_THM;;
+
+let FALSE_IMP_THM = ITAUT `!t. (F ==> t <=> T)`;;
+
+export_thm FALSE_IMP_THM;;
+
+let IMP_FALSE_THM = ITAUT `!t. (t ==> F <=> ~t)`;;
+
+export_thm IMP_FALSE_THM;;
+
+let IMP_REFL_CLAUSE = prove
+  (`!t. (t ==> t <=> T)`,
+   GEN_TAC THEN
+   PURE_REWRITE_TAC [IMP_REFL] THEN
+   MATCH_ACCEPT_TAC EQ_REFL);;
 
 let IMP_CLAUSES = prove
  (`!t. (T ==> t <=> t) /\ (t ==> T <=> T) /\ (F ==> t <=> T) /\
        (t ==> t <=> T) /\ (t ==> F <=> ~t)`,
-  ITAUT_TAC);;
-
-export_thm IMP_CLAUSES;;
+    REPEAT GEN_TAC THEN
+    REPEAT CONJ_TAC THENL
+    [MATCH_ACCEPT_TAC TRUE_IMP_THM;
+     MATCH_ACCEPT_TAC IMP_TRUE_THM;
+     MATCH_ACCEPT_TAC FALSE_IMP_THM;
+     MATCH_ACCEPT_TAC IMP_REFL_CLAUSE;
+     MATCH_ACCEPT_TAC IMP_FALSE_THM]);;
 
 extend_basic_rewrites
   [REFL_CLAUSE;
@@ -256,8 +396,6 @@ extend_basic_congs
 (* ------------------------------------------------------------------------- *)
 (* Rewrite rule for unique existence.                                        *)
 (* ------------------------------------------------------------------------- *)
-
-logfile "bool-int";;
 
 let EXISTS_UNIQUE_THM = prove
  (`!P. (?!x:A. P x) <=> (?x. P x) /\ (!x x'. P x /\ P x' ==> (x = x'))`,

@@ -2068,7 +2068,7 @@ let LE_IMP =
 (* Maximum and minimum of natural numbers.                                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-min-max-def";;
+logfile "natural-order-min-max-def";;
 
 let MAX = new_definition
   `!m n. MAX m n = if m <= n then n else m`;;
@@ -2096,7 +2096,7 @@ let MINIMAL = prove
 
 export_thm MINIMAL;;
 
-logfile "natural-min-max-thm";;
+logfile "natural-order-min-max-thm";;
 
 let MAX_REFL = prove
  (`!n. MAX n n = n`,

@@ -66,13 +66,18 @@ let EQ_EXT = prove
 
 export_thm EQ_EXT;;
 
+let FUN_EQ_THM' = prove
+ (`!(f:A->B) g. (!x. f x = g x) <=> f = g`,
+  REPEAT GEN_TAC THEN EQ_TAC THENL
+   [MATCH_ACCEPT_TAC EQ_EXT;
+    DISCH_THEN SUBST1_TAC THEN GEN_TAC THEN REFL_TAC]);;
+
+export_thm FUN_EQ_THM';;
+
 let FUN_EQ_THM = prove
  (`!(f:A->B) g. f = g <=> (!x. f x = g x)`,
-  REPEAT GEN_TAC THEN EQ_TAC THENL
-   [DISCH_THEN SUBST1_TAC THEN GEN_TAC THEN REFL_TAC;
-    MATCH_ACCEPT_TAC EQ_EXT]);;
-
-export_thm FUN_EQ_THM;;
+  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+  ACCEPT_TAC FUN_EQ_THM');;
 
 (* ------------------------------------------------------------------------- *)
 (* Indefinite descriptor (giving AC).                                        *)
@@ -332,15 +337,31 @@ let TAUT =
 (* A few useful classical tautologies.                                       *)
 (* ------------------------------------------------------------------------- *)
 
-let DE_MORGAN_THM = TAUT
-  `!t1 t2. (~(t1 /\ t2) <=> ~t1 \/ ~t2) /\ (~(t1 \/ t2) <=> ~t1 /\ ~t2)`;;
+let NOT_AND_THM = TAUT `!t1 t2. ~(t1 /\ t2) <=> ~t1 \/ ~t2`;;
 
-export_thm DE_MORGAN_THM;;
+export_thm NOT_AND_THM;;
 
-let NOT_CLAUSES =
-  TAUT `(!t. ~ ~t <=> t) /\ (~T <=> F) /\ (~F <=> T)`;;
+let NOT_OR_THM = TAUT `!t1 t2. ~(t1 \/ t2) <=> ~t1 /\ ~t2`;;
 
-export_thm NOT_CLAUSES;;
+export_thm NOT_OR_THM;;
+
+let DE_MORGAN_THM = prove
+  (`!t1 t2. (~(t1 /\ t2) <=> ~t1 \/ ~t2) /\ (~(t1 \/ t2) <=> ~t1 /\ ~t2)`,
+   REPEAT GEN_TAC THEN
+   CONJ_TAC THENL
+   [MATCH_ACCEPT_TAC NOT_AND_THM;
+    MATCH_ACCEPT_TAC NOT_OR_THM]);;
+
+let NOT_NOT_THM = TAUT `!t. ~ ~t <=> t`;;
+
+export_thm NOT_NOT_THM;;
+
+let NOT_CLAUSES = prove
+  (`(!t. ~ ~t <=> t) /\ (~T <=> F) /\ (~F <=> T)`,
+   REPEAT CONJ_TAC THENL
+   [ACCEPT_TAC NOT_NOT_THM;
+    ACCEPT_TAC NOT_TRUE_THM;
+    ACCEPT_TAC NOT_FALSE_THM]);;
 
 let NOT_IMP = TAUT `!t1 t2. ~(t1 ==> t2) <=> t1 /\ ~t2`;;
 
@@ -512,12 +533,25 @@ export_thm COND_DEF;;
 
 logfile "bool-class";;
 
+let COND_TRUE = prove
+ (`!(t1:A) t2. (if T then t1 else t2) = t1`,
+  REWRITE_TAC[COND_DEF]);;
+
+export_thm COND_TRUE;;
+
+let COND_FALSE = prove
+ (`!(t1:A) t2. (if F then t1 else t2) = t2`,
+  REWRITE_TAC[COND_DEF]);;
+
+export_thm COND_FALSE;;
+
 let COND_CLAUSES = prove
  (`!(t1:A) t2. ((if T then t1 else t2) = t1) /\
                ((if F then t1 else t2) = t2)`,
-  REWRITE_TAC[COND_DEF]);;
-
-export_thm COND_CLAUSES;;
+  REPEAT GEN_TAC THEN
+  CONJ_TAC THENL
+  [MATCH_ACCEPT_TAC COND_TRUE;
+   MATCH_ACCEPT_TAC COND_FALSE]);;
 
 let is_cond tm =
   try fst(dest_const(rator(rator (rator tm)))) = "COND"
