@@ -373,11 +373,21 @@ let MEASURE = new_definition
 
 export_thm MEASURE;;
 
+let MEASURE_EXPAND = prove
+  (`!m. MEASURE m = \(x:A) y. m x < m y`,
+   GEN_TAC THEN
+   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+   GEN_TAC THEN
+   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+   GEN_TAC THEN
+   REWRITE_TAC [MEASURE]);;
+
 logfile "relation-natural-thm";;
 
 let WF_MEASURE = prove
  (`!m:A->num. WF(MEASURE m)`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[MEASURE] THEN
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MEASURE_EXPAND] THEN
   MATCH_MP_TAC WF_MEASURE_GEN THEN
   MATCH_ACCEPT_TAC WF_num);;
 
