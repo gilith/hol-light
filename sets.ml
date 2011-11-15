@@ -72,27 +72,9 @@ let EXTENSION_IMP = prove
 
 export_thm EXTENSION_IMP;;
 
-logfile "set-thm";;
-
-let EXTENSION' = prove
- (`!s t. (!x:A. x IN s <=> x IN t) <=> s = t`,
-  REPEAT STRIP_TAC THEN
-  EQ_TAC THENL
-  [MATCH_ACCEPT_TAC EXTENSION_IMP;
-   DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
-
-export_thm EXTENSION';;
-
-let EXTENSION = prove
- (`!s t. (s = t) <=> !x:A. x IN s <=> x IN t`,
-  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
-  ACCEPT_TAC EXTENSION');;
-
 (* ------------------------------------------------------------------------- *)
 (* These two definitions are needed first, for the parsing of enumerations.  *)
 (* ------------------------------------------------------------------------- *)
-
-logfile "set-def";;
 
 let EMPTY = new_definition
   `EMPTY = { x:A | F }`;;
@@ -208,8 +190,14 @@ let CHOICE_DEF = new_definition
 
 let CHOICE = prove
  (`!s : A set. ~(s = EMPTY) ==> (CHOICE s) IN s`,
-  REWRITE_TAC
-    [CHOICE_DEF; EXTENSION; EMPTY; IN_ELIM_THM; NOT_FORALL_THM; EXISTS_THM]);;
+  GEN_TAC THEN
+  ONCE_REWRITE_TAC [GSYM CONTRAPOS_THM] THEN
+  REWRITE_TAC [CHOICE_DEF] THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC EXTENSION_IMP THEN
+  REWRITE_TAC [EMPTY; IN_ELIM_THM] THEN
+  REWRITE_TAC [GSYM NOT_EXISTS_THM; EXISTS_THM] THEN
+  FIRST_ASSUM ACCEPT_TAC);;
 
 export_thm CHOICE;;
 
@@ -223,6 +211,20 @@ export_thm REST;;
 (* ------------------------------------------------------------------------- *)
 
 logfile "set-thm";;
+
+let EXTENSION' = prove
+ (`!s t. (!x:A. x IN s <=> x IN t) <=> s = t`,
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [MATCH_ACCEPT_TAC EXTENSION_IMP;
+   DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
+
+export_thm EXTENSION';;
+
+let EXTENSION = prove
+ (`!s t. (s = t) <=> !x:A. x IN s <=> x IN t`,
+  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+  ACCEPT_TAC EXTENSION');;
 
 let IN_ELIM = prove
  (`!p (x:A). x IN GSPEC (\v. ?y. v = y /\ p y) <=> p x`,
