@@ -65,17 +65,27 @@ let TL = new_recursive_definition list_RECURSION
 
 export_thm TL;;
 
-let NULL = new_recursive_definition list_RECURSION
-  `(NULL ([] : A list) = T) /\
-   (!h t. NULL (CONS (h:A) t) = F)`;;
+let (NULL_NIL,NULL_CONS) =
+  let def = new_recursive_definition list_RECURSION
+    `(NULL ([] : A list) <=> T) /\
+     (!h t. NULL (CONS (h:A) t) <=> F)` in
+  (CONJ_PAIR o PURE_REWRITE_RULE [EQ_CLAUSES]) def;;
 
-export_thm NULL;;
+export_thm NULL_NIL;;
+export_thm NULL_CONS;;
 
-let case_list_def = new_recursive_definition list_RECURSION
-  `(!b f. case_list b f [] = (b:B)) /\
-   (!b f h t. case_list b f (CONS h t) = f (h:A) t)`;;
+let NULL = CONJ NULL_NIL NULL_CONS;;
 
-export_thm case_list_def;;
+let (case_list_nil,case_list_cons) =
+  let def = new_recursive_definition list_RECURSION
+    `(!b f. case_list b f [] = (b:B)) /\
+     (!b f h t. case_list b f (CONS h t) = f (h:A) t)` in
+  CONJ_PAIR def;;
+
+export_thm case_list_nil;;
+export_thm case_list_cons;;
+
+let case_list_def = CONJ case_list_nil case_list_cons;;
 
 logfile "list-dest-thm";;
 
@@ -108,11 +118,16 @@ export_thm CONS_HD_TL;;
 
 logfile "list-length-def";;
 
-let LENGTH = new_recursive_definition list_RECURSION
-  `(LENGTH [] = 0) /\
-   (!h:A. !t. LENGTH (CONS h t) = SUC (LENGTH t))`;;
+let (LENGTH_NIL,LENGTH_CONS) =
+  let def = new_recursive_definition list_RECURSION
+    `(LENGTH [] = 0) /\
+     (!h:A. !t. LENGTH (CONS h t) = SUC (LENGTH t))` in
+  CONJ_PAIR def;;
 
-export_thm LENGTH;;
+export_thm LENGTH_NIL;;
+export_thm LENGTH_CONS;;
+
+let LENGTH = CONJ LENGTH_NIL LENGTH_CONS;;
 
 logfile "list-length-thm";;
 
@@ -141,11 +156,16 @@ export_thm LENGTH_TL;;
 
 logfile "list-set-def";;
 
-let set_of_list = new_recursive_definition list_RECURSION
-  `(set_of_list ([]:A list) = {}) /\
-   (!h t. set_of_list (CONS (h:A) t) = h INSERT (set_of_list t))`;;
+let (set_of_list_nil,set_of_list_cons) =
+  let def = new_recursive_definition list_RECURSION
+    `(set_of_list ([]:A list) = {}) /\
+     (!h t. set_of_list (CONS (h:A) t) = h INSERT (set_of_list t))` in
+  CONJ_PAIR def;;
 
-export_thm set_of_list;;
+export_thm set_of_list_nil;;
+export_thm set_of_list_cons;;
+
+let set_of_list = CONJ set_of_list_nil set_of_list_cons;;
 
 let list_of_set = new_definition
   `!(s : A set).
@@ -153,7 +173,7 @@ let list_of_set = new_definition
 
 let LIST_OF_SET_PROPERTIES = prove
  (`!(s : A set).
-     FINITE(s) ==> (set_of_list(list_of_set s) = s) /\
+     FINITE(s) ==> (set_of_list (list_of_set s) = s) /\
                    (LENGTH (list_of_set s) = CARD s)`,
   REWRITE_TAC [list_of_set] THEN
   CONV_TAC (BINDER_CONV (RAND_CONV SELECT_CONV)) THEN
@@ -229,11 +249,16 @@ export_thm CARD_SET_OF_LIST_LE;;
 
 logfile "list-append-def";;
 
-let APPEND = new_recursive_definition list_RECURSION
-  `(!l:(A)list. APPEND [] l = l) /\
-   (!l h t. APPEND (CONS h t) l = CONS h (APPEND t l))`;;
+let (NIL_APPEND,CONS_APPEND) =
+  let def = new_recursive_definition list_RECURSION
+    `(!(l : A list). APPEND [] l = l) /\
+     (!(l : A list) h t. APPEND (CONS h t) l = CONS h (APPEND t l))` in
+  CONJ_PAIR def;;
 
-export_thm APPEND;;
+export_thm NIL_APPEND;;
+export_thm CONS_APPEND;;
+
+let APPEND = CONJ NIL_APPEND CONS_APPEND;;
 
 logfile "list-append-thm";;
 
@@ -293,11 +318,16 @@ export_thm NULL_APPEND;;
 
 logfile "list-map-def";;
 
-let MAP = new_recursive_definition list_RECURSION
-  `(!f:A->B. MAP f NIL = NIL) /\
-   (!f h t. MAP f (CONS h t) = CONS (f h) (MAP f t))`;;
+let (MAP_NIL,MAP_CONS) =
+  let def = new_recursive_definition list_RECURSION
+    `(!(f : A -> B). MAP f NIL = NIL) /\
+     (!(f : A -> B) h t. MAP f (CONS h t) = CONS (f h) (MAP f t))` in
+  CONJ_PAIR def;;
 
-export_thm MAP;;
+export_thm MAP_NIL;;
+export_thm MAP_CONS;;
+
+let MAP = CONJ MAP_NIL MAP_CONS;;
 
 logfile "list-map-thm";;
 
@@ -377,17 +407,27 @@ export_thm SET_OF_LIST_MAP;;
 
 logfile "list-quant-def";;
 
-let ALL = new_recursive_definition list_RECURSION
-  `(!P. ALL P ([] : A list) = T) /\
-   (!P h t. ALL P (CONS (h:A) t) <=> P h /\ ALL P t)`;;
+let (ALL_NIL,ALL_CONS) =
+  let def = new_recursive_definition list_RECURSION
+    `(!P. ALL P ([] : A list) = T) /\
+     (!P h t. ALL P (CONS (h:A) t) <=> P h /\ ALL P t)` in
+  CONJ_PAIR def;;
 
-export_thm ALL;;
+export_thm ALL_NIL;;
+export_thm ALL_CONS;;
 
-let EX = new_recursive_definition list_RECURSION
-  `(!P. EX P ([] : A list) = F) /\
-   (!P h t. EX P (CONS (h:A) t) <=> P h \/ EX P t)`;;
+let ALL = CONJ ALL_NIL ALL_CONS;;
 
-export_thm EX;;
+let (EX_NIL,EX_CONS) =
+  let def = new_recursive_definition list_RECURSION
+    `(!P. EX P ([] : A list) = F) /\
+     (!P h t. EX P (CONS (h:A) t) <=> P h \/ EX P t)` in
+  CONJ_PAIR def;;
+
+export_thm EX_NIL;;
+export_thm EX_CONS;;
+
+let EX = CONJ EX_NIL EX_CONS;;
 
 logfile "list-quant-thm";;
 
@@ -524,17 +564,24 @@ export_thm EX_SET_OF_LIST;;
 
 logfile "list-filter-def";;
 
-let FILTER = new_recursive_definition list_RECURSION
-  `(!P. FILTER (P:A->bool) [] = []) /\
-   (!P h t. FILTER (P:A->bool) (CONS h t) =
-      if P h then CONS h (FILTER P t) else FILTER P t)`;;
+let (FILTER_NIL,FILTER_CONS) =
+  let def = new_recursive_definition list_RECURSION
+    `(!P. FILTER (P:A->bool) [] = []) /\
+     (!P h t. FILTER (P:A->bool) (CONS h t) =
+        if P h then CONS h (FILTER P t) else FILTER P t)` in
+  CONJ_PAIR def;;
 
-export_thm FILTER;;
+export_thm FILTER_NIL;;
+export_thm FILTER_CONS;;
+
+let FILTER = CONJ FILTER_NIL FILTER_CONS;;
 
 logfile "list-filter-thm";;
 
 let FILTER_APPEND = prove
- (`!P l1 l2. FILTER (P:A->bool) (APPEND l1 l2) = APPEND (FILTER P l1) (FILTER P l2)`,
+ (`!P l1 l2.
+     FILTER (P:A->bool) (APPEND l1 l2) =
+     APPEND (FILTER P l1) (FILTER P l2)`,
   GEN_TAC THEN LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[FILTER; APPEND] THEN
   GEN_TAC THEN COND_CASES_TAC THEN ASM_REWRITE_TAC[APPEND]);;
 
@@ -634,11 +681,16 @@ export_thm LAST_SET_OF_LIST;;
 
 logfile "list-reverse-def";;
 
-let REVERSE = new_recursive_definition list_RECURSION
-  `(REVERSE [] = []) /\
-   (!x l. REVERSE (CONS (x:A) l) = APPEND (REVERSE l) [x])`;;
+let (REVERSE_NIL,REVERSE_CONS) =
+  let def = new_recursive_definition list_RECURSION
+    `(REVERSE ([] : A list) = []) /\
+     (!x l. REVERSE (CONS (x:A) l) = APPEND (REVERSE l) [x])` in
+  CONJ_PAIR def;;
 
-export_thm REVERSE;;
+export_thm REVERSE_NIL;;
+export_thm REVERSE_CONS;;
+
+let REVERSE = CONJ REVERSE_NIL REVERSE_CONS;;
 
 logfile "list-reverse-thm";;
 
@@ -677,30 +729,24 @@ export_thm SET_OF_LIST_REVERSE;;
 
 logfile "list-nth-def";;
 
-let EL =
+let (EL_0,EL_SUC) =
   let def = new_recursive_definition num_RECURSION
-      `(!l. EL 0 (l : A list) = HD l) /\
-       (!n l. EL (SUC n) (l : A list) = EL n (TL l))` in
-  prove
-  (`(!h t. EL 0 (CONS (h : A) t) = h) /\
-    (!h t n. n < LENGTH t ==> EL (SUC n) (CONS (h : A) t) = EL n t)`,
-   REWRITE_TAC [def; HD; TL]);;
-
-export_thm EL;;
-
-logfile "list-nth-thm";;
-
-let EL_0 = prove
- (`!(h:A) t. EL 0 (CONS h t) = h`,
-  ACCEPT_TAC (CONJUNCT1 EL));;
+    `(!l. EL 0 (l : A list) = HD l) /\
+     (!n l. EL (SUC n) (l : A list) = EL n (TL l))` in
+  let zero = prove
+    (`!(h:A) t. EL 0 (CONS h t) = h`,
+     REWRITE_TAC [def; HD])
+  and suc = prove
+    (`!(h:A) t n. n < LENGTH t ==> EL (SUC n) (CONS h t) = EL n t`,
+     REWRITE_TAC [def; TL]) in
+  (zero,suc);;
 
 export_thm EL_0;;
-
-let EL_SUC = prove
- (`!(h:A) t n. n < LENGTH t ==> EL (SUC n) (CONS h t) = EL n t`,
-  ACCEPT_TAC (CONJUNCT2 EL));;
-
 export_thm EL_SUC;;
+
+let EL = CONJ EL_0 EL_SUC;;
+
+logfile "list-nth-thm";;
 
 let EL_APPEND = prove
  (`!k l m.
@@ -908,11 +954,16 @@ export_thm EX_EL;;
 
 logfile "list-replicate-def";;
 
-let REPLICATE = new_recursive_definition num_RECURSION
-  `(!x. REPLICATE 0 (x:A) = []) /\
-   (!x n. REPLICATE (SUC n) (x:A) = CONS x (REPLICATE n x))`;;
+let (REPLICATE_0,REPLICATE_SUC) =
+  let def = new_recursive_definition num_RECURSION
+    `(!x. REPLICATE 0 (x:A) = []) /\
+     (!x n. REPLICATE (SUC n) (x:A) = CONS x (REPLICATE n x))` in
+  CONJ_PAIR def;;
 
-export_thm REPLICATE;;
+export_thm REPLICATE_0;;
+export_thm REPLICATE_SUC;;
+
+let REPLICATE = CONJ REPLICATE_0 REPLICATE_SUC;;
 
 logfile "list-replicate-thm";;
 
@@ -959,11 +1010,16 @@ export_thm SET_OF_LIST_REPLICATE;;
 
 logfile "list-member-def";;
 
-let MEM = new_recursive_definition list_RECURSION
-  `(!x. MEM (x:A) [] <=> F) /\
-   (!x h t. MEM (x:A) (CONS h t) <=> (x = h) \/ MEM x t)`;;
+let (MEM_NIL,MEM_CONS) =
+  let def = new_recursive_definition list_RECURSION
+    `(!x. MEM (x:A) [] <=> F) /\
+     (!x h t. MEM (x:A) (CONS h t) <=> (x = h) \/ MEM x t)` in
+  (CONJ_PAIR o PURE_REWRITE_RULE [EQ_CLAUSES]) def;;
 
-export_thm MEM;;
+export_thm MEM_NIL;;
+export_thm MEM_CONS;;
+
+let MEM = CONJ MEM_NIL MEM_CONS;;
 
 logfile "list-member-thm";;
 
@@ -1019,7 +1075,7 @@ export_thm EX_MEM;;
 let MEM_EL = prove
  (`!l n. n < LENGTH (l : A list) ==> MEM (EL n l) l`,
   LIST_INDUCT_TAC THEN REWRITE_TAC[MEM; CONJUNCT1 LT; LENGTH] THEN
-  INDUCT_TAC THEN ASM_SIMP_TAC[EL; HD; LT_SUC; TL]);;
+  INDUCT_TAC THEN ASM_SIMP_TAC[EL_0; EL_SUC; LT_SUC]);;
 
 export_thm MEM_EL;;
 
@@ -1096,11 +1152,16 @@ export_thm MEM_REVERSE;;
 
 logfile "list-concat-def";;
 
-let concat_def = new_recursive_definition list_RECURSION
-  `(concat [] = ([] : A list)) /\
-   (!h t. concat (CONS h t) = APPEND h (concat t))`;;
+let (concat_nil,concat_cons) =
+  let def = new_recursive_definition list_RECURSION
+    `(concat [] = ([] : A list)) /\
+     (!h t. concat (CONS (h : A list) t) = APPEND h (concat t))` in
+  CONJ_PAIR def;;
 
-export_thm concat_def;;
+export_thm concat_nil;;
+export_thm concat_cons;;
+
+let concat_def = CONJ concat_nil concat_cons;;
 
 logfile "list-concat-thm";;
 

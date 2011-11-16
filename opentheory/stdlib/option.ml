@@ -33,7 +33,7 @@ let (is_some_none,is_some_some) =
   let def = new_recursive_definition option_RECURSION
     `(is_some (NONE : A option) <=> F) /\
      (!a. is_some (SOME (a : A)) <=> T)` in
-  (EQF_ELIM (CONJUNCT1 def), EQT_ELIM (CONJUNCT2 def));;
+  (CONJ_PAIR o PURE_REWRITE_RULE [EQ_CLAUSES]) def;;
 
 export_thm is_some_none;;
 export_thm is_some_some;;
@@ -44,7 +44,7 @@ let (is_none_none,is_none_some) =
   let def = new_recursive_definition option_RECURSION
     `(is_none (NONE : A option) <=> T) /\
      (!a. is_none (SOME (a : A)) <=> F)` in
-  (EQT_ELIM (CONJUNCT1 def), EQF_ELIM (CONJUNCT2 def));;
+  (CONJ_PAIR o PURE_REWRITE_RULE [EQ_CLAUSES]) def;;
 
 export_thm is_none_none;;
 export_thm is_none_some;;
