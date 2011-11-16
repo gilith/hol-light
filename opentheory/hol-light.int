@@ -395,6 +395,22 @@ const "HOLLight.list_to_word16" as "Data.Word16.Bits.toWord"
 
 # Number
 
+# Number.GF(p)
+
+type "HOLLight.gfp" as "Number.GF(p).gfp"
+
+const "HOLLight.gfp_add" as "Number.GF(p).+"
+const "HOLLight.gfp_inverse" as "Number.GF(p).inv"
+const "HOLLight.gfp_le" as "Number.GF(p).<="
+const "HOLLight.gfp_lt" as "Number.GF(p).<"
+const "HOLLight.gfp_neg" as "Number.GF(p).~"
+const "HOLLight.gfp_mult" as "Number.GF(p).*"
+const "HOLLight.gfp_sub" as "Number.GF(p).-"
+const "HOLLight.gfp_equiv" as "Number.GF(p).equivalent"
+const "HOLLight.num_to_gfp" as "Number.GF(p).fromNatural"
+const "HOLLight.oddprime" as "Number.GF(p).oddprime"
+const "HOLLight.gfp_to_num" as "Number.GF(p).toNatural"
+
 # Number.Modular
 
 type "HOLLight.modular" as "Number.Modular.modular"
