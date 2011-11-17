@@ -735,6 +735,8 @@ let num_CONV =
     let tm' = mk_numeral n in
     SYM(NUM_SUC_CONV (mk_comb(SUC_tm,tm')));;
 
+let THREE = num_CONV `3`;;
+
 (* ------------------------------------------------------------------------- *)
 (* Expands "!n. n < numeral-constant ==> P(n)" into all the cases.           *)
 (* ------------------------------------------------------------------------- *)

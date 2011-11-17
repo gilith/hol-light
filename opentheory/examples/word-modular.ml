@@ -1,6 +1,6 @@
 (* word *)
 
-(* word-mod *)
+(* word-def *)
 
 let mod_refl_word_size = new_axiom
   `word_size MOD word_size = 0`;;
@@ -22,8 +22,6 @@ let mod_add_mod_word_size = new_axiom
 
 let mod_mult_mod_word_size = new_axiom
   `!m n. (m MOD word_size * n MOD word_size) MOD word_size = (m * n) MOD word_size`;;
-
-(* word-def *)
 
 new_type ("word",0);;
 
@@ -195,7 +193,7 @@ let word_mult_right_neg = new_axiom
 (*PARAMETRIC
 (* word *)
 
-(* word-mod *)
+(* word-def *)
 
 let mod_refl_word_size = new_axiom
   `word_size MOD word_size = 0`;;
@@ -217,8 +215,6 @@ let mod_add_mod_word_size = new_axiom
 
 let mod_mult_mod_word_size = new_axiom
   `!m n. (m MOD word_size * n MOD word_size) MOD word_size = (m * n) MOD word_size`;;
-
-(* word-def *)
 
 new_type ("word",0);;
 

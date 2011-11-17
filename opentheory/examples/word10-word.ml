@@ -12,7 +12,7 @@ let word10_size_nonzero = new_axiom
 
 (* word10 *)
 
-(* word10-mod *)
+(* word10-def *)
 
 let mod_refl_word10_size = new_axiom
   `word10_size MOD word10_size = 0`;;
@@ -34,8 +34,6 @@ let mod_add_mod_word10_size = new_axiom
 
 let mod_mult_mod_word10_size = new_axiom
   `!m n. (m MOD word10_size * n MOD word10_size) MOD word10_size = (m * n) MOD word10_size`;;
-
-(* word10-def *)
 
 new_type ("word10",0);;
 
@@ -228,12 +226,15 @@ let word10_to_list_def = new_axiom
 
 new_constant ("list_to_word10", `:bool list -> word10`);;
 
-let list_to_word10_def = new_axiom
-  `(list_to_word10 [] = num_to_word10 0) /\
-   (!h t.
-      list_to_word10 (CONS h t) =
-      if h then word10_add (word10_shl (list_to_word10 t) 1) (num_to_word10 1)
-      else word10_shl (list_to_word10 t) 1)`;;
+let list_to_word10_nil = new_axiom
+  `list_to_word10 [] = num_to_word10 0`
+and list_to_word10_cons = new_axiom
+  `!h t.
+     list_to_word10 (CONS h t) =
+     if h then word10_add (word10_shl (list_to_word10 t) 1) (num_to_word10 1)
+     else word10_shl (list_to_word10 t) 1`;;
+
+let list_to_word10_def = CONJ list_to_word10_nil list_to_word10_cons;;
 
 new_constant ("is_word10_list", `:bool list -> bool`);;
 
@@ -261,11 +262,14 @@ let word10_not_def = new_axiom
 
 new_constant ("word10_bits_lte", `:bool -> bool list -> bool list -> bool`);;
 
-let word10_bits_lte_def = new_axiom
-   `(!q. word10_bits_lte q [] [] = q) /\
-    (!q h1 h2 t1 t2.
-       word10_bits_lte q (CONS h1 t1) (CONS h2 t2) =
-       word10_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2)`;;
+let word10_bits_lte_nil = new_axiom
+   `!q. word10_bits_lte q [] [] = q`
+and word10_bits_lte_cons = new_axiom
+   `!q h1 h2 t1 t2.
+      word10_bits_lte q (CONS h1 t1) (CONS h2 t2) =
+      word10_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2`;;
+
+let word10_bits_lte_def = CONJ word10_bits_lte_nil word10_bits_lte_cons;;
 
 (* word10-bits-thm *)
 

@@ -1,6 +1,6 @@
 (* gfp *)
 
-(* gfp-mod *)
+(* gfp-def *)
 
 let mod_refl_oddprime = new_axiom
   `oddprime MOD oddprime = 0`;;
@@ -22,8 +22,6 @@ let mod_add_mod_oddprime = new_axiom
 
 let mod_mult_mod_oddprime = new_axiom
   `!m n. (m MOD oddprime * n MOD oddprime) MOD oddprime = (m * n) MOD oddprime`;;
-
-(* gfp-def *)
 
 new_type ("gfp",0);;
 
@@ -195,7 +193,7 @@ let gfp_mult_right_neg = new_axiom
 (*PARAMETRIC
 (* gfp *)
 
-(* gfp-mod *)
+(* gfp-def *)
 
 let mod_refl_oddprime = new_axiom
   `oddprime MOD oddprime = 0`;;
@@ -217,8 +215,6 @@ let mod_add_mod_oddprime = new_axiom
 
 let mod_mult_mod_oddprime = new_axiom
   `!m n. (m MOD oddprime * n MOD oddprime) MOD oddprime = (m * n) MOD oddprime`;;
-
-(* gfp-def *)
 
 new_type ("gfp",0);;
 

@@ -1964,11 +1964,16 @@ let real_abs = new_definition
 
 export_thm real_abs;;
 
-let real_pow = new_recursive_definition num_RECURSION
-  `(!x. x pow 0 = &1) /\
-   (!x n. x pow (SUC n) = x * (x pow n))`;;
+let (real_pow_0,real_pow_suc) =
+  let def = new_recursive_definition num_RECURSION
+    `(!x. x pow 0 = &1) /\
+     (!x n. x pow (SUC n) = x * (x pow n))` in
+  CONJ_PAIR def;;
 
-export_thm real_pow;;
+export_thm real_pow_0;;
+export_thm real_pow_suc;;
+
+let real_pow = CONJ real_pow_0 real_pow_suc;;
 
 let real_div = new_definition
   `!x y. x / y = x * inv(y)`;;
@@ -2159,35 +2164,43 @@ let SUP_EXISTS = prove
    EXISTS_TAC `y:real` THEN
    ASM_REWRITE_TAC []]);;
 
-let sup_def =
+let (sup_bound,sup_least) =
     let th0 = SUP_EXISTS in
     let th1 = ONCE_REWRITE_RULE [RIGHT_IMP_EXISTS_THM] th0 in
     let th2 = ONCE_REWRITE_RULE [SKOLEM_THM] th1 in
-    new_specification ["sup"] th2;;
+    let def = new_specification ["sup"] th2 in
+    let th3 = REWRITE_RULE [IMP_AND_DISTRIB; FORALL_AND_THM] def in
+    let th4 = REWRITE_RULE [RIGHT_IMP_FORALL_THM] th3 in
+    let th5 = REWRITE_RULE [IMP_IMP; CONJ_ASSOC'] th4 in
+    CONJ_PAIR th5;;
 
-export_thm sup_def;;
+export_thm sup_bound;;
+export_thm sup_least;;
 
 logfile "real-thm";;
 
 let REAL_COMPLETE = prove
- (`!P. (?x. P x) /\
-       (?M. !x. P x ==> x <= M)
-       ==> ?M. (!x. P x ==> x <= M) /\
-               !M'. (!x. P x ==> x <= M') ==> M <= M'`,
+ (`!p. (?x. p x) /\
+       (?m. !x. p x ==> x <= m)
+       ==> ?s. (!x. p x ==> x <= s) /\
+               !m. (!x. p x ==> x <= m) ==> s <= m`,
   REPEAT STRIP_TAC THEN
-  MP_TAC (SPEC `{ (y:real) | P y }` sup_def) THEN
-  ANTS_TAC THENL
-  [ASM_REWRITE_TAC [EXTENSION; IN_ELIM; NOT_IN_EMPTY; NOT_FORALL_THM] THEN
+  EXISTS_TAC `sup { y | p y }` THEN
+  REPEAT STRIP_TAC THENL
+  [MATCH_MP_TAC sup_bound THEN
+   ASM_REWRITE_TAC [IN_ELIM; GSYM MEMBER_NOT_EMPTY] THEN
    CONJ_TAC THENL
-   [EXISTS_TAC `x : real` THEN
+   [EXISTS_TAC `x:real` THEN
     FIRST_ASSUM ACCEPT_TAC;
-    EXISTS_TAC `M : real` THEN
+    EXISTS_TAC `m:real` THEN
     FIRST_ASSUM ACCEPT_TAC];
-   REWRITE_TAC [IN_ELIM] THEN
-   STRIP_TAC THEN
-   EXISTS_TAC `sup { y | P y }` THEN
-   CONJ_TAC THEN
-   FIRST_ASSUM ACCEPT_TAC]);;
+   MATCH_MP_TAC sup_least THEN
+   ASM_REWRITE_TAC [IN_ELIM; GSYM MEMBER_NOT_EMPTY] THEN
+   CONJ_TAC THENL
+   [EXISTS_TAC `x:real` THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    EXISTS_TAC `m:real` THEN
+    FIRST_ASSUM ACCEPT_TAC]]);;
 
 export_thm REAL_COMPLETE;;
 

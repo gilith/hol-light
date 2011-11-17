@@ -8,14 +8,20 @@
 
 (* The theory parameters *)
 
-new_constant ("modulus", `:num`);;
+logfile "modular-witness";;
 
-let modulus_nonzero = new_axiom `~(modulus = 0)`;;
+let modulus_nonzero =
+  let def = new_definition `modulus = SUC 0` in
+  prove
+  (`~(modulus = 0)`,
+   REWRITE_TAC [def; NOT_SUC]);;
 
-logfile "modular-mod";;
+export_thm modulus_nonzero;;
+
+logfile "modular-def";;
 
 (*PARAMETRIC
-(* modular-mod *)
+(* modular-def *)
 *)
 
 let mod_refl_modulus = prove
@@ -115,27 +121,17 @@ let mod_mult_mod_modulus = new_axiom
   `!m n. (m MOD modulus * n MOD modulus) MOD modulus = (m * n) MOD modulus`;;
 *)
 
-logfile "modular-equiv-def";;
-
 let modular_equiv_def = new_definition
   `!x y. modular_equiv x y = x MOD modulus = y MOD modulus`;;
-
-export_thm modular_equiv_def;;
-
-logfile "modular-equiv-thm";;
 
 let modular_equiv_refl = prove
   (`!x. modular_equiv x x`,
    REWRITE_TAC [modular_equiv_def]);;
 
-export_thm modular_equiv_refl;;
-
 let modular_equiv_trans = prove
   (`!x y z. modular_equiv x y /\ modular_equiv y z ==> modular_equiv x z`,
    REWRITE_TAC [modular_equiv_def] THEN
    SIMP_TAC []);;
-
-export_thm modular_equiv_trans;;
 
 let modular_equiv_eq = prove
   (`!x y. modular_equiv x = modular_equiv y <=> x MOD modulus = y MOD modulus`,
@@ -147,8 +143,6 @@ let modular_equiv_eq = prove
     REWRITE_TAC [];
     DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
 
-export_thm modular_equiv_eq;;
-
 let modular_equiv_inj = prove
   (`!x y.
       x < modulus /\ y < modulus /\ modular_equiv x = modular_equiv y ==>
@@ -158,8 +152,6 @@ let modular_equiv_inj = prove
    POP_ASSUM MP_TAC THEN
    ASM_SIMP_TAC [mod_lt_modulus]);;
 
-export_thm modular_equiv_inj;;
-
 let modular_equiv_add = prove
   (`!x1 x2 y1 y2.
       modular_equiv x1 x2 /\ modular_equiv y1 y2 ==>
@@ -168,8 +160,6 @@ let modular_equiv_add = prove
    ONCE_REWRITE_TAC [GSYM mod_add_mod_modulus] THEN
    SIMP_TAC []);;
 
-export_thm modular_equiv_add;;
-
 let modular_equiv_mult = prove
   (`!x1 x2 y1 y2.
       modular_equiv x1 x2 /\ modular_equiv y1 y2 ==>
@@ -177,14 +167,6 @@ let modular_equiv_mult = prove
    REWRITE_TAC [modular_equiv_def] THEN
    ONCE_REWRITE_TAC [GSYM mod_mult_mod_modulus] THEN
    SIMP_TAC []);;
-
-export_thm modular_equiv_mult;;
-
-logfile "modular-def";;
-
-(*PARAMETRIC
-(* modular-def *)
-*)
 
 let (modular_abs_rep,modular_rep_abs) = define_quotient_type
   "modular" ("modular_from_class","modular_to_class") `modular_equiv`;;

@@ -108,26 +108,36 @@ let word_to_list_def = new_axiom
   `!w. word_to_list w = MAP (word_bit w) (interval 0 word_width)`;;
 *)
 
-let list_to_word_def = new_recursive_definition list_RECURSION
-  `(list_to_word [] = num_to_word 0) /\
-   (!h t.
-      list_to_word (CONS h t) =
-      if h then word_add (word_shl (list_to_word t) 1) (num_to_word 1)
-      else word_shl (list_to_word t) 1)`;;
+let (list_to_word_nil,list_to_word_cons) =
+  let def = new_recursive_definition list_RECURSION
+    `(list_to_word [] = num_to_word 0) /\
+     (!h t.
+        list_to_word (CONS h t) =
+        if h then word_add (word_shl (list_to_word t) 1) (num_to_word 1)
+        else word_shl (list_to_word t) 1)` in
+  CONJ_PAIR def;;
 
 (*PARAMETRIC
 new_constant ("list_to_word", `:bool list -> word`);;
 *)
 
-export_thm list_to_word_def;;
+export_thm list_to_word_nil;;
+export_thm list_to_word_cons;;
 
 (*PARAMETRIC
-let list_to_word_def = new_axiom
-  `(list_to_word [] = num_to_word 0) /\
-   (!h t.
-      list_to_word (CONS h t) =
-      if h then word_add (word_shl (list_to_word t) 1) (num_to_word 1)
-      else word_shl (list_to_word t) 1)`;;
+let list_to_word_nil = new_axiom
+  `list_to_word [] = num_to_word 0`
+and list_to_word_cons = new_axiom
+  `!h t.
+     list_to_word (CONS h t) =
+     if h then word_add (word_shl (list_to_word t) 1) (num_to_word 1)
+     else word_shl (list_to_word t) 1`;;
+*)
+
+let list_to_word_def = CONJ list_to_word_nil list_to_word_cons;;
+
+(*PARAMETRIC
+let list_to_word_def = CONJ list_to_word_nil list_to_word_cons;;
 *)
 
 let is_word_list_def = new_definition
@@ -194,31 +204,42 @@ let word_not_def = new_axiom
   `!w. word_not w = list_to_word (MAP (~) (word_to_list w))`;;
 *)
 
-let word_bits_lte_raw_def = new_recursive_definition list_RECURSION
-  `(!q l. word_bits_lte q [] l = q) /\
-   (!q h t l.
-      word_bits_lte q (CONS h t) l =
-      word_bits_lte ((~h /\ HD l) \/ (~(h /\ ~HD l) /\ q)) t (TL l))`;;
+let (word_bits_lte_nil,word_bits_lte_cons) =
+  let def = new_recursive_definition list_RECURSION
+    `(!q l. word_bits_lte q [] l = q) /\
+     (!q h t l.
+        word_bits_lte q (CONS h t) l =
+        word_bits_lte ((~h /\ HD l) \/ (~(h /\ ~HD l) /\ q)) t (TL l))` in
+  let wnil = prove
+    (`!q. word_bits_lte q [] [] = q`,
+     REWRITE_TAC [def])
+  and wcons = prove
+    (`!q h1 h2 t1 t2.
+        word_bits_lte q (CONS h1 t1) (CONS h2 t2) =
+        word_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2`,
+     REWRITE_TAC [def; HD; TL]) in
+  (wnil,wcons);;
 
 (*PARAMETRIC
 new_constant ("word_bits_lte", `:bool -> bool list -> bool list -> bool`);;
 *)
 
-let word_bits_lte_def = prove
-  (`(!q. word_bits_lte q [] [] = q) /\
-    (!q h1 h2 t1 t2.
-       word_bits_lte q (CONS h1 t1) (CONS h2 t2) =
-       word_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2)`,
-   REWRITE_TAC [word_bits_lte_raw_def; HD; TL]);;
-
-export_thm word_bits_lte_def;;
+export_thm word_bits_lte_nil;;
+export_thm word_bits_lte_cons;;
 
 (*PARAMETRIC
-let word_bits_lte_def = new_axiom
-   `(!q. word_bits_lte q [] [] = q) /\
-    (!q h1 h2 t1 t2.
-       word_bits_lte q (CONS h1 t1) (CONS h2 t2) =
-       word_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2)`;;
+let word_bits_lte_nil = new_axiom
+   `!q. word_bits_lte q [] [] = q`
+and word_bits_lte_cons = new_axiom
+   `!q h1 h2 t1 t2.
+      word_bits_lte q (CONS h1 t1) (CONS h2 t2) =
+      word_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2`;;
+*)
+
+let word_bits_lte_def = CONJ word_bits_lte_nil word_bits_lte_cons;;
+
+(*PARAMETRIC
+let word_bits_lte_def = CONJ word_bits_lte_nil word_bits_lte_cons;;
 *)
 
 logfile "word-bits-thm";;

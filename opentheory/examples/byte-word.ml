@@ -12,7 +12,7 @@ let byte_size_nonzero = new_axiom
 
 (* byte *)
 
-(* byte-mod *)
+(* byte-def *)
 
 let mod_refl_byte_size = new_axiom
   `byte_size MOD byte_size = 0`;;
@@ -34,8 +34,6 @@ let mod_add_mod_byte_size = new_axiom
 
 let mod_mult_mod_byte_size = new_axiom
   `!m n. (m MOD byte_size * n MOD byte_size) MOD byte_size = (m * n) MOD byte_size`;;
-
-(* byte-def *)
 
 new_type ("byte",0);;
 
@@ -228,12 +226,15 @@ let byte_to_list_def = new_axiom
 
 new_constant ("list_to_byte", `:bool list -> byte`);;
 
-let list_to_byte_def = new_axiom
-  `(list_to_byte [] = num_to_byte 0) /\
-   (!h t.
-      list_to_byte (CONS h t) =
-      if h then byte_add (byte_shl (list_to_byte t) 1) (num_to_byte 1)
-      else byte_shl (list_to_byte t) 1)`;;
+let list_to_byte_nil = new_axiom
+  `list_to_byte [] = num_to_byte 0`
+and list_to_byte_cons = new_axiom
+  `!h t.
+     list_to_byte (CONS h t) =
+     if h then byte_add (byte_shl (list_to_byte t) 1) (num_to_byte 1)
+     else byte_shl (list_to_byte t) 1`;;
+
+let list_to_byte_def = CONJ list_to_byte_nil list_to_byte_cons;;
 
 new_constant ("is_byte_list", `:bool list -> bool`);;
 
@@ -261,11 +262,14 @@ let byte_not_def = new_axiom
 
 new_constant ("byte_bits_lte", `:bool -> bool list -> bool list -> bool`);;
 
-let byte_bits_lte_def = new_axiom
-   `(!q. byte_bits_lte q [] [] = q) /\
-    (!q h1 h2 t1 t2.
-       byte_bits_lte q (CONS h1 t1) (CONS h2 t2) =
-       byte_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2)`;;
+let byte_bits_lte_nil = new_axiom
+   `!q. byte_bits_lte q [] [] = q`
+and byte_bits_lte_cons = new_axiom
+   `!q h1 h2 t1 t2.
+      byte_bits_lte q (CONS h1 t1) (CONS h2 t2) =
+      byte_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2`;;
+
+let byte_bits_lte_def = CONJ byte_bits_lte_nil byte_bits_lte_cons;;
 
 (* byte-bits-thm *)
 

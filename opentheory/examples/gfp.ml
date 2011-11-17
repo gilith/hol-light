@@ -8,11 +8,21 @@
 
 (* The theory parameters *)
 
-new_constant ("oddprime", `:num`);;
+logfile "gfp-witness";;
 
-let oddprime_odd = new_axiom `ODD oddprime`;;
+let (oddprime_odd,oddprime_prime) =
+  let def = new_definition `oddprime = 3` in
+  let odd = prove
+    (`ODD oddprime`,
+     REWRITE_TAC [def] THEN
+     NUM_REDUCE_TAC)
+  and prime = prove
+    (`prime oddprime`,
+     REWRITE_TAC [def; prime_three]) in
+  (odd,prime);;
 
-let oddprime_prime = new_axiom `prime oddprime`;;
+export_thm oddprime_odd;;
+export_thm oddprime_prime;;
 
 logfile "gfp-def";;
 

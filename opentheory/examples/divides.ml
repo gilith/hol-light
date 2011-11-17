@@ -138,30 +138,6 @@ let divides_sub = prove
 
 export_thm divides_sub;;
 
-let divides_two = prove
-  (`!a. divides a 2 <=> a = 1 \/ a = 2`,
-   GEN_TAC THEN
-   ASM_CASES_TAC `a = 0` THENL
-   [ASM_REWRITE_TAC [zero_divides; TWO; ONE; NOT_SUC];
-    ALL_TAC] THEN
-   ASM_CASES_TAC `a = 1` THENL
-   [ASM_REWRITE_TAC [one_divides];
-    ALL_TAC] THEN
-   ASM_CASES_TAC `a = 2` THENL
-   [ASM_REWRITE_TAC [divides_refl];
-    ALL_TAC] THEN
-   ASM_REWRITE_TAC [] THEN
-   STRIP_TAC THEN
-   MP_TAC (SPECL [`a : num`; `2`] divides_le) THEN
-   ASM_REWRITE_TAC [] THEN
-   POP_ASSUM (K ALL_TAC) THEN
-   REPEAT (POP_ASSUM MP_TAC) THEN
-   REWRITE_TAC [TWO; ONE; LE; NOT_SUC] THEN
-   REPEAT (DISCH_THEN (SUBST1_TAC o EQF_INTRO)) THEN
-   REWRITE_TAC []);;
-
-export_thm divides_two;;
-
 let divides_div = prove
   (`!a b. ~(a = 0) ==> (divides a b <=> (b DIV a) * a = b)`,
    REPEAT STRIP_TAC THEN
@@ -198,14 +174,68 @@ let divides_mod = prove
 
 export_thm divides_mod;;
 
-let divides_even = prove
+let divides_two = prove
+  (`!a. divides a 2 <=> a = 1 \/ a = 2`,
+   GEN_TAC THEN
+   ASM_CASES_TAC `a = 1` THENL
+   [ASM_REWRITE_TAC [one_divides];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_CASES_TAC `a = 2` THENL
+   [ASM_REWRITE_TAC [divides_refl];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_CASES_TAC `a = 0` THENL
+   [ASM_REWRITE_TAC [zero_divides; TWO; NOT_SUC];
+    ALL_TAC] THEN
+   STRIP_TAC THEN
+   MP_TAC (SPECL [`a : num`; `2`] divides_le) THEN
+   ASM_REWRITE_TAC [] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REPEAT (POP_ASSUM MP_TAC) THEN
+   REWRITE_TAC [TWO; ONE; LE; NOT_SUC] THEN
+   REPEAT (DISCH_THEN (SUBST1_TAC o EQF_INTRO)) THEN
+   REWRITE_TAC []);;
+
+export_thm divides_two;;
+
+let two_divides = prove
   (`!a. divides 2 a <=> EVEN a`,
    GEN_TAC THEN
    REWRITE_TAC [EVEN_MOD] THEN
    MATCH_MP_TAC divides_mod THEN
    NUM_REDUCE_TAC);;
 
-export_thm divides_even;;
+export_thm two_divides;;
+
+let divides_three = prove
+  (`!a. divides a 3 <=> a = 1 \/ a = 3`,
+   GEN_TAC THEN
+   ASM_CASES_TAC `a = 1` THENL
+   [ASM_REWRITE_TAC [one_divides];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_CASES_TAC `a = 3` THENL
+   [ASM_REWRITE_TAC [divides_refl];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_CASES_TAC `a = 2` THENL
+   [ASM_REWRITE_TAC [two_divides] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   ASM_CASES_TAC `a = 0` THENL
+   [ASM_REWRITE_TAC [zero_divides; THREE; NOT_SUC];
+    ALL_TAC] THEN
+   MP_TAC (SPECL [`a : num`; `3`] divides_le) THEN
+   BOOL_CASES_TAC `divides a 3` THENL
+   [ALL_TAC;
+    REWRITE_TAC []] THEN
+   REWRITE_TAC [NOT_IMP] THEN
+   NUM_REDUCE_TAC THEN
+   REWRITE_TAC [THREE; TWO; ONE; LE] THEN
+   ASM_REWRITE_TAC [GSYM THREE; GSYM TWO; GSYM ONE]);;
+
+export_thm divides_three;;
 
 let gcd_induction = prove
   (`!p : num -> num -> bool.

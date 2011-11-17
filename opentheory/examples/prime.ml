@@ -33,10 +33,17 @@ let prime_two = prove
 
 export_thm prime_two;;
 
+let prime_three = prove
+  (`prime 3`,
+   REWRITE_TAC [prime_def; divides_three] THEN
+   NUM_REDUCE_TAC);;
+
+export_thm prime_three;;
+
 let prime_even = prove
   (`!p. prime p /\ EVEN p ==> p = 2`,
    GEN_TAC THEN
-   REWRITE_TAC [prime_def; GSYM divides_even] THEN
+   REWRITE_TAC [prime_def; GSYM two_divides] THEN
    REPEAT STRIP_TAC THEN
    FIRST_X_ASSUM (MP_TAC o SPEC `2`) THEN
    ASM_REWRITE_TAC [] THEN

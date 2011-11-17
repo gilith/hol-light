@@ -12,7 +12,7 @@ let word16_size_nonzero = new_axiom
 
 (* word16 *)
 
-(* word16-mod *)
+(* word16-def *)
 
 let mod_refl_word16_size = new_axiom
   `word16_size MOD word16_size = 0`;;
@@ -34,8 +34,6 @@ let mod_add_mod_word16_size = new_axiom
 
 let mod_mult_mod_word16_size = new_axiom
   `!m n. (m MOD word16_size * n MOD word16_size) MOD word16_size = (m * n) MOD word16_size`;;
-
-(* word16-def *)
 
 new_type ("word16",0);;
 
@@ -228,12 +226,15 @@ let word16_to_list_def = new_axiom
 
 new_constant ("list_to_word16", `:bool list -> word16`);;
 
-let list_to_word16_def = new_axiom
-  `(list_to_word16 [] = num_to_word16 0) /\
-   (!h t.
-      list_to_word16 (CONS h t) =
-      if h then word16_add (word16_shl (list_to_word16 t) 1) (num_to_word16 1)
-      else word16_shl (list_to_word16 t) 1)`;;
+let list_to_word16_nil = new_axiom
+  `list_to_word16 [] = num_to_word16 0`
+and list_to_word16_cons = new_axiom
+  `!h t.
+     list_to_word16 (CONS h t) =
+     if h then word16_add (word16_shl (list_to_word16 t) 1) (num_to_word16 1)
+     else word16_shl (list_to_word16 t) 1`;;
+
+let list_to_word16_def = CONJ list_to_word16_nil list_to_word16_cons;;
 
 new_constant ("is_word16_list", `:bool list -> bool`);;
 
@@ -261,11 +262,14 @@ let word16_not_def = new_axiom
 
 new_constant ("word16_bits_lte", `:bool -> bool list -> bool list -> bool`);;
 
-let word16_bits_lte_def = new_axiom
-   `(!q. word16_bits_lte q [] [] = q) /\
-    (!q h1 h2 t1 t2.
-       word16_bits_lte q (CONS h1 t1) (CONS h2 t2) =
-       word16_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2)`;;
+let word16_bits_lte_nil = new_axiom
+   `!q. word16_bits_lte q [] [] = q`
+and word16_bits_lte_cons = new_axiom
+   `!q h1 h2 t1 t2.
+      word16_bits_lte q (CONS h1 t1) (CONS h2 t2) =
+      word16_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2`;;
+
+let word16_bits_lte_def = CONJ word16_bits_lte_nil word16_bits_lte_cons;;
 
 (* word16-bits-thm *)
 
