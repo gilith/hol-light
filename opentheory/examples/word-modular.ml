@@ -23,6 +23,9 @@ let mod_add_mod_word_size = new_axiom
 let mod_mult_mod_word_size = new_axiom
   `!m n. (m MOD word_size * n MOD word_size) MOD word_size = (m * n) MOD word_size`;;
 
+let divides_mod_word_size = new_axiom
+   `!n. divides word_size n <=> n MOD word_size = 0`;;
+
 new_type ("word",0);;
 
 new_constant ("num_to_word", `:num -> word`);;
@@ -215,6 +218,9 @@ let mod_add_mod_word_size = new_axiom
 
 let mod_mult_mod_word_size = new_axiom
   `!m n. (m MOD word_size * n MOD word_size) MOD word_size = (m * n) MOD word_size`;;
+
+let divides_mod_word_size = new_axiom
+   `!n. divides word_size n <=> n MOD word_size = 0`;;
 
 new_type ("word",0);;
 

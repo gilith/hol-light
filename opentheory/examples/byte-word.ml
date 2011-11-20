@@ -35,6 +35,9 @@ let mod_add_mod_byte_size = new_axiom
 let mod_mult_mod_byte_size = new_axiom
   `!m n. (m MOD byte_size * n MOD byte_size) MOD byte_size = (m * n) MOD byte_size`;;
 
+let divides_mod_byte_size = new_axiom
+   `!n. divides byte_size n <=> n MOD byte_size = 0`;;
+
 new_type ("byte",0);;
 
 new_constant ("num_to_byte", `:num -> byte`);;

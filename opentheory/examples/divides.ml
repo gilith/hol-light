@@ -108,6 +108,55 @@ let divides_trans = prove
 
 export_thm divides_trans;;
 
+let divides_mult2 = prove
+  (`!a b c. divides a c ==> divides a (b * c)`,
+   REWRITE_TAC [divides_def] THEN
+   REPEAT STRIP_TAC THEN
+   EXISTS_TAC `(b:num) * c'` THEN
+   ASM_REWRITE_TAC [GSYM MULT_ASSOC]);;
+
+export_thm divides_mult2;;
+
+let divides_mult1 = prove
+  (`!a b c. divides a b ==> divides a (b * c)`,
+   REPEAT GEN_TAC THEN
+   ONCE_REWRITE_TAC [MULT_SYM] THEN
+   MATCH_ACCEPT_TAC divides_mult2);;
+
+export_thm divides_mult1;;
+
+let mult_divides_mult = prove
+  (`!a b c d. divides a c /\ divides b d ==> divides (a * b) (c * d)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [divides_def] THEN
+   REPEAT STRIP_TAC THEN
+   EXISTS_TAC `c' * c'' : num` THEN
+   REPEAT (FIRST_X_ASSUM SUBST_VAR_TAC) THEN
+   REWRITE_TAC [MULT_ASSOC] THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [GSYM MULT_ASSOC] THEN
+   AP_TERM_TAC THEN
+   MATCH_ACCEPT_TAC MULT_SYM);;
+
+export_thm mult_divides_mult;;
+
+let divides_mult_cancel = prove
+  (`!a b c. divides (b * a) (c * a) <=> a = 0 \/ divides b c`,
+   REPEAT GEN_TAC THEN
+   ASM_CASES_TAC `a = 0` THENL
+   [ASM_REWRITE_TAC [MULT_0; divides_refl];
+    ASM_REWRITE_TAC [divides_def; MULT_ASSOC; EQ_MULT_RCANCEL]]);;
+
+export_thm divides_mult_cancel;;
+
+let mult_divides_cancel = prove
+  (`!a b c. divides (a * b) (a * c) <=> a = 0 \/ divides b c`,
+   ONCE_REWRITE_TAC [MULT_SYM] THEN
+   ACCEPT_TAC divides_mult_cancel);;
+
+export_thm mult_divides_cancel;;
+
 let divides_add = prove
   (`!a b c. divides a b /\ divides a c ==> divides a (b + c)`,
    REPEAT GEN_TAC THEN
@@ -173,6 +222,17 @@ let divides_mod = prove
     ASM_REWRITE_TAC [ADD_0]]);;
 
 export_thm divides_mod;;
+
+let divides_mod_cond = prove
+  (`!a b. divides a b <=> if a = 0 then b = 0 else b MOD a = 0`,
+   REPEAT STRIP_TAC THEN
+   ASM_CASES_TAC `a = 0` THENL
+   [ASM_REWRITE_TAC [zero_divides];
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC divides_mod THEN
+    FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm divides_mod_cond;;
 
 let divides_two = prove
   (`!a. divides a 2 <=> a = 1 \/ a = 2`,

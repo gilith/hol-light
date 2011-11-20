@@ -69,6 +69,30 @@ let gcd_prime = prove
 export_thm gcd_prime;;
 
 (***
+let prime_divides_mult_imp = prove
+  (`!p m n. prime p /\ divides p (m * n) ==> divides p m \/ divides p n`,
+   REPEAT GEN_TAC THEN
+   ASM_CASES_TAC `p = 0` THENL
+   [ASM_REWRITE_TAC [prime_zero];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [divides_mod_cond] THEN
+   REWRITE_TAC [prime_def] THEN
+   ONCE_REWRITE_TAC [GSYM CONTRAPOS_THM] THEN
+   REWRITE_TAC [NOT_OR_THM] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `m MOD p`) THEN
+   ASM_REWRITE_TAC [] THEN
+   REWRITE_TAC [NOT_IMP; NOT_OR_THM] THEN
+   REPEAT CONJ_TAC THENL
+   [REWRITE_TAC [divides_def]
+
+let prime_divides_mult = prove
+  (`!p m n. prime p ==> divides p (~(n = 1) ==> ?p. prime p /\ divides p n`,
+
+export_thm prime_divides_mult;;
+***)
+
+(***
 let prime_divisor = prove
   (`!n. ~(n = 1) ==> ?p. prime p /\ divides p n`,
 

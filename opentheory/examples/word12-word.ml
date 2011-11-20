@@ -35,6 +35,9 @@ let mod_add_mod_word12_size = new_axiom
 let mod_mult_mod_word12_size = new_axiom
   `!m n. (m MOD word12_size * n MOD word12_size) MOD word12_size = (m * n) MOD word12_size`;;
 
+let divides_mod_word12_size = new_axiom
+   `!n. divides word12_size n <=> n MOD word12_size = 0`;;
+
 new_type ("word12",0);;
 
 new_constant ("num_to_word12", `:num -> word12`);;

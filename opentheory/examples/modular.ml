@@ -121,6 +121,21 @@ let mod_mult_mod_modulus = new_axiom
   `!m n. (m MOD modulus * n MOD modulus) MOD modulus = (m * n) MOD modulus`;;
 *)
 
+let divides_mod_modulus = prove
+  (`!n. divides modulus n <=> n MOD modulus = 0`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPECL [`modulus`; `n:num`] divides_mod) THEN
+   ANTS_TAC THENL
+   [REWRITE_TAC [modulus_nonzero];
+    DISCH_THEN ACCEPT_TAC]);;
+
+export_thm divides_mod_modulus;;
+
+(*PARAMETRIC
+let divides_mod_modulus = new_axiom
+   `!n. divides modulus n <=> n MOD modulus = 0`;;
+*)
+
 let modular_equiv_def = new_definition
   `!x y. modular_equiv x y = x MOD modulus = y MOD modulus`;;
 

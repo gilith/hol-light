@@ -144,6 +144,56 @@ let gfp_one_nonzero = new_axiom
    `~(num_to_gfp 1 = num_to_gfp 0)`;;
 *)
 
+let gfp_two_nonzero = prove
+  (`~(num_to_gfp 2 = num_to_gfp 0)`,
+   STRIP_TAC THEN
+   SUBGOAL_THEN `2 MOD oddprime = 0 MOD oddprime` MP_TAC THENL
+   [ONCE_REWRITE_TAC [GSYM num_to_gfp_to_num] THEN
+    ASM_REWRITE_TAC [];
+    REWRITE_TAC [two_mod_oddprime; zero_mod_oddprime] THEN
+    NUM_REDUCE_TAC]);;
+
+export_thm gfp_two_nonzero;;
+
+(*PARAMETRIC
+let gfp_two_nonzero = new_axiom
+   `~(num_to_gfp 2 = num_to_gfp 0)`;;
+*)
+
+(***
+let gfp_mult_eq_zero = prove
+  (`!x y.
+      gfp_mult x y = num_to_gfp 0 <=>
+      x = num_to_gfp 0 \/ y = num_to_gfp 0`,
+   REPEAT STRIP_TAC THEN
+   EQ_TAC THENL
+   [ALL_TAC;
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [gfp_mult_left_zero; gfp_mult_right_zero]] THEN
+   MP_TAC (SPEC `x : gfp` gfp_to_num_to_gfp) THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   MP_TAC (SPEC `y : gfp` gfp_to_num_to_gfp) THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   REWRITE_TAC [GSYM num_to_gfp_mult] THEN
+   REWRITE_TAC [num_to_gfp_eq; zero_mod_oddprime; GSYM divides_mod_oddprime] THEN
+   MATCH_MP_TAC prime_divides_mult
+
+   SUBGOAL_THEN `2 MOD oddprime = 0 MOD oddprime` MP_TAC THENL
+   [ONCE_REWRITE_TAC [GSYM num_to_gfp_to_num] THEN
+    ASM_REWRITE_TAC [];
+    REWRITE_TAC [two_mod_oddprime; zero_mod_oddprime] THEN
+    NUM_REDUCE_TAC]);;
+
+export_thm gfp_two_nonzero;;
+
+(*PARAMETRIC
+let gfp_mult_eq_zero = new_axiom
+   `!x y.
+      gfp_mult x y = num_to_gfp 0 <=>
+      x = num_to_gfp 0 \/ y = num_to_gfp 0`;;
+*)
+***)
+
 logfile "gfp-div-def";;
 
 (*PARAMETRIC

@@ -23,6 +23,9 @@ let mod_add_mod_oddprime = new_axiom
 let mod_mult_mod_oddprime = new_axiom
   `!m n. (m MOD oddprime * n MOD oddprime) MOD oddprime = (m * n) MOD oddprime`;;
 
+let divides_mod_oddprime = new_axiom
+   `!n. divides oddprime n <=> n MOD oddprime = 0`;;
+
 new_type ("gfp",0);;
 
 new_constant ("num_to_gfp", `:num -> gfp`);;
@@ -215,6 +218,9 @@ let mod_add_mod_oddprime = new_axiom
 
 let mod_mult_mod_oddprime = new_axiom
   `!m n. (m MOD oddprime * n MOD oddprime) MOD oddprime = (m * n) MOD oddprime`;;
+
+let divides_mod_oddprime = new_axiom
+   `!n. divides oddprime n <=> n MOD oddprime = 0`;;
 
 new_type ("gfp",0);;
 
