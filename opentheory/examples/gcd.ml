@@ -670,35 +670,48 @@ let coprime_gcd_mult2 = prove
     EXISTS_TAC `c : num` THEN
     FIRST_ASSUM ACCEPT_TAC]);;
 
+export_thm coprime_gcd_mult2;;
 
-***
+let coprime_gcd_mult1 = prove
+  (`!a b c. gcd a b = 1 ==> gcd a (c * b) = gcd a c`,
+   ONCE_REWRITE_TAC [MULT_SYM] THEN
+   ACCEPT_TAC coprime_gcd_mult2);;
 
-let coprime_mult_divides
+export_thm coprime_gcd_mult1;;
 
-    UNDISCH_THEN `divides a c`
-      (X_CHOOSE_THEN `k:num` SUBST_VAR_TAC o
-       ONCE_REWRITE_RULE [MULT_SYM] o
-       REWRITE_RULE [divides_def]) THEN
-    REWRITE_TAC [mult_divides_cancel] THEN
-    ASM_CASES_TAC `a = 0` THEN
-    ASM_REWRITE_TAC [] THEN
-    UNDISCH_TAC `divides b (a * k)` THEN
-    REWRITE_TAC [divides_def] THEN
-    STRIP_TAC THEN
-    EXISTS_TAC `c DIV a` THEN
-    MP_TAC (SPECL [`a : num`; `(c DIV a) * b`; `k : num`] EQ_MULT_LCANCEL) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (SUBST1_TAC o SYM) THEN
-    FIRST_ASSUM (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
-    REWRITE_TAC [MULT_ASSOC] THEN
-    AP_THM_TAC THEN
-    AP_TERM_TAC THEN
-    ONCE_REWRITE_TAC [MULT_SYM] THEN
-    MP_TAC (SPECL [`a : num`; `c : num`] divides_div) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (SUBST1_TAC o SYM) THEN
-    REWRITE_TAC [GSYM divides_gcd]
+let coprime_mult1_gcd = prove
+  (`!a b c. gcd b a = 1 ==> gcd (c * b) a = gcd c a`,
+   ONCE_REWRITE_TAC [gcd_comm] THEN
+   ACCEPT_TAC coprime_gcd_mult1);;
 
+export_thm coprime_mult1_gcd;;
+
+let coprime_mult2_gcd = prove
+  (`!a b c. gcd b a = 1 ==> gcd (b * c) a = gcd c a`,
+   ONCE_REWRITE_TAC [gcd_comm] THEN
+   ACCEPT_TAC coprime_gcd_mult2);;
+
+export_thm coprime_mult2_gcd;;
+
+let coprime_mult_divides = prove
+  (`!a b c. gcd b c = 1 /\ divides b a /\ divides c a ==> divides (b * c) a`,
+   REPEAT STRIP_TAC THEN
+   UNDISCH_THEN `divides b a`
+     (X_CHOOSE_THEN `k:num` SUBST_VAR_TAC o
+      ONCE_REWRITE_RULE [MULT_SYM] o
+      REWRITE_RULE [divides_def]) THEN
+   REWRITE_TAC [mult_divides_cancel] THEN
+   ASM_CASES_TAC `b = 0` THEN
+   ASM_REWRITE_TAC [] THEN
+   UNDISCH_TAC `divides c (b * k)` THEN
+   REWRITE_TAC [GSYM divides_gcd] THEN
+   DISCH_THEN (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC coprime_gcd_mult2 THEN
+   ONCE_REWRITE_TAC [gcd_comm] THEN
+   FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm coprime_mult_divides;;
 
 logfile "natural-gcd-lattice-def";;
 
