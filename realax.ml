@@ -124,6 +124,14 @@ let DIST_RADD = prove
 
 export_thm DIST_RADD;;
 
+let DIST_SUC = prove
+ (`!m n. dist (SUC m) (SUC n) = dist m n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [ADD1] THEN
+  MATCH_ACCEPT_TAC DIST_RADD);;
+
+export_thm DIST_SUC;;
+
 let DIST_RADD_0 = prove
  (`!m n. dist m (m + n) = n`,
   REWRITE_TAC[dist; LE_ADD; ADD_SUB2]);;
@@ -182,12 +190,13 @@ export_thm DIST_EQ_0;;
 (* ------------------------------------------------------------------------- *)
 
 let DIST_ELIM_THM = prove
- (`!P x y.
-     P (dist x y) <=> !d. ((x = y + d) ==> P(d)) /\ ((y = x + d) ==> P(d))`,
+ (`!p x y.
+     p (dist x y) <=>
+     !d. ((x = y + d) ==> p d) /\ ((y = x + d) ==> p d)`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [dist] THEN
   COND_CASES_TAC THENL
-  [ASM_CASES_TAC `y <= x` THENL
+  [ASM_CASES_TAC `y <= (x : num)` THENL
    [MP_TAC (SPECL [`x:num`; `y:num`] LE_ANTISYM) THEN
     ASM_REWRITE_TAC [] THEN
     DISCH_THEN SUBST1_TAC THEN
@@ -203,8 +212,8 @@ let DIST_ELIM_THM = prove
     REWRITE_TAC [ADD_SUB2; EQ_ADD_LCANCEL] THEN
     CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
     REWRITE_TAC [FORALL_UNWIND_THM2]];
-   ASM_CASES_TAC `y <= x` THENL
-   [UNDISCH_TAC `~(x <= y)` THEN
+   ASM_CASES_TAC `y <= (x:num)` THENL
+   [UNDISCH_TAC `~(x <= (y:num))` THEN
     REWRITE_TAC [LE_EXISTS; NOT_EXISTS_THM] THEN
     DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
     POP_ASSUM MP_TAC THEN
@@ -232,12 +241,6 @@ let DIST_CASES,DIST_LE_CASES,DIST_ADDBOUND,
                          (let l,r = dest_eq (concl th) in
                           if is_var l & not (vfree_in l r) then ALL_TAC
                           else ASSUME_TAC th)) in
-  let DIST_ELIM_TAC' =
-    REPEAT STRIP_TAC THEN REPEAT DIST_ELIM_TAC THEN
-    REWRITE_TAC[GSYM NOT_LT; LT_EXISTS] THEN
-    DISCH_THEN(CHOOSE_THEN SUBST_ALL_TAC) THEN POP_ASSUM MP_TAC THEN
-    CONV_TAC(LAND_CONV NUM_CANCEL_CONV) THEN
-    REWRITE_TAC[ADD_CLAUSES; NOT_SUC] in
   let DIST_CASES = prove
    (`!m n p. dist m n = p <=> m + p = n \/ n + p = m`,
     REPEAT GEN_TAC THEN
@@ -255,51 +258,69 @@ let DIST_CASES,DIST_LE_CASES,DIST_ADDBOUND,
    (`!m n. dist m n <= m + n`,
     REPEAT GEN_TAC THEN DIST_ELIM_TAC THENL
      [ONCE_REWRITE_TAC[ADD_SYM]; ALL_TAC] THEN
-    REWRITE_TAC[ADD_ASSOC; LE_ADDR])
-  and [DIST_TRIANGLE; DIST_ADD2; DIST_ADD2_REV] = (CONJUNCTS o prove)
-   (`(!m n p. dist m p <= dist m n + dist n p) /\
-     (!m n p q. dist (m + n) (p + q) <= dist m p + dist n q) /\
-     (!m n p q. dist m p <= dist (m + n) (p + q) + dist n q)`,
-    DIST_ELIM_TAC')
-  and DIST_DIST_SUC = prove
+    REWRITE_TAC[ADD_ASSOC; LE_ADDR]) in
+  let DIST_LEMMA = prove
+   (`!m n. n <= m + dist m n`,
+    REPEAT GEN_TAC THEN
+    DIST_ELIM_TAC THENL
+    [REWRITE_TAC [GSYM ADD_ASSOC; LE_ADD];
+     MATCH_ACCEPT_TAC LE_REFL]) in
+  let DIST_TRIANGLE = prove
+   (`!m n p. dist m p <= dist m n + dist n p`,
+    REPEAT GEN_TAC THEN
+    REWRITE_TAC [DIST_LE_CASES] THEN
+    CONJ_TAC THENL
+    [CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
+     ONCE_REWRITE_TAC [DIST_SYM] THEN
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `n + dist n m` THEN
+     REWRITE_TAC [DIST_LEMMA; LE_ADD_RCANCEL; ADD_ASSOC];
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `n + dist n p` THEN
+     REWRITE_TAC [DIST_LEMMA; LE_ADD_RCANCEL; ADD_ASSOC]]) in
+  let DIST_ADD2 = prove
+   (`!m n p q. dist (m + n) (p + q) <= dist m p + dist n q`,
+    REPEAT GEN_TAC THEN
+    REWRITE_TAC [DIST_LE_CASES] THEN
+    CONJ_TAC THENL
+    [ONCE_REWRITE_TAC [DIST_SYM] THEN
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `m + (q + dist q n)` THEN
+     REWRITE_TAC [DIST_LEMMA; LE_ADD_LCANCEL] THEN
+     REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL] THEN
+     REWRITE_TAC [GSYM ADD_ASSOC] THEN
+     CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
+     REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL; DIST_LEMMA];
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `p + (n + dist n q)` THEN
+     REWRITE_TAC [DIST_LEMMA; LE_ADD_LCANCEL] THEN
+     REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL] THEN
+     REWRITE_TAC [GSYM ADD_ASSOC] THEN
+     CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
+     REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL; DIST_LEMMA]]) in
+  let DIST_ADD2_REV = prove
+   (`!m n p q. dist m p <= dist (m + n) (p + q) + dist n q`,
+    REPEAT GEN_TAC THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `dist ((m + n) + q) ((p + q) + n)` THEN
+    CONJ_TAC THENL
+    [REWRITE_TAC [GSYM ADD_ASSOC] THEN
+     CONV_TAC (RAND_CONV (RAND_CONV (RAND_CONV (REWR_CONV ADD_SYM)))) THEN
+     REWRITE_TAC [DIST_RADD; LE_REFL];
+     CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV DIST_SYM))) THEN
+     MATCH_ACCEPT_TAC DIST_ADD2]) in
+  let DIST_DIST_SUC = prove
    (`!m n. dist (dist m n) (dist m (n + 1)) = 1`,
     REPEAT GEN_TAC THEN
-    REPEAT DIST_ELIM_TAC THEN
-    POP_ASSUM MP_TAC THENL
-    [REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
-     CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
-     REWRITE_TAC [EQ_ADD_LCANCEL];
-     REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
-     CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
-     CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
-     REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL_0; ADD_EQ_0] THEN
-     NUM_REDUCE_TAC;
-     REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
-     MP_TAC (SPEC `d' : num` num_CASES) THEN
-     STRIP_TAC THENL
-     [ASM_REWRITE_TAC [ADD_0; ZERO_ADD] THEN
-      DISCH_THEN SUBST_VAR_TAC THEN
-      REFL_TAC;
-      ASM_REWRITE_TAC [ONE; SUC_ADD; ADD_SUC; SUC_INJ; NOT_SUC]];
-     REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+    DIST_ELIM_TAC THENL
+    [REWRITE_TAC [DIST_LADD] THEN
      MP_TAC (SPEC `d : num` num_CASES) THEN
      STRIP_TAC THENL
-     [ASM_REWRITE_TAC [ADD_0; ZERO_ADD] THEN
-      DISCH_THEN SUBST_VAR_TAC THEN
-      REFL_TAC;
-      ASM_REWRITE_TAC [ONE; SUC_ADD; ADD_SUC; SUC_INJ; NOT_SUC]];
-     CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
-     REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL_0; ADD_EQ_0] THEN
-     NUM_REDUCE_TAC;
-     CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
-     REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL_0; ADD_EQ_0] THEN
-     NUM_REDUCE_TAC;
-     REWRITE_TAC
-       [GSYM ADD_ASSOC; EQ_ADD_LCANCEL; EQ_ADD_LCANCEL_0; ADD_EQ_0] THEN
-     NUM_REDUCE_TAC;
-     REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
-     DISCH_THEN SUBST_VAR_TAC THEN
-     REFL_TAC]) in
+     [ASM_REWRITE_TAC [DIST_LZERO];
+      POP_ASSUM SUBST1_TAC THEN
+      REWRITE_TAC [ONE; DIST_SUC; DIST_RZERO] THEN
+      REWRITE_TAC [ADD1; DIST_LADD_0; ZERO_ADD]];
+     REWRITE_TAC [GSYM ADD_ASSOC; DIST_RADD_0]]) in
   DIST_CASES,DIST_LE_CASES,DIST_ADDBOUND,
   DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV,
   DIST_DIST_SUC;;

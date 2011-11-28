@@ -430,6 +430,7 @@ const "HOLLight.modular_to_num" as "Number.Modular.toNatural"
 
 const "HOLLight.divides" as "Number.Natural.divides"
 const "HOLLight.gcd" as "Number.Natural.gcd"
+const "HOLLight.lcm" as "Number.Natural.lcm"
 const "HOLLight.prime" as "Number.Natural.prime"
 
 # Parser
