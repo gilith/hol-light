@@ -424,6 +424,18 @@ let num_to_modular_eq = new_axiom
       num_to_modular x = num_to_modular y <=> x MOD modulus = y MOD modulus`;;
 *)
 
+let num_to_modular_is_zero = prove
+  (`!x. num_to_modular x = num_to_modular 0 <=> divides modulus x`,
+   GEN_TAC THEN
+   REWRITE_TAC [num_to_modular_eq; divides_mod_modulus; zero_mod_modulus]);;
+
+export_thm num_to_modular_is_zero;;
+
+(*PARAMETRIC
+let num_to_modular_is_zero = new_axiom
+   `!x. num_to_modular x = num_to_modular 0 <=> divides modulus x`;;
+*)
+
 let modular_to_num_bound = prove
   (`!x. modular_to_num x < modulus`,
    ONCE_REWRITE_TAC [GSYM modular_to_num_to_modular] THEN

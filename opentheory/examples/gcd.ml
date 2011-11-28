@@ -4,7 +4,7 @@
 
 logfile "natural-gcd-def";;
 
-let (gcd_divides1,gcd_divides2,gcd_greatest) =
+let (gcd_divides1,gcd_divides2,gcd_greatest_imp) =
   let def = new_specification ["gcd"]
               (REWRITE_RULE [SKOLEM_THM] gcd_exists) in
   let def = REWRITE_RULE [FORALL_AND_THM] def in
@@ -16,9 +16,39 @@ let (gcd_divides1,gcd_divides2,gcd_greatest) =
 
 export_thm gcd_divides1;;
 export_thm gcd_divides2;;
-export_thm gcd_greatest;;
+export_thm gcd_greatest_imp;;
 
 logfile "natural-gcd-thm";;
+
+let gcd_greatest = prove
+  (`!a b c. divides c (gcd a b) <=> divides c a /\ divides c b`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC divides_trans THEN
+    EXISTS_TAC `gcd a b` THEN
+    ASM_REWRITE_TAC [gcd_divides1; gcd_divides2];
+    MATCH_ACCEPT_TAC gcd_greatest_imp]);;
+
+export_thm gcd_greatest;;
+
+let gcd_divides1_imp = prove
+  (`!a b c. divides b a ==> divides (gcd b c) a`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC divides_trans THEN
+   EXISTS_TAC `b : num` THEN
+   ASM_REWRITE_TAC [gcd_divides1]);;
+
+export_thm gcd_divides1_imp;;
+
+let gcd_divides2_imp = prove
+  (`!a b c. divides b a ==> divides (gcd c b) a`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC divides_trans THEN
+   EXISTS_TAC `b : num` THEN
+   ASM_REWRITE_TAC [gcd_divides2]);;
+
+export_thm gcd_divides2_imp;;
 
 let gcd_unique = prove
   (`!a b g.
@@ -30,7 +60,7 @@ let gcd_unique = prove
    STRIP_TAC THENL
    [FIRST_X_ASSUM MATCH_MP_TAC THEN
     REWRITE_TAC [gcd_divides1; gcd_divides2];
-    MATCH_MP_TAC gcd_greatest THEN
+    MATCH_MP_TAC gcd_greatest_imp THEN
     ASM_REWRITE_TAC []]);;
 
 export_thm gcd_unique;;
@@ -49,7 +79,7 @@ let gcd_comm = prove
    MATCH_MP_TAC gcd_unique THEN
    REWRITE_TAC [gcd_divides1; gcd_divides2] THEN
    REPEAT STRIP_TAC THEN
-   MATCH_MP_TAC gcd_greatest THEN
+   MATCH_MP_TAC gcd_greatest_imp THEN
    ASM_REWRITE_TAC []);;
 
 export_thm gcd_comm;;
@@ -59,20 +89,20 @@ let gcd_assoc = prove
    REPEAT STRIP_TAC THEN
    MATCH_MP_TAC divides_antisym THEN
    STRIP_TAC THENL
-   [MATCH_MP_TAC gcd_greatest THEN
+   [MATCH_MP_TAC gcd_greatest_imp THEN
     STRIP_TAC THENL
     [MATCH_MP_TAC divides_trans THEN
      EXISTS_TAC `gcd a b` THEN
      REWRITE_TAC [gcd_divides1];
-     MATCH_MP_TAC gcd_greatest THEN
+     MATCH_MP_TAC gcd_greatest_imp THEN
      STRIP_TAC THENL
      [MATCH_MP_TAC divides_trans THEN
       EXISTS_TAC `gcd a b` THEN
       REWRITE_TAC [gcd_divides1; gcd_divides2];
       REWRITE_TAC [gcd_divides2]]];
-    MATCH_MP_TAC gcd_greatest THEN
+    MATCH_MP_TAC gcd_greatest_imp THEN
     STRIP_TAC THENL
-    [MATCH_MP_TAC gcd_greatest THEN
+    [MATCH_MP_TAC gcd_greatest_imp THEN
      STRIP_TAC THENL
      [REWRITE_TAC [gcd_divides1];
       MATCH_MP_TAC divides_trans THEN
@@ -169,7 +199,7 @@ let gcd_addl = prove
    [MATCH_MP_TAC divides_add THEN
     REWRITE_TAC [gcd_divides1; gcd_divides2];
     REPEAT STRIP_TAC THEN
-    MATCH_MP_TAC gcd_greatest THEN
+    MATCH_MP_TAC gcd_greatest_imp THEN
     ASM_REWRITE_TAC [] THEN
     SUBGOAL_THEN `divides c ((a + b) - a)`
       (fun th -> MP_TAC th THEN REWRITE_TAC [ADD_SUB2]) THEN
@@ -210,7 +240,7 @@ let gcd_sub = prove
    [MATCH_MP_TAC divides_sub THEN
     ASM_REWRITE_TAC [gcd_divides1; gcd_divides2];
     REPEAT STRIP_TAC THEN
-    MATCH_MP_TAC gcd_greatest THEN
+    MATCH_MP_TAC gcd_greatest_imp THEN
     ASM_REWRITE_TAC [] THEN
     SUBGOAL_THEN `divides c ((b - a) + a)` MP_TAC THENL
     [MATCH_MP_TAC divides_add THEN
@@ -332,7 +362,7 @@ let mult1_coprime = prove
    REPEAT STRIP_TAC THEN
    REWRITE_TAC [GSYM divides_one] THEN
    POP_ASSUM (SUBST1_TAC o SYM) THEN
-   MATCH_MP_TAC gcd_greatest THEN
+   MATCH_MP_TAC gcd_greatest_imp THEN
    REWRITE_TAC [gcd_divides2] THEN
    MATCH_MP_TAC divides_mult2 THEN
    MATCH_ACCEPT_TAC gcd_divides1);;
@@ -395,7 +425,7 @@ let coprime_induction = prove
    MP_TAC (SPECL [`gcd a b`; `c : num`; `1`] divides_mult_cancel) THEN
    ASM_REWRITE_TAC [ONE_MULT] THEN
    DISCH_THEN (SUBST1_TAC o SYM) THEN
-   MATCH_MP_TAC gcd_greatest THEN
+   MATCH_MP_TAC gcd_greatest_imp THEN
    CONJ_TAC THENL
    [FIRST_X_ASSUM (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
     ASM_REWRITE_TAC [divides_mult_cancel];
@@ -434,7 +464,7 @@ let square_coprime_imp = prove
    [ASM_REWRITE_TAC [MULT_0];
     ALL_TAC] THEN
    STRIP_TAC THEN
-   MP_TAC (SPECL [`a : num`; `b : num`] egcd_exists_nonzero) THEN
+   MP_TAC (SPECL [`a : num`; `b : num`] egcd_exists_nonzero1) THEN
    ASM_REWRITE_TAC [] THEN
    STRIP_TAC THEN
    MATCH_MP_TAC coprime_egcd THEN
@@ -713,7 +743,34 @@ let coprime_mult_divides = prove
 
 export_thm coprime_mult_divides;;
 
-logfile "natural-gcd-lattice-def";;
+let divides_gcd_mult = prove
+  (`!a b c. divides (gcd a (b * c)) (gcd a b * gcd a c)`,
+   MATCH_MP_TAC coprime_induction THEN
+   REPEAT CONJ_TAC THENL
+   [REWRITE_TAC [zero_gcd; ZERO_MULT; divides_refl];
+    REPEAT STRIP_TAC THEN
+    ASM_REWRITE_TAC [ONE_MULT] THEN
+    MATCH_MP_TAC divides_refl_imp THEN
+    MATCH_MP_TAC coprime_gcd_mult2 THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    X_GEN_TAC `k : num` THEN
+    X_GEN_TAC `a : num` THEN
+    X_GEN_TAC `b : num` THEN
+    STRIP_TAC THEN
+    X_GEN_TAC `c : num` THEN
+    ASM_REWRITE_TAC [mult_gcd_cancel; GSYM MULT_ASSOC; mult_divides_cancel] THEN
+    MATCH_MP_TAC divides_trans THEN
+    EXISTS_TAC `gcd a b * gcd a c` THEN
+    ASM_REWRITE_TAC [] THEN
+    REWRITE_TAC [mult_divides_cancel] THEN
+    DISJ2_TAC THEN
+    REWRITE_TAC [gcd_greatest; gcd_divides2] THEN
+    MATCH_MP_TAC divides_mult2 THEN
+    MATCH_ACCEPT_TAC gcd_divides1]);;
+
+export_thm divides_gcd_mult;;
+
+logfile "natural-gcd-lcm-def";;
 
 let (zero_lcm,lcm_gcd) =
   let def = new_definition
@@ -744,7 +801,7 @@ let (zero_lcm,lcm_gcd) =
 export_thm zero_lcm;;
 export_thm lcm_gcd;;
 
-logfile "natural-gcd-lattice-thm";;
+logfile "natural-gcd-lcm-thm";;
 
 let lcm_comm = prove
   (`!a b. lcm a b = lcm b a`,
@@ -770,7 +827,7 @@ let lcm_zero = prove
 
 export_thm lcm_zero;;
 
-let lcm_divides1 = prove
+let divides_lcm1 = prove
   (`!a b. divides a (lcm a b)`,
    REPEAT GEN_TAC THEN
    ASM_CASES_TAC `a = 0` THENL
@@ -786,15 +843,33 @@ let lcm_divides1 = prove
    MATCH_MP_TAC mult_divides_mult THEN
    REWRITE_TAC [gcd_divides2; divides_refl]);;
 
-export_thm lcm_divides1;;
+export_thm divides_lcm1;;
 
-let lcm_divides2 = prove
+let divides_lcm2 = prove
   (`!a b. divides b (lcm a b)`,
    REPEAT GEN_TAC THEN
    ONCE_REWRITE_TAC [lcm_comm] THEN
-   MATCH_ACCEPT_TAC lcm_divides1);;
+   MATCH_ACCEPT_TAC divides_lcm1);;
 
-export_thm lcm_divides2;;
+export_thm divides_lcm2;;
+
+let divides_lcm1_imp = prove
+  (`!a b c. divides a b ==> divides a (lcm b c)`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC divides_trans THEN
+   EXISTS_TAC `b : num` THEN
+   ASM_REWRITE_TAC [divides_lcm1]);;
+
+export_thm divides_lcm1_imp;;
+
+let divides_lcm2_imp = prove
+  (`!a b c. divides a b ==> divides a (lcm c b)`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC divides_trans THEN
+   EXISTS_TAC `b : num` THEN
+   ASM_REWRITE_TAC [divides_lcm2]);;
+
+export_thm divides_lcm2_imp;;
 
 let mult_lcm_cancel = prove
   (`!a b c. lcm (a * b) (a * c) = a * lcm b c`,
@@ -827,7 +902,7 @@ let lcm_mult_cancel = prove
 
 export_thm lcm_mult_cancel;;
 
-let lcm_least = prove
+let lcm_least_imp = prove
   (`!a b c. divides a c /\ divides b c ==> divides (lcm a b) c`,
    MATCH_MP_TAC coprime_induction THEN
    REPEAT STRIP_TAC THENL
@@ -837,194 +912,248 @@ let lcm_least = prove
     ASM_REWRITE_TAC [MULT_1] THEN
     NUM_REDUCE_TAC THEN
     DISCH_THEN (SUBST1_TAC o SYM) THEN
-
-
-
-    UNDISCH_THEN `divides a c`
-      (X_CHOOSE_THEN `k:num` SUBST_VAR_TAC o
-       ONCE_REWRITE_RULE [MULT_SYM] o
-       REWRITE_RULE [divides_def]) THEN
-    REWRITE_TAC [mult_divides_cancel] THEN
-    ASM_CASES_TAC `a = 0` THEN
-    ASM_REWRITE_TAC [] THEN
-    UNDISCH_TAC `divides b (a * k)` THEN
-    REWRITE_TAC [divides_def] THEN
-    STRIP_TAC THEN
-    EXISTS_TAC `c DIV a` THEN
-    MP_TAC (SPECL [`a : num`; `(c DIV a) * b`; `k : num`] EQ_MULT_LCANCEL) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (SUBST1_TAC o SYM) THEN
-    FIRST_ASSUM (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
-    REWRITE_TAC [MULT_ASSOC] THEN
-    AP_THM_TAC THEN
-    AP_TERM_TAC THEN
-    ONCE_REWRITE_TAC [MULT_SYM] THEN
-    MP_TAC (SPECL [`a : num`; `c : num`] divides_div) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (SUBST1_TAC o SYM) THEN
-    REWRITE_TAC [GSYM divides_gcd]
-
-    MP_TAC 
-    
-
-   REPEAT GEN_TAC THEN
-   ASM_CASES_TAC `a = 0` THENL
-   [ASM_REWRITE_TAC [zero_lcm; zero_divides] THEN
-    REPEAT STRIP_TAC;
-    ALL_TAC] THEN
-   SUBGOAL_THEN `~(gcd a b = 0)` ASSUME_TAC THENL
-   [ASM_REWRITE_TAC [gcd_is_zero];
-    ALL_TAC] THEN
-   REPEAT STRIP_TAC THEN
-   MP_TAC (SPECL [`gcd a b`; `lcm a b`; `c : num`] divides_mult_cancel) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN (SUBST1_TAC o SYM) THEN
-   REWRITE_TAC [lcm_gcd] THEN
-   UNDISCH_THEN `divides a c`
-     (X_CHOOSE_THEN `k:num` SUBST_VAR_TAC o
-      ONCE_REWRITE_RULE [MULT_SYM] o
-      REWRITE_RULE [divides_def]) THEN
-   ASM_REWRITE_TAC [GSYM MULT_ASSOC; mult_divides_cancel] THEN
-   MP_TAC (SPECL [`a : num`; `b : num`] gcd_divides2) THEN
-   DISCH_THEN
-     (X_CHOOSE_THEN `j:num` (CONV_TAC o LAND_CONV o REWR_CONV o SYM) o
-      REWRITE_RULE [divides_def]) THEN
-   ASM_REWRITE_TAC [GSYM MULT_ASSOC; mult_divides_cancel] THEN
-
-   
-   EXISTS_TAC `if a = 0 then 0 else (a * b) DIV (gcd a b)` THEN
-   REPEAT STRIP_TAC THENL
-   [MP_TAC (SPECL [`gcd a b`; `b : num`] divides_div) THEN
-    ASM_REWRITE_TAC [gcd_divides2] THEN
-    DISCH_THEN
-      (fun th ->
-         CONV_TAC (RAND_CONV (LAND_CONV (RAND_CONV (REWR_CONV (SYM th)))))) THEN
-    REWRITE_TAC [MULT_ASSOC] THEN
-    ONCE_REWRITE_TAC [MULT_SYM] THEN
-    MP_TAC (SPECL [`gcd a b`; `a * (b DIV (gcd a b))`] DIV_MULT) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN SUBST1_TAC THEN
-    MATCH_MP_TAC divides_mult1 THEN
-    MATCH_ACCEPT_TAC divides_refl;
-    MP_TAC (SPECL [`gcd a b`; `a : num`] divides_div) THEN
-    ASM_REWRITE_TAC [gcd_divides1] THEN
-    DISCH_THEN
-      (fun th ->
-         CONV_TAC (RAND_CONV (LAND_CONV (LAND_CONV (REWR_CONV (SYM th)))))) THEN
-    CONV_TAC (RAND_CONV (LAND_CONV (LAND_CONV (REWR_CONV MULT_SYM)))) THEN
-    REWRITE_TAC [GSYM MULT_ASSOC] THEN
-    MP_TAC (SPECL [`gcd a b`; `(a DIV (gcd a b)) * b`] DIV_MULT) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN SUBST1_TAC THEN
-    MATCH_MP_TAC divides_mult2 THEN
-    MATCH_ACCEPT_TAC divides_refl;
-    
-
-   
-
-
-   MATCH_MP_TAC gcd_induction THEN
-   REPEAT STRIP_TAC THENL
-   [EXISTS_TAC `0 : num` THEN
-    REWRITE_TAC [divides_zero] THEN
-    REPEAT STRIP_TAC;
-    EXISTS_TAC `l : num` THEN
-    ASM_REWRITE_TAC [] THEN
-    REPEAT STRIP_TAC THEN
-    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    MATCH_MP_TAC coprime_mult_divides THEN
     ASM_REWRITE_TAC [];
-    EXISTS_TAC `(l : num) + a * a` THEN
-    ASM_REWRITE_TAC [] THEN
-    REPEAT STRIP_TAC THENL
-    [MATCH_MP_TAC divides_add THEN
-     ASM_REWRITE_TAC [];
-     FIRST_X_ASSUM MATCH_MP_TAC THEN
-     ASM_REWRITE_TAC [] THEN
-     SUBGOAL_THEN `divides c ((b + a) - a)`
-       (fun th -> MP_TAC th THEN REWRITE_TAC [ADD_SUB]) THEN
-     MATCH_MP_TAC divides_sub THEN
-     ASM_REWRITE_TAC [LE_ADDR]]]);;
+    SUBGOAL_THEN `divides c c'` MP_TAC THENL
+    [MATCH_MP_TAC mult1_divides THEN
+     EXISTS_TAC `a : num` THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     ALL_TAC] THEN
+    DISCH_THEN
+      (X_CHOOSE_THEN `k:num` SUBST_VAR_TAC o
+       REWRITE_RULE [MULT_SYM] o
+       REWRITE_RULE [divides_def]) THEN
+    POP_ASSUM MP_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    ASM_REWRITE_TAC [mult_divides_cancel; mult_lcm_cancel; IMP_IMP]]);;
 
-export_thm lcm_exists;;
+export_thm lcm_least_imp;;
 
-export_thm divides_lcm1;;
-export_thm divides_lcm2;;
+let lcm_least = prove
+  (`!a b c. divides (lcm a b) c <=> divides a c /\ divides b c`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC divides_trans THEN
+    EXISTS_TAC `lcm a b` THEN
+    ASM_REWRITE_TAC [divides_lcm1; divides_lcm2];
+    MATCH_ACCEPT_TAC lcm_least_imp]);;
+
 export_thm lcm_least;;
 
+let lcm_unique = prove
+  (`!a b l.
+      divides a l /\ divides b l /\
+      (!c. divides a c /\ divides b c ==> divides l c) ==>
+      lcm a b = l`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC divides_antisym THEN
+   STRIP_TAC THENL
+   [MATCH_MP_TAC lcm_least_imp THEN
+    ASM_REWRITE_TAC [];
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    REWRITE_TAC [divides_lcm1; divides_lcm2]]);;
 
-(***
+export_thm lcm_unique;;
+
+let one_lcm = prove
+  (`!a. lcm 1 a = a`,
+   REPEAT GEN_TAC THEN
+   MATCH_MP_TAC lcm_unique THEN
+   REWRITE_TAC [one_divides; divides_refl]);;
+
+export_thm one_lcm;;
+
+let lcm_one = prove
+  (`!a. lcm a 1 = a`,
+   ONCE_REWRITE_TAC [lcm_comm] THEN
+   ACCEPT_TAC one_lcm);;
+
+export_thm lcm_one;;
+
+let lcm_is_one = prove
+  (`!a b. lcm a b = 1 <=> a = 1 /\ b = 1`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [REWRITE_TAC [GSYM divides_one] THEN
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC divides_trans THEN
+    EXISTS_TAC `lcm a b` THEN
+    ASM_REWRITE_TAC [divides_lcm1; divides_lcm2];
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [lcm_one]]);;
+
+export_thm lcm_is_one;;
+
+let lcm_is_zero = prove
+  (`!a b. lcm a b = 0 <=> a = 0 \/ b = 0`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    REWRITE_TAC [GSYM MULT_EQ_0] THEN
+    ONCE_REWRITE_TAC [GSYM lcm_gcd] THEN
+    ASM_REWRITE_TAC [ZERO_MULT];
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [zero_lcm; lcm_zero]]);;
+
+export_thm lcm_is_zero;;
+
+let lcm_refl = prove
+  (`!a. lcm a a = a`,
+   REPEAT GEN_TAC THEN
+   MATCH_MP_TAC lcm_unique THEN
+   REWRITE_TAC [divides_refl]);;
+
+export_thm lcm_refl;;
+
+let lcm_assoc = prove
+  (`!a b c. lcm (lcm a b) c = lcm a (lcm b c)`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC divides_antisym THEN
+   STRIP_TAC THENL
+   [MATCH_MP_TAC lcm_least_imp THEN
+    STRIP_TAC THENL
+    [MATCH_MP_TAC lcm_least_imp THEN
+     STRIP_TAC THENL
+     [MATCH_ACCEPT_TAC divides_lcm1;
+      MATCH_MP_TAC divides_lcm2_imp THEN
+      MATCH_ACCEPT_TAC divides_lcm1];
+     MATCH_MP_TAC divides_lcm2_imp THEN
+     MATCH_ACCEPT_TAC divides_lcm2];
+    MATCH_MP_TAC lcm_least_imp THEN
+    STRIP_TAC THENL
+    [MATCH_MP_TAC divides_lcm1_imp THEN
+     MATCH_ACCEPT_TAC divides_lcm1;
+     MATCH_MP_TAC lcm_least_imp THEN
+     STRIP_TAC THENL
+     [MATCH_MP_TAC divides_lcm1_imp THEN
+      MATCH_ACCEPT_TAC divides_lcm2;
+      MATCH_ACCEPT_TAC divides_lcm2]]]);;
+
+export_thm lcm_assoc;;
+
+let divides_lcm = prove
+  (`!a b. lcm a b = a <=> divides b a`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [DISCH_THEN (SUBST1_TAC o SYM) THEN
+    MATCH_ACCEPT_TAC divides_lcm2;
+    STRIP_TAC THEN
+    MATCH_MP_TAC lcm_unique THEN
+    ASM_REWRITE_TAC [divides_refl] THEN
+    REPEAT STRIP_TAC]);;
+
+export_thm divides_lcm;;
+
+let lcm_divides = prove
+  (`!a b. lcm b a = a <=> divides b a`,
+   ONCE_REWRITE_TAC [lcm_comm] THEN
+   ACCEPT_TAC divides_lcm);;
+
+export_thm lcm_divides;;
+
 let lcm_left_distrib = prove
   (`!a b c. gcd a (lcm b c) = lcm (gcd a b) (gcd a c)`,
-
-gcd a b * gcd a c
-= lcm (gcd a b) (gcd a c) * gcd (gcd a b) (gcd a c)
-= gcd a (lcm b c) * gcd (gcd a b) (gcd a c)
-= gcd a (lcm b c) * gcd a (gcd b c)
-= gcd a (b' * c' * gcd b c) * gcd a (gcd b c)
-= gcd a (lcm b' c' * gcd b c) * gcd a (gcd b c)
-
-gcd a (b * c)
-= gcd a (lcm b c * gcd b c)
-= gcd (g * a') (lcm b c * 
-
-= gcd a (gcd a (gcd b c) * k + 
-
-g = gcd a b c
-a' = a / g
-b' = b / g
-c' = c / g
-
-gcd a (b * c)
-= gcd (g * a') (g * (g * b' * c'))
-= g * gcd a' (g * b' * c')
-
- (g * g * b' * c')
-= gcd a (g * g * lcm b' c')
-
-lcm (gcd a b) (gcd c d)
-= 
- = gcd (lcm a c) (lcm b d)
-
- | gcd (a * c) (b * d)
-gcd a b * gcd c d | gcd (a * c) (b * d)
-
-
-gcd a b * gcd (a / gcd a b) c
-| gcd a b * gcd a c
-
-= lcm (gcd a b) (gcd a c) * gcd (gcd a b) (gcd a c)
-= gcd a (lcm b c) * gcd (gcd a b) (gcd a c)
-= gcd a (lcm b c) * gcd a (gcd b c)
-
-
-let divides_gcd_mult = prove
-  (`!a b c. divides (gcd a (b * c)) (gcd a b * gcd a c)`,
    REPEAT GEN_TAC THEN
-   REWRITE_TAC [GSYM gcd_divides] THEN
-   REWRITE_TAC [GSYM gcd_assoc] THEN
-   MATCH_MP_TAC gcd_unique
-
-let gcd_mult = prove
-  (`!a b c. gcd a b = 1 /\ gcd a c = 1 ==> gcd a (b * c) = 1`,
-   REPEAT STRIP_TAC THEN
-   MATCH_MP_TAC gcd_is_one THEN
-   X_GEN_TAC `d:num`
-   REWRITE_TAC [gcd_divides1] THEN
+   MATCH_MP_TAC divides_antisym THEN
    STRIP_TAC THENL
-   [MATCH_MP_TAC divides_sub THEN
-    ASM_REWRITE_TAC [gcd_divides1; gcd_divides2];
+   [ALL_TAC;
+    REWRITE_TAC [lcm_least; gcd_greatest; gcd_divides1; gcd_divides2] THEN
+    STRIP_TAC THENL
+    [MATCH_MP_TAC divides_trans THEN
+     EXISTS_TAC `b : num` THEN
+     REWRITE_TAC [gcd_divides2; divides_lcm1];
+     MATCH_MP_TAC divides_trans THEN
+     EXISTS_TAC `c : num` THEN
+     REWRITE_TAC [gcd_divides2; divides_lcm2]]] THEN
+   SUBGOAL_THEN `?ac. gcd a c = ac` (CHOOSE_THEN MP_TAC) THENL
+   [EXISTS_TAC `gcd a c` THEN
+    REFL_TAC;
+    ALL_TAC] THEN
+   SUBGOAL_THEN `?ab. gcd a b = ab` (CHOOSE_THEN MP_TAC) THENL
+   [EXISTS_TAC `gcd a b` THEN
+    REFL_TAC;
+    ALL_TAC] THEN
+   SPEC_TAC (`c : num`, `c : num`) THEN
+   SPEC_TAC (`b : num`, `b : num`) THEN
+   SPEC_TAC (`a : num`, `a : num`) THEN
+   SPEC_TAC (`ac : num`, `ac : num`) THEN
+   SPEC_TAC (`ab : num`, `ab : num`) THEN
+   MATCH_MP_TAC coprime_induction THEN
+   REPEAT CONJ_TAC THENL
+   [REWRITE_TAC [gcd_is_zero] THEN
     REPEAT STRIP_TAC THEN
-    MATCH_MP_TAC gcd_greatest THEN
+    ASM_REWRITE_TAC [gcd_zero; lcm_zero; divides_refl];
+    REPEAT STRIP_TAC THEN
     ASM_REWRITE_TAC [] THEN
-    SUBGOAL_THEN `divides c ((b - a) + a)` MP_TAC THENL
-    [MATCH_MP_TAC divides_add THEN
-     ASM_REWRITE_TAC [];
-     MATCH_MP_TAC EQ_IMP THEN
-     AP_TERM_TAC THEN
-     MATCH_MP_TAC SUB_ADD THEN
-     FIRST_ASSUM ACCEPT_TAC]]);;
+    MP_TAC (SPECL [`ab : num`; `ac : num`] lcm_gcd) THEN
+    ASM_REWRITE_TAC [MULT_1] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    MATCH_MP_TAC divides_trans THEN
+    EXISTS_TAC `gcd a (b * c)` THEN
+    CONJ_TAC THENL
+    [REWRITE_TAC [gcd_greatest; gcd_divides1] THEN
+     MATCH_MP_TAC gcd_divides2_imp THEN
+     ONCE_REWRITE_TAC [GSYM lcm_gcd] THEN
+     MATCH_MP_TAC divides_mult1 THEN
+     MATCH_ACCEPT_TAC divides_refl;
+     REPEAT (FIRST_X_ASSUM SUBST_VAR_TAC) THEN
+     MATCH_ACCEPT_TAC divides_gcd_mult];
+    X_GEN_TAC `k : num` THEN
+    X_GEN_TAC `ab : num` THEN
+    X_GEN_TAC `ac : num` THEN
+    STRIP_TAC THEN
+    X_GEN_TAC `a : num` THEN
+    X_GEN_TAC `b : num` THEN
+    X_GEN_TAC `c : num` THEN
+    REPEAT STRIP_TAC THEN
+    SUBGOAL_THEN `divides k (gcd a b) /\ divides k (gcd a c)` MP_TAC THENL
+    [ASM_REWRITE_TAC [] THEN
+     STRIP_TAC THEN
+     MATCH_MP_TAC divides_mult1 THEN
+     MATCH_ACCEPT_TAC divides_refl;
+     ALL_TAC] THEN
+    REWRITE_TAC [gcd_greatest] THEN
+    CONV_TAC (LAND_CONV (REWRITE_CONV [divides_def])) THEN
+    CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [MULT_SYM])) THEN
+    REWRITE_TAC [IMP_CONJ] THEN
+    DISCH_THEN (K ALL_TAC) THEN
+    DISCH_THEN (X_CHOOSE_THEN `b' : num` SUBST_VAR_TAC) THEN
+    DISCH_THEN (X_CHOOSE_THEN `c' : num` SUBST_VAR_TAC) THEN
+    DISCH_THEN (X_CHOOSE_THEN `a' : num` SUBST_VAR_TAC) THEN
+    POP_ASSUM MP_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    ASM_REWRITE_TAC
+      [mult_gcd_cancel; mult_lcm_cancel; EQ_MULT_LCANCEL;
+       mult_divides_cancel]]);;
 
-export_thm gcd_mult;;
-***)
+export_thm lcm_left_distrib;;
+
+let lcm_right_distrib = prove
+  (`!a b c. gcd (lcm b c) a = lcm (gcd b a) (gcd c a)`,
+   ONCE_REWRITE_TAC [gcd_comm] THEN
+   ACCEPT_TAC lcm_left_distrib);;
+
+export_thm lcm_right_distrib;;
+
+let gcd_left_distrib = prove
+  (`!a b c. lcm a (gcd b c) = gcd (lcm a b) (lcm a c)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [lcm_left_distrib] THEN
+   REWRITE_TAC [lcm_right_distrib; gcd_refl; GSYM lcm_assoc] THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   REWRITE_TAC
+     [lcm_assoc; divides_lcm; lcm_least; gcd_divides1; gcd_divides2]);;
+
+export_thm gcd_left_distrib;;
+
+let gcd_right_distrib = prove
+  (`!a b c. lcm (gcd b c) a = gcd (lcm b a) (lcm c a)`,
+   ONCE_REWRITE_TAC [lcm_comm] THEN
+   ACCEPT_TAC gcd_left_distrib);;
+
+export_thm gcd_right_distrib;;
 
 logfile_end ();;

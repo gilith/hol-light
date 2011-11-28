@@ -98,6 +98,9 @@ let num_to_word16_eq = new_axiom
    `!x y.
       num_to_word16 x = num_to_word16 y <=> x MOD word16_size = y MOD word16_size`;;
 
+let num_to_word16_is_zero = new_axiom
+   `!x. num_to_word16 x = num_to_word16 0 <=> divides word16_size x`;;
+
 let word16_to_num_bound = new_axiom
   `!x. word16_to_num x < word16_size`;;
 

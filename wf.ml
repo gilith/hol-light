@@ -449,27 +449,27 @@ let WF_FALSE = prove
 (* ------------------------------------------------------------------------- *)
 
 let WF_REC_TAIL = prove
- (`!P g h. ?f:A->B. !x. f x = if P(x) then f(g x) else h x`,
+ (`!p g h. ?(f : A -> B). !x. f x = if p x then f (g x) else h x`,
   let lemma1 = prove
-   (`~(P 0) ==> ((?n. P(SUC n)) <=> (?n. P(n)))`,
+   (`~(p 0) ==> ((?n. p(SUC n)) <=> (?n. p(n)))`,
     MESON_TAC[num_CASES; NOT_SUC])
   and lemma2 = prove
-   (`(P 0) ==> ((!m. m < n ==> P(SUC m)) <=> (!m. m < SUC n ==> P(m)))`,
+   (`(p 0) ==> ((!m. m < n ==> p(SUC m)) <=> (!m. m < SUC n ==> p(m)))`,
     REPEAT(DISCH_TAC ORELSE EQ_TAC) THEN INDUCT_TAC THEN
     ASM_MESON_TAC[LT_SUC; LT_0]) in
   REPEAT GEN_TAC THEN
   MP_TAC(GEN `x:A` (ISPECL [`x:A`; `\y:A n:num. g(y):A`] num_RECURSION)) THEN
   REWRITE_TAC[SKOLEM_THM; FORALL_AND_THM] THEN
   DISCH_THEN(X_CHOOSE_THEN `s:A->num->A` STRIP_ASSUME_TAC) THEN
-  EXISTS_TAC `\x:A. if ?n:num. ~P(s x n)
-                    then (h:A->B)(@y. ?n. (y = s x n) /\ ~P(s x n) /\
-                                          !m. m < n ==> P(s x m))
+  EXISTS_TAC `\x:A. if ?n:num. ~p(s x n)
+                    then (h:A->B)(@y. ?n. (y = s x n) /\ ~p(s x n) /\
+                                          !m. m < n ==> p(s x m))
                     else something_arbitrary:B` THEN
   X_GEN_TAC `x:A` THEN
   SUBGOAL_THEN `!n x:A. s (g x) n :A = s x (SUC n)` ASSUME_TAC THENL
    [INDUCT_TAC THEN ASM_REWRITE_TAC[];
     UNDISCH_THEN `!x:A n. s x (SUC n) :A = g (s x n)` (K ALL_TAC)] THEN
-  ASM_CASES_TAC `(P:A->bool) x` THEN ASM_REWRITE_TAC[] THENL
+  ASM_CASES_TAC `(p:A->bool) x` THEN ASM_REWRITE_TAC[] THENL
    [ASM_SIMP_TAC[lemma1] THEN COND_CASES_TAC THEN ASM_REWRITE_TAC[] THEN
     CONV_TAC SYM_CONV THEN ASM_SIMP_TAC[lemma2; lemma1];
     COND_CASES_TAC THENL [ALL_TAC; ASM_MESON_TAC[]] THEN
@@ -478,6 +478,8 @@ let WF_REC_TAIL = prove
      [SIMP_TAC[LEFT_IMP_EXISTS_THM] THEN
       INDUCT_TAC THEN ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[LT_0];
       ASM_MESON_TAC[LT]]]);;
+
+export_thm WF_REC_TAIL;;
 
 (* ------------------------------------------------------------------------- *)
 (* A more general mix of tail and wellfounded recursion.                     *)

@@ -82,6 +82,13 @@ let divides_refl = prove
 
 export_thm divides_refl;;
 
+let divides_refl_imp = prove
+  (`!a b. a = b ==> divides a b`,
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [divides_refl]);;
+
+export_thm divides_refl_imp;;
+
 let divides_antisym = prove
   (`!a b. divides a b /\ divides b a ==> a = b`,
    REPEAT GEN_TAC THEN
@@ -107,6 +114,63 @@ let divides_trans = prove
    MATCH_ACCEPT_TAC MULT_ASSOC);;
 
 export_thm divides_trans;;
+
+let divides_below_imp = prove
+  (`!a b. (!c. divides c a ==> divides c b) ==> divides a b`,
+   REPEAT GEN_TAC THEN
+   DISCH_THEN MATCH_MP_TAC THEN
+   MATCH_ACCEPT_TAC divides_refl);;
+
+export_thm divides_below_imp;;
+
+let divides_below = prove
+  (`!a b. (!c. divides c a ==> divides c b) <=> divides a b`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC divides_below_imp;
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC divides_trans THEN
+    EXISTS_TAC `a : num` THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm divides_below;;
+
+let divides_above_imp = prove
+  (`!a b. (!c. divides b c ==> divides a c) ==> divides a b`,
+   REPEAT GEN_TAC THEN
+   DISCH_THEN MATCH_MP_TAC THEN
+   MATCH_ACCEPT_TAC divides_refl);;
+
+export_thm divides_above_imp;;
+
+let divides_above = prove
+  (`!a b. (!c. divides b c ==> divides a c) <=> divides a b`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC divides_above_imp;
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC divides_trans THEN
+    EXISTS_TAC `b : num` THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm divides_above;;
+
+let mult2_divides = prove
+  (`!a b c. divides (a * b) c ==> divides b c`,
+   REWRITE_TAC [divides_def] THEN
+   REPEAT STRIP_TAC THEN
+   EXISTS_TAC `(c':num) * a` THEN
+   ASM_REWRITE_TAC [GSYM MULT_ASSOC]);;
+
+export_thm mult2_divides;;
+
+let mult1_divides = prove
+  (`!a b c. divides (a * b) c ==> divides a c`,
+   REPEAT GEN_TAC THEN
+   ONCE_REWRITE_TAC [MULT_SYM] THEN
+   MATCH_ACCEPT_TAC mult2_divides);;
+
+export_thm mult1_divides;;
 
 let divides_mult2 = prove
   (`!a b c. divides a c ==> divides a (b * c)`,
@@ -355,5 +419,26 @@ let gcd_exists = prove
      ASM_REWRITE_TAC [LE_ADDR]]]);;
 
 export_thm gcd_exists;;
+
+let divides_factorial = prove
+  (`!a b. ~(b = 0) /\ b <= a ==> divides b (FACT a)`,
+   INDUCT_TAC THENL
+   [GEN_TAC THEN
+    REWRITE_TAC [LE_ZERO] THEN
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [];
+    ALL_TAC] THEN
+   GEN_TAC THEN
+   REWRITE_TAC [LE; FACT_SUC] THEN
+   REPEAT STRIP_TAC THENL
+   [MATCH_MP_TAC divides_mult1 THEN
+    ASM_REWRITE_TAC [divides_refl];
+    MATCH_MP_TAC divides_mult2 THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm divides_factorial;;
 
 logfile_end ();;

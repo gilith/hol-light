@@ -356,6 +356,10 @@ let NOT_NOT_THM = TAUT `!t. ~ ~t <=> t`;;
 
 export_thm NOT_NOT_THM;;
 
+let NOT_IFF_THM = TAUT `!t1 t2. (~t1 <=> ~t2) <=> (t1 <=> t2)`;;
+
+export_thm NOT_IFF_THM;;
+
 let NOT_CLAUSES = prove
   (`(!t. ~ ~t <=> t) /\ (~T <=> F) /\ (~F <=> T)`,
    REPEAT CONJ_TAC THENL

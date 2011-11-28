@@ -86,6 +86,9 @@ let num_to_gfp_eq = new_axiom
    `!x y.
       num_to_gfp x = num_to_gfp y <=> x MOD oddprime = y MOD oddprime`;;
 
+let num_to_gfp_is_zero = new_axiom
+   `!x. num_to_gfp x = num_to_gfp 0 <=> divides oddprime x`;;
+
 let gfp_to_num_bound = new_axiom
   `!x. gfp_to_num x < oddprime`;;
 
@@ -281,6 +284,9 @@ let gfp_to_num_inj = new_axiom
 let num_to_gfp_eq = new_axiom
    `!x y.
       num_to_gfp x = num_to_gfp y <=> x MOD oddprime = y MOD oddprime`;;
+
+let num_to_gfp_is_zero = new_axiom
+   `!x. num_to_gfp x = num_to_gfp 0 <=> divides oddprime x`;;
 
 let gfp_to_num_bound = new_axiom
   `!x. gfp_to_num x < oddprime`;;

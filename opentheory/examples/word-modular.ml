@@ -86,6 +86,9 @@ let num_to_word_eq = new_axiom
    `!x y.
       num_to_word x = num_to_word y <=> x MOD word_size = y MOD word_size`;;
 
+let num_to_word_is_zero = new_axiom
+   `!x. num_to_word x = num_to_word 0 <=> divides word_size x`;;
+
 let word_to_num_bound = new_axiom
   `!x. word_to_num x < word_size`;;
 
@@ -281,6 +284,9 @@ let word_to_num_inj = new_axiom
 let num_to_word_eq = new_axiom
    `!x y.
       num_to_word x = num_to_word y <=> x MOD word_size = y MOD word_size`;;
+
+let num_to_word_is_zero = new_axiom
+   `!x. num_to_word x = num_to_word 0 <=> divides word_size x`;;
 
 let word_to_num_bound = new_axiom
   `!x. word_to_num x < word_size`;;

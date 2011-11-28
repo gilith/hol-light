@@ -98,6 +98,9 @@ let num_to_byte_eq = new_axiom
    `!x y.
       num_to_byte x = num_to_byte y <=> x MOD byte_size = y MOD byte_size`;;
 
+let num_to_byte_is_zero = new_axiom
+   `!x. num_to_byte x = num_to_byte 0 <=> divides byte_size x`;;
+
 let byte_to_num_bound = new_axiom
   `!x. byte_to_num x < byte_size`;;
 
