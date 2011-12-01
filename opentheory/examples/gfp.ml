@@ -600,7 +600,7 @@ logfile "gfp-div-gcd-def";;
 (* Algorithm 2.22 in Guide to Elliptic Curve Cryptography *)
 *)
 
-let gfp_div_gcd_loop_def =
+let gfp_div_gcd_def =
   let th = prove
     (`?f. !u v x1 x2.
         f u v x1 x2 =
@@ -650,57 +650,33 @@ let gfp_div_gcd_loop_def =
      ASM_REWRITE_TAC [] THEN
      ASM_CASES_TAC `v <= (u : num)` THEN
      ASM_REWRITE_TAC []) in
-  new_specification ["gfp_div_gcd_loop"] th;;
+  new_specification ["gfp_div_gcd"] th;;
 
-export_thm gfp_div_gcd_loop_def;;
+export_thm gfp_div_gcd_def;;
 
 (*PARAMETRIC
-new_constant ("gfp_div_gcd_loop", `:num -> num -> gfp -> gfp -> gfp`);;
+new_constant ("gfp_div_gcd", `:num -> num -> gfp -> gfp -> gfp`);;
 
-let gfp_div_gcd_loop_def = new_axiom
+let gfp_div_gcd_def = new_axiom
   `!u v x1 x2.
-     gcd_div_gcd_loop u v x1 x2 =
+     gfp_div_gcd u v x1 x2 =
        if u = 1 then
          x1
        else if v = 1 then
          x2
        else if EVEN u then
-         gcd_div_gcd_loop (u DIV 2) v (gfp_div x1 (num_to_gfp 2)) x2
+         gfp_div_gcd (u DIV 2) v (gfp_div x1 (num_to_gfp 2)) x2
        else if EVEN v then
-         gcd_div_gcd_loop u (v DIV 2) x1 (gfp_div x2 (num_to_gfp 2))
+         gfp_div_gcd u (v DIV 2) x1 (gfp_div x2 (num_to_gfp 2))
        else if v <= u then
-         gcd_div_gcd_loop (u - v) v (gfp_sub x1 x2) x2
+         gfp_div_gcd (u - v) v (gfp_sub x1 x2) x2
        else
-         gcd_div_gcd_loop u (v - u) x1 (gfp_sub x2 x1)`;;
-*)
-
-let gfp_div_gcd_def =
-  let def = new_definition
-    `!x y.
-       gfp_div_gcd x y =
-       gfp_div_gcd_loop (gfp_to_num y) oddprime x (num_to_gfp 0)` in
-  prove
-  (`!x y.
-      ~(y = num_to_gfp 0) ==>
-      gfp_div_gcd x y =
-      gfp_div_gcd_loop (gfp_to_num y) oddprime x (num_to_gfp 0)`,
-   REWRITE_TAC [def]);;
-
-export_thm gfp_div_gcd_def;;
-
-(*PARAMETRIC
-new_constant ("gfp_div_gcd", `:gfp -> gfp -> gfp`);;
-
-let gfp_div_gcd_def = new_axiom
-   `!x y.
-      ~(y = num_to_gfp 0) ==>
-      gfp_div_gcd x y =
-      gfp_div_gcd_loop (gfp_to_num y) oddprime x (num_to_gfp 0)`;;
+         gfp_div_gcd u (v - u) x1 (gfp_sub x2 x1)`;;
 *)
 
 logfile "gfp-div-gcd-thm";;
 
-let gfp_div_gcd_loop_induction = prove
+let gfp_div_gcd_induction = prove
   (`!p : num -> num -> bool.
       (!v. p 1 v) /\
       (!u. ~(u = 1) ==> p u 1) /\
@@ -803,10 +779,10 @@ let gfp_div_gcd_loop_induction = prove
     FIRST_X_ASSUM MATCH_MP_TAC THEN
     ASM_REWRITE_TAC [LT_ADD_RCANCEL; LT_ADDR; LT_NZ]]);;
 
-export_thm gfp_div_gcd_loop_induction;;
+export_thm gfp_div_gcd_induction;;
 
 (*PARAMETRIC
-let gfp_div_gcd_loop_induction = new_axiom
+let gfp_div_gcd_induction = new_axiom
    `!p : num -> num -> bool.
       (!v. p 1 v) /\
       (!u. ~(u = 1) ==> p u 1) /\
@@ -825,7 +801,7 @@ let gfp_div_gcd_loop_induction = new_axiom
       (!u v. gcd u v = 1 ==> p u v)`;;
 *)
 
-let gfp_div_gcd_loop_recursion = prove
+let gfp_div_gcd_recursion = prove
   (`!p : num -> num -> gfp -> gfp -> gfp -> bool.
       (!v x1 x2. p 1 v x1 x2 x1) /\
       (!u x1 x2. p u 1 x1 x2 x2) /\
@@ -841,24 +817,24 @@ let gfp_div_gcd_loop_recursion = prove
       (!u v x1 x2 g.
          gcd u v = 1 /\ p u v x1 x2 g ==>
          p u (u + v) x1 (gfp_add x1 x2) g) ==>
-      (!u v x1 x2. gcd u v = 1 ==> p u v x1 x2 (gfp_div_gcd_loop u v x1 x2))`,
+      (!u v x1 x2. gcd u v = 1 ==> p u v x1 x2 (gfp_div_gcd u v x1 x2))`,
    GEN_TAC THEN
    STRIP_TAC THEN
    ONCE_REWRITE_TAC [RIGHT_FORALL_IMP_THM] THEN
    ONCE_REWRITE_TAC [RIGHT_FORALL_IMP_THM] THEN
-   MATCH_MP_TAC gfp_div_gcd_loop_induction THEN
+   MATCH_MP_TAC gfp_div_gcd_induction THEN
    CONJ_TAC THENL
    [REPEAT STRIP_TAC THEN
-    ASM_REWRITE_TAC [gfp_div_gcd_loop_def];
+    ASM_REWRITE_TAC [gfp_div_gcd_def];
     ALL_TAC] THEN
    CONJ_TAC THENL
    [REPEAT STRIP_TAC THEN
-    ONCE_REWRITE_TAC [gfp_div_gcd_loop_def] THEN
+    ONCE_REWRITE_TAC [gfp_div_gcd_def] THEN
     ASM_REWRITE_TAC [];
     ALL_TAC] THEN
    CONJ_TAC THENL
    [REPEAT STRIP_TAC THEN
-    ONCE_REWRITE_TAC [gfp_div_gcd_loop_def] THEN
+    ONCE_REWRITE_TAC [gfp_div_gcd_def] THEN
     ASM_CASES_TAC `2 * u = 1` THENL
     [ASM_REWRITE_TAC [];
      ALL_TAC] THEN
@@ -883,7 +859,7 @@ let gfp_div_gcd_loop_recursion = prove
     ALL_TAC] THEN
    CONJ_TAC THENL
    [REPEAT STRIP_TAC THEN
-    ONCE_REWRITE_TAC [gfp_div_gcd_loop_def] THEN
+    ONCE_REWRITE_TAC [gfp_div_gcd_def] THEN
     ASM_REWRITE_TAC [EVEN_DOUBLE] THEN
     ASM_CASES_TAC `2 * v = 1` THENL
     [ASM_REWRITE_TAC [];
@@ -910,7 +886,7 @@ let gfp_div_gcd_loop_recursion = prove
     ALL_TAC] THEN
    CONJ_TAC THENL
    [REPEAT STRIP_TAC THEN
-    ONCE_REWRITE_TAC [gfp_div_gcd_loop_def] THEN
+    ONCE_REWRITE_TAC [gfp_div_gcd_def] THEN
     ASM_REWRITE_TAC [EVEN_ADD] THEN
     ASM_CASES_TAC `v + u = 1` THENL
     [ASM_REWRITE_TAC [];
@@ -928,7 +904,7 @@ let gfp_div_gcd_loop_recursion = prove
     DISCH_THEN MATCH_MP_TAC THEN
     ASM_REWRITE_TAC [];
     REPEAT STRIP_TAC THEN
-    ONCE_REWRITE_TAC [gfp_div_gcd_loop_def] THEN
+    ONCE_REWRITE_TAC [gfp_div_gcd_def] THEN
     ASM_REWRITE_TAC [EVEN_ADD] THEN
     ASM_CASES_TAC `u + v = 1` THENL
     [ASM_REWRITE_TAC [];
@@ -956,10 +932,10 @@ let gfp_div_gcd_loop_recursion = prove
     DISCH_THEN MATCH_MP_TAC THEN
     ASM_REWRITE_TAC [ADD_SUB2]]);;
 
-export_thm gfp_div_gcd_loop_recursion;;
+export_thm gfp_div_gcd_recursion;;
 
 (*PARAMETRIC
-let gfp_div_gcd_loop_recursion = new_axiom
+let gfp_div_gcd_recursion = new_axiom
    `!p : num -> num -> gfp -> gfp -> gfp -> bool.
       (!v x1 x2. p 1 v x1 x2 x1) /\
       (!u x1 x2. p u 1 x1 x2 x2) /\
@@ -975,17 +951,17 @@ let gfp_div_gcd_loop_recursion = new_axiom
       (!u v x1 x2 g.
          gcd u v = 1 /\ p u v x1 x2 g ==>
          p u (u + v) x1 (gfp_add x1 x2) g) ==>
-      (!u v x1 x2. gcd u v = 1 ==> p u v x1 x2 (gfp_div_gcd_loop u v x1 x2))`;;
+      (!u v x1 x2. gcd u v = 1 ==> p u v x1 x2 (gfp_div_gcd u v x1 x2))`;;
 *)
 
-let gfp_div_gcd_loop = prove
+let gfp_div_gcd_invariant = prove
   (`!u v x1 x2.
       gcd u v = 1 /\
       gfp_mult (num_to_gfp u) x2 = gfp_mult (num_to_gfp v) x1 ==>
-      (gfp_mult (num_to_gfp u) (gfp_div_gcd_loop u v x1 x2) = x1 /\
-       gfp_mult (num_to_gfp v) (gfp_div_gcd_loop u v x1 x2) = x2)`,
+      (gfp_mult (num_to_gfp u) (gfp_div_gcd u v x1 x2) = x1 /\
+       gfp_mult (num_to_gfp v) (gfp_div_gcd u v x1 x2) = x2)`,
    ONCE_REWRITE_TAC [IMP_CONJ] THEN
-   MATCH_MP_TAC gfp_div_gcd_loop_recursion THEN
+   MATCH_MP_TAC gfp_div_gcd_recursion THEN
    REWRITE_TAC [gfp_mult_left_one] THEN
    REPEAT CONJ_TAC THEN
    REPEAT GEN_TAC THEN
@@ -1018,25 +994,22 @@ let gfp_div_gcd_loop = prove
     STRIP_TAC THEN
     ASM_REWRITE_TAC []]);;
 
-export_thm gfp_div_gcd_loop;;
+export_thm gfp_div_gcd_invariant;;
 
 (*PARAMETRIC
-let gfp_div_gcd_loop = new_axiom
+let gfp_div_gcd_invariant = new_axiom
    `!u v x1 x2.
       gcd u v = 1 /\
       gfp_mult (num_to_gfp u) x2 = gfp_mult (num_to_gfp v) x1 ==>
-      (gfp_mult (num_to_gfp u) (gfp_div_gcd_loop u v x1 x2) = x1 /\
-       gfp_mult (num_to_gfp v) (gfp_div_gcd_loop u v x1 x2) = x2)`;;
+      (gfp_mult (num_to_gfp u) (gfp_div_gcd u v x1 x2) = x1 /\
+       gfp_mult (num_to_gfp v) (gfp_div_gcd u v x1 x2) = x2)`;;
 *)
 
 let gfp_div_gcd = prove
   (`!x y.
       ~(y = num_to_gfp 0) ==>
-      gfp_div_gcd x y = gfp_div x y`,
+      gfp_div_gcd (gfp_to_num y) oddprime x (num_to_gfp 0) = gfp_div x y`,
    REPEAT STRIP_TAC THEN
-   MP_TAC (SPECL [`x : gfp`; `y : gfp`] gfp_div_gcd_def) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN SUBST1_TAC THEN
    MP_TAC (SPECL [`y : gfp`; `x : gfp`] gfp_div_inv) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
@@ -1044,7 +1017,7 @@ let gfp_div_gcd = prove
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
    MP_TAC (SPECL [`gfp_to_num y`; `oddprime`;
-                  `x : gfp`; `num_to_gfp 0`] gfp_div_gcd_loop) THEN
+                  `x : gfp`; `num_to_gfp 0`] gfp_div_gcd_invariant) THEN
    ANTS_TAC THENL
    [REWRITE_TAC
       [gfp_mult_right_zero; num_to_gfp_oddprime; gfp_mult_left_zero] THEN
@@ -1067,7 +1040,7 @@ export_thm gfp_div_gcd;;
 let gfp_div_gcd = new_axiom
    `!x y.
       ~(y = num_to_gfp 0) ==>
-      gfp_div_gcd x y = gfp_div x y`;;
+      gfp_div_gcd (gfp_to_num y) oddprime x (num_to_gfp 0) = gfp_div x y`;;
 *)
 
 logfile_end ();;

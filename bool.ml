@@ -155,6 +155,11 @@ let CONJ_PAIR th =
   try CONJUNCT1 th,CONJUNCT2 th
   with Failure _ -> failwith "CONJ_PAIR: Not a conjunction";;
 
+let CONJ_TRIPLE th =
+  let (c1,c23) = CONJ_PAIR th in
+  let (c2,c3) = CONJ_PAIR c23 in
+  (c1,c2,c3);;
+
 let CONJUNCTS = striplist CONJ_PAIR;;
 
 (* ------------------------------------------------------------------------- *)

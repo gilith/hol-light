@@ -1,5 +1,5 @@
 (* ------------------------------------------------------------------------- *)
-(* A type of parse streams.                                                  *)
+(* Simple stream parsers.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "parser-stream-def";;
@@ -12,27 +12,51 @@ let stream_induct,stream_recursion = define_type
 export_thm stream_induct;;
 export_thm stream_recursion;;
 
-let case_stream_def = new_recursive_definition stream_recursion
-  `(!e b f. case_stream e b f Error = (e:B)) /\
-   (!e b f. case_stream e b f Eof = b) /\
-   (!e b f a s. case_stream e b f (Stream a s) = f (a:A) s)`;;
+let (case_stream_error,case_stream_eof,case_stream_stream) =
+  let def = new_recursive_definition stream_recursion
+    `(!e b f. case_stream e b f Error = (e:B)) /\
+     (!e b f. case_stream e b f Eof = b) /\
+     (!e b f a s. case_stream e b f (Stream a s) = f (a:A) s)` in
+  CONJ_TRIPLE def;;
 
-export_thm case_stream_def;;
+export_thm case_stream_error;;
+export_thm case_stream_eof;;
+export_thm case_stream_stream;;
 
-let length_stream_def = new_recursive_definition stream_recursion
-  `(length_stream Error = 0) /\
-   (length_stream Eof = 0) /\
-   (!(a:A) s. length_stream (Stream a s) = SUC (length_stream s))`;;
+let case_stream_def =
+  CONJ case_stream_error (CONJ case_stream_eof case_stream_stream);;
 
-export_thm length_stream_def;;
+let (length_stream_error,length_stream_eof,length_stream_stream) =
+  let def = new_recursive_definition stream_recursion
+    `(length_stream Error = 0) /\
+     (length_stream Eof = 0) /\
+     (!(a:A) s. length_stream (Stream a s) = SUC (length_stream s))` in
+  CONJ_TRIPLE def;;
 
-let is_proper_suffix_stream_def = new_recursive_definition stream_recursion
+export_thm length_stream_error;;
+export_thm length_stream_eof;;
+export_thm length_stream_stream;;
+
+let length_stream_def =
+  CONJ length_stream_error (CONJ length_stream_eof length_stream_stream);;
+
+let (is_proper_suffix_stream_error,
+     is_proper_suffix_stream_eof,
+     is_proper_suffix_stream_stream) =
+  let def = new_recursive_definition stream_recursion
   `(!s. is_proper_suffix_stream s Error = F) /\
    (!s. is_proper_suffix_stream s Eof = F) /\
    (!s a s'. is_proper_suffix_stream s (Stream (a:A) s') =
-      ((s = s') \/ is_proper_suffix_stream s s'))`;;
+      ((s = s') \/ is_proper_suffix_stream s s'))` in
+   CONJ_TRIPLE (REWRITE_RULE [] def);;
 
-export_thm is_proper_suffix_stream_def;;
+export_thm is_proper_suffix_stream_error;;
+export_thm is_proper_suffix_stream_eof;;
+export_thm is_proper_suffix_stream_stream;;
+
+let is_proper_suffix_stream_def =
+  CONJ is_proper_suffix_stream_error
+    (CONJ is_proper_suffix_stream_eof is_proper_suffix_stream_stream);;
 
 let is_suffix_stream_def = new_definition
   `!s s'.
@@ -41,22 +65,37 @@ let is_suffix_stream_def = new_definition
 
 export_thm is_suffix_stream_def;;
 
-let stream_to_list_def = new_recursive_definition stream_recursion
-  `(stream_to_list Error = NONE) /\
-   (stream_to_list Eof = SOME []) /\
-   (!a s. stream_to_list (Stream a s) =
-      case_option
-        NONE
-        (\l. SOME (CONS (a:A) l))
-        (stream_to_list s))`;;
+let (stream_to_list_error,
+     stream_to_list_eof,
+     stream_to_list_stream) =
+  let def = new_recursive_definition stream_recursion
+    `(stream_to_list Error = NONE) /\
+     (stream_to_list Eof = SOME []) /\
+     (!a s. stream_to_list (Stream a s) =
+        case_option
+          NONE
+          (\l. SOME (CONS (a:A) l))
+          (stream_to_list s))` in
+  CONJ_TRIPLE def;;
 
-export_thm stream_to_list_def;;
+export_thm stream_to_list_error;;
+export_thm stream_to_list_eof;;
+export_thm stream_to_list_stream;;
 
-let append_stream_def = new_recursive_definition list_RECURSION
-  `(!s. append_stream [] s = s) /\
-   (!h t s. append_stream (CONS h t) s = Stream (h:A) (append_stream t s))`;;
+let stream_to_list_def =
+  CONJ stream_to_list_error
+    (CONJ stream_to_list_eof stream_to_list_stream);;
 
-export_thm append_stream_def;;
+let (append_stream_nil,append_stream_cons) =
+  let def = new_recursive_definition list_RECURSION
+    `(!s. append_stream [] s = s) /\
+     (!h t s. append_stream (CONS h t) s = Stream (h:A) (append_stream t s))` in
+  CONJ_PAIR def;;
+
+export_thm append_stream_nil;;
+export_thm append_stream_cons;;
+
+let append_stream_def = CONJ append_stream_nil append_stream_cons;;
 
 let list_to_stream_def = new_definition
   `!(l : A list). list_to_stream l = append_stream l Eof`;;
@@ -69,9 +108,18 @@ let stream_cases = prove_cases_thm stream_induct;;
 
 export_thm stream_cases;;
 
-let stream_distinct = distinctness "stream";;
+let (stream_distinct_error_eof,
+     stream_distinct_error_stream,
+     stream_distinct_eof_stream) =
+    CONJ_TRIPLE (distinctness "stream");;
 
-export_thm stream_distinct;;
+export_thm stream_distinct_error_eof;;
+export_thm stream_distinct_error_stream;;
+export_thm stream_distinct_eof_stream;;
+
+let stream_distinct =
+    CONJ stream_distinct_error_eof
+      (CONJ stream_distinct_error_stream stream_distinct_eof_stream);;
 
 let stream_inj = injectivity "stream";;
 
@@ -268,17 +316,30 @@ let parser_exists = prove
    EXISTS_TAC `\(x:A) (s:A stream). (NONE : (B # A stream) option)` THEN
    REWRITE_TAC [is_parser_def; case_option_def]);;
 
-let parser_tybij =
-    new_type_definition "parser" ("mk_parser","dest_parser") parser_exists;;
+let (parser_abs_rep,parser_rep_abs) =
+  let tybij =
+    new_type_definition "parser" ("mk_parser","dest_parser") parser_exists in
+  CONJ_PAIR tybij;;
 
-export_thm parser_tybij;;
+export_thm parser_abs_rep;;
+export_thm parser_rep_abs;;
 
-let parse_def = new_recursive_definition stream_recursion
-  `(!p. parse (p : (A,B) parser) Error = NONE) /\
-   (!p. parse p Eof = NONE) /\
-   (!p a s. parse p (Stream a s) = dest_parser p a s)`;;
+let parser_tybij = CONJ parser_abs_rep parser_rep_abs;;
 
-export_thm parse_def;;
+let (parse_error,parse_eof,parse_stream) =
+  let def = new_recursive_definition stream_recursion
+    `(!p : (A,B) parser. parse p Error = NONE) /\
+     (!p : (A,B) parser. parse p Eof = NONE) /\
+     (!p : (A,B) parser. !a s. parse p (Stream a s) = dest_parser p a s)` in
+  CONJ_TRIPLE def;;
+
+export_thm parse_error;;
+export_thm parse_eof;;
+export_thm parse_stream;;
+
+let parse_def =
+  REWRITE_RULE [GSYM FORALL_AND_THM]
+    (CONJ parse_error (CONJ parse_eof parse_stream));;
 
 let parse_inverse_def = new_definition
   `!p e.
@@ -912,10 +973,21 @@ let parse_stream_exists = prove
    POP_ASSUM (fun th -> CONV_TAC (LAND_CONV (REWR_CONV th))) THEN
    REWRITE_TAC [case_stream_def]);;
 
-let parse_stream_def = new_specification ["parse_stream"]
-  (REWRITE_RULE [SKOLEM_THM] parse_stream_exists);;
+let (parse_stream_error,
+     parse_stream_eof,
+     parse_stream_stream) =
+  let def =
+    new_specification ["parse_stream"]
+    (REWRITE_RULE [SKOLEM_THM] parse_stream_exists) in
+  CONJ_TRIPLE (REWRITE_RULE [FORALL_AND_THM] def);;
 
-export_thm parse_stream_def;;
+export_thm parse_stream_error;;
+export_thm parse_stream_eof;;
+export_thm parse_stream_stream;;
+
+let parse_stream_def =
+  REWRITE_RULE [GSYM FORALL_AND_THM]
+    (CONJ parse_stream_error (CONJ parse_stream_eof parse_stream_stream));;
 
 logfile "parser-all-thm";;
 

@@ -17,15 +17,22 @@ let plane_exists = prove
    REWRITE_TAC [is_plane_def] THEN
    CONV_TAC byte_reduce_conv);;
 
-let plane_tybij =
-    new_type_definition "plane" ("mk_plane","dest_plane") plane_exists;;
+let (plane_abs_rep,plane_rep_abs) =
+  let tybij =
+    new_type_definition "plane" ("mk_plane","dest_plane") plane_exists in
+  CONJ_PAIR tybij;;
 
-export_thm plane_tybij;;
+export_thm plane_abs_rep;;
+export_thm plane_rep_abs;;
+
+let plane_tybij = CONJ plane_abs_rep plane_rep_abs;;
 
 (* Positions *)
 
-let is_position_def = new_definition
-  `!p. is_position (p : word16) = T`;;
+let is_position_def =
+  let def = new_definition
+    `!p. is_position (p : word16) = T` in
+  REWRITE_RULE [] def;;
 
 export_thm is_position_def;;
 
@@ -34,11 +41,16 @@ let position_exists = prove
    EXISTS_TAC `p : word16` THEN
    REWRITE_TAC [is_position_def]);;
 
-let position_tybij =
+let (position_abs_rep,position_rep_abs) =
+  let tybij =
     new_type_definition
-      "position" ("mk_position","dest_position") position_exists;;
+      "position" ("mk_position","dest_position") position_exists in
+  CONJ_PAIR (REWRITE_RULE [is_position_def] tybij);;
 
-export_thm position_tybij;;
+export_thm position_abs_rep;;
+export_thm position_rep_abs;;
+
+let position_tybij = CONJ position_abs_rep position_rep_abs;;
 
 (* Unicode characters *)
 
@@ -65,10 +77,16 @@ let unicode_exists = prove
    ASM_REWRITE_TAC [] THEN
    CONV_TAC byte_reduce_conv);;
 
-let unicode_tybij =
-    new_type_definition "unicode" ("mk_unicode","dest_unicode") unicode_exists;;
+let (unicode_abs_rep,unicode_rep_abs) =
+  let tybij =
+    new_type_definition
+      "unicode" ("mk_unicode","dest_unicode") unicode_exists in
+  CONJ_PAIR tybij;;
 
-export_thm unicode_tybij;;
+export_thm unicode_abs_rep;;
+export_thm unicode_rep_abs;;
+
+let unicode_tybij = CONJ unicode_abs_rep unicode_rep_abs;;
 
 logfile "char-thm";;
 
@@ -92,7 +110,7 @@ let dest_plane_cases = prove
 export_thm dest_plane_cases;;
 
 let position_cases = prove
-  (`!pos. ?w. is_position w /\ pos = mk_position w`,
+  (`!pos. ?w. pos = mk_position w`,
    GEN_TAC THEN
    EXISTS_TAC `dest_position pos` THEN
    REWRITE_TAC [position_tybij]);;
@@ -100,13 +118,12 @@ let position_cases = prove
 export_thm position_cases;;
 
 let dest_position_cases = prove
-  (`!pos. ?w. is_position w /\ pos = mk_position w /\ dest_position pos = w`,
+  (`!pos. ?w. pos = mk_position w /\ dest_position pos = w`,
    GEN_TAC THEN
    MP_TAC (SPEC `pos : position` position_cases) THEN
-   REWRITE_TAC [position_tybij] THEN
    STRIP_TAC THEN
    EXISTS_TAC `w : word16` THEN
-   ASM_REWRITE_TAC []);;
+   ASM_REWRITE_TAC [position_tybij]);;
 
 export_thm dest_position_cases;;
 
@@ -412,9 +429,11 @@ let decoder_encoder_inverse = prove
    STRIP_TAC THEN
    STRIP_TAC THEN
    bool_cases_tac `b = num_to_byte 0` THENL
-   [ASM_REWRITE_TAC [] THEN
+   [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [] THEN
     bool_cases_tac `b0 = num_to_byte 0 /\ ~byte_bit b1 7` THENL
-    [ASM_REWRITE_TAC [append_stream_def] THEN
+    [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+     ASM_REWRITE_TAC [append_stream_def] THEN
      REWRITE_TAC [parse_decoder; case_stream_def; decoder_parse_def] THEN
      ASM_REWRITE_TAC [LET_DEF; LET_END_DEF];
      ASM_REWRITE_TAC [] THEN
@@ -500,17 +519,14 @@ let decoder_encoder_inverse = prove
       DISCH_THEN MATCH_MP_TAC THEN
       CONJ_TAC THENL
       [PAT_ASSUM `is_unicode X` THEN
-       ASM_REWRITE_TAC [is_unicode_def] THEN
+       ASM_REWRITE_TAC [is_unicode_def; position_tybij] THEN
        PAT_ASSUM `is_plane X` THEN
-       ASM_REWRITE_TAC [plane_tybij] THEN
-       DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-       PAT_ASSUM `is_position X` THEN
-       ASM_REWRITE_TAC [position_tybij] THEN
+       REWRITE_TAC [plane_tybij] THEN
        DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
        bit_blast_tac THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
        bit_blast_tac THEN
-       ITAUT_TAC;
+       ASM_TAUT_TAC;
        ALL_TAC] THEN
       ONCE_REWRITE_TAC [COND_RAND] THEN
       ONCE_REWRITE_TAC [COND_RAND] THEN
@@ -520,18 +536,17 @@ let decoder_encoder_inverse = prove
        ALL_TAC] THEN
       DISCH_THEN MATCH_MP_TAC THEN
       PAT_ASSUM `is_unicode X` THEN
-      ASM_REWRITE_TAC [is_unicode_def] THEN
+      ASM_REWRITE_TAC [is_unicode_def; position_tybij] THEN
       PAT_ASSUM `is_plane X` THEN
       ASM_REWRITE_TAC [plane_tybij] THEN
-      DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-      PAT_ASSUM `is_position X` THEN
-      ASM_REWRITE_TAC [position_tybij] THEN
       DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
       bit_blast_tac THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
       bit_blast_tac THEN
-      ITAUT_TAC]];
+      ASM_TAUT_TAC]];
     ASM_REWRITE_TAC [] THEN
+    PAT_ASSUM `is_unicode X` THEN
+    DISCH_THEN (K ALL_TAC) THEN
     REWRITE_TAC [encode_cont3_def] THEN
     REPEAT (POP_ASSUM MP_TAC) THEN
     MP_TAC (SPEC `b : byte` byte_list_cases) THEN
@@ -579,7 +594,7 @@ let decoder_encoder_inverse = prove
     [PAT_ASSUM `is_plane X` THEN
      ASM_REWRITE_TAC [is_plane_def] THEN
      bit_blast_tac THEN
-     ITAUT_TAC;
+     ASM_TAUT_TAC;
      ALL_TAC] THEN
     AP_TERM_TAC THEN
     AP_THM_TAC THEN
@@ -591,7 +606,7 @@ let decoder_encoder_inverse = prove
     PAT_ASSUM `is_plane X` THEN
     ASM_REWRITE_TAC [is_plane_def] THEN
     bit_blast_tac THEN
-    ITAUT_TAC]);;
+    ASM_TAUT_TAC]);;
 
 export_thm decoder_encoder_inverse;;
 
@@ -687,15 +702,12 @@ let decoder_encoder_strong_inverse = prove
        bit_blast_tac THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
        bit_blast_tac THEN
-       CONV_TAC (RATOR_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+       CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
        ONCE_REWRITE_TAC [COND_RAND] THEN
        ONCE_REWRITE_TAC [COND_RAND] THEN
        REWRITE_TAC [case_option_def; option_distinct] THEN
-       KNOW_TAC `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d` THENL
-       [REWRITE_TAC [COND_EXPAND] THEN
-        ITAUT_TAC;
-        ALL_TAC] THEN
-       DISCH_THEN MATCH_MP_TAC THEN
+       MATCH_MP_TAC
+         (TAUT `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d`) THEN
        STRIP_TAC THEN
        REWRITE_TAC [option_inj; PAIR_EQ] THEN
        STRIP_TAC THEN
@@ -710,11 +722,11 @@ let decoder_encoder_strong_inverse = prove
        [SIMP_TAC [];
         ALL_TAC] THEN
        DISCH_THEN MATCH_MP_TAC THEN
-       REWRITE_TAC [GSYM (CONJUNCT2 unicode_tybij)] THEN
+       REWRITE_TAC [GSYM unicode_rep_abs] THEN
        KNOW_TAC
          `!x y z.
-            is_plane x /\ is_position y /\
-            (is_plane x /\ is_position y ==>
+            is_plane x /\
+            (is_plane x ==>
              is_unicode (mk_plane x, mk_position y) /\ z) ==>
             is_unicode (mk_plane x, mk_position y) /\ z` THENL
        [SIMP_TAC [];
@@ -723,36 +735,25 @@ let decoder_encoder_strong_inverse = prove
        CONJ_TAC THENL
        [REWRITE_TAC [is_plane_def] THEN
         bit_blast_tac THEN
-        POP_ASSUM MP_TAC THEN
-        MESON_TAC [];
+        ASM_TAUT_TAC;
         ALL_TAC] THEN
+       REWRITE_TAC [is_unicode_def; position_tybij] THEN
+       DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_tybij] th]) THEN
        CONJ_TAC THENL
-       [REWRITE_TAC [is_position_def];
-        ALL_TAC] THEN
-       REWRITE_TAC [is_unicode_def] THEN
-       DISCH_THEN
-         (fun th ->
-            let th' = REWRITE_RULE [plane_tybij; position_tybij] th in
-            REWRITE_TAC [th']) THEN
-       CONJ_TAC THENL
-       [bit_blast_tac THEN
-        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-        bit_blast_tac THEN
+       [REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
         DISJ1_TAC THEN
-        ASM_MESON_TAC [];
+        bit_blast_tac THEN
+        ASM_TAUT_TAC;
         ALL_TAC] THEN
        bit_blast_tac THEN
        REWRITE_TAC [] THEN
        bit_blast_tac THEN
-       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-       bit_blast_tac THEN
        ONCE_REWRITE_TAC [COND_RAND] THEN
        ONCE_REWRITE_TAC [COND_RATOR] THEN
        ONCE_REWRITE_TAC [COND_RAND] THEN
-       ONCE_REWRITE_TAC [COND_EXPAND] THEN
+       MATCH_MP_TAC (TAUT `~X /\ Z ==> (if X then Y else Z)`) THEN
        CONJ_TAC THENL
-       [DISJ1_TAC THEN
-        ASM_MESON_TAC [];
+       [ASM_TAUT_TAC;
         ALL_TAC] THEN
        REWRITE_TAC [encode_cont3_def] THEN
        bit_blast_tac THEN
@@ -805,24 +806,18 @@ let decoder_encoder_strong_inverse = prove
        bit_blast_tac THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
        bit_blast_tac THEN
-       CONV_TAC (RATOR_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+       CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
        ONCE_REWRITE_TAC [COND_RAND] THEN
        ONCE_REWRITE_TAC [COND_RAND] THEN
        REWRITE_TAC [case_option_def; option_distinct] THEN
-       KNOW_TAC `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d` THENL
-       [REWRITE_TAC [COND_EXPAND] THEN
-        ITAUT_TAC;
-        ALL_TAC] THEN
-       DISCH_THEN MATCH_MP_TAC THEN
+       MATCH_MP_TAC
+         (TAUT `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d`) THEN
        STRIP_TAC THEN
        ONCE_REWRITE_TAC [COND_RAND] THEN
        ONCE_REWRITE_TAC [COND_RAND] THEN
        REWRITE_TAC [case_option_def; option_distinct] THEN
-       KNOW_TAC `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d` THENL
-       [REWRITE_TAC [COND_EXPAND] THEN
-        ITAUT_TAC;
-        ALL_TAC] THEN
-       DISCH_THEN MATCH_MP_TAC THEN
+       MATCH_MP_TAC
+         (TAUT `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d`) THEN
        STRIP_TAC THEN
        REWRITE_TAC [option_inj; PAIR_EQ] THEN
        STRIP_TAC THEN
@@ -837,11 +832,11 @@ let decoder_encoder_strong_inverse = prove
        [SIMP_TAC [];
         ALL_TAC] THEN
        DISCH_THEN MATCH_MP_TAC THEN
-       REWRITE_TAC [GSYM (CONJUNCT2 unicode_tybij)] THEN
+       REWRITE_TAC [GSYM unicode_rep_abs] THEN
        KNOW_TAC
          `!x y z.
-            is_plane x /\ is_position y /\
-            (is_plane x /\ is_position y ==>
+            is_plane x /\
+            (is_plane x ==>
              is_unicode (mk_plane x, mk_position y) /\ z) ==>
             is_unicode (mk_plane x, mk_position y) /\ z` THENL
        [SIMP_TAC [];
@@ -851,17 +846,11 @@ let decoder_encoder_strong_inverse = prove
        [REWRITE_TAC [is_plane_def] THEN
         bit_blast_tac;
         ALL_TAC] THEN
+       REWRITE_TAC [is_unicode_def; position_tybij] THEN
+       DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_tybij] th]) THEN
        CONJ_TAC THENL
-       [REWRITE_TAC [is_position_def];
-        ALL_TAC] THEN
-       REWRITE_TAC [is_unicode_def] THEN
-       DISCH_THEN
-         (fun th ->
-            let th' = REWRITE_RULE [plane_tybij; position_tybij] th in
-            REWRITE_TAC [th']) THEN
-       CONJ_TAC THENL
-       [bit_blast_tac THEN
-        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+       [REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+        DISJ2_TAC THEN
         bit_blast_tac THEN
         ASM_TAUT_TAC;
         ALL_TAC] THEN
@@ -871,21 +860,17 @@ let decoder_encoder_strong_inverse = prove
        ONCE_REWRITE_TAC [COND_RAND] THEN
        ONCE_REWRITE_TAC [COND_RATOR] THEN
        ONCE_REWRITE_TAC [COND_RAND] THEN
-       ONCE_REWRITE_TAC [COND_EXPAND] THEN
+       MATCH_MP_TAC (TAUT `~X /\ Z ==> (if X then Y else Z)`) THEN
        CONJ_TAC THENL
-       [DISJ1_TAC THEN
-        ASM_TAUT_TAC;
+       [ASM_TAUT_TAC;
         ALL_TAC] THEN
-       DISJ2_TAC THEN
        ONCE_REWRITE_TAC [COND_RAND] THEN
        ONCE_REWRITE_TAC [COND_RATOR] THEN
        ONCE_REWRITE_TAC [COND_RAND] THEN
-       ONCE_REWRITE_TAC [COND_EXPAND] THEN
+       MATCH_MP_TAC (TAUT `~X /\ Z ==> (if X then Y else Z)`) THEN
        CONJ_TAC THENL
-       [DISJ1_TAC THEN
-        ASM_TAUT_TAC;
+       [ASM_TAUT_TAC;
         ALL_TAC] THEN
-       DISJ2_TAC THEN
        REWRITE_TAC [encode_cont2_def] THEN
        bit_blast_tac THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
@@ -918,15 +903,12 @@ let decoder_encoder_strong_inverse = prove
       bit_blast_tac THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
       bit_blast_tac THEN
-      CONV_TAC (RATOR_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+      CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
       ONCE_REWRITE_TAC [COND_RAND] THEN
       ONCE_REWRITE_TAC [COND_RAND] THEN
       REWRITE_TAC [case_option_def; option_distinct] THEN
-      KNOW_TAC `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d` THENL
-      [REWRITE_TAC [COND_EXPAND] THEN
-       ITAUT_TAC;
-       ALL_TAC] THEN
-      DISCH_THEN MATCH_MP_TAC THEN
+      MATCH_MP_TAC
+        (TAUT `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d`) THEN
       STRIP_TAC THEN
       REWRITE_TAC [option_inj; PAIR_EQ] THEN
       STRIP_TAC THEN
@@ -941,11 +923,11 @@ let decoder_encoder_strong_inverse = prove
       [SIMP_TAC [];
        ALL_TAC] THEN
       DISCH_THEN MATCH_MP_TAC THEN
-      REWRITE_TAC [GSYM (CONJUNCT2 unicode_tybij)] THEN
+      REWRITE_TAC [GSYM unicode_rep_abs] THEN
       KNOW_TAC
         `!x y z.
-           is_plane x /\ is_position y /\
-           (is_plane x /\ is_position y ==>
+           is_plane x /\
+           (is_plane x ==>
             is_unicode (mk_plane x, mk_position y) /\ z) ==>
            is_unicode (mk_plane x, mk_position y) /\ z` THENL
       [SIMP_TAC [];
@@ -955,17 +937,12 @@ let decoder_encoder_strong_inverse = prove
       [REWRITE_TAC [is_plane_def] THEN
        bit_blast_tac;
        ALL_TAC] THEN
+      REWRITE_TAC [is_unicode_def; position_tybij] THEN
+      DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_tybij] th]) THEN
       CONJ_TAC THENL
-      [REWRITE_TAC [is_position_def];
-       ALL_TAC] THEN
-      REWRITE_TAC [is_unicode_def] THEN
-      DISCH_THEN
-        (fun th ->
-           let th' = REWRITE_RULE [plane_tybij; position_tybij] th in
-           REWRITE_TAC [th']) THEN
-      CONJ_TAC THENL
-      [bit_blast_tac THEN
-       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+      [REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+       DISJ2_TAC THEN
+       DISJ1_TAC THEN
        bit_blast_tac;
        ALL_TAC] THEN
       bit_blast_tac THEN
@@ -974,12 +951,10 @@ let decoder_encoder_strong_inverse = prove
       ONCE_REWRITE_TAC [COND_RAND] THEN
       ONCE_REWRITE_TAC [COND_RATOR] THEN
       ONCE_REWRITE_TAC [COND_RAND] THEN
-      ONCE_REWRITE_TAC [COND_EXPAND] THEN
+      MATCH_MP_TAC (TAUT `~X /\ Z ==> (if X then Y else Z)`) THEN
       CONJ_TAC THENL
-      [DISJ1_TAC THEN
-       ASM_TAUT_TAC;
+      [ASM_TAUT_TAC;
        ALL_TAC] THEN
-      DISJ2_TAC THEN
       REWRITE_TAC [encode_cont1_def] THEN
       bit_blast_tac THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
@@ -1000,11 +975,11 @@ let decoder_encoder_strong_inverse = prove
     [SIMP_TAC [];
      ALL_TAC] THEN
     DISCH_THEN MATCH_MP_TAC THEN
-    REWRITE_TAC [GSYM (CONJUNCT2 unicode_tybij)] THEN
+    REWRITE_TAC [GSYM unicode_rep_abs] THEN
     KNOW_TAC
       `!x y z.
-         is_plane x /\ is_position y /\
-         (is_plane x /\ is_position y ==>
+         is_plane x /\
+         (is_plane x ==>
           is_unicode (mk_plane x, mk_position y) /\ z) ==>
          is_unicode (mk_plane x, mk_position y) /\ z` THENL
     [SIMP_TAC [];
@@ -1014,17 +989,12 @@ let decoder_encoder_strong_inverse = prove
     [REWRITE_TAC [is_plane_def] THEN
      bit_blast_tac;
      ALL_TAC] THEN
+    REWRITE_TAC [is_unicode_def; position_tybij] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_tybij] th]) THEN
     CONJ_TAC THENL
-    [REWRITE_TAC [is_position_def];
-     ALL_TAC] THEN
-    REWRITE_TAC [is_unicode_def] THEN
-    DISCH_THEN
-      (fun th ->
-         let th' = REWRITE_RULE [plane_tybij; position_tybij] th in
-         REWRITE_TAC [th']) THEN
-    CONJ_TAC THENL
-    [bit_blast_tac THEN
-     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+    [REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+     DISJ2_TAC THEN
+     DISJ1_TAC THEN
      bit_blast_tac;
      ALL_TAC] THEN
     bit_blast_tac THEN

@@ -240,9 +240,9 @@ const "HOLLight.byte_width" as "Data.Byte.width"
 # Data.Byte.Bits
 
 const "HOLLight.byte_bits_lte" as "Data.Byte.Bits.compare"
-const "HOLLight.byte_to_list" as "Data.Byte.Bits.fromWord"
+const "HOLLight.byte_to_list" as "Data.Byte.Bits.fromByte"
 const "HOLLight.is_byte_list" as "Data.Byte.Bits.normal"
-const "HOLLight.list_to_byte" as "Data.Byte.Bits.toWord"
+const "HOLLight.list_to_byte" as "Data.Byte.Bits.toByte"
 
 # Data.Char
 
@@ -400,7 +400,7 @@ const "HOLLight.list_to_word16" as "Data.Word16.Bits.toWord"
 type "HOLLight.gfp" as "Number.GF(p).gfp"
 
 const "HOLLight.gfp_add" as "Number.GF(p).+"
-const "HOLLight.gfp_inverse" as "Number.GF(p).inv"
+const "HOLLight.gfp_div" as "Number.GF(p)./"
 const "HOLLight.gfp_le" as "Number.GF(p).<="
 const "HOLLight.gfp_lt" as "Number.GF(p).<"
 const "HOLLight.gfp_neg" as "Number.GF(p).~"
@@ -408,6 +408,8 @@ const "HOLLight.gfp_mult" as "Number.GF(p).*"
 const "HOLLight.gfp_sub" as "Number.GF(p).-"
 const "HOLLight.gfp_equiv" as "Number.GF(p).equivalent"
 const "HOLLight.num_to_gfp" as "Number.GF(p).fromNatural"
+const "HOLLight.gfp_div_gcd" as "Number.GF(p).gcdDiv"
+const "HOLLight.gfp_inv" as "Number.GF(p).inv"
 const "HOLLight.oddprime" as "Number.GF(p).oddprime"
 const "HOLLight.gfp_to_num" as "Number.GF(p).toNatural"
 
