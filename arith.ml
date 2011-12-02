@@ -466,11 +466,17 @@ export_thm GT;;
 (* Maximum and minimum of natural numbers.                                   *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-order-min-max-def";;
+
 let MAX = new_definition
   `!m n. MAX m n = if m <= n then n else m`;;
 
+export_thm MAX;;
+
 let MIN = new_definition
   `!m n. MIN m n = if m <= n then m else n`;;
+
+export_thm MIN;;
 
 (* ------------------------------------------------------------------------- *)
 (* Step cases.                                                               *)
@@ -2076,24 +2082,10 @@ let LE_IMP =
   fun th -> GEN_ALL(MATCH_MP pth (SPEC_ALL th));;
 
 (* ------------------------------------------------------------------------- *)
-(* Maximum and minimum of natural numbers.                                   *)
+(* Binder for "the minimal n such that".                                     *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "natural-order-min-max-def";;
-
-let MAX = new_definition
-  `!m n. MAX m n = if m <= n then n else m`;;
-
-export_thm MAX;;
-
-let MIN = new_definition
-  `!m n. MIN m n = if m <= n then m else n`;;
-
-export_thm MIN;;
-
-(* ------------------------------------------------------------------------- *)
-(* Binder for "the minimal n such that".                                     *)
-(* ------------------------------------------------------------------------- *)
 
 parse_as_binder "minimal";;
 
