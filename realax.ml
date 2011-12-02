@@ -2038,8 +2038,12 @@ export_thm real_pow_suc;;
 
 let real_pow = CONJ real_pow_0 real_pow_suc;;
 
-let real_div = new_definition
-  `!x y. x / y = x * inv(y)`;;
+let real_div =
+  let def = new_definition
+    `!x y. x / y = x * inv(y)` in
+  prove
+  (`!x y. ~(y = &0) ==> x / y = x * inv(y)`,
+   REWRITE_TAC [def]);;
 
 export_thm real_div;;
 
