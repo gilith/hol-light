@@ -7,7 +7,7 @@
 (*              (c) Copyright, John Harrison 1998-2007                       *)
 (* ========================================================================= *)
 
-needs "nums.ml";;
+needs "recursion.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Note: all the following proofs are intuitionistic and intensional, except *)
@@ -164,29 +164,6 @@ let TWO = prove
  (`2 = SUC 1`,
   REWRITE_TAC [NUMERAL; REWRITE_RULE [NUMERAL] BIT1_DEF;
                REWRITE_RULE [NUMERAL] BIT0_DEF]);;
-
-(* ------------------------------------------------------------------------- *)
-(* Syntax operations on numerals.                                            *)
-(* ------------------------------------------------------------------------- *)
-
-let mk_numeral =
-  let Z = mk_const("_0",[])
-  and BIT0 = mk_const("BIT0",[])
-  and BIT1 = mk_const("BIT1",[])
-  and NUMERAL = mk_const("NUMERAL",[])
-  and zero = num_0 in
-  let rec mk_num n =
-    if n =/ num_0 then Z else
-    mk_comb((if mod_num n num_2 =/ num_0 then BIT0 else BIT1),
-            mk_num(quo_num n num_2)) in
-  fun n -> if n </ zero then failwith "mk_numeral: negative argument"
-           else mk_comb(NUMERAL,mk_num n);;
-
-let mk_small_numeral n = mk_numeral(Int n);;
-
-let dest_small_numeral t = Num.int_of_num(dest_numeral t);;
-
-let is_numeral = can dest_numeral;;
 
 (* ------------------------------------------------------------------------- *)
 (* One immediate consequence.                                                *)
@@ -484,6 +461,16 @@ let GT = new_definition
   `!m n. m > n <=> n < m`;;
 
 export_thm GT;;
+
+(* ------------------------------------------------------------------------- *)
+(* Maximum and minimum of natural numbers.                                   *)
+(* ------------------------------------------------------------------------- *)
+
+let MAX = new_definition
+  `!m n. MAX m n = if m <= n then n else m`;;
+
+let MIN = new_definition
+  `!m n. MIN m n = if m <= n then m else n`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Step cases.                                                               *)
@@ -1908,6 +1895,15 @@ let MOD_MULT_ADD = prove
 
 export_thm MOD_MULT_ADD;;
 
+let DIV_MULT_ADD = prove
+ (`!a b n. ~(n = 0) ==> (a * n + b) DIV n = a + b DIV n`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC DIV_UNIQ THEN
+  EXISTS_TAC `b MOD n` THEN
+  REWRITE_TAC[RIGHT_ADD_DISTRIB; GSYM ADD_ASSOC] THEN
+  ASM_MESON_TAC[DIVISION]);;
+
+export_thm DIV_MULT_ADD;;
+
 let MOD_ADD_MOD = prove
  (`!a b n. ~(n = 0) ==> ((a MOD n + b MOD n) MOD n = (a + b) MOD n)`,
   REPEAT STRIP_TAC THEN CONV_TAC SYM_CONV THEN MATCH_MP_TAC MOD_EQ THEN
@@ -2025,6 +2021,21 @@ let DIV_MOD = prove
   REWRITE_TAC[MULT_AC] THEN MESON_TAC[ADD_SYM; MULT_SYM; LE_ADD_RCANCEL]);;
 
 export_thm DIV_MOD;;
+
+let MOD_MOD_EXP_MIN = prove
+ (`!x p m n. ~(p = 0)
+             ==> x MOD (p EXP m) MOD (p EXP n) = x MOD (p EXP (MIN m n))`,
+  REPEAT STRIP_TAC THEN REWRITE_TAC[MIN] THEN
+  ASM_CASES_TAC `m:num <= n` THEN ASM_REWRITE_TAC[] THENL
+   [FIRST_X_ASSUM(CHOOSE_THEN SUBST1_TAC o GEN_REWRITE_RULE I [LE_EXISTS]) THEN
+    MATCH_MP_TAC MOD_LT THEN MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `p EXP m` THEN
+    ASM_SIMP_TAC[DIVISION; EXP_EQ_0; LE_EXP; LE_ADD];
+    SUBGOAL_THEN `?d. m = n + d` (CHOOSE_THEN SUBST1_TAC) THENL
+     [ASM_MESON_TAC[LE_CASES; LE_EXISTS];
+      ASM_SIMP_TAC[EXP_ADD; MOD_MOD; MULT_EQ_0; EXP_EQ_0]]]);;
+
+export_thm MOD_MOD_EXP_MIN;;
 
 (* ------------------------------------------------------------------------- *)
 (* Crude but useful conversion for cancelling down equations.                *)

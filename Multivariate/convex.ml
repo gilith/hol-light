@@ -548,6 +548,15 @@ let AFFINE_HULL_2 = prove
               VECTOR_ARITH `x - y = z:real^N <=> x = y + z`] THEN
   REWRITE_TAC[VECTOR_ADD_RID; REAL_ADD_RID] THEN SET_TAC[]);;
 
+let AFFINE_HULL_2_ALT = prove
+ (`!a b. affine hull {a,b} = {a + u % (b - a) | u IN (:real)}`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[AFFINE_HULL_2] THEN
+  MATCH_MP_TAC SUBSET_ANTISYM THEN REWRITE_TAC[SUBSET; FORALL_IN_GSPEC] THEN
+  REWRITE_TAC[IN_ELIM_THM; IN_UNIV; ARITH_RULE `u + v = &1 <=> v = &1 - u`;
+    FORALL_UNWIND_THM2; UNWIND_THM2] THEN
+  CONJ_TAC THEN X_GEN_TAC `u:real` THEN EXISTS_TAC `&1 - u` THEN
+  VECTOR_ARITH_TAC);;
+
 let AFFINE_HULL_3 = prove
  (`affine hull {a,b,c} =
     { u % a + v % b + w % c | u + v + w = &1}`,
@@ -1085,6 +1094,10 @@ let CONIC_SUMS = prove
  (`!s t. conic s /\ conic t ==> conic {x + y:real^N | x IN s /\ y IN t}`,
   REWRITE_TAC[conic; IN_ELIM_THM] THEN
   MESON_TAC[VECTOR_ADD_LDISTRIB]);;
+
+let CONIC_POSITIVE_ORTHANT = prove
+ (`conic {x:real^N | !i. 1 <= i /\ i <= dimindex(:N) ==> &0 <= x$i}`,
+  SIMP_TAC[conic; IN_ELIM_THM; REAL_LE_MUL; VECTOR_MUL_COMPONENT]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Affine dependence and consequential theorems (from Lars Schewe).          *)
@@ -2121,6 +2134,36 @@ let CONVEX_HULL_3_ALT = prove
   REWRITE_TAC[REAL_ARITH `x + y = &1 <=> y = &1 - x`; UNWIND_THM2] THEN
   REPEAT GEN_TAC THEN REPEAT(AP_TERM_TAC THEN ABS_TAC) THEN
   BINOP_TAC THENL [REAL_ARITH_TAC; VECTOR_ARITH_TAC]);;
+
+let CONVEX_HULL_SUMS = prove
+ (`!s t:real^N->bool.
+        convex hull {x + y | x IN s /\ y IN t} =
+        {x + y | x IN convex hull s /\ y IN convex hull t}`,
+  REPEAT GEN_TAC THEN MATCH_MP_TAC SUBSET_ANTISYM THEN CONJ_TAC THENL
+   [MATCH_MP_TAC HULL_MINIMAL THEN
+    SIMP_TAC[CONVEX_SUMS; CONVEX_CONVEX_HULL] THEN
+    REWRITE_TAC[SUBSET; FORALL_IN_GSPEC] THEN
+    REWRITE_TAC[IN_ELIM_THM] THEN MESON_TAC[HULL_INC];
+    REWRITE_TAC[SUBSET; FORALL_IN_GSPEC] THEN
+    MAP_EVERY X_GEN_TAC [`x:real^N`; `y:real^N`] THEN
+    GEN_REWRITE_TAC (LAND_CONV o ONCE_DEPTH_CONV) [CONVEX_HULL_INDEXED] THEN
+    REWRITE_TAC[IN_ELIM_THM; LEFT_AND_EXISTS_THM] THEN
+    REWRITE_TAC[RIGHT_AND_EXISTS_THM; LEFT_IMP_EXISTS_THM] THEN
+    MAP_EVERY X_GEN_TAC
+     [`k1:num`; `u1:num->real`; `x1:num->real^N`;
+      `k2:num`; `u2:num->real`; `x2:num->real^N`] THEN
+    STRIP_TAC THEN
+    SUBGOAL_THEN
+     `x + y:real^N =
+      vsum(1..k1) (\i. vsum(1..k2) (\j. u1 i % u2 j % (x1 i + x2 j)))`
+    SUBST1_TAC THENL
+     [REWRITE_TAC[VECTOR_ADD_LDISTRIB; VSUM_ADD_NUMSEG] THEN
+      ASM_SIMP_TAC[VSUM_LMUL; VSUM_RMUL; VECTOR_MUL_LID];
+      REWRITE_TAC[VSUM_LMUL] THEN MATCH_MP_TAC CONVEX_VSUM THEN
+      ASM_SIMP_TAC[FINITE_NUMSEG; CONVEX_CONVEX_HULL; IN_NUMSEG] THEN
+      REPEAT STRIP_TAC THEN MATCH_MP_TAC CONVEX_VSUM THEN
+      ASM_SIMP_TAC[FINITE_NUMSEG; CONVEX_CONVEX_HULL; IN_NUMSEG] THEN
+      REPEAT STRIP_TAC THEN MATCH_MP_TAC HULL_INC THEN ASM SET_TAC[]]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Relations among closure notions and corresponding hulls.                  *)
@@ -4254,6 +4297,64 @@ let CONTINUOUS_ON_CLOSEST_POINT = prove
  (`!s t. convex s /\ closed s /\ ~(s = {})
          ==> (closest_point s) continuous_on t`,
   MESON_TAC[CONTINUOUS_AT_IMP_CONTINUOUS_ON; CONTINUOUS_AT_CLOSEST_POINT]);;
+
+(* ------------------------------------------------------------------------- *)
+(* Relating closest points and orthogonality.                                *)
+(* ------------------------------------------------------------------------- *)
+
+let ANY_CLOSEST_POINT_AFFINE_ORTHOGONAL = prove
+ (`!s a b:real^N.
+        affine s /\ b IN s /\ (!x. x IN s ==> dist(a,b) <= dist(a,x))
+        ==> (!x. x IN s ==> orthogonal (x - b) (a - b))`,
+  REPEAT GEN_TAC THEN GEOM_ORIGIN_TAC `b:real^N` THEN
+  REWRITE_TAC[DIST_0; VECTOR_SUB_RZERO; orthogonal; dist; NORM_LE] THEN
+  REWRITE_TAC[DOT_LSUB] THEN REWRITE_TAC[DOT_RSUB] THEN
+  REWRITE_TAC[DOT_SYM; REAL_ARITH `a <= a - y - (y - x) <=> &2 * y <= x`] THEN
+  REPEAT STRIP_TAC THEN ASM_CASES_TAC `x:real^N = vec 0` THEN
+  ASM_REWRITE_TAC[DOT_RZERO] THEN FIRST_X_ASSUM(fun th ->
+   MP_TAC(SPEC `vec 0 + --((a dot x) / (x dot x)) % (x - vec 0:real^N)` th) THEN
+   MP_TAC(SPEC `vec 0 + (a dot x) / (x dot x) % (x - vec 0:real^N)` th)) THEN
+  ASM_SIMP_TAC[IN_AFFINE_ADD_MUL_DIFF] THEN
+  REWRITE_TAC[VECTOR_SUB_RZERO; VECTOR_ADD_LID; DOT_RMUL] THEN
+  REWRITE_TAC[DOT_LMUL; IMP_IMP] THEN DISCH_THEN(MP_TAC o MATCH_MP (REAL_ARITH
+   `&2 * x * a <= b * c * z /\ &2 * --x * a <= --b * --c * z
+    ==> &2 * abs(x * a) <= b * c * z`)) THEN
+  ONCE_REWRITE_TAC[GSYM CONTRAPOS_THM] THEN DISCH_TAC THEN
+  ASM_SIMP_TAC[REAL_NOT_LE; REAL_DIV_RMUL; DOT_EQ_0] THEN
+  MATCH_MP_TAC(REAL_ARITH `~(x = &0) ==> x < &2 * abs x`) THEN
+  RULE_ASSUM_TAC(REWRITE_RULE[GSYM DOT_EQ_0]) THEN
+  REPEAT(POP_ASSUM MP_TAC) THEN CONV_TAC REAL_FIELD);;
+
+let ORTHOGONAL_ANY_CLOSEST_POINT = prove
+ (`!s a b:real^N.
+        b IN s /\ (!x. x IN s ==> orthogonal (x - b) (a - b))
+        ==> (!x. x IN s ==> dist(a,b) <= dist(a,x))`,
+  REPEAT GEN_TAC THEN GEOM_ORIGIN_TAC `b:real^N` THEN
+  REWRITE_TAC[dist; NORM_LE; orthogonal; VECTOR_SUB_RZERO] THEN
+  SIMP_TAC[DOT_LSUB; DOT_RSUB; DOT_SYM] THEN
+  REWRITE_TAC[DOT_POS_LE; REAL_ARITH `a <= a - &0 - (&0 - x) <=> &0 <= x`]);;
+
+let CLOSEST_POINT_AFFINE_ORTHOGONAL = prove
+ (`!s a:real^N x.
+        affine s /\ ~(s = {}) /\ x IN s
+        ==> orthogonal (x - closest_point s a) (a - closest_point s a)`,
+  GEN_TAC THEN REWRITE_TAC[IMP_CONJ; RIGHT_FORALL_IMP_THM] THEN
+  DISCH_TAC THEN DISCH_TAC THEN GEN_TAC THEN
+  MATCH_MP_TAC ANY_CLOSEST_POINT_AFFINE_ORTHOGONAL THEN
+  ASM_REWRITE_TAC[] THEN MATCH_MP_TAC CLOSEST_POINT_EXISTS THEN
+  ASM_SIMP_TAC[CLOSED_AFFINE]);;
+
+let CLOSEST_POINT_AFFINE_ORTHOGONAL_EQ = prove
+ (`!s a b:real^N.
+        affine s /\ b IN s
+        ==> (closest_point s a = b <=>
+             !x. x IN s ==> orthogonal (x - b) (a - b))`,
+  REPEAT STRIP_TAC THEN EQ_TAC THENL
+   [ASM_MESON_TAC[CLOSEST_POINT_AFFINE_ORTHOGONAL; MEMBER_NOT_EMPTY];
+    DISCH_TAC THEN CONV_TAC SYM_CONV THEN
+    MATCH_MP_TAC CLOSEST_POINT_UNIQUE THEN
+    ASM_SIMP_TAC[CLOSED_AFFINE; AFFINE_IMP_CONVEX] THEN
+    MATCH_MP_TAC ORTHOGONAL_ANY_CLOSEST_POINT THEN ASM_REWRITE_TAC[]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Various point-to-set separating/supporting hyperplane theorems.           *)
