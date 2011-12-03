@@ -448,6 +448,8 @@ let WF_FALSE = prove
 (* Tail recursion.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "relation-natural-thm";;
+
 let WF_REC_TAIL = prove
  (`!p g h. ?(f : A -> B). !x. f x = if p x then f (g x) else h x`,
   let lemma1 = prove
