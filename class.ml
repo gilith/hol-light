@@ -162,12 +162,12 @@ export_thm SELECT_AX;;
 logfile "bool-class";;
 
 let EXISTS_THM = prove
- (`(?) = \P:A->bool. P ((@) P)`,
-  MATCH_MP_TAC EQ_EXT THEN BETA_TAC THEN X_GEN_TAC `P:A->bool` THEN
+ (`(?) = \p:A->bool. p ((@) p)`,
+  MATCH_MP_TAC EQ_EXT THEN BETA_TAC THEN X_GEN_TAC `p:A->bool` THEN
   GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [GSYM ETA_AX] THEN
   EQ_TAC THENL
    [DISCH_THEN(CHOOSE_THEN MP_TAC) THEN MATCH_ACCEPT_TAC SELECT_AX;
-    DISCH_TAC THEN EXISTS_TAC `((@) P):A` THEN POP_ASSUM ACCEPT_TAC]);;
+    DISCH_TAC THEN EXISTS_TAC `((@) p):A` THEN POP_ASSUM ACCEPT_TAC]);;
 
 export_thm EXISTS_THM;;
 
@@ -176,9 +176,9 @@ export_thm EXISTS_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let SELECT_RULE =
-  let P = `P:A->bool` in
+  let P = `p:A->bool` in
   let pth = prove
-   (`(?) (P:A->bool) ==> P((@) P)`,
+   (`(?) (p:A->bool) ==> p((@) p)`,
     SIMP_TAC[SELECT_AX; ETA_AX]) in
   fun th ->
     try let abs = rand(concl th) in
@@ -187,9 +187,9 @@ let SELECT_RULE =
     with Failure _ -> failwith "SELECT_RULE";;
 
 let SELECT_CONV =
-  let P = `P:A->bool` in
+  let P = `p:A->bool` in
   let pth = prove
-   (`(P:A->bool)((@) P) = (?) P`,
+   (`(p:A->bool)((@) p) = (?) p`,
     REWRITE_TAC[EXISTS_THM] THEN BETA_TAC THEN REFL_TAC) in
    fun tm ->
      try let is_epsok t = is_select t &
@@ -215,7 +215,7 @@ let SELECT_REFL = prove
 export_thm SELECT_REFL;;
 
 let SELECT_UNIQUE = prove
- (`!P x. (!y:A. P y = (y = x)) ==> ((@) P = x)`,
+ (`!p x. (!y:A. p y = (y = x)) ==> ((@) p = x)`,
   REPEAT STRIP_TAC THEN
   GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [GSYM ETA_AX] THEN
   ASM_REWRITE_TAC[SELECT_REFL]);;
@@ -344,8 +344,8 @@ extend_basic_rewrites [CONJUNCT1 NOT_CLAUSES];;
 (* ------------------------------------------------------------------------- *)
 
 let CCONTR =
-  let P = `P:bool` in
-  let pth = TAUT `(~P ==> F) ==> P` in
+  let P = `p:bool` in
+  let pth = TAUT `(~p ==> F) ==> p` in
   fun tm th ->
     try let tm' = mk_neg tm in
         MP (INST [tm,P] pth) (DISCH tm' th)
@@ -360,7 +360,7 @@ let CONTRAPOS_CONV =
     with Failure _ -> failwith "CONTRAPOS_CONV";;
 
 (* ------------------------------------------------------------------------- *)
-(* A classicalal "refutation" tactic.                                        *)
+(* A classical "refutation" tactic.                                          *)
 (* ------------------------------------------------------------------------- *)
 
 let REFUTE_THEN =
@@ -380,29 +380,29 @@ let REFUTE_THEN =
 logfile "bool-class";;
 
 let NOT_EXISTS_THM = prove
- (`!P. ~(?x:A. P x) <=> (!x. ~(P x))`,
+ (`!p. ~(?x:A. p x) <=> (!x. ~(p x))`,
   GEN_TAC THEN EQ_TAC THEN DISCH_TAC THENL
-   [GEN_TAC THEN DISCH_TAC THEN UNDISCH_TAC `~(?x:A. P x)` THEN
+   [GEN_TAC THEN DISCH_TAC THEN UNDISCH_TAC `~(?x:A. p x)` THEN
     REWRITE_TAC[] THEN EXISTS_TAC `x:A` THEN POP_ASSUM ACCEPT_TAC;
     DISCH_THEN(CHOOSE_THEN MP_TAC) THEN ASM_REWRITE_TAC[]]);;
 
 export_thm NOT_EXISTS_THM;;
 
 let EXISTS_NOT_THM = prove
- (`!P. (?x:A. ~(P x)) <=> ~(!x. P x)`,
+ (`!p. (?x:A. ~(p x)) <=> ~(!x. p x)`,
   ONCE_REWRITE_TAC[TAUT `(a <=> ~b) <=> (~a <=> b)`] THEN
   REWRITE_TAC[NOT_EXISTS_THM]);;
 
 export_thm EXISTS_NOT_THM;;
 
 let NOT_FORALL_THM = prove
- (`!P. ~(!x. P x) <=> (?x:A. ~(P x))`,
+ (`!p. ~(!x. p x) <=> (?x:A. ~(p x))`,
   MATCH_ACCEPT_TAC(GSYM EXISTS_NOT_THM));;
 
 export_thm NOT_FORALL_THM;;
 
 let FORALL_NOT_THM = prove
- (`!P. (!x. ~(P x)) <=> ~(?x:A. P x)`,
+ (`!p. (!x. ~(p x)) <=> ~(?x:A. p x)`,
   MATCH_ACCEPT_TAC(GSYM NOT_EXISTS_THM));;
 
 export_thm FORALL_NOT_THM;;
@@ -412,14 +412,14 @@ export_thm FORALL_NOT_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let FORALL_BOOL_THM = prove
-  (`!P. (!b. P b) <=> P T /\ P F`,
+  (`!p. (!b. p b) <=> p T /\ p F`,
    GEN_TAC THEN EQ_TAC THEN DISCH_TAC THEN ASM_REWRITE_TAC[] THEN
    GEN_TAC THEN BOOL_CASES_TAC `b:bool` THEN ASM_REWRITE_TAC[]);;
 
 export_thm FORALL_BOOL_THM;;
 
 let EXISTS_BOOL_THM = prove
- (`!P. (?b. P b) <=> P T \/ P F`,
+ (`!p. (?b. p b) <=> p T \/ p F`,
   GEN_TAC THEN MATCH_MP_TAC(TAUT `(~p <=> ~q) ==> (p <=> q)`) THEN
   REWRITE_TAC[DE_MORGAN_THM; NOT_EXISTS_THM; FORALL_BOOL_THM]);;
 
@@ -430,27 +430,27 @@ export_thm EXISTS_BOOL_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let LEFT_FORALL_OR_THM = prove
- (`!P Q. (!x:A. P x \/ Q) <=> (!x. P x) \/ Q`,
+ (`!p q. (!x:A. p x \/ q) <=> (!x. p x) \/ q`,
   REPEAT GEN_TAC THEN ONCE_REWRITE_TAC[TAUT `(a <=> b) <=> (~a <=> ~b)`] THEN
   REWRITE_TAC[NOT_FORALL_THM; DE_MORGAN_THM; LEFT_EXISTS_AND_THM]);;
 
 export_thm LEFT_FORALL_OR_THM;;
 
 let RIGHT_FORALL_OR_THM = prove
- (`!P Q. (!x:A. P \/ Q x) <=> P \/ (!x. Q x)`,
+ (`!p q. (!x:A. p \/ q x) <=> p \/ (!x. q x)`,
   REPEAT GEN_TAC THEN ONCE_REWRITE_TAC[TAUT `(a <=> b) <=> (~a <=> ~b)`] THEN
   REWRITE_TAC[NOT_FORALL_THM; DE_MORGAN_THM; RIGHT_EXISTS_AND_THM]);;
 
 export_thm RIGHT_FORALL_OR_THM;;
 
 let LEFT_OR_FORALL_THM = prove
- (`!P Q. (!x:A. P x) \/ Q <=> (!x. P x \/ Q)`,
+ (`!p q. (!x:A. p x) \/ q <=> (!x. p x \/ q)`,
   MATCH_ACCEPT_TAC(GSYM LEFT_FORALL_OR_THM));;
 
 export_thm LEFT_OR_FORALL_THM;;
 
 let RIGHT_OR_FORALL_THM = prove
- (`!P Q. P \/ (!x:A. Q x) <=> (!x. P \/ Q x)`,
+ (`!p q. p \/ (!x:A. q x) <=> (!x. p \/ q x)`,
   MATCH_ACCEPT_TAC(GSYM RIGHT_FORALL_OR_THM));;
 
 export_thm RIGHT_OR_FORALL_THM;;
@@ -460,27 +460,27 @@ export_thm RIGHT_OR_FORALL_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let LEFT_IMP_FORALL_THM = prove
- (`!P Q. ((!x:A. P x) ==> Q) <=> (?x. P x ==> Q)`,
+ (`!p q. ((!x:A. p x) ==> q) <=> (?x. p x ==> q)`,
   REPEAT GEN_TAC THEN ONCE_REWRITE_TAC[TAUT `(a <=> b) <=> (~a <=> ~b)`] THEN
   REWRITE_TAC[NOT_EXISTS_THM; NOT_IMP; LEFT_AND_FORALL_THM]);;
 
 export_thm LEFT_IMP_FORALL_THM;;
 
 let LEFT_EXISTS_IMP_THM = prove
- (`!P Q. (?x. P x ==> Q) <=> ((!x:A. P x) ==> Q)`,
+ (`!p q. (?x. p x ==> q) <=> ((!x:A. p x) ==> q)`,
   MATCH_ACCEPT_TAC(GSYM LEFT_IMP_FORALL_THM));;
 
 export_thm LEFT_EXISTS_IMP_THM;;
 
 let RIGHT_IMP_EXISTS_THM = prove
- (`!P Q. (P ==> ?x:A. Q x) <=> (?x:A. P ==> Q x)`,
+ (`!p q. (p ==> ?x:A. q x) <=> (?x:A. p ==> q x)`,
   REPEAT GEN_TAC THEN ONCE_REWRITE_TAC[TAUT `(a <=> b) <=> (~a <=> ~b)`] THEN
   REWRITE_TAC[NOT_EXISTS_THM; NOT_IMP; RIGHT_AND_FORALL_THM]);;
 
 export_thm RIGHT_IMP_EXISTS_THM;;
 
 let RIGHT_EXISTS_IMP_THM = prove
- (`!P Q. (?x:A. P ==> Q x) <=> (P ==> ?x:A. Q x)`,
+ (`!p q. (?x:A. p ==> q x) <=> (p ==> ?x:A. q x)`,
   MATCH_ACCEPT_TAC(GSYM RIGHT_IMP_EXISTS_THM));;
 
 export_thm RIGHT_EXISTS_IMP_THM;;
@@ -589,9 +589,9 @@ let TAUT =
 (* ------------------------------------------------------------------------- *)
 
 let MONO_COND = prove
- (`!b A B C D.
-     (A ==> B) /\ (C ==> D) ==>
-     (if b then A else C) ==> (if b then B else D)`,
+ (`!b p q r s.
+     (p ==> q) /\ (r ==> s) ==>
+     (if b then p else r) ==> (if b then q else s)`,
   REPEAT GEN_TAC THEN
   STRIP_TAC THEN BOOL_CASES_TAC `b:bool` THEN
   ASM_REWRITE_TAC[]);;
@@ -605,8 +605,8 @@ monotonicity_theorems := MONO_COND::(!monotonicity_theorems);;
 (* ------------------------------------------------------------------------- *)
 
 let COND_ELIM_THM = prove
- (`!P c x y.
-     (P:A->bool) (if c then x else y) <=> (c ==> P x) /\ (~c ==> P y)`,
+ (`!p c x y.
+     (p:A->bool) (if c then x else y) <=> (c ==> p x) /\ (~c ==> p y)`,
   REPEAT GEN_TAC THEN BOOL_CASES_TAC `c:bool` THEN REWRITE_TAC[]);;
 
 export_thm COND_ELIM_THM;;
@@ -630,9 +630,9 @@ let (COND_CASES_TAC :tactic) =
 logfile "bool-class";;
 
 let SKOLEM_THM = prove
- (`!P. (!x:A. ?y:B. P x y) <=> (?y. !x. P x (y x))`,
+ (`!p. (!x:A. ?y:B. p x y) <=> (?y. !x. p x (y x))`,
   REPEAT(STRIP_TAC ORELSE EQ_TAC) THENL
-   [EXISTS_TAC `\x:A. @y:B. P x y` THEN GEN_TAC THEN
+   [EXISTS_TAC `\x:A. @y:B. p x y` THEN GEN_TAC THEN
     BETA_TAC THEN CONV_TAC SELECT_CONV;
     EXISTS_TAC `(y:A->B) x`] THEN
   POP_ASSUM MATCH_ACCEPT_TAC);;
@@ -644,7 +644,7 @@ export_thm SKOLEM_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let UNIQUE_SKOLEM_ALT = prove
- (`!P:A->B->bool. (!x. ?!y. P x y) <=> ?f. !x y. P x y <=> (f x = y)`,
+ (`!p:A->B->bool. (!x. ?!y. p x y) <=> ?f. !x y. p x y <=> (f x = y)`,
   GEN_TAC THEN REWRITE_TAC[EXISTS_UNIQUE_ALT; SKOLEM_THM]);;
 
 export_thm UNIQUE_SKOLEM_ALT;;
@@ -654,7 +654,7 @@ export_thm UNIQUE_SKOLEM_ALT;;
 (* ------------------------------------------------------------------------- *)
 
 let UNIQUE_SKOLEM_THM = prove
- (`!P. (!x:A. ?!y:B. P x y) <=> (?!f. !x. P x (f x))`,
+ (`!p. (!x:A. ?!y:B. p x y) <=> (?!f. !x. p x (f x))`,
   GEN_TAC THEN REWRITE_TAC[EXISTS_UNIQUE_THM; SKOLEM_THM; FORALL_AND_THM] THEN
   EQ_TAC THEN DISCH_THEN(CONJUNCTS_THEN ASSUME_TAC) THEN
   ASM_REWRITE_TAC[] THENL
@@ -695,7 +695,7 @@ let COND_EQ_CLAUSE = prove
 logfile "bool-class";;
 
 let bool_INDUCT = prove
- (`!P. P F /\ P T ==> !x. P x`,
+ (`!p. p F /\ p T ==> !x. p x`,
   REPEAT STRIP_TAC THEN DISJ_CASES_TAC(SPEC `x:bool` BOOL_CASES_AX) THEN
   ASM_REWRITE_TAC[]);;
 

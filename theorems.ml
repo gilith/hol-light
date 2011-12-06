@@ -410,7 +410,7 @@ extend_basic_congs
 (* ------------------------------------------------------------------------- *)
 
 let EXISTS_UNIQUE_THM = prove
- (`!P. (?!x:A. P x) <=> (?x. P x) /\ (!x x'. P x /\ P x' ==> (x = x'))`,
+ (`!p. (?!x:A. p x) <=> (?x. p x) /\ (!x x'. p x /\ p x' ==> (x = x'))`,
   GEN_TAC THEN REWRITE_TAC[EXISTS_UNIQUE_DEF]);;
 
 export_thm EXISTS_UNIQUE_THM;;
@@ -439,7 +439,7 @@ export_thm EXISTS_UNIQUE_REFL;;
 (* ------------------------------------------------------------------------- *)
 
 let UNWIND_THM1 = prove
- (`!P (a:A). (?x. a = x /\ P x) <=> P a`,
+ (`!p (a:A). (?x. a = x /\ p x) <=> p a`,
   REPEAT GEN_TAC THEN EQ_TAC THENL
    [DISCH_THEN(CHOOSE_THEN (CONJUNCTS_THEN2 SUBST1_TAC ACCEPT_TAC));
     DISCH_TAC THEN EXISTS_TAC `a:A` THEN
@@ -449,14 +449,14 @@ let UNWIND_THM1 = prove
 export_thm UNWIND_THM1;;
 
 let UNWIND_THM2 = prove
- (`!P (a:A). (?x. x = a /\ P x) <=> P a`,
+ (`!p (a:A). (?x. x = a /\ p x) <=> p a`,
   REPEAT GEN_TAC THEN CONV_TAC(LAND_CONV(ONCE_DEPTH_CONV SYM_CONV)) THEN
   MATCH_ACCEPT_TAC UNWIND_THM1);;
 
 export_thm UNWIND_THM2;;
 
 let FORALL_UNWIND_THM2 = prove
- (`!P (a:A). (!x. x = a ==> P x) <=> P a`,
+ (`!p (a:A). (!x. x = a ==> p x) <=> p a`,
   REPEAT GEN_TAC THEN EQ_TAC THENL
    [DISCH_THEN(MP_TAC o SPEC `a:A`) THEN REWRITE_TAC[];
     DISCH_TAC THEN GEN_TAC THEN DISCH_THEN SUBST1_TAC THEN
@@ -465,7 +465,7 @@ let FORALL_UNWIND_THM2 = prove
 export_thm FORALL_UNWIND_THM2;;
 
 let FORALL_UNWIND_THM1 = prove
- (`!P (a:A). (!x. a = x ==> P x) <=> P a`,
+ (`!p (a:A). (!x. a = x ==> p x) <=> p a`,
   REPEAT GEN_TAC THEN CONV_TAC(LAND_CONV(ONCE_DEPTH_CONV SYM_CONV)) THEN
   MATCH_ACCEPT_TAC FORALL_UNWIND_THM2);;
 
@@ -476,13 +476,13 @@ export_thm FORALL_UNWIND_THM1;;
 (* ------------------------------------------------------------------------- *)
 
 let SWAP_FORALL_THM = prove
- (`!P:A->B->bool. (!x y. P x y) <=> (!y x. P x y)`,
+ (`!p:A->B->bool. (!x y. p x y) <=> (!y x. p x y)`,
   ITAUT_TAC);;
 
 export_thm SWAP_FORALL_THM;;
 
 let SWAP_EXISTS_THM = prove
- (`!P:A->B->bool. (?x y. P x y) <=> (?y x. P x y)`,
+ (`!p:A->B->bool. (?x y. p x y) <=> (?y x. p x y)`,
   ITAUT_TAC);;
 
 export_thm SWAP_EXISTS_THM;;
@@ -492,25 +492,25 @@ export_thm SWAP_EXISTS_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let FORALL_AND_THM = prove
- (`!P Q. (!x:A. P x /\ Q x) <=> (!x. P x) /\ (!x. Q x)`,
+ (`!p q. (!x:A. p x /\ q x) <=> (!x. p x) /\ (!x. q x)`,
   ITAUT_TAC);;
 
 export_thm FORALL_AND_THM;;
 
 let AND_FORALL_THM = prove
- (`!P Q. (!x. P x) /\ (!x. Q x) <=> (!x:A. P x /\ Q x)`,
+ (`!p q. (!x. p x) /\ (!x. q x) <=> (!x:A. p x /\ q x)`,
   ITAUT_TAC);;
 
 export_thm AND_FORALL_THM;;
 
 let LEFT_AND_FORALL_THM = prove
- (`!P Q. (!x:A. P x) /\ Q <=> (!x:A. P x /\ Q)`,
+ (`!p q. (!x:A. p x) /\ q <=> (!x:A. p x /\ q)`,
   ITAUT_TAC);;
 
 export_thm LEFT_AND_FORALL_THM;;
 
 let RIGHT_AND_FORALL_THM = prove
- (`!P Q. P /\ (!x:A. Q x) <=> (!x. P /\ Q x)`,
+ (`!p q. p /\ (!x:A. q x) <=> (!x. p /\ q x)`,
   ITAUT_TAC);;
 
 export_thm RIGHT_AND_FORALL_THM;;
@@ -520,25 +520,25 @@ export_thm RIGHT_AND_FORALL_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let EXISTS_OR_THM = prove
- (`!P Q. (?x:A. P x \/ Q x) <=> (?x. P x) \/ (?x. Q x)`,
+ (`!p q. (?x:A. p x \/ q x) <=> (?x. p x) \/ (?x. q x)`,
   ITAUT_TAC);;
 
 export_thm EXISTS_OR_THM;;
 
 let OR_EXISTS_THM = prove
- (`!P Q. (?x. P x) \/ (?x. Q x) <=> (?x:A. P x \/ Q x)`,
+ (`!p q. (?x. p x) \/ (?x. q x) <=> (?x:A. p x \/ q x)`,
   ITAUT_TAC);;
 
 export_thm OR_EXISTS_THM;;
 
 let LEFT_OR_EXISTS_THM = prove
- (`!P Q. (?x. P x) \/ Q <=> (?x:A. P x \/ Q)`,
+ (`!p q. (?x. p x) \/ q <=> (?x:A. p x \/ q)`,
   ITAUT_TAC);;
 
 export_thm LEFT_OR_EXISTS_THM;;
 
 let RIGHT_OR_EXISTS_THM = prove
- (`!P Q. P \/ (?x. Q x) <=> (?x:A. P \/ Q x)`,
+ (`!p q. p \/ (?x. q x) <=> (?x:A. p \/ q x)`,
   ITAUT_TAC);;
 
 export_thm RIGHT_OR_EXISTS_THM;;
@@ -548,37 +548,37 @@ export_thm RIGHT_OR_EXISTS_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let LEFT_EXISTS_AND_THM = prove
- (`!P Q. (?x:A. P x /\ Q) <=> (?x:A. P x) /\ Q`,
+ (`!p q. (?x:A. p x /\ q) <=> (?x:A. p x) /\ q`,
   ITAUT_TAC);;
 
 export_thm LEFT_EXISTS_AND_THM;;
 
 let RIGHT_EXISTS_AND_THM = prove
- (`!P Q. (?x:A. P /\ Q x) <=> P /\ (?x:A. Q x)`,
+ (`!p q. (?x:A. p /\ q x) <=> p /\ (?x:A. q x)`,
   ITAUT_TAC);;
 
 export_thm RIGHT_EXISTS_AND_THM;;
 
 let TRIV_EXISTS_AND_THM = prove
- (`!P Q. (?x:A. P /\ Q) <=> (?x:A. P) /\ (?x:A. Q)`,
+ (`!p q. (?x:A. p /\ q) <=> (?x:A. p) /\ (?x:A. q)`,
   ITAUT_TAC);;
 
 export_thm TRIV_EXISTS_AND_THM;;
 
 let LEFT_AND_EXISTS_THM = prove
- (`!P Q. (?x:A. P x) /\ Q <=> (?x:A. P x /\ Q)`,
+ (`!p q. (?x:A. p x) /\ q <=> (?x:A. p x /\ q)`,
   ITAUT_TAC);;
 
 export_thm LEFT_AND_EXISTS_THM;;
 
 let RIGHT_AND_EXISTS_THM = prove
- (`!P Q. P /\ (?x:A. Q x) <=> (?x:A. P /\ Q x)`,
+ (`!p q. p /\ (?x:A. q x) <=> (?x:A. p /\ q x)`,
   ITAUT_TAC);;
 
 export_thm RIGHT_AND_EXISTS_THM;;
 
 let TRIV_AND_EXISTS_THM = prove
- (`!P Q. (?x:A. P) /\ (?x:A. Q) <=> (?x:A. P /\ Q)`,
+ (`!p q. (?x:A. p) /\ (?x:A. q) <=> (?x:A. p /\ q)`,
   ITAUT_TAC);;
 
 export_thm TRIV_AND_EXISTS_THM;;
@@ -588,13 +588,13 @@ export_thm TRIV_AND_EXISTS_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let TRIV_FORALL_OR_THM = prove
- (`!P Q. (!x:A. P \/ Q) <=> (!x:A. P) \/ (!x:A. Q)`,
+ (`!p q. (!x:A. p \/ q) <=> (!x:A. p) \/ (!x:A. q)`,
   ITAUT_TAC);;
 
 export_thm TRIV_FORALL_OR_THM;;
 
 let TRIV_OR_FORALL_THM = prove
- (`!P Q. (!x:A. P) \/ (!x:A. Q) <=> (!x:A. P \/ Q)`,
+ (`!p q. (!x:A. p) \/ (!x:A. q) <=> (!x:A. p \/ q)`,
   ITAUT_TAC);;
 
 export_thm TRIV_OR_FORALL_THM;;
@@ -604,37 +604,37 @@ export_thm TRIV_OR_FORALL_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let RIGHT_IMP_FORALL_THM = prove
- (`!P Q. (P ==> !x:A. Q x) <=> (!x. P ==> Q x)`,
+ (`!p q. (p ==> !x:A. q x) <=> (!x. p ==> q x)`,
   ITAUT_TAC);;
 
 export_thm RIGHT_IMP_FORALL_THM;;
 
 let RIGHT_FORALL_IMP_THM = prove
- (`!P Q. (!x. P ==> Q x) <=> (P ==> !x:A. Q x)`,
+ (`!p q. (!x. p ==> q x) <=> (p ==> !x:A. q x)`,
   ITAUT_TAC);;
 
 export_thm RIGHT_FORALL_IMP_THM;;
 
 let LEFT_IMP_EXISTS_THM = prove
- (`!P Q. ((?x:A. P x) ==> Q) <=> (!x. P x ==> Q)`,
+ (`!p q. ((?x:A. p x) ==> q) <=> (!x. p x ==> q)`,
   ITAUT_TAC);;
 
 export_thm LEFT_IMP_EXISTS_THM;;
 
 let LEFT_FORALL_IMP_THM = prove
- (`!P Q. (!x. P x ==> Q) <=> ((?x:A. P x) ==> Q)`,
+ (`!p q. (!x. p x ==> q) <=> ((?x:A. p x) ==> q)`,
   ITAUT_TAC);;
 
 export_thm LEFT_FORALL_IMP_THM;;
 
 let TRIV_FORALL_IMP_THM = prove
- (`!P Q. (!x:A. P ==> Q) <=> ((?x:A. P) ==> (!x:A. Q))`,
+ (`!p q. (!x:A. p ==> q) <=> ((?x:A. p) ==> (!x:A. q))`,
   ITAUT_TAC);;
 
 export_thm TRIV_FORALL_IMP_THM;;
 
 let TRIV_EXISTS_IMP_THM = prove
- (`!P Q. (?x:A. P ==> Q) <=> ((!x:A. P) ==> (?x:A. Q))`,
+ (`!p q. (?x:A. p ==> q) <=> ((!x:A. p) ==> (?x:A. q))`,
   ITAUT_TAC);;
 
 export_thm TRIV_EXISTS_IMP_THM;;
@@ -644,7 +644,7 @@ export_thm TRIV_EXISTS_IMP_THM;;
 (* ------------------------------------------------------------------------- *)
 
 let EXISTS_UNIQUE_ALT = prove
- (`!P:A->bool. (?!x. P x) <=> (?x. !y. P y <=> (x = y))`,
+ (`!p:A->bool. (?!x. p x) <=> (?x. !y. p y <=> (x = y))`,
   GEN_TAC THEN REWRITE_TAC[EXISTS_UNIQUE_THM] THEN EQ_TAC THENL
    [DISCH_THEN(CONJUNCTS_THEN2 (X_CHOOSE_TAC `x:A`) ASSUME_TAC) THEN
     EXISTS_TAC `x:A` THEN GEN_TAC THEN EQ_TAC THENL
@@ -657,7 +657,7 @@ let EXISTS_UNIQUE_ALT = prove
 export_thm EXISTS_UNIQUE_ALT;;
 
 let EXISTS_UNIQUE = prove
- (`!P:A->bool. (?!x. P x) <=> (?x. P x /\ !y. P y ==> (y = x))`,
+ (`!p:A->bool. (?!x. p x) <=> (?x. p x /\ !y. p y ==> (y = x))`,
   GEN_TAC THEN REWRITE_TAC[EXISTS_UNIQUE_ALT] THEN
   AP_TERM_TAC THEN ABS_TAC THEN
   GEN_REWRITE_TAC (LAND_CONV o BINDER_CONV)
