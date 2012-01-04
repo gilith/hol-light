@@ -143,4 +143,34 @@ export_thm test_th;;
 
 logfile_end ();;
 
+(* ------------------------------------------------------------------------- *)
+(* Testing generation of theory theorems.                                    *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "example10";;
+
+let def1 = new_basic_definition `c1 = \f x. (f : A -> B) x`;;
+
+export_thm def1;;
+
+let (abs_rep1,rep_abs1) =
+    let th = prove
+      (`(\l. LENGTH (l : A list) = 0) []`,
+       REWRITE_TAC [LENGTH]) in
+    new_basic_type_definition "t1" ("a1","r1") th;;
+
+export_thm abs_rep1;;
+export_thm rep_abs1;;
+
+let (abs_rep2,rep_abs2) =
+    let th = prove
+      (`(\l. LENGTH (l : A list) = LENGTH ([] : B list)) []`,
+       REWRITE_TAC [LENGTH]) in
+    new_basic_type_definition "t2" ("a2","r2") th;;
+
+export_thm abs_rep2;;
+export_thm rep_abs2;;
+
+logfile_end ();;
+
 stop_logging ();;

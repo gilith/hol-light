@@ -317,7 +317,7 @@ let GEN_ALL th =
 logfile "bool-def";;
 
 let EXISTS_DEF = new_basic_definition
- `(?) = \P:A->bool. !q. (!x. P x ==> q) ==> q`;;
+ `(?) = \p:A->bool. !q. (!x. p x ==> q) ==> q`;;
 
 export_thm EXISTS_DEF;;
 
@@ -488,7 +488,7 @@ let CONTR =
 logfile "bool-def";;
 
 let EXISTS_UNIQUE_DEF = new_basic_definition
- `(?!) = \P:A->bool. ((?) P) /\ (!x y. P x /\ P y ==> x = y)`;;
+ `(?!) = \p:A->bool. ((?) p) /\ (!x y. p x /\ p y ==> x = y)`;;
 
 export_thm EXISTS_UNIQUE_DEF;;
 
