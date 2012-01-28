@@ -731,6 +731,130 @@ let SET_OF_LIST_REVERSE = prove
 export_thm SET_OF_LIST_REVERSE;;
 
 (* ------------------------------------------------------------------------- *)
+(* fold.                                                                     *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "list-fold-def";;
+
+let (foldr_nil,foldr_cons) =
+  let def = new_recursive_definition list_RECURSION
+    `(!f b. foldr (f : A -> B -> B) (b : B) ([] : A list) = b) /\
+     (!f b h t.
+        foldr (f : A -> B -> B) (b : B) (CONS (h : A) t) =
+        f h (foldr f b t))` in
+  CONJ_PAIR def;;
+
+export_thm foldr_nil;;
+export_thm foldr_cons;;
+
+let foldr_def = CONJ foldr_nil foldr_cons;;
+
+let foldl_def = new_definition
+  `!(f : B -> A -> B) b l.
+      foldl f b l = foldr (c_comb f) b (REVERSE l)`;;
+
+export_thm foldl_def;;
+
+logfile "list-fold-thm";;
+
+let foldr_with_cons = prove
+  (`!(l1 : A list) l2. foldr CONS l2 l1 = APPEND l1 l2`,
+   REPEAT STRIP_TAC THEN
+   SPEC_TAC (`l1 : A list`, `l1 : A list`) THEN
+   LIST_INDUCT_TAC THENL
+   [ASM_REWRITE_TAC [foldr_def; APPEND];
+    ASM_REWRITE_TAC [foldr_def; APPEND]]);;
+
+export_thm foldr_with_cons;;
+
+let foldr_with_cons_nil = prove
+  (`!(l : A list). foldr CONS [] l = l`,
+   REWRITE_TAC [foldr_with_cons; APPEND_NIL]);;
+
+export_thm foldr_with_cons_nil;;
+
+let foldr_append = prove
+  (`!(f : A -> B -> B) b l1 l2.
+      foldr f b (APPEND l1 l2) = foldr f (foldr f b l2) l1`,
+   REPEAT STRIP_TAC THEN
+   SPEC_TAC (`l1 : A list`, `l1 : A list`) THEN
+   LIST_INDUCT_TAC THENL
+   [ASM_REWRITE_TAC [foldr_def; APPEND];
+    ASM_REWRITE_TAC [foldr_def; APPEND]]);;
+
+export_thm foldr_append;;
+
+let foldr_append_assoc = prove
+  (`!g (f : A -> B -> B) b l1 l2.
+      (!s. g b s = s) /\
+      (!x s1 s2. g (f x s1) s2 = f x (g s1 s2)) ==>
+      (foldr f b (APPEND l1 l2) = g (foldr f b l1) (foldr f b l2))`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [foldr_append] THEN
+   SPEC_TAC (`l1 : A list`, `l1 : A list`) THEN
+   LIST_INDUCT_TAC THENL
+   [ASM_REWRITE_TAC [foldr_def];
+    ASM_REWRITE_TAC [foldr_def]]);;
+
+export_thm foldr_append_assoc;;
+
+let foldl_nil = prove
+  (`!(f : B -> A -> B) b. foldl f b [] = b`,
+   REWRITE_TAC [foldl_def; REVERSE; foldr_def]);;
+
+export_thm foldl_nil;;
+
+let foldl_cons = prove
+  (`!(f : B -> A -> B) b h t. foldl f b (CONS h t) = foldl f (f b h) t`,
+   REWRITE_TAC [foldl_def; REVERSE; foldr_append; foldr_def; c_comb]);;
+
+export_thm foldl_cons;;
+
+let foldl_with_cons = prove
+  (`!(l1 : A list) l2. foldl (c_comb CONS) l2 l1 = APPEND (REVERSE l1) l2`,
+   REWRITE_TAC [foldl_def; cc_eq_id; foldr_with_cons]);;
+
+export_thm foldl_with_cons;;
+
+let foldl_with_cons_nil = prove
+  (`!(l : A list). foldl (c_comb CONS) [] l = REVERSE l`,
+   REWRITE_TAC [foldl_with_cons; APPEND_NIL]);;
+
+export_thm foldl_with_cons_nil;;
+
+let foldr_reverse = prove
+  (`!(f : A -> B -> B) b l. foldr f b (REVERSE l) = foldl (c_comb f) b l`,
+   REWRITE_TAC [foldl_def; cc_eq_id]);;
+
+export_thm foldr_reverse;;
+
+let foldl_reverse = prove
+  (`!(f : B -> A -> B) b l. foldl f b (REVERSE l) = foldr (c_comb f) b l`,
+   REWRITE_TAC [foldl_def; REVERSE_REVERSE]);;
+
+export_thm foldl_reverse;;
+
+let foldl_append = prove
+  (`!(f : B -> A -> B) b l1 l2.
+      foldl f b (APPEND l1 l2) = foldl f (foldl f b l1) l2`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [foldl_def; REVERSE_APPEND; foldr_append]);;
+
+export_thm foldl_append;;
+
+let foldl_append_assoc = prove
+  (`!g (f : B -> A -> B) b l1 l2.
+      (!s. g s b = s) /\
+      (!s1 s2 x. g s1 (f s2 x) = f (g s1 s2) x) ==>
+      (foldl f b (APPEND l1 l2) = g (foldl f b l1) (foldl f b l2))`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [foldl_def; REVERSE_APPEND] THEN
+   MATCH_MP_TAC foldr_append_assoc THEN
+   ASM_REWRITE_TAC [c_comb]);;
+
+export_thm foldl_append_assoc;;
+
+(* ------------------------------------------------------------------------- *)
 (* nth.                                                                      *)
 (* ------------------------------------------------------------------------- *)
 

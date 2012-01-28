@@ -248,33 +248,39 @@ let derive_nonschematic_inductive_relations =
 logfile "bool-int";;
 
 let MONO_AND =
-    ITAUT `!A B C D. (A ==> B) /\ (C ==> D) ==> (A /\ C ==> B /\ D)`;;
+    ITAUT
+      `!p1 p2 q1 q2.
+         (p1 ==> p2) /\ (q1 ==> q2) ==> (p1 /\ q1 ==> p2 /\ q2)`;;
 
 export_thm MONO_AND;;
 
 let MONO_OR =
-    ITAUT `!A B C D. (A ==> B) /\ (C ==> D) ==> (A \/ C ==> B \/ D)`;;
+    ITAUT
+      `!p1 p2 q1 q2.
+         (p1 ==> p2) /\ (q1 ==> q2) ==> (p1 \/ q1 ==> p2 \/ q2)`;;
 
 export_thm MONO_OR;;
 
 let MONO_IMP =
-    ITAUT `!A B C D. (B ==> A) /\ (C ==> D) ==> ((A ==> C) ==> (B ==> D))`;;
+    ITAUT
+      `!p1 p2 q1 q2.
+         (p2 ==> p1) /\ (q1 ==> q2) ==> ((p1 ==> q1) ==> (p2 ==> q2))`;;
 
 export_thm MONO_IMP;;
 
-let MONO_NOT = ITAUT `!A B. (B ==> A) ==> (~A ==> ~B)`;;
+let MONO_NOT = ITAUT `!p q. (q ==> p) ==> (~p ==> ~q)`;;
 
 export_thm MONO_NOT;;
 
 let MONO_FORALL = prove
- (`!P Q. (!x:A. P x ==> Q x) ==> ((!x. P x) ==> (!x. Q x))`,
+ (`!p q. (!x:A. p x ==> q x) ==> ((!x. p x) ==> (!x. q x))`,
   REPEAT STRIP_TAC THEN FIRST_ASSUM MATCH_MP_TAC THEN
   ASM_REWRITE_TAC[]);;
 
 export_thm MONO_FORALL;;
 
 let MONO_EXISTS = prove
- (`!P Q. (!x:A. P x ==> Q x) ==> ((?x. P x) ==> (?x. Q x))`,
+ (`!p q. (!x:A. p x ==> q x) ==> ((?x. p x) ==> (?x. q x))`,
   REPEAT GEN_TAC THEN
   DISCH_TAC THEN DISCH_THEN(X_CHOOSE_TAC `x:A`) THEN
   EXISTS_TAC `x:A` THEN FIRST_ASSUM MATCH_MP_TAC THEN
