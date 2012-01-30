@@ -23,14 +23,23 @@ let SAT_TAC =
     REPEAT (CONJ_TAC ORELSE EQ_TAC) THEN
     W sat;;
 
-(* Byte addition *)
+(* Natural number addition *)
 
-logfile "map-reduce-byte-sum";;
+let natural_sum_def = new_definition
+  `natural_sum = foldl (+) 0`;;
+
+let natural_sum_parallel = prove
+  (`!l1 l2.
+      natural_sum (APPEND l1 l2) = natural_sum l1 + natural_sum l2`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [natural_sum_def] THEN
+   MATCH_MP_TAC foldl_append_assoc THEN
+   REWRITE_TAC [ADD_ASSOC; ADD_CLAUSES]);;
+
+(* Byte addition *)
 
 let byte_sum_def = new_definition
   `byte_sum = foldl byte_add (num_to_byte 0)`;;
-
-export_thm byte_sum_def;;
 
 let byte_sum_parallel = prove
   (`!l1 l2.
@@ -40,11 +49,7 @@ let byte_sum_parallel = prove
    MATCH_MP_TAC foldl_append_assoc THEN
    REWRITE_TAC [byte_add_assoc; byte_add_right_zero]);;
 
-export_thm byte_sum_parallel;;
-
 (* Multiplying 3x3 bit matrices: the SAT problem *)
-
-logfile "map-reduce-bit3x3-sat";;
 
 let bit3x3_sat_goal =
 `((~(a11 /\ ~(a11' /\ a11'' <=> ~(a12' /\ a21'' <=> a13' /\ a31'')) <=>
@@ -102,9 +107,16 @@ let bit3x3_sat_goal =
     ~(~(a31 /\ a12' <=> ~(a32 /\ a22' <=> a33 /\ a32')) /\ a23'' <=>
       ~(a31 /\ a13' <=> ~(a32 /\ a23' <=> a33 /\ a33')) /\ a33'')))`;;
 
+(*** Already logged: don't need to do it again
+
+logfile "map-reduce-bit3x3-sat";;
+
 let bit3x3_sat_thm = prove (bit3x3_sat_goal, SAT_TAC);;
 
 export_thm bit3x3_sat_thm;;
+***)
+
+let bit3x3_sat_thm = prove (bit3x3_sat_goal, CHEAT_TAC);;
 
 (* Multiplying 3x3 bit matrices: correctness *)
 
