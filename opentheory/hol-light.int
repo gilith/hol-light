@@ -45,6 +45,8 @@ const "HOLLight.concat" as "Data.List.concat"
 const "HOLLight.drop" as "Data.List.drop"
 const "HOLLight.EX" as "Data.List.exists"
 const "HOLLight.FILTER" as "Data.List.filter"
+const "HOLLight.foldl" as "Data.List.foldl"
+const "HOLLight.foldr" as "Data.List.foldr"
 const "HOLLight.list_of_set" as "Data.List.fromSet"
 const "HOLLight.HD" as "Data.List.head"
 const "HOLLight.interval" as "Data.List.interval"
@@ -98,10 +100,14 @@ const "HOLLight.one" as "Data.Unit.()"
 
 # Function
 
+const "HOLLight.c_comb" as "Function.c"
 const "HOLLight.I" as "Function.id"
-const "HOLLight.o" as "Function.o"
 const "HOLLight.ONE_ONE" as "Function.injective"
+const "HOLLight.k_comb" as "Function.k"
+const "HOLLight.o" as "Function.o"
+const "HOLLight.s_comb" as "Function.s"
 const "HOLLight.ONTO" as "Function.surjective"
+const "HOLLight.w_comb" as "Function.w"
 
 # Number
 
@@ -213,6 +219,21 @@ const "HOLLight.NUMERAL" as "Unwanted.id"
 ###############################################################################
 # The HOL Light example theories.
 ###############################################################################
+
+# Bit
+
+const "HOLLight.bit_add" as "Bit.+"
+const "HOLLight.bit_mult" as "Bit.*"
+
+# Bit3
+
+const "HOLLight.bit3_dot" as "Bit3.dot"
+
+# Bit3x3
+
+const "HOLLight.bit3x3_mult" as "Bit3x3.*"
+const "HOLLight.bit3x3_identity" as "Bit3x3.identity"
+const "HOLLight.bit3x3_product" as "Bit3x3.product"
 
 # Data
 

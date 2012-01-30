@@ -71,12 +71,23 @@ let I_THM = prove
 
 export_thm I_THM;;
 
-let I_O_ID = prove
- (`!f:A->B. (I o f = f) /\ (f o I = f)`,
+let I_O = prove
+ (`!f:A->B. I o f = f`,
   REPEAT STRIP_TAC THEN
   REWRITE_TAC[FUN_EQ_THM; o_DEF; I_THM]);;
 
-export_thm I_O_ID;;
+export_thm I_O;;
+
+let O_I = prove
+ (`!f:A->B. f o I = f`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC[FUN_EQ_THM; o_DEF; I_THM]);;
+
+export_thm O_I;;
+
+let I_O_ID = prove
+ (`!f:A->B. (I o f = f) /\ (f o I = f)`,
+  REWRITE_TAC [I_O; O_I]);;
 
 let k_comb = prove
  (`!(x:A) (y:B). k_comb x y = x`,

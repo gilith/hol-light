@@ -29,8 +29,7 @@ loads "opentheory/examples/char.ml";;
 (* Memory safety for the H interface *)
 loads "opentheory/examples/h.ml";;
 
-(* Map reduce example
+(* Map reduce example *)
 loads "opentheory/examples/map-reduce.ml";;
-*)
 
 stop_logging ();;
