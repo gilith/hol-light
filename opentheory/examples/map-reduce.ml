@@ -2,7 +2,7 @@
 (* Map reduce.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-(* Random tactic for splitting deeply nested pairs *)
+(* Custom tactic for splitting deeply nested pairs *)
 
 let split_pair_tac =
     let split (_,g) =
@@ -107,16 +107,11 @@ let bit3x3_sat_goal =
     ~(~(a31 /\ a12' <=> ~(a32 /\ a22' <=> a33 /\ a32')) /\ a23'' <=>
       ~(a31 /\ a13' <=> ~(a32 /\ a23' <=> a33 /\ a33')) /\ a33'')))`;;
 
-(*** Already logged: don't need to do it again
-
 logfile "map-reduce-bit3x3-sat";;
 
 let bit3x3_sat_thm = prove (bit3x3_sat_goal, SAT_TAC);;
 
 export_thm bit3x3_sat_thm;;
-***)
-
-let bit3x3_sat_thm = prove (bit3x3_sat_goal, CHEAT_TAC);;
 
 (* Multiplying 3x3 bit matrices: correctness *)
 
@@ -227,7 +222,7 @@ let bit3x3_product_parallel = prove
 
 export_thm bit3x3_product_parallel;;
 
-(*** TOO BIG FOR PROOF RECORDING :-(
+(*** TOO BIG FOR PROOF LOGGING :-(
 
 (* Multiplying 4x4 bit matrices: the SAT problem *)
 

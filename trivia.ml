@@ -161,7 +161,7 @@ let one_axiom = prove
 export_thm one_axiom;;
 
 let one_INDUCT = prove
- (`!P. P one ==> !x. P x`,
+ (`!p. p one ==> !x. p x`,
   ONCE_REWRITE_TAC[one] THEN REWRITE_TAC[]);;
 
 export_thm one_INDUCT;;
