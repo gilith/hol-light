@@ -81,16 +81,16 @@ let REP_ABS_PAIR = prove
 parse_as_infix (",",(14,"right"));;
 
 let COMMA_DEF = new_definition
- `(x:A),(y:B) = ABS_prod(mk_pair x y)`;;
+ `!x y. (x:A),(y:B) = ABS_prod(mk_pair x y)`;;
 
 let FST_DEF = new_definition
- `FST (p:A#B) = @x. ?y. p = x,y`;;
+ `!xy. FST (xy:A#B) = @x. ?y. xy = (x,y)`;;
 
 let SND_DEF = new_definition
- `SND (p:A#B) = @y. ?x. p = x,y`;;
+ `!xy. SND (xy:A#B) = @y. ?x. xy = (x,y)`;;
 
 let PAIR_EQ = prove
- (`!(x:A) (y:B) a b. (x,y = a,b) <=> (x = a) /\ (y = b)`,
+ (`!(x:A) (y:B) a b. (x,y) = (a,b) <=> (x = a) /\ (y = b)`,
   REPEAT GEN_TAC THEN EQ_TAC THENL
    [REWRITE_TAC[COMMA_DEF] THEN
     DISCH_THEN(MP_TAC o AP_TERM `REP_prod:A#B->A->B->bool`) THEN
@@ -101,9 +101,9 @@ let PAIR_EQ = prove
 export_thm PAIR_EQ;;
 
 let PAIR_SURJECTIVE = prove
- (`!p:A#B. ?x y. p = x,y`,
+ (`!xy:A#B. ?x y. xy = x,y`,
   GEN_TAC THEN REWRITE_TAC[COMMA_DEF] THEN
-  MP_TAC(SPEC `REP_prod p :A->B->bool` (CONJUNCT2 prod_tybij)) THEN
+  MP_TAC(SPEC `REP_prod xy :A->B->bool` (CONJUNCT2 prod_tybij)) THEN
   REWRITE_TAC[CONJUNCT1 prod_tybij] THEN
   DISCH_THEN(X_CHOOSE_THEN `a:A` (X_CHOOSE_THEN `b:B` MP_TAC)) THEN
   DISCH_THEN(MP_TAC o AP_TERM `ABS_prod:(A->B->bool)->A#B`) THEN
@@ -135,10 +135,10 @@ export_thm SND;;
 logfile "pair-thm";;
 
 let PAIR = prove
- (`!x:A#B. FST x,SND x = x`,
+ (`!xy:A#B. (FST xy, SND xy) = xy`,
   GEN_TAC THEN
   (X_CHOOSE_THEN `a:A` (X_CHOOSE_THEN `b:B` SUBST1_TAC)
-     (SPEC `x:A#B` PAIR_SURJECTIVE)) THEN
+     (SPEC `xy:A#B` PAIR_SURJECTIVE)) THEN
   REWRITE_TAC[FST; SND]);;
 
 export_thm PAIR;;

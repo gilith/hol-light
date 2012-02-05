@@ -100,14 +100,14 @@ const "HOLLight.one" as "Data.Unit.()"
 
 # Function
 
-const "HOLLight.c_comb" as "Function.c"
+const "HOLLight.c_comb" as "Function.C"
 const "HOLLight.I" as "Function.id"
 const "HOLLight.ONE_ONE" as "Function.injective"
-const "HOLLight.k_comb" as "Function.k"
+const "HOLLight.k_comb" as "Function.K"
 const "HOLLight.o" as "Function.o"
-const "HOLLight.s_comb" as "Function.s"
+const "HOLLight.s_comb" as "Function.S"
 const "HOLLight.ONTO" as "Function.surjective"
-const "HOLLight.w_comb" as "Function.w"
+const "HOLLight.w_comb" as "Function.W"
 
 # Number
 
