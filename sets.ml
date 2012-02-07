@@ -2025,7 +2025,6 @@ let SIMPLE_IMAGE = prove
 export_thm SIMPLE_IMAGE;;
 
 let SIMPLE_IMAGE_GEN = prove
-<<<<<<< .merge_file_HHeVm7
  (`!p (f : A -> B). {f x | p x} = IMAGE f {x | p x}`,
   REWRITE_TAC [EXTENSION; IN_IMAGE; IN_ELIM_THM] THEN
   REPEAT (STRIP_TAC ORELSE EQ_TAC) THENL
@@ -2037,10 +2036,6 @@ let SIMPLE_IMAGE_GEN = prove
    ASM_REWRITE_TAC []]);;
 
 export_thm SIMPLE_IMAGE_GEN;;
-=======
- (`!f P. {f x | P x} = IMAGE f {x | P x}`,
-  SET_TAC[]);;
->>>>>>> .merge_file_5YvLK1
 
 let IMAGE_UNIONS = prove
  (`!(f : A -> B) s. IMAGE f (UNIONS s) = UNIONS (IMAGE (IMAGE f) s)`,
@@ -2462,8 +2457,16 @@ let UNIONS_INTERS = prove
 export_thm UNIONS_INTERS;;
 
 let DIFF_UNIONS = prove
- (`!s t. UNIONS s DIFF t = UNIONS {x DIFF t | x IN s}`,
-  REWRITE_TAC[UNIONS_GSPEC] THEN SET_TAC[]);;
+ (`!s (t : A set). UNIONS s DIFF t = UNIONS {x DIFF t | x IN s}`,
+  REPEAT GEN_TAC THEN
+  GEN_REWRITE_TAC I [EXTENSION] THEN
+  GEN_TAC THEN
+  REWRITE_TAC [UNIONS_GSPEC; IN_ELIM] THEN
+  REWRITE_TAC [IN_UNIONS; IN_DIFF] THEN
+  BOOL_CASES_TAC `(x : A) IN t` THEN
+  REWRITE_TAC []);;
+
+export_thm DIFF_UNIONS;;
 
 let INTERS_OVER_UNIONS = prove
  (`!(f:A->((B set) set)) s.

@@ -633,6 +633,28 @@ let SET_OF_LIST_FILTER = prove
 
 export_thm SET_OF_LIST_FILTER;;
 
+let ALL_FILTER = prove
+ (`!p q (l : A list). ALL p (FILTER q l) <=> ALL (\x. q x ==> p x) l`,
+  GEN_TAC THEN
+  GEN_TAC THEN
+  LIST_INDUCT_TAC THEN
+  REWRITE_TAC [ALL; FILTER] THEN
+  COND_CASES_TAC THEN
+  ASM_REWRITE_TAC [ALL]);;
+
+export_thm ALL_FILTER;;
+
+let EX_FILTER = prove
+ (`!p q (l : A list). EX p (FILTER q l) <=> EX (\x. q x /\ p x) l`,
+  GEN_TAC THEN
+  GEN_TAC THEN
+  LIST_INDUCT_TAC THEN
+  REWRITE_TAC [EX; FILTER] THEN
+  COND_CASES_TAC THEN
+  ASM_REWRITE_TAC [EX]);;
+
+export_thm EX_FILTER;;
+
 (* ------------------------------------------------------------------------- *)
 (* Last.                                                                     *)
 (* ------------------------------------------------------------------------- *)
@@ -729,6 +751,14 @@ let SET_OF_LIST_REVERSE = prove
   MATCH_ACCEPT_TAC INSERT_UNION_SING);;
 
 export_thm SET_OF_LIST_REVERSE;;
+
+let MAP_REVERSE = prove
+ (`!(f : A -> B) l. REVERSE (MAP f l) = MAP f (REVERSE l)`,
+  GEN_TAC THEN
+  LIST_INDUCT_TAC THEN
+  ASM_REWRITE_TAC [MAP; REVERSE; MAP_APPEND]);;
+
+export_thm MAP_REVERSE;;
 
 (* ------------------------------------------------------------------------- *)
 (* fold.                                                                     *)
@@ -1694,22 +1724,6 @@ let nub_idempotent = prove
    REWRITE_TAC [nub_def; REVERSE_REVERSE; setify_idempotent]);;
 
 export_thm nub_idempotent;;
-
-let EL_MAP = prove
- (`!f n l. n < LENGTH l ==> EL n (MAP f l) = f(EL n l)`,
-  GEN_TAC THEN INDUCT_TAC THEN LIST_INDUCT_TAC THEN
-  ASM_REWRITE_TAC[LENGTH; CONJUNCT1 LT; LT_0; EL; HD; TL; MAP; LT_SUC]);;
-
-let MAP_REVERSE = prove
- (`!f l. REVERSE(MAP f l) = MAP f (REVERSE l)`,
-  GEN_TAC THEN LIST_INDUCT_TAC THEN
-  ASM_REWRITE_TAC[MAP; REVERSE; MAP_APPEND]);;
-
-let ALL_FILTER = prove
- (`!P Q l:A list. ALL P (FILTER Q l) <=> ALL (\x. Q x ==> P x) l`,
-  GEN_TAC THEN GEN_TAC THEN
-  LIST_INDUCT_TAC THEN REWRITE_TAC[ALL; FILTER] THEN
-  COND_CASES_TAC THEN ASM_REWRITE_TAC[ALL]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Syntax.                                                                   *)
