@@ -757,6 +757,14 @@ export_thm foldl_def;;
 
 logfile "list-fold-thm";;
 
+let foldr_suc = prove
+  (`!l : A list. !k. foldr (\x n. SUC n) k l = LENGTH l + k`,
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [foldr_nil; LENGTH; ADD_CLAUSES];
+    ASM_REWRITE_TAC [foldr_cons; LENGTH; ADD_CLAUSES]]);;
+
+export_thm foldr_suc;;
+
 let foldr_with_cons = prove
   (`!(l1 : A list) l2. foldr CONS l2 l1 = APPEND l1 l2`,
    REPEAT STRIP_TAC THEN
@@ -809,6 +817,12 @@ let foldl_cons = prove
    REWRITE_TAC [foldl_def; REVERSE; foldr_append; foldr_def; c_comb]);;
 
 export_thm foldl_cons;;
+
+let foldl_suc = prove
+  (`!l : A list. !k. foldl (\n x. SUC n) k l = LENGTH l + k`,
+   REWRITE_TAC [foldl_def; c_lambda; foldr_suc; LENGTH_REVERSE]);;
+
+export_thm foldl_suc;;
 
 let foldl_with_cons = prove
   (`!(l1 : A list) l2. foldl (c_comb CONS) l2 l1 = APPEND (REVERSE l1) l2`,
@@ -1680,6 +1694,22 @@ let nub_idempotent = prove
    REWRITE_TAC [nub_def; REVERSE_REVERSE; setify_idempotent]);;
 
 export_thm nub_idempotent;;
+
+let EL_MAP = prove
+ (`!f n l. n < LENGTH l ==> EL n (MAP f l) = f(EL n l)`,
+  GEN_TAC THEN INDUCT_TAC THEN LIST_INDUCT_TAC THEN
+  ASM_REWRITE_TAC[LENGTH; CONJUNCT1 LT; LT_0; EL; HD; TL; MAP; LT_SUC]);;
+
+let MAP_REVERSE = prove
+ (`!f l. REVERSE(MAP f l) = MAP f (REVERSE l)`,
+  GEN_TAC THEN LIST_INDUCT_TAC THEN
+  ASM_REWRITE_TAC[MAP; REVERSE; MAP_APPEND]);;
+
+let ALL_FILTER = prove
+ (`!P Q l:A list. ALL P (FILTER Q l) <=> ALL (\x. Q x ==> P x) l`,
+  GEN_TAC THEN GEN_TAC THEN
+  LIST_INDUCT_TAC THEN REWRITE_TAC[ALL; FILTER] THEN
+  COND_CASES_TAC THEN ASM_REWRITE_TAC[ALL]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Syntax.                                                                   *)

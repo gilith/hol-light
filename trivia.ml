@@ -125,6 +125,12 @@ let cc_eq_id = prove
 
 export_thm cc_eq_id;;
 
+let c_lambda = prove
+  (`!(f : A -> B -> C). c_comb (\a b. f a b) = \b a. f a b`,
+   REWRITE_TAC [c_comb_def]);;
+
+export_thm c_lambda;;
+
 (* ------------------------------------------------------------------------- *)
 (* The theory "1" (a 1-element type).                                        *)
 (* ------------------------------------------------------------------------- *)

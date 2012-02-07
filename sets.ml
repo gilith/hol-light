@@ -2025,6 +2025,7 @@ let SIMPLE_IMAGE = prove
 export_thm SIMPLE_IMAGE;;
 
 let SIMPLE_IMAGE_GEN = prove
+<<<<<<< .merge_file_HHeVm7
  (`!p (f : A -> B). {f x | p x} = IMAGE f {x | p x}`,
   REWRITE_TAC [EXTENSION; IN_IMAGE; IN_ELIM_THM] THEN
   REPEAT (STRIP_TAC ORELSE EQ_TAC) THENL
@@ -2036,6 +2037,10 @@ let SIMPLE_IMAGE_GEN = prove
    ASM_REWRITE_TAC []]);;
 
 export_thm SIMPLE_IMAGE_GEN;;
+=======
+ (`!f P. {f x | P x} = IMAGE f {x | P x}`,
+  SET_TAC[]);;
+>>>>>>> .merge_file_5YvLK1
 
 let IMAGE_UNIONS = prove
  (`!(f : A -> B) s. IMAGE f (UNIONS s) = UNIONS (IMAGE (IMAGE f) s)`,
@@ -2455,6 +2460,10 @@ let UNIONS_INTERS = prove
      NOT_IMP]);;
 
 export_thm UNIONS_INTERS;;
+
+let DIFF_UNIONS = prove
+ (`!s t. UNIONS s DIFF t = UNIONS {x DIFF t | x IN s}`,
+  REWRITE_TAC[UNIONS_GSPEC] THEN SET_TAC[]);;
 
 let INTERS_OVER_UNIONS = prove
  (`!(f:A->((B set) set)) s.
@@ -5294,44 +5303,39 @@ export_thm BIJECTIVE_LEFT_RIGHT_INVERSE;;
 
 logfile "function-thm";;
 
-let FUNCTION_FACTORS_RIGHT = prove
- (`!(f : A -> C) (g : B -> C). (!x. ?y. g(y) = f(x)) <=> ?h. f = g o h`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [FUN_EQ_THM; o_THM; GSYM SKOLEM_THM] THEN
-  CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
-  REFL_TAC);;
-
-export_thm FUNCTION_FACTORS_RIGHT;;
-
-let FUNCTION_FACTORS_LEFT = prove
- (`!(f : A -> C) (g : A -> B).
-     (!x y. (g x = g y) ==> (f x = f y)) <=> ?h. f = h o g`,
+let FUNCTION_FACTORS_LEFT_GEN = prove
+ (`!p (f : A -> C) (g : A -> B).
+     (!x y. p x /\ p y /\ g x = g y ==> f x = f y) <=>
+     ?h. !x. p x ==> f x = h (g x)`,
   REPEAT GEN_TAC THEN
   SUBGOAL_THEN
-   `!h. ((f : A -> C) = h o (g : A -> B)) <=> !y x. (y = g x) ==> (h y = f x)`
+   `!h.
+      (!x. p x ==> (f : A -> C) x = h ((g : A -> B) x)) <=>
+      !y x. p x /\ y = g x ==> h y = f x`
    (fun th -> REWRITE_TAC [th]) THENL
   [GEN_TAC THEN
-   REWRITE_TAC [FUN_EQ_THM; o_THM] THEN
    EQ_TAC THENL
    [REPEAT STRIP_TAC THEN
     FIRST_X_ASSUM SUBST_VAR_TAC THEN
     MATCH_MP_TAC EQ_SYM THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
     FIRST_ASSUM MATCH_ACCEPT_TAC;
     REPEAT STRIP_TAC THEN
     MATCH_MP_TAC EQ_SYM THEN
     FIRST_X_ASSUM MATCH_MP_TAC THEN
-    REFL_TAC];
+    ASM_REWRITE_TAC []];
    REWRITE_TAC [GSYM SKOLEM_THM] THEN
    EQ_TAC THENL
    [REPEAT STRIP_TAC THEN
-    EXISTS_TAC `(f : A -> C) (@z. y = (g : A -> B) z)` THEN
+    EXISTS_TAC `(f : A -> C) (@z. p z /\ y = (g : A -> B) z)` THEN
     REPEAT STRIP_TAC THEN
     FIRST_X_ASSUM SUBST_VAR_TAC THEN
     FIRST_X_ASSUM MATCH_MP_TAC THEN
-    MATCH_MP_TAC EQ_SYM THEN
+    ASM_REWRITE_TAC [] THEN
+    CONV_TAC (RAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
     CONV_TAC SELECT_CONV THEN
     EXISTS_TAC `x : A` THEN
-    REFL_TAC;
+    ASM_REWRITE_TAC [];
     REPEAT STRIP_TAC THEN
     FIRST_X_ASSUM (MP_TAC o SPEC `(g : A -> B) x`) THEN
     STRIP_TAC THEN
@@ -5339,11 +5343,37 @@ let FUNCTION_FACTORS_LEFT = prove
       (fun th ->
          MP_TAC (SPEC `x : A` th) THEN
          MP_TAC (SPEC `y : A` th)) THEN
-     ASM_REWRITE_TAC [] THEN
-     DISCH_THEN SUBST_VAR_TAC THEN
-     MATCH_ACCEPT_TAC EQ_SYM]]);;
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST_VAR_TAC THEN
+    MATCH_ACCEPT_TAC EQ_SYM]]);;
+
+export_thm FUNCTION_FACTORS_LEFT_GEN;;
+
+let FUNCTION_FACTORS_LEFT = prove
+ (`!(f : A -> C) (g : A -> B).
+     (!x y. g x = g y ==> f x = f y) <=> ?h. f = h o g`,
+  REWRITE_TAC [FUN_EQ_THM; o_THM;
+    GSYM (REWRITE_RULE [] (ISPEC `\ (x:A). T` FUNCTION_FACTORS_LEFT_GEN))]);;
 
 export_thm FUNCTION_FACTORS_LEFT;;
+
+let FUNCTION_FACTORS_RIGHT_GEN = prove
+ (`!p (f : A -> C) (g : B -> C).
+     (!x. p x ==> ?y. g y = f x) <=>
+     ?h. !x. p x ==> f x = g (h x)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [GSYM SKOLEM_THM; RIGHT_IMP_EXISTS_THM] THEN
+  CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+  REFL_TAC);;
+
+export_thm FUNCTION_FACTORS_RIGHT_GEN;;
+
+let FUNCTION_FACTORS_RIGHT = prove
+ (`!(f : A -> C) (g : B -> C). (!x. ?y. g(y) = f(x)) <=> ?h. f = g o h`,
+  REWRITE_TAC [FUN_EQ_THM; o_THM;
+    GSYM (REWRITE_RULE [] (ISPEC `\ (x:A). T` FUNCTION_FACTORS_RIGHT_GEN))]);;
+
+export_thm FUNCTION_FACTORS_RIGHT;;
 
 let SURJECTIVE_FORALL_THM = prove
  (`!(f:A->B). (!y. ?x. f x = y) <=> (!P. (!x. P(f x)) <=> (!y. P y))`,
