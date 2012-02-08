@@ -74,12 +74,17 @@ type log_state =
    | Ready_logging
    | Active_logging of out_channel;;
 
+let log_env () =
+    try (let r = Sys.getenv "OPENTHEORY_LOGGING" in
+         if r = "0" then 0 else 2)
+    with Not_found -> 1;;
+
 let log_state =
     let initial_log_state =
-        (try (let _ = Sys.getenv "OPENTHEORY_STDLIB" in
-              let () = report "Logging the OpenTheory standard library" in
-              Ready_logging)
-         with Not_found -> Not_logging) in
+        let l = log_env () in
+        if l < 2 then Not_logging else
+        let () = report "Logging the OpenTheory standard library" in
+        Ready_logging in
     ref initial_log_state;;
 
 let log_raw s =
@@ -569,7 +574,10 @@ let start_logging () =
     match (!log_state) with
       Not_logging ->
         let () = reset_articles () in
-        let () = log_state := Ready_logging in
+        let new_log_state =
+            let l = log_env () in
+            if l = 0 then Not_logging else Ready_logging in
+        let () = log_state := new_log_state in
         ()
     | _ -> ();;
 

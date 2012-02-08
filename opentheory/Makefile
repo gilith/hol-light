@@ -70,7 +70,7 @@ clean:
 standard-theories:
 	$(MAKE) clean
 	$(MAKE) theory-interpretations
-	cd .. && OPENTHEORY_STDLIB=1 opentheory/scripts/capture
+	cd .. && OPENTHEORY_LOGGING=1 opentheory/scripts/capture
 
 ###############################################################################
 # Example theories.
