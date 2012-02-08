@@ -1,5 +1,3 @@
-let _ = new_definition `!x y. K x y = x`;;
-
 let thm_to_article h th =
   let () = start_logging_to h in
   let () = export_thm(th ()) in

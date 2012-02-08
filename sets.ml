@@ -5548,7 +5548,7 @@ let INJECTIVE_ON_IMAGE = prove
    FIRST_X_ASSUM (MP_TAC o SPECL [`(x:A) INSERT EMPTY`;
                                   `(y:A) INSERT EMPTY`]) THEN
    REWRITE_TAC [IN_SING] THEN
-   MATCH_MP_TAC (TAUT `(X /\ (Y ==> Z)) ==> ((X ==> Y) ==> Z)`) THEN
+   MATCH_MP_TAC (TAUT `(x /\ (y ==> z)) ==> ((x ==> y) ==> z)`) THEN
    REPEAT STRIP_TAC THENL
    [ASM_REWRITE_TAC [];
     ASM_REWRITE_TAC [];
@@ -5559,8 +5559,8 @@ let INJECTIVE_ON_IMAGE = prove
     REWRITE_TAC []];
    REPEAT STRIP_TAC THEN
    FIRST_X_ASSUM (MP_TAC o SPEC `(f : A -> B) x`) THEN
-   MATCH_MP_TAC (TAUT `(Y ==> W /\ (X ==> Z)) /\ (Z ==> X /\ (W ==> Y)) ==>
-                       ((W <=> X) ==> (Y <=> Z))`) THEN
+   MATCH_MP_TAC (TAUT `(y ==> w /\ (x ==> z)) /\ (z ==> x /\ (w ==> y)) ==>
+                       ((w <=> x) ==> (y <=> z))`) THEN
    CONJ_TAC THENL
    [STRIP_TAC THEN
     CONJ_TAC THENL

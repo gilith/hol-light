@@ -17,37 +17,41 @@ logfile "function-def";;
 
 parse_as_infix ("o",(26,"right"));;
 
-let o_DEF = new_definition
- `!f g. (o) (f:B->C) g = \x:A. f(g(x))`;;
+let o_PRIM_DEF = new_definition
+ `(o) = \ (f : B -> C) g (x : A). f (g x)`;;
 
-export_thm o_DEF;;
+export_thm o_PRIM_DEF;;
 
 let I_DEF = new_definition
- `I = \x:A. x`;;
+ `I = \ (x:A). x`;;
 
 export_thm I_DEF;;
 
-let k_comb_def = new_definition
- `k_comb = \ (x:A) (y:B). x`;;
+let K_DEF = new_definition
+ `K = \ (x:A) (y:B). x`;;
 
-export_thm k_comb_def;;
+export_thm K_DEF;;
 
-let s_comb_def = new_definition
- `s_comb = \ (f : A -> B -> C) (g : A -> B) (x:A). (f x) (g x)`;;
+let S_DEF = new_definition
+ `S = \ (f : A -> B -> C) (g : A -> B) (x:A). (f x) (g x)`;;
 
-export_thm s_comb_def;;
+export_thm S_DEF;;
 
-let c_comb_def = new_definition
- `c_comb = \ (f : A -> B -> C) (x:B) (y:A). f y x`;;
+let C_DEF = new_definition
+ `C = \ (f : A -> B -> C) (x:B) (y:A). f y x`;;
 
-export_thm c_comb_def;;
+export_thm C_DEF;;
 
-let w_comb_def = new_definition
- `w_comb = \ (f : A -> A -> B) (x:A). f x x`;;
+let W_DEF = new_definition
+ `W = \ (f : A -> A -> B) (x:A). f x x`;;
 
-export_thm w_comb_def;;
+export_thm W_DEF;;
 
 logfile "function-thm";;
+
+let o_DEF = prove
+ (`!f g. (o) (f:B->C) g = \x:A. f(g(x))`,
+  REWRITE_TAC [o_PRIM_DEF]);;
 
 let o_THM = prove
  (`!f:B->C. !g:A->B. !x:A. (f o g) x = f(g(x))`,
@@ -89,47 +93,41 @@ let I_O_ID = prove
  (`!f:A->B. (I o f = f) /\ (f o I = f)`,
   REWRITE_TAC [I_O; O_I]);;
 
-let k_comb = prove
- (`!(x:A) (y:B). k_comb x y = x`,
-  REWRITE_TAC [k_comb_def]);;
+let K_THM = prove
+ (`!(x:A) (y:B). K x y = x`,
+  REWRITE_TAC [K_DEF]);;
 
-export_thm k_comb;;
+export_thm K_THM;;
 
-let s_comb = prove
- (`!(f : A -> B -> C) (g : A -> B) (x:A). s_comb f g x = (f x) (g x)`,
-  REWRITE_TAC [s_comb_def]);;
+let S_THM = prove
+ (`!(f : A -> B -> C) (g : A -> B) (x:A). S f g x = (f x) (g x)`,
+  REWRITE_TAC [S_DEF]);;
 
-export_thm s_comb;;
+export_thm S_THM;;
 
-let c_comb = prove
- (`!(f : A -> B -> C) (x:B) (y:A). c_comb f x y = f y x`,
-  REWRITE_TAC [c_comb_def]);;
+let C_THM = prove
+ (`!(f : A -> B -> C) (x:B) (y:A). C f x y = f y x`,
+  REWRITE_TAC [C_DEF]);;
 
-export_thm c_comb;;
+export_thm C_THM;;
 
-let w_comb = prove
- (`!(f : A -> A -> B) (x:A). w_comb f x = f x x`,
-  REWRITE_TAC [w_comb_def]);;
+let W_THM = prove
+ (`!(f : A -> A -> B) (x:A). W f x = f x x`,
+  REWRITE_TAC [W_DEF]);;
 
-export_thm w_comb;;
+export_thm W_THM;;
 
-let skx_eq_id = prove
- (`!x. s_comb (k_comb : A -> B -> A) (x : A -> B) = (I : A -> A)`,
-  REWRITE_TAC [s_comb_def; k_comb; I_DEF]);;
+let SKX_EQ_I = prove
+ (`!x. S (K : A -> B -> A) (x : A -> B) = (I : A -> A)`,
+  REWRITE_TAC [S_DEF; K_THM; I_DEF]);;
 
-export_thm skx_eq_id;;
+export_thm SKX_EQ_I;;
 
-let cc_eq_id = prove
-  (`!(f : A -> B -> C). c_comb (c_comb f) = f`,
-   REWRITE_TAC [c_comb; FUN_EQ_THM]);;
+let CC_EQ_I = prove
+  (`!(f : A -> B -> C). C (C f) = f`,
+   REWRITE_TAC [C_THM; FUN_EQ_THM]);;
 
-export_thm cc_eq_id;;
-
-let c_lambda = prove
-  (`!(f : A -> B -> C). c_comb (\a b. f a b) = \b a. f a b`,
-   REWRITE_TAC [c_comb_def]);;
-
-export_thm c_lambda;;
+export_thm CC_EQ_I;;
 
 (* ------------------------------------------------------------------------- *)
 (* The theory "1" (a 1-element type).                                        *)

@@ -781,7 +781,7 @@ let foldr_def = CONJ foldr_nil foldr_cons;;
 
 let foldl_def = new_definition
   `!(f : B -> A -> B) b l.
-      foldl f b l = foldr (c_comb f) b (REVERSE l)`;;
+      foldl f b l = foldr (C f) b (REVERSE l)`;;
 
 export_thm foldl_def;;
 
@@ -844,36 +844,36 @@ export_thm foldl_nil;;
 
 let foldl_cons = prove
   (`!(f : B -> A -> B) b h t. foldl f b (CONS h t) = foldl f (f b h) t`,
-   REWRITE_TAC [foldl_def; REVERSE; foldr_append; foldr_def; c_comb]);;
+   REWRITE_TAC [foldl_def; REVERSE; foldr_append; foldr_def; C_THM]);;
 
 export_thm foldl_cons;;
 
 let foldl_suc = prove
   (`!l : A list. !k. foldl (\n x. SUC n) k l = LENGTH l + k`,
-   REWRITE_TAC [foldl_def; c_lambda; foldr_suc; LENGTH_REVERSE]);;
+   REWRITE_TAC [foldl_def; C_DEF; foldr_suc; LENGTH_REVERSE]);;
 
 export_thm foldl_suc;;
 
 let foldl_with_cons = prove
-  (`!(l1 : A list) l2. foldl (c_comb CONS) l2 l1 = APPEND (REVERSE l1) l2`,
-   REWRITE_TAC [foldl_def; cc_eq_id; foldr_with_cons]);;
+  (`!(l1 : A list) l2. foldl (C CONS) l2 l1 = APPEND (REVERSE l1) l2`,
+   REWRITE_TAC [foldl_def; CC_EQ_I; foldr_with_cons]);;
 
 export_thm foldl_with_cons;;
 
 let foldl_with_cons_nil = prove
-  (`!(l : A list). foldl (c_comb CONS) [] l = REVERSE l`,
+  (`!(l : A list). foldl (C CONS) [] l = REVERSE l`,
    REWRITE_TAC [foldl_with_cons; APPEND_NIL]);;
 
 export_thm foldl_with_cons_nil;;
 
 let foldr_reverse = prove
-  (`!(f : A -> B -> B) b l. foldr f b (REVERSE l) = foldl (c_comb f) b l`,
-   REWRITE_TAC [foldl_def; cc_eq_id]);;
+  (`!(f : A -> B -> B) b l. foldr f b (REVERSE l) = foldl (C f) b l`,
+   REWRITE_TAC [foldl_def; CC_EQ_I]);;
 
 export_thm foldr_reverse;;
 
 let foldl_reverse = prove
-  (`!(f : B -> A -> B) b l. foldl f b (REVERSE l) = foldr (c_comb f) b l`,
+  (`!(f : B -> A -> B) b l. foldl f b (REVERSE l) = foldr (C f) b l`,
    REWRITE_TAC [foldl_def; REVERSE_REVERSE]);;
 
 export_thm foldl_reverse;;
@@ -894,7 +894,7 @@ let foldl_append_assoc = prove
    REPEAT STRIP_TAC THEN
    REWRITE_TAC [foldl_def; REVERSE_APPEND] THEN
    MATCH_MP_TAC foldr_append_assoc THEN
-   ASM_REWRITE_TAC [c_comb]);;
+   ASM_REWRITE_TAC [C_THM]);;
 
 export_thm foldl_append_assoc;;
 
