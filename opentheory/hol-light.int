@@ -109,6 +109,10 @@ const "HOLLight.s_comb" as "Function.S"
 const "HOLLight.ONTO" as "Function.surjective"
 const "HOLLight.w_comb" as "Function.W"
 
+# Function.Combinator
+
+const "HOLLight.K" as "Function.Combinator.k"
+
 # Number
 
 # Number.Natural
