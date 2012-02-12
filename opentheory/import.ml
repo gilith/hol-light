@@ -1,6 +1,6 @@
 (* ========================================================================= *)
 (* OPENTHEORY ARTICLE READING FOR HOL LIGHT                                  *)
-(* Ramana Kumar                                                              *)
+(* Ramana Kumar and Joe Hurd                                                 *)
 (* ========================================================================= *)
 
 module Int_map = Map.Make (struct type t = int let compare = compare end);;

@@ -1,5 +1,10 @@
+(* ========================================================================= *)
+(* CLOUD TACTICS                                                             *)
+(* Joe Hurd                                                                  *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* A general cloud tactic.                                                   *)
+(* A general interface for calling cloud tactics.                            *)
 (* ------------------------------------------------------------------------- *)
 
 let CLOUD_TAC url =
@@ -31,6 +36,22 @@ let CLOUD_TAC url =
 
 let QBF_TAC = CLOUD_TAC "http://cam.xrchz.net/holqbf.cgi"
 and SKICO_TAC = CLOUD_TAC "http://cam.xrchz.net/skico.cgi";;
+
+(* ------------------------------------------------------------------------- *)
+(* A general interface for making tactics available to the cloud.            *)
+(* ------------------------------------------------------------------------- *)
+
+let CLOUDIFY_TAC tac goal_file =
+  let (hs,c) =
+      match import_article goal_file with
+        [] -> failwith "CLOUDIFY_TAC: no theorems in goal article"
+      | [th] -> (hyp th, concl th)
+      | _ :: _ :: _ ->
+        failwith "CLOUDIFY_TAC: multiple theorems in goal article" in
+  let goal = List.fold_right (curry mk_imp) hs c in
+  let th = prove (goal, tac THEN CHEAT_TAC) in
+  let th = funpow (List.length hs) UNDISCH th in
+  export_proof stdout th;;
 
 (* ------------------------------------------------------------------------- *)
 (* Tests.                                                                    *)

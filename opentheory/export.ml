@@ -626,6 +626,22 @@ let export_thm th =
     ();;
 
 (* ------------------------------------------------------------------------- *)
+(* Exporting proofs.                                                         *)
+(* ------------------------------------------------------------------------- *)
+
+let export_proof h th =
+    let old_log_state = !log_state in
+    let ld = new_log_dict true in
+    let () = log_state := Active_logging (h,ld) in
+    let () = log_thm th in
+    let () = log_list log_term (hyp th) in
+    let () = log_term (concl th) in
+    let () = log_command "thm" in
+    let () = log_clear () in
+    let () = log_state := old_log_state in
+    ();;
+
+(* ------------------------------------------------------------------------- *)
 (* Exporting goals.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
@@ -648,6 +664,7 @@ let export_goal file (hs,c) =
 end
 
 let export_goal = Export.export_goal
+and export_proof = Export.export_proof
 and export_thm = Export.export_thm
 and logfile = Export.logfile
 and logfile_end = Export.logfile_end
