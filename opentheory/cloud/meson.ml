@@ -137,8 +137,4 @@ loads "meson.ml";;      (* First order automation: MESON (model elimination) *)
 
 loads "opentheory/cloud.ml";;
 
-let goal_file = Sys.getenv "OPENTHEORY_GOAL";;
-
-(***
-CLOUDIFY_TAC (MESON_TAC []) goal_file;;
-***)
+meson_main ();;

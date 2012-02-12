@@ -66,3 +66,7 @@ let th = prove
   (`?x. !y. ?z. (~x \/ ~y) /\ (~z \/ ~y)`,
    SKICO_TAC);;
 *)
+
+let meson_main () =
+  let goal_file = Sys.getenv "OPENTHEORY_GOAL" in
+  CLOUDIFY_TAC (MESON_TAC []) goal_file;;
