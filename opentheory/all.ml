@@ -16,6 +16,8 @@
 
 (* Haskell theories *)
 
+#use "opentheory/haskell.ml";;
+
 #use "opentheory/haskell/all.ml";;
 
 (* Test theory

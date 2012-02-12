@@ -122,6 +122,14 @@ let rec to_string obj =
 and list_to_string objs =
     "[" ^ String.concat "; " (List.map to_string objs) ^ "]";;
 
+let option_to_string obj =
+    match obj with
+      Some ob -> to_string ob
+    | None -> "Unknown";;
+
+let option_list_to_string objs =
+    "[" ^ String.concat "; " (List.map option_to_string objs) ^ "]";;
+
 (* ------------------------------------------------------------------------- *)
 (* Type matching.                                                            *)
 (* ------------------------------------------------------------------------- *)
@@ -361,11 +369,6 @@ let mkAppThm objF objX =
 let mkAssume objT =
     let t = dest_term objT in
     Thm_object (ASSUME t);;
-
-let mkAxiom axiom_context objH objC =
-    let h = dest_term_list objH in
-    let c = dest_term objC in
-    Thm_object (axiom_context (h,c));;
 
 let mkBetaConv objT =
     let t = dest_term objT in
