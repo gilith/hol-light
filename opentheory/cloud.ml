@@ -60,12 +60,17 @@ and SKICO_TAC = CLOUD_TAC "http://cam.xrchz.net/skico.cgi";;
 (* ------------------------------------------------------------------------- *)
 
 let CLOUDIFY_TAC tac goal_file =
-  let (hs,c) =
-      match import_article goal_file with
+  let (asms,thms) = import_article goal_file in
+  let th =
+      match thms with
         [] -> failwith "CLOUDIFY_TAC: no theorems in goal article"
-      | [th] -> (hyp th, concl th)
+      | [th] -> th
       | _ :: _ :: _ ->
         failwith "CLOUDIFY_TAC: multiple theorems in goal article" in
+  let (hs,c) =
+      match th with
+        Some (_,x) -> x
+      | None -> failwith "CLOUDIFY_TAC: unknown goal" in
   let goal = List.fold_right (curry mk_imp) hs c in
   let th = prove (goal, tac THEN CHEAT_TAC) in
   let th = funpow (List.length hs) UNDISCH th in
