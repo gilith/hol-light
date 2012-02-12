@@ -7,13 +7,39 @@ module Export =
 struct
 
 (* ------------------------------------------------------------------------- *)
+(* Imperative logging dictionaries.                                          *)
+(* ------------------------------------------------------------------------- *)
+
+type log_dict = Log_dict of bool * int ref * int Object_map.t ref;;
+
+let new_log_dict defs =
+    let next_key = 0 in
+    let object_map = Object_map.empty in
+    Log_dict (defs, ref next_key, ref object_map);;
+
+let defs_log_dict (Log_dict (defs,_,_)) = defs;;
+
+let next_key_log_dict (Log_dict (_,next_key,_)) =
+    let k = !next_key in
+    let () = next_key := k + 1 in
+    k;;
+
+let peek_log_dict (Log_dict (_,_,object_map)) obj =
+    if not (Object_map.mem obj (!object_map)) then None
+    else Some (Object_map.find obj (!object_map));;
+
+let save_log_dict (Log_dict (_,_,object_map)) (k,obj) =
+    let () = object_map := Object_map.add obj k (!object_map) in
+    ();;
+
+(* ------------------------------------------------------------------------- *)
 (* Setting up the log files: part 1                                          *)
 (* ------------------------------------------------------------------------- *)
 
 type log_state =
      Not_logging
    | Ready_logging
-   | Active_logging of out_channel;;
+   | Active_logging of out_channel * log_dict;;
 
 let log_env () =
     try (let r = Sys.getenv "OPENTHEORY_LOGGING" in
@@ -30,7 +56,7 @@ let log_state =
 
 let log_raw s =
     match (!log_state) with
-      Active_logging h -> output_string h (s ^ "\n")
+      Active_logging (h,_) -> output_string h (s ^ "\n")
     | _ -> ();;
 
 (* ------------------------------------------------------------------------- *)
@@ -100,34 +126,38 @@ let log_type_var s = log_type_var_name s;;
 (* The dictionary.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-let (log_reset,log_term,log_thm,log_clear) =
-    let (reset_key,next_key) =
-        let key = ref 0 in
-        let reset () = key := 0 in
-        let next () = let k = !key in (key := k + 1; k) in
-        (reset,next) in
-    let (reset_dict,peek_dict,save_dict) =
-        let object_map = ref (Object_map.empty) in
-        let reset () = object_map := Object_map.empty in
-        let mem x = Object_map.mem x (!object_map) in
-        let peek x =
-            if mem x then Some (Object_map.find x (!object_map))
-            else None in
-        let save x =
-            match (peek x) with
-              Some k -> k
-            | None ->
-                let k = next_key () in
-                let () = object_map := Object_map.add x k (!object_map) in
-                let () = log_num k in
-                let () = log_command "def" in
-                k in
-        (reset,peek,save) in
-    let reset () =
-        let () = reset_key () in
-        let () = reset_dict () in
-        () in
-    let clear () =
+let (log_term,log_thm,log_clear) =
+    let peek_type_op_def t =
+        match !log_state with
+          Active_logging (_,ld) ->
+          if defs_log_dict ld then peek_type_op_definition t else None
+        | _ -> failwith "Export.peek_const_def: not actively logging" in
+    let peek_const_def c =
+        match !log_state with
+          Active_logging (_,ld) ->
+          if defs_log_dict ld then peek_const_definition c else None
+        | _ -> failwith "Export.peek_const_def: not actively logging" in
+    let next_key () =
+        match !log_state with
+          Active_logging (_,ld) -> next_key_log_dict ld
+        | _ -> failwith "Export.next_key: not actively logging" in
+    let peek obj =
+        match !log_state with
+          Active_logging (_,ld) -> peek_log_dict ld obj
+        | _ -> failwith "Export.peek: not actively logging" in
+    let save obj =
+        match !log_state with
+          Active_logging (_,ld) ->
+          (match peek obj with
+             Some k -> k
+           | None ->
+             let k = next_key () in
+             let () = save_log_dict ld (k,obj) in
+             let () = log_num k in
+             let () = log_command "def" in
+             k)
+        | _ -> failwith "Export.save: not actively logging" in
+    let log_clear () =
         let rec clear_up_to k =
             if k = 0 then () else
             let k = k - 1 in
@@ -136,10 +166,9 @@ let (log_reset,log_term,log_thm,log_clear) =
             let () = log_command "pop" in
             clear_up_to k in
         let () = clear_up_to (next_key ()) in
-        let () = reset () in
         () in
-    let saved ob =
-        match (peek_dict ob) with
+    let saved obj =
+        match (peek obj) with
           Some k ->
             let () = log_num k in
             let () = log_command "ref" in
@@ -161,21 +190,21 @@ let (log_reset,log_term,log_thm,log_clear) =
         let () = log_list log_type_var tyVars in
         let () = log_thm exists_th in
         let () = log_command "defineTypeOp" in
-        let ra_k = save_dict (Object.Thm_object ra) in
+        let ra_k = save (Object.Thm_object ra) in
         let () = log_command "pop" in
-        let ar_k = save_dict (Object.Thm_object ar) in
+        let ar_k = save (Object.Thm_object ar) in
         let () = log_command "pop" in
-        let rep_k = save_dict (Object.Const_object repTm) in
+        let rep_k = save (Object.Const_object repTm) in
         let () = log_command "pop" in
-        let abs_k = save_dict (Object.Const_object absTm) in
+        let abs_k = save (Object.Const_object absTm) in
         let () = log_command "pop" in
-        let ty_k = save_dict (Object.Type_op_object newTy) in
+        let ty_k = save (Object.Type_op_object newTy) in
         let () = log_command "pop" in
         (ty_k,abs_k,rep_k,ar_k,ra_k)
     and log_type_op ty =
         let ob = Object.Type_op_object ty in
         if saved ob then () else
-        match (peek_type_op_definition ty) with
+        match (peek_type_op_def ty) with
           Some (Type_op_definition tydef) ->
             let (k,_,_,_,_) = log_type_op_def tydef in
             let () = log_num k in
@@ -184,7 +213,7 @@ let (log_reset,log_term,log_thm,log_clear) =
         | None ->
             let () = log_type_op_name ty in
             let () = log_command "typeOp" in
-            let _ = save_dict ob in
+            let _ = save ob in
             ()
     and log_type ty =
         let ob = Object.Type_object ty in
@@ -200,7 +229,7 @@ let (log_reset,log_term,log_thm,log_clear) =
               let () = log_type_var (dest_vartype ty) in
               let () = log_command "varType" in
               () in
-        let _ = save_dict ob in
+        let _ = save ob in
         ()
     and log_const_def th =
         let (c,tm) = dest_eq (concl th) in
@@ -208,19 +237,19 @@ let (log_reset,log_term,log_thm,log_clear) =
         let () = log_const_name c in
         let () = log_term tm in
         let () = log_command "defineConst" in
-        let th_k = save_dict (Object.Thm_object th) in
+        let th_k = save (Object.Thm_object th) in
         let () = log_command "pop" in
-        let c_k = save_dict (Object.Const_object c) in
+        let c_k = save (Object.Const_object c) in
         let () = log_command "pop" in
         (c_k,th_k)
     and log_const c =
         let ob = Object.Const_object c in
         if saved ob then () else
-        match (peek_const_definition c) with
+        match (peek_const_def c) with
           None ->
             let () = log_const_name c in
             let () = log_command "const" in
-            let _ = save_dict ob in
+            let _ = save ob in
             ()
         | Some def ->
             match def with
@@ -230,7 +259,7 @@ let (log_reset,log_term,log_thm,log_clear) =
                 let () = log_command "ref" in
                 ()
             | Abs_type_definition ty ->
-              (match (peek_type_op_definition ty) with
+              (match (peek_type_op_def ty) with
                  Some (Type_op_definition tydef) ->
                    let (_,k,_,_,_) = log_type_op_def tydef in
                    let () = log_num k in
@@ -239,7 +268,7 @@ let (log_reset,log_term,log_thm,log_clear) =
                | None ->
                  failwith ("abs const out of type op definition scope: " ^ ty))
             | Rep_type_definition ty ->
-              (match (peek_type_op_definition ty) with
+              (match (peek_type_op_def ty) with
                  Some (Type_op_definition tydef) ->
                    let (_,_,k,_,_) = log_type_op_def tydef in
                    let () = log_num k in
@@ -254,7 +283,7 @@ let (log_reset,log_term,log_thm,log_clear) =
         let () = log_var_name n in
         let () = log_type ty in
         let () = log_command "var" in
-        let _ = save_dict ob in
+        let _ = save ob in
         ()
     and log_term tm =
         let ob = Object.Term_object tm in
@@ -282,7 +311,7 @@ let (log_reset,log_term,log_thm,log_clear) =
               let () = log_term b in
               let () = log_command "absTerm" in
               () in
-        let _ = save_dict ob in
+        let _ = save ob in
         ()
     and log_subst ins = log_object (Object.mk_subst ins)
     and log_type_subst tyins = log_subst (tyins,[])
@@ -349,7 +378,7 @@ let (log_reset,log_term,log_thm,log_clear) =
                 let () = log_command "subst" in
                 ()
             | New_basic_definition_proof c ->
-                (match (peek_const_definition c) with
+                (match (peek_const_def c) with
                    Some (Const_definition cdef) ->
                      let (_,k) = log_const_def cdef in
                      let () = log_num k in
@@ -358,7 +387,7 @@ let (log_reset,log_term,log_thm,log_clear) =
                  | _ ->
                    failwith ("thm out of const definition scope: " ^ c))
             | New_basic_type_definition_proof (is_ar,ty) ->
-                (match (peek_type_op_definition ty) with
+                (match (peek_type_op_def ty) with
                    Some (Type_op_definition tydef) ->
                      let (_,_,_,ar_k,ra_k) = log_type_op_def tydef in
                      let () = log_num (if is_ar then ar_k else ra_k) in
@@ -366,7 +395,7 @@ let (log_reset,log_term,log_thm,log_clear) =
                      ()
                  | _ ->
                    failwith ("thm out of type op definition scope: " ^ ty)) in
-        let _ = save_dict ob in
+        let _ = save ob in
         ()
     and log_object obj =
         if saved obj then () else
@@ -380,7 +409,7 @@ let (log_reset,log_term,log_thm,log_clear) =
         | Object.Var_object v -> log_var v
         | Object.Term_object t -> log_term t
         | Object.Thm_object t -> log_thm t in
-    (reset,log_term,log_thm,clear);;
+    (log_term,log_thm,log_clear);;
 
 (* ------------------------------------------------------------------------- *)
 (* Article files.                                                            *)
@@ -471,7 +500,7 @@ let write_theory_files () =
 
 let logfile_end () =
     match (!log_state) with
-      Active_logging h ->
+      Active_logging (h,_) ->
         let () = log_clear () in
         let () = close_out h in
         let () = log_state := Ready_logging in
@@ -482,10 +511,10 @@ let logfile thy =
     let () = logfile_end () in
     match (!log_state) with
       Ready_logging ->
-        let () = log_reset () in
         let file = add_article thy in
         let h = open_out file in
-        let () = log_state := Active_logging h in
+        let ld = new_log_dict true in
+        let () = log_state := Active_logging (h,ld) in
         ()
     | _ -> ();;
 
@@ -516,21 +545,19 @@ let stop_logging () =
         ()
     | _ -> ();;
 
-let start_logging_to h =
-  match (!log_state) with
-    Not_logging ->
-      let () = log_reset () in
-      let () = log_state := Active_logging h in
-      ()
-    | _ -> ();;
+(* ------------------------------------------------------------------------- *)
+(* Tracking exported theorems.                                               *)
+(* ------------------------------------------------------------------------- *)
 
-let stop_logging_to () =
-  match (!log_state) with
-    Active_logging h ->
-      let () = close_out h in
-      let () = log_state := Not_logging in
-      ()
-    | _ -> ();;
+let the_exported_thms = ref (Sequent_map.empty : thm Sequent_map.t);;
+
+let add_the_exported_thms th =
+    the_exported_thms :=
+    Sequent_map.add (Sequent.from_thm th) th (!the_exported_thms);;
+
+let peek_the_exported_thms seq =
+    if not (Sequent_map.mem seq (!the_exported_thms)) then None
+    else Some (Sequent_map.find seq (!the_exported_thms));;
 
 (* ------------------------------------------------------------------------- *)
 (* Exporting theorems.                                                       *)
@@ -595,30 +622,35 @@ let export_thm th =
     let () = delete_proof th in
     let () = delete_type_op_definition (thm_type_ops th) in
     let () = delete_const_definition (thm_consts th) in
+    let () = add_the_exported_thms th in
+    ();;
+
+(* ------------------------------------------------------------------------- *)
+(* Exporting goals.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
+let export_goal file (hs,c) =
+    let old_log_state = !log_state in
+    let h = open_out file in
+    let ld = new_log_dict false in
+    let () = log_state := Active_logging (h,ld) in
+    let () = log_list log_term hs in
+    let () = log_term c in
+    let () = log_command "axiom" in
+    let () = log_list log_term hs in
+    let () = log_term c in
+    let () = log_command "thm" in
+    let () = log_clear () in
+    let () = close_out h in
+    let () = log_state := old_log_state in
     ();;
 
 end
 
-let start_logging = Export.start_logging
+let export_goal = Export.export_goal
+and export_thm = Export.export_thm
 and logfile = Export.logfile
 and logfile_end = Export.logfile_end
+and peek_the_exported_thms = Export.peek_the_exported_thms
+and start_logging = Export.start_logging
 and stop_logging = Export.stop_logging;;
-
-(* ------------------------------------------------------------------------- *)
-(* Tracking exported theorems.                                               *)
-(* ------------------------------------------------------------------------- *)
-
-let the_exported_thms = ref (Sequent_map.empty : thm Sequent_map.t);;
-
-let add_the_exported_thms th =
-    the_exported_thms :=
-    Sequent_map.add (Sequent.from_thm th) th (!the_exported_thms);;
-
-let peek_the_exported_thms seq =
-    if not (Sequent_map.mem seq (!the_exported_thms)) then None
-    else Some (Sequent_map.find seq (!the_exported_thms));;
-
-let export_thm th =
-    let () = Export.export_thm th in
-    let () = add_the_exported_thms th in
-    ();;
