@@ -94,10 +94,10 @@ loads "lib.ml";;        (* Various useful general library functions          *)
 loads "fusion.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* OpenTheory proof logging.                                                 *)
+(* Load the OpenTheory infrastructure.                                       *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/logging.ml";;
+loads "opentheory/opentheory.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)
