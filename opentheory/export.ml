@@ -552,12 +552,9 @@ let stop_logging () =
 let the_exported_thms = ref (Sequent_map.empty : thm Sequent_map.t);;
 
 let add_the_exported_thms th =
-    the_exported_thms :=
-    Sequent_map.add (Sequent.from_thm th) th (!the_exported_thms);;
+    the_exported_thms := add_sequent_map th (!the_exported_thms);;
 
-let peek_the_exported_thms seq =
-    if not (Sequent_map.mem seq (!the_exported_thms)) then None
-    else Some (Sequent_map.find seq (!the_exported_thms));;
+let peek_the_exported_thms seq = peek_sequent_map (!the_exported_thms) seq;;
 
 (* ------------------------------------------------------------------------- *)
 (* Exporting theorems.                                                       *)

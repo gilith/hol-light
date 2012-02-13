@@ -495,3 +495,13 @@ let from_thm th = Sequent (hyp th, concl th);;
 end
 
 module Sequent_map = Map.Make Sequent;;
+
+let add_sequent_map seqs th = Sequent_map.add (Sequent.from_thm th) th seqs;;
+
+let add_list_sequent_map = List.fold_left add_sequent_map;;
+
+let from_list_sequent_map = add_list_sequent_map Sequent_map.empty;;
+
+let peek_sequent_map seqs seq =
+    if not (Sequent_map.mem seq seqs) then None
+    else Some (Sequent_map.find seq seqs);;
