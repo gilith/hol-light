@@ -552,7 +552,7 @@ let stop_logging () =
 let the_exported_thms = ref (Sequent_map.empty : thm Sequent_map.t);;
 
 let add_the_exported_thms th =
-    the_exported_thms := add_sequent_map th (!the_exported_thms);;
+    the_exported_thms := add_sequent_map (!the_exported_thms) th;;
 
 let peek_the_exported_thms seq = peek_sequent_map (!the_exported_thms) seq;;
 
