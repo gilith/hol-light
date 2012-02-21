@@ -301,8 +301,8 @@ export_thm stream_to_list_length;;
 logfile "parser-comb-def";;
 
 let is_parser_def = new_definition
-  `!p.
-     is_parser (p : A -> A stream -> (B # A stream) option) =
+  `!(p : A -> A stream -> (B # A stream) option).
+     is_parser p <=>
        !x xs.
          case_option
            T

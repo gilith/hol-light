@@ -1,36 +1,80 @@
+(* ========================================================================= *)
+(* OPENTHEORY EXAMPLE THEORIES                                               *)
+(* Joe Hurd                                                                  *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* OpenTheory example theories.                                              *)
+(* The interpretation for the example theories.                              *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation "opentheory/interpretations/examples.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Start proof logging.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
 start_logging ();;
 
-(* Natural number division *)
+(* ------------------------------------------------------------------------- *)
+(* Natural number division.                                                  *)
+(* ------------------------------------------------------------------------- *)
+
 loads "opentheory/examples/divides.ml";;
+
 loads "opentheory/examples/gcd.ml";;
+
 loads "opentheory/examples/prime.ml";;
 
-(* Modular arithmetic *)
+(* ------------------------------------------------------------------------- *)
+(* Modular arithmetic.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
 loads "opentheory/examples/modular.ml";;
 
-(* Finite fields GF(p) *)
+(* ------------------------------------------------------------------------- *)
+(* Finite fields GF(p).                                                      *)
+(* ------------------------------------------------------------------------- *)
+
 loads "opentheory/examples/gfp.ml";;
 
-(* Bit-vectors *)
+(* ------------------------------------------------------------------------- *)
+(* Bit-vectors.                                                              *)
+(* ------------------------------------------------------------------------- *)
+
 loads "opentheory/examples/word.ml";;
+
 loads "opentheory/examples/byte.ml";;
+
 loads "opentheory/examples/word10.ml";;
+
 loads "opentheory/examples/word12.ml";;
+
 loads "opentheory/examples/word16.ml";;
 
-(* Simple stream parsers *)
+(* ------------------------------------------------------------------------- *)
+(* Simple stream parsers.                                                    *)
+(* ------------------------------------------------------------------------- *)
+
 loads "opentheory/examples/parser.ml";;
+
 loads "opentheory/examples/char.ml";;
 
-(* Memory safety for the H interface *)
+(* ------------------------------------------------------------------------- *)
+(* Memory safety for the H interface.                                        *)
+(* ------------------------------------------------------------------------- *)
+
 loads "opentheory/examples/h.ml";;
 
-(* Map reduce example using Minisat
+(* ------------------------------------------------------------------------- *)
+(* Map reduce example using Minisat.                                         *)
+(* ------------------------------------------------------------------------- *)
+
+(*
 loads "opentheory/examples/map-reduce.ml";;
 *)
+
+(* ------------------------------------------------------------------------- *)
+(* Stop proof logging.                                                       *)
+(* ------------------------------------------------------------------------- *)
 
 stop_logging ();;
