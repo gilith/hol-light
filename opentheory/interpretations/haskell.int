@@ -9,11 +9,10 @@
 
 type "HOLLight.parserH" as "Haskell.Parser.parser"
 
-const "HOLLight.dest_parserH" as "Haskell.Parser.destParser"
+const "HOLLight.lift_parserH" as "Haskell.Parser.fromHol"
 const "HOLLight.parse_inverseH" as "Haskell.Parser.inverse"
-const "HOLLight.is_parserH" as "Haskell.Parser.isParser"
 const "HOLLight.parse_mapH" as "Haskell.Parser.map"
-const "HOLLight.mk_parserH" as "Haskell.Parser.mkParser"
+const "HOLLight.mk_parserH" as "Haskell.Parser.Parser"
 const "HOLLight.parseH" as "Haskell.Parser.parse"
 const "HOLLight.parse_allH" as "Haskell.Parser.parseAll"
 const "HOLLight.parser_allH" as "Haskell.Parser.parseAll.pa"
@@ -24,9 +23,15 @@ const "HOLLight.parse_pairH" as "Haskell.Parser.parsePair"
 const "HOLLight.parser_pairH" as "Haskell.Parser.parsePair.pbc"
 const "HOLLight.parse_someH" as "Haskell.Parser.parseSome"
 const "HOLLight.parse_streamH" as "Haskell.Parser.parseStream"
+const "HOLLight.lift_parser_functionH" as "Haskell.Parser.parserFromHol"
+const "HOLLight.drop_parser_functionH" as "Haskell.Parser.parserToHol"
 const "HOLLight.parse_partial_mapH" as "Haskell.Parser.partialMap"
 const "HOLLight.parser_partial_mapH" as "Haskell.Parser.partialMap.pf"
+const "HOLLight.lift_parser_resultH" as "Haskell.Parser.resultFromHol"
+const "HOLLight.drop_parser_resultH" as "Haskell.Parser.resultToHol"
 const "HOLLight.parse_strong_inverseH" as "Haskell.Parser.strongInverse"
+const "HOLLight.drop_parserH" as "Haskell.Parser.toHol"
+const "HOLLight.dest_parserH" as "Haskell.Parser.unParser"
 
 # Haskell.Parser.Stream
 
