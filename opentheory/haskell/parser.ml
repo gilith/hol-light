@@ -150,6 +150,49 @@ let dest_parserH_def = new_definition
 
 export_thm dest_parserH_def;;
 
+let parseH_def = new_definition
+  `!(p : (A,B) parserH) s.
+     parseH p s =
+     lift_parser_resultH (parse (drop_parserH p) (drop_streamH s))`;;
+
+export_thm parseH_def;;
+
+let parser_noneH_def = new_definition
+  `(parser_noneH : A -> A streamH -> (B # A streamH) option) =
+   lift_parser_functionH parser_none`;;
+
+export_thm parser_noneH_def;;
+
+let parse_noneH_def = new_definition
+  `(parse_noneH : (A,B) parserH) = lift_parserH parse_none`;;
+
+export_thm parse_noneH_def;;
+
+let parser_allH_def = new_definition
+  `(parser_allH : A -> A streamH -> (A # A streamH) option) =
+   lift_parser_functionH parser_all`;;
+
+export_thm parser_allH_def;;
+
+let parse_allH_def = new_definition
+  `(parse_allH : (A,A) parserH) = lift_parserH parse_all`;;
+
+export_thm parse_allH_def;;
+
+let parser_partial_mapH_def = new_definition
+  `!(f : B -> C option) (p : (A,B) parserH).
+     parser_partial_mapH f p =
+     lift_parser_functionH (parser_partial_map f (drop_parserH p))`;;
+
+export_thm parser_partial_mapH_def;;
+
+let parse_partial_mapH_def = new_definition
+  `!(f : B -> C option) (p : (A,B) parserH).
+     parse_partial_mapH f p =
+     lift_parserH (parse_partial_map f (drop_parserH p))`;;
+
+export_thm parse_partial_mapH_def;;
+
 (* ------------------------------------------------------------------------- *)
 (* Properties of Haskell parsers and streams.                                *)
 (* ------------------------------------------------------------------------- *)
@@ -176,10 +219,27 @@ let parser_resultH_drop_lift = prove
 
 export_thm parser_resultH_drop_lift;;
 
+let parser_resultH_lift_drop = prove
+ (`!(r : (B # A streamH) option).
+     lift_parser_resultH (drop_parser_resultH r) = r`,
+  GEN_TAC THEN
+  MP_TAC (ISPEC `r : (B # A streamH) option` option_cases) THEN
+  STRIP_TAC THENL
+  [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [lift_parser_resultH_def; drop_parser_resultH_def];
+   ALL_TAC] THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MP_TAC (ISPEC `a : B # A streamH` PAIR_SURJECTIVE) THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  REWRITE_TAC
+    [lift_parser_resultH_def; drop_parser_resultH_def; streamH_lift_drop]);;
+
+export_thm parser_resultH_lift_drop;;
+
 let parser_functionH_drop_lift = prove
- (`!(p : (A,B) parser).
-     drop_parser_functionH (lift_parser_functionH (dest_parser p)) =
-     dest_parser p`,
+ (`!(p : A -> A stream -> (B # A stream) option).
+     drop_parser_functionH (lift_parser_functionH p) = p`,
   GEN_TAC THEN
   CONV_TAC (REWR_CONV FUN_EQ_THM) THEN
   X_GEN_TAC `a : A` THEN
@@ -191,6 +251,20 @@ let parser_functionH_drop_lift = prove
 
 export_thm parser_functionH_drop_lift;;
 
+let parser_functionH_lift_drop = prove
+ (`!(p : A -> A streamH -> (B # A streamH) option).
+     lift_parser_functionH (drop_parser_functionH p) = p`,
+  GEN_TAC THEN
+  CONV_TAC (REWR_CONV FUN_EQ_THM) THEN
+  X_GEN_TAC `a : A` THEN
+  CONV_TAC (REWR_CONV FUN_EQ_THM) THEN
+  X_GEN_TAC `s : A streamH` THEN
+  REWRITE_TAC
+    [lift_parser_functionH_def; drop_parser_functionH_def;
+     streamH_lift_drop; parser_resultH_lift_drop]);;
+
+export_thm parser_functionH_lift_drop;;
+
 let parserH_mk_dest = prove
  (`!(p : (A,B) parserH).
      mk_parserH (dest_parserH p) = p`,
@@ -199,6 +273,15 @@ let parserH_mk_dest = prove
      parser_abs_rep; parserH_lift_drop]);;
 
 export_thm parserH_mk_dest;;
+
+let dest_parserH_inj = prove
+ (`!(p : (A,B) parserH) q.
+     dest_parserH p = dest_parserH q ==> p = q`,
+  REPEAT STRIP_TAC THEN
+  ONCE_REWRITE_TAC [GSYM parserH_mk_dest] THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm dest_parserH_inj;;
 
 (* ------------------------------------------------------------------------- *)
 (* A type of Haskell parsers.                                                *)
@@ -252,21 +335,61 @@ let () = (export_haskell_thm o prove)
 
 let () = export_haskell_thm parserH_mk_dest;;
 
+let () = (export_haskell_thm o prove)
+ (`(!(p : (A,B) parserH). parseH p ErrorH = NONE) /\
+   (!(p : (A,B) parserH). parseH p EofH = NONE) /\
+   (!(p : (A,B) parserH) a s. parseH p (StreamH a s) = dest_parserH p a s)`,
+  REWRITE_TAC
+    [parseH_def; ErrorH_def; EofH_def; StreamH_def; streamH_drop_lift;
+     parse_def; lift_parser_resultH_def; dest_parserH_def;
+     lift_parser_functionH_def]);;
+
+let () = (export_haskell_thm o prove)
+ (`!a s. parser_noneH a s = (NONE : (B # A streamH) option)`,
+  REWRITE_TAC
+    [parser_noneH_def; lift_parser_functionH_def; parser_none_def;
+     lift_parser_resultH_def]);;
+
+let () = (export_haskell_thm o prove)
+ (`(parse_noneH : (A,B) parserH) = mk_parserH parser_noneH`,
+  REWRITE_TAC
+    [parse_noneH_def; parse_none_def; mk_parserH_def; parser_noneH_def;
+     parser_functionH_drop_lift]);;
+
+let () = (export_haskell_thm o prove)
+ (`!(a : A) s. parser_allH a s = SOME (a,s)`,
+  REWRITE_TAC
+    [parser_allH_def; lift_parser_functionH_def; parser_all_def;
+     lift_parser_resultH_def; streamH_lift_drop]);;
+
+let () = (export_haskell_thm o prove)
+ (`(parse_allH : (A,A) parserH) = mk_parserH parser_allH`,
+  REWRITE_TAC
+    [parse_allH_def; parse_all_def; mk_parserH_def; parser_allH_def;
+     parser_functionH_drop_lift]);;
+
+let () = (export_haskell_thm o prove)
+ (`!(f : B -> C option) (p : (A,B) parserH) a s.
+    parser_partial_mapH f p a s =
+    case_option
+      NONE
+      (\ (b,s'). case_option NONE (\c. SOME (c,s')) (f b))
+      (dest_parserH p a s)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC
+    [parser_partial_mapH_def; lift_parser_functionH_def; dest_parserH_def;
+     parser_partial_map_def] THEN
+  MP_TAC (ISPECL [`drop_parserH (p : (A,B) parserH)`; `a : A`;
+                  `drop_streamH s : A stream`] dest_parser_cases) THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST1_TAC THEN
+  REWRITE_TAC [lift_parser_resultH_def; case_option_def] THEN
+  MP_TAC (ISPEC `(f : B -> C option) b` option_cases) THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST1_TAC THEN
+  REWRITE_TAC [lift_parser_resultH_def; case_option_def]);;
+
 (***
-export_haskell_thm (CONJUNCT1 parser_tybij);;
-
-export_haskell_thm parse_def;;
-
-export_haskell_thm parser_none_def;;
-
-export_haskell_thm parse_none_def;;
-
-export_haskell_thm parser_all_def;;
-
-export_haskell_thm parse_all_def;;
-
-export_haskell_thm parser_partial_map_def;;
-
 export_haskell_thm parse_partial_map_def;;
 
 export_haskell_thm parse_map_def;;
