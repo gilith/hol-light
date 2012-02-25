@@ -193,6 +193,45 @@ let parse_partial_mapH_def = new_definition
 
 export_thm parse_partial_mapH_def;;
 
+let parse_mapH_def = new_definition
+  `!(f : B -> C) (p : (A,B) parserH).
+     parse_mapH f p = lift_parserH (parse_map f (drop_parserH p))`;;
+
+export_thm parse_mapH_def;;
+
+let parser_pairH_def = new_definition
+  `!(pb : (A,B) parserH) (pc : (A,C) parserH).
+     parser_pairH pb pc =
+     lift_parser_functionH (parser_pair (drop_parserH pb) (drop_parserH pc))`;;
+
+export_thm parser_pairH_def;;
+
+let parse_pairH_def = new_definition
+  `!(pb : (A,B) parserH) (pc : (A,C) parserH).
+     parse_pairH pb pc =
+     lift_parserH (parse_pair (drop_parserH pb) (drop_parserH pc))`;;
+
+export_thm parse_pairH_def;;
+
+let parse_optionH_def = new_definition
+  `!(f : A -> B option).
+     parse_optionH f = lift_parserH (parse_option f)`;;
+
+export_thm parse_optionH_def;;
+
+let parse_someH_def = new_definition
+  `!(p : A -> bool).
+     parse_someH p = lift_parserH (parse_some p)`;;
+
+export_thm parse_someH_def;;
+
+let parse_streamH_def = new_definition
+  `!(p : (A,B) parserH) s.
+     parse_streamH p s =
+     lift_streamH (parse_stream (drop_parserH p) (drop_streamH s))`;;
+
+export_thm parse_streamH_def;;
+
 (* ------------------------------------------------------------------------- *)
 (* Properties of Haskell parsers and streams.                                *)
 (* ------------------------------------------------------------------------- *)
@@ -370,11 +409,11 @@ let () = (export_haskell_thm o prove)
 
 let () = (export_haskell_thm o prove)
  (`!(f : B -> C option) (p : (A,B) parserH) a s.
-    parser_partial_mapH f p a s =
-    case_option
-      NONE
-      (\ (b,s'). case_option NONE (\c. SOME (c,s')) (f b))
-      (dest_parserH p a s)`,
+     parser_partial_mapH f p a s =
+     case_option
+       NONE
+       (\ (b,s'). case_option NONE (\c. SOME (c,s')) (f b))
+       (dest_parserH p a s)`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC
     [parser_partial_mapH_def; lift_parser_functionH_def; dest_parserH_def;
@@ -389,21 +428,90 @@ let () = (export_haskell_thm o prove)
   FIRST_X_ASSUM SUBST1_TAC THEN
   REWRITE_TAC [lift_parser_resultH_def; case_option_def]);;
 
-(***
-export_haskell_thm parse_partial_map_def;;
+let () = (export_haskell_thm o prove)
+ (`!(f : B -> C option) (p : (A,B) parserH).
+     parse_partial_mapH f p = mk_parserH (parser_partial_mapH f p)`,
+  REWRITE_TAC
+    [parse_partial_mapH_def; parser_partial_mapH_def; mk_parserH_def;
+     parse_partial_map_def; parser_functionH_drop_lift]);;
 
-export_haskell_thm parse_map_def;;
+let () = (export_haskell_thm o prove)
+ (`!(f : B -> C) (p : (A,B) parserH).
+     parse_mapH f p = parse_partial_mapH (\b. SOME (f b)) p`,
+  REWRITE_TAC
+    [parse_mapH_def; parse_partial_mapH_def; parse_map_def]);;
 
-export_haskell_thm parser_pair_def;;
+let () = (export_haskell_thm o prove)
+ (`!(pb : (A,B) parserH) (pc : (A,C) parserH) a s.
+     parser_pairH pb pc a s =
+     case_option
+       NONE
+       (\ (b,s').
+          case_option
+            NONE
+            (\ (c,s''). SOME ((b,c),s''))
+            (parseH pc s'))
+       (dest_parserH pb a s)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC
+    [parser_pairH_def; lift_parser_functionH_def; dest_parserH_def;
+     parser_pair_def] THEN
+  MP_TAC (ISPECL [`drop_parserH (pb : (A,B) parserH)`; `a : A`;
+                  `drop_streamH s : A stream`] dest_parser_cases) THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST1_TAC THEN
+  REWRITE_TAC [lift_parser_resultH_def; case_option_def] THEN
+  REWRITE_TAC [parseH_def; streamH_drop_lift] THEN
+  MP_TAC (ISPECL [`drop_parserH (pc : (A,C) parserH)`;
+                  `s' : A stream`] parse_cases) THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST1_TAC THEN
+  REWRITE_TAC [lift_parser_resultH_def; case_option_def]);;
 
-export_haskell_thm parse_pair_def;;
+let () = (export_haskell_thm o prove)
+ (`!(pb : (A,B) parserH) (pc : (A,C) parserH).
+     parse_pairH pb pc = mk_parserH (parser_pairH pb pc)`,
+  REWRITE_TAC
+    [parse_pairH_def; parser_pairH_def; mk_parserH_def;
+     parse_pair_def; parser_functionH_drop_lift]);;
 
-export_haskell_thm parse_option_def;;
+let () = (export_haskell_thm o prove)
+ (`!(f : A -> B option).
+     parse_optionH f = parse_partial_mapH f parse_allH`,
+  REWRITE_TAC
+    [parse_optionH_def; parse_partial_mapH_def; parse_allH_def;
+     parse_option_def; parserH_drop_lift]);;
 
-export_haskell_thm parse_some_def;;
+let () = (export_haskell_thm o prove)
+ (`!(p : A -> bool).
+     parse_someH p = parse_optionH (\a. if p a then SOME a else NONE)`,
+  REWRITE_TAC
+    [parse_someH_def; parse_optionH_def; parse_some_def]);;
 
-export_haskell_thm (REWRITE_RULE [FORALL_AND_THM] parse_stream_def);;
-***)
+let () = (export_haskell_thm o prove)
+ (`!(p : A -> bool).
+     parse_someH p = parse_optionH (\a. if p a then SOME a else NONE)`,
+  REWRITE_TAC
+    [parse_someH_def; parse_optionH_def; parse_some_def]);;
+
+let () = (export_haskell_thm o prove)
+ (`(!(p : (A,B) parserH). parse_streamH p ErrorH = ErrorH) /\
+   (!(p : (A,B) parserH). parse_streamH p EofH = EofH) /\
+   (!(p : (A,B) parserH) a s.
+      parse_streamH p (StreamH a s) =
+      case_option
+        ErrorH
+        (\ (b,s'). StreamH b (parse_streamH p s'))
+        (dest_parserH p a s))`,
+  REWRITE_TAC
+    [parse_streamH_def; ErrorH_def; EofH_def; StreamH_def; streamH_drop_lift;
+     parse_stream_def; dest_parserH_def; lift_parser_functionH_def] THEN
+  REPEAT GEN_TAC THEN
+  MP_TAC (ISPECL [`drop_parserH (p : (A,B) parserH)`; `a : A`;
+                  `drop_streamH s : A stream`] dest_parser_cases) THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST1_TAC THEN
+  REWRITE_TAC [lift_parser_resultH_def; case_option_def; streamH_drop_lift]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Testing.                                                                  *)
