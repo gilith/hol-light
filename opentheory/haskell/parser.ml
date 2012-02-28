@@ -528,10 +528,17 @@ let () = (export_haskell_thm o prove)
     [length_streamH_def; append_streamH_def; streamH_drop_lift;
      append_stream_length]);;
 
+let () = (export_haskell_thm o prove)
+ (`!(l : num list).
+     equal_optionH (equal_listH equal_numH)
+       (stream_to_listH (list_to_streamH l)) (SOME l)`,
+  REWRITE_TAC
+    [equal_numH_def; equal_listH; equal_optionH;
+     stream_to_listH_def; list_to_streamH_def; streamH_drop_lift;
+     list_to_stream_to_list]);;
+
 (***
 export_haskell_thm append_stream_assoc;;
-
-export_haskell_thm list_to_stream_to_list;;
 
 export_haskell_thm stream_to_list_append;;
 

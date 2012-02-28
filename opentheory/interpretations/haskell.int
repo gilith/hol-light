@@ -5,6 +5,22 @@
 
 # Haskell
 
+# Haskell.Data
+
+# Haskell.Data.List
+
+const "HOLLight.equal_listH" as "Haskell.Data.List.equal"
+
+# Haskell.Data.Option
+
+const "HOLLight.equal_optionH" as "Haskell.Data.Option.equal"
+
+# Haskell.Number
+
+# Haskell.Number.Natural
+
+const "HOLLight.equal_numH" as "Haskell.Number.Natural.equal"
+
 # Haskell.Parser
 
 type "HOLLight.parserH" as "Haskell.Parser.Parser"
