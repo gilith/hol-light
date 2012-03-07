@@ -523,10 +523,12 @@ logfile "haskell-parser-test";;
 
 let () = (export_haskell_thm o prove)
  (`!(l : A list) s.
-     length_streamH (append_streamH l s) = LENGTH l + length_streamH s`,
+     equal_numH
+       (length_streamH (append_streamH l s))
+       (LENGTH l + length_streamH s)`,
   REWRITE_TAC
     [length_streamH_def; append_streamH_def; streamH_drop_lift;
-     append_stream_length]);;
+     append_stream_length; equal_numH_def]);;
 
 let () = (export_haskell_thm o prove)
  (`!(l : num list).

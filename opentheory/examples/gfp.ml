@@ -1041,4 +1041,18 @@ let gfp_div_gcd = new_axiom
       gfp_div_gcd (gfp_to_num y) oddprime x (num_to_gfp 0) = gfp_div x y`;;
 *)
 
+(***
+logfile "gfp-exp-div-def";;
+
+(*PARAMETRIC
+(* gfp-exp-div-def *)
+*)
+
+logfile "gfp-exp-div-thm";;
+
+(*PARAMETRIC
+(* gfp-exp-div-thm *)
+*)
+***)
+
 logfile_end ();;
