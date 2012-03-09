@@ -65,9 +65,7 @@ let word_exp_0 = new_axiom
 let word_exp_suc = new_axiom
   `!x n. word_exp x (SUC n) = word_mult x (word_exp x n)`;;
 
-let word_exp_def = new_axiom
-  `(!x. word_exp x 0 = num_to_word 1) /\
-   (!x n. word_exp x (SUC n) = word_mult x (word_exp x n))`;;
+let word_exp_def = CONJ word_exp_0 word_exp_suc;;
 
 new_constant ("word_neg", `:word -> word`);;
 
@@ -292,9 +290,7 @@ let word_exp_0 = new_axiom
 let word_exp_suc = new_axiom
   `!x n. word_exp x (SUC n) = word_mult x (word_exp x n)`;;
 
-let word_exp_def = new_axiom
-  `(!x. word_exp x 0 = num_to_word 1) /\
-   (!x n. word_exp x (SUC n) = word_mult x (word_exp x n))`;;
+let word_exp_def = CONJ word_exp_0 word_exp_suc;;
 
 new_constant ("word_neg", `:word -> word`);;
 

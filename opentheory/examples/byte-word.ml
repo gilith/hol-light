@@ -77,9 +77,7 @@ let byte_exp_0 = new_axiom
 let byte_exp_suc = new_axiom
   `!x n. byte_exp x (SUC n) = byte_mult x (byte_exp x n)`;;
 
-let byte_exp_def = new_axiom
-  `(!x. byte_exp x 0 = num_to_byte 1) /\
-   (!x n. byte_exp x (SUC n) = byte_mult x (byte_exp x n))`;;
+let byte_exp_def = CONJ byte_exp_0 byte_exp_suc;;
 
 new_constant ("byte_neg", `:byte -> byte`);;
 

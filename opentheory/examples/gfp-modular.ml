@@ -65,9 +65,7 @@ let gfp_exp_0 = new_axiom
 let gfp_exp_suc = new_axiom
   `!x n. gfp_exp x (SUC n) = gfp_mult x (gfp_exp x n)`;;
 
-let gfp_exp_def = new_axiom
-  `(!x. gfp_exp x 0 = num_to_gfp 1) /\
-   (!x n. gfp_exp x (SUC n) = gfp_mult x (gfp_exp x n))`;;
+let gfp_exp_def = CONJ gfp_exp_0 gfp_exp_suc;;
 
 new_constant ("gfp_neg", `:gfp -> gfp`);;
 
@@ -292,9 +290,7 @@ let gfp_exp_0 = new_axiom
 let gfp_exp_suc = new_axiom
   `!x n. gfp_exp x (SUC n) = gfp_mult x (gfp_exp x n)`;;
 
-let gfp_exp_def = new_axiom
-  `(!x. gfp_exp x 0 = num_to_gfp 1) /\
-   (!x n. gfp_exp x (SUC n) = gfp_mult x (gfp_exp x n))`;;
+let gfp_exp_def = CONJ gfp_exp_0 gfp_exp_suc;;
 
 new_constant ("gfp_neg", `:gfp -> gfp`);;
 
