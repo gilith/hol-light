@@ -57,6 +57,18 @@ let num_to_word_mult = new_axiom
      num_to_word (x1 * y1) =
      word_mult (num_to_word x1) (num_to_word y1)`;;
 
+new_constant ("word_exp", `:word -> num -> word`);;
+
+let word_exp_0 = new_axiom
+  `!x. word_exp x 0 = num_to_word 1`;;
+
+let word_exp_suc = new_axiom
+  `!x n. word_exp x (SUC n) = word_mult x (word_exp x n)`;;
+
+let word_exp_def = new_axiom
+  `(!x. word_exp x 0 = num_to_word 1) /\
+   (!x n. word_exp x (SUC n) = word_mult x (word_exp x n))`;;
+
 new_constant ("word_neg", `:word -> word`);;
 
 let word_neg_def = new_axiom
@@ -195,6 +207,22 @@ let word_mult_left_neg = new_axiom
 
 let word_mult_right_neg = new_axiom
    `!x y. word_mult x (word_neg y) = word_neg (word_mult x y)`;;
+
+let num_to_word_exp = new_axiom
+   `!m n. num_to_word (m EXP n) = word_exp (num_to_word m) n`;;
+
+let word_exp_zero = new_axiom
+   `!n.
+      word_exp (num_to_word 0) n =
+      if n = 0 then num_to_word 1 else num_to_word 0`;;
+
+let word_exp_add = new_axiom
+   `!x m n.
+      word_mult (word_exp x m) (word_exp x n) =
+      word_exp x (m + n)`;;
+
+let word_exp_one = new_axiom
+   `!x. word_exp x 1 = x`;;
 
 (*PARAMETRIC
 (* word *)
@@ -256,6 +284,18 @@ let num_to_word_mult = new_axiom
      num_to_word (x1 * y1) =
      word_mult (num_to_word x1) (num_to_word y1)`;;
 
+new_constant ("word_exp", `:word -> num -> word`);;
+
+let word_exp_0 = new_axiom
+  `!x. word_exp x 0 = num_to_word 1`;;
+
+let word_exp_suc = new_axiom
+  `!x n. word_exp x (SUC n) = word_mult x (word_exp x n)`;;
+
+let word_exp_def = new_axiom
+  `(!x. word_exp x 0 = num_to_word 1) /\
+   (!x n. word_exp x (SUC n) = word_mult x (word_exp x n))`;;
+
 new_constant ("word_neg", `:word -> word`);;
 
 let word_neg_def = new_axiom
@@ -394,4 +434,20 @@ let word_mult_left_neg = new_axiom
 
 let word_mult_right_neg = new_axiom
    `!x y. word_mult x (word_neg y) = word_neg (word_mult x y)`;;
+
+let num_to_word_exp = new_axiom
+   `!m n. num_to_word (m EXP n) = word_exp (num_to_word m) n`;;
+
+let word_exp_zero = new_axiom
+   `!n.
+      word_exp (num_to_word 0) n =
+      if n = 0 then num_to_word 1 else num_to_word 0`;;
+
+let word_exp_add = new_axiom
+   `!x m n.
+      word_mult (word_exp x m) (word_exp x n) =
+      word_exp x (m + n)`;;
+
+let word_exp_one = new_axiom
+   `!x. word_exp x 1 = x`;;
 *)

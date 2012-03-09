@@ -329,6 +329,35 @@ let num_to_modular_mult = new_axiom
      modular_mult (num_to_modular x1) (num_to_modular y1)`;;
 *)
 
+let (modular_exp_0,modular_exp_suc) =
+  let def = new_recursive_definition num_RECURSION
+    `(!x. modular_exp x 0 = num_to_modular 1) /\
+     (!x n. modular_exp x (SUC n) = modular_mult x (modular_exp x n))` in
+  CONJ_PAIR def;;
+
+(*PARAMETRIC
+new_constant ("modular_exp", `:modular -> num -> modular`);;
+*)
+
+export_thm modular_exp_0;;
+export_thm modular_exp_suc;;
+
+(*PARAMETRIC
+let modular_exp_0 = new_axiom
+  `!x. modular_exp x 0 = num_to_modular 1`;;
+
+let modular_exp_suc = new_axiom
+  `!x n. modular_exp x (SUC n) = modular_mult x (modular_exp x n)`;;
+*)
+
+let modular_exp_def = CONJ modular_exp_0 modular_exp_suc;;
+
+(*PARAMETRIC
+let modular_exp_def = new_axiom
+  `(!x. modular_exp x 0 = num_to_modular 1) /\
+   (!x n. modular_exp x (SUC n) = modular_mult x (modular_exp x n))`;;
+*)
+
 let modular_neg_def = new_definition
   `!x. modular_neg x = num_to_modular (modulus - modular_to_num x)`;;
 
@@ -931,6 +960,67 @@ export_thm modular_mult_right_neg;;
 (*PARAMETRIC
 let modular_mult_right_neg = new_axiom
    `!x y. modular_mult x (modular_neg y) = modular_neg (modular_mult x y)`;;
+*)
+
+let num_to_modular_exp = prove
+  (`!m n. num_to_modular (m EXP n) = modular_exp (num_to_modular m) n`,
+   STRIP_TAC THEN
+   INDUCT_TAC THEN
+   ASM_REWRITE_TAC [modular_exp_def; EXP; num_to_modular_mult]);;
+
+export_thm num_to_modular_exp;;
+
+(*PARAMETRIC
+let num_to_modular_exp = new_axiom
+   `!m n. num_to_modular (m EXP n) = modular_exp (num_to_modular m) n`;;
+*)
+
+let modular_exp_zero = prove
+  (`!n.
+      modular_exp (num_to_modular 0) n =
+      if n = 0 then num_to_modular 1 else num_to_modular 0`,
+   REWRITE_TAC [GSYM num_to_modular_exp; EXP_ZERO] THEN
+   REWRITE_TAC [GSYM COND_RAND]);;
+
+export_thm modular_exp_zero;;
+
+(*PARAMETRIC
+let modular_exp_zero = new_axiom
+   `!n.
+      modular_exp (num_to_modular 0) n =
+      if n = 0 then num_to_modular 1 else num_to_modular 0`;;
+*)
+
+let modular_exp_add = prove
+  (`!x m n.
+      modular_mult (modular_exp x m) (modular_exp x n) =
+      modular_exp x (m + n)`,
+   REPEAT GEN_TAC THEN
+   SPEC_TAC (`m : num`, `m : num`) THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [modular_exp_def; modular_mult_left_one; ADD_CLAUSES];
+    ASM_REWRITE_TAC [modular_exp_def; ADD_CLAUSES; modular_mult_assoc]]);;
+
+export_thm modular_exp_add;;
+
+(*PARAMETRIC
+let modular_exp_add = new_axiom
+   `!x m n.
+      modular_mult (modular_exp x m) (modular_exp x n) =
+      modular_exp x (m + n)`;;
+*)
+
+let modular_exp_one = prove
+  (`!x. modular_exp x 1 = x`,
+   GEN_TAC THEN
+   REWRITE_TAC [ONE] THEN
+   REWRITE_TAC [modular_exp_def; modular_mult_right_one]);;
+
+export_thm modular_exp_one;;
+
+(*PARAMETRIC
+let modular_exp_one = new_axiom
+   `!x. modular_exp x 1 = x`;;
 *)
 
 logfile_end ();;

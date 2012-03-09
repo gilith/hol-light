@@ -69,6 +69,18 @@ let num_to_word10_mult = new_axiom
      num_to_word10 (x1 * y1) =
      word10_mult (num_to_word10 x1) (num_to_word10 y1)`;;
 
+new_constant ("word10_exp", `:word10 -> num -> word10`);;
+
+let word10_exp_0 = new_axiom
+  `!x. word10_exp x 0 = num_to_word10 1`;;
+
+let word10_exp_suc = new_axiom
+  `!x n. word10_exp x (SUC n) = word10_mult x (word10_exp x n)`;;
+
+let word10_exp_def = new_axiom
+  `(!x. word10_exp x 0 = num_to_word10 1) /\
+   (!x n. word10_exp x (SUC n) = word10_mult x (word10_exp x n))`;;
+
 new_constant ("word10_neg", `:word10 -> word10`);;
 
 let word10_neg_def = new_axiom
@@ -207,6 +219,22 @@ let word10_mult_left_neg = new_axiom
 
 let word10_mult_right_neg = new_axiom
    `!x y. word10_mult x (word10_neg y) = word10_neg (word10_mult x y)`;;
+
+let num_to_word10_exp = new_axiom
+   `!m n. num_to_word10 (m EXP n) = word10_exp (num_to_word10 m) n`;;
+
+let word10_exp_zero = new_axiom
+   `!n.
+      word10_exp (num_to_word10 0) n =
+      if n = 0 then num_to_word10 1 else num_to_word10 0`;;
+
+let word10_exp_add = new_axiom
+   `!x m n.
+      word10_mult (word10_exp x m) (word10_exp x n) =
+      word10_exp x (m + n)`;;
+
+let word10_exp_one = new_axiom
+   `!x. word10_exp x 1 = x`;;
 
 (* word10-bits-def *)
 

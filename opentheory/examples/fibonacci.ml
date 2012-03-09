@@ -196,11 +196,12 @@ export_thm encode_fib_def;;
 
 let (decode_fib_dest_nil,decode_fib_dest_cons) =
   let def = new_recursive_definition list_RECURSION
-    `(!n f p. decode_fib_dest n f p [] = (n : num)) /\
-     (!n f p h t.
-        decode_fib_dest n f p (CONS h t) =
-          let s = f + p in
-          decode_fib_dest (if h then n + s else n) s f t)` in
+    `(!f p. decode_fib_dest f p [] = 0) /\
+     (!f p h t.
+        decode_fib_dest f p (CONS h t) =
+        let s = f + p in
+        let n = decode_fib_dest s f t in
+        if h then s + n else n)` in
   CONJ_PAIR def;;
 
 export_thm decode_fib_dest_nil;;
@@ -209,7 +210,7 @@ export_thm decode_fib_dest_cons;;
 let decode_fib_dest_def = CONJ decode_fib_dest_nil decode_fib_dest_cons;;
 
 let decode_fib_def = new_definition
-  `!l. decode_fib l = decode_fib_dest 0 1 0 l`;;
+  `!l. decode_fib l = decode_fib_dest 1 0 l`;;
 
 export_thm decode_fib_def;;
 
@@ -323,9 +324,9 @@ export_thm large_fibonacci;;
 let encode_decode_fib_dest_mk = prove
  (`!n k l.
      n < fibonacci (k + 2) ==>
-     decode_fib_dest 0 1 0
+     decode_fib_dest 1 0
        (encode_fib_mk l n (fibonacci (k + 1)) (fibonacci k)) =
-     decode_fib_dest n (fibonacci (k + 1)) (fibonacci k) l`,
+     n + decode_fib_dest (fibonacci (k + 1)) (fibonacci k) l`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [fibonacci_add2] THEN
   SPEC_TAC (`l : bool list`, `l : bool list`) THEN
@@ -337,7 +338,7 @@ let encode_decode_fib_dest_mk = prove
    REWRITE_TAC [GSYM LE_SUC_LT; ONE; LE_SUC; LE] THEN
    DISCH_THEN SUBST_VAR_TAC THEN
    ONCE_REWRITE_TAC [encode_fib_mk_def] THEN
-   REWRITE_TAC [];
+   REWRITE_TAC [ADD_CLAUSES];
    ALL_TAC] THEN
   REPEAT GEN_TAC THEN
   REWRITE_TAC [GSYM ADD1; fibonacci_suc_suc] THEN
@@ -366,10 +367,8 @@ let encode_decode_fib_dest_mk = prove
     ALL_TAC] THEN
    DISCH_THEN SUBST1_TAC THEN
    REWRITE_TAC [decode_fib_dest_def; LET_DEF; LET_END_DEF] THEN
-   AP_THM_TAC THEN
-   AP_THM_TAC THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
+   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+   CONV_TAC (LAND_CONV (REWR_CONV (GSYM ADD_ASSOC))) THEN
    MATCH_ACCEPT_TAC ADD_SYM;
    REWRITE_TAC [ADD_SUB2] THEN
    FIRST_X_ASSUM
@@ -386,7 +385,7 @@ export_thm encode_decode_fib_dest_mk;;
 
 let encode_decode_fib_dest_find = prove
  (`!n k.
-     decode_fib_dest 0 1 0
+     decode_fib_dest 1 0
        (encode_fib_find n (fibonacci (k + 1)) (fibonacci k)) = n`,
   REPEAT GEN_TAC THEN
   SUBGOAL_THEN `?j. n < fibonacci (j + 2) /\ k <= j` MP_TAC THENL
@@ -417,7 +416,7 @@ let encode_decode_fib_dest_find = prove
                  encode_decode_fib_dest_mk) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [decode_fib_dest_def];
+   REWRITE_TAC [decode_fib_dest_def; ADD_CLAUSES];
    ALL_TAC] THEN
   REWRITE_TAC [ADD_CLAUSES] THEN
   REPEAT STRIP_TAC THEN
@@ -429,7 +428,7 @@ let encode_decode_fib_dest_find = prove
                  encode_decode_fib_dest_mk) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [decode_fib_dest_def];
+   REWRITE_TAC [decode_fib_dest_def; ADD_CLAUSES];
    ALL_TAC] THEN
   POP_ASSUM (K ALL_TAC) THEN
   FIRST_X_ASSUM (MP_TAC o SPEC `SUC k`) THEN
@@ -503,13 +502,13 @@ local
   fun destFib b n d f p l =
       case l of
         [] => if b then n - d else d - n
-      | x :: l =>
+      | h :: t =>
         let
-          val p = p - f
+          val s = p - f
 
-          val n = if x then n - p else n
+          val n = if h then n - s else n
         in
-          destFib (not b) d n p f l
+          destFib (not b) d n s f t
         end;
 in
   val decodeSub = destFib true 0 0 1 0;

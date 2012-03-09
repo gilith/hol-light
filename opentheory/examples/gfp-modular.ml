@@ -57,6 +57,18 @@ let num_to_gfp_mult = new_axiom
      num_to_gfp (x1 * y1) =
      gfp_mult (num_to_gfp x1) (num_to_gfp y1)`;;
 
+new_constant ("gfp_exp", `:gfp -> num -> gfp`);;
+
+let gfp_exp_0 = new_axiom
+  `!x. gfp_exp x 0 = num_to_gfp 1`;;
+
+let gfp_exp_suc = new_axiom
+  `!x n. gfp_exp x (SUC n) = gfp_mult x (gfp_exp x n)`;;
+
+let gfp_exp_def = new_axiom
+  `(!x. gfp_exp x 0 = num_to_gfp 1) /\
+   (!x n. gfp_exp x (SUC n) = gfp_mult x (gfp_exp x n))`;;
+
 new_constant ("gfp_neg", `:gfp -> gfp`);;
 
 let gfp_neg_def = new_axiom
@@ -195,6 +207,22 @@ let gfp_mult_left_neg = new_axiom
 
 let gfp_mult_right_neg = new_axiom
    `!x y. gfp_mult x (gfp_neg y) = gfp_neg (gfp_mult x y)`;;
+
+let num_to_gfp_exp = new_axiom
+   `!m n. num_to_gfp (m EXP n) = gfp_exp (num_to_gfp m) n`;;
+
+let gfp_exp_zero = new_axiom
+   `!n.
+      gfp_exp (num_to_gfp 0) n =
+      if n = 0 then num_to_gfp 1 else num_to_gfp 0`;;
+
+let gfp_exp_add = new_axiom
+   `!x m n.
+      gfp_mult (gfp_exp x m) (gfp_exp x n) =
+      gfp_exp x (m + n)`;;
+
+let gfp_exp_one = new_axiom
+   `!x. gfp_exp x 1 = x`;;
 
 (*PARAMETRIC
 (* gfp *)
@@ -256,6 +284,18 @@ let num_to_gfp_mult = new_axiom
      num_to_gfp (x1 * y1) =
      gfp_mult (num_to_gfp x1) (num_to_gfp y1)`;;
 
+new_constant ("gfp_exp", `:gfp -> num -> gfp`);;
+
+let gfp_exp_0 = new_axiom
+  `!x. gfp_exp x 0 = num_to_gfp 1`;;
+
+let gfp_exp_suc = new_axiom
+  `!x n. gfp_exp x (SUC n) = gfp_mult x (gfp_exp x n)`;;
+
+let gfp_exp_def = new_axiom
+  `(!x. gfp_exp x 0 = num_to_gfp 1) /\
+   (!x n. gfp_exp x (SUC n) = gfp_mult x (gfp_exp x n))`;;
+
 new_constant ("gfp_neg", `:gfp -> gfp`);;
 
 let gfp_neg_def = new_axiom
@@ -394,4 +434,20 @@ let gfp_mult_left_neg = new_axiom
 
 let gfp_mult_right_neg = new_axiom
    `!x y. gfp_mult x (gfp_neg y) = gfp_neg (gfp_mult x y)`;;
+
+let num_to_gfp_exp = new_axiom
+   `!m n. num_to_gfp (m EXP n) = gfp_exp (num_to_gfp m) n`;;
+
+let gfp_exp_zero = new_axiom
+   `!n.
+      gfp_exp (num_to_gfp 0) n =
+      if n = 0 then num_to_gfp 1 else num_to_gfp 0`;;
+
+let gfp_exp_add = new_axiom
+   `!x m n.
+      gfp_mult (gfp_exp x m) (gfp_exp x n) =
+      gfp_exp x (m + n)`;;
+
+let gfp_exp_one = new_axiom
+   `!x. gfp_exp x 1 = x`;;
 *)

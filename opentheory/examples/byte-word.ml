@@ -69,6 +69,18 @@ let num_to_byte_mult = new_axiom
      num_to_byte (x1 * y1) =
      byte_mult (num_to_byte x1) (num_to_byte y1)`;;
 
+new_constant ("byte_exp", `:byte -> num -> byte`);;
+
+let byte_exp_0 = new_axiom
+  `!x. byte_exp x 0 = num_to_byte 1`;;
+
+let byte_exp_suc = new_axiom
+  `!x n. byte_exp x (SUC n) = byte_mult x (byte_exp x n)`;;
+
+let byte_exp_def = new_axiom
+  `(!x. byte_exp x 0 = num_to_byte 1) /\
+   (!x n. byte_exp x (SUC n) = byte_mult x (byte_exp x n))`;;
+
 new_constant ("byte_neg", `:byte -> byte`);;
 
 let byte_neg_def = new_axiom
@@ -207,6 +219,22 @@ let byte_mult_left_neg = new_axiom
 
 let byte_mult_right_neg = new_axiom
    `!x y. byte_mult x (byte_neg y) = byte_neg (byte_mult x y)`;;
+
+let num_to_byte_exp = new_axiom
+   `!m n. num_to_byte (m EXP n) = byte_exp (num_to_byte m) n`;;
+
+let byte_exp_zero = new_axiom
+   `!n.
+      byte_exp (num_to_byte 0) n =
+      if n = 0 then num_to_byte 1 else num_to_byte 0`;;
+
+let byte_exp_add = new_axiom
+   `!x m n.
+      byte_mult (byte_exp x m) (byte_exp x n) =
+      byte_exp x (m + n)`;;
+
+let byte_exp_one = new_axiom
+   `!x. byte_exp x 1 = x`;;
 
 (* byte-bits-def *)
 

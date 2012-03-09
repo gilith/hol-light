@@ -223,6 +223,28 @@ let gfp_mult_eq_zero = new_axiom
       x = num_to_gfp 0 \/ y = num_to_gfp 0`;;
 *)
 
+let gfp_exp_eq_zero = prove
+  (`!x n. gfp_exp x n = num_to_gfp 0 <=> x = num_to_gfp 0 /\ ~(n = 0)`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPEC `n : num` num_CASES) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [gfp_exp_def; gfp_one_nonzero];
+    ALL_TAC] THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [NOT_SUC] THEN
+   SPEC_TAC (`n' : num`, `n : num`) THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [gfp_exp_def; gfp_mult_right_one];
+    ONCE_REWRITE_TAC [gfp_exp_def] THEN
+    ASM_REWRITE_TAC [gfp_mult_eq_zero]]);;
+
+export_thm gfp_exp_eq_zero;;
+
+(*PARAMETRIC
+let gfp_exp_eq_zero = new_axiom
+   `!x n. gfp_exp x n = num_to_gfp 0 <=> x = num_to_gfp 0 /\ ~(n = 0)`;;
+*)
+
 logfile "gfp-div-def";;
 
 (*PARAMETRIC
@@ -328,6 +350,22 @@ let gfp_mult_right_div = new_axiom
    `!x y. ~(x = num_to_gfp 0) ==> gfp_div (gfp_mult y x) x = y`;;
 *)
 
+let gfp_mult_left_cancel_imp = prove
+  (`!x y z. ~(x = num_to_gfp 0) /\ gfp_mult x y = gfp_mult x z ==> y = z`,
+   REPEAT STRIP_TAC THEN
+   ONCE_REWRITE_TAC [GSYM gfp_mult_left_one] THEN
+   MP_TAC (SPEC `x : gfp` gfp_mult_left_inv) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+   ASM_REWRITE_TAC [gfp_mult_assoc]);;
+
+export_thm gfp_mult_left_cancel_imp;;
+
+(*PARAMETRIC
+let gfp_mult_left_cancel_imp = new_axiom
+   `!x y z. ~(x = num_to_gfp 0) /\ gfp_mult x y = gfp_mult x z ==> y = z`;;
+*)
+
 let gfp_mult_left_cancel = prove
   (`!x y z. gfp_mult x y = gfp_mult x z <=> x = num_to_gfp 0 \/ y = z`,
    REPEAT GEN_TAC THEN
@@ -335,11 +373,9 @@ let gfp_mult_left_cancel = prove
    [STRIP_TAC THEN
     ASM_CASES_TAC `x = num_to_gfp 0` THEN
     ASM_REWRITE_TAC [] THEN
-    ONCE_REWRITE_TAC [GSYM gfp_mult_left_one] THEN
-    MP_TAC (SPEC `x : gfp` gfp_mult_left_inv) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
-    ASM_REWRITE_TAC [gfp_mult_assoc];
+    MATCH_MP_TAC gfp_mult_left_cancel_imp THEN
+    EXISTS_TAC `x : gfp` THEN
+    ASM_REWRITE_TAC [];
     STRIP_TAC THEN
     ASM_REWRITE_TAC [gfp_mult_left_zero]]);;
 
@@ -350,11 +386,22 @@ let gfp_mult_left_cancel = new_axiom
    `!x y z. gfp_mult x y = gfp_mult x z <=> x = num_to_gfp 0 \/ y = z`;;
 *)
 
+let gfp_mult_right_cancel_imp = prove
+  (`!x y z. ~(x = num_to_gfp 0) /\ gfp_mult y x = gfp_mult z x ==> y = z`,
+   ONCE_REWRITE_TAC [gfp_mult_comm] THEN
+   ACCEPT_TAC gfp_mult_left_cancel_imp);;
+
+export_thm gfp_mult_right_cancel_imp;;
+
+(*PARAMETRIC
+let gfp_mult_right_cancel_imp = new_axiom
+   `!x y z. ~(x = num_to_gfp 0) /\ gfp_mult y x = gfp_mult z x ==> y = z`;;
+*)
+
 let gfp_mult_right_cancel = prove
   (`!x y z. gfp_mult y x = gfp_mult z x <=> x = num_to_gfp 0 \/ y = z`,
-   REPEAT GEN_TAC THEN
    ONCE_REWRITE_TAC [gfp_mult_comm] THEN
-   REWRITE_TAC [gfp_mult_left_cancel]);;
+   ACCEPT_TAC gfp_mult_left_cancel);;
 
 export_thm gfp_mult_right_cancel;;
 
@@ -588,6 +635,58 @@ export_thm gfp_div_left_mult;;
 (*PARAMETRIC
 let gfp_div_left_mult = new_axiom
    `!x y. ~(x = num_to_gfp 0) ==> gfp_mult x (gfp_div y x) = y`;;
+*)
+
+let gfp_div_nonzero = prove
+  (`!x y.
+      ~(x = num_to_gfp 0) /\ ~(y = num_to_gfp 0) ==>
+      ~(gfp_div y x = num_to_gfp 0)`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPECL [`x : gfp`; `y : gfp`] gfp_div_left_mult) THEN
+   ASM_REWRITE_TAC [gfp_mult_right_zero]);;
+
+export_thm gfp_div_nonzero;;
+
+(*PARAMETRIC
+let gfp_div_nonzero = new_axiom
+   `!x y.
+      ~(x = num_to_gfp 0) /\ ~(y = num_to_gfp 0) ==>
+      ~(gfp_div y x = num_to_gfp 0)`;;
+*)
+
+let gfp_div_one = prove
+  (`!x. gfp_div x (num_to_gfp 1) = x`,
+   GEN_TAC THEN
+   CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [GSYM gfp_mult_right_one])) THEN
+   MATCH_MP_TAC gfp_div_right_mult THEN
+   ACCEPT_TAC gfp_one_nonzero);;
+
+export_thm gfp_div_one;;
+
+(*PARAMETRIC
+let gfp_div_one = new_axiom
+   `!x. gfp_div x (num_to_gfp 1) = x`;;
+*)
+
+let gfp_exp_inv = prove
+  (`!x n.
+      ~(x = num_to_gfp 0) ==>
+      gfp_exp (gfp_inv x) n = gfp_inv (gfp_exp x n)`,
+   REPEAT STRIP_TAC THEN
+   SPEC_TAC (`n : num`, `n : num`) THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [gfp_exp_def; gfp_inv_one];
+    ASM_REWRITE_TAC [gfp_exp_def] THEN
+    MATCH_MP_TAC gfp_inv_mult THEN
+    ASM_REWRITE_TAC [gfp_exp_eq_zero]]);;
+
+export_thm gfp_exp_inv;;
+
+(*PARAMETRIC
+let gfp_exp_inv = new_axiom
+   `!x n.
+      ~(x = num_to_gfp 0) ==>
+      gfp_exp (gfp_inv x) n = gfp_inv (gfp_exp x n)`;;
 *)
 
 logfile "gfp-div-gcd-def";;
@@ -1041,18 +1140,233 @@ let gfp_div_gcd = new_axiom
       gfp_div_gcd (gfp_to_num y) oddprime x (num_to_gfp 0) = gfp_div x y`;;
 *)
 
-(***
 logfile "gfp-exp-div-def";;
 
 (*PARAMETRIC
 (* gfp-exp-div-def *)
 *)
 
+let (gfp_exp_div_nil,gfp_exp_div_cons) =
+  let def = new_recursive_definition list_RECURSION
+    `(!b n d f p.
+        gfp_exp_div b n d f p [] =
+        if b then gfp_div n d else gfp_div d n) /\
+     (!b n d f p h t.
+        gfp_exp_div b n d f p (CONS h t) =
+        let s = gfp_div p f in
+        gfp_exp_div (~b) d (if h then gfp_div n s else n) s f t)` in
+  CONJ_PAIR def;;
+
+export_thm gfp_exp_div_nil;;
+export_thm gfp_exp_div_cons;;
+
+let gfp_exp_div_def = CONJ gfp_exp_div_nil gfp_exp_div_cons;;
+
 logfile "gfp-exp-div-thm";;
 
 (*PARAMETRIC
 (* gfp-exp-div-thm *)
 *)
-***)
+
+let gfp_exp_div_invariant = prove
+  (`!x n d f p l.
+      ~(x = num_to_gfp 0) /\ ~(n = num_to_gfp 0) /\ ~(d = num_to_gfp 0) ==>
+      (gfp_exp_div T n d (gfp_exp x f) (gfp_inv (gfp_exp x p)) l =
+       gfp_mult (gfp_div n d) (gfp_exp x (decode_fib_dest f p l))) /\
+      (gfp_exp_div F n d (gfp_inv (gfp_exp x f)) (gfp_exp x p) l =
+       gfp_mult (gfp_div d n) (gfp_exp x (decode_fib_dest f p l)))`,
+   REPEAT GEN_TAC THEN
+   STRIP_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [IMP_IMP] THEN
+   SPEC_TAC (`p : num`, `p : num`) THEN
+   SPEC_TAC (`f : num`, `f : num`) THEN
+   SPEC_TAC (`d : gfp`, `d : gfp`) THEN
+   SPEC_TAC (`n : gfp`, `n : gfp`) THEN
+   SPEC_TAC (`l : bool list`, `l : bool list`) THEN
+   LIST_INDUCT_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    ASM_REWRITE_TAC
+      [gfp_exp_def; decode_fib_dest_def; gfp_exp_div_def; gfp_mult_right_one];
+    ALL_TAC] THEN
+   REPEAT GEN_TAC THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [gfp_exp_def; decode_fib_dest_def; gfp_exp_div_def;
+      LET_DEF; LET_END_DEF; ADD_CLAUSES] THEN
+   SUBGOAL_THEN
+     `gfp_div (gfp_inv (gfp_exp x p)) (gfp_exp x f) =
+      gfp_inv (gfp_exp x (f + p))` SUBST1_TAC THENL
+   [SUBGOAL_THEN
+     `gfp_inv (gfp_exp x p) =
+      gfp_mult (gfp_inv (gfp_exp x (f + p))) (gfp_exp x f)` SUBST1_TAC THENL
+    [MATCH_MP_TAC gfp_mult_right_cancel_imp THEN
+     EXISTS_TAC `gfp_exp x p` THEN
+     ASM_REWRITE_TAC [gfp_exp_eq_zero] THEN
+     MATCH_MP_TAC EQ_TRANS THEN
+     EXISTS_TAC `num_to_gfp 1` THEN
+     STRIP_TAC THENL
+     [MATCH_MP_TAC gfp_mult_left_inv THEN
+      ASM_REWRITE_TAC [gfp_exp_eq_zero];
+      MATCH_MP_TAC EQ_SYM THEN
+      REWRITE_TAC [gfp_mult_assoc; gfp_exp_add] THEN
+      MATCH_MP_TAC gfp_mult_left_inv THEN
+      ASM_REWRITE_TAC [gfp_exp_eq_zero]];
+     MATCH_MP_TAC gfp_mult_right_div THEN
+     ASM_REWRITE_TAC [gfp_exp_eq_zero]];
+    ALL_TAC] THEN
+   CONJ_TAC THENL
+   [SUBGOAL_THEN
+      `gfp_div n (gfp_inv (gfp_exp x (f + p))) =
+       gfp_mult n (gfp_exp x (f + p))` SUBST1_TAC THENL
+    [MP_TAC (SPECL [`gfp_inv (gfp_exp x (f + p))`; `n : gfp`] gfp_div_inv) THEN
+     ANTS_TAC THENL
+     [MATCH_MP_TAC gfp_inv_nonzero THEN
+      ASM_REWRITE_TAC [gfp_exp_eq_zero];
+      ALL_TAC] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     REWRITE_TAC [gfp_mult_left_cancel] THEN
+     DISJ2_TAC THEN
+     MATCH_MP_TAC gfp_inv_inv THEN
+     ASM_REWRITE_TAC [gfp_exp_eq_zero];
+     ALL_TAC] THEN
+    FIRST_X_ASSUM (MP_TAC o SPECL
+      [`d : gfp`; `if h then gfp_mult n (gfp_exp x (f + p)) else n`;
+       `f + p : num`; `f : num`]) THEN
+    ANTS_TAC THENL
+    [ASM_REWRITE_TAC [] THEN
+     BOOL_CASES_TAC `h : bool` THEN
+     ASM_REWRITE_TAC [gfp_mult_eq_zero; gfp_exp_eq_zero];
+     ALL_TAC] THEN
+    DISCH_THEN (SUBST1_TAC o CONJUNCT2) THEN
+    BOOL_CASES_TAC `h : bool` THENL
+    [ASM_REWRITE_TAC [] THEN
+     CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM gfp_exp_add])) THEN
+     REWRITE_TAC [GSYM gfp_mult_assoc; gfp_mult_right_cancel] THEN
+     DISJ2_TAC THEN
+     MATCH_MP_TAC gfp_mult_right_cancel_imp THEN
+     EXISTS_TAC `d : gfp` THEN
+     ASM_REWRITE_TAC [] THEN
+     MATCH_MP_TAC EQ_TRANS THEN
+     EXISTS_TAC `gfp_mult n (gfp_exp x (f + p))` THEN
+     CONJ_TAC THENL
+     [MATCH_MP_TAC gfp_div_right_mult THEN
+      FIRST_ASSUM ACCEPT_TAC;
+      MATCH_MP_TAC EQ_SYM THEN
+      REWRITE_TAC [gfp_mult_assoc] THEN
+      CONV_TAC (LAND_CONV (RAND_CONV (ONCE_REWRITE_CONV [gfp_mult_comm]))) THEN
+      REWRITE_TAC [GSYM gfp_mult_assoc; gfp_mult_right_cancel] THEN
+      DISJ2_TAC THEN
+      MATCH_MP_TAC gfp_div_right_mult THEN
+      FIRST_ASSUM ACCEPT_TAC];
+     ASM_REWRITE_TAC []];
+    SUBGOAL_THEN
+      `gfp_div (gfp_exp x p) (gfp_inv (gfp_exp x f)) =
+       gfp_exp x (f + p)` SUBST1_TAC THENL
+    [MP_TAC (SPECL [`gfp_inv (gfp_exp x f)`; `gfp_exp x p`] gfp_div_inv) THEN
+     ANTS_TAC THENL
+     [MATCH_MP_TAC gfp_inv_nonzero THEN
+      ASM_REWRITE_TAC [gfp_exp_eq_zero];
+      ALL_TAC] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     ONCE_REWRITE_TAC [ADD_SYM] THEN
+     REWRITE_TAC [GSYM gfp_exp_add; gfp_mult_left_cancel] THEN
+     DISJ2_TAC THEN
+     MATCH_MP_TAC gfp_inv_inv THEN
+     ASM_REWRITE_TAC [gfp_exp_eq_zero];
+     ALL_TAC] THEN
+    FIRST_X_ASSUM (MP_TAC o SPECL
+      [`d : gfp`; `if h then gfp_div n (gfp_exp x (f + p)) else n`;
+       `f + p : num`; `f : num`]) THEN
+    ANTS_TAC THENL
+    [ASM_REWRITE_TAC [] THEN
+     BOOL_CASES_TAC `h : bool` THENL
+     [ASM_REWRITE_TAC [] THEN
+      MATCH_MP_TAC gfp_div_nonzero THEN
+      ASM_REWRITE_TAC [gfp_exp_eq_zero];
+      ASM_REWRITE_TAC []];
+     ALL_TAC] THEN
+    DISCH_THEN (SUBST1_TAC o CONJUNCT1) THEN
+    BOOL_CASES_TAC `h : bool` THENL
+    [ASM_REWRITE_TAC [] THEN
+     CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM gfp_exp_add])) THEN
+     REWRITE_TAC [GSYM gfp_mult_assoc; gfp_mult_right_cancel] THEN
+     DISJ2_TAC THEN
+     MATCH_MP_TAC gfp_mult_left_cancel_imp THEN
+     EXISTS_TAC `gfp_div n (gfp_exp x (f + p))` THEN
+     CONJ_TAC THENL
+     [MATCH_MP_TAC gfp_div_nonzero THEN
+      ASM_REWRITE_TAC [gfp_exp_eq_zero];
+      ALL_TAC] THEN
+     MATCH_MP_TAC EQ_TRANS THEN
+     EXISTS_TAC `d : gfp` THEN
+     CONJ_TAC THENL
+     [MATCH_MP_TAC gfp_div_left_mult THEN
+      MATCH_MP_TAC gfp_div_nonzero THEN
+      ASM_REWRITE_TAC [gfp_exp_eq_zero];
+      ALL_TAC] THEN
+     MATCH_MP_TAC EQ_SYM THEN
+     MATCH_MP_TAC EQ_TRANS THEN
+     EXISTS_TAC `gfp_mult n (gfp_div d n)` THEN
+     CONJ_TAC THENL
+     [CONV_TAC (LAND_CONV (RAND_CONV (ONCE_REWRITE_CONV [gfp_mult_comm]))) THEN
+      REWRITE_TAC [GSYM gfp_mult_assoc; gfp_mult_right_cancel] THEN
+      DISJ2_TAC THEN
+      MATCH_MP_TAC gfp_div_right_mult THEN
+      ASM_REWRITE_TAC [gfp_exp_eq_zero];
+      MATCH_MP_TAC gfp_div_left_mult THEN
+      FIRST_ASSUM ACCEPT_TAC];
+     ASM_REWRITE_TAC []]]);;
+
+export_thm gfp_exp_div_invariant;;
+
+(*PARAMETRIC
+let gfp_exp_div_invariant = new_axiom
+   `!x n d f p l.
+      ~(x = num_to_gfp 0) /\ ~(n = num_to_gfp 0) /\ ~(d = num_to_gfp 0) ==>
+      (gfp_exp_div T n d (gfp_exp x f) (gfp_inv (gfp_exp x p)) l =
+       gfp_mult (gfp_div n d) (gfp_exp x (decode_fib_dest f p l))) /\
+      (gfp_exp_div F n d (gfp_inv (gfp_exp x f)) (gfp_exp x p) l =
+       gfp_mult (gfp_div d n) (gfp_exp x (decode_fib_dest f p l)))`;;
+*)
+
+let gfp_exp_div = prove
+  (`!x n.
+      (if n = 0 then num_to_gfp 1
+       else if x = num_to_gfp 0 then num_to_gfp 0
+       else gfp_exp_div T (num_to_gfp 1) (num_to_gfp 1) x (num_to_gfp 1)
+              (encode_fib n)) =
+      gfp_exp x n`,
+   REPEAT GEN_TAC THEN
+   COND_CASES_TAC THENL
+   [ASM_REWRITE_TAC [gfp_exp_def];
+    ALL_TAC] THEN
+   COND_CASES_TAC THENL
+   [MATCH_MP_TAC EQ_SYM THEN
+    ASM_REWRITE_TAC [gfp_exp_eq_zero];
+    ALL_TAC] THEN
+   MP_TAC (SPECL [`x : gfp`; `num_to_gfp 1`; `num_to_gfp 1`; `1`; `0`;
+                  `encode_fib n`] gfp_exp_div_invariant) THEN
+   ANTS_TAC THENL
+   [ASM_REWRITE_TAC [gfp_one_nonzero];
+    ALL_TAC] THEN
+   DISCH_THEN
+     (SUBST1_TAC o REWRITE_RULE [gfp_exp_def; gfp_inv_one; gfp_exp_one] o
+      CONJUNCT1) THEN
+   REWRITE_TAC
+     [gfp_div_one; gfp_mult_left_one; GSYM decode_fib_def; encode_decode_fib]);;
+
+export_thm gfp_exp_div;;
+
+(*PARAMETRIC
+let gfp_exp_div = new_axiom
+   `!x n.
+      (if n = 0 then num_to_gfp 1
+       else if x = num_to_gfp 0 then num_to_gfp 0
+       else gfp_exp_div T (num_to_gfp 1) (num_to_gfp 1) x (num_to_gfp 1)
+              (encode_fib n)) =
+      gfp_exp x n`;;
+*)
 
 logfile_end ();;
