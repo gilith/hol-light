@@ -475,17 +475,19 @@ encode 12;
 encode 13;
 
 local
-  fun destFib n f p l =
+  fun destFib f p l =
       case l of
-        [] => n
+        [] => 0
       | h :: t =>
         let
           val s = f + p
+
+          val n = destFib s f t
         in
-          destFib (if h then n + s else n) s f t
+          if h then s + n else n
         end;
 in
-  fun decode l = destFib 0 1 0 l;
+  fun decode l = destFib 1 0 l;
 end;
 
 (decode o encode) 0;
