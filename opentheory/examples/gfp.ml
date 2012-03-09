@@ -1140,10 +1140,10 @@ let gfp_div_gcd = new_axiom
       gfp_div_gcd (gfp_to_num y) oddprime x (num_to_gfp 0) = gfp_div x y`;;
 *)
 
-logfile "gfp-exp-div-def";;
+logfile "gfp-div-exp-def";;
 
 (*PARAMETRIC
-(* gfp-exp-div-def *)
+(* gfp-div-exp-def *)
 *)
 
 let (gfp_exp_div_nil,gfp_exp_div_cons) =
@@ -1162,10 +1162,10 @@ export_thm gfp_exp_div_cons;;
 
 let gfp_exp_div_def = CONJ gfp_exp_div_nil gfp_exp_div_cons;;
 
-logfile "gfp-exp-div-thm";;
+logfile "gfp-div-exp-thm";;
 
 (*PARAMETRIC
-(* gfp-exp-div-thm *)
+(* gfp-div-exp-thm *)
 *)
 
 let gfp_exp_div_invariant = prove
