@@ -321,6 +321,28 @@ let large_fibonacci = prove
 
 export_thm large_fibonacci;;
 
+let fibonacci_vorobev = prove
+ (`!j k.
+     fibonacci (j + k + 1) =
+     fibonacci j * fibonacci k + fibonacci (j + 1) * fibonacci (k + 1)`,
+  INDUCT_TAC THENL
+  [REWRITE_TAC [ADD_CLAUSES; fibonacci_def; MULT_CLAUSES];
+   ALL_TAC] THEN
+  GEN_TAC THEN
+  REWRITE_TAC [ONE; ADD_CLAUSES] THEN
+  CONV_TAC (RAND_CONV (REWRITE_CONV [fibonacci_suc_suc])) THEN
+  REWRITE_TAC [ADD_ASSOC; RIGHT_ADD_DISTRIB] THEN
+  REWRITE_TAC [GSYM LEFT_ADD_DISTRIB] THEN
+  CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [ADD_SYM])) THEN
+  CONV_TAC (RAND_CONV (RAND_CONV (ONCE_REWRITE_CONV [ADD_SYM]))) THEN
+  REWRITE_TAC [GSYM fibonacci_suc_suc] THEN
+  ONCE_REWRITE_TAC [GSYM ADD_SUC] THEN
+  REWRITE_TAC [ADD1] THEN
+  CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [GSYM ADD_ASSOC])) THEN
+  FIRST_ASSUM MATCH_ACCEPT_TAC);;
+
+export_thm fibonacci_vorobev;;
+
 let encode_decode_fib_dest_mk = prove
  (`!n k l.
      n < fibonacci (k + 2) ==>
@@ -470,6 +492,7 @@ end;
 encode 0;
 encode 1;
 encode 2;
+encode 10;
 encode 11;
 encode 12;
 encode 13;
