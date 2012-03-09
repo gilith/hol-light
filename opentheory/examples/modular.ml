@@ -353,9 +353,7 @@ let modular_exp_suc = new_axiom
 let modular_exp_def = CONJ modular_exp_0 modular_exp_suc;;
 
 (*PARAMETRIC
-let modular_exp_def = new_axiom
-  `(!x. modular_exp x 0 = num_to_modular 1) /\
-   (!x n. modular_exp x (SUC n) = modular_mult x (modular_exp x n))`;;
+let modular_exp_def = CONJ modular_exp_0 modular_exp_suc;;
 *)
 
 let modular_neg_def = new_definition
