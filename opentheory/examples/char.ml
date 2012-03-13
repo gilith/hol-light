@@ -264,13 +264,13 @@ let decoder_def = new_definition
 
 export_thm decoder_def;;
 
-let decode_stream_def = new_definition
-  `decode_stream = parse_stream decoder`;;
+let decode_pstream_def = new_definition
+  `decode_pstream = parse_pstream decoder`;;
 
-export_thm decode_stream_def;;
+export_thm decode_pstream_def;;
 
 let decode_def = new_definition
-  `!bs. decode bs = stream_to_list (decode_stream (list_to_stream bs))`;;
+  `!bs. decode bs = pstream_to_list (decode_pstream (list_to_pstream bs))`;;
 
 export_thm decode_def;;
 
@@ -363,25 +363,25 @@ let is_parser_decoder_parse = prove
       STRIP_TAC THEN
       ASM_REWRITE_TAC [case_option_def; COND_CLAUSES] THEN
       MP_TAC (ISPECL [`parse_partial_map (decode_cont3 x) parse_cont3`;
-                      `xs : byte stream`] parse_cases) THEN
+                      `xs : byte pstream`] parse_cases) THEN
       STRIP_TAC THEN
       ASM_REWRITE_TAC [case_option_def] THEN
-      MATCH_MP_TAC is_suffix_stream_proper THEN
+      MATCH_MP_TAC is_suffix_pstream_proper THEN
       ASM_REWRITE_TAC [];
       MP_TAC (ISPECL [`parse_partial_map (decode_cont2 x) parse_cont2`;
-                      `xs : byte stream`] parse_cases) THEN
+                      `xs : byte pstream`] parse_cases) THEN
       STRIP_TAC THEN
       ASM_REWRITE_TAC [case_option_def] THEN
-      MATCH_MP_TAC is_suffix_stream_proper THEN
+      MATCH_MP_TAC is_suffix_pstream_proper THEN
       ASM_REWRITE_TAC []];
      MP_TAC (ISPECL [`parse_partial_map (decode_cont1 x) parse_cont`;
-                     `xs : byte stream`] parse_cases) THEN
+                     `xs : byte pstream`] parse_cases) THEN
      STRIP_TAC THEN
      ASM_REWRITE_TAC [case_option_def] THEN
-     MATCH_MP_TAC is_suffix_stream_proper THEN
+     MATCH_MP_TAC is_suffix_pstream_proper THEN
      ASM_REWRITE_TAC []];
     REWRITE_TAC
-      [LET_DEF; LET_END_DEF; case_option_def; is_suffix_stream_refl]]);;
+      [LET_DEF; LET_END_DEF; case_option_def; is_suffix_pstream_refl]]);;
 
 export_thm is_parser_decoder_parse;;
 
@@ -394,12 +394,12 @@ let dest_parser_decoder = prove
 export_thm dest_parser_decoder;;
 
 let parse_decoder = prove
-  (`parse decoder = case_stream NONE NONE decoder_parse`,
+  (`parse decoder = case_pstream NONE NONE decoder_parse`,
    ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
    GEN_TAC THEN
-   MP_TAC (ISPEC `x : byte stream` stream_cases) THEN
+   MP_TAC (ISPEC `x : byte pstream` pstream_cases) THEN
    STRIP_TAC THEN
-   ASM_REWRITE_TAC [parse_def; case_stream_def; dest_parser_decoder]);;
+   ASM_REWRITE_TAC [parse_def; case_pstream_def; dest_parser_decoder]);;
 
 export_thm parse_decoder;;
 
@@ -433,8 +433,8 @@ let decoder_encoder_inverse = prove
     ASM_REWRITE_TAC [] THEN
     bool_cases_tac `b0 = num_to_byte 0 /\ ~byte_bit b1 7` THENL
     [FIRST_X_ASSUM SUBST_VAR_TAC THEN
-     ASM_REWRITE_TAC [append_stream_def] THEN
-     REWRITE_TAC [parse_decoder; case_stream_def; decoder_parse_def] THEN
+     ASM_REWRITE_TAC [append_pstream_def] THEN
+     REWRITE_TAC [parse_decoder; case_pstream_def; decoder_parse_def] THEN
      ASM_REWRITE_TAC [LET_DEF; LET_END_DEF];
      ASM_REWRITE_TAC [] THEN
      bool_cases_tac `byte_and (num_to_byte 248) b0 = num_to_byte 0` THENL
@@ -450,15 +450,15 @@ let decoder_encoder_inverse = prove
       bit_blast_tac THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
       bit_blast_tac THEN
-      REWRITE_TAC [append_stream_def] THEN
-      REWRITE_TAC [parse_decoder; case_stream_def] THEN
+      REWRITE_TAC [append_pstream_def] THEN
+      REWRITE_TAC [parse_decoder; case_pstream_def] THEN
       REWRITE_TAC [decoder_parse_def] THEN
       bit_blast_tac THEN
       REPEAT STRIP_TAC THEN
       ASM_REWRITE_TAC [] THEN
       REWRITE_TAC
         [parse_parse_partial_map; parse_parse_some; parse_cont_def;
-         case_option_def; case_stream_def; is_cont_def] THEN
+         case_option_def; case_pstream_def; is_cont_def] THEN
       bit_blast_tac THEN
       REWRITE_TAC [case_option_def] THEN
       REWRITE_TAC [decode_cont1_def] THEN
@@ -490,8 +490,8 @@ let decoder_encoder_inverse = prove
       bit_blast_tac THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
       bit_blast_tac THEN
-      REWRITE_TAC [append_stream_def] THEN
-      REWRITE_TAC [parse_decoder; case_stream_def] THEN
+      REWRITE_TAC [append_pstream_def] THEN
+      REWRITE_TAC [parse_decoder; case_pstream_def] THEN
       REWRITE_TAC [decoder_parse_def] THEN
       bit_blast_tac THEN
       REPEAT STRIP_TAC THEN
@@ -499,9 +499,9 @@ let decoder_encoder_inverse = prove
       REWRITE_TAC
         [parse_parse_partial_map; parse_parse_some; parse_cont2_def;
          parse_parse_pair; parse_cont_def;
-         case_option_def; case_stream_def; is_cont_def] THEN
+         case_option_def; case_pstream_def; is_cont_def] THEN
       bit_blast_tac THEN
-      REWRITE_TAC [case_option_def; case_stream_def] THEN
+      REWRITE_TAC [case_option_def; case_pstream_def] THEN
       bit_blast_tac THEN
       REWRITE_TAC [case_option_def] THEN
       REWRITE_TAC [decode_cont2_def] THEN
@@ -561,8 +561,8 @@ let decoder_encoder_inverse = prove
     bit_blast_tac THEN
     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
     bit_blast_tac THEN
-    REWRITE_TAC [append_stream_def] THEN
-    REWRITE_TAC [parse_decoder; case_stream_def] THEN
+    REWRITE_TAC [append_pstream_def] THEN
+    REWRITE_TAC [parse_decoder; case_pstream_def] THEN
     REWRITE_TAC [decoder_parse_def] THEN
     bit_blast_tac THEN
     REPEAT STRIP_TAC THEN
@@ -570,13 +570,13 @@ let decoder_encoder_inverse = prove
     REWRITE_TAC
       [parse_parse_partial_map; parse_parse_some; parse_cont3_def;
        parse_parse_pair; parse_cont2_def; parse_cont_def;
-       case_option_def; case_stream_def; is_cont_def] THEN
+       case_option_def; case_pstream_def; is_cont_def] THEN
     bit_blast_tac THEN
-    REWRITE_TAC [case_option_def; case_stream_def] THEN
+    REWRITE_TAC [case_option_def; case_pstream_def] THEN
     bit_blast_tac THEN
-    REWRITE_TAC [case_option_def; case_stream_def] THEN
+    REWRITE_TAC [case_option_def; case_pstream_def] THEN
     bit_blast_tac THEN
-    REWRITE_TAC [case_option_def; case_stream_def] THEN
+    REWRITE_TAC [case_option_def; case_pstream_def] THEN
     REWRITE_TAC [decode_cont3_def] THEN
     bit_blast_tac THEN
     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
@@ -615,13 +615,13 @@ let decoder_encoder_strong_inverse = prove
    REWRITE_TAC
      [parse_strong_inverse_def; decoder_encoder_inverse; parse_decoder] THEN
    REPEAT GEN_TAC THEN
-   MP_TAC (ISPEC `s : byte stream` stream_cases) THEN
+   MP_TAC (ISPEC `s : byte pstream` pstream_cases) THEN
    STRIP_TAC THENL
-   [ASM_REWRITE_TAC [case_stream_def; option_distinct];
-    ASM_REWRITE_TAC [case_stream_def; option_distinct];
+   [ASM_REWRITE_TAC [case_pstream_def; option_distinct];
+    ASM_REWRITE_TAC [case_pstream_def; option_distinct];
     ALL_TAC] THEN
    POP_ASSUM SUBST_VAR_TAC THEN
-   REWRITE_TAC [case_stream_def; decoder_parse_def] THEN
+   REWRITE_TAC [case_pstream_def; decoder_parse_def] THEN
    MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
    STRIP_TAC THEN
    POP_ASSUM SUBST_VAR_TAC THEN
@@ -640,14 +640,14 @@ let decoder_encoder_strong_inverse = prove
        REWRITE_TAC
          [parse_parse_partial_map; parse_parse_some; parse_cont3_def;
           parse_parse_pair; parse_cont2_def; parse_cont_def;
-          case_option_def; case_stream_def; is_cont_def] THEN
-       MP_TAC (ISPEC `a1 : byte stream` stream_cases) THEN
+          case_option_def; case_pstream_def; is_cont_def] THEN
+       MP_TAC (ISPEC `a1 : byte pstream` pstream_cases) THEN
        STRIP_TAC THENL
-       [ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
-        ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
+       [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+        ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ALL_TAC] THEN
        POP_ASSUM SUBST_VAR_TAC THEN
-       REWRITE_TAC [case_stream_def] THEN
+       REWRITE_TAC [case_pstream_def] THEN
        MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
        STRIP_TAC THEN
        POP_ASSUM SUBST_VAR_TAC THEN
@@ -660,13 +660,13 @@ let decoder_encoder_strong_inverse = prove
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [case_option_def] THEN
-       MP_TAC (ISPEC `a1' : byte stream` stream_cases) THEN
+       MP_TAC (ISPEC `a1' : byte pstream` pstream_cases) THEN
        STRIP_TAC THENL
-       [ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
-        ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
+       [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+        ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ALL_TAC] THEN
        POP_ASSUM SUBST_VAR_TAC THEN
-       REWRITE_TAC [case_stream_def] THEN
+       REWRITE_TAC [case_pstream_def] THEN
        MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
        STRIP_TAC THEN
        POP_ASSUM SUBST_VAR_TAC THEN
@@ -679,13 +679,13 @@ let decoder_encoder_strong_inverse = prove
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [case_option_def] THEN
-       MP_TAC (ISPEC `a1 : byte stream` stream_cases) THEN
+       MP_TAC (ISPEC `a1 : byte pstream` pstream_cases) THEN
        STRIP_TAC THENL
-       [ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
-        ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
+       [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+        ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ALL_TAC] THEN
        POP_ASSUM SUBST_VAR_TAC THEN
-       REWRITE_TAC [case_stream_def] THEN
+       REWRITE_TAC [case_pstream_def] THEN
        MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
        STRIP_TAC THEN
        POP_ASSUM SUBST_VAR_TAC THEN
@@ -716,9 +716,9 @@ let decoder_encoder_strong_inverse = prove
        REWRITE_TAC [encoder_def] THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
        KNOW_TAC
-         `!x y f (z : byte stream).
-            dest_unicode (mk_unicode y) = y /\ x = append_stream (f y) z ==>
-            x = append_stream (f (dest_unicode (mk_unicode y))) z` THENL
+         `!x y f (z : byte pstream).
+            dest_unicode (mk_unicode y) = y /\ x = append_pstream (f y) z ==>
+            x = append_pstream (f (dest_unicode (mk_unicode y))) z` THENL
        [SIMP_TAC [];
         ALL_TAC] THEN
        DISCH_THEN MATCH_MP_TAC THEN
@@ -759,18 +759,18 @@ let decoder_encoder_strong_inverse = prove
        bit_blast_tac THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
        bit_blast_tac THEN
-       REWRITE_TAC [append_stream_def];
+       REWRITE_TAC [append_pstream_def];
        REWRITE_TAC
          [parse_parse_partial_map; parse_parse_some; parse_cont3_def;
           parse_parse_pair; parse_cont2_def; parse_cont_def;
-          case_option_def; case_stream_def; is_cont_def] THEN
-       MP_TAC (ISPEC `a1 : byte stream` stream_cases) THEN
+          case_option_def; case_pstream_def; is_cont_def] THEN
+       MP_TAC (ISPEC `a1 : byte pstream` pstream_cases) THEN
        STRIP_TAC THENL
-       [ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
-        ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
+       [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+        ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ALL_TAC] THEN
        POP_ASSUM SUBST_VAR_TAC THEN
-       REWRITE_TAC [case_stream_def] THEN
+       REWRITE_TAC [case_pstream_def] THEN
        MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
        STRIP_TAC THEN
        POP_ASSUM SUBST_VAR_TAC THEN
@@ -783,13 +783,13 @@ let decoder_encoder_strong_inverse = prove
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [case_option_def] THEN
-       MP_TAC (ISPEC `a1' : byte stream` stream_cases) THEN
+       MP_TAC (ISPEC `a1' : byte pstream` pstream_cases) THEN
        STRIP_TAC THENL
-       [ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
-        ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
+       [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+        ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ALL_TAC] THEN
        POP_ASSUM SUBST_VAR_TAC THEN
-       REWRITE_TAC [case_stream_def] THEN
+       REWRITE_TAC [case_pstream_def] THEN
        MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
        STRIP_TAC THEN
        POP_ASSUM SUBST_VAR_TAC THEN
@@ -826,9 +826,9 @@ let decoder_encoder_strong_inverse = prove
        REWRITE_TAC [encoder_def] THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
        KNOW_TAC
-         `!x y f (z : byte stream).
-            dest_unicode (mk_unicode y) = y /\ x = append_stream (f y) z ==>
-            x = append_stream (f (dest_unicode (mk_unicode y))) z` THENL
+         `!x y f (z : byte pstream).
+            dest_unicode (mk_unicode y) = y /\ x = append_pstream (f y) z ==>
+            x = append_pstream (f (dest_unicode (mk_unicode y))) z` THENL
        [SIMP_TAC [];
         ALL_TAC] THEN
        DISCH_THEN MATCH_MP_TAC THEN
@@ -875,18 +875,18 @@ let decoder_encoder_strong_inverse = prove
        bit_blast_tac THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
        bit_blast_tac THEN
-       REWRITE_TAC [append_stream_def]];
+       REWRITE_TAC [append_pstream_def]];
       REWRITE_TAC
         [parse_parse_partial_map; parse_parse_some; parse_cont3_def;
          parse_parse_pair; parse_cont2_def; parse_cont_def;
-         case_option_def; case_stream_def; is_cont_def] THEN
-      MP_TAC (ISPEC `a1 : byte stream` stream_cases) THEN
+         case_option_def; case_pstream_def; is_cont_def] THEN
+      MP_TAC (ISPEC `a1 : byte pstream` pstream_cases) THEN
       STRIP_TAC THENL
-      [ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
-       ASM_REWRITE_TAC [case_stream_def; case_option_def; option_distinct];
+      [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+       ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
        ALL_TAC] THEN
       POP_ASSUM SUBST_VAR_TAC THEN
-      REWRITE_TAC [case_stream_def] THEN
+      REWRITE_TAC [case_pstream_def] THEN
       MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
       STRIP_TAC THEN
       POP_ASSUM SUBST_VAR_TAC THEN
@@ -917,9 +917,9 @@ let decoder_encoder_strong_inverse = prove
       REWRITE_TAC [encoder_def] THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
       KNOW_TAC
-        `!x y f (z : byte stream).
-           dest_unicode (mk_unicode y) = y /\ x = append_stream (f y) z ==>
-           x = append_stream (f (dest_unicode (mk_unicode y))) z` THENL
+        `!x y f (z : byte pstream).
+           dest_unicode (mk_unicode y) = y /\ x = append_pstream (f y) z ==>
+           x = append_pstream (f (dest_unicode (mk_unicode y))) z` THENL
       [SIMP_TAC [];
        ALL_TAC] THEN
       DISCH_THEN MATCH_MP_TAC THEN
@@ -959,7 +959,7 @@ let decoder_encoder_strong_inverse = prove
       bit_blast_tac THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
       bit_blast_tac THEN
-      REWRITE_TAC [append_stream_def]];
+      REWRITE_TAC [append_pstream_def]];
      REWRITE_TAC [option_distinct]];
     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
     REWRITE_TAC [option_inj; PAIR_EQ] THEN
@@ -969,9 +969,9 @@ let decoder_encoder_strong_inverse = prove
     REWRITE_TAC [encoder_def] THEN
     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
     KNOW_TAC
-      `!x y f (z : byte stream).
-         dest_unicode (mk_unicode y) = y /\ x = append_stream (f y) z ==>
-         x = append_stream (f (dest_unicode (mk_unicode y))) z` THENL
+      `!x y f (z : byte pstream).
+         dest_unicode (mk_unicode y) = y /\ x = append_pstream (f y) z ==>
+         x = append_pstream (f (dest_unicode (mk_unicode y))) z` THENL
     [SIMP_TAC [];
      ALL_TAC] THEN
     DISCH_THEN MATCH_MP_TAC THEN
@@ -1000,17 +1000,17 @@ let decoder_encoder_strong_inverse = prove
     bit_blast_tac THEN
     REWRITE_TAC [] THEN
     bit_blast_tac THEN
-    REWRITE_TAC [append_stream_def]]);;
+    REWRITE_TAC [append_pstream_def]]);;
 
 export_thm decoder_encoder_strong_inverse;;
 
 let decode_encode = prove
   (`!cs. decode (encode cs) = SOME cs`,
    GEN_TAC THEN
-   REWRITE_TAC [decode_def; encode_def; decode_stream_def] THEN
-   REWRITE_TAC [GSYM list_to_stream_to_list] THEN
+   REWRITE_TAC [decode_def; encode_def; decode_pstream_def] THEN
+   REWRITE_TAC [GSYM list_to_pstream_to_list] THEN
    AP_TERM_TAC THEN
-   MATCH_MP_TAC parse_stream_inverse THEN
+   MATCH_MP_TAC parse_pstream_inverse THEN
    ACCEPT_TAC decoder_encoder_inverse);;
 
 export_thm decode_encode;;
@@ -1018,40 +1018,40 @@ export_thm decode_encode;;
 let encode_decode = prove
   (`!bs. case_option T (\cs. encode cs = bs) (decode bs)`,
    GEN_TAC THEN
-   REWRITE_TAC [decode_def; encode_def; decode_stream_def] THEN
-   MP_TAC (ISPECL [`decoder`; `encoder`; `list_to_stream (bs : byte list)`]
-                  parse_stream_strong_inverse) THEN
+   REWRITE_TAC [decode_def; encode_def; decode_pstream_def] THEN
+   MP_TAC (ISPECL [`decoder`; `encoder`; `list_to_pstream (bs : byte list)`]
+                  parse_pstream_strong_inverse) THEN
    COND_TAC THENL
    [ACCEPT_TAC decoder_encoder_strong_inverse;
     ALL_TAC] THEN
-   REWRITE_TAC [list_to_stream_to_list; option_inj] THEN
+   REWRITE_TAC [list_to_pstream_to_list; option_inj] THEN
    DISCH_THEN (ACCEPT_TAC o ONCE_REWRITE_RULE [EQ_SYM_EQ]));;
 
 export_thm encode_decode;;
 
-let decode_stream_length = prove
-  (`!bs. length_stream (decode_stream bs) <= length_stream bs`,
+let decode_pstream_length = prove
+  (`!bs. length_pstream (decode_pstream bs) <= length_pstream bs`,
    GEN_TAC THEN
-   REWRITE_TAC [decode_stream_def] THEN
-   MATCH_ACCEPT_TAC parse_stream_length);;
+   REWRITE_TAC [decode_pstream_def] THEN
+   MATCH_ACCEPT_TAC parse_pstream_length);;
 
-export_thm decode_stream_length;;
+export_thm decode_pstream_length;;
 
 let decode_length = prove
   (`!bs. case_option T (\cs. LENGTH cs <= LENGTH bs) (decode bs)`,
    GEN_TAC THEN
    REWRITE_TAC [decode_def] THEN
-   REWRITE_TAC [GSYM list_to_stream_length] THEN
-   SPEC_TAC (`list_to_stream (bs : byte list)`, `bs : byte stream`) THEN
+   REWRITE_TAC [GSYM list_to_pstream_length] THEN
+   SPEC_TAC (`list_to_pstream (bs : byte list)`, `bs : byte pstream`) THEN
    GEN_TAC THEN
-   MP_TAC (ISPEC `stream_to_list (decode_stream bs)` option_cases) THEN
+   MP_TAC (ISPEC `pstream_to_list (decode_pstream bs)` option_cases) THEN
    STRIP_TAC THENL
    [ASM_REWRITE_TAC [case_option_def];
     ALL_TAC] THEN
-   MP_TAC (ISPEC `decode_stream bs` stream_to_list_length) THEN
+   MP_TAC (ISPEC `decode_pstream bs` pstream_to_list_length) THEN
    ASM_REWRITE_TAC [case_option_def] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th; list_to_stream_length]) THEN
-   MATCH_ACCEPT_TAC decode_stream_length);;
+   DISCH_THEN (fun th -> REWRITE_TAC [th; list_to_pstream_length]) THEN
+   MATCH_ACCEPT_TAC decode_pstream_length);;
 
 export_thm decode_length;;
 

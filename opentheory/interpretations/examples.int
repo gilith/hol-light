@@ -274,25 +274,25 @@ const "HOLLight.parse_option" as "Parser.parseOption"
 const "HOLLight.parse_pair" as "Parser.parsePair"
 const "HOLLight.parser_pair" as "Parser.parsePair.pbc"
 const "HOLLight.parse_some" as "Parser.parseSome"
-const "HOLLight.parse_stream" as "Parser.parseStream"
+const "HOLLight.parse_pstream" as "Parser.parseStream"
 const "HOLLight.parse_partial_map" as "Parser.partialMap"
 const "HOLLight.parser_partial_map" as "Parser.partialMap.pf"
 const "HOLLight.parse_strong_inverse" as "Parser.strongInverse"
 
 # Parser.Stream
 
-type "HOLLight.stream" as "Parser.Stream.stream"
+type "HOLLight.pstream" as "Parser.Stream.stream"
 
-const "HOLLight.append_stream" as "Parser.Stream.append"
-const "HOLLight.case_stream" as "Parser.Stream.case.error.eof.stream"
-const "HOLLight.Eof" as "Parser.Stream.eof"
-const "HOLLight.Error" as "Parser.Stream.error"
-const "HOLLight.list_to_stream" as "Parser.Stream.fromList"
-const "HOLLight.is_proper_suffix_stream" as "Parser.Stream.isProperSuffix"
-const "HOLLight.is_suffix_stream" as "Parser.Stream.isSuffix"
-const "HOLLight.length_stream" as "Parser.Stream.length"
-const "HOLLight.Stream" as "Parser.Stream.stream"
-const "HOLLight.stream_to_list" as "Parser.Stream.toList"
+const "HOLLight.append_pstream" as "Parser.Stream.append"
+const "HOLLight.case_pstream" as "Parser.Stream.case.error.eof.cons"
+const "HOLLight.ConsPstream" as "Parser.Stream.cons"
+const "HOLLight.EofPstream" as "Parser.Stream.eof"
+const "HOLLight.ErrorPstream" as "Parser.Stream.error"
+const "HOLLight.list_to_pstream" as "Parser.Stream.fromList"
+const "HOLLight.is_proper_suffix_pstream" as "Parser.Stream.isProperSuffix"
+const "HOLLight.is_suffix_pstream" as "Parser.Stream.isSuffix"
+const "HOLLight.length_pstream" as "Parser.Stream.length"
+const "HOLLight.pstream_to_list" as "Parser.Stream.toList"
 
 # System
 
