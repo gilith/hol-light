@@ -126,6 +126,26 @@ export_thm fibonacci_add2;;
 let fibonacci_def =
     CONJ fibonacci_zero (CONJ fibonacci_one fibonacci_add2);;
 
+let (decode_fib_dest_nil,decode_fib_dest_cons) =
+  let def = new_recursive_definition list_RECURSION
+    `(!f p. decode_fib_dest f p [] = 0) /\
+     (!f p h t.
+        decode_fib_dest f p (CONS h t) =
+        let s = f + p in
+        let n = decode_fib_dest s f t in
+        if h then s + n else n)` in
+  CONJ_PAIR def;;
+
+export_thm decode_fib_dest_nil;;
+export_thm decode_fib_dest_cons;;
+
+let decode_fib_dest_def = CONJ decode_fib_dest_nil decode_fib_dest_cons;;
+
+let decode_fib_def = new_definition
+  `!l. decode_fib l = decode_fib_dest 1 0 l`;;
+
+export_thm decode_fib_def;;
+
 let encode_fib_mk_exists = prove
  (`?mk. !l n f p.
      mk l n f p =
@@ -194,30 +214,18 @@ let encode_fib_def = new_definition
 
 export_thm encode_fib_def;;
 
-let (decode_fib_dest_nil,decode_fib_dest_cons) =
+let (zeckendorf_nil,zeckendorf_cons) =
   let def = new_recursive_definition list_RECURSION
-    `(!f p. decode_fib_dest f p [] = 0) /\
-     (!f p h t.
-        decode_fib_dest f p (CONS h t) =
-        let s = f + p in
-        let n = decode_fib_dest s f t in
-        if h then s + n else n)` in
-  CONJ_PAIR def;;
+    `(zeckendorf [] <=> T) /\
+     (!h t.
+        zeckendorf (CONS h t) <=>
+        if NULL t then h else ~(h /\ HD t) /\ zeckendorf t)` in
+  CONJ_PAIR (REWRITE_RULE [] def);;
 
-export_thm decode_fib_dest_nil;;
-export_thm decode_fib_dest_cons;;
+export_thm zeckendorf_nil;;
+export_thm zeckendorf_cons;;
 
-let decode_fib_dest_def = CONJ decode_fib_dest_nil decode_fib_dest_cons;;
-
-let decode_fib_def = new_definition
-  `!l. decode_fib l = decode_fib_dest 1 0 l`;;
-
-export_thm decode_fib_def;;
-
-let zeckendorf_def = new_definition
-  `!l. zeckendorf l <=> ALL (~) (zipwith ( /\ ) (CONS F l) (APPEND l [F]))`;;
-
-export_thm zeckendorf_def;;
+let zeckendorf_def = CONJ zeckendorf_nil zeckendorf_cons;;
 
 logfile "natural-fibonacci-thm";;
 
@@ -229,6 +237,13 @@ let fibonacci_suc_suc = prove
    REWRITE_TAC [fibonacci_def; EQ_ADD_RCANCEL; ADD1]]);;
 
 export_thm fibonacci_suc_suc;;
+
+let fibonacci_two = prove
+ (`fibonacci 2 = 1`,
+  REWRITE_TAC [TWO; ONE; fibonacci_suc_suc; fibonacci_zero; ADD_CLAUSES] THEN
+  REWRITE_TAC [fibonacci_one; GSYM ONE]);;
+
+export_thm fibonacci_two;;
 
 let fibonacci_eq_zero = prove
  (`!k. fibonacci k = 0 <=> k = 0`,
@@ -310,6 +325,29 @@ let fibonacci_strictly_mono_imp = prove
 
 export_thm fibonacci_strictly_mono_imp;;
 
+let fibonacci_mono_imp' = prove
+ (`!j k. ~(j = 2 /\ k = 1) /\ fibonacci j <= fibonacci k ==> j <= k`,
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM MP_TAC THEN
+  ONCE_REWRITE_TAC [GSYM CONTRAPOS_THM] THEN
+  REWRITE_TAC [NOT_LE] THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC fibonacci_strictly_mono_imp THEN
+  ASM_REWRITE_TAC [] THEN
+  ONCE_REWRITE_TAC [CONJ_SYM] THEN
+  FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm fibonacci_mono_imp';;
+
+let fibonacci_strictly_mono_imp' = prove
+ (`!j k. fibonacci j < fibonacci k ==> j < k`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [GSYM CONTRAPOS_THM] THEN
+  REWRITE_TAC [NOT_LT] THEN
+  MATCH_ACCEPT_TAC fibonacci_mono_imp);;
+
+export_thm fibonacci_strictly_mono_imp';;
+
 let large_fibonacci = prove
  (`!n. ?k. n <= fibonacci k`,
   INDUCT_TAC THENL
@@ -347,6 +385,50 @@ let fibonacci_vorobev = prove
   FIRST_ASSUM MATCH_ACCEPT_TAC);;
 
 export_thm fibonacci_vorobev;;
+
+let decode_fib_nil = prove
+ (`decode_fib [] = 0`,
+  REWRITE_TAC [decode_fib_def; decode_fib_dest_def]);;
+
+export_thm decode_fib_nil;;
+
+let decode_fib_dest_append = prove
+ (`!k l l'.
+     decode_fib_dest (fibonacci (k + 1)) (fibonacci k) (APPEND l l') =
+     decode_fib_dest (fibonacci (k + 1)) (fibonacci k) l +
+     decode_fib_dest (fibonacci (LENGTH l + (k + 1)))
+       (fibonacci (LENGTH l + k)) l'`,
+  REPEAT GEN_TAC THEN
+  SPEC_TAC (`k : num`, `k : num`) THEN
+  SPEC_TAC (`l : bool list`, `l : bool list`) THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC
+     [APPEND; decode_fib_dest_def; LENGTH; ADD_CLAUSES; fibonacci_def];
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC
+    [APPEND; decode_fib_dest_def; LENGTH; ADD_CLAUSES;
+     GSYM fibonacci_add2] THEN
+  REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  FIRST_X_ASSUM (MP_TAC o SPEC `SUC k`) THEN
+  REWRITE_TAC [ONE; TWO; ADD_CLAUSES] THEN
+  BOOL_CASES_TAC `h : bool` THEN
+  REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL]);;
+
+export_thm decode_fib_dest_append;;
+
+let decode_fib_append = prove
+ (`!l l'.
+     decode_fib (APPEND l l') =
+     decode_fib l +
+     decode_fib_dest (fibonacci (LENGTH l + 1)) (fibonacci (LENGTH l)) l'`,
+  REPEAT GEN_TAC THEN
+  MP_TAC
+    (SPECL [`0`; `l : bool list`; `l' : bool list`]
+       decode_fib_dest_append) THEN
+  REWRITE_TAC [ADD_CLAUSES; fibonacci_def; decode_fib_def]);;
+
+export_thm decode_fib_append;;
 
 let encode_decode_fib_dest_mk = prove
  (`!n k l.
@@ -474,37 +556,300 @@ let encode_decode_fib = prove
 
 export_thm encode_decode_fib;;
 
-let zeckendorf_nil = prove
- (`zeckendorf []`,
-  REWRITE_TAC [zeckendorf_def; APPEND] THEN
-  MP_TAC (ISPECL [`( /\ )`; `F`; `F`; `[] : bool list`;
-                  `[] : bool list`] zipwith_cons) THEN
-  ANTS_TAC THENL
-  [REFL_TAC;
-   DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [ALL; zipwith_nil]]);;
-
-export_thm zeckendorf_nil;;
-
-(***
-let zeckendorf_induction = prove
- (`!h t. zeckendorf (CONS h t) ==> zeckendorf t`,
-  REWRITE_TAC [zeckendorf_def]
-
 let zeckendorf_cons_imp = prove
  (`!h t. zeckendorf (CONS h t) ==> zeckendorf t`,
-  REWRITE_TAC [zeckendorf_def]
+  GEN_TAC THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [zeckendorf_nil];
+   CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [zeckendorf_def])) THEN
+   REWRITE_TAC [NULL] THEN
+   STRIP_TAC]);;
 
+export_thm zeckendorf_cons_imp;;
 
-     (n < fibonacci (k + 1) /\ zeckendorf l) \/
-     (n < fibonacci (k + 2) /\ zeckendorf (CONS T l)) ==>
-      zeckendorf (encode_fib_mk l n (fibonacci (k + 1)) (fibonacci k))`,
+let zeckendorf_decode_fib_dest_lower_bound = prove
+ (`!k h t.
+     zeckendorf (CONS h t) ==>
+     fibonacci ((k + 2) + LENGTH t) <=
+     decode_fib_dest (fibonacci (k + 1)) (fibonacci k) (CONS h t)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [ONE; TWO; ADD_CLAUSES] THEN
+  SPEC_TAC (`h : bool`, `h : bool`) THEN
+  SPEC_TAC (`k : num`, `k : num`) THEN
+  SPEC_TAC (`t : bool list`, `t : bool list`) THEN
+  LIST_INDUCT_TAC THENL
+  [REPEAT GEN_TAC THEN
+   REWRITE_TAC
+     [LENGTH; ADD_CLAUSES; decode_fib_dest_def; zeckendorf_def; NULL;
+      GSYM fibonacci_suc_suc] THEN
+   DISCH_THEN (SUBST_VAR_TAC o EQT_INTRO) THEN
+   REWRITE_TAC [ADD_CLAUSES; LET_DEF; LET_END_DEF; LE_REFL];
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [zeckendorf_def; decode_fib_dest_def; LENGTH] THEN
+  REWRITE_TAC [NULL; HD; GSYM fibonacci_suc_suc; APPEND] THEN
+  REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM (MP_TAC o SPECL [`SUC k`; `h : bool`]) THEN
+  ASM_REWRITE_TAC [ADD_CLAUSES] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  SPEC_TAC
+    (`decode_fib_dest (fibonacci (SUC (SUC k))) (fibonacci (SUC k)) (CONS h t)`,
+      `n : num`) THEN
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC `n : num` THEN
+  ASM_REWRITE_TAC [] THEN
+  BOOL_CASES_TAC `h' : bool` THEN
+  REWRITE_TAC [LE_REFL; LE_ADDR]);;
+
+export_thm zeckendorf_decode_fib_dest_lower_bound;;
+
+let zeckendorf_decode_fib_lower_bound = prove
+ (`!l. ~NULL l /\ zeckendorf l ==> fibonacci (LENGTH l + 1) <= decode_fib l`,
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [NULL];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REWRITE_TAC [NULL] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL [`0`; `h : bool`; `t : bool list`]
+       zeckendorf_decode_fib_dest_lower_bound) THEN
+  ASM_REWRITE_TAC
+    [decode_fib_def; ADD_CLAUSES; fibonacci_zero; fibonacci_one] THEN
+  REWRITE_TAC [ONE; TWO; THREE; ADD_CLAUSES; LENGTH]);;
+
+export_thm zeckendorf_decode_fib_lower_bound;;
+
+let zeckendorf_decode_fib_dest_upper_bound = prove
+ (`!k h t l.
+     zeckendorf (CONS h (APPEND t l)) ==>
+     fibonacci (k + (if h then 1 else 2)) +
+     decode_fib_dest (fibonacci (k + 1)) (fibonacci k) (CONS h t) <=
+     fibonacci ((k + 3) + LENGTH t)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [ONE; TWO; THREE; ADD_CLAUSES] THEN
+  SPEC_TAC (`h : bool`, `h : bool`) THEN
+  SPEC_TAC (`k : num`, `k : num`) THEN
+  SPEC_TAC (`t : bool list`, `t : bool list`) THEN
+  LIST_INDUCT_TAC THENL
+  [REPEAT GEN_TAC THEN
+   DISCH_THEN (K ALL_TAC) THEN
+   REWRITE_TAC [LENGTH; ADD_CLAUSES] THEN
+   BOOL_CASES_TAC `h : bool` THENL
+   [REWRITE_TAC [decode_fib_dest_def; GSYM fibonacci_suc_suc] THEN
+    REWRITE_TAC [ADD_CLAUSES; LET_DEF; LET_END_DEF] THEN
+    ONCE_REWRITE_TAC [ADD_SYM] THEN
+    REWRITE_TAC [GSYM fibonacci_suc_suc] THEN
+    MATCH_ACCEPT_TAC LE_REFL;
+    REWRITE_TAC [decode_fib_dest_def; LET_DEF; LET_END_DEF; ADD_CLAUSES] THEN
+    MATCH_MP_TAC fibonacci_mono_imp THEN
+    MATCH_ACCEPT_TAC SUC_LE];
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [zeckendorf_def; decode_fib_dest_def; LENGTH] THEN
+  REWRITE_TAC [NULL; HD; GSYM fibonacci_suc_suc; APPEND] THEN
+  REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM (MP_TAC o SPECL [`SUC k`; `h : bool`]) THEN
+  ASM_REWRITE_TAC [] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM MP_TAC THEN
+  BOOL_CASES_TAC `h' : bool` THENL
+  [REWRITE_TAC [ADD_CLAUSES] THEN
+   DISCH_THEN (SUBST_VAR_TAC o EQF_INTRO) THEN
+   REWRITE_TAC
+     [ADD_CLAUSES; ONCE_REWRITE_RULE [ADD_SYM] (GSYM fibonacci_suc_suc);
+      ADD_ASSOC];
+   ALL_TAC] THEN
+  REWRITE_TAC [ADD_CLAUSES] THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC
+    `fibonacci (SUC (k + (if h then SUC 0 else SUC (SUC 0)))) +
+     decode_fib_dest (fibonacci (SUC (SUC k))) (fibonacci (SUC k))
+       (CONS h t)` THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [LE_ADD_RCANCEL] THEN
+   MATCH_MP_TAC fibonacci_mono_imp THEN
+   BOOL_CASES_TAC `h : bool` THENL
+   [REWRITE_TAC [ADD_CLAUSES; LE_REFL];
+    REWRITE_TAC [ADD_CLAUSES; SUC_LE]];
+   FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm zeckendorf_decode_fib_dest_upper_bound;;
+
+let zeckendorf_decode_fib_upper_bound = prove
+ (`!l l'. zeckendorf (APPEND l l') ==> decode_fib l < fibonacci (LENGTH l + 2)`,
+  REPEAT GEN_TAC THEN
+  SPEC_TAC (`l : bool list`, `l : bool list`) THEN
+  LIST_INDUCT_TAC THENL
+  [DISCH_THEN (K ALL_TAC) THEN
+   REWRITE_TAC [decode_fib_nil; LENGTH; ADD_CLAUSES; fibonacci_def; LT_NZ] THEN
+   REWRITE_TAC [ONE; NOT_SUC];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REWRITE_TAC [APPEND] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL [`0`; `h : bool`; `t : bool list`; `l' : bool list`]
+       zeckendorf_decode_fib_dest_upper_bound) THEN
+  ASM_REWRITE_TAC
+    [decode_fib_def; ADD_CLAUSES; fibonacci_zero; fibonacci_one;
+     GSYM fibonacci_add2] THEN
+  SUBGOAL_THEN `fibonacci (if h then 1 else 2) = 1` SUBST1_TAC THENL
+  [BOOL_CASES_TAC `h : bool` THEN
+   REWRITE_TAC [fibonacci_one; fibonacci_two];
+   REWRITE_TAC [ONE; TWO; THREE; ADD_CLAUSES; LENGTH; LE_SUC_LT]]);;
+
+export_thm zeckendorf_decode_fib_upper_bound;;
+
+let bool_list_diff = prove
+ (`!l1 l2.
+     LENGTH l1 = LENGTH l2 /\
+     ~(l1 = l2) ==>
+     ?k1 k2 h t.
+       l1 = APPEND k1 (CONS h t) /\
+       l2 = APPEND k2 (CONS (~h) t)`,
+  LIST_INDUCT_TAC THENL
+  [LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [];
+    REWRITE_TAC [LENGTH; NOT_SUC]];
+   ALL_TAC] THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [LENGTH; NOT_SUC];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REWRITE_TAC [LENGTH; SUC_INJ; CONS_11;
+               TAUT `!x y. ~(x /\ y) <=> (y /\ ~x) \/ ~y`] THEN
+  STRIP_TAC THENL
+  [EXISTS_TAC `[] : bool list` THEN
+   EXISTS_TAC `[] : bool list` THEN
+   EXISTS_TAC `h : bool` THEN
+   EXISTS_TAC `t' : bool list` THEN
+   ASM_REWRITE_TAC [APPEND; CONS_11] THEN
+   MATCH_MP_TAC (TAUT `!x y. ~(y <=> x) ==> (x <=> ~y)`) THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  FIRST_X_ASSUM (MP_TAC o SPEC `t' : bool list`) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `CONS (h : bool) k1` THEN
+  EXISTS_TAC `CONS (h' : bool) k2` THEN
+  EXISTS_TAC `h'' : bool` THEN
+  EXISTS_TAC `t'' : bool list` THEN
+  ASM_REWRITE_TAC [APPEND; CONS_11]);;
+
+let zeckendorf_decode_fib_dominate = prove
+ (`!l1 l2 t.
+     LENGTH l1 = LENGTH l2 /\
+     zeckendorf (APPEND l1 (CONS F t)) /\
+     zeckendorf (APPEND l2 (CONS T t)) ==>
+     decode_fib (APPEND l1 (CONS F t)) < decode_fib (APPEND l2 (CONS T t))`,
+  REPEAT STRIP_TAC THEN
+  ONCE_REWRITE_TAC [GSYM SING_APPEND] THEN
+  REWRITE_TAC [APPEND_ASSOC] THEN
+  ONCE_REWRITE_TAC [decode_fib_append] THEN
+  ASM_REWRITE_TAC [LT_ADD_RCANCEL; LENGTH_APPEND; LENGTH] THEN
+  REWRITE_TAC [decode_fib_append; decode_fib_dest_def; GSYM fibonacci_add2] THEN
+  REWRITE_TAC [LET_DEF; LET_END_DEF; ADD_CLAUSES] THEN
+  MATCH_MP_TAC LTE_TRANS THEN
+  EXISTS_TAC `fibonacci (LENGTH (l1 : bool list) + 2)` THEN
+  STRIP_TAC THENL
+  [MATCH_MP_TAC zeckendorf_decode_fib_upper_bound THEN
+   EXISTS_TAC `CONS F t` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ASM_REWRITE_TAC [LE_ADDR]]);;
+
+export_thm zeckendorf_decode_fib_dominate;;
+
+let zeckendorf_decode_fib_length_mono = prove
+ (`!l1 l2.
+     zeckendorf l1 /\ zeckendorf l2 /\ LENGTH l1 < LENGTH l2 ==>
+     decode_fib l1 < decode_fib l2`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC LTE_TRANS THEN
+  EXISTS_TAC `fibonacci (LENGTH (l1 : bool list) + 2)` THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC zeckendorf_decode_fib_upper_bound THEN
+   EXISTS_TAC `[] : bool list` THEN
+   ASM_REWRITE_TAC [APPEND_NIL];
+   ALL_TAC] THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC `fibonacci (LENGTH (l2 : bool list) + 1)` THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC fibonacci_mono_imp THEN
+   ASM_REWRITE_TAC [TWO; ONE; ADD_CLAUSES; LE_SUC_LT; LT_SUC];
+   ALL_TAC] THEN
+  MATCH_MP_TAC zeckendorf_decode_fib_lower_bound THEN
+  ASM_REWRITE_TAC [NULL_EQ_NIL] THEN
+  STRIP_TAC THEN
+  UNDISCH_TAC `LENGTH (l1 : bool list) < LENGTH (l2 : bool list)` THEN
+  ASM_REWRITE_TAC [LENGTH; LT]);;
+
+export_thm zeckendorf_decode_fib_length_mono;;
+
+let zeckendorf_decode_fib_inj = prove
+ (`!l1 l2.
+     zeckendorf l1 /\ zeckendorf l2 /\ decode_fib l1 = decode_fib l2 ==>
+     l1 = l2`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [GSYM LE_ANTISYM; GSYM NOT_LT] THEN
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN `LENGTH (l1 : bool list) = LENGTH (l2 : bool list)` MP_TAC THENL
+  [REWRITE_TAC [GSYM LE_ANTISYM] THEN
+   REWRITE_TAC [GSYM NOT_LT] THEN
+   CONJ_TAC THENL
+   [STRIP_TAC THEN
+    UNDISCH_TAC `~(decode_fib l2 < decode_fib l1)` THEN
+    REWRITE_TAC [] THEN
+    MATCH_MP_TAC zeckendorf_decode_fib_length_mono THEN
+    ASM_REWRITE_TAC [];
+    STRIP_TAC THEN
+    UNDISCH_TAC `~(decode_fib l1 < decode_fib l2)` THEN
+    REWRITE_TAC [] THEN
+    MATCH_MP_TAC zeckendorf_decode_fib_length_mono THEN
+    ASM_REWRITE_TAC []];
+   ALL_TAC] THEN
+  STRIP_TAC THEN
+  MP_TAC (SPECL [`l1 : bool list`; `l2 : bool list`] bool_list_diff) THEN
+  BOOL_CASES_TAC `l1 = (l2 : bool list)` THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  ASM_CASES_TAC `h : bool` THENL
+  [UNDISCH_TAC `~(decode_fib l2 < decode_fib l1)` THEN
+   POP_ASSUM (SUBST_VAR_TAC o EQT_INTRO) THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REPEAT (POP_ASSUM MP_TAC) THEN
+   REWRITE_TAC [LENGTH_APPEND; LENGTH; EQ_ADD_RCANCEL] THEN
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC zeckendorf_decode_fib_dominate THEN
+   ASM_REWRITE_TAC [];
+   UNDISCH_TAC `~(decode_fib l1 < decode_fib l2)` THEN
+   POP_ASSUM (SUBST_VAR_TAC o EQF_INTRO) THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REPEAT (POP_ASSUM MP_TAC) THEN
+   REWRITE_TAC [LENGTH_APPEND; LENGTH; EQ_ADD_RCANCEL] THEN
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC zeckendorf_decode_fib_dominate THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm zeckendorf_decode_fib_inj;;
 
 let zeckendorf_encode_fib_mk = prove
  (`!n k l.
-     (n < fibonacci (k + 1) /\ zeckendorf l) \/
-     (n < fibonacci (k + 2) /\ zeckendorf (CONS T l)) ==>
-      zeckendorf (encode_fib_mk l n (fibonacci (k + 1)) (fibonacci k))`,
+     ~NULL l /\
+     ((n < fibonacci (k + 1) /\ zeckendorf l) \/
+      (n < fibonacci (k + 2) /\ zeckendorf (CONS T l))) ==>
+     zeckendorf (encode_fib_mk l n (fibonacci (k + 1)) (fibonacci k))`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [fibonacci_add2] THEN
   SPEC_TAC (`l : bool list`, `l : bool list`) THEN
@@ -515,57 +860,183 @@ let zeckendorf_encode_fib_mk = prove
    ONCE_REWRITE_TAC [encode_fib_mk_def] THEN
    REWRITE_TAC [fibonacci_def] THEN
    STRIP_TAC THEN
-   
-   REPEAT STRIP
-; ADD_CLAUSES] THEN
-   REWRITE_TAC [GSYM LE_SUC_LT; ONE; LE_SUC; LE] THEN
-   DISCH_THEN SUBST_VAR_TAC THEN
-   ONCE_REWRITE_TAC [encode_fib_mk_def] THEN
-   REWRITE_TAC [ADD_CLAUSES];
+   MATCH_MP_TAC zeckendorf_cons_imp THEN
+   EXISTS_TAC `T` THEN
+   FIRST_ASSUM ACCEPT_TAC;
    ALL_TAC] THEN
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [GSYM ADD1; fibonacci_suc_suc] THEN
+  REWRITE_TAC [GSYM ADD1; fibonacci_suc_suc; NOT_SUC] THEN
   REWRITE_TAC [ADD1] THEN
-  STRIP_TAC THEN
   ONCE_REWRITE_TAC [encode_fib_mk_def] THEN
   SUBGOAL_THEN `fibonacci (k + 1) = 0 <=> F` SUBST1_TAC THENL
   [REWRITE_TAC [fibonacci_eq_zero; GSYM ADD1; NOT_SUC];
    ALL_TAC] THEN
   REWRITE_TAC [] THEN
+  REWRITE_TAC [ADD_SUB2] THEN
+  STRIP_TAC THENL
+  [ASM_REWRITE_TAC [GSYM NOT_LT] THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [NULL] THEN
+   DISJ2_TAC THEN
+   ASM_REWRITE_TAC [zeckendorf_def; NULL; HD];
+   ALL_TAC] THEN
   COND_CASES_TAC THENL
-  [REWRITE_TAC [ADD_SUB2] THEN
-   FIRST_X_ASSUM
-     (MP_TAC o SPECL
-        [`n - (fibonacci (k + 1) + fibonacci k)`;
-         `CONS T l`]) THEN
-   UNDISCH_TAC `n < (fibonacci (k + 1) + fibonacci k) + fibonacci (k + 1)` THEN
-   FIRST_X_ASSUM (MP_TAC o REWRITE_RULE [LE_EXISTS]) THEN
-   DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
-   REWRITE_TAC [ADD_SUB2; LT_ADD_LCANCEL] THEN
-   STRIP_TAC THEN
-   ANTS_TAC THENL
-   [MATCH_MP_TAC LTE_TRANS THEN
-    EXISTS_TAC `fibonacci (k + 1)` THEN
-    ASM_REWRITE_TAC [LE_ADD];
-    ALL_TAC] THEN
-   DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [decode_fib_dest_def; LET_DEF; LET_END_DEF] THEN
-   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
-   CONV_TAC (LAND_CONV (REWR_CONV (GSYM ADD_ASSOC))) THEN
-   MATCH_ACCEPT_TAC ADD_SYM;
-   REWRITE_TAC [ADD_SUB2] THEN
-   FIRST_X_ASSUM
-     (MP_TAC o SPECL
-        [`n : num`;
-         `CONS F l`]) THEN
-   ANTS_TAC THENL
-   [ASM_REWRITE_TAC [GSYM NOT_LE];
-    ALL_TAC] THEN
-   DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [decode_fib_dest_def; LET_DEF; LET_END_DEF]]);;
+  [FIRST_X_ASSUM MATCH_MP_TAC THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [NULL];
+    DISJ1_TAC THEN
+    CONJ_TAC THENL
+    [POP_ASSUM (MP_TAC o REWRITE_RULE [LE_EXISTS]) THEN
+     DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+     REWRITE_TAC [ADD_SUB2] THEN
+     POP_ASSUM (K ALL_TAC) THEN
+     POP_ASSUM MP_TAC THEN
+     REWRITE_TAC [LT_ADD_LCANCEL];
+     FIRST_ASSUM ACCEPT_TAC]];
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [NULL];
+    DISJ2_TAC THEN
+    ASM_REWRITE_TAC [GSYM NOT_LE] THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    POP_ASSUM MP_TAC THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    ASM_REWRITE_TAC [zeckendorf_def; NULL; HD] THEN
+    STRIP_TAC]]);;
 
 export_thm zeckendorf_encode_fib_mk;;
-***)
+
+let zeckendorf_encode_fib_find = prove
+ (`!n k.
+     fibonacci (k + 1) <= n ==>
+     zeckendorf (encode_fib_find n (fibonacci (k + 1)) (fibonacci k))`,
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN
+    `?j. fibonacci (j + 1) <= n /\ n < fibonacci (j + 2) /\ k <= j`
+    MP_TAC THENL
+  [MP_TAC ((REWRITE_RULE [MINIMAL] o REWRITE_RULE [LE_SUC_LT] o
+            SPEC `SUC n`) large_fibonacci) THEN
+   MP_TAC (SPEC `minimal k. n < fibonacci k` num_CASES) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [fibonacci_zero; LT];
+    ALL_TAC] THEN
+   POP_ASSUM SUBST1_TAC THEN
+   REWRITE_TAC [NOT_LT; LT_SUC_LE] THEN
+   MP_TAC (SPEC `n' : num` num_CASES) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [fibonacci_one; GSYM ONE] THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    REWRITE_TAC [ONE; LT_SUC_LE; LE] THEN
+    DISCH_THEN (SUBST_VAR_TAC o CONJUNCT1) THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [LE; fibonacci_eq_zero; GSYM ADD1; NOT_SUC];
+    ALL_TAC] THEN
+   POP_ASSUM SUBST1_TAC THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `n'' : num` THEN
+   ASM_REWRITE_TAC [TWO; ONE; ADD_CLAUSES] THEN
+   POP_ASSUM (MP_TAC o SPEC `SUC n''`) THEN
+   REWRITE_TAC [LE_REFL] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   ONCE_REWRITE_TAC [GSYM LE_SUC] THEN
+   ONCE_REWRITE_TAC [GSYM LT_SUC_LE] THEN
+   MATCH_MP_TAC fibonacci_strictly_mono_imp' THEN
+   MATCH_MP_TAC LET_TRANS THEN
+   EXISTS_TAC `n : num` THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_REWRITE_TAC [ADD1];
+   ALL_TAC] THEN
+  STRIP_TAC THEN
+  POP_ASSUM (MP_TAC o REWRITE_RULE [LE_EXISTS]) THEN
+  DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+  POP_ASSUM MP_TAC THEN
+  POP_ASSUM MP_TAC THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REWRITE_TAC [IMP_IMP] THEN
+  SPEC_TAC (`k : num`, `k : num`) THEN
+  SPEC_TAC (`d : num`, `d : num`) THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [ADD_CLAUSES] THEN
+   REPEAT STRIP_TAC THEN
+   ONCE_REWRITE_TAC [encode_fib_find_def] THEN
+   REWRITE_TAC [GSYM fibonacci_add2] THEN
+   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+   ONCE_REWRITE_TAC [encode_fib_mk_def] THEN
+   ASM_REWRITE_TAC [fibonacci_eq_zero] THEN
+   COND_CASES_TAC THENL
+   [ACCEPT_TAC zeckendorf_nil;
+    ALL_TAC] THEN
+   REPEAT (POP_ASSUM MP_TAC) THEN
+   REWRITE_TAC [fibonacci_def] THEN
+   MP_TAC (SPEC `k : num` num_CASES) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [ONE; TWO; NOT_SUC; ADD_CLAUSES] THEN
+   REWRITE_TAC [LE_EXISTS] THEN
+   DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+   REWRITE_TAC [LT_ADD_LCANCEL; ADD_SUB2] THEN
+   REWRITE_TAC [fibonacci_suc_suc; ADD_SUB2] THEN
+   REWRITE_TAC [ADD1] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC zeckendorf_encode_fib_mk THEN
+   STRIP_TAC THENL
+   [REWRITE_TAC [NULL];
+    ALL_TAC] THEN
+   DISJ1_TAC THEN
+   ASM_REWRITE_TAC [zeckendorf_def; NULL; HD];
+   ALL_TAC] THEN
+  POP_ASSUM MP_TAC THEN
+  REWRITE_TAC [ONE; TWO; ADD_CLAUSES] THEN
+  REPEAT STRIP_TAC THEN
+  ONCE_REWRITE_TAC [encode_fib_find_def] THEN
+  REWRITE_TAC [GSYM fibonacci_suc_suc] THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  COND_CASES_TAC THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   UNDISCH_TAC `fibonacci (SUC (SUC (k + d))) <= n` THEN
+   REWRITE_TAC [NOT_LE] THEN
+   MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `fibonacci (SUC (SUC k))` THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC fibonacci_mono_imp THEN
+   REWRITE_TAC [LE_SUC; LE_ADD];
+   ALL_TAC] THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  ASM_REWRITE_TAC [ADD_CLAUSES]);;
+
+export_thm zeckendorf_encode_fib_find;;
+
+let zeckendorf_encode_fib = prove
+ (`!n. zeckendorf (encode_fib n)`,
+  GEN_TAC THEN
+  REWRITE_TAC [encode_fib_def] THEN
+  MP_TAC (SPEC `n : num` num_CASES) THEN
+  STRIP_TAC THENL
+  [ONCE_REWRITE_TAC [encode_fib_find_def] THEN
+   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF; ONE; LT_SUC_LE; LE_0; ADD_CLAUSES] THEN
+   ONCE_REWRITE_TAC [encode_fib_mk_def] THEN
+   REWRITE_TAC [zeckendorf_nil];
+   MP_TAC (SPECL [`n : num`; `0`] zeckendorf_encode_fib_find) THEN
+   REWRITE_TAC [ADD_CLAUSES; fibonacci_def] THEN
+   DISCH_THEN MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [ONE; LE_SUC; LE_0]]);;
+
+export_thm zeckendorf_encode_fib;;
+
+let zeckendorf_decode_encode_fib = prove
+ (`!l. zeckendorf l <=> encode_fib (decode_fib l) = l`,
+  GEN_TAC THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   MATCH_MP_TAC zeckendorf_decode_fib_inj THEN
+   ASM_REWRITE_TAC [zeckendorf_encode_fib; encode_decode_fib];
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   MATCH_ACCEPT_TAC zeckendorf_encode_fib]);;
+
+export_thm zeckendorf_decode_encode_fib;;
 
 logfile_end ();;
 

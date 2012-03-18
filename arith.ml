@@ -686,6 +686,15 @@ let EQ_IMP_LE = prove
 
 export_thm EQ_IMP_LE;;
 
+let LT_IMP_NEQ = prove
+ (`!m n. m < n ==> ~(m = n)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [GSYM NOT_LE; CONTRAPOS_THM] THEN
+  DISCH_THEN SUBST_VAR_TAC THEN
+  MATCH_ACCEPT_TAC LE_REFL);;
+
+export_thm LT_IMP_NEQ;;
+
 (* ------------------------------------------------------------------------- *)
 (* Ordering and succession.                                                  *)
 (* ------------------------------------------------------------------------- *)
@@ -2098,7 +2107,7 @@ let minimal = new_definition
   `!P. (minimal) (P:num->bool) = @n. P n /\ !m. m < n ==> ~(P m)`;;
 
 let MINIMAL = prove
- (`!P. (?n. P n) <=> P((minimal) P) /\ (!m. m < (minimal) P ==> ~(P m))`,
+ (`!p. (?n. p n) <=> p ((minimal) p) /\ (!m. m < (minimal) p ==> ~(p m))`,
   GEN_TAC THEN REWRITE_TAC[minimal] THEN CONV_TAC(RAND_CONV SELECT_CONV) THEN
   REWRITE_TAC[GSYM num_WOP]);;
 

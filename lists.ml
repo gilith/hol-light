@@ -274,6 +274,12 @@ let APPEND_ASSOC = prove
 
 export_thm APPEND_ASSOC;;
 
+let SING_APPEND = prove
+ (`!h (t : A list). APPEND [h] t = CONS h t`,
+  REWRITE_TAC [APPEND]);;
+
+export_thm SING_APPEND;;
+
 let LENGTH_APPEND = prove
  (`!(l:A list) m. LENGTH(APPEND l m) = LENGTH l + LENGTH m`,
   LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[APPEND; LENGTH; ADD_CLAUSES]);;
