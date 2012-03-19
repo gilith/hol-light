@@ -364,6 +364,24 @@ let large_fibonacci = prove
 
 export_thm large_fibonacci;;
 
+let fibonacci_interval = prove
+ (`!n. ?k. fibonacci k <= n /\ n < fibonacci (k + 1)`,
+  GEN_TAC THEN
+  MP_TAC ((REWRITE_RULE [MINIMAL] o REWRITE_RULE [LE_SUC_LT] o
+           SPEC `SUC n`) large_fibonacci) THEN
+  MP_TAC (SPEC `minimal k. n < fibonacci k` num_CASES) THEN
+  STRIP_TAC THENL
+  [ASM_REWRITE_TAC [fibonacci_zero; LT];
+   POP_ASSUM SUBST1_TAC THEN
+   REWRITE_TAC [NOT_LT; LT_SUC_LE] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `n' : num` THEN
+   ASM_REWRITE_TAC [GSYM ADD1] THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   MATCH_ACCEPT_TAC LE_REFL]);;
+
+export_thm fibonacci_interval;;
+
 let fibonacci_vorobev = prove
  (`!j k.
      fibonacci (j + k + 1) =
@@ -706,7 +724,7 @@ let zeckendorf_decode_fib_upper_bound = prove
 
 export_thm zeckendorf_decode_fib_upper_bound;;
 
-let bool_list_diff = prove
+let bool_list_difference_lemma = prove
  (`!l1 l2.
      LENGTH l1 = LENGTH l2 /\
      ~(l1 = l2) ==>
@@ -763,8 +781,6 @@ let zeckendorf_decode_fib_dominate = prove
    FIRST_ASSUM ACCEPT_TAC;
    ASM_REWRITE_TAC [LE_ADDR]]);;
 
-export_thm zeckendorf_decode_fib_dominate;;
-
 let zeckendorf_decode_fib_length_mono = prove
  (`!l1 l2.
      zeckendorf l1 /\ zeckendorf l2 /\ LENGTH l1 < LENGTH l2 ==>
@@ -789,8 +805,6 @@ let zeckendorf_decode_fib_length_mono = prove
   UNDISCH_TAC `LENGTH (l1 : bool list) < LENGTH (l2 : bool list)` THEN
   ASM_REWRITE_TAC [LENGTH; LT]);;
 
-export_thm zeckendorf_decode_fib_length_mono;;
-
 let zeckendorf_decode_fib_inj = prove
  (`!l1 l2.
      zeckendorf l1 /\ zeckendorf l2 /\ decode_fib l1 = decode_fib l2 ==>
@@ -814,7 +828,8 @@ let zeckendorf_decode_fib_inj = prove
     ASM_REWRITE_TAC []];
    ALL_TAC] THEN
   STRIP_TAC THEN
-  MP_TAC (SPECL [`l1 : bool list`; `l2 : bool list`] bool_list_diff) THEN
+  MP_TAC (SPECL [`l1 : bool list`; `l2 : bool list`]
+                bool_list_difference_lemma) THEN
   BOOL_CASES_TAC `l1 = (l2 : bool list)` THEN
   ASM_REWRITE_TAC [] THEN
   STRIP_TAC THEN
@@ -914,38 +929,23 @@ let zeckendorf_encode_fib_find = prove
   SUBGOAL_THEN
     `?j. fibonacci (j + 1) <= n /\ n < fibonacci (j + 2) /\ k <= j`
     MP_TAC THENL
-  [MP_TAC ((REWRITE_RULE [MINIMAL] o REWRITE_RULE [LE_SUC_LT] o
-            SPEC `SUC n`) large_fibonacci) THEN
-   MP_TAC (SPEC `minimal k. n < fibonacci k` num_CASES) THEN
-   STRIP_TAC THENL
-   [ASM_REWRITE_TAC [fibonacci_zero; LT];
-    ALL_TAC] THEN
-   POP_ASSUM SUBST1_TAC THEN
-   REWRITE_TAC [NOT_LT; LT_SUC_LE] THEN
-   MP_TAC (SPEC `n' : num` num_CASES) THEN
-   STRIP_TAC THENL
-   [ASM_REWRITE_TAC [fibonacci_one; GSYM ONE] THEN
-    POP_ASSUM (K ALL_TAC) THEN
-    REWRITE_TAC [ONE; LT_SUC_LE; LE] THEN
-    DISCH_THEN (SUBST_VAR_TAC o CONJUNCT1) THEN
-    POP_ASSUM MP_TAC THEN
-    REWRITE_TAC [LE; fibonacci_eq_zero; GSYM ADD1; NOT_SUC];
-    ALL_TAC] THEN
-   POP_ASSUM SUBST1_TAC THEN
+  [MP_TAC (SPEC `n : num` fibonacci_interval) THEN
    STRIP_TAC THEN
-   EXISTS_TAC `n'' : num` THEN
-   ASM_REWRITE_TAC [TWO; ONE; ADD_CLAUSES] THEN
-   POP_ASSUM (MP_TAC o SPEC `SUC n''`) THEN
-   REWRITE_TAC [LE_REFL] THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [] THEN
-   ONCE_REWRITE_TAC [GSYM LE_SUC] THEN
-   ONCE_REWRITE_TAC [GSYM LT_SUC_LE] THEN
-   MATCH_MP_TAC fibonacci_strictly_mono_imp' THEN
-   MATCH_MP_TAC LET_TRANS THEN
-   EXISTS_TAC `n : num` THEN
-   ASM_REWRITE_TAC [] THEN
-   ASM_REWRITE_TAC [ADD1];
+   SUBGOAL_THEN `k + 1 < SUC k'`
+     (MP_TAC o REWRITE_RULE [LT_SUC_LE; LE_EXISTS]) THENL
+   [REWRITE_TAC [ADD1] THEN
+    MATCH_MP_TAC fibonacci_strictly_mono_imp' THEN
+    MATCH_MP_TAC LET_TRANS THEN
+    EXISTS_TAC `n : num` THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+   EXISTS_TAC `k + d : num` THEN
+   POP_ASSUM MP_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [ADD_CLAUSES; ONE; TWO; LE_ADD] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_ASSUM ACCEPT_TAC;
    ALL_TAC] THEN
   STRIP_TAC THEN
   POP_ASSUM (MP_TAC o REWRITE_RULE [LE_EXISTS]) THEN

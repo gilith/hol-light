@@ -68,7 +68,7 @@ const "HOLLight.mk_unicode" as "Data.Char.mkChar"
 # Data.Char.UTF8
 
 const "HOLLight.decode" as "Data.Char.UTF8.decode"
-const "HOLLight.decode_stream" as "Data.Char.UTF8.decodeStream"
+const "HOLLight.decode_pstream" as "Data.Char.UTF8.decodeStream"
 const "HOLLight.decoder" as "Data.Char.UTF8.decoder"
 const "HOLLight.decode_cont1" as "Data.Char.UTF8.decoder.decode1"
 const "HOLLight.decode_cont2" as "Data.Char.UTF8.decoder.decode2"
@@ -255,6 +255,7 @@ const "HOLLight.decode_fib_dest" as "Number.Natural.Fibonacci.decode.dest"
 const "HOLLight.encode_fib" as "Number.Natural.Fibonacci.encode"
 const "HOLLight.encode_fib_find" as "Number.Natural.Fibonacci.encode.find"
 const "HOLLight.encode_fib_mk" as "Number.Natural.Fibonacci.encode.mk"
+const "HOLLight.zeckendorf" as "Number.Natural.Fibonacci.zeckendorf"
 
 # Parser
 
