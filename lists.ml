@@ -10,14 +10,6 @@
 needs "ind_types.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Standard tactic for list induction using MATCH_MP_TAC list_INDUCT         *)
-(* ------------------------------------------------------------------------- *)
-
-let LIST_INDUCT_TAC =
-  MATCH_MP_TAC list_INDUCT THEN
-  CONJ_TAC THENL [ALL_TAC; GEN_TAC THEN GEN_TAC THEN DISCH_TAC];;
-
-(* ------------------------------------------------------------------------- *)
 (* Various trivial theorems.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
@@ -42,30 +34,14 @@ let list_cases = prove
 export_thm list_cases;;
 
 (* ------------------------------------------------------------------------- *)
-(* Standard tactic for list case splitting.                                  *)
+(* Standard tactic for list induction using MATCH_MP_TAC list_INDUCT         *)
 (* ------------------------------------------------------------------------- *)
 
-let CASES_TAC =
-  let pth = TAUT `!x y z. (x ==> z) /\ (y ==> z) ==> (x \/ y ==> z)` in
-  let rec split_tac goal =
-      TRY (MATCH_MP_TAC pth THEN CONJ_TAC THENL [ALL_TAC; split_tac]) goal in
-  fun th tm ->
-  MP_TAC (ISPEC tm th) THEN
-  split_tac;;
+let LIST_INDUCT_TAC =
+  MATCH_MP_TAC list_INDUCT THEN
+  CONJ_TAC THENL [ALL_TAC; GEN_TAC THEN GEN_TAC THEN DISCH_TAC];;
 
-let NUM_CASES_TAC = CASES_TAC num_CASES;;
-
-let X_LIST_CASES_TAC h t l =
-  let lty = type_of l in
-  let ty = hd (snd (dest_type lty)) in
-  DISJ_CASES_THEN2
-    (fun th -> SUBST1_TAC th THEN ASSUME_TAC th)
-    (X_CHOOSE_THEN (mk_var (h,ty))
-      (X_CHOOSE_THEN (mk_var (t,lty))
-        (fun th -> SUBST1_TAC th THEN ASSUME_TAC th)))
-    (ISPEC l list_cases);;
-
-let LIST_CASES_TAC = X_LIST_CASES_TAC "h" "t";;
+let LIST_CASES_TAC = CASES_TAC list_cases;;
 
 (* ------------------------------------------------------------------------- *)
 (* Destructors.                                                              *)
@@ -709,7 +685,9 @@ let SURJECTIVE_MAP = prove
    FIRST_X_ASSUM (MP_TAC o SPEC `[y : B]`) THEN
    DISCH_THEN (CHOOSE_THEN MP_TAC) THEN
    LIST_CASES_TAC `xs : A list` THENL
-   [REWRITE_TAC [MAP; NOT_CONS_NIL];
+   [DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [MAP; NOT_CONS_NIL];
+    DISCH_THEN SUBST1_TAC THEN
     REWRITE_TAC [MAP; CONS_11] THEN
     STRIP_TAC THEN
     EXISTS_TAC `h : A` THEN

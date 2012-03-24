@@ -1090,11 +1090,26 @@ let cases ty =
   let _,ith,_ = assoc ty (!inductive_type_store) in prove_cases_thm ith;;
 
 (* ------------------------------------------------------------------------- *)
+(* Standard tactic for case splitting.                                       *)
+(* ------------------------------------------------------------------------- *)
+
+let CASES_TAC =
+  let pth = TAUT `!x y z. (x ==> z) /\ (y ==> z) ==> (x \/ y ==> z)` in
+  let rec split_tac goal =
+      TRY (MATCH_MP_TAC pth THEN CONJ_TAC THENL [ALL_TAC; split_tac]) goal in
+  fun th tm ->
+  MP_TAC (ISPEC tm th) THEN
+  split_tac;;
+
+let NUM_CASES_TAC = CASES_TAC num_CASES;;
+
+(* ------------------------------------------------------------------------- *)
 (* Convenient definitions for type isomorphism.                              *)
 (* ------------------------------------------------------------------------- *)
 
 let ISO = new_definition
-  `ISO (f:A->B) (g:B->A) <=> (!x. f(g x) = x) /\ (!y. g(f y) = y)`;;
+  `!(f : A -> B) (g : B -> A).
+     ISO f g <=> (!x. f (g x) = x) /\ (!y. g (f y) = y)`;;
 
 let ISO_REFL = prove
  (`ISO (\x:A. x) (\x. x)`,
