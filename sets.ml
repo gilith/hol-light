@@ -4709,6 +4709,30 @@ let INSERT_NUMSEG_LT = prove
 
 export_thm INSERT_NUMSEG_LT;;
 
+let INSERT_NUMSEG_LT' = prove
+  (`!n. { m | m < SUC n } = 0 INSERT { SUC m | m < n }`,
+   GEN_TAC THEN
+   REWRITE_TAC [EXTENSION; IN_INSERT; IN_ELIM_THM] THEN
+   GEN_TAC THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    MP_TAC (SPEC `m : num` num_CASES) THEN
+    STRIP_TAC THENL
+    [ASM_REWRITE_TAC [];
+     ASM_REWRITE_TAC [NOT_SUC; LT_SUC] THEN
+     STRIP_TAC THEN
+     EXISTS_TAC `n' : num` THEN
+     ASM_REWRITE_TAC []];
+    STRIP_TAC THENL
+    [EXISTS_TAC `0` THEN
+     ASM_REWRITE_TAC [LT_0];
+     EXISTS_TAC `SUC m` THEN
+     ASM_REWRITE_TAC [LT_SUC]]]);;
+
+export_thm INSERT_NUMSEG_LT';;
+
 logfile "set-finite-thm";;
 
 let FINITE_NUMSEG_LT = prove

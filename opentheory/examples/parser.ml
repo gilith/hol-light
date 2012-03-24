@@ -994,11 +994,12 @@ logfile "parser-all-thm";;
 let parse_pstream_append = prove
   (`!p (e : A -> B list) x s.
       parse_inverse p e ==>
-      parse_pstream p (append_pstream (e x) s) = ConsPstream x (parse_pstream p s)`,
+      parse_pstream p (append_pstream (e x) s) =
+      ConsPstream x (parse_pstream p s)`,
    REWRITE_TAC [parse_inverse_def] THEN
    REPEAT STRIP_TAC THEN
    POP_ASSUM (MP_TAC o SPECL [`x : A`; `s : B pstream`]) THEN
-   MP_TAC (ISPEC `(e : A -> B list) x` list_CASES) THEN
+   MP_TAC (ISPEC `(e : A -> B list) x` list_cases) THEN
    STRIP_TAC THENL
    [ASM_REWRITE_TAC [append_pstream_def] THEN
     MP_TAC (ISPECL [`p : (B,A) parser`; `s : B pstream`] parse_cases) THEN

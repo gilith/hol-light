@@ -84,6 +84,15 @@ const "HOLLight.parse_cont" as "Data.Char.UTF8.parseContinuationByte"
 const "HOLLight.parse_cont2" as "Data.Char.UTF8.parseTwoContinuationBytes"
 const "HOLLight.parse_cont3" as "Data.Char.UTF8.parseThreeContinuationBytes"
 
+# Data.Stream
+
+type "HOLLight.stream" as "Data.Stream.stream"
+
+const "HOLLight.scons" as "Data.Stream.::"
+const "HOLLight.shd" as "Data.Stream.head"
+const "HOLLight.snth" as "Data.Stream.nth"
+const "HOLLight.stl" as "Data.Stream.tail"
+
 # Data.Word
 
 type "HOLLight.word" as "Data.Word.word"

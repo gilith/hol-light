@@ -768,18 +768,29 @@ let parse_inductive_type_specification =
 logfile "sum-def";;
 
 let sum_INDUCT,sum_RECURSION =
-  define_type_raw (parse_inductive_type_specification "sum = INL A | INR B");;
+  let (induct,recursion) =
+    define_type_raw
+      (parse_inductive_type_specification "sum = INL A | INR B") in
+  let th1 = prove
+    (`!(p : A + B -> bool).
+        (!a. p (INL a)) /\ (!b. p (INR b)) ==> (!x. p x)`,
+     MATCH_ACCEPT_TAC induct)
+  and th2 = prove
+    (`!f g. ?(fn : A + B -> C).
+        (!a. fn (INL a) = f a) /\ (!b. fn (INR b) = g b)`,
+     MATCH_ACCEPT_TAC recursion) in
+  (th1,th2);;
 
 export_thm sum_INDUCT;;
 export_thm sum_RECURSION;;
 
 let OUTL = new_recursive_definition sum_RECURSION
-  `OUTL (INL x :A+B) = x`;;
+  `!a. OUTL ((INL a) : A + B) = a`;;
 
 export_thm OUTL;;
 
 let OUTR = new_recursive_definition sum_RECURSION
-  `OUTR (INR y :A+B) = y`;;
+  `!b. OUTR ((INR b) : A + B) = b`;;
 
 export_thm OUTR;;
 
@@ -890,8 +901,16 @@ let define_type_raw =
 logfile "option-def";;
 
 let option_INDUCT,option_RECURSION =
-  define_type_raw
-   (parse_inductive_type_specification "option = NONE | SOME A");;
+  let (induct,recursion) =
+    define_type_raw
+      (parse_inductive_type_specification "option = NONE | SOME A") in
+  let th1 = prove
+    (`!(p : A option -> bool). p NONE /\ (!a. p (SOME a)) ==> (!x. p x)`,
+     MATCH_ACCEPT_TAC induct)
+  and th2 = prove
+    (`!b f. ?(fn : A option -> B). fn NONE = b /\ !a. fn (SOME a) = f a`,
+     MATCH_ACCEPT_TAC recursion) in
+  (th1,th2);;
 
 export_thm option_INDUCT;;
 export_thm option_RECURSION;;
@@ -899,8 +918,18 @@ export_thm option_RECURSION;;
 logfile "list-def";;
 
 let list_INDUCT,list_RECURSION =
-  define_type_raw
-   (parse_inductive_type_specification "list = NIL | CONS A list");;
+  let (induct,recursion) =
+    define_type_raw
+      (parse_inductive_type_specification "list = NIL | CONS A list") in
+  let th1 = prove
+    (`!(p : A list -> bool).
+        p [] /\ (!h t. p t ==> p (CONS h t)) ==> (!l. p l)`,
+     MATCH_ACCEPT_TAC induct)
+  and th2 = prove
+    (`!b f. ?(fn : A list -> B).
+        fn [] = b /\ !h t. fn (CONS h t) = f h t (fn t)`,
+     MATCH_ACCEPT_TAC recursion) in
+  (th1,th2);;
 
 export_thm list_INDUCT;;
 export_thm list_RECURSION;;

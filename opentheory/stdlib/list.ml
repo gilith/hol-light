@@ -5,8 +5,8 @@
 (* Conversions for bit blasting *)
 
 let append_conv =
-    let nil_conv = REWR_CONV (CONJUNCT1 APPEND) in
-    let cons_conv = REWR_CONV (CONJUNCT2 APPEND) in
+    let nil_conv = REWR_CONV NIL_APPEND in
+    let cons_conv = REWR_CONV CONS_APPEND in
     let rec rewr_conv tm =
         (nil_conv ORELSEC
          (cons_conv THENC
@@ -14,8 +14,8 @@ let append_conv =
     rewr_conv;;
 
 let length_convs =
-    let nil_conv = REWR_CONV (CONJUNCT1 LENGTH) in
-    let cons_conv = REWR_CONV (CONJUNCT2 LENGTH) in
+    let nil_conv = REWR_CONV LENGTH_NIL in
+    let cons_conv = REWR_CONV LENGTH_CONS in
     let rec rewr_convs tm =
         try (nil_conv tm, [])
         with Failure _ ->
@@ -31,26 +31,26 @@ let length_conv tm =
     th;;
 
 let replicate_conv =
-    let zero_conv = REWR_CONV (CONJUNCT1 REPLICATE) in
-    let suc_conv = REWR_CONV (CONJUNCT2 REPLICATE) in
+    let zero_conv = REWR_CONV REPLICATE_0 in
+    let suc_conv = REWR_CONV REPLICATE_SUC in
     let rec rewr_conv tm =
         (zero_conv ORELSEC
-         (RATOR_CONV (RAND_CONV num_CONV) THENC
+         (RAND_CONV num_CONV THENC
           suc_conv THENC
           RAND_CONV rewr_conv)) tm in
     rewr_conv;;
 
-let el_conv =
-    let zero_conv = REWR_CONV EL_0 in
+let nth_conv =
+    let zero_conv = REWR_CONV nth_0 in
     let side_conv = RAND_CONV length_conv THENC NUM_LT_CONV in
-    let suc_th = SPEC_ALL EL_SUC in
+    let suc_th = SPEC_ALL nth_suc in
     let suc_conv tm =
         let th = PART_MATCH (lhs o rand) suc_th tm in
         let th' = side_conv (lhand (concl th)) in
         MP th (EQT_ELIM th') in
     let rec rewr_conv tm =
         (zero_conv ORELSEC
-         (RATOR_CONV (RAND_CONV num_CONV) THENC
+         (RAND_CONV num_CONV THENC
           suc_conv THENC
           rewr_conv)) tm in
     rewr_conv;;
@@ -100,7 +100,7 @@ let zipwith_conv =
       let rec rewr_conv tm =
           (nil_conv ORELSEC
            (cons_conv THENC
-            RATOR_CONV (RAND_CONV c) THENC
+            LAND_CONV c THENC
             RAND_CONV rewr_conv)) tm in
     rewr_conv;;
 
@@ -120,7 +120,7 @@ let list_bit_conv =
     append_conv ORELSEC
     length_conv ORELSEC
     replicate_conv ORELSEC
-    el_conv ORELSEC
+    nth_conv ORELSEC
     take_conv ORELSEC
     drop_conv ORELSEC
     zipwith_conv ALL_CONV ORELSEC

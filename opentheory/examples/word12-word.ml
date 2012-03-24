@@ -345,13 +345,13 @@ let word12_to_list_inj_eq = new_axiom
 let list_to_word12_bit = new_axiom
    `!l n.
       word12_bit (list_to_word12 l) n =
-      (n < word12_width /\ n < LENGTH l /\ EL n l)`;;
+      (n < word12_width /\ n < LENGTH l /\ nth l n)`;;
 
 let short_list_to_word12_to_list = new_axiom
    `!l.
       LENGTH l <= word12_width ==>
       word12_to_list (list_to_word12 l) =
-      APPEND l (REPLICATE (word12_width - LENGTH l) F)`;;
+      APPEND l (REPLICATE F (word12_width - LENGTH l))`;;
 
 let long_list_to_word12_to_list = new_axiom
    `!l.
@@ -362,7 +362,7 @@ let list_to_word12_to_list_eq = new_axiom
    `!l.
       word12_to_list (list_to_word12 l) =
       if LENGTH l <= word12_width then
-        APPEND l (REPLICATE (word12_width - LENGTH l) F)
+        APPEND l (REPLICATE F (word12_width - LENGTH l))
       else
         take word12_width l`;;
 
@@ -372,7 +372,7 @@ let list_to_word12_to_list = new_axiom
 let word12_shl_list = new_axiom
    `!l n.
       word12_shl (list_to_word12 l) n =
-      list_to_word12 (APPEND (REPLICATE n F) l)`;;
+      list_to_word12 (APPEND (REPLICATE F n) l)`;;
 
 let short_word12_shr_list = new_axiom
    `!l n.
@@ -459,17 +459,17 @@ let word12_width_conv = REWR_CONV word12_width_def;;
 let list_to_word12_to_list_conv =
     REWR_CONV list_to_word12_to_list_eq THENC
     cond_conv
-      (RATOR_CONV (RAND_CONV length_conv) THENC
+      (LAND_CONV length_conv THENC
        RAND_CONV word12_width_conv THENC
        NUM_REDUCE_CONV)
       (RAND_CONV
-         ((RATOR_CONV o RAND_CONV)
-            (RATOR_CONV (RAND_CONV word12_width_conv) THENC
+         (RAND_CONV
+            (LAND_CONV word12_width_conv THENC
              RAND_CONV length_conv THENC
              NUM_REDUCE_CONV) THENC
           replicate_conv) THENC
        append_conv)
-      (RATOR_CONV (RAND_CONV word12_width_conv) THENC
+      (LAND_CONV word12_width_conv THENC
        take_conv);;
 
 let numeral_to_word12_list_conv =
@@ -479,7 +479,7 @@ let numeral_to_word12_list_conv =
         (zero_conv ORELSEC
          (numeral_conv THENC
           RAND_CONV
-            (RATOR_CONV (RAND_CONV NUM_REDUCE_CONV) THENC
+            (LAND_CONV NUM_REDUCE_CONV THENC
              RAND_CONV
                (RAND_CONV
                   (RAND_CONV NUM_REDUCE_CONV THENC
@@ -491,7 +491,7 @@ let word12_and_list_conv =
     let th = SPECL [`list_to_word12 l1`; `list_to_word12 l2`] word12_and_def in
     REWR_CONV th THENC
     RAND_CONV
-      (RATOR_CONV (RAND_CONV list_to_word12_to_list_conv) THENC
+      (LAND_CONV list_to_word12_to_list_conv THENC
        RAND_CONV list_to_word12_to_list_conv THENC
        zipwith_conv and_simp_conv);;
 
@@ -499,7 +499,7 @@ let word12_or_list_conv =
     let th = SPECL [`list_to_word12 l1`; `list_to_word12 l2`] word12_or_def in
     REWR_CONV th THENC
     RAND_CONV
-      (RATOR_CONV (RAND_CONV list_to_word12_to_list_conv) THENC
+      (LAND_CONV list_to_word12_to_list_conv THENC
        RAND_CONV list_to_word12_to_list_conv THENC
        zipwith_conv or_simp_conv);;
 
@@ -529,7 +529,7 @@ let word12_shl_list_conv =
     let th = SPECL [`l : bool list`; `NUMERAL n`] word12_shl_list in
     REWR_CONV th THENC
     RAND_CONV
-      (RATOR_CONV (RAND_CONV replicate_conv) THENC
+      (LAND_CONV replicate_conv THENC
        append_conv);;
 
 let word12_bit_list_conv =
@@ -541,7 +541,7 @@ let word12_bit_list_conv =
       (andalso_conv
         (RAND_CONV length_conv THENC
          NUM_REDUCE_CONV)
-        el_conv);;
+        nth_conv);;
 
 let word12_bits_lte_conv =
     let nil_conv = REWR_CONV (CONJUNCT1 word12_bits_lte_def) in
@@ -567,14 +567,14 @@ let word12_bits_lte_conv =
 let word12_le_list_conv =
     let th = SYM (SPECL [`list_to_word12 l1`; `list_to_word12 l2`] word12_le_list) in
     REWR_CONV th THENC
-    RATOR_CONV (RAND_CONV list_to_word12_to_list_conv) THENC
+    LAND_CONV list_to_word12_to_list_conv THENC
     RAND_CONV list_to_word12_to_list_conv THENC
     word12_bits_lte_conv;;
 
 let word12_lt_list_conv =
     let th = SYM (SPECL [`list_to_word12 l1`; `list_to_word12 l2`] word12_lt_list) in
     REWR_CONV th THENC
-    RATOR_CONV (RAND_CONV list_to_word12_to_list_conv) THENC
+    LAND_CONV list_to_word12_to_list_conv THENC
     RAND_CONV list_to_word12_to_list_conv THENC
     word12_bits_lte_conv;;
 
@@ -582,7 +582,7 @@ let word12_eq_list_conv =
     let th = SYM (SPECL [`list_to_word12 l1`; `list_to_word12 l2`]
                     word12_to_list_inj_eq) in
     REWR_CONV th THENC
-    RATOR_CONV (RAND_CONV list_to_word12_to_list_conv) THENC
+    LAND_CONV list_to_word12_to_list_conv THENC
     RAND_CONV list_to_word12_to_list_conv THENC
     list_eq_conv iff_simp_conv;;
 
@@ -636,7 +636,7 @@ let prove_word12_list_cases n =
         AP_TERM_TAC THEN
         POP_ASSUM MP_TAC THEN
         N_TAC n
-          (MP_TAC (ISPEC `l : bool list` list_CASES) THEN
+          (MP_TAC (ISPEC `l : bool list` list_cases) THEN
            STRIP_TAC THENL
            [ASM_REWRITE_TAC [LENGTH; NOT_SUC];
             ALL_TAC] THEN

@@ -345,13 +345,13 @@ let byte_to_list_inj_eq = new_axiom
 let list_to_byte_bit = new_axiom
    `!l n.
       byte_bit (list_to_byte l) n =
-      (n < byte_width /\ n < LENGTH l /\ EL n l)`;;
+      (n < byte_width /\ n < LENGTH l /\ nth l n)`;;
 
 let short_list_to_byte_to_list = new_axiom
    `!l.
       LENGTH l <= byte_width ==>
       byte_to_list (list_to_byte l) =
-      APPEND l (REPLICATE (byte_width - LENGTH l) F)`;;
+      APPEND l (REPLICATE F (byte_width - LENGTH l))`;;
 
 let long_list_to_byte_to_list = new_axiom
    `!l.
@@ -362,7 +362,7 @@ let list_to_byte_to_list_eq = new_axiom
    `!l.
       byte_to_list (list_to_byte l) =
       if LENGTH l <= byte_width then
-        APPEND l (REPLICATE (byte_width - LENGTH l) F)
+        APPEND l (REPLICATE F (byte_width - LENGTH l))
       else
         take byte_width l`;;
 
@@ -372,7 +372,7 @@ let list_to_byte_to_list = new_axiom
 let byte_shl_list = new_axiom
    `!l n.
       byte_shl (list_to_byte l) n =
-      list_to_byte (APPEND (REPLICATE n F) l)`;;
+      list_to_byte (APPEND (REPLICATE F n) l)`;;
 
 let short_byte_shr_list = new_axiom
    `!l n.
@@ -459,17 +459,17 @@ let byte_width_conv = REWR_CONV byte_width_def;;
 let list_to_byte_to_list_conv =
     REWR_CONV list_to_byte_to_list_eq THENC
     cond_conv
-      (RATOR_CONV (RAND_CONV length_conv) THENC
+      (LAND_CONV length_conv THENC
        RAND_CONV byte_width_conv THENC
        NUM_REDUCE_CONV)
       (RAND_CONV
-         ((RATOR_CONV o RAND_CONV)
-            (RATOR_CONV (RAND_CONV byte_width_conv) THENC
+         (RAND_CONV
+            (LAND_CONV byte_width_conv THENC
              RAND_CONV length_conv THENC
              NUM_REDUCE_CONV) THENC
           replicate_conv) THENC
        append_conv)
-      (RATOR_CONV (RAND_CONV byte_width_conv) THENC
+      (LAND_CONV byte_width_conv THENC
        take_conv);;
 
 let numeral_to_byte_list_conv =
@@ -479,7 +479,7 @@ let numeral_to_byte_list_conv =
         (zero_conv ORELSEC
          (numeral_conv THENC
           RAND_CONV
-            (RATOR_CONV (RAND_CONV NUM_REDUCE_CONV) THENC
+            (LAND_CONV NUM_REDUCE_CONV THENC
              RAND_CONV
                (RAND_CONV
                   (RAND_CONV NUM_REDUCE_CONV THENC
@@ -491,7 +491,7 @@ let byte_and_list_conv =
     let th = SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_and_def in
     REWR_CONV th THENC
     RAND_CONV
-      (RATOR_CONV (RAND_CONV list_to_byte_to_list_conv) THENC
+      (LAND_CONV list_to_byte_to_list_conv THENC
        RAND_CONV list_to_byte_to_list_conv THENC
        zipwith_conv and_simp_conv);;
 
@@ -499,7 +499,7 @@ let byte_or_list_conv =
     let th = SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_or_def in
     REWR_CONV th THENC
     RAND_CONV
-      (RATOR_CONV (RAND_CONV list_to_byte_to_list_conv) THENC
+      (LAND_CONV list_to_byte_to_list_conv THENC
        RAND_CONV list_to_byte_to_list_conv THENC
        zipwith_conv or_simp_conv);;
 
@@ -529,7 +529,7 @@ let byte_shl_list_conv =
     let th = SPECL [`l : bool list`; `NUMERAL n`] byte_shl_list in
     REWR_CONV th THENC
     RAND_CONV
-      (RATOR_CONV (RAND_CONV replicate_conv) THENC
+      (LAND_CONV replicate_conv THENC
        append_conv);;
 
 let byte_bit_list_conv =
@@ -541,7 +541,7 @@ let byte_bit_list_conv =
       (andalso_conv
         (RAND_CONV length_conv THENC
          NUM_REDUCE_CONV)
-        el_conv);;
+        nth_conv);;
 
 let byte_bits_lte_conv =
     let nil_conv = REWR_CONV (CONJUNCT1 byte_bits_lte_def) in
@@ -567,14 +567,14 @@ let byte_bits_lte_conv =
 let byte_le_list_conv =
     let th = SYM (SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_le_list) in
     REWR_CONV th THENC
-    RATOR_CONV (RAND_CONV list_to_byte_to_list_conv) THENC
+    LAND_CONV list_to_byte_to_list_conv THENC
     RAND_CONV list_to_byte_to_list_conv THENC
     byte_bits_lte_conv;;
 
 let byte_lt_list_conv =
     let th = SYM (SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_lt_list) in
     REWR_CONV th THENC
-    RATOR_CONV (RAND_CONV list_to_byte_to_list_conv) THENC
+    LAND_CONV list_to_byte_to_list_conv THENC
     RAND_CONV list_to_byte_to_list_conv THENC
     byte_bits_lte_conv;;
 
@@ -582,7 +582,7 @@ let byte_eq_list_conv =
     let th = SYM (SPECL [`list_to_byte l1`; `list_to_byte l2`]
                     byte_to_list_inj_eq) in
     REWR_CONV th THENC
-    RATOR_CONV (RAND_CONV list_to_byte_to_list_conv) THENC
+    LAND_CONV list_to_byte_to_list_conv THENC
     RAND_CONV list_to_byte_to_list_conv THENC
     list_eq_conv iff_simp_conv;;
 
@@ -636,7 +636,7 @@ let prove_byte_list_cases n =
         AP_TERM_TAC THEN
         POP_ASSUM MP_TAC THEN
         N_TAC n
-          (MP_TAC (ISPEC `l : bool list` list_CASES) THEN
+          (MP_TAC (ISPEC `l : bool list` list_cases) THEN
            STRIP_TAC THENL
            [ASM_REWRITE_TAC [LENGTH; NOT_SUC];
             ALL_TAC] THEN

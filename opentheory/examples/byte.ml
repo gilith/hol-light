@@ -42,7 +42,7 @@ let byte_list_cases = prove
    AP_TERM_TAC THEN
    POP_ASSUM MP_TAC THEN
    N_TAC 8
-     (MP_TAC (ISPEC `l : bool list` list_CASES) THEN
+     (MP_TAC (ISPEC `l : bool list` list_cases) THEN
       STRIP_TAC THENL
       [ASM_REWRITE_TAC [LENGTH; NOT_SUC];
        ALL_TAC] THEN

@@ -635,27 +635,23 @@ let word_to_list_inj_eq = new_axiom
 let list_to_word_bit = prove
   (`!l n.
       word_bit (list_to_word l) n =
-      (n < word_width /\ n < LENGTH l /\ EL n l)`,
+      (n < word_width /\ n < LENGTH l /\ nth l n)`,
    REWRITE_TAC [word_bit_div] THEN
    ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
-   MATCH_MP_TAC num_INDUCTION THEN
-   CONJ_TAC THENL
+   INDUCT_TAC THENL
    [LIST_INDUCT_TAC THENL
     [REWRITE_TAC [LENGTH; nil_to_word_to_num; LT; ODD; EXP; DIV_1];
      ALL_TAC] THEN
     POP_ASSUM (K ALL_TAC) THEN
     REWRITE_TAC
-      [LENGTH; cons_to_word_to_num; EXP; DIV_1; EL; HD; LT_NZ; NOT_SUC] THEN
+      [LENGTH; cons_to_word_to_num; EXP; DIV_1; nth_0; HD; LT_NZ; NOT_SUC] THEN
     ASM_REWRITE_TAC [word_size_def; odd_mod_exp_2] THEN
     CONV_TAC (RATOR_CONV (ONCE_REWRITE_CONV [CONJ_SYM])) THEN
     AP_TERM_TAC THEN
-    MP_TAC (SPEC `h:bool` BOOL_CASES_AX) THEN
-    STRIP_TAC THENL
+    BOOL_CASES_TAC `h:bool` THENL
     [ASM_REWRITE_TAC [GSYM ADD1; ODD_DOUBLE];
      ASM_REWRITE_TAC [ADD_0; GSYM NOT_EVEN; EVEN_DOUBLE]];
     ALL_TAC] THEN
-   GEN_TAC THEN
-   STRIP_TAC THEN
    bool_cases_tac' `SUC n < word_width` THENL
    [POP_ASSUM MP_TAC THEN
     POP_ASSUM (K ALL_TAC) THEN
@@ -677,7 +673,7 @@ let list_to_word_bit = prove
     ALL_TAC] THEN
    POP_ASSUM (K ALL_TAC) THEN
    REWRITE_TAC [LENGTH; cons_to_word_to_num; LT_SUC] THEN
-   MP_TAC (ISPECL [`h : bool`; `t : bool list`; `n : num`] EL_SUC) THEN
+   MP_TAC (ISPECL [`h : bool`; `t : bool list`; `n : num`] nth_suc) THEN
    MATCH_MP_TAC
      (TAUT `!x y z w.
               ((x /\ y <=> x /\ z) ==> w) ==>
@@ -729,14 +725,14 @@ export_thm list_to_word_bit;;
 let list_to_word_bit = new_axiom
    `!l n.
       word_bit (list_to_word l) n =
-      (n < word_width /\ n < LENGTH l /\ EL n l)`;;
+      (n < word_width /\ n < LENGTH l /\ nth l n)`;;
 *)
 
 let short_list_to_word_to_list = prove
   (`!l.
       LENGTH l <= word_width ==>
       word_to_list (list_to_word l) =
-      APPEND l (REPLICATE (word_width - LENGTH l) F)`,
+      APPEND l (REPLICATE F (word_width - LENGTH l))`,
    REWRITE_TAC [word_to_list_def; list_to_word_bit] THEN
    REPEAT STRIP_TAC THEN
    MATCH_MP_TAC nth_eq THEN
@@ -758,9 +754,10 @@ let short_list_to_word_to_list = prove
    ASM_REWRITE_TAC [ADD] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
    REWRITE_TAC [list_to_word_bit] THEN
-   MP_TAC (ISPECL [`i : num`; `l : bool list`;
-                   `REPLICATE (word_width - LENGTH (l : bool list)) F`]
-                  EL_APPEND) THEN
+   MP_TAC (ISPECL [`l : bool list`;
+                   `REPLICATE F (word_width - LENGTH (l : bool list))`;
+                   `i : num`]
+                  nth_append) THEN
    COND_TAC THENL
    [REWRITE_TAC [LENGTH_REPLICATE] THEN
     MATCH_MP_TAC LTE_TRANS THEN
@@ -785,7 +782,8 @@ let short_list_to_word_to_list = prove
    DISCH_THEN (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC) THEN
    REWRITE_TAC [ADD_SUB2] THEN
    STRIP_TAC THEN
-   MP_TAC (ISPECL [`word_width - LENGTH (l : bool list)`; `F`;
+   MP_TAC (ISPECL [`F`;
+                   `word_width - LENGTH (l : bool list)`;
                    `d : num`] nth_replicate) THEN
    COND_TAC THENL
    [MP_TAC (SPEC `LENGTH (l : bool list)` LT_ADD_LCANCEL) THEN
@@ -812,7 +810,7 @@ let short_list_to_word_to_list = new_axiom
    `!l.
       LENGTH l <= word_width ==>
       word_to_list (list_to_word l) =
-      APPEND l (REPLICATE (word_width - LENGTH l) F)`;;
+      APPEND l (REPLICATE F (word_width - LENGTH l))`;;
 *)
 
 let long_list_to_word_to_list = prove
@@ -864,7 +862,7 @@ let list_to_word_to_list_eq = prove
   (`!l.
       word_to_list (list_to_word l) =
       if LENGTH l <= word_width then
-        APPEND l (REPLICATE (word_width - LENGTH l) F)
+        APPEND l (REPLICATE F (word_width - LENGTH l))
       else
         take word_width l`,
    GEN_TAC THEN
@@ -884,7 +882,7 @@ let list_to_word_to_list_eq = new_axiom
    `!l.
       word_to_list (list_to_word l) =
       if LENGTH l <= word_width then
-        APPEND l (REPLICATE (word_width - LENGTH l) F)
+        APPEND l (REPLICATE F (word_width - LENGTH l))
       else
         take word_width l`;;
 *)
@@ -914,7 +912,7 @@ let list_to_word_to_list = new_axiom
 let word_shl_list = prove
   (`!l n.
       word_shl (list_to_word l) n =
-      list_to_word (APPEND (REPLICATE n F) l)`,
+      list_to_word (APPEND (REPLICATE F n) l)`,
    REWRITE_TAC [word_shl_def] THEN
    REPEAT GEN_TAC THEN
    MATCH_MP_TAC word_to_num_inj THEN
@@ -942,7 +940,7 @@ export_thm word_shl_list;;
 let word_shl_list = new_axiom
    `!l n.
       word_shl (list_to_word l) n =
-      list_to_word (APPEND (REPLICATE n F) l)`;;
+      list_to_word (APPEND (REPLICATE F n) l)`;;
 *)
 
 let short_word_shr_list = prove
@@ -1433,17 +1431,17 @@ let word_width_conv = REWR_CONV word_width_def;;
 let list_to_word_to_list_conv =
     REWR_CONV list_to_word_to_list_eq THENC
     cond_conv
-      (RATOR_CONV (RAND_CONV length_conv) THENC
+      (LAND_CONV length_conv THENC
        RAND_CONV word_width_conv THENC
        NUM_REDUCE_CONV)
       (RAND_CONV
-         ((RATOR_CONV o RAND_CONV)
-            (RATOR_CONV (RAND_CONV word_width_conv) THENC
+         (RAND_CONV
+            (LAND_CONV word_width_conv THENC
              RAND_CONV length_conv THENC
              NUM_REDUCE_CONV) THENC
           replicate_conv) THENC
        append_conv)
-      (RATOR_CONV (RAND_CONV word_width_conv) THENC
+      (LAND_CONV word_width_conv THENC
        take_conv);;
 
 let numeral_to_word_list_conv =
@@ -1453,7 +1451,7 @@ let numeral_to_word_list_conv =
         (zero_conv ORELSEC
          (numeral_conv THENC
           RAND_CONV
-            (RATOR_CONV (RAND_CONV NUM_REDUCE_CONV) THENC
+            (LAND_CONV NUM_REDUCE_CONV THENC
              RAND_CONV
                (RAND_CONV
                   (RAND_CONV NUM_REDUCE_CONV THENC
@@ -1465,7 +1463,7 @@ let word_and_list_conv =
     let th = SPECL [`list_to_word l1`; `list_to_word l2`] word_and_def in
     REWR_CONV th THENC
     RAND_CONV
-      (RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
+      (LAND_CONV list_to_word_to_list_conv THENC
        RAND_CONV list_to_word_to_list_conv THENC
        zipwith_conv and_simp_conv);;
 
@@ -1473,7 +1471,7 @@ let word_or_list_conv =
     let th = SPECL [`list_to_word l1`; `list_to_word l2`] word_or_def in
     REWR_CONV th THENC
     RAND_CONV
-      (RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
+      (LAND_CONV list_to_word_to_list_conv THENC
        RAND_CONV list_to_word_to_list_conv THENC
        zipwith_conv or_simp_conv);;
 
@@ -1503,7 +1501,7 @@ let word_shl_list_conv =
     let th = SPECL [`l : bool list`; `NUMERAL n`] word_shl_list in
     REWR_CONV th THENC
     RAND_CONV
-      (RATOR_CONV (RAND_CONV replicate_conv) THENC
+      (LAND_CONV replicate_conv THENC
        append_conv);;
 
 let word_bit_list_conv =
@@ -1515,7 +1513,7 @@ let word_bit_list_conv =
       (andalso_conv
         (RAND_CONV length_conv THENC
          NUM_REDUCE_CONV)
-        el_conv);;
+        nth_conv);;
 
 let word_bits_lte_conv =
     let nil_conv = REWR_CONV (CONJUNCT1 word_bits_lte_def) in
@@ -1541,14 +1539,14 @@ let word_bits_lte_conv =
 let word_le_list_conv =
     let th = SYM (SPECL [`list_to_word l1`; `list_to_word l2`] word_le_list) in
     REWR_CONV th THENC
-    RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
+    LAND_CONV list_to_word_to_list_conv THENC
     RAND_CONV list_to_word_to_list_conv THENC
     word_bits_lte_conv;;
 
 let word_lt_list_conv =
     let th = SYM (SPECL [`list_to_word l1`; `list_to_word l2`] word_lt_list) in
     REWR_CONV th THENC
-    RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
+    LAND_CONV list_to_word_to_list_conv THENC
     RAND_CONV list_to_word_to_list_conv THENC
     word_bits_lte_conv;;
 
@@ -1556,7 +1554,7 @@ let word_eq_list_conv =
     let th = SYM (SPECL [`list_to_word l1`; `list_to_word l2`]
                     word_to_list_inj_eq) in
     REWR_CONV th THENC
-    RATOR_CONV (RAND_CONV list_to_word_to_list_conv) THENC
+    LAND_CONV list_to_word_to_list_conv THENC
     RAND_CONV list_to_word_to_list_conv THENC
     list_eq_conv iff_simp_conv;;
 
@@ -1610,7 +1608,7 @@ let prove_word_list_cases n =
         AP_TERM_TAC THEN
         POP_ASSUM MP_TAC THEN
         N_TAC n
-          (MP_TAC (ISPEC `l : bool list` list_CASES) THEN
+          (MP_TAC (ISPEC `l : bool list` list_cases) THEN
            STRIP_TAC THENL
            [ASM_REWRITE_TAC [LENGTH; NOT_SUC];
             ALL_TAC] THEN

@@ -55,7 +55,7 @@ let byte_to_word16_list = prove
    MATCH_MP_TAC EQ_TRANS THEN
    EXISTS_TAC
      `i < byte_width /\ i < LENGTH (byte_to_list b) /\
-      EL i (byte_to_list b)` THEN
+      nth (byte_to_list b) i` THEN
    CONJ_TAC THENL
    [REWRITE_TAC [GSYM list_to_byte_bit; byte_to_list_to_byte] THEN
     REWRITE_TAC [byte_bit_div] THEN
@@ -81,7 +81,7 @@ let word16_to_byte_list = prove
    MATCH_MP_TAC EQ_TRANS THEN
    EXISTS_TAC
      `i < word16_width /\ i < LENGTH (word16_to_list w) /\
-      EL i (word16_to_list w)` THEN
+      nth (word16_to_list w) i` THEN
    CONJ_TAC THENL
    [REWRITE_TAC [GSYM list_to_word16_bit; word16_to_list_to_word16] THEN
     REWRITE_TAC [word16_bit_div] THEN
