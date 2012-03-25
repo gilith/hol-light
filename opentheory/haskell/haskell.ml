@@ -134,7 +134,7 @@ export_thm equal_optionH;;
 let equal_listH_left_nil = prove
   (`!(eq : A -> A -> bool) l. equal_listH eq [] l <=> NULL l`,
    REPEAT GEN_TAC THEN
-   MP_TAC (ISPEC `l : A list` list_CASES) THEN
+   MP_TAC (ISPEC `l : A list` list_cases) THEN
    STRIP_TAC THEN
    ASM_REWRITE_TAC [NULL; equal_listH_nil_nil; equal_listH_nil_cons]);;
 
@@ -143,7 +143,7 @@ export_thm equal_listH_left_nil;;
 let equal_listH_right_nil = prove
   (`!(eq : A -> A -> bool) l. equal_listH eq l [] <=> NULL l`,
    REPEAT GEN_TAC THEN
-   MP_TAC (ISPEC `l : A list` list_CASES) THEN
+   MP_TAC (ISPEC `l : A list` list_cases) THEN
    STRIP_TAC THEN
    ASM_REWRITE_TAC [NULL; equal_listH_nil_nil; equal_listH_cons_nil]);;
 
@@ -163,7 +163,7 @@ let equal_listH = prove
     MATCH_ACCEPT_TAC EQ_SYM_EQ;
     ALL_TAC] THEN
    GEN_TAC THEN
-   MP_TAC (ISPEC `l2 : A list` list_CASES) THEN
+   MP_TAC (ISPEC `l2 : A list` list_cases) THEN
    STRIP_TAC THENL
    [FIRST_X_ASSUM SUBST_VAR_TAC THEN
     REWRITE_TAC [equal_listH_cons_nil; NOT_CONS_NIL];
