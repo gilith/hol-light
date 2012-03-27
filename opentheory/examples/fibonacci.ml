@@ -227,6 +227,55 @@ export_thm zeckendorf_cons;;
 
 let zeckendorf_def = CONJ zeckendorf_nil zeckendorf_cons;;
 
+let rdecode_fib_dest_exists = prove
+ (`?dest. !b (n : num) f p r.
+     dest b n f p r =
+       let (b',r') = rbit r in
+       if b' /\ b then n else
+       let s = f + p in
+       dest b' (if b' then s + n else n) s f r'`,
+  MP_TAC
+   (ISPECL
+      [`\ ((b : bool), (n : num), (f : num), (p : num), (r : random)).
+          let (b',r') = rbit r in
+          ~(b' /\ b)`;
+       `\ ((b : bool), (n : num), (f : num), (p : num), (r : random)).
+          let (b',r') = rbit r in
+          let s = f + p in
+          (b', (if b' then s + n else n), s, f, r')`;
+       `\ ((b : bool), (n : num), (f : num), (p : num), (r : random)).
+          n`] WF_REC_TAIL) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `dest : bool # num # num # num # random -> num`
+     STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC
+    `\ (b : bool) (n : num) (f : num) (p : num) (r : random).
+       ((dest (b,n,f,p,r)) : num)` THEN
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [] THEN
+  FIRST_X_ASSUM (fun th -> CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [th]))) THEN
+  REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  PAIR_CASES_TAC `rbit r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `b' : bool` (X_CHOOSE_THEN `r' : random` SUBST1_TAC)) THEN
+  REWRITE_TAC [] THEN
+  BOOL_CASES_TAC `b' /\ b` THENL
+  [REWRITE_TAC [];
+   REWRITE_TAC []]);;
+
+let rdecode_fib_dest_def =
+  new_specification ["rdecode_fib_dest"] rdecode_fib_dest_exists;;
+
+export_thm rdecode_fib_dest_def;;
+
+let rdecode_fib_def = new_definition
+  `!r.
+     rdecode_fib r =
+     let (r1,r2) = rsplit r in
+     (rdecode_fib_dest F 0 1 0 r1, r2)`;;
+
+export_thm rdecode_fib_def;;
+
 logfile "natural-fibonacci-thm";;
 
 export_thm fibonacci_induction;;

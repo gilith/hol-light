@@ -1101,6 +1101,8 @@ let CASES_TAC =
   MP_TAC (ISPEC tm th) THEN
   split_tac;;
 
+let PAIR_CASES_TAC = CASES_TAC PAIR_SURJECTIVE;;
+
 let NUM_CASES_TAC = CASES_TAC num_CASES;;
 
 (* ------------------------------------------------------------------------- *)

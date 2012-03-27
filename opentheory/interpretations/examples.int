@@ -267,6 +267,8 @@ const "HOLLight.decode_fib_dest" as "Number.Natural.Fibonacci.decode.dest"
 const "HOLLight.encode_fib" as "Number.Natural.Fibonacci.encode"
 const "HOLLight.encode_fib_find" as "Number.Natural.Fibonacci.encode.find"
 const "HOLLight.encode_fib_mk" as "Number.Natural.Fibonacci.encode.mk"
+const "HOLLight.rdecode_fib" as "Number.Natural.Fibonacci.fromRandom"
+const "HOLLight.rdecode_fib_dest" as "Number.Natural.Fibonacci.fromRandom.dest"
 const "HOLLight.zeckendorf" as "Number.Natural.Fibonacci.zeckendorf"
 
 # Parser
@@ -306,6 +308,17 @@ const "HOLLight.is_proper_suffix_pstream" as "Parser.Stream.isProperSuffix"
 const "HOLLight.is_suffix_pstream" as "Parser.Stream.isSuffix"
 const "HOLLight.length_pstream" as "Parser.Stream.length"
 const "HOLLight.pstream_to_list" as "Parser.Stream.toList"
+
+# Probability
+
+# Probability.Random
+
+type "HOLLight.random" as "Probability.Random.random"
+
+const "HOLLight.rbit" as "Probability.Random.bit"
+const "HOLLight.mk_random" as "Probability.Random.fromStream"
+const "HOLLight.rsplit" as "Probability.Random.split"
+const "HOLLight.dest_random" as "Probability.Random.toStream"
 
 # System
 

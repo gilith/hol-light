@@ -2104,7 +2104,7 @@ logfile "natural-order-min-max-def";;
 parse_as_binder "minimal";;
 
 let minimal = new_definition
-  `!P. (minimal) (P:num->bool) = @n. P n /\ !m. m < n ==> ~(P m)`;;
+  `!(p : num -> bool). (minimal) p = @n. p n /\ !m. m < n ==> ~(p m)`;;
 
 let MINIMAL = prove
  (`!p. (?n. p n) <=> p ((minimal) p) /\ (!m. m < (minimal) p ==> ~(p m))`,
