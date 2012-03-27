@@ -47,4 +47,74 @@ let ssplit_def = new_definition
 
 export_thm ssplit_def;;
 
+let sappend_def = new_definition
+  `!l (s : A stream).
+     sappend l s =
+     stream (\n. if n < LENGTH l then nth l n else snth s (n - LENGTH l))`;;
+
+export_thm sappend_def;;
+
+logfile "stream-thm";;
+
+let snth_eq_imp = prove
+  (`!(s1 : A stream) s2.
+      (!n. snth s1 n = snth s2 n) ==>
+      s1 = s2`,
+   REPEAT STRIP_TAC THEN
+   ONCE_REWRITE_TAC [GSYM snth_stream] THEN
+   AP_TERM_TAC THEN
+   ASM_REWRITE_TAC [FUN_EQ_THM]);;
+
+export_thm snth_eq_imp;;
+
+let snth_sappend = prove
+  (`!l (s : A stream) n.
+      snth (sappend l s) n =
+      if n < LENGTH l then nth l n else snth s (n - LENGTH l)`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [sappend_def; stream_snth]);;
+
+export_thm snth_sappend;;
+
+let sappend_assoc = prove
+  (`!l1 l2 (s : A stream).
+      sappend (APPEND l1 l2) s = sappend l1 (sappend l2 s)`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC snth_eq_imp THEN
+   GEN_TAC THEN
+   REWRITE_TAC [snth_sappend; LENGTH_APPEND] THEN
+   ASM_CASES_TAC `n < LENGTH (l1 : A list)` THENL
+   [SUBGOAL_THEN
+      `n < LENGTH (l1 : A list) + LENGTH (l2 : A list)` ASSUME_TAC THENL
+    [MATCH_MP_TAC LTE_TRANS THEN
+     EXISTS_TAC `LENGTH (l1 : A list)` THEN
+     ASM_REWRITE_TAC [LE_ADD];
+     ALL_TAC] THEN
+    ASM_REWRITE_TAC [] THEN
+    MP_TAC (SPECL [`l1 : A list`; `l2 : A list`; `n : num`] nth_append) THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   POP_ASSUM (MP_TAC o REWRITE_RULE [NOT_LT; LE_EXISTS]) THEN
+   DISCH_THEN (CHOOSE_THEN SUBST1_TAC) THEN
+   REWRITE_TAC [LT_ADD_LCANCEL; ADD_SUB2] THEN
+   COND_CASES_TAC THENL
+   [ASM_REWRITE_TAC [] THEN
+    MP_TAC (SPECL [`l1 : A list`; `l2 : A list`;
+                   `LENGTH (l1 : A list) + d`] nth_append) THEN
+    ASM_REWRITE_TAC [LT_ADD_LCANCEL; ADD_SUB2] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    COND_CASES_TAC THENL
+    [SUBGOAL_THEN `F` CONTR_TAC THEN
+     POP_ASSUM MP_TAC THEN
+     REWRITE_TAC [NOT_LT; LE_ADD];
+     REFL_TAC];
+    ALL_TAC] THEN
+   REWRITE_TAC [] THEN
+   POP_ASSUM (MP_TAC o REWRITE_RULE [NOT_LT; LE_EXISTS]) THEN
+   DISCH_THEN (X_CHOOSE_THEN `m : num` SUBST1_TAC) THEN
+   REWRITE_TAC [ADD_ASSOC; ADD_SUB2]);;
+
+export_thm sappend_assoc;;
+
 logfile_end ();;

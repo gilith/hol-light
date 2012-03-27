@@ -14,34 +14,38 @@ needs "quot.ml";;
 (* ------------------------------------------------------------------------- *)
 
 let LET_DEF =
-  let OPENTHEORY_LET_DEF = new_basic_definition
-        `LET = \f. (f : A -> B)` in
+  let def = new_basic_definition `LET = \f. (f : A -> B)` in
   let () = delete_const_definition ["LET"] in
-  let () = delete_proof OPENTHEORY_LET_DEF in
+  let () = delete_proof def in
   prove
   (`!(f : A -> B) x. LET f x = f x`,
-   REWRITE_TAC [OPENTHEORY_LET_DEF]);;
+   REWRITE_TAC [def]);;
 
 let LET_END_DEF =
-  let OPENTHEORY_LET_END_DEF = new_basic_definition
-        `LET_END = \t. (t : A)` in
+  let def = new_basic_definition `LET_END = \t. (t : A)` in
   let () = delete_const_definition ["LET_END"] in
-  let () = delete_proof OPENTHEORY_LET_END_DEF in
+  let () = delete_proof def in
   prove
   (`!(t : A). LET_END t = t`,
-   REWRITE_TAC [OPENTHEORY_LET_END_DEF]);;
+   REWRITE_TAC [def]);;
 
-let GABS_DEF = new_definition
- `GABS (P:A->bool) = (@) P`;;
+let GABS_DEF =
+  let def = new_basic_definition `GABS = ((@) : (A -> bool) -> A)` in
+  let alt = REFL (rhs (concl def)) in
+  let () = delete_const_definition ["GABS"] in
+  let () = replace_proof def (read_proof alt) in
+  prove
+  (`!(p : A -> bool). GABS p = (@) p`,
+   REWRITE_TAC [def]);;
 
-delete_const_definition ["GABS"];;
-delete_proof GABS_DEF;;
-
-let GEQ_DEF = new_definition
- `GEQ a b = (a:A = b)`;;
-
-delete_const_definition ["GEQ"];;
-delete_proof GEQ_DEF;;
+let GEQ_DEF =
+  let def = new_basic_definition `GEQ = ((=) : A -> A -> bool)` in
+  let alt = REFL (rhs (concl def)) in
+  let () = delete_const_definition ["GEQ"] in
+  let () = replace_proof def (read_proof alt) in
+  prove
+  (`!a b : A. GEQ a b <=> a = b`,
+   REWRITE_TAC [def]);;
 
 let _SEQPATTERN = new_definition
  `_SEQPATTERN = \r s x. if ?y. r (x:A) (y:B) then r x else s x`;;
@@ -53,7 +57,7 @@ let _GUARDED_PATTERN = new_definition
  `_GUARDED_PATTERN = \p g r. p /\ g /\ r`;;
 
 let _MATCH = new_definition
- `_MATCH =  \e (r:A->B->bool). if (?!) (r e) then (@) (r e) else @z. F`;;
+ `_MATCH = \e (r:A->B->bool). if (?!) (r e) then (@) (r e) else @z. F`;;
 
 let _FUNCTION = new_definition
  `_FUNCTION = \r x. if (?!) ((r:A->B->bool) x) then (@) (r x) else @z. F`;;
@@ -65,7 +69,7 @@ let _FUNCTION = new_definition
 logfile "pair-def";;
 
 let mk_pair_def = new_definition
-  `mk_pair (x:A) (y:B) = \a b. (a = x) /\ (b = y)`;;
+  `!(x:A) (y:B). mk_pair x y = \a b. (a = x) /\ (b = y)`;;
 
 let PAIR_EXISTS_THM = prove
  (`?x. ?(a:A) (b:B). x = mk_pair a b`,
@@ -144,7 +148,7 @@ let PAIR = prove
 export_thm PAIR;;
 
 let pair_INDUCT = prove
- (`!P. (!(x:A) (y:B). P (x,y)) ==> !p. P p`,
+ (`!p. (!(x:A) (y:B). p (x,y)) ==> !xy. p xy`,
   REPEAT STRIP_TAC THEN
   GEN_REWRITE_TAC RAND_CONV [GSYM PAIR] THEN
   FIRST_ASSUM MATCH_ACCEPT_TAC);;
@@ -152,9 +156,10 @@ let pair_INDUCT = prove
 export_thm pair_INDUCT;;
 
 let pair_RECURSION = prove
- (`!PAIR'. ?fn:A#B->C. !a0 a1. fn (a0,a1) = PAIR' a0 a1`,
-  GEN_TAC THEN EXISTS_TAC `\p. (PAIR':A->B->C) (FST p) (SND p)` THEN
-  REWRITE_TAC[FST; SND]);;
+ (`!f. ?(fn : A # B -> C). !x y. fn (x,y) = f x y`,
+  GEN_TAC THEN
+  EXISTS_TAC `\xy. (f:A->B->C) (FST xy) (SND xy)` THEN
+  REWRITE_TAC [FST; SND]);;
 
 export_thm pair_RECURSION;;
 
@@ -220,10 +225,10 @@ let new_definition =
 (* ------------------------------------------------------------------------- *)
 
 let CURRY_DEF = new_definition
- `CURRY(f:A#B->C) x y = f(x,y)`;;
+ `!(f:A#B->C). CURRY f x y = f (x,y)`;;
 
 let UNCURRY_DEF = new_definition
- `!f x y. UNCURRY(f:A->B->C)(x,y) = f x y`;;
+ `!f x y. UNCURRY (f:A->B->C) (x,y) = f x y`;;
 
 let PASSOC_DEF = new_definition
  `!f x y z. PASSOC (f:(A#B)#C->D) (x,y,z) = f ((x,y),z)`;;
@@ -281,8 +286,8 @@ let GEN_BETA_CONV =
   and DEGEQ_RULE = CONV_RULE(REWR_CONV GEQ_DEF) in
   let GABS_RULE =
     let pth = prove
-     (`(?) (P:A->bool) ==> P (GABS P)`,
-      SIMP_TAC[GABS_DEF; SELECT_AX; ETA_AX]) in
+     (`(?) (p : A -> bool) ==> p (GABS p)`,
+      SIMP_TAC [GABS_DEF; SELECT_AX; ETA_AX]) in
     MATCH_MP pth in
   let rec create_iterated_projections tm =
     if frees tm = [] then []

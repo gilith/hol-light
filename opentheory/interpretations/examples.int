@@ -88,6 +88,7 @@ const "HOLLight.parse_cont3" as "Data.Char.UTF8.parseThreeContinuationBytes"
 
 type "HOLLight.stream" as "Data.Stream.stream"
 
+const "HOLLight.sappend" as "Data.Stream.@"
 const "HOLLight.scons" as "Data.Stream.::"
 const "HOLLight.sdrop" as "Data.Stream.drop"
 const "HOLLight.stream" as "Data.Stream.fromFunction"

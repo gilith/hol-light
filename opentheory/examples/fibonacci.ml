@@ -272,7 +272,7 @@ let rdecode_fib_def = new_definition
   `!r.
      rdecode_fib r =
      let (r1,r2) = rsplit r in
-     (rdecode_fib_dest F 0 1 0 r1, r2)`;;
+     (rdecode_fib_dest F 0 1 0 r1 - 1, r2)`;;
 
 export_thm rdecode_fib_def;;
 
@@ -1078,6 +1078,15 @@ let zeckendorf_decode_encode_fib = prove
    MATCH_ACCEPT_TAC zeckendorf_encode_fib]);;
 
 export_thm zeckendorf_decode_encode_fib;;
+
+(***
+let encode_rdecode_fib = prove
+ (`!n r s.
+     dest_random r = sappend (encode_fib (n + 1)) (scons T s) ==>
+     FST (rdecode_fib r) = n`,
+
+export_thm encode_rdecode_fib;;
+***)
 
 logfile_end ();;
 

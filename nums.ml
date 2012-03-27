@@ -220,9 +220,9 @@ export_thm SUC_INJ;;
 (* ------------------------------------------------------------------------- *)
 
 let num_INDUCTION = prove
- (`!P. P(_0) /\ (!n. P(n) ==> P(SUC n)) ==> !n. P n`,
+ (`!p. p (_0) /\ (!n. p (n) ==> p (SUC n)) ==> !n. p n`,
   REPEAT STRIP_TAC THEN
-  MP_TAC(SPEC `\i. NUM_REP i /\ P(mk_num i):bool` NUM_REP_INDUCT) THEN
+  MP_TAC(SPEC `\i. NUM_REP i /\ p (mk_num i):bool` NUM_REP_INDUCT) THEN
   ASM_REWRITE_TAC[GSYM ZERO_DEF; NUM_REP_RULES] THEN
   W(C SUBGOAL_THEN (fun t -> REWRITE_TAC[t]) o funpow 2 lhand o snd) THENL
    [REPEAT STRIP_TAC THENL
@@ -279,13 +279,12 @@ export_thm num_Axiom;;
 (* ------------------------------------------------------------------------- *)
 
 let NUMERAL =
-  let OPENTHEORY_NUMERAL_DEF = new_basic_definition
-        `NUMERAL = \n. (n : num)` in
+  let def = new_basic_definition `NUMERAL = \n. (n : num)` in
   let () = delete_const_definition ["NUMERAL"] in
-  let () = delete_proof OPENTHEORY_NUMERAL_DEF in
+  let () = delete_proof def in
   prove
   (`!(n:num). NUMERAL n = n`,
-   REWRITE_TAC [OPENTHEORY_NUMERAL_DEF]);;
+   REWRITE_TAC [def]);;
 
 let [NOT_SUC; num_INDUCTION; num_Axiom] =
   let th = prove(`_0 = 0`,REWRITE_TAC[NUMERAL]) in
