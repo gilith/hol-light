@@ -41,7 +41,10 @@ let num_to_gfp_inj = new_axiom
       x = y`;;
 
 let num_to_gfp_to_num = new_axiom
-  `!x. gfp_to_num (num_to_gfp x) = x MOD oddprime`;;
+  `!n. gfp_to_num (num_to_gfp n) = n MOD oddprime`;;
+
+let num_to_gfp_to_num_bound = new_axiom
+  `!n. n < oddprime ==> gfp_to_num (num_to_gfp n) = n`;;
 
 new_constant ("gfp_add", `:gfp -> gfp -> gfp`);;
 
@@ -221,6 +224,24 @@ let gfp_exp_add = new_axiom
 
 let gfp_exp_one = new_axiom
    `!x. gfp_exp x 1 = x`;;
+
+let gfp_le_refl = new_axiom
+  `!x. gfp_le x x`;;
+
+let gfp_le_trans = new_axiom
+  `!x1 x2 x3. gfp_le x1 x2 /\ gfp_le x2 x3 ==> gfp_le x1 x3`;;
+
+let gfp_lt_refl = new_axiom
+  `!x. ~gfp_lt x x`;;
+
+let gfp_lte_trans = new_axiom
+  `!x1 x2 x3. gfp_lt x1 x2 /\ gfp_le x2 x3 ==> gfp_lt x1 x3`;;
+
+let gfp_let_trans = new_axiom
+  `!x1 x2 x3. gfp_le x1 x2 /\ gfp_lt x2 x3 ==> gfp_lt x1 x3`;;
+
+let gfp_lt_trans = new_axiom
+  `!x1 x2 x3. gfp_lt x1 x2 /\ gfp_lt x2 x3 ==> gfp_lt x1 x3`;;
 
 (*PARAMETRIC
 (* gfp *)
@@ -266,7 +287,10 @@ let num_to_gfp_inj = new_axiom
       x = y`;;
 
 let num_to_gfp_to_num = new_axiom
-  `!x. gfp_to_num (num_to_gfp x) = x MOD oddprime`;;
+  `!n. gfp_to_num (num_to_gfp n) = n MOD oddprime`;;
+
+let num_to_gfp_to_num_bound = new_axiom
+  `!n. n < oddprime ==> gfp_to_num (num_to_gfp n) = n`;;
 
 new_constant ("gfp_add", `:gfp -> gfp -> gfp`);;
 
@@ -446,4 +470,22 @@ let gfp_exp_add = new_axiom
 
 let gfp_exp_one = new_axiom
    `!x. gfp_exp x 1 = x`;;
+
+let gfp_le_refl = new_axiom
+  `!x. gfp_le x x`;;
+
+let gfp_le_trans = new_axiom
+  `!x1 x2 x3. gfp_le x1 x2 /\ gfp_le x2 x3 ==> gfp_le x1 x3`;;
+
+let gfp_lt_refl = new_axiom
+  `!x. ~gfp_lt x x`;;
+
+let gfp_lte_trans = new_axiom
+  `!x1 x2 x3. gfp_lt x1 x2 /\ gfp_le x2 x3 ==> gfp_lt x1 x3`;;
+
+let gfp_let_trans = new_axiom
+  `!x1 x2 x3. gfp_le x1 x2 /\ gfp_lt x2 x3 ==> gfp_lt x1 x3`;;
+
+let gfp_lt_trans = new_axiom
+  `!x1 x2 x3. gfp_lt x1 x2 /\ gfp_lt x2 x3 ==> gfp_lt x1 x3`;;
 *)

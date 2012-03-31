@@ -41,7 +41,10 @@ let num_to_word_inj = new_axiom
       x = y`;;
 
 let num_to_word_to_num = new_axiom
-  `!x. word_to_num (num_to_word x) = x MOD word_size`;;
+  `!n. word_to_num (num_to_word n) = n MOD word_size`;;
+
+let num_to_word_to_num_bound = new_axiom
+  `!n. n < word_size ==> word_to_num (num_to_word n) = n`;;
 
 new_constant ("word_add", `:word -> word -> word`);;
 
@@ -221,6 +224,24 @@ let word_exp_add = new_axiom
 
 let word_exp_one = new_axiom
    `!x. word_exp x 1 = x`;;
+
+let word_le_refl = new_axiom
+  `!x. word_le x x`;;
+
+let word_le_trans = new_axiom
+  `!x1 x2 x3. word_le x1 x2 /\ word_le x2 x3 ==> word_le x1 x3`;;
+
+let word_lt_refl = new_axiom
+  `!x. ~word_lt x x`;;
+
+let word_lte_trans = new_axiom
+  `!x1 x2 x3. word_lt x1 x2 /\ word_le x2 x3 ==> word_lt x1 x3`;;
+
+let word_let_trans = new_axiom
+  `!x1 x2 x3. word_le x1 x2 /\ word_lt x2 x3 ==> word_lt x1 x3`;;
+
+let word_lt_trans = new_axiom
+  `!x1 x2 x3. word_lt x1 x2 /\ word_lt x2 x3 ==> word_lt x1 x3`;;
 
 (*PARAMETRIC
 (* word *)
@@ -266,7 +287,10 @@ let num_to_word_inj = new_axiom
       x = y`;;
 
 let num_to_word_to_num = new_axiom
-  `!x. word_to_num (num_to_word x) = x MOD word_size`;;
+  `!n. word_to_num (num_to_word n) = n MOD word_size`;;
+
+let num_to_word_to_num_bound = new_axiom
+  `!n. n < word_size ==> word_to_num (num_to_word n) = n`;;
 
 new_constant ("word_add", `:word -> word -> word`);;
 
@@ -446,4 +470,22 @@ let word_exp_add = new_axiom
 
 let word_exp_one = new_axiom
    `!x. word_exp x 1 = x`;;
+
+let word_le_refl = new_axiom
+  `!x. word_le x x`;;
+
+let word_le_trans = new_axiom
+  `!x1 x2 x3. word_le x1 x2 /\ word_le x2 x3 ==> word_le x1 x3`;;
+
+let word_lt_refl = new_axiom
+  `!x. ~word_lt x x`;;
+
+let word_lte_trans = new_axiom
+  `!x1 x2 x3. word_lt x1 x2 /\ word_le x2 x3 ==> word_lt x1 x3`;;
+
+let word_let_trans = new_axiom
+  `!x1 x2 x3. word_le x1 x2 /\ word_lt x2 x3 ==> word_lt x1 x3`;;
+
+let word_lt_trans = new_axiom
+  `!x1 x2 x3. word_lt x1 x2 /\ word_lt x2 x3 ==> word_lt x1 x3`;;
 *)

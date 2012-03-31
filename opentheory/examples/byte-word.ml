@@ -53,7 +53,10 @@ let num_to_byte_inj = new_axiom
       x = y`;;
 
 let num_to_byte_to_num = new_axiom
-  `!x. byte_to_num (num_to_byte x) = x MOD byte_size`;;
+  `!n. byte_to_num (num_to_byte n) = n MOD byte_size`;;
+
+let num_to_byte_to_num_bound = new_axiom
+  `!n. n < byte_size ==> byte_to_num (num_to_byte n) = n`;;
 
 new_constant ("byte_add", `:byte -> byte -> byte`);;
 
@@ -233,6 +236,24 @@ let byte_exp_add = new_axiom
 
 let byte_exp_one = new_axiom
    `!x. byte_exp x 1 = x`;;
+
+let byte_le_refl = new_axiom
+  `!x. byte_le x x`;;
+
+let byte_le_trans = new_axiom
+  `!x1 x2 x3. byte_le x1 x2 /\ byte_le x2 x3 ==> byte_le x1 x3`;;
+
+let byte_lt_refl = new_axiom
+  `!x. ~byte_lt x x`;;
+
+let byte_lte_trans = new_axiom
+  `!x1 x2 x3. byte_lt x1 x2 /\ byte_le x2 x3 ==> byte_lt x1 x3`;;
+
+let byte_let_trans = new_axiom
+  `!x1 x2 x3. byte_le x1 x2 /\ byte_lt x2 x3 ==> byte_lt x1 x3`;;
+
+let byte_lt_trans = new_axiom
+  `!x1 x2 x3. byte_lt x1 x2 /\ byte_lt x2 x3 ==> byte_lt x1 x3`;;
 
 (* byte-bits-def *)
 
@@ -425,24 +446,6 @@ let byte_le_list = new_axiom
 let byte_lt_list = new_axiom
    `!w1 w2.
       byte_bits_lte F (byte_to_list w1) (byte_to_list w2) <=> byte_lt w1 w2`;;
-
-let byte_le_refl = new_axiom
-  `!w. byte_le w w`;;
-
-let byte_le_trans = new_axiom
-  `!w1 w2 w3. byte_le w1 w2 /\ byte_le w2 w3 ==> byte_le w1 w3`;;
-
-let byte_lt_refl = new_axiom
-  `!w. ~byte_lt w w`;;
-
-let byte_lte_trans = new_axiom
-  `!w1 w2 w3. byte_lt w1 w2 /\ byte_le w2 w3 ==> byte_lt w1 w3`;;
-
-let byte_let_trans = new_axiom
-  `!w1 w2 w3. byte_le w1 w2 /\ byte_lt w2 w3 ==> byte_lt w1 w3`;;
-
-let byte_lt_trans = new_axiom
-  `!w1 w2 w3. byte_lt w1 w2 /\ byte_lt w2 w3 ==> byte_lt w1 w3`;;
 
 let byte_reduce_conv =
     REWRITE_CONV

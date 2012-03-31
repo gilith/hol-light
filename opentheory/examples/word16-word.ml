@@ -53,7 +53,10 @@ let num_to_word16_inj = new_axiom
       x = y`;;
 
 let num_to_word16_to_num = new_axiom
-  `!x. word16_to_num (num_to_word16 x) = x MOD word16_size`;;
+  `!n. word16_to_num (num_to_word16 n) = n MOD word16_size`;;
+
+let num_to_word16_to_num_bound = new_axiom
+  `!n. n < word16_size ==> word16_to_num (num_to_word16 n) = n`;;
 
 new_constant ("word16_add", `:word16 -> word16 -> word16`);;
 
@@ -233,6 +236,24 @@ let word16_exp_add = new_axiom
 
 let word16_exp_one = new_axiom
    `!x. word16_exp x 1 = x`;;
+
+let word16_le_refl = new_axiom
+  `!x. word16_le x x`;;
+
+let word16_le_trans = new_axiom
+  `!x1 x2 x3. word16_le x1 x2 /\ word16_le x2 x3 ==> word16_le x1 x3`;;
+
+let word16_lt_refl = new_axiom
+  `!x. ~word16_lt x x`;;
+
+let word16_lte_trans = new_axiom
+  `!x1 x2 x3. word16_lt x1 x2 /\ word16_le x2 x3 ==> word16_lt x1 x3`;;
+
+let word16_let_trans = new_axiom
+  `!x1 x2 x3. word16_le x1 x2 /\ word16_lt x2 x3 ==> word16_lt x1 x3`;;
+
+let word16_lt_trans = new_axiom
+  `!x1 x2 x3. word16_lt x1 x2 /\ word16_lt x2 x3 ==> word16_lt x1 x3`;;
 
 (* word16-bits-def *)
 
@@ -425,24 +446,6 @@ let word16_le_list = new_axiom
 let word16_lt_list = new_axiom
    `!w1 w2.
       word16_bits_lte F (word16_to_list w1) (word16_to_list w2) <=> word16_lt w1 w2`;;
-
-let word16_le_refl = new_axiom
-  `!w. word16_le w w`;;
-
-let word16_le_trans = new_axiom
-  `!w1 w2 w3. word16_le w1 w2 /\ word16_le w2 w3 ==> word16_le w1 w3`;;
-
-let word16_lt_refl = new_axiom
-  `!w. ~word16_lt w w`;;
-
-let word16_lte_trans = new_axiom
-  `!w1 w2 w3. word16_lt w1 w2 /\ word16_le w2 w3 ==> word16_lt w1 w3`;;
-
-let word16_let_trans = new_axiom
-  `!w1 w2 w3. word16_le w1 w2 /\ word16_lt w2 w3 ==> word16_lt w1 w3`;;
-
-let word16_lt_trans = new_axiom
-  `!w1 w2 w3. word16_lt w1 w2 /\ word16_lt w2 w3 ==> word16_lt w1 w3`;;
 
 let word16_reduce_conv =
     REWRITE_CONV

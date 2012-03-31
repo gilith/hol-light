@@ -463,6 +463,16 @@ let decode_fib_nil = prove
 
 export_thm decode_fib_nil;;
 
+let encode_fib_0 = prove
+ (`encode_fib 0 = []`,
+  REWRITE_TAC [encode_fib_def] THEN
+  ONCE_REWRITE_TAC [encode_fib_find_def] THEN
+  REWRITE_TAC [LET_DEF; LET_END_DEF; ADD_CLAUSES; LT_NZ; ONE; NOT_SUC] THEN
+  ONCE_REWRITE_TAC [encode_fib_mk_def] THEN
+  REWRITE_TAC []);;
+
+export_thm encode_fib_0;;
+
 let decode_fib_dest_append = prove
  (`!k l1 l2.
      decode_fib_dest (fibonacci (k + 1)) (fibonacci k) (APPEND l1 l2) =
@@ -618,6 +628,19 @@ let encode_decode_fib = prove
   REWRITE_TAC [ADD_CLAUSES; fibonacci_def]);;
 
 export_thm encode_decode_fib;;
+
+let null_encode_fib = prove
+ (`!n. NULL (encode_fib n) <=> n = 0`,
+  GEN_TAC THEN
+  REWRITE_TAC [NULL_EQ_NIL] THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   ONCE_REWRITE_TAC [GSYM encode_decode_fib] THEN
+   ASM_REWRITE_TAC [encode_fib_0];
+   DISCH_THEN SUBST1_TAC THEN
+   ACCEPT_TAC encode_fib_0]);;
+
+export_thm null_encode_fib;;
 
 let zeckendorf_cons_imp = prove
  (`!h t. zeckendorf (CONS h t) ==> zeckendorf t`,
@@ -1079,14 +1102,88 @@ let zeckendorf_decode_encode_fib = prove
 
 export_thm zeckendorf_decode_encode_fib;;
 
-(***
+let encode_rdecode_dest_fib = prove
+ (`!b n f p h t s.
+     ~(b /\ h) /\ zeckendorf (CONS h t) ==>
+     rdecode_fib_dest b n f p
+       (mk_random (sappend (CONS h t) (scons T s))) =
+     decode_fib_dest f p (CONS h t) + n`,
+  REPEAT GEN_TAC THEN
+  SPEC_TAC (`h : bool`, `h : bool`) THEN
+  SPEC_TAC (`p : num`, `p : num`) THEN
+  SPEC_TAC (`f : num`, `f : num`) THEN
+  SPEC_TAC (`n : num`, `n : num`) THEN
+  SPEC_TAC (`b : bool`, `b : bool`) THEN
+  SPEC_TAC (`t : bool list`, `t : bool list`) THEN
+  LIST_INDUCT_TAC THENL
+  [REPEAT GEN_TAC THEN
+   REWRITE_TAC [zeckendorf_def; NULL] THEN
+   STRIP_TAC THEN
+   POP_ASSUM
+     (fun th ->
+        POP_ASSUM MP_TAC THEN
+        SUBST1_TAC (EQT_INTRO th)) THEN
+   REWRITE_TAC [] THEN
+   DISCH_THEN (SUBST1_TAC o EQF_INTRO) THEN
+   ONCE_REWRITE_TAC [rdecode_fib_dest_def] THEN
+   ONCE_REWRITE_TAC [rdecode_fib_dest_def] THEN
+   REWRITE_TAC
+     [decode_fib_dest_def; rbit_def; LET_DEF; LET_END_DEF; ADD_0;
+      random_tybij; cons_sappend; nil_sappend; shd_scons; stl_scons];
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC
+    [zeckendorf_def; decode_fib_dest_def; rdecode_fib_dest_def] THEN
+  REWRITE_TAC [NULL; HD] THEN
+  STRIP_TAC THEN
+  ONCE_REWRITE_TAC [cons_sappend] THEN
+  REWRITE_TAC
+    [rbit_def; random_tybij; shd_scons; stl_scons; LET_DEF; LET_END_DEF] THEN
+  SUBGOAL_THEN `h' /\ b <=> F` SUBST1_TAC THENL
+  [PURE_ONCE_REWRITE_TAC [CONJ_SYM] THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC [] THEN
+  FIRST_X_ASSUM
+    (MP_TAC o
+     SPECL
+       [`h' : bool`;
+        `(if h' then (f + p) + n else n) : num`;
+        `f + p : num`;
+        `f : num`;
+        `h : bool`]) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  BOOL_CASES_TAC `h' : bool` THENL
+  [REWRITE_TAC [] THEN
+   CONV_TAC (LAND_CONV (REWR_CONV ADD_ASSOC)) THEN
+   REWRITE_TAC [EQ_ADD_RCANCEL] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   REWRITE_TAC []]);;
+
 let encode_rdecode_fib = prove
- (`!n r s.
-     dest_random r = sappend (encode_fib (n + 1)) (scons T s) ==>
-     FST (rdecode_fib r) = n`,
+ (`!n s1 r2.
+     rdecode_fib
+       (mk_random (sinterleave (sappend (encode_fib (n + 1)) (scons T s1))
+                               (dest_random r2))) =
+     (n,r2)`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC
+    [rdecode_fib_def; rsplit_def; random_tybij; LET_DEF; LET_END_DEF;
+     ssplit_sinterleave; dest_mk_random; PAIR_EQ] THEN
+  LIST_CASES_TAC `encode_fib (n + 1)` THENL
+  [REWRITE_TAC [GSYM NULL_EQ_NIL; null_encode_fib; GSYM ADD1; NOT_SUC];
+   ALL_TAC] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  MP_TAC (SPECL [`F`; `0`; `1`; `0`; `h : bool`; `t : bool list`;
+                 `s1 : bool stream`] encode_rdecode_dest_fib) THEN
+  POP_ASSUM (SUBST1_TAC o SYM) THEN
+  REWRITE_TAC [zeckendorf_encode_fib] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [GSYM decode_fib_def; encode_decode_fib; ADD_CLAUSES; ADD_SUB]);;
 
 export_thm encode_rdecode_fib;;
-***)
 
 logfile_end ();;
 

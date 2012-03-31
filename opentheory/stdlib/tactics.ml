@@ -116,3 +116,28 @@ let rec N_TAC n tac =
 
 let rec N_CONV n conv =
     if n == 0 then ALL_CONV else conv THENC N_CONV (n - 1) conv;;
+
+let mk_newtype (a,n) (r,ty) =
+  let exists =
+      let pth = EQ_MP (SYM (SPEC `T` EXISTS_SIMP)) TRUTH in
+      INST_TYPE [(ty,aty)] pth in
+  let alph1 v tm =
+      let (v1,t1) = dest_forall tm in
+      let (_,ty1) = dest_var v1 in
+      let (t2,_) = dest_eq t1 in
+      let (t3,t4) = dest_comb t2 in
+      let (t5,_) = dest_comb t4 in
+      let v1' = mk_var (v,ty1) in
+      let t4' = mk_comb (t5,v1') in
+      let t2' = mk_comb (t3,t4') in
+      let t1' = mk_eq (t2',v1') in
+      mk_forall (v1',t1') in
+  let alph2 th =
+      let tm = concl th in
+      let (md,dm) = dest_conj tm in
+      let md' = alph1 a md in
+      let dm' = alph1 r dm in
+      let tm' = mk_conj (md',dm') in
+      EQ_MP (ALPHA tm tm') th in
+  (alph2 o REWRITE_RULE [])
+     (new_type_definition n ("mk_" ^ n, "dest_" ^ n) exists);;
