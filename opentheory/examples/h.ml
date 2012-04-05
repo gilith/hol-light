@@ -461,55 +461,55 @@ export_thm page_induct;;
 export_thm page_recursion;;
 
 let dest_environment_def = new_recursive_definition page_recursion
-  `(!pd. dest_environment (Environment pd) = SOME pd) /\
-   (!pd. dest_environment (Normal pd) = NONE) /\
-   (!pd. dest_environment (PageDirectory pd) = NONE) /\
-   (!pd. dest_environment (PageTable pd) = NONE) /\
+  `(!d. dest_environment (Environment d) = SOME d) /\
+   (!d. dest_environment (Normal d) = NONE) /\
+   (!pdd. dest_environment (PageDirectory pdd) = NONE) /\
+   (!ptd. dest_environment (PageTable ptd) = NONE) /\
    (dest_environment NotInstalled = NONE)`;;
 
 export_thm dest_environment_def;;
 
 let dest_normal_def = new_recursive_definition page_recursion
-  `(!pd. dest_normal (Environment pd) = NONE) /\
-   (!pd. dest_normal (Normal pd) = SOME pd) /\
-   (!pd. dest_normal (PageDirectory pd) = NONE) /\
-   (!pd. dest_normal (PageTable pd) = NONE) /\
+  `(!d. dest_normal (Environment d) = NONE) /\
+   (!d. dest_normal (Normal d) = SOME d) /\
+   (!pdd. dest_normal (PageDirectory pdd) = NONE) /\
+   (!ptd. dest_normal (PageTable ptd) = NONE) /\
    (dest_normal NotInstalled = NONE)`;;
 
 export_thm dest_normal_def;;
 
 let dest_environment_or_normal_def = new_recursive_definition page_recursion
-  `(!pd. dest_environment_or_normal (Environment pd) = SOME pd) /\
-   (!pd. dest_environment_or_normal (Normal pd) = SOME pd) /\
-   (!pd. dest_environment_or_normal (PageDirectory pd) = NONE) /\
-   (!pd. dest_environment_or_normal (PageTable pd) = NONE) /\
+  `(!d. dest_environment_or_normal (Environment d) = SOME d) /\
+   (!d. dest_environment_or_normal (Normal d) = SOME d) /\
+   (!pdd. dest_environment_or_normal (PageDirectory pdd) = NONE) /\
+   (!ptd. dest_environment_or_normal (PageTable ptd) = NONE) /\
    (dest_environment_or_normal NotInstalled = NONE)`;;
 
 export_thm dest_environment_or_normal_def;;
 
 let dest_page_directory_def = new_recursive_definition page_recursion
-  `(!pd. dest_page_directory (Environment pd) = NONE) /\
-   (!pd. dest_page_directory (Normal pd) = NONE) /\
-   (!pd. dest_page_directory (PageDirectory pd) = SOME pd) /\
-   (!pd. dest_page_directory (PageTable pd) = NONE) /\
+  `(!d. dest_page_directory (Environment d) = NONE) /\
+   (!d. dest_page_directory (Normal d) = NONE) /\
+   (!pdd. dest_page_directory (PageDirectory pdd) = SOME pdd) /\
+   (!ptd. dest_page_directory (PageTable ptd) = NONE) /\
    (dest_page_directory NotInstalled = NONE)`;;
 
 export_thm dest_page_directory_def;;
 
 let dest_page_table_def = new_recursive_definition page_recursion
-  `(!pd. dest_page_table (Environment pd) = NONE) /\
-   (!pd. dest_page_table (Normal pd) = NONE) /\
-   (!pd. dest_page_table (PageDirectory pd) = NONE) /\
-   (!pd. dest_page_table (PageTable pd) = SOME pd) /\
+  `(!d. dest_page_table (Environment d) = NONE) /\
+   (!d. dest_page_table (Normal d) = NONE) /\
+   (!pdd. dest_page_table (PageDirectory pdd) = NONE) /\
+   (!ptd. dest_page_table (PageTable ptd) = SOME ptd) /\
    (dest_page_table NotInstalled = NONE)`;;
 
 export_thm dest_page_table_def;;
 
 let is_not_installed_def = new_recursive_definition page_recursion
-  `(!pd. is_not_installed (Environment pd) = F) /\
-   (!pd. is_not_installed (Normal pd) = F) /\
-   (!pd. is_not_installed (PageDirectory pd) = F) /\
-   (!pd. is_not_installed (PageTable pd) = F) /\
+  `(!d. is_not_installed (Environment d) = F) /\
+   (!d. is_not_installed (Normal d) = F) /\
+   (!pdd. is_not_installed (PageDirectory pdd) = F) /\
+   (!ptd. is_not_installed (PageTable ptd) = F) /\
    (is_not_installed NotInstalled = T)`;;
 
 export_thm is_not_installed_def;;
@@ -813,7 +813,7 @@ let wellformed_def = new_definition
 export_thm wellformed_def;;
 
 (* ------------------------------------------------------------------------- *)
-(* Protection domains and their view of the machine state.                   *)
+(* Protection domains and their view of the system state.                    *)
 (* ------------------------------------------------------------------------- *)
 
 let (domain_induct,domain_recursion) = define_type
@@ -1314,26 +1314,112 @@ export_thm interferes_def;;
 (* Properties of the H interface.                                            *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 logfile "h-thm";;
+
+(* ------------------------------------------------------------------------- *)
+(* Address offsets.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
+(* ------------------------------------------------------------------------- *)
+(* Physical addresses.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
+(* ------------------------------------------------------------------------- *)
+(* Regions of physical memory.                                               *)
+(* ------------------------------------------------------------------------- *)
+
+let physical_region_cases = prove_cases_thm physical_region_induct;;
+
+export_thm physical_region_cases;;
+
+let physical_region_inj = injectivity "physical_region";;
+
+(* ------------------------------------------------------------------------- *)
+(* Virtual addresses.                                                        *)
+(* ------------------------------------------------------------------------- *)
+
+let virtual_superpage_address_cases = prove
+  (`!vsa. ?w. vsa = mk_virtual_superpage_address w`,
+   GEN_TAC THEN
+   EXISTS_TAC `dest_virtual_superpage_address vsa` THEN
+   REWRITE_TAC [virtual_superpage_address_tybij]);;
+
+let virtual_superpage_address_cases_tac =
+    CASES_TAC virtual_superpage_address_cases;;
+
+let virtual_page_address_cases = prove
+  (`!vpa. ?vsa si. vpa = mk_virtual_page_address (vsa,si)`,
+   GEN_TAC THEN
+   EXISTS_TAC `FST (dest_virtual_page_address vpa)` THEN
+   EXISTS_TAC `SND (dest_virtual_page_address vpa)` THEN
+   REWRITE_TAC [PAIR; virtual_page_address_tybij]);;
+
+let virtual_page_address_cases_tac =
+    CASES_TAC virtual_page_address_cases;;
+
+(* ------------------------------------------------------------------------- *)
+(* Regions of virtual memory.                                                *)
+(* ------------------------------------------------------------------------- *)
+
+let virtual_region_cases = prove_cases_thm virtual_region_induct;;
+
+export_thm virtual_region_cases;;
+
+let virtual_region_inj = injectivity "virtual_region";;
 
 (* ------------------------------------------------------------------------- *)
 (* User and kernel virtual addresses.                                        *)
 (* ------------------------------------------------------------------------- *)
 
+let kernel_page_address_not_user = prove
+  (`!vpa. is_kernel_page_address vpa <=> ~is_user_page_address vpa`,
+   REWRITE_TAC [is_user_page_address_def]);;
+
+export_thm kernel_page_address_not_user;;
+
 let user_kernel_boundary = prove
   (`!n.
       n < 768 ==>
       is_user_superpage_address (num_to_virtual_superpage_address n)`,
-   REPEAT STRIP_TAC THEN
+   GEN_TAC THEN
+   SUBGOAL_THEN `768 < word10_size` ASSUME_TAC THENL
+   [REWRITE_TAC [word10_size_def; word10_width_def] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   STRIP_TAC THEN
    REWRITE_TAC
      [is_user_superpage_address_def; is_kernel_superpage_address_def;
       LET_DEF; LET_END_DEF; num_to_virtual_superpage_address_def;
       virtual_superpage_address_tybij] THEN
-   MP_TAC (SPEC `n : num` num_to_word10_to_num) THEN
-   SUBGOAL_THEN `n MOD word10_size
+   MP_TAC (SPEC `n : num` num_to_word10_to_num_bound) THEN
+   ANTS_TAC THENL
+   [MATCH_MP_TAC LT_TRANS THEN
+    EXISTS_TAC `768` THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   DISCH_THEN (fun th -> POP_ASSUM (MP_TAC o ONCE_REWRITE_RULE [SYM th])) THEN
+   MP_TAC (SPEC `768` num_to_word10_to_num_bound) THEN
+   ANTS_TAC THENL
+   [FIRST_ASSUM ACCEPT_TAC;
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   REWRITE_TAC [GSYM word10_lt_def] THEN
+   MP_TAC (SPEC `num_to_word10 n` word10_list_cases) THEN
+   STRIP_TAC THEN
+   POP_ASSUM SUBST1_TAC THEN
+   bit_blast_tac THEN
+   REWRITE_TAC [DE_MORGAN_THM]);;
 
 export_thm user_kernel_boundary;;
+
+(* ------------------------------------------------------------------------- *)
+(* Page data.                                                                *)
+(* ------------------------------------------------------------------------- *)
+
+(* ------------------------------------------------------------------------- *)
+(* Page tables.                                                              *)
+(* ------------------------------------------------------------------------- *)
 
 (* ------------------------------------------------------------------------- *)
 (* Page directories.                                                         *)
@@ -1348,36 +1434,29 @@ let page_directory_entry_distinct = distinctness "page_directory_entry";;
 let page_directory_entry_inj = injectivity "page_directory_entry";;
 
 (* ------------------------------------------------------------------------- *)
-(* Page tables.                                                              *)
+(* Page types.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-(* Pages *)
-
-let page_cases = prove_cases_thm page_induct;;
+let page_cases = prove
+  (`!p.
+      (?d. p = Environment d) \/
+      (?d. p = Normal d) \/
+      (?pdd. p = PageDirectory pdd) \/
+      (?ptd. p = PageTable ptd) \/
+      p = NotInstalled`,
+   ACCEPT_TAC (prove_cases_thm page_induct));;
 
 export_thm page_cases;;
+
+let page_cases_tac = CASES_TAC page_cases;;
 
 let page_distinct = distinctness "page";;
 
 let page_inj = injectivity "page";;
 
-(* Regions of physical memory *)
-
-let physical_region_cases = prove_cases_thm physical_region_induct;;
-
-export_thm physical_region_cases;;
-
-let physical_region_inj = injectivity "physical_region";;
-
-(* Regions of virtual memory *)
-
-let virtual_region_cases = prove_cases_thm virtual_region_induct;;
-
-export_thm virtual_region_cases;;
-
-let virtual_region_inj = injectivity "virtual_region";;
-
-(* The state of the machine *)
+(* ------------------------------------------------------------------------- *)
+(* The state of the system.                                                  *)
+(* ------------------------------------------------------------------------- *)
 
 let region_state_cases = prove_cases_thm region_state_induct;;
 
@@ -1391,7 +1470,45 @@ export_thm state_cases;;
 
 let state_inj = injectivity "state";;
 
-(* Protection domains *)
+(* ------------------------------------------------------------------------- *)
+(* Virtual to physical mappings.                                             *)
+(* ------------------------------------------------------------------------- *)
+
+let translate_page_eq = prove
+  (`!s s'.
+      (!pd vpa.
+         translate_page s pd vpa =
+         translate_page s' pd vpa) ==>
+      translate_page s = translate_page s'`,
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [FUN_EQ_THM]);;
+
+export_thm translate_page_eq;;
+
+let translate_page_is_page_directory = prove
+  (`!s pd vpa.
+      is_some (translate_page s pd vpa) ==>
+      is_page_directory (status s pd)`,
+   REPEAT GEN_TAC THEN
+   virtual_page_address_cases_tac `vpa : virtual_page_address` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [translate_page_def; virtual_page_address_tybij] THEN
+   REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+   page_cases_tac `status s pd` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [dest_page_directory_def; is_page_directory_def; is_some_def;
+      case_option_def]);;
+
+export_thm translate_page_is_page_directory;;
+
+(* ------------------------------------------------------------------------- *)
+(* Well-formed machine states.                                               *)
+(* ------------------------------------------------------------------------- *)
+
+(* ------------------------------------------------------------------------- *)
+(* Protection domains and their view of the system state.                    *)
+(* ------------------------------------------------------------------------- *)
 
 let domain_cases = prove_cases_thm domain_induct;;
 
@@ -1445,44 +1562,19 @@ let view_inj = injectivity "view";;
 
 export_thm view_inj;;
 
-let user_page_address_not_kernel = prove
-  (`!vpa. is_user_page_address vpa <=> ~is_kernel_page_address vpa`,
-   REWRITE_TAC [is_kernel_page_address_def]);;
+(* ------------------------------------------------------------------------- *)
+(* Actions.                                                                  *)
+(* ------------------------------------------------------------------------- *)
 
-export_thm user_page_address_not_kernel;;
+(* ------------------------------------------------------------------------- *)
+(* Output.                                                                   *)
+(* ------------------------------------------------------------------------- *)
 
-let translate_page_eq = prove
-  (`!s s'.
-      (!pd pdi pti.
-         translate_page s pd (pdi,pti) =
-         translate_page s' pd (pdi,pti)) ==>
-      translate_page s = translate_page s'`,
-   REPEAT STRIP_TAC THEN
-   REWRITE_TAC [FUN_EQ_THM] THEN
-   REPEAT STRIP_TAC THEN
-   MP_TAC (ISPEC `x' : virtual_page_address` PAIR_SURJECTIVE) THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC []);;
+(* ------------------------------------------------------------------------- *)
+(* System security policy.                                                   *)
+(* ------------------------------------------------------------------------- *)
 
-export_thm translate_page_eq;;
-
-let translate_page_is_page_directory = prove
-  (`!s pd vpa.
-      is_some (translate_page s pd vpa) ==>
-      is_page_directory (status s pd)`,
-   REPEAT GEN_TAC THEN
-   MP_TAC (ISPEC `vpa : virtual_page_address` PAIR_SURJECTIVE) THEN
-   STRIP_TAC THEN
-   POP_ASSUM SUBST_VAR_TAC THEN
-   REWRITE_TAC [translate_page_def] THEN
-   MP_TAC (SPEC `status s pd` page_cases) THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC
-     [dest_page_directory_def; is_page_directory_def; is_some_def;
-      case_option_def]);;
-
-export_thm translate_page_is_page_directory;;
-
+(***
 let translate_page_inj = prove
   (`!s s'.
       (!ppa.

@@ -95,12 +95,12 @@ let byte_sub_def = new_axiom
 new_constant ("byte_le", `:byte -> byte -> bool`);;
 
 let byte_le_def = new_axiom
-  `!x y. byte_le x y = byte_to_num x <= byte_to_num y`;;
+  `!x y. byte_le x y <=> byte_to_num x <= byte_to_num y`;;
 
 new_constant ("byte_lt", `:byte -> byte -> bool`);;
 
 let byte_lt_def = new_axiom
-  `!x y. byte_lt x y = ~(byte_le y x)`;;
+  `!x y. byte_lt x y <=> byte_to_num x < byte_to_num y`;;
 
 (* byte-thm *)
 
@@ -133,8 +133,11 @@ let byte_mult_to_num = new_axiom
       byte_to_num (byte_mult x y) =
       (byte_to_num x * byte_to_num y) MOD byte_size`;;
 
-let byte_lt_alt = new_axiom
-   `!x y. byte_lt x y = byte_to_num x < byte_to_num y`;;
+let byte_not_lt = new_axiom
+   `!x y. ~(byte_lt x y) <=> byte_le y x`;;
+
+let byte_not_le = new_axiom
+   `!x y. ~(byte_le x y) <=> byte_lt y x`;;
 
 let num_to_byte_byte_size = new_axiom
    `num_to_byte byte_size = num_to_byte 0`;;

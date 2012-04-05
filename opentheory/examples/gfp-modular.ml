@@ -83,12 +83,12 @@ let gfp_sub_def = new_axiom
 new_constant ("gfp_le", `:gfp -> gfp -> bool`);;
 
 let gfp_le_def = new_axiom
-  `!x y. gfp_le x y = gfp_to_num x <= gfp_to_num y`;;
+  `!x y. gfp_le x y <=> gfp_to_num x <= gfp_to_num y`;;
 
 new_constant ("gfp_lt", `:gfp -> gfp -> bool`);;
 
 let gfp_lt_def = new_axiom
-  `!x y. gfp_lt x y = ~(gfp_le y x)`;;
+  `!x y. gfp_lt x y <=> gfp_to_num x < gfp_to_num y`;;
 
 (* gfp-thm *)
 
@@ -121,8 +121,11 @@ let gfp_mult_to_num = new_axiom
       gfp_to_num (gfp_mult x y) =
       (gfp_to_num x * gfp_to_num y) MOD oddprime`;;
 
-let gfp_lt_alt = new_axiom
-   `!x y. gfp_lt x y = gfp_to_num x < gfp_to_num y`;;
+let gfp_not_lt = new_axiom
+   `!x y. ~(gfp_lt x y) <=> gfp_le y x`;;
+
+let gfp_not_le = new_axiom
+   `!x y. ~(gfp_le x y) <=> gfp_lt y x`;;
 
 let num_to_gfp_oddprime = new_axiom
    `num_to_gfp oddprime = num_to_gfp 0`;;
@@ -329,12 +332,12 @@ let gfp_sub_def = new_axiom
 new_constant ("gfp_le", `:gfp -> gfp -> bool`);;
 
 let gfp_le_def = new_axiom
-  `!x y. gfp_le x y = gfp_to_num x <= gfp_to_num y`;;
+  `!x y. gfp_le x y <=> gfp_to_num x <= gfp_to_num y`;;
 
 new_constant ("gfp_lt", `:gfp -> gfp -> bool`);;
 
 let gfp_lt_def = new_axiom
-  `!x y. gfp_lt x y = ~(gfp_le y x)`;;
+  `!x y. gfp_lt x y <=> gfp_to_num x < gfp_to_num y`;;
 
 (* gfp-thm *)
 
@@ -367,8 +370,11 @@ let gfp_mult_to_num = new_axiom
       gfp_to_num (gfp_mult x y) =
       (gfp_to_num x * gfp_to_num y) MOD oddprime`;;
 
-let gfp_lt_alt = new_axiom
-   `!x y. gfp_lt x y = gfp_to_num x < gfp_to_num y`;;
+let gfp_not_lt = new_axiom
+   `!x y. ~(gfp_lt x y) <=> gfp_le y x`;;
+
+let gfp_not_le = new_axiom
+   `!x y. ~(gfp_le x y) <=> gfp_lt y x`;;
 
 let num_to_gfp_oddprime = new_axiom
    `num_to_gfp oddprime = num_to_gfp 0`;;

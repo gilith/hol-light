@@ -95,12 +95,12 @@ let word10_sub_def = new_axiom
 new_constant ("word10_le", `:word10 -> word10 -> bool`);;
 
 let word10_le_def = new_axiom
-  `!x y. word10_le x y = word10_to_num x <= word10_to_num y`;;
+  `!x y. word10_le x y <=> word10_to_num x <= word10_to_num y`;;
 
 new_constant ("word10_lt", `:word10 -> word10 -> bool`);;
 
 let word10_lt_def = new_axiom
-  `!x y. word10_lt x y = ~(word10_le y x)`;;
+  `!x y. word10_lt x y <=> word10_to_num x < word10_to_num y`;;
 
 (* word10-thm *)
 
@@ -133,8 +133,11 @@ let word10_mult_to_num = new_axiom
       word10_to_num (word10_mult x y) =
       (word10_to_num x * word10_to_num y) MOD word10_size`;;
 
-let word10_lt_alt = new_axiom
-   `!x y. word10_lt x y = word10_to_num x < word10_to_num y`;;
+let word10_not_lt = new_axiom
+   `!x y. ~(word10_lt x y) <=> word10_le y x`;;
+
+let word10_not_le = new_axiom
+   `!x y. ~(word10_le x y) <=> word10_lt y x`;;
 
 let num_to_word10_word10_size = new_axiom
    `num_to_word10 word10_size = num_to_word10 0`;;

@@ -1206,7 +1206,7 @@ let word_lte_list = prove
    CONJ_TAC THENL
    [BOOL_CASES_TAC `q : bool` THENL
     [REWRITE_TAC [word_le_def; LT_SUC_LE; GSYM ADD1];
-     REWRITE_TAC [word_lt_alt; ADD_0]];
+     REWRITE_TAC [word_lt_def; ADD_0]];
     ALL_TAC] THEN
    CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
    KNOW_TAC

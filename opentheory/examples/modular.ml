@@ -399,7 +399,7 @@ let modular_sub_def = new_axiom
 *)
 
 let modular_le_def = new_definition
-  `!x y. modular_le x y = modular_to_num x <= modular_to_num y`;;
+  `!x y. modular_le x y <=> modular_to_num x <= modular_to_num y`;;
 
 (*PARAMETRIC
 new_constant ("modular_le", `:modular -> modular -> bool`);;
@@ -409,11 +409,11 @@ export_thm modular_le_def;;
 
 (*PARAMETRIC
 let modular_le_def = new_axiom
-  `!x y. modular_le x y = modular_to_num x <= modular_to_num y`;;
+  `!x y. modular_le x y <=> modular_to_num x <= modular_to_num y`;;
 *)
 
 let modular_lt_def = new_definition
-  `!x y. modular_lt x y = ~(modular_le y x)`;;
+  `!x y. modular_lt x y <=> modular_to_num x < modular_to_num y`;;
 
 (*PARAMETRIC
 new_constant ("modular_lt", `:modular -> modular -> bool`);;
@@ -423,7 +423,7 @@ export_thm modular_lt_def;;
 
 (*PARAMETRIC
 let modular_lt_def = new_axiom
-  `!x y. modular_lt x y = ~(modular_le y x)`;;
+  `!x y. modular_lt x y <=> modular_to_num x < modular_to_num y`;;
 *)
 
 logfile "modular-thm";;
@@ -557,15 +557,26 @@ let modular_mult_to_num = new_axiom
       (modular_to_num x * modular_to_num y) MOD modulus`;;
 *)
 
-let modular_lt_alt = prove
-  (`!x y. modular_lt x y = modular_to_num x < modular_to_num y`,
-   REWRITE_TAC [modular_lt_def; modular_le_def; NOT_LE]);;
+let modular_not_lt = prove
+  (`!x y. ~(modular_lt x y) <=> modular_le y x`,
+   REWRITE_TAC [modular_lt_def; modular_le_def; NOT_LT]);;
 
-export_thm modular_lt_alt;;
+export_thm modular_not_lt;;
 
 (*PARAMETRIC
-let modular_lt_alt = new_axiom
-   `!x y. modular_lt x y = modular_to_num x < modular_to_num y`;;
+let modular_not_lt = new_axiom
+   `!x y. ~(modular_lt x y) <=> modular_le y x`;;
+*)
+
+let modular_not_le = prove
+  (`!x y. ~(modular_le x y) <=> modular_lt y x`,
+   REWRITE_TAC [GSYM modular_not_lt]);;
+
+export_thm modular_not_le;;
+
+(*PARAMETRIC
+let modular_not_le = new_axiom
+   `!x y. ~(modular_le x y) <=> modular_lt y x`;;
 *)
 
 let num_to_modular_modulus = prove
@@ -1059,7 +1070,7 @@ let modular_le_trans = new_axiom
 
 let modular_lt_refl = prove
   (`!x. ~modular_lt x x`,
-   REWRITE_TAC [modular_lt_def; modular_le_refl]);;
+   REWRITE_TAC [modular_not_lt; modular_le_refl]);;
 
 export_thm modular_lt_refl;;
 
@@ -1070,7 +1081,7 @@ let modular_lt_refl = new_axiom
 
 let modular_lte_trans = prove
   (`!x1 x2 x3. modular_lt x1 x2 /\ modular_le x2 x3 ==> modular_lt x1 x3`,
-   REWRITE_TAC [modular_lt_def; modular_le_def; NOT_LE; LTE_TRANS]);;
+   REWRITE_TAC [modular_lt_def; modular_le_def; LTE_TRANS]);;
 
 export_thm modular_lte_trans;;
 
@@ -1081,7 +1092,7 @@ let modular_lte_trans = new_axiom
 
 let modular_let_trans = prove
   (`!x1 x2 x3. modular_le x1 x2 /\ modular_lt x2 x3 ==> modular_lt x1 x3`,
-   REWRITE_TAC [modular_lt_def; modular_le_def; NOT_LE; LET_TRANS]);;
+   REWRITE_TAC [modular_lt_def; modular_le_def; LET_TRANS]);;
 
 export_thm modular_let_trans;;
 
@@ -1092,7 +1103,7 @@ let modular_let_trans = new_axiom
 
 let modular_lt_trans = prove
   (`!x1 x2 x3. modular_lt x1 x2 /\ modular_lt x2 x3 ==> modular_lt x1 x3`,
-   REWRITE_TAC [modular_lt_def; modular_le_def; NOT_LE; LT_TRANS]);;
+   REWRITE_TAC [modular_lt_def; modular_le_def; LT_TRANS]);;
 
 export_thm modular_lt_trans;;
 
