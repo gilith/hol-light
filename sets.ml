@@ -4046,6 +4046,25 @@ let HAS_SIZE_IMAGE_INJ_EQ = prove
 
 export_thm HAS_SIZE_IMAGE_INJ_EQ;;
 
+let CARD_IMAGE_EQ_INJ = prove
+ (`!f:A->B s.
+        FINITE s
+        ==> (CARD(IMAGE f s) = CARD s <=>
+             !x y. x IN s /\ y IN s /\ f x = f y ==> x = y)`,
+  REPEAT STRIP_TAC THEN EQ_TAC THENL
+   [DISCH_TAC; ASM_MESON_TAC[CARD_IMAGE_INJ]] THEN
+  MAP_EVERY X_GEN_TAC [`x:A`; `y:A`] THEN STRIP_TAC THEN
+  ASM_CASES_TAC `x:A = y` THEN ASM_REWRITE_TAC[] THEN
+  UNDISCH_TAC `CARD(IMAGE (f:A->B) s) = CARD s` THEN
+  SUBGOAL_THEN `IMAGE  (f:A->B) s = IMAGE f (s DELETE y)` SUBST1_TAC THENL
+   [ASM SET_TAC[]; REWRITE_TAC[]] THEN
+  MATCH_MP_TAC(ARITH_RULE `!n. m <= n /\ n < p ==> ~(m:num = p)`) THEN
+  EXISTS_TAC `CARD(s DELETE (y:A))` THEN
+  ASM_SIMP_TAC[CARD_IMAGE_LE; FINITE_DELETE] THEN
+  ASM_SIMP_TAC[CARD_DELETE; CARD_EQ_0;
+               ARITH_RULE `n - 1 < n <=> ~(n = 0)`] THEN
+  ASM SET_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Choosing a smaller subset of a given size.                                *)
 (* ------------------------------------------------------------------------- *)

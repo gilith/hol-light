@@ -6,6 +6,12 @@
 #load "unix.cma";;
 
 (* ------------------------------------------------------------------------- *)
+(* The interpretation for the cloud tactics.                                 *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation "opentheory/interpretations/cloud.int";;
+
+(* ------------------------------------------------------------------------- *)
 (* A general interface for calling cloud tactics.                            *)
 (* ------------------------------------------------------------------------- *)
 
@@ -244,11 +250,12 @@ SKICO_CONV `?x. !y. ?z. (~x \/ ~y) /\ (~z \/ ~y)`;;
 
 (* A Norrish numeral conversion *)
 
+let BIT2 = new_definition
+  `!n. BIT2 n = SUC (SUC (n + n))`;;
+
 let NORRISH_CONV =
     CLOUD_CONV "http://cam.xrchz.net/n2b.cgi"
     [];;
-
-let () = new_constant ("BIT2", type_of `BIT1`);;
 
 NORRISH_CONV `_0`;;
 NORRISH_CONV `BIT2 (BIT1 (BIT2 _0))`;;

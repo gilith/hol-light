@@ -140,6 +140,10 @@ let COMPLEX_IN_BALL_0 = prove
  (`!v r. v IN ball(Cx(&0),r) <=> norm v < r`,
   REWRITE_TAC [GSYM COMPLEX_VEC_0; IN_BALL_0]);;
 
+let COMPLEX_IN_CBALL_0 = prove               
+ (`!v r. v IN cball(Cx(&0),r) <=> norm v <= r`,                              
+  REWRITE_TAC [GSYM COMPLEX_VEC_0; IN_CBALL_0]);;
+
 let IN_BALL_RE = prove
  (`!x z e. x IN ball(z,e) ==> abs(Re(x) - Re(z)) < e`,
   REPEAT GEN_TAC THEN REWRITE_TAC[IN_BALL; dist] THEN
@@ -174,7 +178,100 @@ let CLOSED_REAL = prove
   REWRITE_TAC[CLOSED_REAL_SET]);;
 
 (* ------------------------------------------------------------------------- *)
-(* Some complex-specific limit composition theorems.                         *)
+(* Complex-specific uniform limit composition theorems.                      *)
+(* ------------------------------------------------------------------------- *)
+
+let UNIFORM_LIM_COMPLEX_MUL = prove
+ (`!net:(A)net P f g l m b1 b2.
+        eventually (\x. !n. P n ==> norm(l n) <= b1) net /\
+        eventually (\x. !n. P n ==> norm(m n) <= b2) net /\
+        (!e. &0 < e
+             ==> eventually (\x. !n:B. P n ==> norm(f n x - l n) < e) net) /\
+        (!e. &0 < e
+             ==> eventually (\x. !n. P n ==> norm(g n x - m n) < e) net)
+        ==> !e. &0 < e
+                ==> eventually
+                     (\x. !n. P n
+                              ==> norm(f n x * g n x - l n * m n) < e)
+                     net`,
+  REPEAT GEN_TAC THEN
+  DISCH_THEN(MP_TAC o CONJ BILINEAR_COMPLEX_MUL) THEN
+  REWRITE_TAC[UNIFORM_LIM_BILINEAR]);;
+
+let UNIFORM_LIM_COMPLEX_INV = prove
+ (`!net:(A)net P f l b.
+        (!e. &0 < e
+             ==> eventually (\x. !n:B. P n ==> norm(f n x - l n) < e) net) /\
+        &0 < b /\ eventually (\x. !n. P n ==> b <= norm(l n)) net
+        ==> !e. &0 < e
+                ==> eventually
+                    (\x. !n. P n ==> norm(inv(f n x) - inv(l n)) < e) net`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC EVENTUALLY_MONO THEN
+  EXISTS_TAC
+   `\x. !n. P n ==> b <= norm(l n) /\
+                    b / &2 <= norm((f:B->A->complex) n x) /\
+                    norm(f n x - l n) < e * b pow 2 / &2` THEN
+  REWRITE_TAC[TAUT `(p ==> q /\ r) <=> (p ==> q) /\ (p ==> r)`] THEN
+  REWRITE_TAC[FORALL_AND_THM] THEN CONJ_TAC THENL
+   [X_GEN_TAC `x:A` THEN STRIP_TAC THEN X_GEN_TAC `n:B` THEN DISCH_TAC THEN
+    REPEAT(FIRST_X_ASSUM(MP_TAC o SPEC `n:B`) THEN ASM_REWRITE_TAC[]) THEN
+    REPEAT DISCH_TAC THEN
+    SUBGOAL_THEN `~((f:B->A->complex) n x = Cx(&0)) /\ ~(l n = Cx(&0))`
+    STRIP_ASSUME_TAC THENL
+     [CONJ_TAC THEN DISCH_THEN SUBST_ALL_TAC THEN
+      RULE_ASSUM_TAC(REWRITE_RULE[COMPLEX_NORM_CX]) THEN ASM_REAL_ARITH_TAC;
+      ALL_TAC] THEN
+    ASM_SIMP_TAC[COMPLEX_FIELD
+     `~(x = Cx(&0)) /\ ~(y = Cx(&0))
+      ==> inv x - inv y = (y - x) / (x * y)`] THEN
+    ASM_SIMP_TAC[COMPLEX_NORM_DIV; REAL_LT_LDIV_EQ; COMPLEX_NORM_NZ;
+                 COMPLEX_ENTIRE] THEN
+    ONCE_REWRITE_TAC[NORM_SUB] THEN
+    FIRST_X_ASSUM(MATCH_MP_TAC o MATCH_MP (REWRITE_RULE[IMP_CONJ]
+        REAL_LTE_TRANS)) THEN
+    ASM_SIMP_TAC[REAL_LE_LMUL_EQ; REAL_ARITH `b pow 2 / &2 = b / &2 * b`] THEN
+    REWRITE_TAC[COMPLEX_NORM_MUL] THEN MATCH_MP_TAC REAL_LE_MUL2 THEN
+    ASM_REAL_ARITH_TAC;
+    ASM_REWRITE_TAC[EVENTUALLY_AND] THEN CONJ_TAC THENL
+     [FIRST_X_ASSUM(MP_TAC o SPEC `b / &2`) THEN
+      ASM_REWRITE_TAC[REAL_HALF] THEN
+      FIRST_X_ASSUM(fun th -> MP_TAC th THEN REWRITE_TAC[IMP_IMP] THEN
+        GEN_REWRITE_TAC LAND_CONV [GSYM EVENTUALLY_AND]) THEN
+      MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ] EVENTUALLY_MONO) THEN
+      REWRITE_TAC[] THEN
+      ASM_MESON_TAC[NORM_ARITH
+       `b <= norm l /\ norm(f - l) < b / &2 ==> b / &2 <= norm f`];
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
+      ASM_SIMP_TAC[REAL_HALF; REAL_POW_LT; REAL_LT_MUL]]]);;
+
+let UNIFORM_LIM_COMPLEX_DIV = prove
+ (`!net:(A)net P f g l m b1 b2.
+        eventually (\x. !n. P n ==> norm(l n) <= b1) net /\
+        &0 < b2 /\ eventually (\x. !n. P n ==> b2 <= norm(m n)) net /\
+        (!e. &0 < e
+             ==> eventually (\x. !n:B. P n ==> norm(f n x - l n) < e) net) /\
+        (!e. &0 < e
+             ==> eventually (\x. !n. P n ==> norm(g n x - m n) < e) net)
+        ==> !e. &0 < e
+                ==> eventually
+                     (\x. !n. P n
+                              ==> norm(f n x / g n x - l n / m n) < e)
+                     net`,
+  REPEAT GEN_TAC THEN DISCH_TAC THEN
+  REWRITE_TAC[complex_div] THEN MATCH_MP_TAC UNIFORM_LIM_COMPLEX_MUL THEN
+  MAP_EVERY EXISTS_TAC [`b1:real`; `inv(b2):real`] THEN
+  ASM_REWRITE_TAC[] THEN CONJ_TAC THENL
+   [FIRST_X_ASSUM(CONJUNCTS_THEN2 ASSUME_TAC
+     (MP_TAC o CONJUNCT1) o CONJUNCT2) THEN
+    MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ] EVENTUALLY_MONO) THEN
+    GEN_TAC THEN REWRITE_TAC[] THEN MATCH_MP_TAC MONO_FORALL THEN
+    REPEAT STRIP_TAC THEN REWRITE_TAC[COMPLEX_NORM_INV] THEN
+    MATCH_MP_TAC REAL_LE_INV2 THEN ASM_SIMP_TAC[];
+    MATCH_MP_TAC UNIFORM_LIM_COMPLEX_INV THEN
+    EXISTS_TAC `b2:real` THEN ASM_REWRITE_TAC[]]);;
+
+(* ------------------------------------------------------------------------- *)
+(* The usual non-uniform versions.                                           *)
 (* ------------------------------------------------------------------------- *)
 
 let LIM_COMPLEX_MUL = prove
@@ -185,39 +282,14 @@ let LIM_COMPLEX_MUL = prove
 let LIM_COMPLEX_INV = prove
  (`!net:(A)net f g l m.
          (f --> l) net /\ ~(l = Cx(&0)) ==> ((\x. inv(f x)) --> inv(l)) net`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[LIM] THEN
-  ASM_CASES_TAC `trivial_limit (net:(A)net)` THEN
-  ASM_REWRITE_TAC[] THEN REPEAT STRIP_TAC THEN
-  FIRST_X_ASSUM(MP_TAC o SPEC
-   `min (norm(l) / &2) ((e * norm(l:complex) pow 2) / &2)`) THEN
-  REWRITE_TAC[REAL_LT_MIN; REAL_HALF] THEN
-  ASM_SIMP_TAC[REAL_LT_MUL; REAL_POW_LT; NORM_POS_LT; COMPLEX_VEC_0] THEN
-  MATCH_MP_TAC MONO_EXISTS THEN GEN_TAC THEN MATCH_MP_TAC MONO_AND THEN
-  REWRITE_TAC[] THEN MATCH_MP_TAC MONO_FORALL THEN
-  GEN_TAC THEN MATCH_MP_TAC MONO_IMP THEN REWRITE_TAC[] THEN
-  ABBREV_TAC `m = (f:A->complex) x` THEN
-  ASM_CASES_TAC `m = Cx(&0)` THEN ASM_REWRITE_TAC[dist] THEN
-  REWRITE_TAC[COMPLEX_SUB_LZERO; NORM_NEG] THEN
-  SIMP_TAC[NORM_POS_LE; REAL_ARITH `&0 <= x ==> ~(x < x / &2)`] THEN
-  ASM_CASES_TAC `l:complex = m` THEN
-  ASM_REWRITE_TAC[COMPLEX_SUB_REFL; NORM_0; GSYM COMPLEX_VEC_0] THEN
-  STRIP_TAC THEN ASM_SIMP_TAC[COMPLEX_FIELD
-   `~(l = Cx(&0)) /\ ~(m = Cx(&0))
-    ==> inv m - inv l = --inv(l * m) * (m - l)`] THEN
-  REWRITE_TAC[COMPLEX_NORM_MUL; COMPLEX_NORM_INV; NORM_NEG] THEN
-  MATCH_MP_TAC REAL_LTE_TRANS THEN
-  EXISTS_TAC `&2 / (norm(l:complex) pow 2) * (e * norm(l) pow 2) / &2` THEN
-  ASM_SIMP_TAC[COMPLEX_VEC_0; REAL_FIELD
-   `&0 < l ==> &2 / l pow 2 * (e * l pow 2) / &2 = e`; NORM_POS_LT] THEN
-  REWRITE_TAC[REAL_LE_REFL] THEN ONCE_REWRITE_TAC[REAL_MUL_SYM] THEN
-  ASM_SIMP_TAC[GSYM real_div; REAL_LT_LDIV_EQ; REAL_LT_MUL; NORM_POS_LT;
-               COMPLEX_VEC_0] THEN
-  MATCH_MP_TAC REAL_LTE_TRANS THEN
-  EXISTS_TAC `(e * norm(l:complex) pow 2) / &2` THEN
-  ASM_REWRITE_TAC[] THEN
-  REWRITE_TAC[REAL_ARITH `(e * l pow 2) / &2 = e * l * l / &2`] THEN
-  ASM_SIMP_TAC[REAL_LE_LMUL_EQ; REAL_LT_IMP_LE; NORM_POS_LT; COMPLEX_VEC_0] THEN
-  UNDISCH_TAC `norm (m - l:complex) < norm l / &2` THEN CONV_TAC NORM_ARITH);;
+  REPEAT STRIP_TAC THEN
+  MP_TAC(ISPECL
+   [`net:(A)net`; `\x:one. T`;
+    `\n:one. (f:A->complex)`;
+    `\n:one. (l:complex)`;
+    `norm(l:complex)`] UNIFORM_LIM_COMPLEX_INV) THEN
+  ASM_REWRITE_TAC[REAL_LE_REFL; EVENTUALLY_TRUE] THEN
+  ASM_REWRITE_TAC[GSYM dist; GSYM tendsto; COMPLEX_NORM_NZ]);;
 
 let LIM_COMPLEX_DIV = prove
  (`!net:(A)net f g l m.
@@ -765,6 +837,10 @@ let COMPLEX_DERIVATIVE_UNIQUE_AT = prove
   DISCH_THEN(MP_TAC o C AP_THM `Cx(&1)`) THEN
   REWRITE_TAC[COMPLEX_MUL_RID]);;
 
+let HIGHER_COMPLEX_DERIVATIVE_1 = prove
+ (`!f z. higher_complex_derivative 1 f z = complex_derivative f z`,
+  REWRITE_TAC[num_CONV `1`; higher_complex_derivative]);;
+
 (* ------------------------------------------------------------------------- *)
 (* A more direct characterization.                                           *)
 (* ------------------------------------------------------------------------- *)
@@ -1240,7 +1316,7 @@ let HOLOMORPHIC_ON_COMPOSE_GEN = prove
 (* ------------------------------------------------------------------------- *)
 
 let HAS_COMPLEX_DERIVATIVE_DERIVATIVE = prove
- (`!net f f' x. (f has_complex_derivative f') (at x)
+ (`!f f' x. (f has_complex_derivative f') (at x)
                 ==> complex_derivative f x = f'`,
   REWRITE_TAC[complex_derivative] THEN
   MESON_TAC[COMPLEX_DERIVATIVE_UNIQUE_AT]);;
@@ -1698,7 +1774,7 @@ let HAS_COMPLEX_DERIVATIVE_INVERSE_BASIC = prove
   UNDISCH_TAC `~(f' = Cx(&0))` THEN CONV_TAC COMPLEX_FIELD);;
 
 let HAS_COMPLEX_DERIVATIVE_INVERSE_STRONG = prove
- (`!f g f' g' s x.
+ (`!f g f' s x.
          open s /\
          x IN s /\
          f continuous_on s /\
@@ -1713,7 +1789,7 @@ let HAS_COMPLEX_DERIVATIVE_INVERSE_STRONG = prove
   UNDISCH_TAC `~(f' = Cx(&0))` THEN CONV_TAC COMPLEX_FIELD);;
 
 let HAS_COMPLEX_DERIVATIVE_INVERSE_STRONG_X = prove
- (`!f g f' g' s y.
+ (`!f g f' s y.
         open s /\ (g y) IN s /\ f continuous_on s /\
         (!x. x IN s ==> (g(f(x)) = x)) /\
         (f has_complex_derivative f') (at (g y)) /\ ~(f' = Cx(&0)) /\
