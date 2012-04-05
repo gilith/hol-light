@@ -181,6 +181,8 @@ let CLOUD_CONV url ths =
 (* Known instances of cloud conversions.                                     *)
 (* ------------------------------------------------------------------------- *)
 
+(* A QBF tactic *)
+
 let QBF_CONV =
     CLOUD_CONV "http://cam.xrchz.net/holqbf.cgi"
     [prove (`(!) = (\P. P = (\ (x:A). T))`, ACCEPT_TAC FORALL_DEF);
@@ -225,6 +227,8 @@ QBF_CONV `!x. x \/ ~x`;;
 QBF_CONV `?p. (!q. (p \/ ~q)) /\ !q:bool. ?r. r`;;
 QBF_CONV `?x. !y. ?z. (~x \/ ~y) /\ (~z \/ ~y)`;;
 
+(* A SKICO conversion *)
+
 let SKICO_CONV =
     CLOUD_CONV "http://cam.xrchz.net/skico.cgi"
     [prove (`(!) = (\P. P = (\ (x:A). T))`, ACCEPT_TAC FORALL_DEF);
@@ -237,3 +241,14 @@ let SKICO_CONV =
 SKICO_CONV `!x. x \/ ~x`;;
 SKICO_CONV `?p. (!q. (p \/ ~q)) /\ !q:bool. ?r. r`;;
 SKICO_CONV `?x. !y. ?z. (~x \/ ~y) /\ (~z \/ ~y)`;;
+
+(* A Norrish numeral conversion *)
+
+let NORRISH_CONV =
+    CLOUD_CONV "http://cam.xrchz.net/n2b.cgi"
+    [];;
+
+let () = new_constant ("BIT2", type_of `BIT1`);;
+
+NORRISH_CONV `_0`;;
+NORRISH_CONV `BIT2 (BIT1 (BIT2 _0))`;;
