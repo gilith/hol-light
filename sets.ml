@@ -3983,8 +3983,8 @@ export_thm CARD_IMAGE_LE;;
 let CARD_IMAGE_INJ_EQ = prove
  (`!(f:A->B) s t.
         FINITE s /\
-        (!x. x IN s ==> f(x) IN t) /\
-        (!y. y IN t ==> ?!x. x IN s /\ f(x) = y)
+        (!x. x IN s ==> f x IN t) /\
+        (!y. y IN t ==> ?!x. x IN s /\ f x = y)
         ==> CARD t = CARD s`,
   REPEAT STRIP_TAC THEN
   SUBGOAL_THEN `t = IMAGE (f:A->B) s` SUBST_VAR_TAC THENL
@@ -4047,23 +4047,65 @@ let HAS_SIZE_IMAGE_INJ_EQ = prove
 export_thm HAS_SIZE_IMAGE_INJ_EQ;;
 
 let CARD_IMAGE_EQ_INJ = prove
- (`!f:A->B s.
-        FINITE s
-        ==> (CARD(IMAGE f s) = CARD s <=>
-             !x y. x IN s /\ y IN s /\ f x = f y ==> x = y)`,
-  REPEAT STRIP_TAC THEN EQ_TAC THENL
-   [DISCH_TAC; ASM_MESON_TAC[CARD_IMAGE_INJ]] THEN
-  MAP_EVERY X_GEN_TAC [`x:A`; `y:A`] THEN STRIP_TAC THEN
-  ASM_CASES_TAC `x:A = y` THEN ASM_REWRITE_TAC[] THEN
-  UNDISCH_TAC `CARD(IMAGE (f:A->B) s) = CARD s` THEN
-  SUBGOAL_THEN `IMAGE  (f:A->B) s = IMAGE f (s DELETE y)` SUBST1_TAC THENL
-   [ASM SET_TAC[]; REWRITE_TAC[]] THEN
-  MATCH_MP_TAC(ARITH_RULE `!n. m <= n /\ n < p ==> ~(m:num = p)`) THEN
-  EXISTS_TAC `CARD(s DELETE (y:A))` THEN
-  ASM_SIMP_TAC[CARD_IMAGE_LE; FINITE_DELETE] THEN
-  ASM_SIMP_TAC[CARD_DELETE; CARD_EQ_0;
-               ARITH_RULE `n - 1 < n <=> ~(n = 0)`] THEN
-  ASM SET_TAC[]);;
+ (`!(f : A -> B) s.
+     FINITE s ==>
+     (CARD (IMAGE f s) = CARD s <=>
+      !x y. x IN s /\ y IN s /\ f x = f y ==> x = y)`,
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   UNDISCH_TAC `CARD (IMAGE (f : A -> B) s) = CARD s` THEN
+   ONCE_REWRITE_TAC [GSYM CONTRAPOS_THM] THEN
+   STRIP_TAC THEN
+   REWRITE_TAC [GSYM LE_ANTISYM; DE_MORGAN_THM; NOT_LE] THEN
+   DISJ2_TAC THEN
+   MATCH_MP_TAC LET_TRANS THEN
+   EXISTS_TAC `CARD (s DELETE (y:A))` THEN
+   CONJ_TAC THENL
+   [SUBGOAL_THEN `IMAGE  (f:A->B) s = IMAGE f (s DELETE y)` SUBST1_TAC THENL
+    [REWRITE_TAC [EXTENSION] THEN
+     X_GEN_TAC `y : B` THEN
+     EQ_TAC THENL
+     [SPEC_TAC (`y : B`, `y : B`) THEN
+      REWRITE_TAC [FORALL_IN_IMAGE] THEN
+      X_GEN_TAC `z : A` THEN
+      ASM_CASES_TAC `z : A = y` THENL
+      [POP_ASSUM SUBST1_TAC THEN
+       DISCH_THEN (K ALL_TAC) THEN
+       REWRITE_TAC [IN_IMAGE; IN_DELETE] THEN
+       EXISTS_TAC `x : A` THEN
+       ASM_REWRITE_TAC [];
+       STRIP_TAC THEN
+       REWRITE_TAC [IN_IMAGE; IN_DELETE] THEN
+       EXISTS_TAC `z : A` THEN
+       ASM_REWRITE_TAC []];
+      SPEC_TAC (`y : B`, `y : B`) THEN
+      REWRITE_TAC [FORALL_IN_IMAGE; IN_DELETE] THEN
+      X_GEN_TAC `z : A` THEN
+      STRIP_TAC THEN
+      REWRITE_TAC [IN_IMAGE] THEN
+      EXISTS_TAC `z : A` THEN
+      ASM_REWRITE_TAC []];
+     MATCH_MP_TAC CARD_SUBSET_IMAGE THEN
+     EXISTS_TAC `f : A -> B` THEN
+     ASM_REWRITE_TAC [FINITE_DELETE; SUBSET_REFL]];
+    MATCH_MP_TAC CARD_PSUBSET THEN
+    ASM_REWRITE_TAC [PSUBSET; DELETE_SUBSET] THEN
+    REWRITE_TAC [EXTENSION; NOT_FORALL_THM] THEN
+    EXISTS_TAC `y : A` THEN
+    ASM_REWRITE_TAC [IN_DELETE]];
+   STRIP_TAC THEN
+   MATCH_MP_TAC CARD_IMAGE_INJ_EQ THEN
+   EXISTS_TAC `f : A -> B` THEN
+   ASM_REWRITE_TAC [FORALL_IN_IMAGE; FUN_IN_IMAGE; EXISTS_UNIQUE] THEN
+   REPEAT STRIP_TAC THEN
+   EXISTS_TAC `x : A` THEN
+   ASM_REWRITE_TAC [] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm CARD_IMAGE_EQ_INJ;;
 
 (* ------------------------------------------------------------------------- *)
 (* Choosing a smaller subset of a given size.                                *)
