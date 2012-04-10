@@ -16,6 +16,8 @@ let option_cases = prove_cases_thm option_INDUCT;;
 
 export_thm option_cases;;
 
+let option_cases_tac = CASES_TAC option_cases;;
+
 logfile "option-dest-def";;
 
 let (case_option_none,case_option_some) =
