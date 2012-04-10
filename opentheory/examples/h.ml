@@ -1086,7 +1086,7 @@ let allocate_page_directory_h_def = new_definition
      unmapped_normal_page s ppa /\
      !ppa'.
        status s' ppa' =
-       status s (if ppa' = ppa then reference s else ppa)`;;
+       status s (if ppa' = ppa then reference s else ppa')`;;
 
 export_thm allocate_page_directory_h_def;;
 
