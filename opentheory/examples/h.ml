@@ -12,14 +12,14 @@ logfile "h-def";;
 (* Reference counts *)
 
 let reference_count_tybij =
-  mk_newtype ("c","reference_count") ("n",`:num`);;
+  define_newtype ("c","reference_count") ("n",`:num`);;
 
 export_thm reference_count_tybij;;
 
 (* Region lengths *)
 
 let region_length_tybij =
-  mk_newtype ("l","region_length") ("n",`:num`);;
+  define_newtype ("l","region_length") ("n",`:num`);;
 
 export_thm region_length_tybij;;
 
@@ -30,7 +30,7 @@ export_thm region_length_tybij;;
 (* Superpage offsets *)
 
 let superpage_offset_tybij =
-  mk_newtype ("si","superpage_offset") ("w",`:word10`);;
+  define_newtype ("si","superpage_offset") ("w",`:word10`);;
 
 export_thm superpage_offset_tybij;;
 
@@ -52,7 +52,7 @@ export_thm superpage_offset_add_def;;
 (* Page offsets *)
 
 let page_offset_tybij =
-  mk_newtype ("i","page_offset") ("w",`:word12`);;
+  define_newtype ("i","page_offset") ("w",`:word12`);;
 
 export_thm page_offset_tybij;;
 
@@ -63,7 +63,7 @@ export_thm page_offset_tybij;;
 (* Physical superpage addresses *)
 
 let physical_superpage_address_tybij =
-  mk_newtype ("psa","physical_superpage_address") ("w",`:word10`);;
+  define_newtype ("psa","physical_superpage_address") ("w",`:word10`);;
 
 export_thm physical_superpage_address_tybij;;
 
@@ -85,7 +85,7 @@ export_thm physical_superpage_address_add_def;;
 (* Physical page addresses *)
 
 let physical_page_address_tybij =
-  mk_newtype ("ppa","physical_page_address")
+  define_newtype ("ppa","physical_page_address")
     ("r", `:physical_superpage_address # superpage_offset`);;
 
 export_thm physical_page_address_tybij;;
@@ -115,7 +115,7 @@ export_thm physical_page_address_add_def;;
 (* Physical addresses *)
 
 let physical_address_tybij =
-  mk_newtype ("pa","physical_address")
+  define_newtype ("pa","physical_address")
     ("r", `:physical_page_address # page_offset`);;
 
 export_thm physical_address_tybij;;
@@ -188,7 +188,7 @@ export_thm is_physical_subregion_def;;
 (* Virtual superpage addresses *)
 
 let virtual_superpage_address_tybij =
-  mk_newtype ("vsa","virtual_superpage_address") ("w",`:word10`);;
+  define_newtype ("vsa","virtual_superpage_address") ("w",`:word10`);;
 
 export_thm virtual_superpage_address_tybij;;
 
@@ -210,7 +210,7 @@ export_thm virtual_superpage_address_add_def;;
 (* Virtual page addresses *)
 
 let virtual_page_address_tybij =
-  mk_newtype ("vpa","virtual_page_address")
+  define_newtype ("vpa","virtual_page_address")
     ("r", `:virtual_superpage_address # superpage_offset`);;
 
 export_thm virtual_page_address_tybij;;
@@ -240,7 +240,7 @@ export_thm virtual_page_address_add_def;;
 (* Virtual addresses *)
 
 let virtual_address_tybij =
-  mk_newtype ("va","virtual_address")
+  define_newtype ("va","virtual_address")
     ("r", `:virtual_page_address # page_offset`);;
 
 export_thm virtual_address_tybij;;
@@ -374,7 +374,7 @@ export_thm is_kernel_region_def;;
 (* ------------------------------------------------------------------------- *)
 
 let page_data_tybij =
-  mk_newtype ("d","page_data")
+  define_newtype ("d","page_data")
     ("f", `:page_offset -> byte`);;
 
 export_thm page_data_tybij;;
@@ -404,7 +404,7 @@ new_type_abbrev("page_table",`:physical_page_address`);;
 new_type_abbrev("page_table_index",`:superpage_offset`);;
 
 let page_table_data_tybij =
-  mk_newtype ("t","page_table_data")
+  define_newtype ("t","page_table_data")
     ("f", `:page_table_index -> physical_page_address option`);;
 
 export_thm page_table_data_tybij;;
@@ -440,7 +440,7 @@ export_thm case_page_directory_entry_def;;
 new_type_abbrev("page_directory_index",`:virtual_superpage_address`);;
 
 let page_directory_data_tybij =
-  mk_newtype ("d","page_directory_data")
+  define_newtype ("d","page_directory_data")
     ("f", `:page_directory_index -> page_directory_entry option`);;
 
 export_thm page_directory_data_tybij;;
@@ -1281,7 +1281,7 @@ export_thm action_def;;
 (* ------------------------------------------------------------------------- *)
 
 let output_tybij =
-  mk_newtype ("x","output")
+  define_newtype ("x","output")
     ("v", `:view`);;
 
 export_thm output_tybij;;

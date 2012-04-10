@@ -5,7 +5,7 @@
 logfile "probability-def";;
 
 let (mk_dest_random,dest_mk_random) =
-  CONJ_PAIR (mk_newtype ("r","random") ("s",`:bool stream`));;
+  CONJ_PAIR (define_newtype ("r","random") ("s",`:bool stream`));;
 
 export_thm mk_dest_random;;
 export_thm dest_mk_random;;

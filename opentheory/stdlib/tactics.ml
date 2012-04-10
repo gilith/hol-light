@@ -117,7 +117,7 @@ let rec N_TAC n tac =
 let rec N_CONV n conv =
     if n == 0 then ALL_CONV else conv THENC N_CONV (n - 1) conv;;
 
-let mk_newtype (a,n) (r,ty) =
+let define_newtype (a,n) (r,ty) =
   let exists =
       let pth = EQ_MP (SYM (SPEC `T` EXISTS_SIMP)) TRUTH in
       INST_TYPE [(ty,aty)] pth in
