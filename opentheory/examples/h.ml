@@ -3026,20 +3026,23 @@ let local_respect = prove
    [(* write_e view_u *)
     REPEAT STRIP_TAC THEN
     MATCH_MP_TAC local_respect_write_e_view_u THEN
-    EXISTS_TAC `a0 : virtual_address` THEN
-    EXISTS_TAC `a1 : byte` THEN
+    EXISTS_TAC `va : virtual_address` THEN
+    EXISTS_TAC `b : byte` THEN
     ASM_REWRITE_TAC [];
 
     (* derive_region_h view_e *)
     REPEAT STRIP_TAC THEN
     MATCH_MP_TAC local_respect_derive_region_h_view_e THEN
-    EXISTS_TAC `a0 : physical_region` THEN
-    EXISTS_TAC `a1 : physical_page_address` THEN
-    EXISTS_TAC `a2 : region_length` THEN
+    EXISTS_TAC `pr : physical_region` THEN
+    EXISTS_TAC `ppa : physical_page_address` THEN
+    EXISTS_TAC `l : region_length` THEN
     ASM_REWRITE_TAC [];
 
     (* allocate_page_directory_h view_e *)
-    CHEAT_TAC;
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC local_respect_allocate_page_directory_h_view_e THEN
+    EXISTS_TAC `ppa : physical_page_address` THEN
+    ASM_REWRITE_TAC [];
 
     (* free_page_directory_h view_e *)
     CHEAT_TAC;
@@ -3056,35 +3059,35 @@ let local_respect = prove
     (* execute_h view_e *)
     REPEAT STRIP_TAC THEN
     MATCH_MP_TAC local_respect_execute_h_view_e THEN
-    EXISTS_TAC `a : page_directory` THEN
+    EXISTS_TAC `pd : page_directory` THEN
     ASM_REWRITE_TAC [];
 
     (* write_k view_e *)
     REPEAT STRIP_TAC THEN
     MATCH_MP_TAC local_respect_write_k_view_e THEN
-    EXISTS_TAC `a0 : virtual_address` THEN
-    EXISTS_TAC `a1 : byte` THEN
+    EXISTS_TAC `va : virtual_address` THEN
+    EXISTS_TAC `b : byte` THEN
     ASM_REWRITE_TAC [];
 
     (* write_k view_h *)
     REPEAT STRIP_TAC THEN
     MATCH_MP_TAC local_respect_write_k_view_h THEN
-    EXISTS_TAC `a0 : virtual_address` THEN
-    EXISTS_TAC `a1 : byte` THEN
+    EXISTS_TAC `va : virtual_address` THEN
+    EXISTS_TAC `b : byte` THEN
     ASM_REWRITE_TAC [];
 
     (* write_u view_e *)
     REPEAT STRIP_TAC THEN
     MATCH_MP_TAC local_respect_write_u_view_e THEN
-    EXISTS_TAC `a0 : virtual_address` THEN
-    EXISTS_TAC `a1 : byte` THEN
+    EXISTS_TAC `va : virtual_address` THEN
+    EXISTS_TAC `b : byte` THEN
     ASM_REWRITE_TAC [];
 
     (* write_u view_h *)
     REPEAT STRIP_TAC THEN
     MATCH_MP_TAC local_respect_write_u_view_h THEN
-    EXISTS_TAC `a0 : virtual_address` THEN
-    EXISTS_TAC `a1 : byte` THEN
+    EXISTS_TAC `va : virtual_address` THEN
+    EXISTS_TAC `b : byte` THEN
     ASM_REWRITE_TAC []]);;
 
 export_thm local_respect;;
