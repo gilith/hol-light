@@ -81,9 +81,7 @@ loads "opentheory/examples/char.ml";;
 (* Memory safety for the H interface.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 loads "opentheory/examples/h.ml";;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Map reduce example using Minisat.                                         *)

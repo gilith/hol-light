@@ -1028,7 +1028,7 @@ let (action_induct,action_recursion) =
         (!pr ppa l. p (DeriveRegionH pr ppa l)) /\
         (!ppa. p (AllocatePageDirectoryH ppa)) /\
         (!pd. p (FreePageDirectoryH pd)) /\
-        (!pd ppas pr vr. p (AddMappingH pd ppas pr vr)) /\
+        (!pd pts pr vr. p (AddMappingH pd pts pr vr)) /\
         (!pd vr. p (RemoveMappingH pd vr)) /\
         (!pr vr. p (AddKernelMappingH pr vr)) /\
         (!pd. p (ExecuteH pd)) /\
@@ -1043,7 +1043,7 @@ let (action_induct,action_recursion) =
           (!pr ppa l. fn (DeriveRegionH pr ppa l) = fdr pr ppa l) /\
           (!ppa. fn (AllocatePageDirectoryH ppa) = fapd ppa) /\
           (!pd. fn (FreePageDirectoryH pd) = ffpd pd) /\
-          (!pd ppas pr vr. fn (AddMappingH pd ppas pr vr) = fam pd ppas pr vr) /\
+          (!pd pts pr vr. fn (AddMappingH pd pts pr vr) = fam pd pts pr vr) /\
           (!pd vr. fn (RemoveMappingH pd vr) = frm pd vr) /\
           (!pr vr. fn (AddKernelMappingH pr vr) = fakm pr vr) /\
           (!pd. fn (ExecuteH pd) = fe pd) /\
@@ -1060,7 +1060,7 @@ let domain_def = new_recursive_definition action_recursion
    (!pr ppa l. domain (DeriveRegionH pr ppa l) = HDomain) /\
    (!ppa. domain (AllocatePageDirectoryH ppa) = HDomain) /\
    (!pd. domain (FreePageDirectoryH pd) = HDomain) /\
-   (!pd ppas pr vr. domain (AddMappingH pd ppas pr vr) = HDomain) /\
+   (!pd pts pr vr. domain (AddMappingH pd pts pr vr) = HDomain) /\
    (!pd vr. domain (RemoveMappingH pd vr) = HDomain) /\
    (!pr vr. domain (AddKernelMappingH pr vr) = HDomain) /\
    (!pd. domain (ExecuteH pd) = HDomain) /\
@@ -1279,9 +1279,9 @@ let action_spec_def = new_recursive_definition action_recursion
    (!pd.
       action_spec (FreePageDirectoryH pd) =
       free_page_directory_h pd) /\
-   (!pd ppas pr vr.
-      action_spec (AddMappingH pd ppas pr vr) =
-      add_mapping_h pd ppas pr vr) /\
+   (!pd pts pr vr.
+      action_spec (AddMappingH pd pts pr vr) =
+      add_mapping_h pd pts pr vr) /\
    (!pd vr.
       action_spec (RemoveMappingH pd vr) =
       remove_mapping_h pd vr) /\
@@ -2063,6 +2063,21 @@ let allocate_page_directory_h_not_cr3 = prove
 
 export_thm allocate_page_directory_h_not_cr3;;
 
+let allocate_page_directory_h_not_cr3' = prove
+  (`!s s' ppa.
+      wellformed s /\
+      allocate_page_directory_h ppa s s' ==>
+      ~(cr3 s' = ppa)`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPECL [`s : state`; `s' : state`; `ppa : physical_page_address`]
+                 allocate_page_directory_h_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC allocate_page_directory_h_not_cr3 THEN
+   EXISTS_TAC `s' : state` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm allocate_page_directory_h_not_cr3';;
+
 let allocate_page_directory_h_reference = prove
   (`!s s' ppa.
       allocate_page_directory_h ppa s s' ==> reference s = reference s'`,
@@ -2156,6 +2171,43 @@ let allocate_page_directory_h_translate_page = prove
 
 export_thm allocate_page_directory_h_translate_page;;
 
+let allocate_page_directory_h_translate_page' = prove
+  (`!s s' ppa pd.
+      wellformed s /\
+      allocate_page_directory_h ppa s s' ==>
+      translate_page s pd =
+      if pd = ppa then K NONE else translate_page s' pd`,
+   REPEAT STRIP_TAC THEN
+   COND_CASES_TAC THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    REWRITE_TAC [FUN_EQ_THM] THEN
+    X_GEN_TAC `vpa : virtual_page_address` THEN
+    REWRITE_TAC [K_THM] THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC
+      [allocate_page_directory_h_def; unmapped_normal_page_def;
+       is_normal_page_def] THEN
+    STRIP_TAC THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    POP_ASSUM MP_TAC THEN
+    POP_ASSUM_LIST (K ALL_TAC) THEN
+    REWRITE_TAC [translate_page_def] THEN
+    page_cases_tac `status s ppa` THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC
+      [is_page_directory_def; is_normal_def; is_some_def;
+       dest_page_directory_def; dest_normal_def; case_option_def] THEN
+    PAIR_CASES_TAC `dest_virtual_page_address vpa` THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [LET_DEF; LET_END_DEF];
+    MATCH_MP_TAC EQ_SYM THEN
+    MP_TAC (SPECL [`s : state`; `s' : state`; `ppa : physical_page_address`;
+                   `pd : page_directory`]
+                  allocate_page_directory_h_translate_page) THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm allocate_page_directory_h_translate_page';;
+
 let allocate_page_directory_h_translate_page_cr3 = prove
   (`!s s' ppa.
       wellformed s /\
@@ -2199,6 +2251,33 @@ let allocate_page_directory_h_reference_count = prove
 
 export_thm allocate_page_directory_h_reference_count;;
 
+let allocate_page_directory_h_reference_count' = prove
+  (`!s s' ppa pd.
+      wellformed s /\
+      allocate_page_directory_h ppa s s' ==>
+      reference_count s pd =
+      if pd = ppa then K (mk_reference_count 0) else reference_count s' pd`,
+   REPEAT STRIP_TAC THEN
+   COND_CASES_TAC THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    REWRITE_TAC [FUN_EQ_THM] THEN
+    X_GEN_TAC `ppa' : physical_page_address` THEN
+    REWRITE_TAC [reference_count_def; K_THM] THEN
+    MP_TAC
+      (SPECL [`s : state`; `s' : state`; `ppa : physical_page_address`;
+              `ppa : page_directory`]
+       allocate_page_directory_h_translate_page') THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+    REWRITE_TAC [K_THM; option_distinct; EMPTY_GSPEC; CARD_EMPTY];
+    MATCH_MP_TAC EQ_SYM THEN
+    MP_TAC (SPECL [`s : state`; `s' : state`; `ppa : physical_page_address`;
+                   `pd : page_directory`]
+                  allocate_page_directory_h_reference_count) THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm allocate_page_directory_h_reference_count';;
+
 let allocate_page_directory_h_reference_count_cr3 = prove
   (`!s s' ppa.
       wellformed s /\
@@ -2222,6 +2301,239 @@ let allocate_page_directory_h_reference_count_cr3 = prove
    ASM_REWRITE_TAC []);;
 
 export_thm allocate_page_directory_h_reference_count_cr3;;
+
+(* free_page_directory_h *)
+
+let free_page_directory_h_cr3 = prove
+  (`!s s' pd. free_page_directory_h pd s s' ==> cr3 s = cr3 s'`,
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC allocate_page_directory_h_cr3 THEN
+   EXISTS_TAC `pd : physical_page_address` THEN
+   FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm free_page_directory_h_cr3;;
+
+let free_page_directory_h_not_cr3 = prove
+  (`!s s' pd.
+      wellformed s' /\
+      free_page_directory_h pd s s' ==>
+      ~(cr3 s = pd)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC allocate_page_directory_h_not_cr3' THEN
+   EXISTS_TAC `s' : state` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm free_page_directory_h_not_cr3;;
+
+let free_page_directory_h_not_cr3' = prove
+  (`!s s' pd.
+      wellformed s' /\
+      free_page_directory_h pd s s' ==>
+      ~(cr3 s' = pd)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC allocate_page_directory_h_not_cr3 THEN
+   EXISTS_TAC `s : state` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm free_page_directory_h_not_cr3';;
+
+let free_page_directory_h_reference = prove
+  (`!s s' pd.
+      free_page_directory_h pd s s' ==> reference s = reference s'`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC allocate_page_directory_h_reference THEN
+   EXISTS_TAC `pd : physical_page_address` THEN
+   FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm free_page_directory_h_reference;;
+
+let free_page_directory_h_regions = prove
+  (`!s s' pd. free_page_directory_h pd s s' ==> regions s = regions s'`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC allocate_page_directory_h_regions THEN
+   EXISTS_TAC `pd : physical_page_address` THEN
+   FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm free_page_directory_h_regions;;
+
+let free_page_directory_h_dest_environment = prove
+  (`!s s' pd pt.
+      wellformed s' /\
+      free_page_directory_h pd s s' ==>
+      dest_environment (status s' pt) = dest_environment (status s pt)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC allocate_page_directory_h_dest_environment THEN
+   EXISTS_TAC `pd : physical_page_address` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm free_page_directory_h_dest_environment;;
+
+let free_page_directory_h_dest_page_table = prove
+  (`!s s' pd pt.
+      wellformed s' /\
+      free_page_directory_h pd s s' ==>
+      dest_page_table (status s' pt) = dest_page_table (status s pt)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC allocate_page_directory_h_dest_page_table THEN
+   EXISTS_TAC `pd : physical_page_address` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm free_page_directory_h_dest_page_table;;
+
+let free_page_directory_h_translate_page = prove
+  (`!s s' pd pd'.
+      wellformed s' /\
+      free_page_directory_h pd s s' ==>
+      translate_page s' pd' =
+      if pd' = pd then K NONE else translate_page s pd'`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC allocate_page_directory_h_translate_page' THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm free_page_directory_h_translate_page;;
+
+let free_page_directory_h_translate_page' = prove
+  (`!s s' pd pd'.
+      wellformed s' /\
+      free_page_directory_h pd s s' ==>
+      translate_page s pd' =
+      translate_page s' (if pd' = pd then reference s' else pd')`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC allocate_page_directory_h_translate_page THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm free_page_directory_h_translate_page';;
+
+let free_page_directory_h_translate_page_cr3 = prove
+  (`!s s' pd.
+      wellformed s' /\
+      free_page_directory_h pd s s' ==>
+      translate_page s (cr3 s) = translate_page s' (cr3 s')`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC allocate_page_directory_h_translate_page_cr3 THEN
+   EXISTS_TAC `pd : physical_page_address` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm free_page_directory_h_translate_page_cr3;;
+
+let free_page_directory_h_reference_count = prove
+  (`!s s' pd pd'.
+      wellformed s' /\
+      free_page_directory_h pd s s' ==>
+      reference_count s' pd' =
+      if pd' = pd then K (mk_reference_count 0) else reference_count s pd'`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC allocate_page_directory_h_reference_count' THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm free_page_directory_h_reference_count;;
+
+let free_page_directory_h_reference_count' = prove
+  (`!s s' pd pd'.
+      wellformed s' /\
+      free_page_directory_h pd s s' ==>
+      reference_count s pd' =
+      reference_count s' (if pd' = pd then reference s' else pd')`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC allocate_page_directory_h_reference_count THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm free_page_directory_h_reference_count';;
+
+let free_page_directory_h_reference_count_cr3 = prove
+  (`!s s' pd.
+      wellformed s' /\
+      free_page_directory_h pd s s' ==>
+      reference_count s (cr3 s) = reference_count s' (cr3 s')`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [free_page_directory_h_def] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC allocate_page_directory_h_reference_count_cr3 THEN
+   EXISTS_TAC `pd : physical_page_address` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm free_page_directory_h_reference_count_cr3;;
+
+(* add_mapping *)
+
+let add_mapping_cr3 = prove
+  (`!s s' pd pts pr vr. add_mapping pd pts pr vr s s' ==> cr3 s = cr3 s'`,
+   REWRITE_TAC [add_mapping_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm add_mapping_cr3;;
+
+(* add_mapping_h *)
+
+let add_mapping_h_cr3 = prove
+  (`!s s' pd pts pr vr. add_mapping_h pd pts pr vr s s' ==> cr3 s = cr3 s'`,
+   REWRITE_TAC [add_mapping_h_def] THEN
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC add_mapping_cr3 THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `set_of_list (take n (pts : page_table list))` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm add_mapping_h_cr3;;
+
+(* remove_mapping_h *)
+
+(***
+let remove_mapping_h_cr3 = prove
+  (`!s s' pd vr. remove_mapping_h pd vr s s' ==> cr3 s = cr3 s'`,
+   REWRITE_TAC [remove_mapping_h_def] THEN
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC add_mapping_cr3 THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `set_of_list (take n (pts : page_table list))` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm remove_mapping_h_cr3;;
+***)
+
+(* add_kernel_mapping_h *)
+
+let add_kernel_mapping_h_cr3 = prove
+  (`!s s' pr vr. add_kernel_mapping_h pr vr s s' ==> cr3 s = cr3 s'`,
+   REWRITE_TAC [add_kernel_mapping_h_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm add_kernel_mapping_h_cr3;;
 
 (* execute_h *)
 
@@ -2686,6 +2998,78 @@ let local_respect_allocate_page_directory_h_view_e = prove
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]));;
 
+let local_respect_free_page_directory_h_view_e = prove
+  (`!s s' pd.
+      wellformed s' /\ free_page_directory_h pd s s' ==>
+      view_e s = view_e s'`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [view_e_def; e_view_inj] THEN
+   ABS_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pd : page_directory`]
+      free_page_directory_h_translate_page_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   ABS_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pd : page_directory`]
+      free_page_directory_h_dest_environment) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   ABS_TAC THEN
+   AP_TERM_TAC THEN
+   AP_TERM_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pd : page_directory`]
+      free_page_directory_h_reference_count_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+(***
+let local_respect_add_mapping_h_view_e = prove
+  (`!s s' pd pts pr vr.
+      add_mapping_h pd pts pr vr s s' ==>
+      view_e s = view_e s'`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [view_e_def; e_view_inj] THEN
+   ABS_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pd : page_directory`]
+      free_page_directory_h_translate_page_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   ABS_TAC THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `pd : page_directory`]
+      free_page_directory_h_dest_environment) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   ABS_TAC THEN
+   AP_TERM_TAC THEN
+
+let local_respect_remove_mapping_h_view_e = prove
+  (`!s s' pd vr.
+      remove_mapping_h pd vr s s' ==>
+      view_e s = view_e s'`,
+   REWRITE_TAC [view_e_def; e_view_inj] THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+
+let local_respect_add_kernel_mapping_h_view_e = prove
+  (`!s s' pr vr.
+      add_kernel_mapping_h pr vr s s' ==>
+      view_e s = view_e s'`,
+   REWRITE_TAC [view_e_def; e_view_inj] THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+***)
+
 let local_respect_execute_h_view_e = prove
   (`!s s' pd.
       wellformed s /\ wellformed s' /\ execute_h pd s s' ==>
@@ -3006,6 +3390,7 @@ let local_respect_write_u_view_h = prove
       dest_normal_def; case_option_def; page_distinct;
       page_inj; option_distinct; option_inj]);;
 
+(***
 let local_respect = prove
   (`!s s' a u.
       ~interferes (domain a) u /\
@@ -3045,7 +3430,10 @@ let local_respect = prove
     ASM_REWRITE_TAC [];
 
     (* free_page_directory_h view_e *)
-    CHEAT_TAC;
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC local_respect_free_page_directory_h_view_e THEN
+    EXISTS_TAC `pd : page_directory` THEN
+    ASM_REWRITE_TAC [];
 
     (* add_mapping_h view_e *)
     CHEAT_TAC;
@@ -3092,6 +3480,8 @@ let local_respect = prove
 
 export_thm local_respect;;
 
+(* Weak step consistency *)
+
 let weak_step_consistency = prove
   (`!s s' t t' a u.
       view_equiv u s t /\
@@ -3118,6 +3508,8 @@ let weak_step_consistency = prove
 
 export_thm weak_step_consistency;;
 
+(* Output consistency *)
+
 let output_consistency = prove
   (`!s s' t t' a.
       view_equiv (domain a) s t /\
@@ -3135,5 +3527,6 @@ let output_consistency = prove
    ASM_REWRITE_TAC []);;
 
 export_thm output_consistency;;
+***)
 
 logfile_end ();;
