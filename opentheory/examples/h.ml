@@ -1157,6 +1157,8 @@ let add_mapping_def = new_definition
        else
          status s ppa = status s' ppa`;;
 
+export_thm add_mapping_def;;
+
 let add_mapping_h_def = new_definition
   `!pd pts pr vr s s'.
      add_mapping_h pd pts pr vr s s' <=>
