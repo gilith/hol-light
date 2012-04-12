@@ -474,7 +474,7 @@ let mkVarType objN =
 
 end
 
-module Object_map = Map.Make Object;;
+module Object_map = Map.Make(Object);;
 
 (* ------------------------------------------------------------------------- *)
 (* Sequents.                                                                 *)
@@ -494,7 +494,7 @@ let from_thm th = Sequent (hyp th, concl th);;
 
 end
 
-module Sequent_map = Map.Make Sequent;;
+module Sequent_map = Map.Make(Sequent);;
 
 let add_sequent_map seqs th = Sequent_map.add (Sequent.from_thm th) th seqs;;
 

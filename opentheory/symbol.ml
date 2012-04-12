@@ -132,7 +132,7 @@ let to_string =
 
 end
 
-module Name_map = Map.Make Name;;
+module Name_map = Map.Make(Name);;
 
 (* ------------------------------------------------------------------------- *)
 (* Interpretations.                                                          *)
