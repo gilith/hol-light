@@ -335,7 +335,6 @@ type "HOLLight.view" as "System.H.view"
 type "HOLLight.e_view" as "System.H.viewE"
 type "HOLLight.h_view" as "System.H.viewH"
 type "HOLLight.k_view" as "System.H.viewK"
-type "HOLLight.reference_count" as "System.H.referenceCount"
 type "HOLLight.region_length" as "System.H.regionLength"
 type "HOLLight.u_view" as "System.H.viewU"
 
@@ -502,11 +501,6 @@ const "HOLLight.dest_physical_superpage_address" as "System.H.Physical.Superpage
 const "HOLLight.num_to_physical_superpage_address" as "System.H.Physical.Superpage.fromNatural"
 const "HOLLight.mk_physical_superpage_address" as "System.H.Physical.Superpage.mk"
 
-# System.H.ReferenceCount
-
-const "HOLLight.mk_reference_count" as "System.H.ReferenceCount.fromNatural"
-const "HOLLight.dest_reference_count" as "System.H.ReferenceCount.toNatural"
-
 # System.H.RegionLength
 
 const "HOLLight.mk_region_length" as "System.H.RegionLength.fromNatural"
@@ -527,7 +521,6 @@ const "HOLLight.status" as "System.H.State.page"
 const "HOLLight.page_directories_contain_reference" as "System.H.State.pageDirectoriesContainReference"
 const "HOLLight.reference" as "System.H.State.reference"
 const "HOLLight.reference_contains_environment" as "System.H.State.referenceContainsEnvironment"
-const "HOLLight.reference_count" as "System.H.State.referenceCount"
 const "HOLLight.reference_is_page_directory" as "System.H.State.referenceIsPageDirectory"
 const "HOLLight.regions" as "System.H.State.regions"
 const "HOLLight.regions_are_not_environment" as "System.H.State.regionsAreNotEnvironment"
