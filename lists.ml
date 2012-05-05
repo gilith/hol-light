@@ -1673,6 +1673,82 @@ let length_zipwith = prove
 
 export_thm length_zipwith;;
 
+let length_zip = prove
+  (`!(l1 : A list) (l2 : B list) n.
+      LENGTH l1 = n /\ LENGTH l2 = n ==> LENGTH (zip l1 l2) = n`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [zip_def] THEN
+   MATCH_ACCEPT_TAC length_zipwith);;
+
+export_thm length_zip;;
+
+let nth_zipwith = prove
+  (`!(f : A -> B -> C) l1 l2 n i.
+      LENGTH l1 = n /\ LENGTH l2 = n /\ i < n ==>
+      nth (zipwith f l1 l2) i = f (nth l1 i) (nth l2 i)`,
+   GEN_TAC THEN
+   (LIST_INDUCT_TAC THEN
+    LIST_INDUCT_TAC THEN
+    INDUCT_TAC THEN
+    INDUCT_TAC THEN
+    REWRITE_TAC [NOT_SUC; LENGTH; LT_ZERO; LT_0; SUC_INJ; LT_SUC]) THENL
+   [POP_ASSUM_LIST (K ALL_TAC) THEN
+    REPEAT STRIP_TAC THEN
+    MP_TAC (SPECL [`f : A -> B -> C`; `h : A`; `h' : B`;
+                   `t : A list`; `t' : B list`] zipwith_cons) THEN
+    ANTS_TAC THENL
+    [ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [nth_0];
+    POP_ASSUM (K ALL_TAC) THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    STRIP_TAC THEN
+    MP_TAC (SPECL [`f : A -> B -> C`; `h : A`; `h' : B`;
+                   `t : A list`; `t' : B list`] zipwith_cons) THEN
+    ANTS_TAC THENL
+    [ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    MP_TAC (ISPECL [`h : A`; `t : A list`; `i : num`] nth_suc) THEN
+    ANTS_TAC THENL
+    [ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    MP_TAC (ISPECL [`h' : B`; `t' : B list`; `i : num`] nth_suc) THEN
+    ANTS_TAC THENL
+    [ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    MP_TAC (ISPECL [`(f : A -> B -> C) h h'`; `zipwith (f : A -> B -> C) t t'`;
+                    `i : num`] nth_suc) THEN
+    ANTS_TAC THENL
+    [MP_TAC (ISPECL [`f : A -> B -> C`; `t : A list`; `t' : B list`;
+                     `n : num`] length_zipwith) THEN
+     ANTS_TAC THENL
+     [ASM_REWRITE_TAC [];
+      ALL_TAC] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     ALL_TAC] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    EXISTS_TAC `n : num` THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm nth_zipwith;;
+
+let nth_zip = prove
+  (`!(l1 : A list) (l2 : B list) n i.
+      LENGTH l1 = n /\ LENGTH l2 = n /\ i < n ==>
+      nth (zip l1 l2) i = (nth l1 i, nth l2 i)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [zip_def] THEN
+   MATCH_ACCEPT_TAC nth_zipwith);;
+
+export_thm nth_zip;;
+
 (* ------------------------------------------------------------------------- *)
 (* Nub.                                                                      *)
 (* ------------------------------------------------------------------------- *)
