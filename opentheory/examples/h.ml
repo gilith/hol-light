@@ -648,7 +648,7 @@ let translate_page_def = new_definition
        (\pdd.
           case_option
             NONE
-            (\pdc.
+            (\pde.
                case_page_directory_entry
                  (\psa. SOME (mk_physical_page_address (psa,si)))
                  (\pt.
@@ -656,7 +656,7 @@ let translate_page_def = new_definition
                       NONE
                       (\ptd. dest_page_table_data ptd si)
                       (dest_page_table (status s pt)))
-                 pdc)
+                 pde)
             (dest_page_directory_data pdd vsa))
        (dest_page_directory (status s pd))`;;
 
@@ -785,11 +785,11 @@ let table_pointers_are_page_tables_def = new_definition
          (\pdd.
             case_option
               T
-              (\pdc.
+              (\pde.
                  case_page_directory_entry
                    (\spa. T)
                    (\ppa. is_page_table (status s ppa))
-                   pdc)
+                   pde)
               (dest_page_directory_data pdd pdi))
          (dest_page_directory (status s pd))`;;
 
@@ -1591,6 +1591,21 @@ let is_kernel_region = prove
 
 export_thm is_kernel_region;;
 
+let is_user_region = prove
+  (`!vr vpa.
+      is_user_region vr /\
+      member_virtual_region vpa vr ==>
+      is_user_page_address vpa`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC
+     [is_user_region_def; forall_virtual_region_def;
+      member_virtual_region_def; GSYM ALL_MEM] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm is_user_region;;
+
 (* ------------------------------------------------------------------------- *)
 (* Page data.                                                                *)
 (* ------------------------------------------------------------------------- *)
@@ -1784,6 +1799,20 @@ let status_translate_page = prove
 
 export_thm status_translate_page;;
 
+let unmapped_normal_page_unmapped = prove
+  (`!s ppa. unmapped_normal_page s ppa ==> unmapped_page s ppa`,
+   REWRITE_TAC [unmapped_normal_page_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm unmapped_normal_page_unmapped;;
+
+let unmapped_normal_page_normal = prove
+  (`!s ppa. unmapped_normal_page s ppa ==> is_normal_page s ppa`,
+   REWRITE_TAC [unmapped_normal_page_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm unmapped_normal_page_normal;;
+
 (* ------------------------------------------------------------------------- *)
 (* Well-formed machine states.                                               *)
 (* ------------------------------------------------------------------------- *)
@@ -1895,6 +1924,23 @@ let table_pointers_are_page_tables = prove
       case_page_directory_entry_def]);;
 
 export_thm table_pointers_are_page_tables;;
+
+let table_mapped_in_directory = prove
+  (`!s pd pt.
+     table_mapped_in_directory s pd pt <=>
+     ?pdd pdi.
+        status s pd = PageDirectory pdd /\
+        dest_page_directory_data pdd pdi = SOME (Table pt)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [table_mapped_in_directory_def] THEN
+   page_cases_tac `status s pd` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [page_distinct; page_inj; dest_page_directory_def; case_option_def] THEN
+   CONV_TAC (RAND_CONV (REWR_CONV SWAP_EXISTS_THM)) THEN
+   REWRITE_TAC [UNWIND_THM1]);;
+
+export_thm table_mapped_in_directory;;
 
 let table_mapped_in_directory_is_page_directory_table = prove
   (`!s pd pt.
@@ -2614,6 +2660,947 @@ let add_mapping_cr3 = prove
 
 export_thm add_mapping_cr3;;
 
+let add_mapping_reference = prove
+  (`!s s' pd pts pr vr.
+      add_mapping pd pts pr vr s s' ==> reference s = reference s'`,
+   REWRITE_TAC [add_mapping_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm add_mapping_reference;;
+
+let add_mapping_is_user_region = prove
+  (`!s s' pd pts pr vr.
+      add_mapping pd pts pr vr s s' ==> is_user_region vr`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [add_mapping_def] THEN
+   STRIP_TAC);;
+
+export_thm add_mapping_is_user_region;;
+
+let add_mapping_status = prove
+  (`!s s' pd pts pr vr ppa.
+      add_mapping pd pts pr vr s s' /\
+      ~(ppa = pd) /\
+      ~(ppa IN pts) /\
+      ~table_mapped_in_directory s pd ppa ==>
+      status s ppa = status s' ppa`,
+   REWRITE_TAC [add_mapping_def] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `ppa : physical_page_address`) THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_status;;
+
+let add_mapping_pd_was_page_directory = prove
+  (`!s s' pd pts pr vr.
+      add_mapping pd pts pr vr s s' ==>
+      is_page_directory (status s pd)`,
+   REWRITE_TAC [add_mapping_def] THEN
+   REPEAT STRIP_TAC);;
+
+export_thm add_mapping_pd_was_page_directory;;
+
+let add_mapping_pts_were_unmapped_normal = prove
+  (`!s s' pd pts pr vr pt.
+      add_mapping pd pts pr vr s s' /\
+      pt IN pts ==>
+      unmapped_normal_page s pt`,
+   REWRITE_TAC [add_mapping_def] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_pts_were_unmapped_normal;;
+
+let add_mapping_pts_were_normal = prove
+  (`!s s' pd pts pr vr pt.
+      add_mapping pd pts pr vr s s' /\
+      pt IN pts ==>
+      is_normal_page s pt`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC unmapped_normal_page_normal THEN
+   MATCH_MP_TAC add_mapping_pts_were_unmapped_normal THEN
+   EXISTS_TAC `s' : state` THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `pts : page_table set` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_pts_were_normal;;
+
+let add_mapping_pd_not_in_pts = prove
+  (`!s s' pd pts pr vr.
+      add_mapping pd pts pr vr s s' ==>
+      ~(pd IN pts)`,
+   REPEAT STRIP_TAC THEN
+   SUBGOAL_THEN
+     `is_page_directory (status s pd) /\
+      is_normal (status s pd)` MP_TAC THENL
+   [CONJ_TAC THENL
+    [MATCH_MP_TAC add_mapping_pd_was_page_directory THEN
+     EXISTS_TAC `s' : state` THEN
+     EXISTS_TAC `pts : page_table set` THEN
+     EXISTS_TAC `pr : physical_region` THEN
+     EXISTS_TAC `vr : virtual_region` THEN
+     ASM_REWRITE_TAC [];
+     REWRITE_TAC [GSYM is_normal_page_def] THEN
+     MATCH_MP_TAC add_mapping_pts_were_normal THEN
+     EXISTS_TAC `s' : state` THEN
+     EXISTS_TAC `pd : page_directory` THEN
+     EXISTS_TAC `pts : page_table set` THEN
+     EXISTS_TAC `pr : physical_region` THEN
+     EXISTS_TAC `vr : virtual_region` THEN
+     ASM_REWRITE_TAC []];
+    page_cases_tac `status s pd` THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC
+      [is_normal_def; dest_normal_def; is_some_def; is_page_directory_def;
+       dest_page_directory_def]]);;
+
+export_thm add_mapping_pd_not_in_pts;;
+
+let add_mapping_pd_is_page_directory = prove
+  (`!s s' pd pts pr vr.
+      add_mapping pd pts pr vr s s' ==>
+      is_page_directory (status s' pd)`,
+   REPEAT STRIP_TAC THEN
+   SUBGOAL_THEN `~((pd : page_directory) IN pts)` MP_TAC THENL
+   [MATCH_MP_TAC add_mapping_pd_not_in_pts THEN
+    EXISTS_TAC `s : state` THEN
+    EXISTS_TAC `s' : state` THEN
+    EXISTS_TAC `pr : physical_region` THEN
+    EXISTS_TAC `vr : virtual_region` THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   POP_ASSUM (STRIP_ASSUME_TAC o REWRITE_RULE [add_mapping_def]) THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `pd : page_directory`) THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_pd_is_page_directory;;
+
+let add_mapping_pts_mapped_in_pd = prove
+  (`!s s' pd pts pr vr pt.
+      add_mapping pd pts pr vr s s' /\
+      pt IN pts ==>
+      table_mapped_in_directory s' pd pt`,
+   REWRITE_TAC [add_mapping_def] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `pt : page_table`) THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_pts_mapped_in_pd;;
+
+let add_mapping_pts_are_page_tables = prove
+  (`!s s' pd pts pr vr pt.
+      wellformed s' /\
+      add_mapping pd pts pr vr s s' /\
+      pt IN pts ==>
+      is_page_table (status s' pt)`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC table_mapped_in_directory_is_page_table THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC add_mapping_pts_mapped_in_pd THEN
+   EXISTS_TAC `s : state` THEN
+   EXISTS_TAC `pts : page_table set` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_pts_are_page_tables;;
+
+let add_mapping_is_page_table = prove
+  (`!s s' pd pts pr vr ppa.
+      wellformed s /\
+      add_mapping pd pts pr vr s s' /\
+      ~(ppa IN pts) ==>
+      is_page_table (status s ppa) = is_page_table (status s' ppa)`,
+   REPEAT STRIP_TAC THEN
+   ASM_CASES_TAC `ppa = (pd : page_directory)` THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `F` THEN
+    REWRITE_TAC [] THEN
+    CONJ_TAC THENL
+    [MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`]
+          add_mapping_pd_was_page_directory) THEN
+     ASM_REWRITE_TAC [] THEN
+     page_cases_tac `status s pd` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def];
+     MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`]
+          add_mapping_pd_is_page_directory) THEN
+     ASM_REWRITE_TAC [] THEN
+     page_cases_tac `status s' pd` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def]];
+    ALL_TAC] THEN
+   ASM_CASES_TAC `table_mapped_in_directory s pd ppa` THENL
+   [MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `T` THEN
+    REWRITE_TAC [] THEN
+    CONJ_TAC THENL
+    [MATCH_MP_TAC table_mapped_in_directory_is_page_table THEN
+     EXISTS_TAC `pd : page_directory` THEN
+     ASM_REWRITE_TAC [];
+     UNDISCH_TAC `add_mapping pd pts pr vr s s'` THEN
+     REWRITE_TAC [add_mapping_def] THEN
+     STRIP_TAC THEN
+     FIRST_X_ASSUM (MP_TAC o SPEC `ppa : physical_page_address`) THEN
+     ASM_REWRITE_TAC []];
+    ALL_TAC] THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC add_mapping_status THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `pts : page_table set` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_is_page_table;;
+
+let add_mapping_dest_environment = prove
+  (`!s s' pd pts pr vr ppa.
+      wellformed s /\
+      wellformed s' /\
+      add_mapping pd pts pr vr s s' ==>
+      dest_environment (status s ppa) = dest_environment (status s' ppa)`,
+   REPEAT STRIP_TAC THEN
+   ASM_CASES_TAC `ppa = (pd : page_directory)` THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `NONE : page_data option` THEN
+    CONJ_TAC THENL
+    [MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`]
+          add_mapping_pd_was_page_directory) THEN
+     ASM_REWRITE_TAC [] THEN
+     page_cases_tac `status s pd` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_environment_def; dest_environment_def;
+        is_normal_def; dest_normal_def;
+        is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def; option_distinct; option_inj];
+     MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`]
+          add_mapping_pd_is_page_directory) THEN
+     ASM_REWRITE_TAC [] THEN
+     page_cases_tac `status s' pd` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_environment_def; dest_environment_def;
+        is_normal_def; dest_normal_def;
+        is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def; option_distinct; option_inj]];
+    ALL_TAC] THEN
+   ASM_CASES_TAC `(ppa : physical_page_address) IN pts` THENL
+   [MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `NONE : page_data option` THEN
+    CONJ_TAC THENL
+    [MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`;
+           `ppa : physical_page_address`]
+          add_mapping_pts_were_normal) THEN
+     ASM_REWRITE_TAC [is_normal_page_def] THEN
+     page_cases_tac `status s ppa` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_environment_def; dest_environment_def;
+        is_normal_def; dest_normal_def;
+        is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def; option_distinct; option_inj];
+     MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`;
+           `ppa : physical_page_address`]
+          add_mapping_pts_are_page_tables) THEN
+     ASM_REWRITE_TAC [] THEN
+     page_cases_tac `status s' ppa` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_environment_def; dest_environment_def;
+        is_normal_def; dest_normal_def;
+        is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def; option_distinct; option_inj]];
+    ALL_TAC] THEN
+   ASM_CASES_TAC `table_mapped_in_directory s pd ppa` THENL
+   [SUBGOAL_THEN `is_page_table (status s ppa)` ASSUME_TAC THENL
+    [MATCH_MP_TAC table_mapped_in_directory_is_page_table THEN
+     EXISTS_TAC `pd : page_directory` THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `NONE : page_data option` THEN
+    CONJ_TAC THENL
+    [POP_ASSUM MP_TAC THEN
+     page_cases_tac `status s ppa` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_environment_def; dest_environment_def;
+        is_normal_def; dest_normal_def;
+        is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def; option_distinct; option_inj];
+     MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`;
+           `ppa : physical_page_address`]
+          add_mapping_is_page_table) THEN
+       ASM_REWRITE_TAC [] THEN
+     page_cases_tac `status s' ppa` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_environment_def; dest_environment_def;
+        is_normal_def; dest_normal_def;
+        is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def; option_distinct; option_inj]];
+    ALL_TAC] THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC add_mapping_status THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `pts : page_table set` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_dest_environment;;
+
+let add_mapping_is_environment = prove
+  (`!s s' pd pts pr vr ppa.
+      wellformed s /\
+      wellformed s' /\
+      add_mapping pd pts pr vr s s' ==>
+      is_environment (status s ppa) = is_environment (status s' ppa)`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [is_environment_def] THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC add_mapping_dest_environment THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `pts : page_table set` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_is_environment;;
+
+let add_mapping_is_page_directory = prove
+  (`!s s' pd pts pr vr ppa.
+      wellformed s /\
+      wellformed s' /\
+      add_mapping pd pts pr vr s s' ==>
+      is_page_directory (status s ppa) = is_page_directory (status s' ppa)`,
+   REPEAT STRIP_TAC THEN
+   ASM_CASES_TAC `ppa = (pd : page_directory)` THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `T` THEN
+    REWRITE_TAC [] THEN
+    CONJ_TAC THENL
+    [MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`]
+          add_mapping_pd_was_page_directory) THEN
+     ASM_REWRITE_TAC [];
+     MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`]
+          add_mapping_pd_is_page_directory) THEN
+     ASM_REWRITE_TAC []];
+    ALL_TAC] THEN
+   ASM_CASES_TAC `(ppa : physical_page_address) IN pts` THENL
+   [MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `F` THEN
+    REWRITE_TAC [] THEN
+    CONJ_TAC THENL
+    [MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`;
+           `ppa : physical_page_address`]
+          add_mapping_pts_were_normal) THEN
+     ASM_REWRITE_TAC [is_normal_page_def] THEN
+     page_cases_tac `status s ppa` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_normal_def; dest_normal_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def];
+     MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`;
+           `ppa : physical_page_address`]
+          add_mapping_pts_are_page_tables) THEN
+     ASM_REWRITE_TAC [] THEN
+     page_cases_tac `status s' ppa` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def]];
+    ALL_TAC] THEN
+   ASM_CASES_TAC `table_mapped_in_directory s pd ppa` THENL
+   [SUBGOAL_THEN `is_page_table (status s ppa)` ASSUME_TAC THENL
+    [MATCH_MP_TAC table_mapped_in_directory_is_page_table THEN
+     EXISTS_TAC `pd : page_directory` THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `F` THEN
+    REWRITE_TAC [] THEN
+    CONJ_TAC THENL
+    [POP_ASSUM MP_TAC THEN
+     page_cases_tac `status s ppa` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def];
+     POP_ASSUM MP_TAC THEN
+     MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`;
+           `ppa : physical_page_address`]
+          add_mapping_is_page_table) THEN
+       ASM_REWRITE_TAC [] THEN
+       DISCH_THEN SUBST1_TAC THEN
+       page_cases_tac `status s' ppa` THEN
+       STRIP_TAC THEN
+       ASM_REWRITE_TAC
+         [is_page_table_def; dest_page_table_def;
+          is_page_directory_def; dest_page_directory_def;
+          is_some_def]];
+    ALL_TAC] THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC add_mapping_status THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `pts : page_table set` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_is_page_directory;;
+
+let add_mapping_dest_page_directory = prove
+  (`!s s' pd pts pr vr ppa.
+      wellformed s /\
+      wellformed s' /\
+      add_mapping pd pts pr vr s s' /\
+      ~(ppa = pd) ==>
+      dest_page_directory (status s ppa) = dest_page_directory (status s' ppa)`,
+   REPEAT STRIP_TAC THEN
+   ASM_CASES_TAC `is_page_directory (status s ppa)` THENL
+   [AP_TERM_TAC THEN
+    MATCH_MP_TAC add_mapping_status THEN
+    EXISTS_TAC `pd : page_directory` THEN
+    EXISTS_TAC `pts : page_table set` THEN
+    EXISTS_TAC `pr : physical_region` THEN
+    EXISTS_TAC `vr : virtual_region` THEN
+    ASM_REWRITE_TAC [] THEN
+    REPEAT STRIP_TAC THENL
+    [MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`;
+           `ppa : physical_page_address`]
+          add_mapping_pts_were_normal) THEN
+     ASM_REWRITE_TAC [is_normal_page_def] THEN
+     UNDISCH_TAC `is_page_directory (status s ppa)` THEN
+     page_cases_tac `status s ppa` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_normal_def; dest_normal_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def];
+     MP_TAC
+       (SPECL
+          [`s : state`;
+           `pd : page_directory`;
+           `ppa : physical_page_address`]
+          table_mapped_in_directory_is_page_table) THEN
+     ASM_REWRITE_TAC [] THEN
+     UNDISCH_TAC `is_page_directory (status s ppa)` THEN
+     page_cases_tac `status s ppa` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def]];
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `NONE : page_directory_data option` THEN
+    CONJ_TAC THENL
+    [POP_ASSUM MP_TAC THEN
+     REWRITE_TAC [is_page_directory_def] THEN
+     option_cases_tac `dest_page_directory (status s ppa)` THENL
+     [DISCH_THEN SUBST1_TAC THEN
+      REWRITE_TAC [];
+      DISCH_THEN (X_CHOOSE_THEN `pdd : page_directory_data` SUBST1_TAC) THEN
+      REWRITE_TAC [is_some_def]];
+     POP_ASSUM MP_TAC THEN
+     MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`;
+           `ppa : physical_page_address`]
+          add_mapping_is_page_directory) THEN
+     ASM_REWRITE_TAC [] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     REWRITE_TAC [is_page_directory_def] THEN
+     option_cases_tac `dest_page_directory (status s' ppa)` THENL
+     [DISCH_THEN SUBST1_TAC THEN
+      REWRITE_TAC [];
+      DISCH_THEN (X_CHOOSE_THEN `pdd : page_directory_data` SUBST1_TAC) THEN
+      REWRITE_TAC [is_some_def]]]]);;
+
+export_thm add_mapping_dest_page_directory;;
+
+let add_mapping_dest_page_table = prove
+  (`!s s' pd pts pr vr ppa.
+      add_mapping pd pts pr vr s s' /\
+      ~(ppa IN pts) /\
+      ~table_mapped_in_directory s pd ppa ==>
+      dest_page_table (status s ppa) = dest_page_table (status s' ppa)`,
+   REPEAT STRIP_TAC THEN
+   ASM_CASES_TAC `ppa = (pd : page_directory)` THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `NONE : page_table_data option` THEN
+    CONJ_TAC THENL
+    [MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`]
+          add_mapping_pd_was_page_directory) THEN
+     ASM_REWRITE_TAC [] THEN
+     page_cases_tac `status s pd` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def];
+     MP_TAC
+       (SPECL
+          [`s : state`;
+           `s' : state`;
+           `pd : page_directory`;
+           `pts : page_table set`;
+           `pr : physical_region`;
+           `vr : virtual_region`]
+          add_mapping_pd_is_page_directory) THEN
+     ASM_REWRITE_TAC [] THEN
+     page_cases_tac `status s' pd` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def]];
+    ALL_TAC] THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC add_mapping_status THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `pts : page_table set` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_dest_page_table;;
+
+let add_mapping_translate_page_pd = prove
+  (`!s s' pd pts pr vr vpa.
+      add_mapping pd pts pr vr s s' /\
+      ~member_virtual_region vpa vr ==>
+      translate_page s pd vpa = translate_page s' pd vpa`,
+   REWRITE_TAC [add_mapping_def] THEN
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `vpa : virtual_page_address`) THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_translate_page_pd;;
+
+let add_mapping_translate_page_reference = prove
+  (`!s s' pd pts pr vr.
+      wellformed s /\
+      wellformed s' /\
+      add_mapping pd pts pr vr s s' ==>
+      translate_page s (reference s) = translate_page s' (reference s')`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   X_GEN_TAC `vpa : virtual_page_address` THEN
+   ASM_CASES_TAC `is_kernel_page_address vpa` THENL
+   [MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `translate_page s pd vpa` THEN
+    CONJ_TAC THENL
+    [MATCH_MP_TAC EQ_SYM THEN
+     MATCH_MP_TAC page_directories_contain_reference THEN
+     ASM_REWRITE_TAC [] THEN
+     MATCH_MP_TAC add_mapping_pd_was_page_directory THEN
+     EXISTS_TAC `s' : state` THEN
+     EXISTS_TAC `pts : page_table set` THEN
+     EXISTS_TAC `pr : physical_region` THEN
+     EXISTS_TAC `vr : virtual_region` THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `translate_page s' pd vpa` THEN
+    CONJ_TAC THENL
+    [MATCH_MP_TAC add_mapping_translate_page_pd THEN
+     EXISTS_TAC `pts : page_table set` THEN
+     EXISTS_TAC `pr : physical_region` THEN
+     EXISTS_TAC `vr : virtual_region` THEN
+     ASM_REWRITE_TAC [] THEN
+     STRIP_TAC THEN
+     UNDISCH_TAC `is_kernel_page_address vpa` THEN
+     REWRITE_TAC [GSYM is_user_page_address_def] THEN
+     MATCH_MP_TAC is_user_region THEN
+     EXISTS_TAC `vr : virtual_region` THEN
+     ASM_REWRITE_TAC [] THEN
+     MATCH_MP_TAC add_mapping_is_user_region THEN
+     EXISTS_TAC `s : state` THEN
+     EXISTS_TAC `s' : state` THEN
+     EXISTS_TAC `pd : page_directory` THEN
+     EXISTS_TAC `pts : page_table set` THEN
+     EXISTS_TAC `pr : physical_region` THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    MATCH_MP_TAC page_directories_contain_reference THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC add_mapping_pd_is_page_directory THEN
+    EXISTS_TAC `s : state` THEN
+    EXISTS_TAC `pts : page_table set` THEN
+    EXISTS_TAC `pr : physical_region` THEN
+    EXISTS_TAC `vr : virtual_region` THEN
+    ASM_REWRITE_TAC [];
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `NONE : physical_page_address option` THEN
+    CONJ_TAC THENL
+    [MP_TAC
+       (SPECL
+         [`s : state`;
+          `vpa : virtual_page_address`]
+         reference_maps_kernel_addresses) THEN
+     ASM_REWRITE_TAC [mapped_page_def] THEN
+     option_cases_tac `translate_page s (reference s) vpa` THENL
+     [DISCH_THEN SUBST1_TAC THEN
+      REWRITE_TAC [];
+      STRIP_TAC THEN
+      ASM_REWRITE_TAC [is_some_def]];
+     MP_TAC
+       (SPECL
+         [`s' : state`;
+          `vpa : virtual_page_address`]
+         reference_maps_kernel_addresses) THEN
+     ASM_REWRITE_TAC [mapped_page_def] THEN
+     option_cases_tac `translate_page s' (reference s') vpa` THENL
+     [DISCH_THEN SUBST1_TAC THEN
+      REWRITE_TAC [];
+      STRIP_TAC THEN
+      ASM_REWRITE_TAC [is_some_def]]]]);;
+
+export_thm add_mapping_translate_page_reference;;
+
+let add_mapping_translate_kernel_page = prove
+  (`!s s' pd pts pr vr pd' vpa.
+      wellformed s /\
+      wellformed s' /\
+      add_mapping pd pts pr vr s s' /\
+      is_kernel_page_address vpa ==>
+      translate_page s pd' vpa = translate_page s' pd' vpa`,
+   REPEAT STRIP_TAC THEN
+   ASM_CASES_TAC `is_page_directory (status s pd')` THENL
+   [MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `translate_page s (reference s) vpa` THEN
+    CONJ_TAC THENL
+    [MATCH_MP_TAC page_directories_contain_reference THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `translate_page s' (reference s') vpa` THEN
+    CONJ_TAC THENL
+    [AP_THM_TAC THEN
+     MATCH_MP_TAC add_mapping_translate_page_reference THEN
+     EXISTS_TAC `pd : page_directory` THEN
+     EXISTS_TAC `pts : page_table set` THEN
+     EXISTS_TAC `pr : physical_region` THEN
+     EXISTS_TAC `vr : virtual_region` THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    MATCH_MP_TAC page_directories_contain_reference THEN
+    ASM_REWRITE_TAC [] THEN
+    MP_TAC
+      (SPECL
+         [`s : state`;
+          `s' : state`;
+          `pd : page_directory`;
+          `pts : page_table set`;
+          `pr : physical_region`;
+          `vr : virtual_region`;
+          `pd' : page_directory`]
+         add_mapping_is_page_directory) THEN
+    ASM_REWRITE_TAC [];
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `NONE : physical_page_address option` THEN
+    CONJ_TAC THENL
+    [MATCH_MP_TAC translate_page_is_not_page_directory THEN
+     ASM_REWRITE_TAC [];
+     MATCH_MP_TAC EQ_SYM THEN
+     MATCH_MP_TAC translate_page_is_not_page_directory THEN
+     POP_ASSUM MP_TAC THEN
+     MATCH_MP_TAC EQ_IMP THEN
+     AP_TERM_TAC THEN
+     MATCH_MP_TAC add_mapping_is_page_directory THEN
+     EXISTS_TAC `pd : page_directory` THEN
+     EXISTS_TAC `pts : page_table set` THEN
+     EXISTS_TAC `pr : physical_region` THEN
+     EXISTS_TAC `vr : virtual_region` THEN
+     ASM_REWRITE_TAC []]]);;
+
+export_thm add_mapping_translate_kernel_page;;
+
+let add_mapping_translate_page = prove
+  (`!s s' pd pts pr vr pd'.
+      wellformed s /\
+      wellformed s' /\
+      add_mapping pd pts pr vr s s' /\
+      ~(pd' = pd) ==>
+      translate_page s pd' = translate_page s' pd'`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM] THEN
+   X_GEN_TAC `vpa : virtual_page_address` THEN
+   ASM_CASES_TAC `is_kernel_page_address vpa` THENL
+   [MATCH_MP_TAC add_mapping_translate_kernel_page THEN
+    EXISTS_TAC `pd : page_directory` THEN
+    EXISTS_TAC `pts : page_table set` THEN
+    EXISTS_TAC `pr : physical_region` THEN
+    EXISTS_TAC `vr : virtual_region` THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   REWRITE_TAC [translate_page_def] THEN
+   MP_TAC
+     (SPECL
+        [`s : state`;
+         `s' : state`;
+         `pd : page_directory`;
+         `pts : page_table set`;
+         `pr : physical_region`;
+         `vr : virtual_region`;
+         `pd' : physical_page_address`]
+        add_mapping_dest_page_directory) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   option_cases_tac `dest_page_directory (status s pd')` THENL
+   [DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [case_option_def];
+    ALL_TAC] THEN
+   DISCH_THEN (X_CHOOSE_THEN `pdd : page_directory_data` ASSUME_TAC) THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   virtual_page_address_cases_tac `vpa : virtual_page_address` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [virtual_page_address_tybij] THEN
+   REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+   option_cases_tac `dest_page_directory_data pdd vsa` THENL
+   [DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [case_option_def];
+    ALL_TAC] THEN
+   DISCH_THEN (X_CHOOSE_THEN `pde : page_directory_entry` ASSUME_TAC) THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   page_directory_entry_cases_tac `pde : page_directory_entry` THENL
+   [STRIP_TAC THEN
+    ASM_REWRITE_TAC [case_page_directory_entry_def];
+    ALL_TAC] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_page_directory_entry_def] THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC add_mapping_dest_page_table THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `pts : page_table set` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC [] THEN
+   REPEAT STRIP_TAC THENL
+   [MP_TAC
+      (SPECL
+         [`s : state`;
+          `s' : state`;
+          `pd : page_directory`;
+          `pts : page_table set`;
+          `pr : physical_region`;
+          `vr : virtual_region`;
+          `pt : page_table`]
+         add_mapping_pts_were_normal) THEN
+    ASM_REWRITE_TAC [is_normal_page_def] THEN
+    MP_TAC
+      (SPECL
+         [`s : state`;
+          `pd' : page_directory`;
+          `pdd : page_directory_data`;
+          `vsa : virtual_superpage_address`;
+          `pt : page_table`]
+         table_pointers_are_page_tables) THEN
+    ANTS_TAC THENL
+    [ASM_REWRITE_TAC [] THEN
+     UNDISCH_TAC `dest_page_directory (status s pd') = SOME pdd` THEN
+     page_cases_tac `status s pd'` THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC
+       [is_page_table_def; dest_page_table_def;
+        is_page_directory_def; dest_page_directory_def;
+        is_some_def; option_distinct; option_inj] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     REFL_TAC;
+     ALL_TAC] THEN
+    page_cases_tac `status s pt` THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC
+      [is_environment_def; dest_environment_def;
+       is_normal_def; dest_normal_def;
+       is_page_table_def; dest_page_table_def;
+       is_page_directory_def; dest_page_directory_def;
+       is_some_def; option_distinct; option_inj];
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [table_mapped_in_directory] THEN
+    STRIP_TAC THEN
+    MP_TAC
+      (SPECL
+         [`s : state`;
+          `pt : page_table`;
+          `pd' : page_directory`;
+          `pd : page_directory`;
+          `pdd : page_directory_data`;
+          `pdd' : page_directory_data`;
+          `vsa : virtual_superpage_address`;
+          `pdi : virtual_superpage_address`]
+         no_shared_page_tables) THEN
+    ASM_REWRITE_TAC [dest_page_directory_def] THEN
+    STRIP_TAC THEN
+    FIRST_X_ASSUM (SUBST_VAR_TAC o SYM) THEN
+    UNDISCH_TAC `~is_kernel_page_address vpa` THEN
+    ASM_REWRITE_TAC
+      [is_kernel_page_address_def; virtual_page_address_tybij;
+       LET_DEF; LET_END_DEF]]);;
+
+export_thm add_mapping_translate_page;;
+
+let add_mapping_translate_kernel_page_cr3 = prove
+  (`!s s' pd pts pr vr vpa.
+      wellformed s /\
+      wellformed s' /\
+      add_mapping pd pts pr vr s s' /\
+      is_kernel_page_address vpa ==>
+      translate_page s (cr3 s) vpa = translate_page s' (cr3 s') vpa`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`s : state`;
+         `s' : state`;
+         `pd : page_directory`;
+         `pts : page_table set`;
+         `pr : physical_region`;
+         `vr : virtual_region`]
+        add_mapping_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   MATCH_MP_TAC add_mapping_translate_kernel_page THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `pts : page_table set` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_translate_kernel_page_cr3;;
+
 (* add_mapping_h *)
 
 let add_mapping_h_cr3 = prove
@@ -2629,23 +3616,108 @@ let add_mapping_h_cr3 = prove
 
 export_thm add_mapping_h_cr3;;
 
-(* remove_mapping_h *)
-
-(***
-let remove_mapping_h_cr3 = prove
-  (`!s s' pd vr. remove_mapping_h pd vr s s' ==> cr3 s = cr3 s'`,
-   REWRITE_TAC [remove_mapping_h_def] THEN
+let add_mapping_h_is_environment = prove
+  (`!s s' pd pts pr vr ppa.
+      wellformed s /\
+      wellformed s' /\
+      add_mapping_h pd pts pr vr s s' ==>
+      is_environment (status s ppa) = is_environment (status s' ppa)`,
+   REWRITE_TAC [add_mapping_h_def] THEN
    REPEAT STRIP_TAC THEN
-   MATCH_MP_TAC EQ_SYM THEN
-   MATCH_MP_TAC add_mapping_cr3 THEN
+   MATCH_MP_TAC add_mapping_is_environment THEN
    EXISTS_TAC `pd : page_directory` THEN
    EXISTS_TAC `set_of_list (take n (pts : page_table list))` THEN
    EXISTS_TAC `pr : physical_region` THEN
    EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_h_is_environment;;
+
+let add_mapping_h_translate_kernel_page = prove
+  (`!s s' pd pts pr vr pd' vpa.
+      wellformed s /\
+      wellformed s' /\
+      add_mapping_h pd pts pr vr s s' /\
+      is_kernel_page_address vpa ==>
+      translate_page s pd' vpa = translate_page s' pd' vpa`,
+   REWRITE_TAC [add_mapping_h_def] THEN
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC add_mapping_translate_kernel_page THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `set_of_list (take n (pts : page_table list))` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_h_translate_kernel_page;;
+
+let add_mapping_h_translate_kernel_page_cr3 = prove
+  (`!s s' pd pts pr vr vpa.
+      wellformed s /\
+      wellformed s' /\
+      add_mapping_h pd pts pr vr s s' /\
+      is_kernel_page_address vpa ==>
+      translate_page s (cr3 s) vpa = translate_page s' (cr3 s') vpa`,
+   REWRITE_TAC [add_mapping_h_def] THEN
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC add_mapping_translate_kernel_page_cr3 THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `set_of_list (take n (pts : page_table list))` THEN
+   EXISTS_TAC `pr : physical_region` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm add_mapping_h_translate_kernel_page_cr3;;
+
+(* remove_mapping_h *)
+
+let remove_mapping_h = prove
+  (`!s s' pd vr.
+      remove_mapping_h pd vr s s' <=>
+      ?prs.
+        translate_page s pd (virtual_region_start vr) = SOME prs /\
+        let pr = PhysicalRegion prs (virtual_region_length vr) in
+        let pts = { ppa | is_page_table (status s ppa) /\
+                          status s' ppa = Normal zero_page_data } in
+        add_mapping pd pts pr vr s' s`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [remove_mapping_h_def] THEN
+   option_cases_tac `translate_page s pd (virtual_region_start vr)` THENL
+   [STRIP_TAC THEN
+    ASM_REWRITE_TAC [case_option_def; option_distinct];
+    ALL_TAC] THEN
+   DISCH_THEN (X_CHOOSE_THEN `prs : physical_page_address` ASSUME_TAC) THEN
+   ASM_REWRITE_TAC [case_option_def; option_inj; UNWIND_THM1]);;
+
+export_thm remove_mapping_h;;
+
+let remove_mapping_h_was_mapped = prove
+  (`!s s' pd vr.
+      remove_mapping_h pd vr s s' ==>
+      ?ppa. translate_page s pd (virtual_region_start vr) = SOME ppa`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [remove_mapping_h] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `prs : physical_page_address` THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm remove_mapping_h_was_mapped;;
+
+let remove_mapping_h_cr3 = prove
+  (`!s s' pd vr. remove_mapping_h pd vr s s' ==> cr3 s = cr3 s'`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [remove_mapping_h; LET_DEF; LET_END_DEF] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC add_mapping_cr3 THEN
+   EXISTS_TAC `pd : page_directory` THEN
+   EXISTS_TAC `{ ppa | is_page_table (status s ppa) /\
+                       status s' ppa = Normal zero_page_data }` THEN
+   EXISTS_TAC `PhysicalRegion prs (virtual_region_length vr)` THEN
+   EXISTS_TAC `vr : virtual_region` THEN
    FIRST_ASSUM ACCEPT_TAC);;
 
 export_thm remove_mapping_h_cr3;;
-***)
 
 (* add_kernel_mapping_h *)
 
@@ -3730,6 +4802,8 @@ let local_respect_free_page_directory_h_view_e = prove
 (***
 let local_respect_add_mapping_h_view_e = prove
   (`!s s' pd pts pr vr.
+      wellformed s /\
+      wellformed s' /\
       add_mapping_h pd pts pr vr s s' ==>
       view EDomain s = view EDomain s'`,
    REPEAT STRIP_TAC THEN
@@ -3738,29 +4812,46 @@ let local_respect_add_mapping_h_view_e = prove
       translate_to_observable_pages_def] THEN
    AP_TERM_TAC THEN
    ABS_TAC THEN
+   ASM_CASES_TAC `is_kernel_page_address vpa` THENL
+   [MP_TAC
+      (SPECL
+         [`s : state`;
+          `s' : state`;
+          `pd : page_directory`;
+          `pts : page_table list`;
+          `pr : physical_region`;
+          `vr : virtual_region`;
+          `vpa : virtual_page_address`]
+         add_mapping_h_translate_kernel_page_cr3) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (SUBST1_TAC o SYM) THEN
+    option_cases_tac `translate_page s (cr3 s) vpa` THENL
+    [DISCH_THEN SUBST1_TAC THEN
+     REWRITE_TAC [case_option_def];
+     ALL_TAC] THEN
+    DISCH_THEN (X_CHOOSE_THEN `ppa : physical_page_address` ASSUME_TAC) THEN
+    ASM_REWRITE_TAC [case_option_def] THEN
+    MP_TAC
+      (SPECL
+         [`s : state`;
+          `s' : state`;
+          `pd : page_directory`;
+          `pts : page_table list`;
+          `pr : physical_region`;
+          `vr : virtual_region`;
+          `ppa : physical_page_address`]
+         add_mapping_h_is_environment) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (SUBST1_TAC o SYM) THEN
+    ASM_CASES_TAC `is_environment (status s ppa)` THENL
+    [ASM_REWRITE_TAC [case_option_def]
+     ***
 
 
-   REPEAT STRIP_TAC THEN
-   REWRITE_TAC [view_e_def; e_view_inj] THEN
-   ABS_TAC THEN
-   MP_TAC
-     (SPECL [`s : state`; `s' : state`; `pd : page_directory`]
-      free_page_directory_h_translate_page_cr3) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   ABS_TAC THEN
-   MP_TAC
-     (SPECL [`s : state`; `s' : state`; `pd : page_directory`]
-      free_page_directory_h_dest_environment) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   ABS_TAC THEN
-   AP_TERM_TAC THEN
 
+***)
+
+(***
 let local_respect_remove_mapping_h_view_e = prove
   (`!s s' pd vr.
       remove_mapping_h pd vr s s' ==>
