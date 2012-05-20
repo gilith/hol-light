@@ -4,11 +4,11 @@
 
 logfile "option-thm";;
 
-let option_distinct = distinctness "option";;
+let option_distinct = prove_constructors_distinct option_RECURSION;;
 
 export_thm option_distinct;;
 
-let option_inj = injectivity "option";;
+let option_inj = prove_constructors_injective option_RECURSION;;
 
 export_thm option_inj;;
 

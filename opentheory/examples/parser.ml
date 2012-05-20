@@ -4,7 +4,7 @@
 
 logfile "parser-stream-def";;
 
-let pstream_induct,pstream_recursion = define_type
+let (pstream_induct,pstream_recursion) = define_type
     "pstream = ErrorPstream
              | EofPstream
              | ConsPstream A pstream";;
@@ -111,7 +111,7 @@ export_thm pstream_cases;;
 let (pstream_distinct_error_eof,
      pstream_distinct_error_cons,
      pstream_distinct_eof_cons) =
-    CONJ_TRIPLE (distinctness "pstream");;
+    CONJ_TRIPLE (prove_constructors_distinct pstream_recursion);;
 
 export_thm pstream_distinct_error_eof;;
 export_thm pstream_distinct_error_cons;;
@@ -121,7 +121,7 @@ let pstream_distinct =
     CONJ pstream_distinct_error_eof
       (CONJ pstream_distinct_error_cons pstream_distinct_eof_cons);;
 
-let pstream_inj = injectivity "pstream";;
+let pstream_inj = prove_constructors_injective pstream_recursion;;
 
 export_thm pstream_inj;;
 

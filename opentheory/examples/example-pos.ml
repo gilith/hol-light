@@ -407,9 +407,9 @@ let LEP_ADDP_TAC =
 let N_INDUCT,N_RECURSION = define_type
   "N = Neg P | Zero | Pos P";;
 
-let N_DISTINCT = distinctness "N";;
+let N_DISTINCT = prove_constructors_distinct N_RECURSION;;
 
-let N_INJECTIVE = injectivity "N";;
+let N_INJECTIVE = prove_constructors_injective N_RECURSION;;
 
 let inject_def = define
     `inject x = Pos x`;;
