@@ -5,6 +5,34 @@
 (*                                                                           *)
 (* A formalization of Rebekah Leslie's PhD thesis:                           *)
 (*   http://leslier.com/thesis.pdf                                           *)
+(*                                                                           *)
+(* Complete:                                                                 *)
+(*                                                                           *)
+(* 1. A model of the machine state relevant to operating system memory       *)
+(*    safety, including a notion of wellformed states.                       *)
+(*                                                                           *)
+(* 2. A definition of the 4 domains relevant to the memory-safe H interface  *)
+(*    for low-level memory operations in a Haskell operating system:         *)
+(*      E: Haskell environment                                               *)
+(*      H: H interface                                                       *)
+(*      K: Operating system kernel                                           *)
+(*      U: User processes                                                    *)
+(*                                                                           *)
+(* 3. A model of the actions that domains can perform, defined in terms of   *)
+(*    their effect on wellformed states.                                     *)
+(*                                                                           *)
+(* 4. A definition of operating system memory safety as a noninterference    *)
+(*    policy between the domains.                                            *)
+(*                                                                           *)
+(* In progress:                                                              *)
+(*                                                                           *)
+(* 1. A definition of the view of the machine state for each domain.         *)
+(*                                                                           *)
+(* 2. A refinement of the actions that are deterministic with respect to the *)
+(*    domain views.                                                          *)
+(*                                                                           *)
+(* 3. A proof that the refined actions satisfy Rushby's "unwinding           *)
+(*    conditions" for the system noninterference policy.                     *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
@@ -4945,6 +4973,148 @@ let write_k_is_environment = prove
    FIRST_ASSUM ACCEPT_TAC);;
 
 export_thm write_k_is_environment;;
+
+let write_k_status_update = prove
+  (`!s s' va b.
+      write_k va b s s' ==>
+      ?vpa i ppa d.
+        va = mk_virtual_address (vpa,i) /\
+        translate_page s (cr3 s) vpa = SOME ppa /\
+        status s ppa = Normal d /\
+        !ppa'.
+           status s' ppa' =
+             if ppa' = ppa then Normal (update_page_data i b d)
+             else status s ppa'`,
+   REPEAT GEN_TAC THEN
+   virtual_address_cases_tac `va : virtual_address` THEN
+   REPEAT STRIP_TAC THEN
+   EXISTS_TAC `vpa : virtual_page_address` THEN
+   EXISTS_TAC `i : page_offset` THEN
+   FIRST_ASSUM (MP_TAC o CONV_RULE (REWR_CONV write_k_def)) THEN
+   DISCH_THEN (MP_TAC o CONJUNCT2 o REWRITE_RULE [CONJ_ASSOC]) THEN
+   ASM_REWRITE_TAC [translation_def; virtual_address_tybij] THEN
+   REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+   option_cases_tac `translate_page s (cr3 s) vpa` THENL
+   [STRIP_TAC THEN
+    ASM_REWRITE_TAC [case_option_def];
+    ALL_TAC] THEN
+   DISCH_THEN (X_CHOOSE_THEN `ppa : physical_page_address` ASSUME_TAC) THEN
+   ASM_REWRITE_TAC [case_option_def; physical_address_tybij] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `ppa : physical_page_address` THEN
+   FIRST_ASSUM (MP_TAC o SPEC `ppa : physical_page_address`) THEN
+   REWRITE_TAC [] THEN
+   page_cases_tac `status s ppa` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [is_environment_def; dest_environment_def;
+      is_normal_def; dest_normal_def;
+      is_page_table_def; dest_page_table_def;
+      is_page_directory_def; dest_page_directory_def;
+      is_some_def; option_distinct; option_inj; case_option_def] THEN
+   page_cases_tac `status s' ppa` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [is_environment_def; dest_environment_def;
+      is_normal_def; dest_normal_def;
+      is_page_table_def; dest_page_table_def;
+      is_page_directory_def; dest_page_directory_def;
+      is_some_def; option_distinct; option_inj; case_option_def] THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   EXISTS_TAC `d : page_data` THEN
+   REWRITE_TAC [] THEN
+   X_GEN_TAC `ppa' : physical_page_address` THEN
+   COND_CASES_TAC THENL
+   [ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `ppa' : physical_page_address`) THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_ACCEPT_TAC EQ_SYM);;
+
+export_thm write_k_status_update;;
+
+let write_k_view_k = prove
+  (`!va b. ?f. !s s'.
+      wellformed s /\
+      wellformed s' /\
+      write_k va b s s' ==>
+      view KDomain s' = f (view KDomain s)`,
+   REPEAT STRIP_TAC THEN
+   REPEAT GEN_TAC THEN
+   virtual_address_cases_tac `va : virtual_address` THEN
+   STRIP_TAC THEN
+   REWRITE_TAC [view_def] THEN
+   MP_TAC
+     (ISPEC
+        `\f g.
+           KView
+             (mk_observable_pages
+                (\vpa'.
+                   case_option
+                     NONE
+                     (\ (d,vpas).
+                        SOME
+                          ((if vpa IN vpas then update_page_data i b d else d),
+                           vpas))
+                     (dest_observable_pages f vpa'))) g`
+        view_k_recursion) THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `fn : view -> view` THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (CONV_TAC o RAND_CONV o REWR_CONV) THEN
+   REWRITE_TAC
+     [view_inj; mk_observable_pages_k_def; mk_region_handles_k_def;
+      translate_to_observable_pages_def;
+      mk_observable_pages_inj; observable_pages_tybij] THEN
+   CONJ_TAC THENL
+   [ALL_TAC;
+    MATCH_MP_TAC EQ_SYM THEN
+    MATCH_MP_TAC write_k_regions THEN
+    EXISTS_TAC `va : virtual_address` THEN
+    EXISTS_TAC `b : byte` THEN
+    FIRST_ASSUM ACCEPT_TAC] THEN
+   X_GEN_TAC `vpa' : virtual_page_address` THEN
+   MP_TAC
+     (SPECL [`s : state`; `s' : state`; `va : virtual_address`; `b : byte`]
+      write_k_translate_page_cr3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   MP_TAC
+     (SPECL
+        [`s : state`;
+         `s' : state`;
+         `va : virtual_address`;
+         `b : byte`]
+      write_k_status_update) THEN
+   ASM_REWRITE_TAC [mk_virtual_address_inj; PAIR_EQ] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM (SUBST_VAR_TAC o SYM) THEN
+   FIRST_X_ASSUM (SUBST_VAR_TAC o SYM) THEN
+   ASM_REWRITE_TAC [] THEN
+   option_cases_tac `translate_page s (cr3 s) vpa'` THENL
+   [DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [case_option_def];
+    ALL_TAC] THEN
+   DISCH_THEN (X_CHOOSE_THEN `ppa' : physical_page_address` ASSUME_TAC) THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   ASM_CASES_TAC `ppa' = (ppa : physical_page_address)` THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC
+      [is_normal_def; dest_normal_def; is_some_def;
+       case_option_def; dest_environment_or_normal_def; IN_ELIM;
+       option_inj; PAIR_EQ; EXTENSION];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   page_cases_tac `status s ppa'` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC
+     [is_environment_def; dest_environment_def;
+      is_normal_def; dest_normal_def; dest_environment_or_normal_def;
+      is_page_table_def; dest_page_table_def; IN_ELIM;
+      is_page_directory_def; dest_page_directory_def;
+      is_some_def; option_distinct; option_inj; case_option_def]);;
+
+export_thm write_k_view_k;;
 
 (* write_u *)
 
