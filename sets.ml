@@ -2556,6 +2556,19 @@ let FINITE_SUBSET = prove
 
 export_thm FINITE_SUBSET;;
 
+let INFINITE_SUPERSET = prove
+ (`!(s : A set) t. INFINITE s /\ s SUBSET t ==> INFINITE t`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [INFINITE] THEN
+  REPEAT STRIP_TAC THEN
+  UNDISCH_TAC `~FINITE (s : A set)` THEN
+  REWRITE_TAC [] THEN
+  MATCH_MP_TAC FINITE_SUBSET THEN
+  EXISTS_TAC `t : A set` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm INFINITE_SUPERSET;;
+
 let FINITE_UNION_IMP = prove
  (`!(s:A set) t. FINITE s /\ FINITE t ==> FINITE (s UNION t)`,
   REWRITE_TAC[IMP_CONJ] THEN REWRITE_TAC[RIGHT_FORALL_IMP_THM] THEN
@@ -2999,10 +3012,6 @@ let FINITE_INDUCT_STRONG = prove
    ASM_REWRITE_TAC []]);;
 
 export_thm FINITE_INDUCT_STRONG;;
-
-let INFINITE_SUPERSET = prove
- (`!s t. INFINITE s /\ s SUBSET t ==> INFINITE t`,
-  REWRITE_TAC[INFINITE] THEN MESON_TAC[FINITE_SUBSET]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Recursion over finite sets; based on Ching-Tsun's code (archive 713).     *)
