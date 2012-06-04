@@ -5,6 +5,7 @@
 (*                                                                           *)
 (*            (c) Copyright, University of Cambridge 1998                    *)
 (*              (c) Copyright, John Harrison 1998-2007                       *)
+(*                 (c) Copyright, Marco Maggesi 2012                         *)
 (* ========================================================================= *)
 
 needs "calc_num.ml";;
@@ -2999,6 +3000,10 @@ let FINITE_INDUCT_STRONG = prove
 
 export_thm FINITE_INDUCT_STRONG;;
 
+let INFINITE_SUPERSET = prove
+ (`!s t. INFINITE s /\ s SUBSET t ==> INFINITE t`,
+  REWRITE_TAC[INFINITE] THEN MESON_TAC[FINITE_SUBSET]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Recursion over finite sets; based on Ching-Tsun's code (archive 713).     *)
 (* ------------------------------------------------------------------------- *)
@@ -4888,77 +4893,6 @@ let CARD_NUMSEG_LE = prove
 
 export_thm CARD_NUMSEG_LE;;
 
-(***
-(* ------------------------------------------------------------------------- *)
-(* Non-trivial intervals of reals are infinite.                              *)
-(* ------------------------------------------------------------------------- *)
-
-let FINITE_REAL_INTERVAL = prove
- (`(!a. ~FINITE {x:real | a < x}) /\
-   (!a. ~FINITE {x:real | a <= x}) /\
-   (!b. ~FINITE {x:real | x < b}) /\
-   (!b. ~FINITE {x:real | x <= b}) /\
-   (!a b. FINITE {x:real | a < x /\ x < b} <=> b <= a) /\
-   (!a b. FINITE {x:real | a <= x /\ x < b} <=> b <= a) /\
-   (!a b. FINITE {x:real | a < x /\ x <= b} <=> b <= a) /\
-   (!a b. FINITE {x:real | a <= x /\ x <= b} <=> b <= a)`,
-  SUBGOAL_THEN `!a b. FINITE {x:real | a < x /\ x < b} <=> b <= a`
-  ASSUME_TAC THENL
-   [REPEAT GEN_TAC THEN REWRITE_TAC[GSYM REAL_NOT_LT] THEN
-    ASM_CASES_TAC `a:real < b` THEN
-    ASM_SIMP_TAC[REAL_ARITH `~(a:real < b) ==> ~(a < x /\ x < b)`] THEN
-    REWRITE_TAC[EMPTY_GSPEC; FINITE_EMPTY] THEN
-    DISCH_THEN(MP_TAC o MATCH_MP (REWRITE_RULE[IMP_CONJ] FINITE_SUBSET)) THEN
-    DISCH_THEN(MP_TAC o SPEC `IMAGE (\n. a + (b - a) / (&n + &2)) (:num)`) THEN
-    REWRITE_TAC[SUBSET; FORALL_IN_IMAGE; IN_UNIV; IN_ELIM_THM] THEN
-    SIMP_TAC[REAL_LT_ADDR; REAL_ARITH `a + x / y < b <=> x / y < b - a`] THEN
-    ASM_SIMP_TAC[REAL_LT_DIV; REAL_SUB_LT; REAL_LT_LDIV_EQ; NOT_IMP;
-                 REAL_ARITH `&0:real < &n + &2`] THEN
-    REWRITE_TAC[REAL_ARITH `x:real < x * (n + &2) <=> &0 < x * (n + &1)`] THEN
-    ASM_SIMP_TAC[REAL_SUB_LT; REAL_LT_MUL; REAL_ARITH `&0:real < &n + &1`] THEN
-    MP_TAC num_INFINITE THEN REWRITE_TAC[INFINITE] THEN
-    MATCH_MP_TAC EQ_IMP THEN AP_TERM_TAC THEN CONV_TAC SYM_CONV THEN
-    MATCH_MP_TAC FINITE_IMAGE_INJ_EQ THEN
-    ASM_SIMP_TAC[REAL_OF_NUM_EQ; REAL_FIELD
-     `a < b ==> (a + (b - a) / (&n + &2) = a + (b - a) / (&m + &2) <=>
-                 &n:real = &m)`];
-    ALL_TAC] THEN
-  ASM_REWRITE_TAC[] THEN REPEAT CONJ_TAC THEN REPEAT GEN_TAC THENL
-   [DISCH_THEN(MP_TAC o SPEC `{x:real | a < x /\ x < a + &1}` o
-        MATCH_MP(REWRITE_RULE[IMP_CONJ] FINITE_SUBSET)) THEN
-    ASM_REWRITE_TAC[SUBSET; IN_ELIM_THM] THEN REAL_ARITH_TAC;
-    DISCH_THEN(MP_TAC o SPEC `{x:real | a < x /\ x < a + &1}` o
-        MATCH_MP(REWRITE_RULE[IMP_CONJ] FINITE_SUBSET)) THEN
-    ASM_REWRITE_TAC[SUBSET; IN_ELIM_THM] THEN REAL_ARITH_TAC;
-    DISCH_THEN(MP_TAC o SPEC `{x:real | b - &1 < x /\ x < b}` o
-        MATCH_MP(REWRITE_RULE[IMP_CONJ] FINITE_SUBSET)) THEN
-    ASM_REWRITE_TAC[SUBSET; IN_ELIM_THM] THEN REAL_ARITH_TAC;
-    DISCH_THEN(MP_TAC o SPEC `{x:real | b - &1 < x /\ x < b}` o
-        MATCH_MP(REWRITE_RULE[IMP_CONJ] FINITE_SUBSET)) THEN
-    ASM_REWRITE_TAC[SUBSET; IN_ELIM_THM] THEN REAL_ARITH_TAC;
-    REWRITE_TAC[REAL_ARITH
-     `a:real <= x /\ x < b <=> (a < x /\ x < b) \/ ~(b <= a) /\ x = a`];
-    REWRITE_TAC[REAL_ARITH
-     `a:real < x /\ x <= b <=> (a < x /\ x < b) \/ ~(b <= a) /\ x = b`];
-    ASM_CASES_TAC `b:real = a` THEN
-    ASM_SIMP_TAC[REAL_LE_ANTISYM; REAL_LE_REFL; SING_GSPEC; FINITE_SING] THEN
-    ASM_SIMP_TAC[REAL_ARITH
-     `~(b:real = a) ==>
-        (a <= x /\ x <= b <=> (a < x /\ x < b) \/ ~(b <= a) /\ x = a \/
-        ~(b <= a) /\ x = b)`]] THEN
-  ASM_REWRITE_TAC[FINITE_UNION; SET_RULE
-   `{x | p x \/ q x} = {x | p x} UNION {x | q x}`] THEN
-  ASM_CASES_TAC `b:real <= a` THEN
-  ASM_REWRITE_TAC[EMPTY_GSPEC; FINITE_EMPTY]);;
-
-let real_INFINITE = prove
- (`INFINITE(:real)`,
-  REWRITE_TAC[INFINITE] THEN
-  DISCH_THEN(MP_TAC o SPEC `{x:real | &0 <= x}` o
-        MATCH_MP(REWRITE_RULE[IMP_CONJ] FINITE_SUBSET)) THEN
-  REWRITE_TAC[FINITE_REAL_INTERVAL; SUBSET_UNIV]);;
-***)
-
 (* ------------------------------------------------------------------------- *)
 (* Indexing of finite sets.                                                  *)
 (* ------------------------------------------------------------------------- *)
@@ -5878,41 +5812,5 @@ let BIJECTIONS_CARD_EQ = prove
    REFL_TAC]);;
 
 export_thm BIJECTIONS_CARD_EQ;;
-
-(* ------------------------------------------------------------------------- *)
-(* Cardinal comparisons (more theory in Examples/card.ml)                    *)
-(* ------------------------------------------------------------------------- *)
-
-(***
-let le_c = new_definition
-  `s <=_c t <=> ?f. (!x. x IN s ==> f(x) IN t) /\
-                    (!x y. x IN s /\ y IN s /\ (f(x) = f(y)) ==> (x = y))`;;
-
-let lt_c = new_definition
-  `s <_c t <=> s <=_c t /\ ~(t <=_c s)`;;
-
-let eq_c = new_definition
-  `s =_c t <=> ?f. (!x. x IN s ==> f(x) IN t) /\
-                   !y. y IN t ==> ?!x. x IN s /\ (f x = y)`;;
-
-let ge_c = new_definition
- `s >=_c t <=> t <=_c s`;;
-
-let gt_c = new_definition
- `s >_c t <=> t <_c s`;;
-
-let LE_C = prove
- (`!s t. s <=_c t <=> ?g. !x. x IN s ==> ?y. y IN t /\ (g y = x)`,
-  REWRITE_TAC[le_c; INJECTIVE_ON_LEFT_INVERSE; SURJECTIVE_ON_RIGHT_INVERSE;
-              RIGHT_IMP_EXISTS_THM; SKOLEM_THM; RIGHT_AND_EXISTS_THM] THEN
-  MESON_TAC[]);;
-
-let GE_C = prove
- (`!s t. s >=_c t <=> ?f. !y. y IN t ==> ?x. x IN s /\ (y = f x)`,
-  REWRITE_TAC[ge_c; LE_C] THEN MESON_TAC[]);;
-
-let COUNTABLE = new_definition
-  `COUNTABLE t <=> (:num) >=_c t`;;
-***)
 
 logfile_end ();;
