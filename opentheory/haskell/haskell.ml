@@ -80,6 +80,11 @@ let equal_listH_def =
     (CONJ equal_listH_nil_cons
        (CONJ equal_listH_cons_nil equal_listH_cons_cons));;
 
+let lengthH_def = new_definition
+  `(lengthH : A list -> num) = LENGTH`;;
+
+export_thm lengthH_def;;
+
 (* Natural numbers *)
 
 let rdecode_fib_destH_def = new_definition
@@ -91,6 +96,13 @@ let rdecode_fibH_def = new_definition
   `rdecode_fibH = rdecode_fib`;;
 
 export_thm rdecode_fibH_def;;
+
+(* Random streams *)
+
+let rbitsH_def = new_definition
+  `rbitsH = rbits`;;
+
+export_thm rbitsH_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties.                                                               *)
@@ -177,10 +189,6 @@ let equal_listH = prove
 
 export_thm equal_listH;;
 
-(* Natural numbers *)
-
-export_thm equal_numH_def;;
-
 (* ------------------------------------------------------------------------- *)
 (* Source.                                                                   *)
 (* ------------------------------------------------------------------------- *)
@@ -197,6 +205,24 @@ let () = (export_haskell_thm o prove)
       equal_optionH eq (SOME x1) (SOME x2) = eq x1 x2)`,
   REWRITE_TAC [] THEN
   ACCEPT_TAC equal_optionH_def);;
+
+(* Lists *)
+
+let () = (export_haskell_thm o prove)
+ (`(!(eq : A -> A -> bool). equal_listH eq [] [] = T) /\
+   (!(eq : A -> A -> bool) h t. equal_listH eq [] (CONS h t) = F) /\
+   (!(eq : A -> A -> bool) h t. equal_listH eq (CONS h t) [] = F) /\
+   (!(eq : A -> A -> bool) h1 t1 h2 t2.
+      equal_listH eq (CONS h1 t1) (CONS h2 t2) =
+      (eq h1 h2 /\ equal_listH eq t1 t2))`,
+  REWRITE_TAC [] THEN
+  ACCEPT_TAC equal_listH_def);;
+
+let () = (export_haskell_thm o prove)
+ (`(lengthH ([] : A list) = 0) /\
+   (!(h : A) t. lengthH (CONS h t) = 1 + lengthH t)`,
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  REWRITE_TAC [lengthH_def; LENGTH_NIL; LENGTH_CONS; ADD1]);;
 
 (* Natural numbers *)
 
@@ -220,6 +246,23 @@ let () = (export_haskell_thm o prove)
   REWRITE_TAC [rdecode_fibH_def; rdecode_fib_destH_def] THEN
   ACCEPT_TAC rdecode_fib_def);;
 
+(* Random streams *)
+
+let () = (export_haskell_thm o prove)
+ (`!n r.
+     rbitsH n r =
+     if n = 0 then ([],r) else
+     let (b,r') = rbit r in
+     let (l,r'') = rbitsH (n - 1) r' in
+     (CONS b l, r'')`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [rbitsH_def] THEN
+  NUM_CASES_TAC `n : num` THENL
+  [DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [rbits_zero];
+   DISCH_THEN (X_CHOOSE_THEN `m : num` SUBST1_TAC) THEN
+   REWRITE_TAC [NOT_SUC; rbits_suc; SUC_SUB1]]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Testing.                                                                  *)
 (* ------------------------------------------------------------------------- *)
@@ -230,7 +273,7 @@ let () = (export_haskell_thm o prove)
  (`!r.
      let (n1,r') = rdecode_fibH r in
      let (n2,r'') = rdecode_fibH r' in
-     (~(equal_numH n1 n2) \/ equal_numH n2 n1)`,
+     (~(n1 = n2) \/ n2 = n1)`,
   REPEAT STRIP_TAC THEN
   PAIR_CASES_TAC `rdecode_fibH r` THEN
   DISCH_THEN
@@ -241,7 +284,6 @@ let () = (export_haskell_thm o prove)
     (X_CHOOSE_THEN `n2 : num`
       (X_CHOOSE_THEN `r'' : random` STRIP_ASSUME_TAC)) THEN
   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-  REWRITE_TAC [equal_numH_def] THEN
   MATCH_MP_TAC (TAUT `!x y. (x ==> y) ==> ~x \/ y`) THEN
   MATCH_ACCEPT_TAC EQ_SYM);;
 

@@ -526,19 +526,18 @@ logfile "haskell-parser-test";;
 
 let () = (export_haskell_thm o prove)
  (`!(l : A list) s.
-     equal_numH
-       (length_pstreamH (append_pstreamH l s))
-       (LENGTH l + length_pstreamH s)`,
+     length_pstreamH (append_pstreamH l s) =
+     lengthH l + length_pstreamH s`,
   REWRITE_TAC
     [length_pstreamH_def; append_pstreamH_def; pstreamH_drop_lift;
-     append_pstream_length; equal_numH_def]);;
+     append_pstream_length; lengthH_def]);;
 
 let () = (export_haskell_thm o prove)
  (`!(l : num list).
-     equal_optionH (equal_listH equal_numH)
+     equal_optionH (equal_listH (=))
        (pstream_to_listH (list_to_pstreamH l)) (SOME l)`,
   REWRITE_TAC
-    [equal_numH_def; equal_listH; equal_optionH;
+    [equal_listH; equal_optionH;
      pstream_to_listH_def; list_to_pstreamH_def; pstreamH_drop_lift;
      list_to_pstream_to_list]);;
 

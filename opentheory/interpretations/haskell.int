@@ -10,6 +10,7 @@
 # Haskell.Data.List
 
 const "HOLLight.equal_listH" as "Haskell.Data.List.equal"
+const "HOLLight.lengthH" as "Haskell.Data.List.length"
 
 # Haskell.Data.Option
 
@@ -63,10 +64,8 @@ const "HOLLight.length_pstreamH" as "Haskell.Parser.Stream.size"
 const "HOLLight.drop_pstreamH" as "Haskell.Parser.Stream.toHol"
 const "HOLLight.pstream_to_listH" as "Haskell.Parser.Stream.toList"
 
-# Haskell.Primitive
+# Haskell.Probability
 
-# Haskell.Primitive.Number
+# Haskell.Probability.Random
 
-# Haskell.Primitive.Number.Natural
-
-const "HOLLight.equal_numH" as "Haskell.Primitive.Number.Natural.equal"
+const "HOLLight.rbitsH" as "Haskell.Probability.Random.bits"

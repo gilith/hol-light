@@ -25,4 +25,19 @@ let rsplit_def = new_definition
 
 export_thm rsplit_def;;
 
+let (rbits_zero,rbits_suc) =
+  let def = new_recursive_definition num_RECURSION
+    `(!r. rbits 0 r = ([],r)) /\
+     (!r n.
+        rbits (SUC n) r =
+        let (b,r') = rbit r in
+        let (l,r'') = rbits n r' in
+        (CONS b l, r''))` in
+  CONJ_PAIR def;;
+
+export_thm rbits_zero;;
+export_thm rbits_suc;;
+
+let rbits_def = CONJ rbits_zero rbits_suc;;
+
 logfile_end ();;

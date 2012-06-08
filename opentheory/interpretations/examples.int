@@ -318,6 +318,7 @@ const "HOLLight.pstream_to_list" as "Parser.Stream.toList"
 type "HOLLight.random" as "Probability.Random.random"
 
 const "HOLLight.rbit" as "Probability.Random.bit"
+const "HOLLight.rbits" as "Probability.Random.bits"
 const "HOLLight.mk_random" as "Probability.Random.fromStream"
 const "HOLLight.rsplit" as "Probability.Random.split"
 const "HOLLight.dest_random" as "Probability.Random.toStream"

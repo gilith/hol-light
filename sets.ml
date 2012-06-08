@@ -466,7 +466,7 @@ let SING_SUBSET = prove
 export_thm SING_SUBSET;;
 
 let SUBSET_RESTRICT = prove
- (`!s P. {x | (x:A) IN s /\ P x} SUBSET s`,
+ (`!s p. {x | (x:A) IN s /\ p x} SUBSET s`,
   REWRITE_TAC [SUBSET; IN_ELIM] THEN
   REPEAT STRIP_TAC);;
 
@@ -4470,7 +4470,7 @@ let INSERT_FUNSPACE = prove
       FIRST_X_ASSUM MATCH_MP_TAC THEN
       ASM_REWRITE_TAC []];
      COND_CASES_TAC THENL
-     [UNDISCH_TAC `~((x:A) IN s)` THEN
+     [UNDISCH_TAC `~((x':A) IN s)` THEN
       ASM_REWRITE_TAC [];
       FIRST_X_ASSUM MATCH_MP_TAC THEN
       ASM_REWRITE_TAC []]]];
@@ -4507,7 +4507,7 @@ let INSERT_FUNSPACE = prove
     REPEAT STRIP_TAC THENL
     [ASM_REWRITE_TAC [];
      COND_CASES_TAC THENL
-     [UNDISCH_TAC `(x:A) IN s` THEN
+     [UNDISCH_TAC `(x':A) IN s` THEN
       ASM_REWRITE_TAC [];
       FIRST_X_ASSUM MATCH_MP_TAC THEN
       ASM_REWRITE_TAC []];
@@ -4569,12 +4569,16 @@ let HAS_SIZE_FUNSPACE = prove
   CONJ_TAC THENL
   [REWRITE_TAC [FORALL_PAIR_THM; IN_CROSS; PAIR_EQ; IN_ELIM] THEN
    REWRITE_TAC [FUN_EQ_THM] THEN
+   X_GEN_TAC `b : B` THEN
+   X_GEN_TAC `f : A -> B` THEN
+   X_GEN_TAC `b' : B` THEN
+   X_GEN_TAC `f' : A -> B` THEN
    REPEAT STRIP_TAC THENL
-   [POP_ASSUM (MP_TAC o SPEC `a:A`) THEN
+   [POP_ASSUM (MP_TAC o SPEC `a : A`) THEN
     REWRITE_TAC [];
     ASM_CASES_TAC `(x:A) = a` THENL
     [POP_ASSUM SUBST_VAR_TAC THEN
-     UNDISCH_TAC `!x. ~(x IN u) ==> (p2' : A -> B) x = d` THEN
+     UNDISCH_TAC `!x. ~(x IN u) ==> (f' : A -> B) x = d` THEN
      DISCH_THEN (MP_TAC o SPEC `a : A`) THEN
      ASM_REWRITE_TAC [] THEN
      DISCH_THEN SUBST1_TAC THEN
@@ -5407,7 +5411,7 @@ let FUNCTION_FACTORS_RIGHT = prove
 export_thm FUNCTION_FACTORS_RIGHT;;
 
 let SURJECTIVE_FORALL_THM = prove
- (`!(f:A->B). (!y. ?x. f x = y) <=> (!P. (!x. P(f x)) <=> (!y. P y))`,
+ (`!(f:A->B). (!y. ?x. f x = y) <=> (!p. (!x. p (f x)) <=> (!y. p y))`,
   GEN_TAC THEN
   EQ_TAC THENL
   [REPEAT STRIP_TAC THEN
@@ -5426,7 +5430,7 @@ let SURJECTIVE_FORALL_THM = prove
 export_thm SURJECTIVE_FORALL_THM;;
 
 let SURJECTIVE_EXISTS_THM = prove
- (`!(f:A->B). (!y. ?x. f x = y) <=> (!P. (?x. P(f x)) <=> (?y. P y))`,
+ (`!(f:A->B). (!y. ?x. f x = y) <=> (!p. (?x. p (f x)) <=> (?y. p y))`,
   GEN_TAC THEN
   EQ_TAC THENL
   [REPEAT STRIP_TAC THEN
@@ -5452,7 +5456,7 @@ export_thm SURJECTIVE_EXISTS_THM;;
 logfile "set-thm";;
 
 let SURJECTIVE_IMAGE_THM = prove
- (`!(f:A->B). (!y. ?x. f x = y) <=> (!P. IMAGE f {x | P(f x)} = {x | P x})`,
+ (`!(f:A->B). (!y. ?x. f x = y) <=> (!p. IMAGE f {x | p (f x)} = {x | p x})`,
   GEN_TAC THEN
   REWRITE_TAC [EXTENSION; IN_IMAGE; IN_ELIM] THEN
   EQ_TAC THENL
