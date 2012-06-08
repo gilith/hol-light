@@ -1,20 +1,13 @@
 (* ========================================================================= *)
-(* OPENTHEORY HASKELL LIBRARY                                                *)
+(* OPENTHEORY HASKELL BASE                                                   *)
 (* Joe Hurd                                                                  *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Definition of the Haskell base.                                           *)
+(* Definition.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-def";;
-
-(* Numbers *)
-
-let equal_numH_def = new_definition
-  `(equal_numH : num -> num -> bool) = (=)`;;
-
-export_thm equal_numH_def;;
 
 (* Options *)
 
@@ -87,8 +80,20 @@ let equal_listH_def =
     (CONJ equal_listH_nil_cons
        (CONJ equal_listH_cons_nil equal_listH_cons_cons));;
 
+(* Natural numbers *)
+
+let rdecode_fib_destH_def = new_definition
+  `rdecode_fib_destH = rdecode_fib_dest`;;
+
+export_thm rdecode_fib_destH_def;;
+
+let rdecode_fibH_def = new_definition
+  `rdecode_fibH = rdecode_fib`;;
+
+export_thm rdecode_fibH_def;;
+
 (* ------------------------------------------------------------------------- *)
-(* Properties of the Haskell base.                                           *)
+(* Properties.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-thm";;
@@ -171,5 +176,73 @@ let equal_listH = prove
     ASM_REWRITE_TAC [equal_listH_cons_cons; CONS_11]]);;
 
 export_thm equal_listH;;
+
+(* Natural numbers *)
+
+export_thm equal_numH_def;;
+
+(* ------------------------------------------------------------------------- *)
+(* Source.                                                                   *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "haskell-src";;
+
+(* Options *)
+
+let () = (export_haskell_thm o prove)
+ (`(!(eq : A -> A -> bool). equal_optionH eq NONE NONE = T) /\
+   (!(eq : A -> A -> bool) x. equal_optionH eq NONE (SOME x) = F) /\
+   (!(eq : A -> A -> bool) x. equal_optionH eq (SOME x) NONE = F) /\
+   (!(eq : A -> A -> bool) x1 x2.
+      equal_optionH eq (SOME x1) (SOME x2) = eq x1 x2)`,
+  REWRITE_TAC [] THEN
+  ACCEPT_TAC equal_optionH_def);;
+
+(* Natural numbers *)
+
+let () = (export_haskell_thm o prove)
+ (`!b n f p r.
+     rdecode_fib_destH b n f p r =
+     let b',r' = rbit r in
+     if b' /\ b then n
+     else
+       let s = f + p in
+       rdecode_fib_destH b' (if b' then s + n else n) s f r'`,
+  REWRITE_TAC [rdecode_fib_destH_def] THEN
+  ACCEPT_TAC rdecode_fib_dest_def);;
+
+let () = (export_haskell_thm o prove)
+ (`rdecode_fibH =
+   \r.
+     let (r1,r2) = rsplit r in
+     (rdecode_fib_destH F 0 1 0 r1 - 1, r2)`,
+  ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+  REWRITE_TAC [rdecode_fibH_def; rdecode_fib_destH_def] THEN
+  ACCEPT_TAC rdecode_fib_def);;
+
+(* ------------------------------------------------------------------------- *)
+(* Testing.                                                                  *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "haskell-test";;
+
+let () = (export_haskell_thm o prove)
+ (`!r.
+     let (n1,r') = rdecode_fibH r in
+     let (n2,r'') = rdecode_fibH r' in
+     (~(equal_numH n1 n2) \/ equal_numH n2 n1)`,
+  REPEAT STRIP_TAC THEN
+  PAIR_CASES_TAC `rdecode_fibH r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `n1 : num`
+      (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
+  PAIR_CASES_TAC `rdecode_fibH r'` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `n2 : num`
+      (X_CHOOSE_THEN `r'' : random` STRIP_ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  REWRITE_TAC [equal_numH_def] THEN
+  MATCH_MP_TAC (TAUT `!x y. (x ==> y) ==> ~x \/ y`) THEN
+  MATCH_ACCEPT_TAC EQ_SYM);;
 
 logfile_end ();;

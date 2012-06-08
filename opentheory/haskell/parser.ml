@@ -324,7 +324,7 @@ let dest_parserH_inj = prove
 export_thm dest_parserH_inj;;
 
 (* ------------------------------------------------------------------------- *)
-(* A type of Haskell parsers.                                                *)
+(* Sources.                                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-parser-src";;
