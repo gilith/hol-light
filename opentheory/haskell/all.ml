@@ -21,14 +21,6 @@ extend_the_interpretation "opentheory/interpretations/haskell.int";;
 
 start_logging ();;
 
-(*** This should all be covered in the export program
-(* ------------------------------------------------------------------------- *)
-(* Opentheory Haskell primitives.                                            *)
-(* ------------------------------------------------------------------------- *)
-
-loads "opentheory/haskell/primitive.ml";;
-***)
-
 (* ------------------------------------------------------------------------- *)
 (* Opentheory Haskell library.                                               *)
 (* ------------------------------------------------------------------------- *)

@@ -102,6 +102,15 @@ let list_to_pstream_def = new_definition
 
 export_thm list_to_pstream_def;;
 
+let rdecode_pstream_def = new_definition
+  `!r.
+     rdecode_pstream (d : random -> A # random) r =
+     let (l,r') = rdecode_list d r in
+     let (b,r'') = rbit r' in
+     (append_pstream l (if b then ErrorPstream else EofPstream), r'')`;;
+
+export_thm rdecode_pstream_def;;
+
 logfile "parser-stream-thm";;
 
 let pstream_cases = prove_cases_thm pstream_induct;;

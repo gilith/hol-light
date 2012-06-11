@@ -10,7 +10,9 @@
 # Haskell.Data.List
 
 const "HOLLight.equal_listH" as "Haskell.Data.List.equal"
-const "HOLLight.lengthH" as "Haskell.Data.List.length"
+const "HOLLight.rdecode_listH" as "Haskell.Data.List.fromRandom"
+const "HOLLight.rdecode_list_destH" as "Haskell.Data.List.fromRandom.dest"
+const "HOLLight.lengthH" as "Haskell.Data.List.size"
 
 # Haskell.Data.Option
 
@@ -60,6 +62,7 @@ const "HOLLight.EofPstreamH" as "Haskell.Parser.Stream.Eof"
 const "HOLLight.ErrorPstreamH" as "Haskell.Parser.Stream.Error"
 const "HOLLight.lift_pstreamH" as "Haskell.Parser.Stream.fromHol"
 const "HOLLight.list_to_pstreamH" as "Haskell.Parser.Stream.fromList"
+const "HOLLight.rdecode_pstreamH" as "Haskell.Parser.Stream.fromRandom"
 const "HOLLight.length_pstreamH" as "Haskell.Parser.Stream.size"
 const "HOLLight.drop_pstreamH" as "Haskell.Parser.Stream.toHol"
 const "HOLLight.pstream_to_listH" as "Haskell.Parser.Stream.toList"

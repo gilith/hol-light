@@ -85,6 +85,20 @@ let lengthH_def = new_definition
 
 export_thm lengthH_def;;
 
+let rdecode_list_destH_def = new_definition
+  `rdecode_list_destH =
+     (rdecode_list_dest :
+        (random -> A # random) -> A list -> random -> A list)`;;
+
+export_thm rdecode_list_destH_def;;
+
+let rdecode_listH_def = new_definition
+  `rdecode_listH =
+     (rdecode_list :
+       (random -> A # random) -> random -> A list # random)`;;
+
+export_thm rdecode_listH_def;;
+
 (* Natural numbers *)
 
 let rdecode_fib_destH_def = new_definition
@@ -224,6 +238,25 @@ let () = (export_haskell_thm o prove)
   ONCE_REWRITE_TAC [ADD_SYM] THEN
   REWRITE_TAC [lengthH_def; LENGTH_NIL; LENGTH_CONS; ADD1]);;
 
+let () = (export_haskell_thm o prove)
+ (`!(d : random -> A # random) l r.
+     rdecode_list_destH d l r =
+     let b,r' = rbit r in
+     if b then l else
+     let (x,r'') = d r' in
+     rdecode_list_destH d (CONS x l) r''`,
+  REWRITE_TAC [rdecode_list_destH_def] THEN
+  ACCEPT_TAC rdecode_list_dest_def);;
+
+let () = (export_haskell_thm o prove)
+ (`!(d : random -> A # random).
+     rdecode_listH d =
+     \r.
+       let (r1,r2) = rsplit r in
+       (rdecode_list_destH d [] r1, r2)`,
+  REWRITE_TAC [rdecode_listH_def; rdecode_list_destH_def; FUN_EQ_THM] THEN
+  ACCEPT_TAC rdecode_list_def);;
+
 (* Natural numbers *)
 
 let () = (export_haskell_thm o prove)
@@ -274,7 +307,7 @@ let () = (export_haskell_thm o prove)
      let (n1,r') = rdecode_fibH r in
      let (n2,r'') = rdecode_fibH r' in
      (~(n1 = n2) \/ n2 = n1)`,
-  REPEAT STRIP_TAC THEN
+  GEN_TAC THEN
   PAIR_CASES_TAC `rdecode_fibH r` THEN
   DISCH_THEN
     (X_CHOOSE_THEN `n1 : num`

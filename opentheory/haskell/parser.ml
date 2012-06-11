@@ -67,6 +67,14 @@ let list_to_pstreamH_def = new_definition
 
 export_thm list_to_pstreamH_def;;
 
+let rdecode_pstreamH_def = new_definition
+  `!d r.
+     rdecode_pstreamH d r =
+     let (s,r') = rdecode_pstream d r in
+     (lift_pstreamH (s : A pstream), r')`;;
+
+export_thm rdecode_pstreamH_def;;
+
 (* Parsers *)
 
 let (parserH_lift_drop,parserH_drop_lift) =
@@ -372,6 +380,28 @@ let () = (export_haskell_thm o prove)
     [list_to_pstreamH_def; pstreamH_tybij; EofPstreamH_def; list_to_pstream_def;
      append_pstreamH_def]);;
 
+let () = (export_haskell_thm o prove)
+ (`!(d : random -> A # random) r.
+     rdecode_pstreamH d r =
+     let (l,r') = rdecode_listH d r in
+     let (b,r'') = rbit r' in
+     (append_pstreamH l (if b then ErrorPstreamH else EofPstreamH), r'')`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC
+    [EofPstreamH_def; ErrorPstreamH_def; append_pstreamH_def;
+     rdecode_pstreamH_def; rdecode_listH_def;
+     rdecode_pstream_def; LET_DEF; LET_END_DEF] THEN
+  PAIR_CASES_TAC `rdecode_list (d : random -> A # random) r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `l : A list` (X_CHOOSE_THEN `r' : random` SUBST1_TAC)) THEN
+  REWRITE_TAC [] THEN
+  PAIR_CASES_TAC `rbit r'` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `b : bool` (X_CHOOSE_THEN `r'' : random` SUBST1_TAC)) THEN
+  REWRITE_TAC [] THEN
+  BOOL_CASES_TAC `b : bool` THEN
+  REWRITE_TAC [pstreamH_tybij]);;
+
 (* Parsers *)
 
 let () = export_haskell_thm parserH_mk_dest;;
@@ -525,21 +555,40 @@ logfile "haskell-parser-test";;
 (* Streams *)
 
 let () = (export_haskell_thm o prove)
- (`!(l : A list) s.
-     length_pstreamH (append_pstreamH l s) =
-     lengthH l + length_pstreamH s`,
-  REWRITE_TAC
-    [length_pstreamH_def; append_pstreamH_def; pstreamH_drop_lift;
-     append_pstream_length; lengthH_def]);;
-
-let () = (export_haskell_thm o prove)
- (`!(l : num list).
+ (`!r.
+     let (l,r') = rdecode_listH rdecode_fibH r in
      equal_optionH (equal_listH (=))
        (pstream_to_listH (list_to_pstreamH l)) (SOME l)`,
+  GEN_TAC THEN
+  PAIR_CASES_TAC `rdecode_listH rdecode_fibH r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `l : num list`
+      (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
   REWRITE_TAC
     [equal_listH; equal_optionH;
      pstream_to_listH_def; list_to_pstreamH_def; pstreamH_drop_lift;
      list_to_pstream_to_list]);;
+
+let () = (export_haskell_thm o prove)
+ (`!r.
+     let (l,r') = rdecode_listH rdecode_fibH r in
+     let (s,r'') = rdecode_pstreamH rdecode_fibH r' in
+     length_pstreamH (append_pstreamH l s) =
+     lengthH l + length_pstreamH s`,
+  GEN_TAC THEN
+  PAIR_CASES_TAC `rdecode_listH rdecode_fibH r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `l : num list`
+      (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
+  PAIR_CASES_TAC `rdecode_pstreamH rdecode_fibH r'` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `s : num pstreamH`
+      (X_CHOOSE_THEN `r'' : random` STRIP_ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  REWRITE_TAC
+    [length_pstreamH_def; append_pstreamH_def; pstreamH_drop_lift;
+     append_pstream_length; lengthH_def]);;
 
 (***
 export_haskell_thm append_pstream_assoc;;
