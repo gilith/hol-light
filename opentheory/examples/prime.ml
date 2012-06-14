@@ -198,13 +198,13 @@ export_thm large_prime;;
 let is_sieve_def = new_definition
   `!n ps.
      is_sieve (n,ps) =
-     ~(n = 0) /\
+     ~(n = 0) /\`
 
 let sieve_tybij =
   define_newtype ("s","sieve") ("p", `:num # (num # (num # num)) list`);;
 
 let init_sieve = new_definition
-  `init_sieve = mk_sieve 
+  `init_sieve = mk_sieve`
 ***)
 
 logfile_end ();;
