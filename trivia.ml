@@ -61,11 +61,20 @@ let o_THM = prove
 
 export_thm o_THM;;
 
-let o_ASSOC = prove
- (`!f:C->D. !g:B->C. !h:A->B. f o (g o h) = (f o g) o h`,
-  REPEAT GEN_TAC THEN REWRITE_TAC [o_DEF] THEN
+let o_ASSOC' = prove
+ (`!f:C->D. !g:B->C. !h:A->B. (f o g) o h = f o (g o h)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [o_DEF] THEN
   CONV_TAC (REDEPTH_CONV BETA_CONV) THEN
   REFL_TAC);;
+
+export_thm o_ASSOC';;
+
+let o_ASSOC = prove
+ (`!f:C->D. !g:B->C. !h:A->B. f o (g o h) = (f o g) o h`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_ACCEPT_TAC o_ASSOC');;
 
 export_thm o_ASSOC;;
 

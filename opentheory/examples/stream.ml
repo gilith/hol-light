@@ -63,6 +63,13 @@ let sappend_def = new_definition
 
 export_thm sappend_def;;
 
+let sunfold_def = new_definition
+  `!(f : B -> A # B) b.
+     sunfold f b =
+     stream (\n. FST (f (funpow (SND o f) n b)))`;;
+
+export_thm sunfold_def;;
+
 logfile "stream-thm";;
 
 let snth_eq_imp = prove
@@ -93,6 +100,27 @@ let stl_scons = prove
       NOT_SUC; SUC_SUB1]);;
 
 export_thm stl_scons;;
+
+let snth_scons_zero = prove
+  (`!h (t : A stream). snth (scons h t) 0 = h`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [GSYM shd_def; shd_scons]);;
+
+export_thm snth_scons_zero;;
+
+let snth_add = prove
+  (`!(s : A stream) m n. snth s (m + n) = snth (sdrop s n) m`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [sdrop_def; stream_tybij]);;
+
+export_thm snth_add;;
+
+let snth_scons_suc = prove
+  (`!h (t : A stream) n. snth (scons h t) (SUC n) = snth t n`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [ADD1; snth_add; GSYM stl_def; stl_scons]);;
+
+export_thm snth_scons_suc;;
 
 let snth_sappend = prove
   (`!l (s : A stream) n.
@@ -211,5 +239,118 @@ let ssplit_sinterleave = prove
     MATCH_ACCEPT_TAC MULT_SYM]);;
 
 export_thm ssplit_sinterleave;;
+
+let sunfold = prove
+ (`!(f : B -> A # B) b.
+     sunfold f b =
+     let (a,b') = f b in
+     scons a (sunfold f b')`,
+  GEN_TAC THEN
+  GEN_TAC THEN
+  REWRITE_TAC [sunfold_def; scons_def; LET_DEF; LET_END_DEF] THEN
+  PAIR_CASES_TAC `(f : B -> A # B) b` THEN
+  DISCH_THEN (X_CHOOSE_THEN `a : A` (X_CHOOSE_THEN `b' : B` ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [stream_tybij] THEN
+  AP_TERM_TAC THEN
+  ABS_TAC THEN
+  NUM_CASES_TAC `n : num` THENL
+  [DISCH_THEN SUBST1_TAC THEN
+   ASM_REWRITE_TAC [funpow_zero; I_THM];
+   DISCH_THEN (X_CHOOSE_THEN `m : num` SUBST1_TAC) THEN
+   ASM_REWRITE_TAC [SUC_SUB1; NOT_SUC; funpow_suc_x'; o_THM]]);;
+
+export_thm sunfold;;
+
+let num_stream_exists = prove
+  (`!(p : num -> bool).
+      (!m. ?n. m <= n /\ p n) ==>
+      ?s.
+        (!i j. i < j ==> snth s i < snth s j) /\
+        (!n. p n <=> ?i. snth s i = n)`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [LT_MONO_SIMPLIFY] THEN
+   EXISTS_TAC
+     `sunfold (\b. let n = (minimal m. b <= m /\ p m) in (n, SUC n)) 0` THEN
+   REPEAT STRIP_TAC THENL
+   [REWRITE_TAC [sunfold_def; stream_tybij; funpow_suc_x] THEN
+    SPEC_TAC
+      (`funpow
+          (SND o (\b. let n = (minimal m. b <= m /\ p m) in (n, SUC n)))
+          n 0`, `k : num`) THEN
+    GEN_TAC THEN
+    REWRITE_TAC [o_THM] THEN
+    REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+    SPEC_TAC (`minimal m. k <= m /\ p m`, `n : num`) THEN
+    GEN_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `SUC n`) THEN
+    REWRITE_TAC [MINIMAL] THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [GSYM LE_SUC_LT];
+    EQ_TAC THENL
+    [STRIP_TAC THEN
+     MP_TAC (SPEC `n : num` LE_0) THEN
+     SPEC_TAC (`0`, `k : num`) THEN
+     GEN_TAC THEN
+     CONV_TAC (LAND_CONV (REWR_CONV LE_EXISTS)) THEN
+     REWRITE_TAC [LEFT_IMP_EXISTS_THM] THEN
+     STRIP_TAC THEN
+     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+     SPEC_TAC (`k : num`, `k : num`) THEN
+     WF_INDUCT_TAC `d : num` THEN
+     GEN_TAC THEN
+     DISCH_THEN SUBST_VAR_TAC THEN
+     ONCE_REWRITE_TAC [sunfold] THEN
+     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+     SUBGOAL_THEN
+       `?m : num. k <= m /\ p m` (MP_TAC o REWRITE_RULE [MINIMAL]) THENL
+     [EXISTS_TAC `k + d : num` THEN
+      ASM_REWRITE_TAC [LE_ADD];
+      ALL_TAC] THEN
+     SPEC_TAC (`minimal m. k <= m /\ p m`, `j : num`) THEN
+     GEN_TAC THEN
+     STRIP_TAC THEN
+     FIRST_X_ASSUM (MP_TAC o SPEC `k + d : num`) THEN
+     POP_ASSUM (K ALL_TAC) THEN
+     ASM_REWRITE_TAC [LE_ADD; NOT_LT] THEN
+     POP_ASSUM MP_TAC THEN
+     CONV_TAC (LAND_CONV (REWR_CONV LE_EXISTS)) THEN
+     DISCH_THEN (X_CHOOSE_THEN `x : num` SUBST_VAR_TAC) THEN
+     REWRITE_TAC [LE_ADD_LCANCEL] THEN
+     CONV_TAC (LAND_CONV (REWR_CONV LE_LT)) THEN
+     STRIP_TAC THENL
+     [POP_ASSUM (MP_TAC o REWRITE_RULE [LT_EXISTS]) THEN
+      DISCH_THEN (X_CHOOSE_THEN `y : num` SUBST_VAR_TAC) THEN
+      FIRST_X_ASSUM (MP_TAC o SPEC `y : num`) THEN
+      ANTS_TAC THENL
+      [REWRITE_TAC [ADD_CLAUSES; LT_SUC_LE; LE_ADDR];
+       ALL_TAC] THEN
+      DISCH_THEN (MP_TAC o SPEC `SUC (k + x)`) THEN
+      ANTS_TAC THENL
+      [REWRITE_TAC [ADD_CLAUSES; ADD_ASSOC];
+       ALL_TAC] THEN
+      STRIP_TAC THEN
+      EXISTS_TAC `SUC i` THEN
+      ASM_REWRITE_TAC [snth_scons_suc];
+      FIRST_X_ASSUM SUBST_VAR_TAC THEN
+      EXISTS_TAC `0` THEN
+      REWRITE_TAC [snth_scons_zero]];
+     REWRITE_TAC [LEFT_IMP_EXISTS_THM] THEN
+     GEN_TAC THEN
+     SPEC_TAC (`0`, `k : num`) THEN
+     SPEC_TAC (`i : num`, `i : num`) THEN
+     INDUCT_TAC THENL
+     [GEN_TAC THEN
+      ONCE_REWRITE_TAC [sunfold] THEN
+      REWRITE_TAC [LET_DEF; LET_END_DEF; snth_scons_zero] THEN
+      DISCH_THEN SUBST_VAR_TAC THEN
+      FIRST_X_ASSUM (MP_TAC o REWRITE_RULE [MINIMAL] o SPEC `k : num`) THEN
+      STRIP_TAC;
+      GEN_TAC THEN
+      ONCE_REWRITE_TAC [sunfold] THEN
+      REWRITE_TAC [LET_DEF; LET_END_DEF; snth_scons_suc] THEN
+      FIRST_X_ASSUM
+        (MATCH_ACCEPT_TAC o REWRITE_RULE [LET_DEF; LET_END_DEF])]]]);;
+
+export_thm num_stream_exists;;
 
 logfile_end ();;

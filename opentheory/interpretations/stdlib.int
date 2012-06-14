@@ -99,6 +99,7 @@ const "HOLLight.one" as "Data.Unit.()"
 # Function
 
 const "HOLLight.C" as "Function.C"
+const "HOLLight.funpow" as "Function.^"
 const "HOLLight.I" as "Function.id"
 const "HOLLight.ONE_ONE" as "Function.injective"
 const "HOLLight.K" as "Function.K"

@@ -102,6 +102,7 @@ const "HOLLight.sinterleave" as "Data.Stream.interleave"
 const "HOLLight.snth" as "Data.Stream.nth"
 const "HOLLight.ssplit" as "Data.Stream.split"
 const "HOLLight.stl" as "Data.Stream.tail"
+const "HOLLight.sunfold" as "Data.Stream.unfold"
 
 # Data.Word
 

@@ -345,6 +345,84 @@ let MULT_EQ_1 = prove
 export_thm MULT_EQ_1;;
 
 (* ------------------------------------------------------------------------- *)
+(* Function powers.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "natural-funpow-def";;
+
+let (funpow_zero,funpow_suc) =
+  let def = new_recursive_definition num_RECURSION
+    `(!(f : A -> A). funpow f 0 = I) /\
+     (!(f : A -> A) n. funpow f (SUC n) = f o funpow f n)` in
+  CONJ_PAIR def;;
+
+export_thm funpow_zero;;
+export_thm funpow_suc;;
+
+let funpow_def = CONJ funpow_zero funpow_suc;;
+
+logfile "natural-funpow-thm";;
+
+let funpow_I = prove
+ (`!n. funpow (I : A -> A) n = I`,
+  INDUCT_TAC THENL
+  [REWRITE_TAC [funpow_zero];
+   ASM_REWRITE_TAC [funpow_suc; O_I]]);;
+
+export_thm funpow_I;;
+
+let funpow_one = prove
+ (`!(f : A -> A). funpow f 1 = f`,
+  REWRITE_TAC [ONE; funpow_def; O_I]);;
+
+export_thm funpow_one;;
+
+let funpow_suc' = prove
+ (`!(f : A -> A) n. funpow f (SUC n) = funpow f n o f`,
+  GEN_TAC THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [GSYM ONE; funpow_one; funpow_zero; I_O];
+   ONCE_REWRITE_TAC [funpow_suc] THEN
+   REWRITE_TAC [o_ASSOC'] THEN
+   AP_TERM_TAC THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
+
+export_thm funpow_suc';;
+
+let funpow_suc_x = prove
+ (`!(f : A -> A) n x. funpow f (SUC n) x = f (funpow f n x)`,
+  REWRITE_TAC [funpow_suc; o_THM]);;
+
+export_thm funpow_suc_x;;
+
+let funpow_suc_x' = prove
+ (`!(f : A -> A) n x. funpow f (SUC n) x = funpow f n (f x)`,
+  REWRITE_TAC [funpow_suc'; o_THM]);;
+
+export_thm funpow_suc_x';;
+
+let funpow_add = prove
+ (`!(f : A -> A) m n. funpow f (m + n) = funpow f m o funpow f n`,
+  GEN_TAC THEN
+  GEN_TAC THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [ADD_0; funpow_zero; O_I];
+   ASM_REWRITE_TAC [funpow_suc'; ADD_SUC] THEN
+   MATCH_ACCEPT_TAC o_ASSOC']);;
+
+export_thm funpow_add;;
+
+let funpow_mult = prove
+ (`!(f : A -> A) m n. funpow f (m * n) = funpow (funpow f m) n`,
+  GEN_TAC THEN
+  GEN_TAC THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [MULT_0; funpow_zero];
+   ASM_REWRITE_TAC [funpow_add; MULT_SUC; funpow_suc]]);;
+
+export_thm funpow_mult;;
+
+(* ------------------------------------------------------------------------- *)
 (* Exponentiation.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
@@ -948,6 +1026,26 @@ let WLOG_LT = prove
      (!m. P m m) /\ (!m n. P m n <=> P n m) /\ (!m n. m < n ==> P m n)
      ==> !m y. P m y`,
   MESON_TAC[LT_CASES]);;
+
+let LT_MONO_SIMPLIFY = prove
+  (`!(f : num -> num).
+     (!i j. i < j ==> f i < f j) <=>
+     (!n. f n < f (SUC n))`,
+   GEN_TAC THEN
+   EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    MATCH_ACCEPT_TAC SUC_LT;
+    STRIP_TAC THEN
+    REPEAT GEN_TAC THEN
+    DISCH_THEN (CHOOSE_THEN SUBST1_TAC o REWRITE_RULE [LT_EXISTS]) THEN
+    SPEC_TAC (`d : num`, `d : num`) THEN
+    INDUCT_TAC THENL
+    [ASM_REWRITE_TAC [ADD_CLAUSES];
+     MATCH_MP_TAC LT_TRANS THEN
+     EXISTS_TAC `f (i + SUC d) : num` THEN
+     ASM_REWRITE_TAC [] THEN
+     ASM_REWRITE_TAC [ADD_CLAUSES]]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Existence of least and greatest elements of (finite) set.                 *)
