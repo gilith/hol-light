@@ -2211,6 +2211,23 @@ let MINIMAL = prove
 
 export_thm MINIMAL;;
 
+let MINIMAL_EQ = prove
+ (`!p n. p n /\ (!m. m < n ==> ~(p m)) ==> (minimal) p = n`,
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN `?n : num. p n`
+    (STRIP_ASSUME_TAC o REWRITE_RULE [MINIMAL]) THENL
+  [EXISTS_TAC `n : num` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   REWRITE_TAC [GSYM LE_ANTISYM; GSYM NOT_LT] THEN
+   REPEAT STRIP_TAC THENL
+   [FIRST_X_ASSUM (MP_TAC o SPEC `n : num`) THEN
+    ASM_REWRITE_TAC [];
+    UNDISCH_TAC `!m : num. m < n ==> ~p m` THEN
+    DISCH_THEN (MP_TAC o SPEC `(minimal) p`) THEN
+    ASM_REWRITE_TAC []]]);;
+
+export_thm MINIMAL_EQ;;
+
 logfile "natural-order-min-max-thm";;
 
 let MAX_REFL = prove

@@ -41,6 +41,17 @@ let scons_def = new_definition
 
 export_thm scons_def;;
 
+let (stake_0,stake_suc) =
+  let def = new_recursive_definition num_RECURSION
+    `(!(s : A stream). stake s 0 = []) /\
+     (!(s : A stream) n. stake s (SUC n) = CONS (shd s) (stake (stl s) n))` in
+  CONJ_PAIR def;;
+
+export_thm stake_0;;
+export_thm stake_suc;;
+
+let stake_def = CONJ stake_0 stake_suc;;
+
 let ssplit_def = new_definition
   `!s : A stream.
      ssplit s =
@@ -204,6 +215,21 @@ let cons_sappend = prove
     REWRITE_TAC [GSYM SUC_ADD; ADD_SUB2]]);;
 
 export_thm cons_sappend;;
+
+(***
+let stake_add_append = prove
+  (`!(s : A stream) m n.
+      stake s (m + n) = APPEND (stake s m) (stake (sdrop s m) n)`,
+   REPEAT GEN_TAC THEN
+
+let stake_1 = prove
+  (`!(s : A stream). stake s 1 = [shd s]`,
+   REPEAT GEN_TAC THEN
+
+let stake_suc_append = prove
+  (`!(s : A stream) n. stake s (SUC n) = APPEND (stake s n) [snth s n]`,
+   REPEAT GEN_TAC THEN
+***)
 
 let ssplit_sinterleave = prove
   (`!s1 s2 : A stream. ssplit (sinterleave s1 s2) = (s1,s2)`,
