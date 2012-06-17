@@ -289,15 +289,16 @@ const "HOLLight.primes_below" as "Number.Natural.Prime.below"
 
 type "HOLLight.sieve" as "Number.Natural.Prime.Sieve.sieve"
 
+const "HOLLight.mk_sieve" as "Number.Natural.Prime.Sieve.dest"
 const "HOLLight.inc_sieve" as "Number.Natural.Prime.Sieve.increment"
 const "HOLLight.inc_counters_sieve" as "Number.Natural.Prime.Sieve.incrementCounters"
 const "HOLLight.init_sieve" as "Number.Natural.Prime.Sieve.initial"
-const "HOLLight.invariant_sieve" as "Number.Natural.Prime.Sieve.invariant"
-const "HOLLight.invariant_counters_sieve" as "Number.Natural.Prime.Sieve.invariantCounters"
+const "HOLLight.is_sieve" as "Number.Natural.Prime.Sieve.invariant"
+const "HOLLight.is_counters_sieve" as "Number.Natural.Prime.Sieve.invariantCounters"
 const "HOLLight.max_sieve" as "Number.Natural.Prime.Sieve.max"
+const "HOLLight.mk_sieve" as "Number.Natural.Prime.Sieve.mk"
 const "HOLLight.next_sieve" as "Number.Natural.Prime.Sieve.next"
 const "HOLLight.primes_sieve" as "Number.Natural.Prime.Sieve.primes"
-const "HOLLight.Sieve" as "Number.Natural.Prime.Sieve.sieve"
 
 # Parser
 
