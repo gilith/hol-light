@@ -41,7 +41,7 @@ let replicate_conv =
     rewr_conv;;
 
 let nth_conv =
-    let zero_conv = REWR_CONV nth_0 in
+    let zero_conv = REWR_CONV nth_zero in
     let side_conv = RAND_CONV length_conv THENC NUM_LT_CONV in
     let suc_th = SPEC_ALL nth_suc in
     let suc_conv tm =
@@ -56,7 +56,7 @@ let nth_conv =
     rewr_conv;;
 
 let take_conv =
-    let zero_conv = REWR_CONV take_0 in
+    let zero_conv = REWR_CONV take_zero in
     let side_conv = RAND_CONV length_conv THENC NUM_LE_CONV in
     let suc_th = SPEC_ALL take_suc in
     let suc_conv tm =
@@ -71,7 +71,7 @@ let take_conv =
     rewr_conv;;
 
 let drop_conv =
-    let zero_conv = REWR_CONV drop_0 in
+    let zero_conv = REWR_CONV drop_zero in
     let side_conv = RAND_CONV length_conv THENC NUM_LE_CONV in
     let suc_th = SPEC_ALL drop_suc in
     let suc_conv tm =

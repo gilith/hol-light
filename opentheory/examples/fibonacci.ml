@@ -463,7 +463,7 @@ let decode_fib_nil = prove
 
 export_thm decode_fib_nil;;
 
-let encode_fib_0 = prove
+let encode_fib_zero = prove
  (`encode_fib 0 = []`,
   REWRITE_TAC [encode_fib_def] THEN
   ONCE_REWRITE_TAC [encode_fib_find_def] THEN
@@ -471,7 +471,7 @@ let encode_fib_0 = prove
   ONCE_REWRITE_TAC [encode_fib_mk_def] THEN
   REWRITE_TAC []);;
 
-export_thm encode_fib_0;;
+export_thm encode_fib_zero;;
 
 let decode_fib_dest_append = prove
  (`!k l1 l2.
@@ -636,9 +636,9 @@ let null_encode_fib = prove
   EQ_TAC THENL
   [STRIP_TAC THEN
    ONCE_REWRITE_TAC [GSYM encode_decode_fib] THEN
-   ASM_REWRITE_TAC [encode_fib_0];
+   ASM_REWRITE_TAC [encode_fib_zero];
    DISCH_THEN SUBST1_TAC THEN
-   ACCEPT_TAC encode_fib_0]);;
+   ACCEPT_TAC encode_fib_zero]);;
 
 export_thm null_encode_fib;;
 

@@ -250,13 +250,13 @@ logfile "word-bits-thm";;
 
 (* Helper theorems (not exported) *)
 
-let even_0 = prove
+let even_zero = prove
   (`!n. n = 0 ==> EVEN n`,
    GEN_TAC THEN
    DISCH_THEN SUBST_VAR_TAC THEN
    REWRITE_TAC [EVEN]);;
 
-let cons_div_2 = prove
+let cons_div_two = prove
   (`!n h. (2 * n + (if h then 1 else 0)) DIV 2 = n`,
    REPEAT GEN_TAC THEN
    MATCH_MP_TAC EQ_TRANS THEN
@@ -290,22 +290,22 @@ let cons_div_2 = prove
    REWRITE_TAC [] THEN
    NUM_REDUCE_TAC);;
 
-let exp_2_nz = prove
+let exp_two_nz = prove
   (`!n. ~(2 EXP n = 0)`,
    REWRITE_TAC [EXP_EQ_0] THEN
    NUM_REDUCE_TAC);;
 
-let le_exp_2 = prove
+let le_exp_two = prove
   (`!m n. 2 EXP m <= 2 EXP n <=> m <= n`,
    REWRITE_TAC [LE_EXP] THEN
    NUM_REDUCE_TAC);;
 
-let lt_exp_2 = prove
+let lt_exp_two = prove
   (`!m n. 2 EXP m < 2 EXP n <=> m < n`,
    REWRITE_TAC [LT_EXP] THEN
    NUM_REDUCE_TAC);;
 
-let lt_exp_2_suc = prove
+let lt_exp_two_suc = prove
   (`!m n. m < 2 EXP n ==> 2 * m + 1 < 2 EXP SUC n`,
    REPEAT STRIP_TAC THEN
    MATCH_MP_TAC LTE_TRANS THEN
@@ -318,21 +318,21 @@ let lt_exp_2_suc = prove
    DISJ2_TAC THEN
    ASM_REWRITE_TAC [GSYM ADD1; LE_SUC_LT]);;
 
-let mod_exp_2_lt = prove
+let mod_exp_two_lt = prove
   (`!m n. m MOD (2 EXP n) < 2 EXP n`,
    REPEAT GEN_TAC THEN
    MP_TAC (SPECL [`m : num`; `2 EXP n`] DIVISION) THEN
    COND_TAC THENL
-   [REWRITE_TAC [exp_2_nz];
+   [REWRITE_TAC [exp_two_nz];
     DISCH_THEN (fun th -> ACCEPT_TAC (CONJUNCT2 th))]);;
 
-let div_exp_2_lt = prove
+let div_exp_two_lt = prove
   (`!m n. m DIV (2 EXP n) = 0 <=> m < 2 EXP n`,
    REPEAT GEN_TAC THEN
    MATCH_MP_TAC DIV_EQ_0 THEN
-   MATCH_ACCEPT_TAC exp_2_nz);;
+   MATCH_ACCEPT_TAC exp_two_nz);;
 
-let cond_mod_2 = prove
+let cond_mod_two = prove
   (`!n. (if ODD n then 1 else 0) = n MOD 2`,
    GEN_TAC THEN
    MP_TAC (SPEC `n:num` EVEN_OR_ODD) THEN
@@ -347,7 +347,7 @@ let cond_mod_2 = prove
     ASM_REWRITE_TAC [] THEN
     DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
 
-let odd_mod_exp_2 = prove
+let odd_mod_exp_two = prove
   (`!m n. ODD (m MOD (2 EXP n)) <=> ODD m /\ ~(n = 0)`,
    REPEAT GEN_TAC THEN
    MP_TAC (SPEC `n:num` num_CASES) THEN
@@ -359,9 +359,9 @@ let odd_mod_exp_2 = prove
    AP_THM_TAC THEN
    AP_TERM_TAC THEN
    MATCH_MP_TAC MOD_MOD THEN
-   REWRITE_TAC [GSYM EXP; exp_2_nz]);;
+   REWRITE_TAC [GSYM EXP; exp_two_nz]);;
 
-let mod_div_exp_2 = prove
+let mod_div_exp_two = prove
   (`!x m n.
       (x MOD (2 EXP m)) DIV (2 EXP n) =
       (if m <= n then 0 else (x DIV (2 EXP n)) MOD (2 EXP (m - n)))`,
@@ -371,12 +371,12 @@ let mod_div_exp_2 = prove
     MATCH_MP_TAC DIV_LT THEN
     MATCH_MP_TAC LTE_TRANS THEN
     EXISTS_TAC `2 EXP m` THEN
-    ASM_REWRITE_TAC [le_exp_2; mod_exp_2_lt];
+    ASM_REWRITE_TAC [le_exp_two; mod_exp_two_lt];
     ALL_TAC] THEN
    ASM_REWRITE_TAC [] THEN
    MP_TAC (SPECL [`x : num`; `2 EXP n`; `2 EXP (m - n)`] DIV_MOD) THEN
    COND_TAC THENL
-   [REWRITE_TAC [MULT_EQ_0; exp_2_nz];
+   [REWRITE_TAC [MULT_EQ_0; exp_two_nz];
     ALL_TAC] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
    AP_THM_TAC THEN
@@ -491,7 +491,7 @@ let list_to_word_to_num_bound = prove
     REWRITE_TAC [LE_REFL] THEN
     NUM_REDUCE_TAC;
     ALL_TAC] THEN
-   MATCH_MP_TAC lt_exp_2_suc THEN
+   MATCH_MP_TAC lt_exp_two_suc THEN
    FIRST_ASSUM ACCEPT_TAC);;
 
 export_thm list_to_word_to_num_bound;;
@@ -504,7 +504,7 @@ let list_to_word_to_num_bound = new_axiom
 let list_to_word_to_num_bound_suc = prove
   (`!l. 2 * word_to_num (list_to_word l) + 1 < 2 EXP (SUC (LENGTH l))`,
    GEN_TAC THEN
-   MATCH_MP_TAC lt_exp_2_suc THEN
+   MATCH_MP_TAC lt_exp_two_suc THEN
    MATCH_ACCEPT_TAC list_to_word_to_num_bound);;
 
 export_thm list_to_word_to_num_bound_suc;;
@@ -572,7 +572,7 @@ let word_to_list_to_word = prove
     ALL_TAC] THEN
    DISCH_THEN (SUBST1_TAC o SYM) THEN
    DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [word_bit_div; cond_mod_2] THEN
+   REWRITE_TAC [word_bit_div; cond_mod_two] THEN
    ONCE_REWRITE_TAC [MULT_SYM] THEN
    REWRITE_TAC [EXP] THEN
    MP_TAC (SPECL [`word_to_num w`; `2 EXP (word_width - SUC k)`;
@@ -644,8 +644,8 @@ let list_to_word_bit = prove
      ALL_TAC] THEN
     POP_ASSUM (K ALL_TAC) THEN
     REWRITE_TAC
-      [LENGTH; cons_to_word_to_num; EXP; DIV_1; nth_0; HD; LT_NZ; NOT_SUC] THEN
-    ASM_REWRITE_TAC [word_size_def; odd_mod_exp_2] THEN
+      [LENGTH; cons_to_word_to_num; EXP; DIV_1; nth_zero; HD; LT_NZ; NOT_SUC] THEN
+    ASM_REWRITE_TAC [word_size_def; odd_mod_exp_two] THEN
     CONV_TAC (RATOR_CONV (ONCE_REWRITE_CONV [CONJ_SYM])) THEN
     AP_TERM_TAC THEN
     BOOL_CASES_TAC `h:bool` THENL
@@ -657,19 +657,19 @@ let list_to_word_bit = prove
     POP_ASSUM (K ALL_TAC) THEN
     REPEAT STRIP_TAC THEN
     ASM_REWRITE_TAC [NOT_ODD] THEN
-    MATCH_MP_TAC even_0 THEN
-    REWRITE_TAC [div_exp_2_lt] THEN
+    MATCH_MP_TAC even_zero THEN
+    REWRITE_TAC [div_exp_two_lt] THEN
     MATCH_MP_TAC LTE_TRANS THEN
     EXISTS_TAC `word_size` THEN
     REWRITE_TAC [word_to_num_bound] THEN
-    REWRITE_TAC [word_size_def; le_exp_2] THEN
+    REWRITE_TAC [word_size_def; le_exp_two] THEN
     ASM_REWRITE_TAC [GSYM NOT_LT];
     ALL_TAC] THEN
    ASM_REWRITE_TAC [] THEN
    LIST_INDUCT_TAC THENL
    [REWRITE_TAC [LENGTH; nil_to_word_to_num; LT; NOT_ODD] THEN
-    MATCH_MP_TAC even_0 THEN
-    REWRITE_TAC [div_exp_2_lt; LT_NZ; exp_2_nz];
+    MATCH_MP_TAC even_zero THEN
+    REWRITE_TAC [div_exp_two_lt; LT_NZ; exp_two_nz];
     ALL_TAC] THEN
    POP_ASSUM (K ALL_TAC) THEN
    REWRITE_TAC [LENGTH; cons_to_word_to_num; LT_SUC] THEN
@@ -679,8 +679,8 @@ let list_to_word_bit = prove
               ((x /\ y <=> x /\ z) ==> w) ==>
               ((x ==> (y <=> z)) ==> w)`) THEN
    DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [word_size_def; mod_div_exp_2; GSYM NOT_LT] THEN
-   ASM_REWRITE_TAC [odd_mod_exp_2] THEN
+   REWRITE_TAC [word_size_def; mod_div_exp_two; GSYM NOT_LT] THEN
+   ASM_REWRITE_TAC [odd_mod_exp_two] THEN
    SUBGOAL_THEN `~(word_width - SUC n = 0)` (fun th -> REWRITE_TAC [th]) THENL
    [MP_TAC (SPECL [`word_width`; `SUC n`] SUB_EQ_0) THEN
     COND_TAC THENL
@@ -713,11 +713,11 @@ let list_to_word_bit = prove
    [REWRITE_TAC [EXP] THEN
     MATCH_MP_TAC EQ_SYM THEN
     MATCH_MP_TAC DIV_DIV THEN
-    REWRITE_TAC [GSYM EXP; exp_2_nz];
+    REWRITE_TAC [GSYM EXP; exp_two_nz];
     ALL_TAC] THEN
    AP_THM_TAC THEN
    AP_TERM_TAC THEN
-   MATCH_ACCEPT_TAC cons_div_2);;
+   MATCH_ACCEPT_TAC cons_div_two);;
 
 export_thm list_to_word_bit;;
 
@@ -984,7 +984,7 @@ let short_word_shr_list = prove
    LIST_INDUCT_TAC THENL
    [REWRITE_TAC [LE; LENGTH] THEN
     REPEAT STRIP_TAC THEN
-    ASM_REWRITE_TAC [nil_to_word_to_num; drop_0] THEN
+    ASM_REWRITE_TAC [nil_to_word_to_num; drop_zero] THEN
     NUM_REDUCE_TAC THEN
     MATCH_MP_TAC MOD_0 THEN
     ACCEPT_TAC word_size_nonzero;
@@ -994,7 +994,7 @@ let short_word_shr_list = prove
    STRIP_TAC THENL
    [DISCH_THEN (K ALL_TAC) THEN
     DISCH_THEN (K ALL_TAC) THEN
-    ASM_REWRITE_TAC [EXP; DIV_1; drop_0] THEN
+    ASM_REWRITE_TAC [EXP; DIV_1; drop_zero] THEN
     MATCH_MP_TAC MOD_LT THEN
     MATCH_ACCEPT_TAC word_to_num_bound;
     ALL_TAC] THEN
@@ -1029,7 +1029,7 @@ let short_word_shr_list = prove
     CONJ_TAC THENL
     [MATCH_ACCEPT_TAC cons_to_word_to_num_bound;
      ALL_TAC] THEN
-    ASM_REWRITE_TAC [word_size_def; le_exp_2];
+    ASM_REWRITE_TAC [word_size_def; le_exp_two];
     ALL_TAC] THEN
    MATCH_MP_TAC EQ_TRANS THEN
    EXISTS_TAC
@@ -1039,11 +1039,11 @@ let short_word_shr_list = prove
    [REWRITE_TAC [EXP] THEN
     MATCH_MP_TAC EQ_SYM THEN
     MATCH_MP_TAC DIV_DIV THEN
-    REWRITE_TAC [GSYM EXP; exp_2_nz];
+    REWRITE_TAC [GSYM EXP; exp_two_nz];
     ALL_TAC] THEN
    AP_THM_TAC THEN
    AP_TERM_TAC THEN
-   MATCH_ACCEPT_TAC cons_div_2);;
+   MATCH_ACCEPT_TAC cons_div_two);;
 
 export_thm short_word_shr_list;;
 
@@ -1156,7 +1156,7 @@ let num_to_word_cons = prove
    REWRITE_TAC [mod_add_mod_word_size] THEN
    AP_THM_TAC THEN
    AP_TERM_TAC THEN
-   REWRITE_TAC [cond_mod_2] THEN
+   REWRITE_TAC [cond_mod_two] THEN
    ONCE_REWRITE_TAC [MULT_SYM] THEN
    MP_TAC (SPECL [`n : num`; `2`] DIVISION) THEN
    COND_TAC THENL
@@ -1250,7 +1250,7 @@ let word_lte_list = prove
     EXISTS_TAC `2 EXP SUC (LENGTH (t : bool list))` THEN
     CONJ_TAC THENL
     [MATCH_ACCEPT_TAC cons_to_word_to_num_bound;
-     REWRITE_TAC [word_size_def; le_exp_2] THEN
+     REWRITE_TAC [word_size_def; le_exp_two] THEN
      FIRST_ASSUM ACCEPT_TAC];
     ALL_TAC] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
@@ -1262,7 +1262,7 @@ let word_lte_list = prove
     EXISTS_TAC `2 EXP SUC (LENGTH (t' : bool list))` THEN
     CONJ_TAC THENL
     [MATCH_ACCEPT_TAC cons_to_word_to_num_bound;
-     REWRITE_TAC [word_size_def; le_exp_2] THEN
+     REWRITE_TAC [word_size_def; le_exp_two] THEN
      FIRST_ASSUM ACCEPT_TAC];
     ALL_TAC] THEN
    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN

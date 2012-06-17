@@ -2027,16 +2027,16 @@ let real_abs = new_definition
 
 export_thm real_abs;;
 
-let (real_pow_0,real_pow_suc) =
+let (real_pow_zero,real_pow_suc) =
   let def = new_recursive_definition num_RECURSION
     `(!x. x pow 0 = &1) /\
      (!x n. x pow (SUC n) = x * (x pow n))` in
   CONJ_PAIR def;;
 
-export_thm real_pow_0;;
+export_thm real_pow_zero;;
 export_thm real_pow_suc;;
 
-let real_pow = CONJ real_pow_0 real_pow_suc;;
+let real_pow = CONJ real_pow_zero real_pow_suc;;
 
 let real_div =
   let def = new_definition

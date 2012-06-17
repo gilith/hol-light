@@ -74,13 +74,13 @@ let num_to_word10_mult = new_axiom
 
 new_constant ("word10_exp", `:word10 -> num -> word10`);;
 
-let word10_exp_0 = new_axiom
+let word10_exp_zero = new_axiom
   `!x. word10_exp x 0 = num_to_word10 1`;;
 
 let word10_exp_suc = new_axiom
   `!x n. word10_exp x (SUC n) = word10_mult x (word10_exp x n)`;;
 
-let word10_exp_def = CONJ word10_exp_0 word10_exp_suc;;
+let word10_exp_def = CONJ word10_exp_zero word10_exp_suc;;
 
 new_constant ("word10_neg", `:word10 -> word10`);;
 

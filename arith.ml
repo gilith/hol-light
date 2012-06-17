@@ -523,7 +523,7 @@ let (LT_ZERO,LT_SUC) =
   let def = new_recursive_definition num_RECURSION
     `(!m. (m < 0) <=> F) /\
      (!m n. (m < SUC n) <=> (m = n) \/ (m < n))` in
-  (CONJUNCT1 def, CONJUNCT2 def);;
+  (REWRITE_RULE [] (CONJUNCT1 def), CONJUNCT2 def);;
 
 export_thm LT_ZERO;;
 export_thm LT_SUC;;
@@ -1018,20 +1018,54 @@ export_thm LE_SQUARE_REFL;;
 (* ------------------------------------------------------------------------- *)
 
 let WLOG_LE = prove
- (`!P. (!m n. P m n <=> P n m) /\ (!m n. m <= n ==> P m n) ==> !m n. P m n`,
+ (`!p : num -> num -> bool.
+     (!m n. p m n <=> p n m) /\ (!m n. m <= n ==> p m n) ==> !m n. p m n`,
   MESON_TAC[LE_CASES]);;
 
 let WLOG_LT = prove
- (`!P.
-     (!m. P m m) /\ (!m n. P m n <=> P n m) /\ (!m n. m < n ==> P m n)
-     ==> !m y. P m y`,
+ (`!p : num -> num -> bool.
+     (!m. p m m) /\ (!m n. p m n <=> p n m) /\ (!m n. m < n ==> p m n)
+     ==> !m y. p m y`,
   MESON_TAC[LT_CASES]);;
 
-let LT_MONO_SIMPLIFY = prove
+(* ------------------------------------------------------------------------- *)
+(* Useful lemmas about monotonicity of num -> num functions.                 *)
+(* ------------------------------------------------------------------------- *)
+
+let MONO_LE_LT = prove
   (`!(f : num -> num).
-     (!i j. i < j ==> f i < f j) <=>
-     (!n. f n < f (SUC n))`,
+      (!i j. f i <= f j <=> i <= j) <=>
+      (!i j. f i < f j <=> i < j)`,
    GEN_TAC THEN
+   EQ_TAC THENL
+   [DISCH_THEN (fun th -> REWRITE_TAC [th; GSYM NOT_LE]);
+    DISCH_THEN (fun th -> REWRITE_TAC [th; GSYM NOT_LT])]);;
+
+let MONO_LT_IMP = prove
+  (`!(f : num -> num).
+      (!i j. f i < f j <=> i < j) <=>
+      (!i j. i < j ==> f i < f j)`,
+   GEN_TAC THEN
+   EQ_TAC THENL
+   [DISCH_THEN (fun th -> REWRITE_TAC [th]);
+    REPEAT STRIP_TAC THEN
+    EQ_TAC THENL
+    [REWRITE_TAC [GSYM NOT_LE; CONTRAPOS_THM] THEN
+     REWRITE_TAC [LE_LT] THEN
+     STRIP_TAC THENL
+     [DISJ1_TAC THEN
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
+      FIRST_ASSUM ACCEPT_TAC;
+      DISJ2_TAC THEN
+      ASM_REWRITE_TAC []];
+     FIRST_ASSUM MATCH_ACCEPT_TAC]]);;
+
+let MONO_SIMPLIFY = prove
+  (`!(f : num -> num).
+      (!i j. f i <= f j <=> i <= j) <=>
+      (!n. f n < f (SUC n))`,
+   GEN_TAC THEN
+   REWRITE_TAC [MONO_LE_LT; MONO_LT_IMP] THEN
    EQ_TAC THENL
    [REPEAT STRIP_TAC THEN
     FIRST_X_ASSUM MATCH_MP_TAC THEN
@@ -1054,14 +1088,14 @@ let LT_MONO_SIMPLIFY = prove
 logfile "natural-order-thm";;
 
 let num_WF = prove
- (`!P. (!n. (!m. m < n ==> P m) ==> P n) ==> !n. P n`,
-  GEN_TAC THEN MP_TAC(SPEC `\n. !m. m < n ==> P m` num_INDUCTION) THEN
+ (`!p. (!n. (!m. m < n ==> p m) ==> p n) ==> !n : num. p n`,
+  GEN_TAC THEN MP_TAC(SPEC `\n : num. !m. m < n ==> p m` num_INDUCTION) THEN
   REWRITE_TAC[LT; BETA_THM] THEN MESON_TAC[LT]);;
 
 export_thm num_WF;;
 
 let num_WOP = prove
- (`!P. (?n. P n) <=> (?n. P(n) /\ !m. m < n ==> ~P(m))`,
+ (`!p. (?n : num. p n) <=> (?n. p n /\ !m. m < n ==> ~p m)`,
   GEN_TAC THEN EQ_TAC THENL [ALL_TAC; MESON_TAC[]] THEN
   CONV_TAC CONTRAPOS_CONV THEN REWRITE_TAC[NOT_EXISTS_THM] THEN
   DISCH_TAC THEN MATCH_MP_TAC num_WF THEN ASM_MESON_TAC[]);;
@@ -1069,8 +1103,9 @@ let num_WOP = prove
 export_thm num_WOP;;
 
 let num_MAX = prove
- (`!P. (?x. P x) /\ (?M. !x. P x ==> x <= M) <=>
-       ?m. P m /\ (!x. P x ==> x <= m)`,
+ (`!p : num -> bool.
+     (?n. p n) /\ (?m. !n. p n ==> n <= m) <=>
+     ?m. p m /\ !n. p n ==> n <= m`,
   GEN_TAC THEN EQ_TAC THENL
    [DISCH_THEN(CONJUNCTS_THEN2 (X_CHOOSE_TAC `a:num`) MP_TAC) THEN
     DISCH_THEN(X_CHOOSE_THEN `m:num` MP_TAC o ONCE_REWRITE_RULE[num_WOP]) THEN
@@ -1081,9 +1116,9 @@ let num_MAX = prove
       POP_ASSUM ACCEPT_TAC;
       DISCH_THEN(CONJUNCTS_THEN2 ASSUME_TAC (MP_TAC o SPEC `m:num`)) THEN
       REWRITE_TAC[LT] THEN CONV_TAC CONTRAPOS_CONV THEN
-      DISCH_TAC THEN REWRITE_TAC[] THEN X_GEN_TAC `p:num` THEN
-      FIRST_ASSUM(MP_TAC o SPEC `p:num`) THEN REWRITE_TAC[LE] THEN
-      ASM_CASES_TAC `p = SUC m` THEN ASM_REWRITE_TAC[]];
+      DISCH_TAC THEN REWRITE_TAC[] THEN X_GEN_TAC `b:num` THEN
+      FIRST_ASSUM(MP_TAC o SPEC `b:num`) THEN REWRITE_TAC[LE] THEN
+      ASM_CASES_TAC `b = SUC m` THEN ASM_REWRITE_TAC[]];
     REPEAT STRIP_TAC THEN EXISTS_TAC `m:num` THEN ASM_REWRITE_TAC[]]);;
 
 export_thm num_MAX;;
@@ -1855,6 +1890,11 @@ let MOD_MOD_REFL = prove
 
 export_thm MOD_MOD_REFL;;
 
+let MOD_MOD_REFL' = prove
+ (`!n m. ~(n = 0) ==> ((m MOD n) MOD n = m MOD n)`,
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC MOD_MOD_REFL);;
+
 let DIV_MULT2 = prove
  (`!m n p. ~(m * p = 0) ==> ((m * n) DIV (m * p) = n DIV p)`,
   REWRITE_TAC[MULT_EQ_0; DE_MORGAN_THM] THEN REPEAT STRIP_TAC THEN
@@ -2031,6 +2071,11 @@ let MOD_ADD_MOD = prove
 
 export_thm MOD_ADD_MOD;;
 
+let MOD_ADD_MOD' = prove
+ (`!n a b. ~(n = 0) ==> ((a MOD n + b MOD n) MOD n = (a + b) MOD n)`,
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC MOD_ADD_MOD);;
+
 let DIV_ADD_MOD = prove
  (`!a b n. ~(n = 0)
            ==> (((a + b) MOD n = a MOD n + b MOD n) <=>
@@ -2048,6 +2093,41 @@ let DIV_ADD_MOD = prove
   REWRITE_TAC[EQ_SYM_EQ]);;
 
 export_thm DIV_ADD_MOD;;
+
+let SUC_INJ_MOD = prove
+ (`!n a b. ~(n = 0) ==> (SUC a MOD n = SUC b MOD n <=> a MOD n = b MOD n)`,
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   MP_TAC (SPEC `n : num` MOD_MOD_REFL') THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+   CONV_TAC (LAND_CONV (LAND_CONV (REWR_CONV (GSYM ADD_0)))) THEN
+   CONV_TAC (RAND_CONV (LAND_CONV (REWR_CONV (GSYM ADD_0)))) THEN
+   MP_TAC (SPEC `n : num` MOD_REFL) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   MP_TAC (SPEC `n : num` MOD_ADD_MOD') THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   MP_TAC (SPEC `n : num` num_CASES) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `c : num`
+        (fun th ->
+           CONV_TAC (LAND_CONV (LAND_CONV (RAND_CONV (REWR_CONV th)))) THEN
+           CONV_TAC (RAND_CONV (LAND_CONV (RAND_CONV (REWR_CONV th)))))) THEN
+   REWRITE_TAC [ADD_SUC; GSYM SUC_ADD] THEN
+   POP_ASSUM (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+   ASM_REWRITE_TAC [];
+   STRIP_TAC THEN
+   MP_TAC (SPEC `n : num` MOD_ADD_MOD') THEN
+   ASM_REWRITE_TAC [ADD1] THEN
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm SUC_INJ_MOD;;
 
 let DIV_REFL = prove
  (`!n. ~(n = 0) ==> (n DIV n = 1)`,
@@ -2211,23 +2291,6 @@ let MINIMAL = prove
 
 export_thm MINIMAL;;
 
-let MINIMAL_EQ = prove
- (`!p n. p n /\ (!m. m < n ==> ~(p m)) ==> (minimal) p = n`,
-  REPEAT STRIP_TAC THEN
-  SUBGOAL_THEN `?n : num. p n`
-    (STRIP_ASSUME_TAC o REWRITE_RULE [MINIMAL]) THENL
-  [EXISTS_TAC `n : num` THEN
-   FIRST_ASSUM ACCEPT_TAC;
-   REWRITE_TAC [GSYM LE_ANTISYM; GSYM NOT_LT] THEN
-   REPEAT STRIP_TAC THENL
-   [FIRST_X_ASSUM (MP_TAC o SPEC `n : num`) THEN
-    ASM_REWRITE_TAC [];
-    UNDISCH_TAC `!m : num. m < n ==> ~p m` THEN
-    DISCH_THEN (MP_TAC o SPEC `(minimal) p`) THEN
-    ASM_REWRITE_TAC []]]);;
-
-export_thm MINIMAL_EQ;;
-
 logfile "natural-order-min-max-thm";;
 
 let MAX_REFL = prove
@@ -2331,5 +2394,29 @@ let MIN_R0 = prove
   MATCH_ACCEPT_TAC MIN_L0);;
 
 export_thm MIN_R0;;
+
+let MINIMAL_EQ = prove
+ (`!p n. p n /\ (!m. m < n ==> ~(p m)) ==> (minimal) p = n`,
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN `?n : num. p n`
+    (STRIP_ASSUME_TAC o REWRITE_RULE [MINIMAL]) THENL
+  [EXISTS_TAC `n : num` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   REWRITE_TAC [GSYM LE_ANTISYM; GSYM NOT_LT] THEN
+   REPEAT STRIP_TAC THENL
+   [FIRST_X_ASSUM (MP_TAC o SPEC `n : num`) THEN
+    ASM_REWRITE_TAC [];
+    UNDISCH_TAC `!m : num. m < n ==> ~p m` THEN
+    DISCH_THEN (MP_TAC o SPEC `(minimal) p`) THEN
+    ASM_REWRITE_TAC []]]);;
+
+export_thm MINIMAL_EQ;;
+
+let MINIMAL_T = prove
+ (`(minimal n. T) = 0`,
+  MATCH_MP_TAC MINIMAL_EQ THEN
+  REWRITE_TAC [LT]);;
+
+export_thm MINIMAL_T;;
 
 logfile_end ();;

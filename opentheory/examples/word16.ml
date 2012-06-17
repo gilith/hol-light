@@ -49,9 +49,9 @@ let byte_to_word16_list = prove
    REPEAT STRIP_TAC THEN
    ASM_REWRITE_TAC [list_to_word16_bit] THEN
    REWRITE_TAC [word16_bit_div; num_to_word16_to_num] THEN
-   REWRITE_TAC [word16_size_def; mod_div_exp_2] THEN
+   REWRITE_TAC [word16_size_def; mod_div_exp_two] THEN
    ASM_REWRITE_TAC [GSYM NOT_LT] THEN
-   REWRITE_TAC [odd_mod_exp_2] THEN
+   REWRITE_TAC [odd_mod_exp_two] THEN
    MATCH_MP_TAC EQ_TRANS THEN
    EXISTS_TAC
      `i < byte_width /\ i < LENGTH (byte_to_list b) /\
@@ -75,9 +75,9 @@ let word16_to_byte_list = prove
    REPEAT STRIP_TAC THEN
    ASM_REWRITE_TAC [list_to_byte_bit] THEN
    REWRITE_TAC [byte_bit_div; num_to_byte_to_num] THEN
-   REWRITE_TAC [byte_size_def; mod_div_exp_2] THEN
+   REWRITE_TAC [byte_size_def; mod_div_exp_two] THEN
    ASM_REWRITE_TAC [GSYM NOT_LT] THEN
-   REWRITE_TAC [odd_mod_exp_2] THEN
+   REWRITE_TAC [odd_mod_exp_two] THEN
    MATCH_MP_TAC EQ_TRANS THEN
    EXISTS_TAC
      `i < word16_width /\ i < LENGTH (word16_to_list w) /\

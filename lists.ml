@@ -1096,7 +1096,7 @@ let LAST_CLAUSES = CONJ LAST_SING LAST_MULTIPLE;;
 
 logfile "list-nth-def";;
 
-let (nth_0,nth_suc) =
+let (nth_zero,nth_suc) =
   let def = new_recursive_definition num_RECURSION
     `(!(l : A list). nth l 0 = HD l) /\
      (!(l : A list) n. nth l (SUC n) = nth (TL l) n)` in
@@ -1108,10 +1108,10 @@ let (nth_0,nth_suc) =
      REWRITE_TAC [def; TL]) in
   (zero,suc);;
 
-export_thm nth_0;;
+export_thm nth_zero;;
 export_thm nth_suc;;
 
-let nth_def = CONJ nth_0 nth_suc;;
+let nth_def = CONJ nth_zero nth_suc;;
 
 logfile "list-nth-thm";;
 
@@ -1127,7 +1127,7 @@ let nth_append = prove
   INDUCT_TAC THENL
   [LIST_INDUCT_TAC THENL
    [REWRITE_TAC [LENGTH; LT_REFL; SUB_0; APPEND];
-    REWRITE_TAC [APPEND; nth_0; LENGTH; LT_0]];
+    REWRITE_TAC [APPEND; nth_zero; LENGTH; LT_0]];
    ALL_TAC] THEN
   LIST_INDUCT_TAC THENL
   [REWRITE_TAC [LENGTH; LT; SUB_0; APPEND];
@@ -1168,7 +1168,7 @@ let last_nth = prove
   COND_CASES_TAC THENL
   [DISCH_THEN (K ALL_TAC) THEN
    POP_ASSUM (SUBST_VAR_TAC o REWRITE_RULE [NULL_EQ_NIL]) THEN
-   REWRITE_TAC [LENGTH; SUC_SUB1; nth_0];
+   REWRITE_TAC [LENGTH; SUC_SUB1; nth_zero];
    ALL_TAC] THEN
   REWRITE_TAC [SUC_SUB1] THEN
   DISCH_THEN (SUBST1_TAC o SYM) THEN
@@ -1204,7 +1204,7 @@ let nth_eq = prove
    REWRITE_TAC [LENGTH; SUC_INJ; CONS_11] THEN
    REPEAT STRIP_TAC THENL
    [FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
-    REWRITE_TAC [LT_0; nth_0];
+    REWRITE_TAC [LT_0; nth_zero];
     ALL_TAC] THEN
    FIRST_X_ASSUM MATCH_MP_TAC THEN
    ASM_REWRITE_TAC [] THEN
@@ -1230,7 +1230,7 @@ let nth_map = prove
     ALL_TAC] THEN
    REWRITE_TAC [LENGTH; MAP] THEN
    INDUCT_TAC THENL
-   [REWRITE_TAC [nth_0];
+   [REWRITE_TAC [nth_zero];
     ALL_TAC] THEN
    POP_ASSUM (K ALL_TAC) THEN
    REWRITE_TAC [LT_SUC] THEN
@@ -1254,7 +1254,7 @@ let set_of_list_nth = prove
    ALL_TAC] THEN
   ASM_REWRITE_TAC
     [LENGTH; set_of_list; IN_INSERT; INSERT_NUMSEG_LT'; IMAGE_INSERT;
-     nth_0] THEN
+     nth_zero] THEN
   POP_ASSUM (K ALL_TAC) THEN
   AP_TERM_TAC THEN
   REWRITE_TAC [EXTENSION] THEN
@@ -1340,7 +1340,7 @@ let nth_replicate = prove
    REPEAT GEN_TAC THEN
    NUM_CASES_TAC `i : num` THENL
    [DISCH_THEN SUBST1_TAC THEN
-    REWRITE_TAC [REPLICATE; nth_0];
+    REWRITE_TAC [REPLICATE; nth_zero];
     ALL_TAC] THEN
    DISCH_THEN (X_CHOOSE_THEN `m : num` SUBST1_TAC) THEN
    REWRITE_TAC [LT_SUC] THEN
@@ -1384,7 +1384,7 @@ export_thm MEM_REPLICATE;;
 
 logfile "list-take-drop-def";;
 
-let (take_0,take_suc) =
+let (take_zero,take_suc) =
   let def = new_recursive_definition num_RECURSION
     `(!(l : A list). take 0 l = []) /\
      (!n (l : A list). take (SUC n) l = CONS (HD l) (take n (TL l)))` in
@@ -1398,12 +1398,12 @@ let (take_0,take_suc) =
      REWRITE_TAC [def; HD; TL]) in
   (zero,suc);;
 
-export_thm take_0;;
+export_thm take_zero;;
 export_thm take_suc;;
 
-let take_def = CONJ take_0 take_suc;;
+let take_def = CONJ take_zero take_suc;;
 
-let (drop_0,drop_suc) =
+let (drop_zero,drop_suc) =
   let def = new_recursive_definition num_RECURSION
     `(!(l : A list). drop 0 l = l) /\
      (!n (l : A list). drop (SUC n) l = drop n (TL l))` in
@@ -1417,17 +1417,17 @@ let (drop_0,drop_suc) =
      REWRITE_TAC [def; TL]) in
   (zero,suc);;
 
-export_thm drop_0;;
+export_thm drop_zero;;
 export_thm drop_suc;;
 
-let drop_def = CONJ drop_0 drop_suc;;
+let drop_def = CONJ drop_zero drop_suc;;
 
 logfile "list-take-drop-thm";;
 
 let take_drop = prove
   (`!n (l : A list). n <= LENGTH l ==> APPEND (take n l) (drop n l) = l`,
    INDUCT_TAC THENL
-   [REWRITE_TAC [take_0; drop_0; APPEND];
+   [REWRITE_TAC [take_zero; drop_zero; APPEND];
     LIST_INDUCT_TAC THENL
     [REWRITE_TAC [LENGTH; LE; NOT_SUC];
      POP_ASSUM (K ALL_TAC) THEN
@@ -1570,16 +1570,16 @@ export_thm take_length;;
 
 logfile "list-interval-def";;
 
-let (interval_0,interval_suc) =
+let (interval_zero,interval_suc) =
   let def = new_recursive_definition num_RECURSION
     `(!m. interval m 0 = []) /\
      (!m n. interval m (SUC n) = CONS m (interval (SUC m) n))` in
   CONJ_PAIR def;;
 
-export_thm interval_0;;
+export_thm interval_zero;;
 export_thm interval_suc;;
 
-let interval_def = CONJ interval_0 interval_suc;;
+let interval_def = CONJ interval_zero interval_suc;;
 
 logfile "list-interval-thm";;
 
@@ -1601,7 +1601,7 @@ let nth_interval = prove
    REPEAT GEN_TAC THEN
    NUM_CASES_TAC `i : num` THENL
    [DISCH_THEN SUBST1_TAC THEN
-    REWRITE_TAC [nth_0; ADD_CLAUSES];
+    REWRITE_TAC [nth_zero; ADD_CLAUSES];
     ALL_TAC] THEN
    DISCH_THEN (X_CHOOSE_THEN `j : num` SUBST1_TAC) THEN
    REWRITE_TAC [LT_SUC; ADD_CLAUSES] THEN
@@ -1700,7 +1700,7 @@ let nth_zipwith = prove
     [ASM_REWRITE_TAC [];
      ALL_TAC] THEN
     DISCH_THEN SUBST1_TAC THEN
-    REWRITE_TAC [nth_0];
+    REWRITE_TAC [nth_zero];
     POP_ASSUM (K ALL_TAC) THEN
     POP_ASSUM (K ALL_TAC) THEN
     POP_ASSUM (K ALL_TAC) THEN

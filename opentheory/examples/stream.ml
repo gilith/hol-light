@@ -41,16 +41,16 @@ let scons_def = new_definition
 
 export_thm scons_def;;
 
-let (stake_0,stake_suc) =
+let (stake_zero,stake_suc) =
   let def = new_recursive_definition num_RECURSION
     `(!(s : A stream). stake s 0 = []) /\
      (!(s : A stream) n. stake s (SUC n) = CONS (shd s) (stake (stl s) n))` in
   CONJ_PAIR def;;
 
-export_thm stake_0;;
+export_thm stake_zero;;
 export_thm stake_suc;;
 
-let stake_def = CONJ stake_0 stake_suc;;
+let stake_def = CONJ stake_zero stake_suc;;
 
 let ssplit_def = new_definition
   `!s : A stream.
@@ -94,6 +94,19 @@ let snth_eq_imp = prove
 
 export_thm snth_eq_imp;;
 
+let snth_add = prove
+  (`!(s : A stream) m n. snth s (m + n) = snth (sdrop s n) m`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [sdrop_def; stream_tybij]);;
+
+export_thm snth_add;;
+
+let snth_suc = prove
+  (`!(s : A stream) n. snth s (SUC n) = snth (stl s) n`,
+   REWRITE_TAC [ADD1; snth_add; stl_def]);;
+
+export_thm snth_suc;;
+
 let shd_scons = prove
   (`!(h : A) t. shd (scons h t) = h`,
    REPEAT STRIP_TAC THEN
@@ -119,17 +132,9 @@ let snth_scons_zero = prove
 
 export_thm snth_scons_zero;;
 
-let snth_add = prove
-  (`!(s : A stream) m n. snth s (m + n) = snth (sdrop s n) m`,
-   REPEAT STRIP_TAC THEN
-   REWRITE_TAC [sdrop_def; stream_tybij]);;
-
-export_thm snth_add;;
-
 let snth_scons_suc = prove
   (`!h (t : A stream) n. snth (scons h t) (SUC n) = snth t n`,
-   REPEAT STRIP_TAC THEN
-   REWRITE_TAC [ADD1; snth_add; GSYM stl_def; stl_scons]);;
+   REWRITE_TAC [snth_suc; stl_scons]);;
 
 export_thm snth_scons_suc;;
 
@@ -200,7 +205,7 @@ let cons_sappend = prove
    REWRITE_TAC [sappend_def; stream_snth; scons_def; LENGTH] THEN
    NUM_CASES_TAC `n : num` THENL
    [DISCH_THEN SUBST1_TAC THEN
-    REWRITE_TAC [LT_NZ; NOT_SUC; nth_0];
+    REWRITE_TAC [LT_NZ; NOT_SUC; nth_zero];
     ALL_TAC] THEN
    DISCH_THEN (X_CHOOSE_THEN `m : num` SUBST1_TAC) THEN
    REWRITE_TAC [NOT_SUC; LT_SUC; SUC_SUB1] THEN
@@ -216,20 +221,86 @@ let cons_sappend = prove
 
 export_thm cons_sappend;;
 
-(***
-let stake_add_append = prove
+let sdrop_zero = prove
+  (`!s : A stream. sdrop s 0 = s`,
+   GEN_TAC THEN
+   REWRITE_TAC [sdrop_def; ADD_0] THEN
+   CONV_TAC (LAND_CONV (RAND_CONV ETA_CONV)) THEN
+   MATCH_ACCEPT_TAC snth_stream);;
+
+export_thm sdrop_zero;;
+
+let sdrop_suc' = prove
+  (`!(s : A stream) n. sdrop s (SUC n) = sdrop (stl s) n`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [sdrop_def; ADD_SUC; stl_def; GSYM ADD1; stream_tybij]);;
+
+export_thm sdrop_suc';;
+
+let sdrop_funpow = prove
+  (`!(s : A stream) n. sdrop s n = funpow stl n s`,
+   ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [funpow_zero; sdrop_zero; I_THM];
+    ASM_REWRITE_TAC [sdrop_suc'; funpow_suc_x']]);;
+
+export_thm sdrop_funpow;;
+
+let sdrop_suc = prove
+  (`!(s : A stream) n. sdrop s (SUC n) = stl (sdrop s n)`,
+   REWRITE_TAC [sdrop_funpow; funpow_suc_x]);;
+
+export_thm sdrop_suc;;
+
+let sdrop_one = prove
+  (`!s : A stream. sdrop s 1 = stl s`,
+   REWRITE_TAC [ONE; sdrop_suc; sdrop_zero]);;
+
+export_thm sdrop_one;;
+
+let shd_sdrop = prove
+  (`!(s : A stream) n. shd (sdrop s n) = snth s n`,
+   ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [sdrop_zero; shd_def];
+    ASM_REWRITE_TAC [sdrop_suc'; snth_suc]]);;
+
+export_thm shd_sdrop;;
+
+let stake_one = prove
+  (`!(s : A stream). stake s 1 = [shd s]`,
+   REWRITE_TAC [ONE; stake_suc; stake_zero]);;
+
+export_thm stake_one;;
+
+let length_stake = prove
+  (`!(s : A stream) n. LENGTH (stake s n) = n`,
+   ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [LENGTH; stake_zero];
+    ASM_REWRITE_TAC [LENGTH; stake_suc]]);;
+
+export_thm length_stake;;
+
+let stake_add = prove
   (`!(s : A stream) m n.
       stake s (m + n) = APPEND (stake s m) (stake (sdrop s m) n)`,
    REPEAT GEN_TAC THEN
+   SPEC_TAC (`s : A stream`, `s : A stream`) THEN
+   SPEC_TAC (`m : num`, `m : num`) THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [stake_zero; sdrop_zero; ZERO_ADD; NIL_APPEND];
+    GEN_TAC THEN
+    ASM_REWRITE_TAC [stake_suc; sdrop_suc'; SUC_ADD; CONS_APPEND]]);;
 
-let stake_1 = prove
-  (`!(s : A stream). stake s 1 = [shd s]`,
-   REPEAT GEN_TAC THEN
+export_thm stake_add;;
 
-let stake_suc_append = prove
+let stake_suc' = prove
   (`!(s : A stream) n. stake s (SUC n) = APPEND (stake s n) [snth s n]`,
    REPEAT GEN_TAC THEN
-***)
+   REWRITE_TAC [ADD1; stake_add; stake_one; shd_sdrop]);;
+
+export_thm stake_suc';;
 
 let ssplit_sinterleave = prove
   (`!s1 s2 : A stream. ssplit (sinterleave s1 s2) = (s1,s2)`,
@@ -291,10 +362,10 @@ let num_stream_exists = prove
   (`!(p : num -> bool).
       (!m. ?n. m <= n /\ p n) ==>
       ?s.
-        (!i j. i < j ==> snth s i < snth s j) /\
+        (!i j. snth s i <= snth s j <=> i <= j) /\
         (!n. p n <=> ?i. snth s i = n)`,
    REPEAT STRIP_TAC THEN
-   REWRITE_TAC [LT_MONO_SIMPLIFY] THEN
+   REWRITE_TAC [MONO_SIMPLIFY] THEN
    EXISTS_TAC
      `sunfold (\b. let n = (minimal m. b <= m /\ p m) in (n, SUC n)) 0` THEN
    REPEAT STRIP_TAC THENL

@@ -343,7 +343,7 @@ let num_to_modular_mult = new_axiom
      modular_mult (num_to_modular x1) (num_to_modular y1)`;;
 *)
 
-let (modular_exp_0,modular_exp_suc) =
+let (modular_exp_zero,modular_exp_suc) =
   let def = new_recursive_definition num_RECURSION
     `(!x. modular_exp x 0 = num_to_modular 1) /\
      (!x n. modular_exp x (SUC n) = modular_mult x (modular_exp x n))` in
@@ -353,21 +353,21 @@ let (modular_exp_0,modular_exp_suc) =
 new_constant ("modular_exp", `:modular -> num -> modular`);;
 *)
 
-export_thm modular_exp_0;;
+export_thm modular_exp_zero;;
 export_thm modular_exp_suc;;
 
 (*PARAMETRIC
-let modular_exp_0 = new_axiom
+let modular_exp_zero = new_axiom
   `!x. modular_exp x 0 = num_to_modular 1`;;
 
 let modular_exp_suc = new_axiom
   `!x n. modular_exp x (SUC n) = modular_mult x (modular_exp x n)`;;
 *)
 
-let modular_exp_def = CONJ modular_exp_0 modular_exp_suc;;
+let modular_exp_def = CONJ modular_exp_zero modular_exp_suc;;
 
 (*PARAMETRIC
-let modular_exp_def = CONJ modular_exp_0 modular_exp_suc;;
+let modular_exp_def = CONJ modular_exp_zero modular_exp_suc;;
 *)
 
 let modular_neg_def = new_definition
