@@ -2094,6 +2094,24 @@ let DIV_ADD_MOD = prove
 
 export_thm DIV_ADD_MOD;;
 
+let DIV_REFL = prove
+ (`!n. ~(n = 0) ==> (n DIV n = 1)`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC DIV_UNIQ THEN
+  EXISTS_TAC `0` THEN REWRITE_TAC[ADD_CLAUSES; MULT_CLAUSES] THEN
+  POP_ASSUM MP_TAC THEN SPEC_TAC(`n:num`,`n:num`) THEN
+  INDUCT_TAC THEN REWRITE_TAC[LT_0]);;
+
+export_thm DIV_REFL;;
+
+let MOD_REFL = prove
+ (`!n. ~(n = 0) ==> (n MOD n = 0)`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC MOD_UNIQ THEN
+  EXISTS_TAC `1` THEN
+  ASM_REWRITE_TAC [ONE_MULT; LT_NZ; ADD_0]);;
+
+export_thm MOD_REFL;;
+
 let SUC_INJ_MOD = prove
  (`!n a b. ~(n = 0) ==> (SUC a MOD n = SUC b MOD n <=> a MOD n = b MOD n)`,
   REPEAT STRIP_TAC THEN
@@ -2128,24 +2146,6 @@ let SUC_INJ_MOD = prove
    ASM_REWRITE_TAC []]);;
 
 export_thm SUC_INJ_MOD;;
-
-let DIV_REFL = prove
- (`!n. ~(n = 0) ==> (n DIV n = 1)`,
-  REPEAT STRIP_TAC THEN MATCH_MP_TAC DIV_UNIQ THEN
-  EXISTS_TAC `0` THEN REWRITE_TAC[ADD_CLAUSES; MULT_CLAUSES] THEN
-  POP_ASSUM MP_TAC THEN SPEC_TAC(`n:num`,`n:num`) THEN
-  INDUCT_TAC THEN REWRITE_TAC[LT_0]);;
-
-export_thm DIV_REFL;;
-
-let MOD_REFL = prove
- (`!n. ~(n = 0) ==> (n MOD n = 0)`,
-  REPEAT STRIP_TAC THEN
-  MATCH_MP_TAC MOD_UNIQ THEN
-  EXISTS_TAC `1` THEN
-  ASM_REWRITE_TAC [ONE_MULT; LT_NZ; ADD_0]);;
-
-export_thm MOD_REFL;;
 
 let MOD_LE = prove
  (`!m n. ~(n = 0) ==> m MOD n <= m`,

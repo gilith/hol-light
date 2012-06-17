@@ -434,36 +434,73 @@ export_thm primes_below_divides;;
 
 logfile "natural-prime-sieve-def";;
 
-let (sieve_induct,sieve_recursion) =
-  let (induct,recursion) = define_type
-    "sieve = Sieve num ((num # (num # num)) list)" in
-  let induct' = prove
-    (`!p.
-        (!n ps. p (Sieve n ps)) ==>
-        !s. p s`,
-     ACCEPT_TAC induct)
-  and recursion' = prove
-    (`!f.
-        ?(fn : sieve -> A).
-          (!n ps. fn (Sieve n ps) = f n ps)`,
-     MATCH_ACCEPT_TAC recursion) in
-  (induct',recursion');;
+let (is_counters_sieve_nil,is_counters_sieve_cons) =
+  let def = new_recursive_definition list_RECURSION
+    `(!n i. is_counters_sieve n i [] <=> T) /\
+     (!n i pkj ps.
+        is_counters_sieve n i (CONS pkj ps) <=>
+        let (p,(k,j)) = pkj in
+        (~(p = 0) /\
+         (k + i) MOD p = n MOD p /\
+         is_counters_sieve n (i + j) ps))` in
+  let (nil,cons) = CONJ_PAIR def in
+  let nil' = REWRITE_RULE [] nil in
+  let cons' = prove
+    (`!n i p k j ps.
+        is_counters_sieve n i (CONS (p,(k,j)) ps) <=>
+        ~(p = 0) /\
+        (k + i) MOD p = n MOD p /\
+        is_counters_sieve n (i + j) ps`,
+     REPEAT GEN_TAC THEN
+     CONV_TAC (LAND_CONV (REWR_CONV cons)) THEN
+     REWRITE_TAC [LET_DEF; LET_END_DEF]) in
+  (nil',cons');;
 
-export_thm sieve_induct;;
-export_thm sieve_recursion;;
+export_thm is_counters_sieve_nil;;
+export_thm is_counters_sieve_cons;;
+
+let is_counters_sieve_def =
+    CONJ is_counters_sieve_nil is_counters_sieve_cons;;
+
+let is_sieve_def = new_definition
+  `!n ps.
+     is_sieve (n,ps) <=>
+     ~(n = 0) /\
+     MAP FST ps = primes_below (n + 1) /\
+     is_counters_sieve n 0 ps`;;
+
+export_thm is_sieve_def;;
+
+let sieve_exists = prove
+  (`?n_ps. is_sieve n_ps`,
+   EXISTS_TAC `(1, ([] : (num # (num # num)) list))` THEN
+   REWRITE_TAC
+     [is_sieve_def; is_counters_sieve_def; NOT_SUC; ONE; ADD_CLAUSES] THEN
+   REWRITE_TAC [GSYM ONE; GSYM TWO; MAP; primes_below_two]);;
+
+let (mk_dest_sieve,dest_mk_sieve) =
+  let tybij =
+    new_type_definition
+      "sieve" ("mk_sieve","dest_sieve") sieve_exists in
+  CONJ_PAIR tybij;;
+
+export_thm mk_dest_sieve;;
+export_thm dest_mk_sieve;;
+
+let sieve_tybij = CONJ mk_dest_sieve dest_mk_sieve;;
 
 let init_sieve_def = new_definition
-  `init_sieve = Sieve 1 []`;;
+    `init_sieve = mk_sieve (1,[])`;;
 
 export_thm init_sieve_def;;
 
-let max_sieve_def = new_recursive_definition sieve_recursion
-  `!n ps. max_sieve (Sieve n ps) = n`;;
+let max_sieve_def = new_definition
+  `!s. max_sieve s = FST (dest_sieve s)`;;
 
 export_thm max_sieve_def;;
 
-let primes_sieve_def = new_recursive_definition sieve_recursion
-  `!n ps. primes_sieve (Sieve n ps) = MAP FST ps`;;
+let primes_sieve_def = new_definition
+  `!s. primes_sieve s = MAP FST (SND (dest_sieve s))`;;
 
 export_thm primes_sieve_def;;
 
@@ -498,51 +535,15 @@ export_thm inc_counters_sieve_cons;;
 let inc_counters_sieve_def =
     CONJ inc_counters_sieve_nil inc_counters_sieve_cons;;
 
-let inc_sieve_def = new_recursive_definition sieve_recursion
-  `!n ps.
-     inc_sieve (Sieve n ps) =
+let inc_sieve_def = new_definition
+  `!s.
+     inc_sieve s =
+     let (n,ps) = dest_sieve s in
      let n' = n + 1 in
      let (b,ps') = inc_counters_sieve n' 1 ps in
-     (b, Sieve n' ps')`;;
+     (b, mk_sieve (n',ps'))`;;
 
 export_thm inc_sieve_def;;
-
-let (invariant_counters_sieve_nil,invariant_counters_sieve_cons) =
-  let def = new_recursive_definition list_RECURSION
-    `(!n i. invariant_counters_sieve n i [] <=> T) /\
-     (!n i pkj ps.
-        invariant_counters_sieve n i (CONS pkj ps) <=>
-        let (p,(k,j)) = pkj in
-        (~(p = 0) /\
-         (k + i) MOD p = n MOD p /\
-         invariant_counters_sieve n (i + j) ps))` in
-  let (nil,cons) = CONJ_PAIR def in
-  let nil' = REWRITE_RULE [] nil in
-  let cons' = prove
-    (`!n i p k j ps.
-        invariant_counters_sieve n i (CONS (p,(k,j)) ps) <=>
-        ~(p = 0) /\
-        (k + i) MOD p = n MOD p /\
-        invariant_counters_sieve n (i + j) ps`,
-     REPEAT GEN_TAC THEN
-     CONV_TAC (LAND_CONV (REWR_CONV cons)) THEN
-     REWRITE_TAC [LET_DEF; LET_END_DEF]) in
-  (nil',cons');;
-
-export_thm invariant_counters_sieve_nil;;
-export_thm invariant_counters_sieve_cons;;
-
-let invariant_counters_sieve_def =
-    CONJ invariant_counters_sieve_nil invariant_counters_sieve_cons;;
-
-let invariant_sieve_def = new_recursive_definition sieve_recursion
-  `!n ps.
-     invariant_sieve (Sieve n ps) <=>
-     ~(n = 0) /\
-     MAP FST ps = primes_below (n + 1) /\
-     invariant_counters_sieve n 0 ps`;;
-
-export_thm invariant_sieve_def;;
 
 let next_sieve_exists = prove
  (`?fn. !s.
@@ -583,35 +584,68 @@ export_thm next_sieve_def;;
 
 logfile "natural-prime-sieve-thm";;
 
-let sieve_cases = prove_cases_thm sieve_induct;;
+let sieve_cases = prove
+  (`!s. ?n ps. is_sieve (n,ps) /\ s = mk_sieve (n,ps)`,
+   GEN_TAC THEN
+   EXISTS_TAC `FST (dest_sieve s)` THEN
+   EXISTS_TAC `SND (dest_sieve s)` THEN
+   REWRITE_TAC [sieve_tybij]);;
 
-export_thm sieve_cases;;
+let dest_sieve_cases = prove
+  (`!s. ?n ps.
+      is_sieve (n,ps) /\ s = mk_sieve (n,ps) /\
+      dest_sieve s = (n,ps)`,
+   GEN_TAC THEN
+   MP_TAC (SPEC `s : sieve` sieve_cases) THEN
+   REWRITE_TAC [sieve_tybij] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `n : num` THEN
+   EXISTS_TAC `ps : (num # (num # num)) list` THEN
+   ASM_REWRITE_TAC []);;
 
-let sieve_cases_tac = CASES_TAC sieve_cases;;
+let mk_sieve_inj = prove
+  (`!r r'. is_sieve r /\ is_sieve r' /\ mk_sieve r = mk_sieve r' ==> r = r'`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [sieve_tybij] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM (CONV_TAC o LAND_CONV o REWR_CONV o SYM) THEN
+   FIRST_X_ASSUM (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
+   ASM_REWRITE_TAC []);;
 
-let sieve_inj = prove_constructors_injective sieve_recursion;;
-
-export_thm sieve_inj;;
-
-let invariant_init_sieve = prove
-  (`invariant_sieve init_sieve`,
+let dest_init_sieve = prove
+  (`dest_sieve init_sieve = (1,[])`,
+   REWRITE_TAC [init_sieve_def; GSYM dest_mk_sieve] THEN
    REWRITE_TAC
-     [invariant_sieve_def; init_sieve_def; invariant_counters_sieve_def;
-      ONE; ADD_CLAUSES; MAP; NOT_SUC] THEN
-   REWRITE_TAC [GSYM ONE; GSYM TWO; primes_below_two]);;
+     [is_sieve_def; is_counters_sieve_def; NOT_SUC; ONE; ADD_CLAUSES] THEN
+   REWRITE_TAC [GSYM ONE; GSYM TWO; MAP; primes_below_two]);;
 
-export_thm invariant_init_sieve;;
+let max_init_sieve = prove
+  (`max_sieve init_sieve = 1`,
+   REWRITE_TAC [max_sieve_def; dest_init_sieve]);;
 
-let invariant_counters_sieve_suc = prove
+export_thm max_init_sieve;;
+
+let primes_sieve = prove
+  (`!s. primes_sieve s = primes_below (max_sieve s + 1)`,
+   GEN_TAC THEN
+   MP_TAC (SPEC `s : sieve` dest_sieve_cases) THEN
+   STRIP_TAC THEN
+   UNDISCH_TAC `is_sieve (n,ps)` THEN
+   ASM_REWRITE_TAC [primes_sieve_def; max_sieve_def; is_sieve_def] THEN
+   STRIP_TAC);;
+
+export_thm primes_sieve;;
+
+let is_counters_sieve_suc = prove
   (`!n i ps.
-      invariant_counters_sieve (SUC n) (SUC i) ps <=>
-      invariant_counters_sieve n i ps`,
+      is_counters_sieve (SUC n) (SUC i) ps <=>
+      is_counters_sieve n i ps`,
    REPEAT GEN_TAC THEN
    SPEC_TAC (`i : num`, `i : num`) THEN
    SPEC_TAC (`ps : (num # (num # num)) list`,
              `ps : (num # (num # num)) list`) THEN
    LIST_INDUCT_TAC THENL
-   [REWRITE_TAC [invariant_counters_sieve_def];
+   [REWRITE_TAC [is_counters_sieve_def];
     ALL_TAC] THEN
    GEN_TAC THEN
    PAIR_CASES_TAC `h : num # (num # num)` THEN
@@ -622,7 +656,7 @@ let invariant_counters_sieve_suc = prove
    DISCH_THEN
      (X_CHOOSE_THEN `k : num`
         (X_CHOOSE_THEN `j : num` SUBST1_TAC)) THEN
-   ASM_REWRITE_TAC [invariant_counters_sieve_def; ADD_CLAUSES] THEN
+   ASM_REWRITE_TAC [is_counters_sieve_def; ADD_CLAUSES] THEN
    POP_ASSUM (K ALL_TAC) THEN
    ASM_CASES_TAC `p = 0` THENL
    [ASM_REWRITE_TAC [];
@@ -635,9 +669,9 @@ let invariant_counters_sieve_suc = prove
 
 let invariant_inc_counters_sieve = prove
   (`!n i ps b ps'.
-      invariant_counters_sieve n i ps /\
+      is_counters_sieve n i ps /\
       inc_counters_sieve (SUC n) (SUC i) ps = (b,ps') ==>
-      invariant_counters_sieve (SUC n) 0 ps' /\
+      is_counters_sieve (SUC n) 0 ps' /\
       (b <=> ALL (\ (p,(k,j)). ~divides p (SUC n)) ps) /\
       (MAP FST ps' = APPEND (MAP FST ps) (if b then [SUC n] else []))`,
    GEN_TAC THEN
@@ -645,11 +679,11 @@ let invariant_inc_counters_sieve = prove
    LIST_INDUCT_TAC THENL
    [REPEAT GEN_TAC THEN
     REWRITE_TAC
-      [inc_counters_sieve_def; PAIR_EQ; invariant_counters_sieve_def;
+      [inc_counters_sieve_def; PAIR_EQ; is_counters_sieve_def;
        ALL; MAP; APPEND] THEN
     STRIP_TAC THEN
     FIRST_X_ASSUM SUBST_VAR_TAC THEN
-    ASM_REWRITE_TAC [invariant_counters_sieve_def; MAP; ADD_0] THEN
+    ASM_REWRITE_TAC [is_counters_sieve_def; MAP; ADD_0] THEN
     MP_TAC (SPEC `SUC n` MOD_REFL) THEN
     REWRITE_TAC [NOT_SUC] THEN
     DISCH_THEN SUBST1_TAC THEN
@@ -666,7 +700,7 @@ let invariant_inc_counters_sieve = prove
      (X_CHOOSE_THEN `k : num`
         (X_CHOOSE_THEN `j : num` SUBST1_TAC)) THEN
    REWRITE_TAC
-     [inc_counters_sieve_def; invariant_counters_sieve_def;
+     [inc_counters_sieve_def; is_counters_sieve_def;
       LET_DEF; LET_END_DEF; ALL] THEN
    STRIP_TAC THEN
    POP_ASSUM MP_TAC THEN
@@ -692,8 +726,8 @@ let invariant_inc_counters_sieve = prove
     FIRST_X_ASSUM (SUBST1_TAC o SYM) THEN
     REWRITE_TAC [MAP; APPEND_NIL] THEN
     ASM_REWRITE_TAC
-      [invariant_counters_sieve_def; ADD_CLAUSES;
-       invariant_counters_sieve_suc] THEN
+      [is_counters_sieve_def; ADD_CLAUSES;
+       is_counters_sieve_suc] THEN
     MATCH_MP_TAC MOD_0 THEN
     FIRST_ASSUM ACCEPT_TAC;
     ALL_TAC] THEN
@@ -704,7 +738,7 @@ let invariant_inc_counters_sieve = prove
    FIRST_X_ASSUM SUBST_VAR_TAC THEN
    FIRST_X_ASSUM SUBST_VAR_TAC THEN
    ASM_REWRITE_TAC
-     [MAP; APPEND; CONS_11; invariant_counters_sieve_def; ADD_0;
+     [MAP; APPEND; CONS_11; is_counters_sieve_def; ADD_0;
       CONJ_ASSOC'] THEN
    CONJ_TAC THENL
    [MATCH_MP_TAC MOD_MOD_REFL THEN
@@ -714,39 +748,37 @@ let invariant_inc_counters_sieve = prove
    EXISTS_TAC `i + j : num` THEN
    ASM_REWRITE_TAC []);;
 
-let invariant_inc_sieve = prove
+let inc_sieve = prove
   (`!s b s'.
-      invariant_sieve s /\
       inc_sieve s = (b,s') ==>
-      invariant_sieve s' /\
       max_sieve s' = max_sieve s + 1 /\
       (b <=> prime (max_sieve s'))`,
    REPEAT GEN_TAC THEN
-   sieve_cases_tac `s : sieve` THEN
+   MP_TAC (SPEC `s : sieve` dest_sieve_cases) THEN
    STRIP_TAC THEN
-   POP_ASSUM SUBST_VAR_TAC THEN
-   sieve_cases_tac `s' : sieve` THEN
+   MP_TAC (SPEC `s' : sieve` dest_sieve_cases) THEN
    STRIP_TAC THEN
-   POP_ASSUM SUBST_VAR_TAC THEN
-   REWRITE_TAC
-     [inc_sieve_def; max_sieve_def; GSYM ADD1; LET_DEF; LET_END_DEF] THEN
+   REWRITE_TAC [inc_sieve_def; max_sieve_def] THEN
+   ASM_REWRITE_TAC [GSYM ADD1; LET_DEF; LET_END_DEF] THEN
    PAIR_CASES_TAC `inc_counters_sieve (SUC n) 1 ps` THEN
    STRIP_TAC THEN
-   ASM_REWRITE_TAC [invariant_sieve_def; PAIR_EQ; sieve_inj; GSYM ADD1] THEN
+   ASM_REWRITE_TAC [PAIR_EQ] THEN
    STRIP_TAC THEN
-   REPEAT (FIRST_X_ASSUM SUBST_VAR_TAC) THEN
-   REWRITE_TAC [NOT_SUC; CONJ_ASSOC'] THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   UNDISCH_TAC `is_sieve (n,ps)` THEN
+   REWRITE_TAC [is_sieve_def] THEN
+   STRIP_TAC THEN
    MP_TAC
      (SPECL
         [`n : num`;
          `0`;
          `ps : (num # (num # num)) list`;
          `b : bool`;
-         `ps' : (num # (num # num)) list`]
+         `y : (num # (num # num)) list`]
       invariant_inc_counters_sieve) THEN
    ASM_REWRITE_TAC [GSYM ONE] THEN
    STRIP_TAC THEN
-   POP_ASSUM SUBST1_TAC THEN
+   POP_ASSUM (MP_TAC) THEN
    SUBGOAL_THEN `b <=> prime (SUC n)` SUBST1_TAC THENL
    [ASM_REWRITE_TAC [primes_below_divides; NOT_SUC; ONE; SUC_INJ] THEN
     MATCH_MP_TAC EQ_TRANS THEN
@@ -770,46 +802,43 @@ let invariant_inc_sieve = prove
           (X_CHOOSE_THEN `j : num` SUBST1_TAC)) THEN
      REWRITE_TAC [o_THM];
      AP_TERM_TAC THEN
+     REWRITE_TAC [ADD1] THEN
      FIRST_ASSUM ACCEPT_TAC];
     ALL_TAC] THEN
-   POP_ASSUM (K ALL_TAC) THEN
-   ASM_REWRITE_TAC [] THEN
-   MATCH_MP_TAC EQ_SYM THEN
-   MATCH_ACCEPT_TAC primes_below_suc);;
-
-let invariant_sieve = prove
-  (`!s.
-      invariant_sieve s ==>
-      primes_sieve s = primes_below (max_sieve s + 1)`,
-   GEN_TAC THEN
-   sieve_cases_tac `s : sieve` THEN
-   STRIP_TAC THEN
-   POP_ASSUM SUBST_VAR_TAC THEN
-   REWRITE_TAC [invariant_sieve_def; primes_sieve_def; max_sieve_def] THEN
+   DISCH_THEN (ASSUME_TAC o REWRITE_RULE [GSYM ADD1; GSYM primes_below_suc]) THEN
+   SUBGOAL_THEN `SUC n = n'` (fun th -> REWRITE_TAC [th]) THEN
+   SUBGOAL_THEN `(SUC n, y) = (n', (ps' : (num # (num # num)) list))`
+     MP_TAC THENL
+   [MATCH_MP_TAC mk_sieve_inj THEN
+    ASM_REWRITE_TAC [] THEN
+    ASM_REWRITE_TAC [is_sieve_def; NOT_SUC; GSYM ADD1];
+    ALL_TAC] THEN
+   REWRITE_TAC [PAIR_EQ] THEN
    STRIP_TAC);;
 
-export_thm invariant_sieve;;
+export_thm inc_sieve;;
 
-let invariant_first_sieve = prove
+let first_sieve = prove
   (`?s.
       next_sieve init_sieve = (2,s) /\
-      invariant_sieve s /\
       max_sieve s = 2`,
-   EXISTS_TAC `Sieve 2 [(2,(0,0))]` THEN
+   EXISTS_TAC `mk_sieve (2,[(2,(0,0))])` THEN
    ONCE_REWRITE_TAC [next_sieve_def] THEN
    REWRITE_TAC
-     [inc_sieve_def; init_sieve_def; invariant_sieve_def; max_sieve_def;
-      invariant_counters_sieve_def; MAP; LET_DEF; LET_END_DEF;
-      inc_counters_sieve_def; PAIR_EQ; sieve_inj; CONS_11] THEN
+     [inc_sieve_def; dest_init_sieve; max_sieve_def; PAIR_EQ;
+      inc_counters_sieve_def; LET_DEF; LET_END_DEF] THEN
    NUM_REDUCE_TAC THEN
-   REWRITE_TAC [primes_below_three]);;
+   SUBGOAL_THEN `is_sieve (2,[(2,(0,0))])` MP_TAC THENL
+   [REWRITE_TAC [is_sieve_def; is_counters_sieve_def; MAP] THEN
+    NUM_REDUCE_TAC THEN
+    REWRITE_TAC [primes_below_three];
+    ALL_TAC] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [sieve_tybij] th]));;
 
-let invariant_next_sieve = prove
+let next_sieve = prove
   (`!s i n s'.
-      invariant_sieve s /\
       max_sieve s = snth primes i /\
       next_sieve s = (n,s') ==>
-      invariant_sieve s' /\
       n = max_sieve s' /\
       n = snth primes (SUC i)`,
    REPEAT GEN_TAC THEN
@@ -823,7 +852,6 @@ let invariant_next_sieve = prove
    [ASM_REWRITE_TAC [LE_REFL];
     ALL_TAC] THEN
    POP_ASSUM (K ALL_TAC) THEN
-   POP_ASSUM MP_TAC THEN
    REWRITE_TAC [IMP_IMP; CONJ_ASSOC'] THEN
    SPEC_TAC (`s : sieve`, `s : sieve`) THEN
    SPEC_TAC (`d : num`, `d : num`) THEN
@@ -842,7 +870,7 @@ let invariant_next_sieve = prove
          [`s : sieve`;
           `b : bool`;
           `s'' : sieve`]
-         invariant_inc_sieve) THEN
+         inc_sieve) THEN
     ASM_REWRITE_TAC [] THEN
     STRIP_TAC THEN
     FIRST_X_ASSUM SUBST_VAR_TAC THEN
@@ -875,7 +903,7 @@ let invariant_next_sieve = prove
         [`s : sieve`;
          `b : bool`;
          `s'' : sieve`]
-        invariant_inc_sieve) THEN
+        inc_sieve) THEN
    ASM_REWRITE_TAC [] THEN
    STRIP_TAC THEN
    FIRST_X_ASSUM SUBST_VAR_TAC THEN
@@ -902,10 +930,9 @@ let correct_sieve = prove
    MATCH_MP_TAC snth_eq_imp THEN
    GEN_TAC THEN
    ONCE_REWRITE_TAC [sunfold] THEN
-   MP_TAC invariant_first_sieve THEN
+   MP_TAC first_sieve THEN
    STRIP_TAC THEN
    ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-   POP_ASSUM MP_TAC THEN
    POP_ASSUM MP_TAC THEN
    POP_ASSUM (K ALL_TAC) THEN
    REWRITE_TAC [GSYM snth_primes_zero] THEN
@@ -934,7 +961,7 @@ let correct_sieve = prove
          `i : num`;
          `n : num`;
          `s' : sieve`]
-        invariant_next_sieve) THEN
+        next_sieve) THEN
    ASM_REWRITE_TAC [] THEN
    STRIP_TAC THEN
    POP_ASSUM SUBST_VAR_TAC THEN
