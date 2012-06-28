@@ -1,6 +1,6 @@
 (* ========================================================================= *)
 (* OPENTHEORY AXIOMS IN HOL LIGHT                                            *)
-(* Copyright (c) 2012 Joe Hurd, distributed under the GNU GPL version 2      *)
+(* Joe Hurd                                                                  *)
 (* ========================================================================= *)
 
 let normalize_axiom =
