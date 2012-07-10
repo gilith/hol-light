@@ -1,10 +1,10 @@
 (* ========================================================================= *)
-(* SIMPLE STREAM PARSERS IN OPENTHEORY HASKELL                               *)
+(* SIMPLE STREAM PARSERS IN HASKELL                                          *)
 (* Joe Hurd                                                                  *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Definition of Haskell parsers and streams.                                *)
+(* Definition.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-parser-def";;
@@ -242,7 +242,7 @@ let parse_pstreamH_def = new_definition
 export_thm parse_pstreamH_def;;
 
 (* ------------------------------------------------------------------------- *)
-(* Properties of Haskell parsers and streams.                                *)
+(* Properties.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-parser-thm";;
@@ -332,7 +332,7 @@ let dest_parserH_inj = prove
 export_thm dest_parserH_inj;;
 
 (* ------------------------------------------------------------------------- *)
-(* Sources.                                                                  *)
+(* Source.                                                                   *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-parser-src";;
@@ -409,7 +409,8 @@ let () = export_haskell_thm parserH_mk_dest;;
 let () = (export_haskell_thm o prove)
  (`(!(p : (A,B) parserH). parseH p ErrorPstreamH = NONE) /\
    (!(p : (A,B) parserH). parseH p EofPstreamH = NONE) /\
-   (!(p : (A,B) parserH) a s. parseH p (ConsPstreamH a s) = dest_parserH p a s)`,
+   (!(p : (A,B) parserH) a s.
+      parseH p (ConsPstreamH a s) = dest_parserH p a s)`,
   REWRITE_TAC
     [parseH_def; ErrorPstreamH_def; EofPstreamH_def; ConsPstreamH_def;
      pstreamH_drop_lift; parse_def; lift_parser_resultH_def; dest_parserH_def;
@@ -590,16 +591,56 @@ let () = (export_haskell_thm o prove)
     [length_pstreamH_def; append_pstreamH_def; pstreamH_drop_lift;
      append_pstream_length; lengthH_def]);;
 
-(***
-export_haskell_thm append_pstream_assoc;;
+let () = (export_haskell_thm o prove)
+ (`!r.
+     let (l,r') = rdecode_listH rdecode_fibH r in
+     let (s,r'') = rdecode_pstreamH rdecode_fibH r' in
+     equal_optionH (equal_listH (=))
+       (pstream_to_listH (append_pstreamH l s))
+       (case_option NONE (\ls. SOME (APPEND l ls)) (pstream_to_listH s))`,
+  GEN_TAC THEN
+  PAIR_CASES_TAC `rdecode_listH rdecode_fibH r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `l : num list`
+      (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
+  PAIR_CASES_TAC `rdecode_pstreamH rdecode_fibH r'` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `s : num pstreamH`
+      (X_CHOOSE_THEN `r'' : random` STRIP_ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  REWRITE_TAC
+    [equal_listH; equal_optionH; pstream_to_listH_def;
+     append_pstreamH_def; pstreamH_drop_lift] THEN
+  MATCH_ACCEPT_TAC pstream_to_list_append);;
 
-export_haskell_thm pstream_to_list_append;;
+let () = (export_haskell_thm o prove)
+ (`!r.
+     let (l,r') = rdecode_listH rdecode_fibH r in
+     length_pstreamH (list_to_pstreamH l) = LENGTH l`,
+  GEN_TAC THEN
+  PAIR_CASES_TAC `rdecode_listH rdecode_fibH r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `l : num list`
+      (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  REWRITE_TAC
+    [length_pstreamH_def; list_to_pstreamH_def; pstreamH_drop_lift] THEN
+  MATCH_ACCEPT_TAC list_to_pstream_length);;
 
-export_haskell_thm list_to_pstream_length;;
-
-export_haskell_thm pstream_to_list_length;;
+let () = (export_haskell_thm o prove)
+ (`!r.
+     let (s,r') = rdecode_pstreamH rdecode_fibH r in
+     case_option T (\l. LENGTH l = length_pstreamH s) (pstream_to_listH s)`,
+  GEN_TAC THEN
+  PAIR_CASES_TAC `rdecode_pstreamH rdecode_fibH r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `s : num pstreamH`
+      (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  REWRITE_TAC
+    [length_pstreamH_def; pstream_to_listH_def; pstreamH_drop_lift] THEN
+  MATCH_ACCEPT_TAC pstream_to_list_length);;
 
 (* Parsers *)
-***)
 
 logfile_end ();;
