@@ -3,6 +3,10 @@
 (* Joe Hurd                                                                  *)
 (* ========================================================================= *)
 
+(***
+type_invention_error := false;;
+***)
+
 (* ------------------------------------------------------------------------- *)
 (* Definition.                                                               *)
 (* ------------------------------------------------------------------------- *)
@@ -11,72 +15,67 @@ logfile "haskell-parser-def";;
 
 (* Streams *)
 
-let (pstreamH_lift_drop,pstreamH_drop_lift) =
-  let exists = prove (`?(s : A pstream). T`, REWRITE_TAC []) in
-  let tybij =
-    new_type_definition
-      "pstreamH" ("lift_pstreamH","drop_pstreamH") exists in
-  CONJ_PAIR (REWRITE_RULE [] tybij);;
+let pstreamH_tybij = define_haskell_type
+  `:A pstream`
+  [("map_pstream",true,false)];;
 
-export_thm pstreamH_lift_drop;;
-export_thm pstreamH_drop_lift;;
+export_thm pstreamH_tybij;;
 
-let pstreamH_tybij = CONJ pstreamH_lift_drop pstreamH_drop_lift;;
-
-let ErrorPstreamH_def = new_definition
-  `(ErrorPstreamH : A pstreamH) = lift_pstreamH ErrorPstream`;;
+let ErrorPstreamH_def = define_haskell_const
+  `ErrorPstream : A pstream`;;
 
 export_thm ErrorPstreamH_def;;
 
-let EofPstreamH_def = new_definition
-  `(EofPstreamH : A pstreamH) = lift_pstreamH EofPstream`;;
+let EofPstreamH_def = define_haskell_const
+  `EofPstream : A pstream`;;
 
 export_thm EofPstreamH_def;;
 
-let ConsPstreamH_def = new_definition
-  `!(a : A) s.
-     ConsPstreamH a s = lift_pstreamH (ConsPstream a (drop_pstreamH s))`;;
+let ConsPstreamH_def = define_haskell_const
+  `ConsPstream : A -> A pstream -> A pstream`;;
 
 export_thm ConsPstreamH_def;;
 
-let case_pstreamH_def = new_definition
-  `!(e : B) b f (s : A pstreamH).
-     case_pstreamH e b f s =
-     case_pstream e b (\a t. f a (lift_pstreamH t)) (drop_pstreamH s)`;;
+let case_pstreamH_def = define_haskell_const
+  `case_pstream : B -> B -> (A -> A pstream -> B) -> A pstream -> B`;;
 
 export_thm case_pstreamH_def;;
 
-let length_pstreamH_def = new_definition
-  `!(s : A pstreamH). length_pstreamH s = length_pstream (drop_pstreamH s)`;;
+let length_pstreamH_def = define_haskell_const
+  `length_pstream : A pstream -> num`;;
 
 export_thm length_pstreamH_def;;
 
-let pstream_to_listH_def = new_definition
-  `!(s : A pstreamH). pstream_to_listH s = pstream_to_list (drop_pstreamH s)`;;
+let pstream_to_listH_def = define_haskell_const
+  `pstream_to_list : A pstream -> (A list) option`;;
 
 export_thm pstream_to_listH_def;;
 
-let append_pstreamH_def = new_definition
-  `!l (s : A pstreamH).
-     append_pstreamH l s = lift_pstreamH (append_pstream l (drop_pstreamH s))`;;
+let append_pstreamH_def = define_haskell_const
+  `append_pstream : A list -> A pstream -> A pstream`;;
 
 export_thm append_pstreamH_def;;
 
-let list_to_pstreamH_def = new_definition
-  `!(l : A list). list_to_pstreamH l = lift_pstreamH (list_to_pstream l)`;;
+let list_to_pstreamH_def = define_haskell_const
+  `list_to_pstream : A list -> A pstream`;;
 
 export_thm list_to_pstreamH_def;;
 
-let rdecode_pstreamH_def = new_definition
-  `!d r.
-     rdecode_pstreamH d r =
-     let (s,r') = rdecode_pstream d r in
-     (lift_pstreamH (s : A pstream), r')`;;
+let rdecode_pstreamH_def = define_haskell_const
+  `rdecode_pstream : (random -> A # random) -> random -> A pstream # random`;;
 
 export_thm rdecode_pstreamH_def;;
 
 (* Parsers *)
 
+let parserH_tybij = define_haskell_type
+  `:(A,B) parser`
+  [("parse_map_token",true,true);
+   ("parse_map",true,false)];;
+
+export_thm parserH_tybij;;
+
+(***
 let (parserH_lift_drop,parserH_drop_lift) =
   let exists = prove (`?(p : (A,B) parser). T`, REWRITE_TAC []) in
   let tybij =
@@ -146,98 +145,84 @@ let drop_parser_functionH_def = new_definition
      \a s. drop_parser_resultH (p a (lift_pstreamH s))`;;
 
 export_thm drop_parser_functionH_def;;
+***)
 
-let mk_parserH_def = new_definition
-  `!(p : A -> A pstreamH -> (B # A pstreamH) option).
-     mk_parserH p = lift_parserH (mk_parser (drop_parser_functionH p))`;;
+let mk_parserH_def = define_haskell_const
+  `mk_parser : (A -> A pstream -> (B # A pstream) option) -> (A,B) parser`;;
 
 export_thm mk_parserH_def;;
 
-let dest_parserH_def = new_definition
-  `!(p : (A,B) parserH).
-     dest_parserH p = lift_parser_functionH (dest_parser (drop_parserH p))`;;
+let dest_parserH_def = define_haskell_const
+  `dest_parser : (A,B) parser -> A -> A pstream -> (B # A pstream) option`;;
 
 export_thm dest_parserH_def;;
 
-let parseH_def = new_definition
-  `!(p : (A,B) parserH) s.
-     parseH p s =
-     lift_parser_resultH (parse (drop_parserH p) (drop_pstreamH s))`;;
+let parseH_def = define_haskell_const
+  `parse : (A,B) parser -> A pstream -> (B # A pstream) option`;;
 
 export_thm parseH_def;;
 
-let parser_noneH_def = new_definition
-  `(parser_noneH : A -> A pstreamH -> (B # A pstreamH) option) =
-   lift_parser_functionH parser_none`;;
+let parser_noneH_def = define_haskell_const
+  `parser_none : A -> A pstream -> (B # A pstream) option`;;
 
 export_thm parser_noneH_def;;
 
-let parse_noneH_def = new_definition
-  `(parse_noneH : (A,B) parserH) = lift_parserH parse_none`;;
+let parse_noneH_def = define_haskell_const
+  `parse_none : (A,B) parser`;;
 
 export_thm parse_noneH_def;;
 
-let parser_allH_def = new_definition
-  `(parser_allH : A -> A pstreamH -> (A # A pstreamH) option) =
-   lift_parser_functionH parser_all`;;
+let parser_allH_def = define_haskell_const
+  `parser_all : A -> A pstream -> (A # A pstream) option`;;
 
 export_thm parser_allH_def;;
 
-let parse_allH_def = new_definition
-  `(parse_allH : (A,A) parserH) = lift_parserH parse_all`;;
+let parse_allH_def = define_haskell_const
+  `parse_all : (A,A) parser`;;
 
 export_thm parse_allH_def;;
 
-let parser_partial_mapH_def = new_definition
-  `!(f : B -> C option) (p : (A,B) parserH).
-     parser_partial_mapH f p =
-     lift_parser_functionH (parser_partial_map f (drop_parserH p))`;;
+let parser_partial_mapH_def = define_haskell_const
+  `parser_partial_map :
+   (B -> C option) -> (A,B) parser -> A -> A pstream ->
+   (C # A pstream) option`;;
 
 export_thm parser_partial_mapH_def;;
 
-let parse_partial_mapH_def = new_definition
-  `!(f : B -> C option) (p : (A,B) parserH).
-     parse_partial_mapH f p =
-     lift_parserH (parse_partial_map f (drop_parserH p))`;;
+let parse_partial_mapH_def = define_haskell_const
+  `parse_partial_map : (B -> C option) -> (A,B) parser -> (A,C) parser`;;
 
 export_thm parse_partial_mapH_def;;
 
-let parse_mapH_def = new_definition
-  `!(f : B -> C) (p : (A,B) parserH).
-     parse_mapH f p = lift_parserH (parse_map f (drop_parserH p))`;;
+let parse_mapH_def = define_haskell_const
+  `parse_map : (B -> C) -> (A,B) parser -> (A,C) parser`;;
 
 export_thm parse_mapH_def;;
 
-let parser_pairH_def = new_definition
-  `!(pb : (A,B) parserH) (pc : (A,C) parserH).
-     parser_pairH pb pc =
-     lift_parser_functionH (parser_pair (drop_parserH pb) (drop_parserH pc))`;;
+let parser_pairH_def = define_haskell_const
+  `parser_pair :
+   (A,B) parser -> (A,C) parser -> A -> A pstream ->
+   ((B # C) # A pstream) option`;;
 
 export_thm parser_pairH_def;;
 
-let parse_pairH_def = new_definition
-  `!(pb : (A,B) parserH) (pc : (A,C) parserH).
-     parse_pairH pb pc =
-     lift_parserH (parse_pair (drop_parserH pb) (drop_parserH pc))`;;
+let parse_pairH_def = define_haskell_const
+  `parse_pair : (A,B) parser -> (A,C) parser -> (A, B # C) parser`;;
 
 export_thm parse_pairH_def;;
 
-let parse_optionH_def = new_definition
-  `!(f : A -> B option).
-     parse_optionH f = lift_parserH (parse_option f)`;;
+let parse_optionH_def = define_haskell_const
+  `parse_option : (A -> B option) -> (A,B) parser`;;
 
 export_thm parse_optionH_def;;
 
-let parse_someH_def = new_definition
-  `!(p : A -> bool).
-     parse_someH p = lift_parserH (parse_some p)`;;
+let parse_someH_def = define_haskell_const
+  `parse_some : (A -> bool) -> (A,A) parser`;;
 
 export_thm parse_someH_def;;
 
-let parse_pstreamH_def = new_definition
-  `!(p : (A,B) parserH) s.
-     parse_pstreamH p s =
-     lift_pstreamH (parse_pstream (drop_parserH p) (drop_pstreamH s))`;;
+let parse_pstreamH_def = define_haskell_const
+  `parse_pstream : (A,B) parser -> A pstream -> B pstream`;;
 
 export_thm parse_pstreamH_def;;
 
@@ -249,6 +234,7 @@ logfile "haskell-parser-thm";;
 
 (* Parsers *)
 
+(***
 let parser_resultH_drop_lift = prove
  (`!(r : (B # A pstream) option).
      drop_parser_resultH (lift_parser_resultH r) = r`,
@@ -312,16 +298,20 @@ let parser_functionH_lift_drop = prove
      pstreamH_lift_drop; parser_resultH_lift_drop]);;
 
 export_thm parser_functionH_lift_drop;;
+***)
 
+(***
 let parserH_mk_dest = prove
  (`!(p : (A,B) parserH).
      mk_parserH (dest_parserH p) = p`,
-  REWRITE_TAC
-    [mk_parserH_def; dest_parserH_def; parser_functionH_drop_lift;
-     parser_abs_rep; parserH_lift_drop]);;
+  HASKELL_TAC [] THEN
+  REWRITE_TAC [o_rule map_range_o
+);;
 
 export_thm parserH_mk_dest;;
+***)
 
+(***
 let dest_parserH_inj = prove
  (`!(p : (A,B) parserH) q.
      dest_parserH p = dest_parserH q ==> p = q`,
@@ -330,6 +320,7 @@ let dest_parserH_inj = prove
   ASM_REWRITE_TAC []);;
 
 export_thm dest_parserH_inj;;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Source.                                                                   *)
@@ -344,17 +335,13 @@ let () = (export_haskell_thm o prove)
    (!e b (f : A -> A pstreamH -> B). case_pstreamH e b f EofPstreamH = b) /\
    (!e b (f : A -> A pstreamH -> B) a s.
       case_pstreamH e b f (ConsPstreamH a s) = f a s)`,
-  REWRITE_TAC
-    [case_pstreamH_def; ErrorPstreamH_def; EofPstreamH_def; ConsPstreamH_def;
-     case_pstream_def; pstreamH_tybij]);;
+  HASKELL_TAC [case_pstream_def]);;
 
 let () = (export_haskell_thm o prove)
  (`length_pstreamH (ErrorPstreamH : A pstreamH) = 0 /\
    length_pstreamH (EofPstreamH : A pstreamH) = 0 /\
    (!(a:A) s. length_pstreamH (ConsPstreamH a s) = length_pstreamH s + 1)`,
-  REWRITE_TAC
-    [length_pstreamH_def; ErrorPstreamH_def; EofPstreamH_def; ConsPstreamH_def;
-     pstreamH_tybij; length_pstream_def; ADD1]);;
+  HASKELL_TAC [length_pstream_def; ADD1]);;
 
 let () = (export_haskell_thm o prove)
  (`pstream_to_listH (ErrorPstreamH : A pstreamH) = NONE /\
@@ -362,23 +349,17 @@ let () = (export_haskell_thm o prove)
    (!(a : A) s.
       pstream_to_listH (ConsPstreamH a s) =
       case_option NONE (\l. SOME (CONS a l)) (pstream_to_listH s))`,
-  REWRITE_TAC
-    [pstream_to_listH_def; ErrorPstreamH_def; EofPstreamH_def; ConsPstreamH_def;
-     pstreamH_tybij; pstream_to_list_def]);;
+  HASKELL_TAC [pstream_to_list_def]);;
 
 let () = (export_haskell_thm o prove)
  (`(!(s : A pstreamH). append_pstreamH [] s = s) /\
    (!(h : A) t s.
       append_pstreamH (CONS h t) s = ConsPstreamH h (append_pstreamH t s))`,
-  REWRITE_TAC
-    [append_pstreamH_def; pstreamH_tybij; ConsPstreamH_def;
-     append_pstream_def]);;
+  HASKELL_TAC [append_pstream_def]);;
 
 let () = (export_haskell_thm o prove)
  (`!(l : A list). list_to_pstreamH l = append_pstreamH l EofPstreamH`,
-  REWRITE_TAC
-    [list_to_pstreamH_def; pstreamH_tybij; EofPstreamH_def; list_to_pstream_def;
-     append_pstreamH_def]);;
+  HASKELL_TAC [list_to_pstream_def]);;
 
 let () = (export_haskell_thm o prove)
  (`!(d : random -> A # random) r.
@@ -387,10 +368,7 @@ let () = (export_haskell_thm o prove)
      let (b,r'') = rbit r' in
      (append_pstreamH l (if b then ErrorPstreamH else EofPstreamH), r'')`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC
-    [EofPstreamH_def; ErrorPstreamH_def; append_pstreamH_def;
-     rdecode_pstreamH_def; rdecode_listH_def;
-     rdecode_pstream_def; LET_DEF; LET_END_DEF] THEN
+  HASKELL_TAC [LET_DEF; LET_END_DEF; rdecode_pstream_def] THEN
   PAIR_CASES_TAC `rdecode_list (d : random -> A # random) r` THEN
   DISCH_THEN
     (X_CHOOSE_THEN `l : A list` (X_CHOOSE_THEN `r' : random` SUBST1_TAC)) THEN
@@ -400,12 +378,15 @@ let () = (export_haskell_thm o prove)
     (X_CHOOSE_THEN `b : bool` (X_CHOOSE_THEN `r'' : random` SUBST1_TAC)) THEN
   REWRITE_TAC [] THEN
   BOOL_CASES_TAC `b : bool` THEN
-  REWRITE_TAC [pstreamH_tybij]);;
+  HASKELL_TAC []);;
 
 (* Parsers *)
 
+(***
 let () = export_haskell_thm parserH_mk_dest;;
+***)
 
+(***
 let () = (export_haskell_thm o prove)
  (`(!(p : (A,B) parserH). parseH p ErrorPstreamH = NONE) /\
    (!(p : (A,B) parserH). parseH p EofPstreamH = NONE) /\
@@ -640,6 +621,7 @@ let () = (export_haskell_thm o prove)
   REWRITE_TAC
     [length_pstreamH_def; pstream_to_listH_def; pstreamH_drop_lift] THEN
   MATCH_ACCEPT_TAC pstream_to_list_length);;
+***)
 
 (* Parsers *)
 

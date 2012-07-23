@@ -7,6 +7,25 @@
 
 # Haskell.Data
 
+# Haskell.Data.Char
+
+type "HOLLight.unicodeH" as "Haskell.Data.Char.Char"
+type "HOLLight.planeH" as "Haskell.Data.Char.Plane"
+type "HOLLight.positionH" as "Haskell.Data.Char.Position"
+
+const "HOLLight.mk_unicodeH" as "Haskell.Data.Char.Char"
+const "HOLLight.mk_planeH" as "Haskell.Data.Char.Plane"
+const "HOLLight.mk_positionH" as "Haskell.Data.Char.Position"
+const "HOLLight.lift_unicodeH" as "Haskell.Data.Char.fromHol"
+const "HOLLight.lift_planeH" as "Haskell.Data.Char.planeFromHol"
+const "HOLLight.drop_planeH" as "Haskell.Data.Char.planeToHol"
+const "HOLLight.lift_positionH" as "Haskell.Data.Char.positionFromHol"
+const "HOLLight.drop_positionH" as "Haskell.Data.Char.positionToHol"
+const "HOLLight.drop_unicodeH" as "Haskell.Data.Char.toHol"
+const "HOLLight.dest_unicodeH" as "Haskell.Data.Char.unChar"
+const "HOLLight.dest_planeH" as "Haskell.Data.Char.unPlane"
+const "HOLLight.dest_positionH" as "Haskell.Data.Char.unPosition"
+
 # Haskell.Data.List
 
 const "HOLLight.equal_listH" as "Haskell.Data.List.equal"
@@ -29,9 +48,9 @@ const "HOLLight.rdecode_fib_destH" as "Haskell.Number.Natural.fromRandom.dest"
 
 type "HOLLight.parserH" as "Haskell.Parser.Parser"
 
+const "HOLLight.mk_parserH" as "Haskell.Parser.Parser"
 const "HOLLight.lift_parserH" as "Haskell.Parser.fromHol"
 const "HOLLight.parse_mapH" as "Haskell.Parser.map"
-const "HOLLight.mk_parserH" as "Haskell.Parser.Parser"
 const "HOLLight.parseH" as "Haskell.Parser.parse"
 const "HOLLight.parse_allH" as "Haskell.Parser.parseAll"
 const "HOLLight.parser_allH" as "Haskell.Parser.parseAll.pa"

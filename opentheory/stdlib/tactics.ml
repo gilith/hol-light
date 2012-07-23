@@ -117,7 +117,7 @@ let rec N_TAC n tac =
 let rec N_CONV n conv =
     if n == 0 then ALL_CONV else conv THENC N_CONV (n - 1) conv;;
 
-let define_newtype (a,n) (r,ty) =
+let define_newtype' (mk,dest) (a,n) (r,ty) =
   let exists =
       let pth = EQ_MP (SYM (SPEC `T` EXISTS_SIMP)) TRUTH in
       INST_TYPE [(ty,aty)] pth in
@@ -140,4 +140,24 @@ let define_newtype (a,n) (r,ty) =
       let tm' = mk_conj (md',dm') in
       EQ_MP (ALPHA tm tm') th in
   (alph2 o REWRITE_RULE [])
-     (new_type_definition n ("mk_" ^ n, "dest_" ^ n) exists);;
+     (new_type_definition n (mk n, dest n) exists);;
+
+let define_newtype =
+  let mk n = "mk_" ^ n in
+  let dest n = "dest_" ^ n in
+  define_newtype' (mk,dest);;
+
+let prove_newtype_inj =
+    let th = prove
+      (`!(f : B -> A) (g : A -> B).
+           (!a. f (g a) = a) ==>
+           !a1 a2. a1 = a2 <=> g a1 = g a2`,
+       REPEAT STRIP_TAC THEN
+       EQ_TAC THENL
+       [DISCH_THEN SUBST1_TAC THEN
+        REFL_TAC;
+        FIRST_X_ASSUM
+          (fun th -> CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM th]))) THEN
+        DISCH_THEN SUBST1_TAC THEN
+        REFL_TAC]) in
+    MATCH_MP th o CONJUNCT1;;

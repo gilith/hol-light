@@ -84,6 +84,27 @@ export_thm dest_unicodeH_def;;
 
 (* UTF-8 encoding *)
 
+(***
+let decoder_parseH_def = new_definition
+  `decoder_parseH =
+   lift_parser_functionH
+     (\b s. parse_map lift_unicodeH decoder)`;;
+
+export_thm decoderH_def;;
+
+let decoderH_def = new_definition
+  `decoderH = lift_parserH (parse_map lift_unicodeH decoder)`;;
+
+export_thm decoderH_def;;
+
+let decode_pstreamH_def = new_definition
+  `!bs.
+     decode_pstreamH bs =
+     lift_pstreamH (decode_pstream (drop_pstreamH bs))`;;
+
+export_thm decode_pstreamH_def;;
+***)
+
 (* ------------------------------------------------------------------------- *)
 (* Properties.                                                               *)
 (* ------------------------------------------------------------------------- *)
@@ -99,6 +120,26 @@ let planeH_mk_dest = prove
 
 export_thm planeH_mk_dest;;
 
+let positionH_mk_dest = prove
+ (`!p : positionH. mk_positionH (dest_positionH p) = p`,
+  REWRITE_TAC
+    [mk_positionH_def; dest_positionH_def; position_tybij; positionH_tybij]);;
+
+export_thm positionH_mk_dest;;
+
+let unicodeH_mk_dest = prove
+ (`!c : unicodeH. mk_unicodeH (dest_unicodeH c) = c`,
+  GEN_TAC THEN
+  REWRITE_TAC [dest_unicodeH_def; LET_DEF; LET_END_DEF] THEN
+  MP_TAC (SPEC `drop_unicodeH c` dest_unicode_cases) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [mk_unicodeH_def; planeH_tybij; positionH_tybij] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (SUBST1_TAC o SYM) THEN
+  REWRITE_TAC [unicodeH_tybij]);;
+
+export_thm unicodeH_mk_dest;;
+
 (* UTF-8 encoding *)
 
 (* ------------------------------------------------------------------------- *)
@@ -110,6 +151,10 @@ logfile "haskell-char-src";;
 (* Unicode characters *)
 
 let () = export_haskell_thm planeH_mk_dest;;
+
+let () = export_haskell_thm positionH_mk_dest;;
+
+let () = export_haskell_thm unicodeH_mk_dest;;
 
 (* UTF-8 encoding *)
 

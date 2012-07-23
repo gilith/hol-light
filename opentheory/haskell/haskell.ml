@@ -9,6 +9,38 @@
 
 logfile "haskell-def";;
 
+(* Functions *)
+
+let map_domain_def = new_definition
+  `!(f : A -> B) (g : B -> C).
+     map_domain f g = g o f`;;
+
+add_haskell_thm map_domain_def;;
+export_thm map_domain_def;;
+
+let map_range_def = new_definition
+  `!(f : A -> B) (g : C -> A).
+     map_range f g = f o g`;;
+
+add_haskell_thm map_range_def;;
+export_thm map_range_def;;
+
+(* Products *)
+
+let map_fst_def = new_definition
+  `!(f : A -> B) (x : A) (y : C).
+     map_fst f (x,y) = (f x, y)`;;
+
+add_haskell_thm map_fst_def;;
+export_thm map_fst_def;;
+
+let map_snd_def = new_definition
+  `!(f : A -> B) (x : C) (y : A).
+     map_snd f (x,y) = (x, f y)`;;
+
+add_haskell_thm map_snd_def;;
+export_thm map_snd_def;;
+
 (* Options *)
 
 let (equal_optionH_none_none,equal_optionH_none_some,
@@ -83,6 +115,7 @@ let equal_listH_def =
 let lengthH_def = new_definition
   `(lengthH : A list -> num) = LENGTH`;;
 
+add_haskell_thm lengthH_def;;
 export_thm lengthH_def;;
 
 let rdecode_list_destH_def = new_definition
@@ -90,6 +123,7 @@ let rdecode_list_destH_def = new_definition
      (rdecode_list_dest :
         (random -> A # random) -> A list -> random -> A list)`;;
 
+add_haskell_thm rdecode_list_destH_def;;
 export_thm rdecode_list_destH_def;;
 
 let rdecode_listH_def = new_definition
@@ -97,6 +131,7 @@ let rdecode_listH_def = new_definition
      (rdecode_list :
        (random -> A # random) -> random -> A list # random)`;;
 
+add_haskell_thm rdecode_listH_def;;
 export_thm rdecode_listH_def;;
 
 (* Natural numbers *)
@@ -104,11 +139,13 @@ export_thm rdecode_listH_def;;
 let rdecode_fib_destH_def = new_definition
   `rdecode_fib_destH = rdecode_fib_dest`;;
 
+add_haskell_thm rdecode_fib_destH_def;;
 export_thm rdecode_fib_destH_def;;
 
 let rdecode_fibH_def = new_definition
   `rdecode_fibH = rdecode_fib`;;
 
+add_haskell_thm rdecode_fibH_def;;
 export_thm rdecode_fibH_def;;
 
 (* Random streams *)
@@ -116,13 +153,62 @@ export_thm rdecode_fibH_def;;
 let rbitsH_def = new_definition
   `rbitsH = rbits`;;
 
+add_haskell_thm rbitsH_def;;
 export_thm rbitsH_def;;
+
+(***
+(* Units (for testing) *)
+
+let (unitH_lift_drop,unitH_drop_lift) =
+  let exists = prove (`?x : 1. T`, REWRITE_TAC []) in
+  let tybij =
+    new_type_definition
+      "1H" ("lift_1H","drop_1H") exists in
+  CONJ_PAIR (REWRITE_RULE [] tybij);;
+
+export_thm unitH_lift_drop;;
+export_thm unitH_drop_lift;;
+
+let unitH_tybij = CONJ unitH_lift_drop unitH_drop_lift;;
+
+register_haskell_type ("1","lift_1H","drop_1H",[]);;
+
+lift_haskell_type `:1`;;
+drop_haskell_type `:1H`;;
+lift_haskell_type `:1 list`;;
+drop_haskell_type `:1H list`;;
+lift_haskell_type `:1 -> 1`;;
+drop_haskell_type `:1H -> 1H`;;
+lift_haskell_type `:1 list -> 1`;;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Properties.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-thm";;
+
+(* Functions *)
+
+let map_domain_o = prove
+  (`!(f : C -> B) (g : B -> A).
+      map_domain f o map_domain g =
+      (map_domain (g o f) : (A -> D) -> C -> D)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM; map_domain_def; o_THM]);;
+
+add_haskell_thm map_domain_o;;
+export_thm map_domain_o;;
+
+let map_range_o = prove
+  (`!(f : B -> A) (g : C -> B).
+      map_range f o map_range g =
+      (map_range (f o g) : (D -> C) -> D -> A)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM; map_range_def; o_THM]);;
+
+add_haskell_thm map_range_o;;
+export_thm map_range_o;;
 
 (* Options *)
 
@@ -158,6 +244,7 @@ let equal_optionH = prove
    REPEAT (FIRST_X_ASSUM SUBST_VAR_TAC) THEN
    REWRITE_TAC [equal_optionH_def; option_distinct; option_inj]);;
 
+add_haskell_thm equal_optionH;;
 export_thm equal_optionH;;
 
 (* Lists *)
@@ -201,6 +288,7 @@ let equal_listH = prove
     FIRST_X_ASSUM SUBST_VAR_TAC THEN
     ASM_REWRITE_TAC [equal_listH_cons_cons; CONS_11]]);;
 
+add_haskell_thm equal_listH;;
 export_thm equal_listH;;
 
 (* ------------------------------------------------------------------------- *)

@@ -64,4 +64,31 @@ let case_option_id = prove
 
 export_thm case_option_id;;
 
+logfile "option-map-def";;
+
+let (map_option_none,map_option_some) =
+  let def = new_recursive_definition option_RECURSION
+    `(!(f : A -> B). map_option f NONE = NONE) /\
+     (!f a. map_option f (SOME a) = SOME (f a))` in
+  CONJ_PAIR def;;
+
+export_thm map_option_none;;
+export_thm map_option_some;;
+
+let map_option_def = CONJ map_option_none map_option_some;;
+
+logfile "option-map-thm";;
+
+let map_option_o = prove
+ (`!(f : B -> C) (g : A -> B) x.
+      map_option (f o g) x = map_option f (map_option g x)`,
+  REPEAT GEN_TAC THEN
+  option_cases_tac `x : A option` THENL
+  [STRIP_TAC THEN
+   ASM_REWRITE_TAC [map_option_none];
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [map_option_some; o_THM]]);;
+
+export_thm map_option_o;;
+
 logfile_end ();;

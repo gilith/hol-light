@@ -29,7 +29,23 @@ export_thm case_pstream_eof;;
 export_thm case_pstream_cons;;
 
 let case_pstream_def =
-  CONJ case_pstream_error (CONJ case_pstream_eof case_pstream_cons);;
+    CONJ case_pstream_error (CONJ case_pstream_eof case_pstream_cons);;
+
+let (map_pstream_error,map_pstream_eof,map_pstream_cons) =
+  let def = new_recursive_definition pstream_recursion
+    `(!(f : A -> B). map_pstream f ErrorPstream = ErrorPstream) /\
+     (!f. map_pstream f EofPstream = EofPstream) /\
+     (!f a s.
+        map_pstream f (ConsPstream a s) =
+        ConsPstream (f a) (map_pstream f s))` in
+  CONJ_TRIPLE def;;
+
+export_thm map_pstream_error;;
+export_thm map_pstream_eof;;
+export_thm map_pstream_cons;;
+
+let map_pstream_def =
+  CONJ map_pstream_error (CONJ map_pstream_eof map_pstream_cons);;
 
 let (length_pstream_error,length_pstream_eof,length_pstream_cons) =
   let def = new_recursive_definition pstream_recursion
@@ -420,6 +436,16 @@ let parse_map_def = new_definition
      parse_partial_map (\b. SOME (f b)) p`;;
 
 export_thm parse_map_def;;
+
+let parse_map_token_def = new_definition
+  `!f g p s.
+     parse_map_token (f : A -> C) (g : C -> A) (p : (A,B) parser) s =
+     case_option
+       NONE
+       (\ (b,s'). SOME (b, map_pstream f s'))
+       (parse p (map_pstream g s))`;;
+
+export_thm parse_map_token_def;;
 
 let parser_pair_def = new_definition
   `!pb pc a s.
