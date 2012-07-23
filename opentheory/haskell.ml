@@ -286,6 +286,7 @@ let define_haskell_type ty vs =
     let tybij = define_newtype' (mk,dest) ("h",otH) ("x",ty) in
     let () = register_haskell_type (otH, mk otH, dest otH, vs) in
     let () = add_haskell_thms (CONJUNCTS tybij) in
+    let () = add_haskell_thms (CONJUNCTS (prove_newtype_o tybij)) in
     let () = add_haskell_thm (prove_newtype_inj tybij) in
     tybij;;
 

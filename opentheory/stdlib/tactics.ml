@@ -161,3 +161,15 @@ let prove_newtype_inj =
         DISCH_THEN SUBST1_TAC THEN
         REFL_TAC]) in
     MATCH_MP th o CONJUNCT1;;
+
+let prove_newtype_o =
+    let th = prove
+      (`!(f : B -> A) (g : A -> B).
+           (!a. f (g a) = a) ==>
+           f o g = I`,
+       REPEAT STRIP_TAC THEN
+       ASM_REWRITE_TAC [FUN_EQ_THM; o_THM; I_THM]) in
+    let rule = MATCH_MP th in
+    fun tybij ->
+      let (md,dm) = CONJ_PAIR tybij in
+      CONJ (rule md) (rule dm);;

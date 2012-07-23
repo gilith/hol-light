@@ -79,6 +79,16 @@ let map_option_def = CONJ map_option_none map_option_some;;
 
 logfile "option-map-thm";;
 
+let map_option_id = prove
+  (`map_option I = (I : A option -> A option)`,
+   REWRITE_TAC [FUN_EQ_THM; I_THM] THEN
+   X_GEN_TAC `x : A option` THEN
+   option_cases_tac `x : A option` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [map_option_def; I_THM]);;
+
+export_thm map_option_id;;
+
 let map_option_o = prove
  (`!(f : B -> C) (g : A -> B) x.
       map_option (f o g) x = map_option f (map_option g x)`,
@@ -90,5 +100,12 @@ let map_option_o = prove
    ASM_REWRITE_TAC [map_option_some; o_THM]]);;
 
 export_thm map_option_o;;
+
+let map_option_o' = prove
+  (`!(f : B -> C) (g : A -> B).
+      map_option f o map_option g = map_option (f o g)`,
+   REWRITE_TAC [FUN_EQ_THM; map_option_o; o_THM]);;
+
+export_thm map_option_o';;
 
 logfile_end ();;

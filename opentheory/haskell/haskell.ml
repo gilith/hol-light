@@ -156,32 +156,6 @@ let rbitsH_def = new_definition
 add_haskell_thm rbitsH_def;;
 export_thm rbitsH_def;;
 
-(***
-(* Units (for testing) *)
-
-let (unitH_lift_drop,unitH_drop_lift) =
-  let exists = prove (`?x : 1. T`, REWRITE_TAC []) in
-  let tybij =
-    new_type_definition
-      "1H" ("lift_1H","drop_1H") exists in
-  CONJ_PAIR (REWRITE_RULE [] tybij);;
-
-export_thm unitH_lift_drop;;
-export_thm unitH_drop_lift;;
-
-let unitH_tybij = CONJ unitH_lift_drop unitH_drop_lift;;
-
-register_haskell_type ("1","lift_1H","drop_1H",[]);;
-
-lift_haskell_type `:1`;;
-drop_haskell_type `:1H`;;
-lift_haskell_type `:1 list`;;
-drop_haskell_type `:1H list`;;
-lift_haskell_type `:1 -> 1`;;
-drop_haskell_type `:1H -> 1H`;;
-lift_haskell_type `:1 list -> 1`;;
-***)
-
 (* ------------------------------------------------------------------------- *)
 (* Properties.                                                               *)
 (* ------------------------------------------------------------------------- *)
@@ -189,6 +163,20 @@ lift_haskell_type `:1 list -> 1`;;
 logfile "haskell-thm";;
 
 (* Functions *)
+
+let map_domain_id = prove
+  (`map_domain I = (I : (A -> B) -> A -> B)`,
+   REWRITE_TAC [FUN_EQ_THM; map_domain_def; I_THM; o_THM]);;
+
+add_haskell_thm map_domain_id;;
+export_thm map_domain_id;;
+
+let map_range_id = prove
+  (`map_range I = (I : (A -> B) -> A -> B)`,
+   REWRITE_TAC [FUN_EQ_THM; map_range_def; I_THM; o_THM]);;
+
+add_haskell_thm map_range_id;;
+export_thm map_range_id;;
 
 let map_domain_o = prove
   (`!(f : C -> B) (g : B -> A).
@@ -210,7 +198,62 @@ let map_range_o = prove
 add_haskell_thm map_range_o;;
 export_thm map_range_o;;
 
+(* Products *)
+
+let map_fst_id = prove
+  (`map_fst I = (I : A # B -> A # B)`,
+   REWRITE_TAC [FUN_EQ_THM; I_THM] THEN
+   X_GEN_TAC `x : A # B` THEN
+   PAIR_CASES_TAC `x : A # B` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [map_fst_def; I_THM]);;
+
+add_haskell_thm map_fst_id;;
+export_thm map_fst_id;;
+
+let map_snd_id = prove
+  (`map_snd I = (I : A # B -> A # B)`,
+   REWRITE_TAC [FUN_EQ_THM; I_THM] THEN
+   X_GEN_TAC `x : A # B` THEN
+   PAIR_CASES_TAC `x : A # B` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [map_snd_def; I_THM]);;
+
+add_haskell_thm map_snd_id;;
+export_thm map_snd_id;;
+
+let map_fst_o = prove
+  (`!(f : B -> A) (g : C -> B).
+      map_fst f o map_fst g =
+      (map_fst (f o g) : C # D -> A # D)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM; o_THM] THEN
+   X_GEN_TAC `x : C # D` THEN
+   PAIR_CASES_TAC `x : C # D` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [map_fst_def; o_THM]);;
+
+add_haskell_thm map_fst_o;;
+export_thm map_fst_o;;
+
+let map_snd_o = prove
+  (`!(f : B -> A) (g : C -> B).
+      map_snd f o map_snd g =
+      (map_snd (f o g) : D # C -> D # A)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM; o_THM] THEN
+   X_GEN_TAC `x : D # C` THEN
+   PAIR_CASES_TAC `x : D # C` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [map_snd_def; o_THM]);;
+
+add_haskell_thm map_snd_o;;
+export_thm map_snd_o;;
+
 (* Options *)
+
+add_haskell_thm map_option_id;;
+add_haskell_thm map_option_o';;
 
 let equal_optionH_left_none = prove
   (`!(eq : A -> A -> bool) x. equal_optionH eq NONE x <=> is_none x`,
