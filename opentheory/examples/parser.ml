@@ -437,13 +437,19 @@ let parse_map_def = new_definition
 
 export_thm parse_map_def;;
 
-let parse_map_token_def = new_definition
-  `!f g p s.
-     parse_map_token (f : A -> C) (g : C -> A) (p : (A,B) parser) s =
+let parser_map_token_def = new_definition
+  `!(f : A -> B) (g : B -> A) (p : (A,C) parser) b s.
+     parser_map_token f g p b s =
      case_option
        NONE
-       (\ (b,s'). SOME (b, map_pstream f s'))
-       (parse p (map_pstream g s))`;;
+       (\ (c,s'). SOME (c, map_pstream f s'))
+       (dest_parser p (g b) (map_pstream g s))`;;
+
+export_thm parser_map_token_def;;
+
+let parse_map_token_def = new_definition
+  `!(f : A -> B) (g : B -> A) (p : (A,C) parser).
+     parse_map_token f g p = mk_parser (parser_map_token f g p)`;;
 
 export_thm parse_map_token_def;;
 

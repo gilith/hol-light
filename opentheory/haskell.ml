@@ -252,12 +252,14 @@ let lift_drop_haskell_type tb =
 let initial_haskell_type_base =
     List.fold_left add_haskell_type_base empty_haskell_type_base
     [("bool", None, []);
+     ("byte", None, []);
      ("fun", None, [("map_domain", false, true); ("map_range", true, false)]);
      ("list", None, [("MAP", true, false)]);
      ("num", None, []);
      ("option", None, [("map_option", true, false)]);
      ("prod", None, [("map_fst", true, false); ("map_snd", true, false)]);
-     ("random", None, [])];;
+     ("random", None, []);
+     ("word16", None, [])];;
 
 let the_haskell_type_base =
     ref initial_haskell_type_base;;
