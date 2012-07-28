@@ -30,6 +30,8 @@ parse_as_infix("EXP",(24,"left"));;
 parse_as_infix("DIV",(22,"left"));;
 parse_as_infix("MOD",(22,"left"));;
 
+parse_as_binder "minimal";;
+
 (* ------------------------------------------------------------------------- *)
 (* The predecessor function.                                                 *)
 (* ------------------------------------------------------------------------- *)
@@ -43,6 +45,475 @@ let PRE =
     CONJUNCT2 def;;
 
 export_thm PRE;;
+
+(* ------------------------------------------------------------------------- *)
+(* Orderings.                                                                *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "natural-order-def";;
+
+(* Define the orderings recursively *)
+
+let (LE_ZERO,LE_SUC) =
+  let def = new_recursive_definition num_RECURSION
+    `(!m. (m <= 0) <=> (m = 0)) /\
+     (!m n. (m <= SUC n) <=> (m = SUC n) \/ (m <= n))` in
+  (CONJUNCT1 def, CONJUNCT2 def);;
+
+export_thm LE_ZERO;;
+export_thm LE_SUC;;
+
+let LE = CONJ LE_ZERO LE_SUC;;
+
+let (LT_ZERO,LT_SUC) =
+  let def = new_recursive_definition num_RECURSION
+    `(!m. (m < 0) <=> F) /\
+     (!m n. (m < SUC n) <=> (m = n) \/ (m < n))` in
+  (REWRITE_RULE [] (CONJUNCT1 def), CONJUNCT2 def);;
+
+export_thm LT_ZERO;;
+export_thm LT_SUC;;
+
+let LT = CONJ LT_ZERO LT_SUC;;
+
+let GE = new_definition
+  `!m n. m >= n <=> n <= m`;;
+
+export_thm GE;;
+
+let GT = new_definition
+  `!m n. m > n <=> n < m`;;
+
+export_thm GT;;
+
+(* Step cases *)
+
+logfile "natural-order-thm";;
+
+let LE_SUC_LT = prove
+ (`!m n. (SUC m <= n) <=> (m < n)`,
+  GEN_TAC THEN INDUCT_TAC THEN ASM_REWRITE_TAC[LE; LT; NOT_SUC; SUC_INJ]);;
+
+export_thm LE_SUC_LT;;
+
+let LT_SUC_LE = prove
+ (`!m n. (m < SUC n) <=> (m <= n)`,
+  GEN_TAC THEN INDUCT_TAC THEN ONCE_REWRITE_TAC[LT; LE] THEN
+  ASM_REWRITE_TAC[] THEN REWRITE_TAC[LT]);;
+
+export_thm LT_SUC_LE;;
+
+let LE_SUC = prove
+ (`!m n. (SUC m <= SUC n) <=> (m <= n)`,
+  REWRITE_TAC[LE_SUC_LT; LT_SUC_LE]);;
+
+export_thm LE_SUC;;
+
+let LT_SUC = prove
+ (`!m n. (SUC m < SUC n) <=> (m < n)`,
+  REWRITE_TAC[LT_SUC_LE; LE_SUC_LT]);;
+
+export_thm LT_SUC;;
+
+(* Base cases *)
+
+let LE_0 = prove
+ (`!n. 0 <= n`,
+  INDUCT_TAC THEN ASM_REWRITE_TAC[LE]);;
+
+export_thm LE_0;;
+
+let LT_0 = prove
+ (`!n. 0 < SUC n`,
+  REWRITE_TAC[LT_SUC_LE; LE_0]);;
+
+export_thm LT_0;;
+
+(* Reflexivity *)
+
+let LE_REFL = prove
+ (`!n. n <= n`,
+  INDUCT_TAC THEN REWRITE_TAC[LE]);;
+
+export_thm LE_REFL;;
+
+let LT_REFL = prove
+ (`!n. ~(n < n)`,
+  INDUCT_TAC THEN ASM_REWRITE_TAC[LT_SUC] THEN REWRITE_TAC[LT]);;
+
+export_thm LT_REFL;;
+
+(* Antisymmetry *)
+
+let LE_ANTISYM = prove
+ (`!m n. (m <= n /\ n <= m) <=> (m = n)`,
+  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_SUC; SUC_INJ] THEN
+  REWRITE_TAC[LE; NOT_SUC; GSYM NOT_SUC]);;
+
+export_thm LE_ANTISYM;;
+
+let LT_ANTISYM = prove
+ (`!m n. ~(m < n /\ n < m)`,
+  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LT_SUC] THEN REWRITE_TAC[LT]);;
+
+export_thm LT_ANTISYM;;
+
+let LET_ANTISYM = prove
+ (`!m n. ~(m <= n /\ n < m)`,
+  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_SUC; LT_SUC] THEN
+  REWRITE_TAC[LE; LT; NOT_SUC]);;
+
+export_thm LET_ANTISYM;;
+
+let LTE_ANTISYM = prove
+ (`!m n. ~(m < n /\ n <= m)`,
+  ONCE_REWRITE_TAC[CONJ_SYM] THEN REWRITE_TAC[LET_ANTISYM]);;
+
+export_thm LTE_ANTISYM;;
+
+(* Transitivity *)
+
+let LE_TRANS = prove
+ (`!m n p. m <= n /\ n <= p ==> m <= p`,
+  REPEAT INDUCT_TAC THEN
+  ASM_REWRITE_TAC[LE_SUC; LE_0] THEN REWRITE_TAC[LE; NOT_SUC]);;
+
+export_thm LE_TRANS;;
+
+let LT_TRANS = prove
+ (`!m n p. m < n /\ n < p ==> m < p`,
+  REPEAT INDUCT_TAC THEN
+  ASM_REWRITE_TAC[LT_SUC; LT_0] THEN REWRITE_TAC[LT; NOT_SUC]);;
+
+export_thm LT_TRANS;;
+
+let LET_TRANS = prove
+ (`!m n p. m <= n /\ n < p ==> m < p`,
+  REPEAT INDUCT_TAC THEN
+  ASM_REWRITE_TAC[LE_SUC; LT_SUC; LT_0] THEN REWRITE_TAC[LT; LE; NOT_SUC]);;
+
+export_thm LET_TRANS;;
+
+let LTE_TRANS = prove
+ (`!m n p. m < n /\ n <= p ==> m < p`,
+  REPEAT INDUCT_TAC THEN
+  ASM_REWRITE_TAC[LE_SUC; LT_SUC; LT_0] THEN REWRITE_TAC[LT; LE; NOT_SUC]);;
+
+export_thm LTE_TRANS;;
+
+(* Totality *)
+
+let LE_CASES = prove
+ (`!m n. m <= n \/ n <= m`,
+  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_0; LE_SUC]);;
+
+export_thm LE_CASES;;
+
+let LT_CASES = prove
+ (`!m n. (m < n) \/ (n < m) \/ (m = n)`,
+  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LT_SUC; SUC_INJ] THEN
+  REWRITE_TAC[LT; NOT_SUC; GSYM NOT_SUC] THEN
+  W(W (curry SPEC_TAC) o hd o frees o snd) THEN
+  INDUCT_TAC THEN REWRITE_TAC[LT_0]);;
+
+export_thm LT_CASES;;
+
+let LET_CASES = prove
+ (`!m n. m <= n \/ n < m`,
+  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_SUC_LT; LT_SUC_LE; LE_0]);;
+
+export_thm LET_CASES;;
+
+let LTE_CASES = prove
+ (`!m n. m < n \/ n <= m`,
+  ONCE_REWRITE_TAC[DISJ_SYM] THEN MATCH_ACCEPT_TAC LET_CASES);;
+
+export_thm LTE_CASES;;
+
+(* Relationship between orderings *)
+
+let LE_LT = prove
+ (`!m n. (m <= n) <=> (m < n) \/ (m = n)`,
+  REPEAT INDUCT_TAC THEN
+  ASM_REWRITE_TAC[LE_SUC; LT_SUC; SUC_INJ; LE_0; LT_0] THEN
+  REWRITE_TAC[LE; LT]);;
+
+export_thm LE_LT;;
+
+let LT_LE = prove
+ (`!m n. (m < n) <=> (m <= n) /\ ~(m = n)`,
+  REWRITE_TAC[LE_LT] THEN REPEAT GEN_TAC THEN EQ_TAC THENL
+   [DISCH_TAC THEN ASM_REWRITE_TAC[] THEN DISCH_THEN SUBST_ALL_TAC THEN
+    POP_ASSUM MP_TAC THEN REWRITE_TAC[LT_REFL];
+    DISCH_THEN(CONJUNCTS_THEN2 STRIP_ASSUME_TAC MP_TAC) THEN
+    ASM_REWRITE_TAC[]]);;
+
+export_thm LT_LE;;
+
+let NOT_LE = prove
+ (`!m n. ~(m <= n) <=> (n < m)`,
+  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_SUC; LT_SUC] THEN
+  REWRITE_TAC[LE; LT; NOT_SUC; GSYM NOT_SUC; LE_0] THEN
+  W(W (curry SPEC_TAC) o hd o frees o snd) THEN
+  INDUCT_TAC THEN REWRITE_TAC[LT_0]);;
+
+export_thm NOT_LE;;
+
+let NOT_LT = prove
+ (`!m n. ~(m < n) <=> n <= m`,
+  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_SUC; LT_SUC] THEN
+  REWRITE_TAC[LE; LT; NOT_SUC; GSYM NOT_SUC; LE_0] THEN
+  W(W (curry SPEC_TAC) o hd o frees o snd) THEN
+  INDUCT_TAC THEN REWRITE_TAC[LT_0]);;
+
+export_thm NOT_LT;;
+
+let LT_IMP_LE = prove
+ (`!m n. m < n ==> m <= n`,
+  REWRITE_TAC[LT_LE] THEN REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[]);;
+
+export_thm LT_IMP_LE;;
+
+let EQ_IMP_LE = prove
+ (`!m n. (m = n) ==> m <= n`,
+  REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[LE_REFL]);;
+
+export_thm EQ_IMP_LE;;
+
+let LT_IMP_NEQ = prove
+ (`!m n. m < n ==> ~(m = n)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [GSYM NOT_LE; CONTRAPOS_THM] THEN
+  DISCH_THEN SUBST_VAR_TAC THEN
+  MATCH_ACCEPT_TAC LE_REFL);;
+
+export_thm LT_IMP_NEQ;;
+
+(* Ordering and succession *)
+
+let SUC_LT = prove
+ (`!n. n < SUC n`,
+  REWRITE_TAC [LT_SUC_LE; LE_REFL]);;
+
+export_thm SUC_LT;;
+
+let SUC_LE = prove
+ (`!n. n <= SUC n`,
+  REWRITE_TAC [LE_LT; SUC_LT]);;
+
+export_thm SUC_LE;;
+
+(* Often useful to shuffle between different versions of "0 < n" *)
+
+let LT_NZ = prove
+ (`!n. 0 < n <=> ~(n = 0)`,
+  INDUCT_TAC THEN ASM_REWRITE_TAC[NOT_SUC; LT; EQ_SYM_EQ] THEN
+  CONV_TAC TAUT);;
+
+export_thm LT_NZ;;
+
+let LE_1 = prove
+ (`(!n. ~(n = 0) ==> 0 < n) /\
+   (!n. ~(n = 0) ==> 1 <= n) /\
+   (!n. 0 < n ==> ~(n = 0)) /\
+   (!n. 0 < n ==> 1 <= n) /\
+   (!n. 1 <= n ==> 0 < n) /\
+   (!n. 1 <= n ==> ~(n = 0))`,
+  REWRITE_TAC[LT_NZ; GSYM NOT_LT; ONE; LT]);;
+
+(* Existence of least and greatest elements of (finite) sets *)
+
+let num_WF = prove
+ (`!p. (!n. (!m. m < n ==> p m) ==> p n) ==> !n : num. p n`,
+  GEN_TAC THEN MP_TAC(SPEC `\n : num. !m. m < n ==> p m` num_INDUCTION) THEN
+  REWRITE_TAC[LT; BETA_THM] THEN MESON_TAC[LT]);;
+
+export_thm num_WF;;
+
+let num_WOP = prove
+ (`!p. (?n : num. p n) <=> (?n. p n /\ !m. m < n ==> ~p m)`,
+  GEN_TAC THEN EQ_TAC THENL [ALL_TAC; MESON_TAC[]] THEN
+  CONV_TAC CONTRAPOS_CONV THEN REWRITE_TAC[NOT_EXISTS_THM] THEN
+  DISCH_TAC THEN MATCH_MP_TAC num_WF THEN ASM_MESON_TAC[]);;
+
+export_thm num_WOP;;
+
+let num_MAX = prove
+ (`!p : num -> bool.
+     (?n. p n) /\ (?m. !n. p n ==> n <= m) <=>
+     ?m. p m /\ !n. p n ==> n <= m`,
+  GEN_TAC THEN EQ_TAC THENL
+   [DISCH_THEN(CONJUNCTS_THEN2 (X_CHOOSE_TAC `a:num`) MP_TAC) THEN
+    DISCH_THEN(X_CHOOSE_THEN `m:num` MP_TAC o ONCE_REWRITE_RULE[num_WOP]) THEN
+    DISCH_THEN(fun th -> EXISTS_TAC `m:num` THEN MP_TAC th) THEN
+    REWRITE_TAC[TAUT `(a /\ b ==> c /\ a) <=> (a /\ b ==> c)`] THEN
+    SPEC_TAC(`m:num`,`m:num`) THEN INDUCT_TAC THENL
+     [REWRITE_TAC[LE; LT] THEN DISCH_THEN(IMP_RES_THEN SUBST_ALL_TAC) THEN
+      POP_ASSUM ACCEPT_TAC;
+      DISCH_THEN(CONJUNCTS_THEN2 ASSUME_TAC (MP_TAC o SPEC `m:num`)) THEN
+      REWRITE_TAC[LT] THEN CONV_TAC CONTRAPOS_CONV THEN
+      DISCH_TAC THEN REWRITE_TAC[] THEN X_GEN_TAC `b:num` THEN
+      FIRST_ASSUM(MP_TAC o SPEC `b:num`) THEN REWRITE_TAC[LE] THEN
+      ASM_CASES_TAC `b = SUC m` THEN ASM_REWRITE_TAC[]];
+    REPEAT STRIP_TAC THEN EXISTS_TAC `m:num` THEN ASM_REWRITE_TAC[]]);;
+
+export_thm num_MAX;;
+
+(* Definition of maximum and minimum *)
+
+logfile "natural-order-min-max-def";;
+
+let MAX = new_definition
+  `!m n. MAX m n = if m <= n then n else m`;;
+
+export_thm MAX;;
+
+let MIN = new_definition
+  `!m n. MIN m n = if m <= n then m else n`;;
+
+export_thm MIN;;
+
+(* Binder for "the minimal n such that" *)
+
+let minimal = new_definition
+  `!(p : num -> bool). (minimal) p = @n. p n /\ !m. m < n ==> ~(p m)`;;
+
+let MINIMAL = prove
+ (`!p. (?n. p n) <=> p ((minimal) p) /\ (!m. m < (minimal) p ==> ~(p m))`,
+  GEN_TAC THEN REWRITE_TAC[minimal] THEN CONV_TAC(RAND_CONV SELECT_CONV) THEN
+  REWRITE_TAC[GSYM num_WOP]);;
+
+export_thm MINIMAL;;
+
+(* Properties of maximum and minimum *)
+
+logfile "natural-order-min-max-thm";;
+
+let MAX_REFL = prove
+ (`!n. MAX n n = n`,
+  REWRITE_TAC [MAX; LE_REFL]);;
+
+export_thm MAX_REFL;;
+
+let MAX_COMM = prove
+ (`!m n. MAX m n = MAX n m`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MAX] THEN
+  REPEAT COND_CASES_TAC THENL
+  [ASM_REWRITE_TAC [GSYM LE_ANTISYM];
+   REFL_TAC;
+   REFL_TAC;
+   MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm MAX_COMM;;
+
+let LE_MAX1 = prove
+ (`!m n. m <= MAX m n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MAX] THEN
+  COND_CASES_TAC THEN
+  REWRITE_TAC [LE_REFL]);;
+
+export_thm LE_MAX1;;
+
+let LE_MAX2 = prove
+ (`!m n. n <= MAX m n`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [MAX_COMM] THEN
+  MATCH_ACCEPT_TAC LE_MAX1);;
+
+export_thm LE_MAX2;;
+
+let MAX_L0 = prove
+ (`!n. MAX 0 n = n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MAX; LE_0; LE_REFL]);;
+
+export_thm MAX_L0;;
+
+let MAX_R0 = prove
+ (`!n. MAX n 0 = n`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [MAX_COMM] THEN
+  MATCH_ACCEPT_TAC MAX_L0);;
+
+export_thm MAX_R0;;
+
+let MIN_REFL = prove
+ (`!n. MIN n n = n`,
+  REWRITE_TAC [MIN; LE_REFL]);;
+
+export_thm MIN_REFL;;
+
+let MIN_COMM = prove
+ (`!m n. MIN m n = MIN n m`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MIN] THEN
+  REPEAT COND_CASES_TAC THENL
+  [ASM_REWRITE_TAC [GSYM LE_ANTISYM];
+   REFL_TAC;
+   REFL_TAC;
+   MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm MIN_COMM;;
+
+let MIN_LE2 = prove
+ (`!m n. MIN m n <= n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MIN] THEN
+  COND_CASES_TAC THEN
+  REWRITE_TAC [LE_REFL]);;
+
+export_thm MIN_LE2;;
+
+let MIN_LE1 = prove
+ (`!m n. MIN m n <= m`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [MIN_COMM] THEN
+  MATCH_ACCEPT_TAC MIN_LE2);;
+
+export_thm MIN_LE1;;
+
+let MIN_L0 = prove
+ (`!n. MIN 0 n = 0`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MIN; LE_0]);;
+
+export_thm MIN_L0;;
+
+let MIN_R0 = prove
+ (`!n. MIN n 0 = 0`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [MIN_COMM] THEN
+  MATCH_ACCEPT_TAC MIN_L0);;
+
+export_thm MIN_R0;;
+
+let MINIMAL_EQ = prove
+ (`!p n. p n /\ (!m. m < n ==> ~(p m)) ==> (minimal) p = n`,
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN `?n : num. p n`
+    (STRIP_ASSUME_TAC o REWRITE_RULE [MINIMAL]) THENL
+  [EXISTS_TAC `n : num` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   REWRITE_TAC [GSYM LE_ANTISYM; GSYM NOT_LT] THEN
+   REPEAT STRIP_TAC THENL
+   [FIRST_X_ASSUM (MP_TAC o SPEC `n : num`) THEN
+    ASM_REWRITE_TAC [];
+    UNDISCH_TAC `!m : num. m < n ==> ~p m` THEN
+    DISCH_THEN (MP_TAC o SPEC `(minimal) p`) THEN
+    ASM_REWRITE_TAC []]]);;
+
+export_thm MINIMAL_EQ;;
+
+let MINIMAL_T = prove
+ (`(minimal n. T) = 0`,
+  MATCH_MP_TAC MINIMAL_EQ THEN
+  REWRITE_TAC [LT]);;
+
+export_thm MINIMAL_T;;
 
 (* ------------------------------------------------------------------------- *)
 (* Addition.                                                                 *)
@@ -503,313 +974,6 @@ let EXP_MULT = prove
 export_thm EXP_MULT;;
 
 (* ------------------------------------------------------------------------- *)
-(* Define the orderings recursively too.                                     *)
-(* ------------------------------------------------------------------------- *)
-
-logfile "natural-order-def";;
-
-let (LE_ZERO,LE_SUC) =
-  let def = new_recursive_definition num_RECURSION
-    `(!m. (m <= 0) <=> (m = 0)) /\
-     (!m n. (m <= SUC n) <=> (m = SUC n) \/ (m <= n))` in
-  (CONJUNCT1 def, CONJUNCT2 def);;
-
-export_thm LE_ZERO;;
-export_thm LE_SUC;;
-
-let LE = CONJ LE_ZERO LE_SUC;;
-
-let (LT_ZERO,LT_SUC) =
-  let def = new_recursive_definition num_RECURSION
-    `(!m. (m < 0) <=> F) /\
-     (!m n. (m < SUC n) <=> (m = n) \/ (m < n))` in
-  (REWRITE_RULE [] (CONJUNCT1 def), CONJUNCT2 def);;
-
-export_thm LT_ZERO;;
-export_thm LT_SUC;;
-
-let LT = CONJ LT_ZERO LT_SUC;;
-
-let GE = new_definition
-  `!m n. m >= n <=> n <= m`;;
-
-export_thm GE;;
-
-let GT = new_definition
-  `!m n. m > n <=> n < m`;;
-
-export_thm GT;;
-
-(* ------------------------------------------------------------------------- *)
-(* Maximum and minimum of natural numbers.                                   *)
-(* ------------------------------------------------------------------------- *)
-
-logfile "natural-order-min-max-def";;
-
-let MAX = new_definition
-  `!m n. MAX m n = if m <= n then n else m`;;
-
-export_thm MAX;;
-
-let MIN = new_definition
-  `!m n. MIN m n = if m <= n then m else n`;;
-
-export_thm MIN;;
-
-(* ------------------------------------------------------------------------- *)
-(* Step cases.                                                               *)
-(* ------------------------------------------------------------------------- *)
-
-logfile "natural-order-thm";;
-
-let LE_SUC_LT = prove
- (`!m n. (SUC m <= n) <=> (m < n)`,
-  GEN_TAC THEN INDUCT_TAC THEN ASM_REWRITE_TAC[LE; LT; NOT_SUC; SUC_INJ]);;
-
-export_thm LE_SUC_LT;;
-
-let LT_SUC_LE = prove
- (`!m n. (m < SUC n) <=> (m <= n)`,
-  GEN_TAC THEN INDUCT_TAC THEN ONCE_REWRITE_TAC[LT; LE] THEN
-  ASM_REWRITE_TAC[] THEN REWRITE_TAC[LT]);;
-
-export_thm LT_SUC_LE;;
-
-let LE_SUC = prove
- (`!m n. (SUC m <= SUC n) <=> (m <= n)`,
-  REWRITE_TAC[LE_SUC_LT; LT_SUC_LE]);;
-
-export_thm LE_SUC;;
-
-let LT_SUC = prove
- (`!m n. (SUC m < SUC n) <=> (m < n)`,
-  REWRITE_TAC[LT_SUC_LE; LE_SUC_LT]);;
-
-export_thm LT_SUC;;
-
-(* ------------------------------------------------------------------------- *)
-(* Base cases.                                                               *)
-(* ------------------------------------------------------------------------- *)
-
-let LE_0 = prove
- (`!n. 0 <= n`,
-  INDUCT_TAC THEN ASM_REWRITE_TAC[LE]);;
-
-export_thm LE_0;;
-
-let LT_0 = prove
- (`!n. 0 < SUC n`,
-  REWRITE_TAC[LT_SUC_LE; LE_0]);;
-
-export_thm LT_0;;
-
-(* ------------------------------------------------------------------------- *)
-(* Reflexivity.                                                              *)
-(* ------------------------------------------------------------------------- *)
-
-let LE_REFL = prove
- (`!n. n <= n`,
-  INDUCT_TAC THEN REWRITE_TAC[LE]);;
-
-export_thm LE_REFL;;
-
-let LT_REFL = prove
- (`!n. ~(n < n)`,
-  INDUCT_TAC THEN ASM_REWRITE_TAC[LT_SUC] THEN REWRITE_TAC[LT]);;
-
-export_thm LT_REFL;;
-
-(* ------------------------------------------------------------------------- *)
-(* Antisymmetry.                                                             *)
-(* ------------------------------------------------------------------------- *)
-
-let LE_ANTISYM = prove
- (`!m n. (m <= n /\ n <= m) <=> (m = n)`,
-  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_SUC; SUC_INJ] THEN
-  REWRITE_TAC[LE; NOT_SUC; GSYM NOT_SUC]);;
-
-export_thm LE_ANTISYM;;
-
-let LT_ANTISYM = prove
- (`!m n. ~(m < n /\ n < m)`,
-  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LT_SUC] THEN REWRITE_TAC[LT]);;
-
-export_thm LT_ANTISYM;;
-
-let LET_ANTISYM = prove
- (`!m n. ~(m <= n /\ n < m)`,
-  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_SUC; LT_SUC] THEN
-  REWRITE_TAC[LE; LT; NOT_SUC]);;
-
-export_thm LET_ANTISYM;;
-
-let LTE_ANTISYM = prove
- (`!m n. ~(m < n /\ n <= m)`,
-  ONCE_REWRITE_TAC[CONJ_SYM] THEN REWRITE_TAC[LET_ANTISYM]);;
-
-export_thm LTE_ANTISYM;;
-
-(* ------------------------------------------------------------------------- *)
-(* Transitivity.                                                             *)
-(* ------------------------------------------------------------------------- *)
-
-let LE_TRANS = prove
- (`!m n p. m <= n /\ n <= p ==> m <= p`,
-  REPEAT INDUCT_TAC THEN
-  ASM_REWRITE_TAC[LE_SUC; LE_0] THEN REWRITE_TAC[LE; NOT_SUC]);;
-
-export_thm LE_TRANS;;
-
-let LT_TRANS = prove
- (`!m n p. m < n /\ n < p ==> m < p`,
-  REPEAT INDUCT_TAC THEN
-  ASM_REWRITE_TAC[LT_SUC; LT_0] THEN REWRITE_TAC[LT; NOT_SUC]);;
-
-export_thm LT_TRANS;;
-
-let LET_TRANS = prove
- (`!m n p. m <= n /\ n < p ==> m < p`,
-  REPEAT INDUCT_TAC THEN
-  ASM_REWRITE_TAC[LE_SUC; LT_SUC; LT_0] THEN REWRITE_TAC[LT; LE; NOT_SUC]);;
-
-export_thm LET_TRANS;;
-
-let LTE_TRANS = prove
- (`!m n p. m < n /\ n <= p ==> m < p`,
-  REPEAT INDUCT_TAC THEN
-  ASM_REWRITE_TAC[LE_SUC; LT_SUC; LT_0] THEN REWRITE_TAC[LT; LE; NOT_SUC]);;
-
-export_thm LTE_TRANS;;
-
-(* ------------------------------------------------------------------------- *)
-(* Totality.                                                                 *)
-(* ------------------------------------------------------------------------- *)
-
-let LE_CASES = prove
- (`!m n. m <= n \/ n <= m`,
-  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_0; LE_SUC]);;
-
-export_thm LE_CASES;;
-
-let LT_CASES = prove
- (`!m n. (m < n) \/ (n < m) \/ (m = n)`,
-  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LT_SUC; SUC_INJ] THEN
-  REWRITE_TAC[LT; NOT_SUC; GSYM NOT_SUC] THEN
-  W(W (curry SPEC_TAC) o hd o frees o snd) THEN
-  INDUCT_TAC THEN REWRITE_TAC[LT_0]);;
-
-export_thm LT_CASES;;
-
-let LET_CASES = prove
- (`!m n. m <= n \/ n < m`,
-  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_SUC_LT; LT_SUC_LE; LE_0]);;
-
-export_thm LET_CASES;;
-
-let LTE_CASES = prove
- (`!m n. m < n \/ n <= m`,
-  ONCE_REWRITE_TAC[DISJ_SYM] THEN MATCH_ACCEPT_TAC LET_CASES);;
-
-export_thm LTE_CASES;;
-
-(* ------------------------------------------------------------------------- *)
-(* Relationship between orderings.                                           *)
-(* ------------------------------------------------------------------------- *)
-
-let LE_LT = prove
- (`!m n. (m <= n) <=> (m < n) \/ (m = n)`,
-  REPEAT INDUCT_TAC THEN
-  ASM_REWRITE_TAC[LE_SUC; LT_SUC; SUC_INJ; LE_0; LT_0] THEN
-  REWRITE_TAC[LE; LT]);;
-
-export_thm LE_LT;;
-
-let LT_LE = prove
- (`!m n. (m < n) <=> (m <= n) /\ ~(m = n)`,
-  REWRITE_TAC[LE_LT] THEN REPEAT GEN_TAC THEN EQ_TAC THENL
-   [DISCH_TAC THEN ASM_REWRITE_TAC[] THEN DISCH_THEN SUBST_ALL_TAC THEN
-    POP_ASSUM MP_TAC THEN REWRITE_TAC[LT_REFL];
-    DISCH_THEN(CONJUNCTS_THEN2 STRIP_ASSUME_TAC MP_TAC) THEN
-    ASM_REWRITE_TAC[]]);;
-
-export_thm LT_LE;;
-
-let NOT_LE = prove
- (`!m n. ~(m <= n) <=> (n < m)`,
-  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_SUC; LT_SUC] THEN
-  REWRITE_TAC[LE; LT; NOT_SUC; GSYM NOT_SUC; LE_0] THEN
-  W(W (curry SPEC_TAC) o hd o frees o snd) THEN
-  INDUCT_TAC THEN REWRITE_TAC[LT_0]);;
-
-export_thm NOT_LE;;
-
-let NOT_LT = prove
- (`!m n. ~(m < n) <=> n <= m`,
-  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC[LE_SUC; LT_SUC] THEN
-  REWRITE_TAC[LE; LT; NOT_SUC; GSYM NOT_SUC; LE_0] THEN
-  W(W (curry SPEC_TAC) o hd o frees o snd) THEN
-  INDUCT_TAC THEN REWRITE_TAC[LT_0]);;
-
-export_thm NOT_LT;;
-
-let LT_IMP_LE = prove
- (`!m n. m < n ==> m <= n`,
-  REWRITE_TAC[LT_LE] THEN REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[]);;
-
-export_thm LT_IMP_LE;;
-
-let EQ_IMP_LE = prove
- (`!m n. (m = n) ==> m <= n`,
-  REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[LE_REFL]);;
-
-export_thm EQ_IMP_LE;;
-
-let LT_IMP_NEQ = prove
- (`!m n. m < n ==> ~(m = n)`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [GSYM NOT_LE; CONTRAPOS_THM] THEN
-  DISCH_THEN SUBST_VAR_TAC THEN
-  MATCH_ACCEPT_TAC LE_REFL);;
-
-export_thm LT_IMP_NEQ;;
-
-(* ------------------------------------------------------------------------- *)
-(* Ordering and succession.                                                  *)
-(* ------------------------------------------------------------------------- *)
-
-let SUC_LT = prove
- (`!n. n < SUC n`,
-  REWRITE_TAC [LT_SUC_LE; LE_REFL]);;
-
-export_thm SUC_LT;;
-
-let SUC_LE = prove
- (`!n. n <= SUC n`,
-  REWRITE_TAC [LE_LT; SUC_LT]);;
-
-export_thm SUC_LE;;
-
-(* ------------------------------------------------------------------------- *)
-(* Often useful to shuffle between different versions of "0 < n".            *)
-(* ------------------------------------------------------------------------- *)
-
-let LT_NZ = prove
- (`!n. 0 < n <=> ~(n = 0)`,
-  INDUCT_TAC THEN ASM_REWRITE_TAC[NOT_SUC; LT; EQ_SYM_EQ] THEN
-  CONV_TAC TAUT);;
-
-export_thm LT_NZ;;
-
-let LE_1 = prove
- (`(!n. ~(n = 0) ==> 0 < n) /\
-   (!n. ~(n = 0) ==> 1 <= n) /\
-   (!n. 0 < n ==> ~(n = 0)) /\
-   (!n. 0 < n ==> 1 <= n) /\
-   (!n. 1 <= n ==> 0 < n) /\
-   (!n. 1 <= n ==> ~(n = 0))`,
-  REWRITE_TAC[LT_NZ; GSYM NOT_LT; ONE; LT]);;
-
-(* ------------------------------------------------------------------------- *)
 (* Relate the orderings to arithmetic operations.                            *)
 (* ------------------------------------------------------------------------- *)
 
@@ -1080,48 +1244,6 @@ let MONO_SIMPLIFY = prove
      EXISTS_TAC `f (i + SUC d) : num` THEN
      ASM_REWRITE_TAC [] THEN
      ASM_REWRITE_TAC [ADD_CLAUSES]]]);;
-
-(* ------------------------------------------------------------------------- *)
-(* Existence of least and greatest elements of (finite) set.                 *)
-(* ------------------------------------------------------------------------- *)
-
-logfile "natural-order-thm";;
-
-let num_WF = prove
- (`!p. (!n. (!m. m < n ==> p m) ==> p n) ==> !n : num. p n`,
-  GEN_TAC THEN MP_TAC(SPEC `\n : num. !m. m < n ==> p m` num_INDUCTION) THEN
-  REWRITE_TAC[LT; BETA_THM] THEN MESON_TAC[LT]);;
-
-export_thm num_WF;;
-
-let num_WOP = prove
- (`!p. (?n : num. p n) <=> (?n. p n /\ !m. m < n ==> ~p m)`,
-  GEN_TAC THEN EQ_TAC THENL [ALL_TAC; MESON_TAC[]] THEN
-  CONV_TAC CONTRAPOS_CONV THEN REWRITE_TAC[NOT_EXISTS_THM] THEN
-  DISCH_TAC THEN MATCH_MP_TAC num_WF THEN ASM_MESON_TAC[]);;
-
-export_thm num_WOP;;
-
-let num_MAX = prove
- (`!p : num -> bool.
-     (?n. p n) /\ (?m. !n. p n ==> n <= m) <=>
-     ?m. p m /\ !n. p n ==> n <= m`,
-  GEN_TAC THEN EQ_TAC THENL
-   [DISCH_THEN(CONJUNCTS_THEN2 (X_CHOOSE_TAC `a:num`) MP_TAC) THEN
-    DISCH_THEN(X_CHOOSE_THEN `m:num` MP_TAC o ONCE_REWRITE_RULE[num_WOP]) THEN
-    DISCH_THEN(fun th -> EXISTS_TAC `m:num` THEN MP_TAC th) THEN
-    REWRITE_TAC[TAUT `(a /\ b ==> c /\ a) <=> (a /\ b ==> c)`] THEN
-    SPEC_TAC(`m:num`,`m:num`) THEN INDUCT_TAC THENL
-     [REWRITE_TAC[LE; LT] THEN DISCH_THEN(IMP_RES_THEN SUBST_ALL_TAC) THEN
-      POP_ASSUM ACCEPT_TAC;
-      DISCH_THEN(CONJUNCTS_THEN2 ASSUME_TAC (MP_TAC o SPEC `m:num`)) THEN
-      REWRITE_TAC[LT] THEN CONV_TAC CONTRAPOS_CONV THEN
-      DISCH_TAC THEN REWRITE_TAC[] THEN X_GEN_TAC `b:num` THEN
-      FIRST_ASSUM(MP_TAC o SPEC `b:num`) THEN REWRITE_TAC[LE] THEN
-      ASM_CASES_TAC `b = SUC m` THEN ASM_REWRITE_TAC[]];
-    REPEAT STRIP_TAC THEN EXISTS_TAC `m:num` THEN ASM_REWRITE_TAC[]]);;
-
-export_thm num_MAX;;
 
 (* ------------------------------------------------------------------------- *)
 (* Oddness and evenness (recursively rather than inductively!)               *)
@@ -2274,149 +2396,106 @@ let LE_IMP =
   fun th -> GEN_ALL(MATCH_MP pth (SPEC_ALL th));;
 
 (* ------------------------------------------------------------------------- *)
-(* Binder for "the minimal n such that".                                     *)
+(* Logarithm.                                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-order-min-max-def";;
+logfile "natural-exp-log-def";;
 
-parse_as_binder "minimal";;
+let log_def = new_definition
+  `!k n. log k n = minimal m. n <= k EXP m`;;
 
-let minimal = new_definition
-  `!(p : num -> bool). (minimal) p = @n. p n /\ !m. m < n ==> ~(p m)`;;
+let log_one = prove
+  (`!k. 1 < k ==> log k 1 = 0`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [log_def] THEN
+   MATCH_MP_TAC MINIMAL_EQ THEN
+   REWRITE_TAC [EXP; LE_REFL; LT]);;
 
-let MINIMAL = prove
- (`!p. (?n. p n) <=> p ((minimal) p) /\ (!m. m < (minimal) p ==> ~(p m))`,
-  GEN_TAC THEN REWRITE_TAC[minimal] THEN CONV_TAC(RAND_CONV SELECT_CONV) THEN
-  REWRITE_TAC[GSYM num_WOP]);;
+export_thm log_one;;
 
-export_thm MINIMAL;;
+(***
+let log_between = prove
+  (`!k n m.
+      k EXP m < n /\
+      n <= k EXP (m + 1) ==>
+      log k n = m + 1`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [log_def] THEN
+   MATCH_MP_TAC MINIMAL_EQ THEN
+   ASM_REWRITE_TAC [] THEN
+   X_GEN_TAC `p : num` THEN
+   REWRITE_TAC [GSYM ADD1; LT_SUC_LE; NOT_LE] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC LET_TRANS THEN
+   EXISTS_TAC `k EXP m` THEN
+   ASM_REWRITE_TAC []
 
-logfile "natural-order-min-max-thm";;
+export_thm log_between;;
 
-let MAX_REFL = prove
- (`!n. MAX n n = n`,
-  REWRITE_TAC [MAX; LE_REFL]);;
+let log_def = CONJ log_one log_between;;
 
-export_thm MAX_REFL;;
+logfile "natural-exp-thm";;
 
-let MAX_COMM = prove
- (`!m n. MAX m n = MAX n m`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [MAX] THEN
-  REPEAT COND_CASES_TAC THENL
-  [ASM_REWRITE_TAC [GSYM LE_ANTISYM];
-   REFL_TAC;
-   REFL_TAC;
-   MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
-   ASM_REWRITE_TAC []]);;
+let EXP_EQ_0 = prove
+ (`!m n. (m EXP n = 0) <=> (m = 0) /\ ~(n = 0)`,
+  REPEAT INDUCT_TAC THEN ASM_REWRITE_TAC
+    [BIT1_THM; NOT_SUC; NOT_SUC; EXP; MULT_CLAUSES; ADD_CLAUSES; ADD_EQ_0]);;
 
-export_thm MAX_COMM;;
+export_thm EXP_EQ_0;;
 
-let LE_MAX1 = prove
- (`!m n. m <= MAX m n`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [MAX] THEN
-  COND_CASES_TAC THEN
-  REWRITE_TAC [LE_REFL]);;
+let EXP_EQ_1 = prove
+ (`!x n. x EXP n = 1 <=> x = 1 \/ n = 0`,
+  GEN_TAC THEN INDUCT_TAC THEN ASM_REWRITE_TAC[EXP; MULT_EQ_1; NOT_SUC] THEN
+  CONV_TAC TAUT);;
 
-export_thm LE_MAX1;;
+export_thm EXP_EQ_1;;
 
-let LE_MAX2 = prove
- (`!m n. n <= MAX m n`,
-  REPEAT GEN_TAC THEN
-  ONCE_REWRITE_TAC [MAX_COMM] THEN
-  MATCH_ACCEPT_TAC LE_MAX1);;
+let EXP_ZERO = prove
+ (`!n. 0 EXP n = if n = 0 then 1 else 0`,
+  GEN_TAC THEN COND_CASES_TAC THEN ASM_REWRITE_TAC[EXP_EQ_0; EXP_EQ_1]);;
 
-export_thm LE_MAX2;;
+export_thm EXP_ZERO;;
 
-let MAX_L0 = prove
- (`!n. MAX 0 n = n`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [MAX; LE_0; LE_REFL]);;
+let EXP_ADD = prove
+ (`!m n p. m EXP (n + p) = (m EXP n) * (m EXP p)`,
+  GEN_TAC THEN GEN_TAC THEN INDUCT_TAC THEN
+  ASM_REWRITE_TAC[EXP; ADD_CLAUSES; MULT_CLAUSES; MULT_AC]);;
 
-export_thm MAX_L0;;
+export_thm EXP_ADD;;
 
-let MAX_R0 = prove
- (`!n. MAX n 0 = n`,
-  REPEAT GEN_TAC THEN
-  ONCE_REWRITE_TAC [MAX_COMM] THEN
-  MATCH_ACCEPT_TAC MAX_L0);;
+let EXP_ONE = prove
+ (`!n. 1 EXP n = 1`,
+  INDUCT_TAC THEN ASM_REWRITE_TAC[EXP; MULT_CLAUSES]);;
 
-export_thm MAX_R0;;
+export_thm EXP_ONE;;
 
-let MIN_REFL = prove
- (`!n. MIN n n = n`,
-  REWRITE_TAC [MIN; LE_REFL]);;
+let EXP_1 = prove
+ (`!n. n EXP 1 = n`,
+  REWRITE_TAC[ONE; EXP; MULT_CLAUSES; ADD_CLAUSES]);;
 
-export_thm MIN_REFL;;
+export_thm EXP_1;;
 
-let MIN_COMM = prove
- (`!m n. MIN m n = MIN n m`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [MIN] THEN
-  REPEAT COND_CASES_TAC THENL
-  [ASM_REWRITE_TAC [GSYM LE_ANTISYM];
-   REFL_TAC;
-   REFL_TAC;
-   MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
-   ASM_REWRITE_TAC []]);;
+let EXP_2 = prove
+ (`!n. n EXP 2 = n * n`,
+  REWRITE_TAC[BIT0_THM; BIT1_THM; EXP; EXP_ADD; MULT_CLAUSES; ADD_CLAUSES]);;
 
-export_thm MIN_COMM;;
+export_thm EXP_2;;
 
-let MIN_LE2 = prove
- (`!m n. MIN m n <= n`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [MIN] THEN
-  COND_CASES_TAC THEN
-  REWRITE_TAC [LE_REFL]);;
+let MULT_EXP = prove
+ (`!p m n. (m * n) EXP p = m EXP p * n EXP p`,
+  INDUCT_TAC THEN ASM_REWRITE_TAC[EXP; MULT_CLAUSES; MULT_AC]);;
 
-export_thm MIN_LE2;;
+export_thm MULT_EXP;;
 
-let MIN_LE1 = prove
- (`!m n. MIN m n <= m`,
-  REPEAT GEN_TAC THEN
-  ONCE_REWRITE_TAC [MIN_COMM] THEN
-  MATCH_ACCEPT_TAC MIN_LE2);;
+let EXP_MULT = prove
+ (`!m n p. m EXP (n * p) = (m EXP n) EXP p`,
+  GEN_TAC THEN INDUCT_TAC THEN
+  ASM_REWRITE_TAC[EXP_ADD; EXP; MULT_CLAUSES] THENL
+   [CONV_TAC(ONCE_DEPTH_CONV SYM_CONV) THEN
+    INDUCT_TAC THEN ASM_REWRITE_TAC[EXP; MULT_CLAUSES];
+    REWRITE_TAC[MULT_EXP] THEN MATCH_ACCEPT_TAC MULT_SYM]);;
 
-export_thm MIN_LE1;;
-
-let MIN_L0 = prove
- (`!n. MIN 0 n = 0`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [MIN; LE_0]);;
-
-export_thm MIN_L0;;
-
-let MIN_R0 = prove
- (`!n. MIN n 0 = 0`,
-  REPEAT GEN_TAC THEN
-  ONCE_REWRITE_TAC [MIN_COMM] THEN
-  MATCH_ACCEPT_TAC MIN_L0);;
-
-export_thm MIN_R0;;
-
-let MINIMAL_EQ = prove
- (`!p n. p n /\ (!m. m < n ==> ~(p m)) ==> (minimal) p = n`,
-  REPEAT STRIP_TAC THEN
-  SUBGOAL_THEN `?n : num. p n`
-    (STRIP_ASSUME_TAC o REWRITE_RULE [MINIMAL]) THENL
-  [EXISTS_TAC `n : num` THEN
-   FIRST_ASSUM ACCEPT_TAC;
-   REWRITE_TAC [GSYM LE_ANTISYM; GSYM NOT_LT] THEN
-   REPEAT STRIP_TAC THENL
-   [FIRST_X_ASSUM (MP_TAC o SPEC `n : num`) THEN
-    ASM_REWRITE_TAC [];
-    UNDISCH_TAC `!m : num. m < n ==> ~p m` THEN
-    DISCH_THEN (MP_TAC o SPEC `(minimal) p`) THEN
-    ASM_REWRITE_TAC []]]);;
-
-export_thm MINIMAL_EQ;;
-
-let MINIMAL_T = prove
- (`(minimal n. T) = 0`,
-  MATCH_MP_TAC MINIMAL_EQ THEN
-  REWRITE_TAC [LT]);;
-
-export_thm MINIMAL_T;;
+export_thm EXP_MULT;;
+***)
 
 logfile_end ();;

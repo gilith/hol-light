@@ -327,6 +327,14 @@ and word16_bits_lte_cons = new_axiom
 
 let word16_bits_lte_def = CONJ word16_bits_lte_nil word16_bits_lte_cons;;
 
+new_constant ("rdecode_word16", `:random -> word16 # random`);;
+
+let redecode_word16_def = new_axiom
+  `!r.
+     rdecode_word16 r =
+     let (l,r') = rbits word16_width r in
+     (list_to_word16 l, r')`;;
+
 (* word16-bits-thm *)
 
 let length_word16_to_list = new_axiom

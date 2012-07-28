@@ -327,6 +327,14 @@ and byte_bits_lte_cons = new_axiom
 
 let byte_bits_lte_def = CONJ byte_bits_lte_nil byte_bits_lte_cons;;
 
+new_constant ("rdecode_byte", `:random -> byte # random`);;
+
+let redecode_byte_def = new_axiom
+  `!r.
+     rdecode_byte r =
+     let (l,r') = rbits byte_width r in
+     (list_to_byte l, r')`;;
+
 (* byte-bits-thm *)
 
 let length_byte_to_list = new_axiom

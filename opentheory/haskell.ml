@@ -40,17 +40,24 @@ let empty_haskell_simp_thms =
 let add_haskell_simp_thm =
     let o_thm = prove
       (`!(f : B -> A) (g : C -> B) (h : C -> A).
-          f o g = h ==> !(j : Z -> C). f o (g o j) = h o j`,
-       REPEAT STRIP_TAC THEN
-       ASM_REWRITE_TAC [o_ASSOC]) in
-    let o_rule = GEN_ALL o MATCH_MP o_thm o SPEC_ALL in
+          f o g = h ==>
+          (!(j : Z -> C). f o (g o j) = h o j) /\
+          (!(x : C). f (g x) = h x)`,
+       REPEAT STRIP_TAC THENL
+       [ASM_REWRITE_TAC [o_ASSOC];
+        CONV_TAC (LAND_CONV (REWR_CONV (GSYM o_THM))) THEN
+        ASM_REWRITE_TAC []]) in
+    let o_rule th =
+        let (th1,th2) = CONJ_PAIR (MATCH_MP o_thm (SPEC_ALL th)) in
+        (GEN_ALL th1, GEN_ALL th2) in
     fun st th ->
       match st with
         Haskell_simp_thms ths ->
-          let ths = th :: ths in
-          let ths =
-              try o_rule th :: ths
-              with Failure _ -> ths in
+          let news =
+              try let (th1,th2) = o_rule th in
+                  [th; th1; th2]
+              with Failure _ -> [th] in
+          let ths = news @ ths in
           Haskell_simp_thms ths;;
 
 let add_haskell_simp_thms = List.fold_left add_haskell_simp_thm;;
@@ -120,9 +127,13 @@ let to_list_haskell_type_base tb =
 
 let lift_drop_haskell_type tb =
     let mk_const_at_type (c,ty) =
-        let cty = get_const_type c in
-        let theta = type_match cty ty [] in
-        mk_const (c,theta) in
+        try let cty = get_const_type c in
+            let theta = type_match cty ty [] in
+            mk_const (c,theta)
+        with Failure _ ->
+          let msg =
+              "mk_const_at_type: (" ^ c ^ ", " ^ string_of_type ty ^ ")" in
+          failwith msg in
     let mk_i ty =
         let ity = mk_fun_ty ty ty in
         mk_const_at_type ("I",ity) in
@@ -146,12 +157,13 @@ let lift_drop_haskell_type tb =
             failwith ("unknown type op: " ^ ot) in
         let {tyop = ld; vars = vs} = find_haskell_type_base tb ot in
         let (res,tysH) = lift_vars ty ot [] [] vs tys in
+        let pty = mk_type (ot,tysH) in
         match ld with
-          None -> (mk_type (ot,tysH), res)
+          None -> (pty,res)
         | Some (l,_) ->
           let otH = mk_haskell_name ot in
           let tyH = mk_type (otH,tysH) in
-          let lty = mk_fun_ty ty tyH in
+          let lty = mk_fun_ty pty tyH in
           let ltm = mk_const_at_type (l,lty) in
           (tyH, ltm :: res)
     and lift_vars pty ot res tysH vs tys =
@@ -287,7 +299,6 @@ let define_haskell_type ty vs =
     let dest n = "destH_" ^ n in
     let tybij = define_newtype' (mk,dest) ("h",otH) ("x",ty) in
     let () = register_haskell_type (otH, mk otH, dest otH, vs) in
-    let () = add_haskell_thms (CONJUNCTS tybij) in
     let () = add_haskell_thms (CONJUNCTS (prove_newtype_o tybij)) in
     let () = add_haskell_thm (prove_newtype_inj tybij) in
     tybij;;

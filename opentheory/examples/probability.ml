@@ -88,11 +88,72 @@ let rdecode_list_dest_def =
 export_thm rdecode_list_dest_def;;
 
 let rdecode_list_def = new_definition
-  `!r.
+  `!d r.
      rdecode_list (d : random -> A # random) r =
      let (r1,r2) = rsplit r in
      (rdecode_list_dest d [] r1, r2)`;;
 
 export_thm rdecode_list_def;;
+
+(***
+let rdecode_uniform_dest_def =
+ (`!n r.
+
+let rdecode_uniform_loop_exists = prove
+ (`!d. ?dest. !(l : A list) r.
+     dest l r =
+       let (b,r') = rbit r in
+       if b then l else
+       let (x,r'') = d r' in
+       dest (CONS x l) r''`,
+  GEN_TAC THEN
+  MP_TAC
+   (ISPECL
+      [`\ ((l : A list), (r : random)).
+          let (b,r') = rbit r in
+          ~b`;
+       `\ ((l : A list), (r : random)).
+          let (b,r') = rbit r in
+          let (x,r'') = (d : random -> A # random) r' in
+          (CONS x l, r'')`;
+       `\ ((l : A list), (r : random)).
+          l`] WF_REC_TAIL) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `dest : A list # random -> A list`
+     STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC
+    `\ (l : A list) (r : random).
+       ((dest (l,r)) : A list)` THEN
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [] THEN
+  FIRST_X_ASSUM (fun th -> CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [th]))) THEN
+  REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  PAIR_CASES_TAC `rbit r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `b : bool` (X_CHOOSE_THEN `r' : random` SUBST1_TAC)) THEN
+  REWRITE_TAC [] THEN
+  BOOL_CASES_TAC `b : bool` THENL
+  [REWRITE_TAC [];
+   REWRITE_TAC [] THEN
+   PAIR_CASES_TAC `(d : random -> A # random) r'` THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `x : A` (X_CHOOSE_THEN `r'' : random` SUBST1_TAC)) THEN
+   REWRITE_TAC []]);;
+
+let rdecode_list_dest_def =
+  new_specification ["rdecode_list_dest"]
+    (ONCE_REWRITE_RULE [SKOLEM_THM] rdecode_list_dest_exists);;
+
+export_thm rdecode_list_dest_def;;
+
+let rdecode_uniform_def = new_definition
+  `!n r.
+     rdecode_uniform n r =
+     let w = log2_num n in
+     let (r1,r2) = rsplit r in
+     (rdecode_uniform_loop n w r1, r2);;
+
+export_thm rdecode_uniform_def;;
+***)
 
 logfile_end ();;

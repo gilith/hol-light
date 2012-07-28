@@ -76,14 +76,10 @@ let decoderH_def = define_haskell_const
 
 export_thm decoderH_def;;
 
-(***
-let decode_pstreamH_def = new_definition
-  `!bs.
-     decode_pstreamH bs =
-     lift_pstreamH (decode_pstream (drop_pstreamH bs))`;;
+let decode_pstreamH_def = define_haskell_const
+  `decode_pstream : byte pstream -> unicode pstream`;;
 
 export_thm decode_pstreamH_def;;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Properties.                                                               *)
@@ -132,11 +128,17 @@ logfile "haskell-char-src";;
 
 (* Unicode characters *)
 
-let () = export_haskell_thm planeH_mk_dest;;
+let () = (export_haskell_thm o prove)
+ (`!p : planeH. mk_planeH (dest_planeH p) = p`,
+  HASKELL_TAC [plane_tybij]);;
 
-let () = export_haskell_thm positionH_mk_dest;;
+let () = (export_haskell_thm o prove)
+ (`!p : positionH. mk_positionH (dest_positionH p) = p`,
+  HASKELL_TAC [position_tybij]);;
 
-let () = export_haskell_thm unicodeH_mk_dest;;
+let () = (export_haskell_thm o prove)
+ (`!c : unicodeH. mk_unicodeH (dest_unicodeH p) = p`,
+  HASKELL_TAC [unicode_tybij]);;
 
 (* UTF-8 encoding *)
 
@@ -144,10 +146,12 @@ let () = export_haskell_thm unicodeH_mk_dest;;
 (* Testing.                                                                  *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 logfile "haskell-char-test";;
 
 (* Unicode characters *)
 
 (* UTF-8 encoding *)
+***)
 
 logfile_end ();;

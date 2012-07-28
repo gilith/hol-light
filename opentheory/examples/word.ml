@@ -242,6 +242,26 @@ let word_bits_lte_def = CONJ word_bits_lte_nil word_bits_lte_cons;;
 let word_bits_lte_def = CONJ word_bits_lte_nil word_bits_lte_cons;;
 *)
 
+let redecode_word_def = new_definition
+  `!r.
+     rdecode_word r =
+     let (l,r') = rbits word_width r in
+     (list_to_word l, r')`;;
+
+(*PARAMETRIC
+new_constant ("rdecode_word", `:random -> word # random`);;
+*)
+
+export_thm rdecode_word_def;;
+
+(*PARAMETRIC
+let redecode_word_def = new_axiom
+  `!r.
+     rdecode_word r =
+     let (l,r') = rbits word_width r in
+     (list_to_word l, r')`;;
+*)
+
 logfile "word-bits-thm";;
 
 (*PARAMETRIC
