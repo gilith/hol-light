@@ -349,6 +349,20 @@ let BIT1_DEF = new_definition
 export_thm BIT1_DEF;;
 
 (* ------------------------------------------------------------------------- *)
+(* Following is handy before num_CONV arrives.                               *)
+(* ------------------------------------------------------------------------- *)
+
+let ONE = prove
+ (`1 = SUC 0`,
+  REWRITE_TAC [NUMERAL; REWRITE_RULE [NUMERAL] BIT1_DEF;
+               REWRITE_RULE [NUMERAL] BIT0_DEF]);;
+
+let TWO = prove
+ (`2 = SUC 1`,
+  REWRITE_TAC [NUMERAL; REWRITE_RULE [NUMERAL] BIT1_DEF;
+               REWRITE_RULE [NUMERAL] BIT0_DEF]);;
+
+(* ------------------------------------------------------------------------- *)
 (* Syntax operations on numerals.                                            *)
 (* ------------------------------------------------------------------------- *)
 

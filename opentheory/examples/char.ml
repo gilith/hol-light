@@ -32,6 +32,14 @@ export_thm plane_rep_abs;;
 
 let plane_tybij = CONJ plane_abs_rep plane_rep_abs;;
 
+let rdecode_plane_def = new_definition
+  `!r.
+     rdecode_plane r =
+     let (n,r') = rdecode_uniform 17 r in
+     (mk_plane (num_to_byte n), r')`;;
+
+export_thm rdecode_plane_def;;
+
 (* Positions *)
 
 let is_position_def =
@@ -56,6 +64,14 @@ export_thm position_abs_rep;;
 export_thm position_rep_abs;;
 
 let position_tybij = CONJ position_abs_rep position_rep_abs;;
+
+let rdecode_position_def = new_definition
+  `!r.
+     rdecode_position r =
+     let (w,r') = rdecode_word16 r in
+     (mk_position w, r')`;;
+
+export_thm rdecode_position_def;;
 
 (* Unicode characters *)
 
@@ -93,6 +109,20 @@ export_thm unicode_rep_abs;;
 
 let unicode_tybij = CONJ unicode_abs_rep unicode_rep_abs;;
 
+let rdecode_unicode_def = new_definition
+  `!r.
+     rdecode_unicode r =
+     let (pl,r') = rdecode_plane r in
+     let pli = dest_plane pl in
+     let (pos,r'') =
+         if ~(pli = num_to_byte 0) then rdecode_position r' else
+         let (n,r'') = rdecode_uniform 63486 r' in
+         let n' = if n < 55296 then n else n + 2048 in
+         (mk_position (num_to_word16 n'), r'') in
+     (mk_unicode (pl,pos), r'')`;;
+
+export_thm rdecode_unicode_def;;
+
 logfile "char-thm";;
 
 let plane_cases = prove
@@ -114,6 +144,18 @@ let dest_plane_cases = prove
 
 export_thm dest_plane_cases;;
 
+let dest_plane_inj = prove
+  (`!pl1 pl2. dest_plane pl1 = dest_plane pl2 <=> pl1 = pl2`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    ONCE_REWRITE_TAC [GSYM plane_abs_rep] THEN
+    ASM_REWRITE_TAC [];
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm dest_plane_inj;;
+
 let position_cases = prove
   (`!pos. ?w. pos = mk_position w`,
    GEN_TAC THEN
@@ -131,6 +173,18 @@ let dest_position_cases = prove
    ASM_REWRITE_TAC [position_tybij]);;
 
 export_thm dest_position_cases;;
+
+let dest_position_inj = prove
+  (`!pos1 pos2. dest_position pos1 = dest_position pos2 <=> pos1 = pos2`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    ONCE_REWRITE_TAC [GSYM position_abs_rep] THEN
+    ASM_REWRITE_TAC [];
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm dest_position_inj;;
 
 let unicode_cases = prove
   (`!c. ?pl pos. is_unicode (pl,pos) /\ c = mk_unicode (pl,pos)`,
@@ -154,6 +208,18 @@ let dest_unicode_cases = prove
    ASM_REWRITE_TAC []);;
 
 export_thm dest_unicode_cases;;
+
+let dest_unicode_inj = prove
+  (`!c1 c2. dest_unicode c1 = dest_unicode c2 <=> c1 = c2`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    ONCE_REWRITE_TAC [GSYM unicode_abs_rep] THEN
+    ASM_REWRITE_TAC [];
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm dest_unicode_inj;;
 
 (* ------------------------------------------------------------------------- *)
 (* UTF-8 encodings of unicode characters.                                    *)

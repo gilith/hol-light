@@ -102,6 +102,14 @@ new_constant ("byte_lt", `:byte -> byte -> bool`);;
 let byte_lt_def = new_axiom
   `!x y. byte_lt x y <=> byte_to_num x < byte_to_num y`;;
 
+new_constant ("rdecode_byte", `:random -> byte # random`);;
+
+let rdecode_byte_def = new_axiom
+  `!r.
+     rdecode_byte r =
+     let (n,r') = rdecode_uniform byte_size r in
+     (num_to_byte n, r')`;;
+
 (* byte-thm *)
 
 let byte_to_num_inj = new_axiom
@@ -326,14 +334,6 @@ and byte_bits_lte_cons = new_axiom
       byte_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2`;;
 
 let byte_bits_lte_def = CONJ byte_bits_lte_nil byte_bits_lte_cons;;
-
-new_constant ("rdecode_byte", `:random -> byte # random`);;
-
-let redecode_byte_def = new_axiom
-  `!r.
-     rdecode_byte r =
-     let (l,r') = rbits byte_width r in
-     (list_to_byte l, r')`;;
 
 (* byte-bits-thm *)
 

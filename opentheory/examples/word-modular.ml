@@ -90,6 +90,14 @@ new_constant ("word_lt", `:word -> word -> bool`);;
 let word_lt_def = new_axiom
   `!x y. word_lt x y <=> word_to_num x < word_to_num y`;;
 
+new_constant ("rdecode_word", `:random -> word # random`);;
+
+let rdecode_word_def = new_axiom
+  `!r.
+     rdecode_word r =
+     let (n,r') = rdecode_uniform word_size r in
+     (num_to_word n, r')`;;
+
 (* word-thm *)
 
 let word_to_num_inj = new_axiom
@@ -338,6 +346,14 @@ new_constant ("word_lt", `:word -> word -> bool`);;
 
 let word_lt_def = new_axiom
   `!x y. word_lt x y <=> word_to_num x < word_to_num y`;;
+
+new_constant ("rdecode_word", `:random -> word # random`);;
+
+let rdecode_word_def = new_axiom
+  `!r.
+     rdecode_word r =
+     let (n,r') = rdecode_uniform word_size r in
+     (num_to_word n, r')`;;
 
 (* word-thm *)
 

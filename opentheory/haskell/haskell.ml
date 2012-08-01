@@ -148,6 +148,24 @@ let rdecode_fibH_def = new_definition
 add_haskell_thm rdecode_fibH_def;;
 export_thm rdecode_fibH_def;;
 
+let rdecode_uniform_destH_def = new_definition
+  `rdecode_uniform_destH = rdecode_uniform_dest`;;
+
+add_haskell_thm rdecode_uniform_destH_def;;
+export_thm rdecode_uniform_destH_def;;
+
+let rdecode_uniform_loopH_def = new_definition
+  `rdecode_uniform_loopH = rdecode_uniform`;;
+
+add_haskell_thm rdecode_uniform_loopH_def;;
+export_thm rdecode_uniform_loopH_def;;
+
+let rdecode_uniformH_def = new_definition
+  `rdecode_uniformH = rdecode_uniform`;;
+
+add_haskell_thm rdecode_uniformH_def;;
+export_thm rdecode_uniformH_def;;
+
 (* Random streams *)
 
 let rbitsH_def = new_definition
@@ -155,6 +173,18 @@ let rbitsH_def = new_definition
 
 add_haskell_thm rbitsH_def;;
 export_thm rbitsH_def;;
+
+(* Bytes *)
+
+(***
+Need rdecode_byte
+
+let rbitsH_def = new_definition
+  `rbitsH = rbits`;;
+
+add_haskell_thm rbitsH_def;;
+export_thm rbitsH_def;;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Properties.                                                               *)
@@ -409,6 +439,19 @@ let () = (export_haskell_thm o prove)
   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
   REWRITE_TAC [rdecode_fibH_def; rdecode_fib_destH_def] THEN
   ACCEPT_TAC rdecode_fib_def);;
+
+(***
+let () = (export_haskell_thm o prove)
+ (`!n.
+     rdecode_uniformH n =
+     let w = logH 2 n in
+     \r.
+       let r1,r2 = rsplit r in
+       (rdecode_uniform_loopH n w r1 MOD n, r2)`,
+  ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+  REWRITE_TAC [rdecode_fibH_def; rdecode_fib_destH_def] THEN
+  ACCEPT_TAC rdecode_fib_def);;
+***)
 
 (* Random streams *)
 

@@ -426,6 +426,26 @@ let modular_lt_def = new_axiom
   `!x y. modular_lt x y <=> modular_to_num x < modular_to_num y`;;
 *)
 
+let rdecode_modular_def = new_definition
+  `!r.
+     rdecode_modular r =
+     let (n,r') = rdecode_uniform modulus r in
+     (num_to_modular n, r')`;;
+
+(*PARAMETRIC
+new_constant ("rdecode_modular", `:random -> modular # random`);;
+*)
+
+export_thm rdecode_modular_def;;
+
+(*PARAMETRIC
+let rdecode_modular_def = new_axiom
+  `!r.
+     rdecode_modular r =
+     let (n,r') = rdecode_uniform modulus r in
+     (num_to_modular n, r')`;;
+*)
+
 logfile "modular-thm";;
 
 (*PARAMETRIC

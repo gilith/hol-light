@@ -1,127 +1,33 @@
 (* ------------------------------------------------------------------------- *)
-(* A parametric theory of words.                                             *)
+(* A theory of natural numbers represented as bits.                          *)
 (* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* word *)
-*)
+logfile "natural-bits-def";;
 
-(* The theory parameters *)
+let bitwidth_def = new_definition
+  `!n. bitwidth n = if n = 0 then 0 else log 2 n + 1`;;
 
-new_constant ("word_width", `:num`);;
+export_thm bitwidth_def;;
 
-logfile "word-def";;
+let num_bit_def = new_definition
+  `!n i. num_bit n i = ODD (n DIV (2 EXP n))`;;
 
-(*PARAMETRIC
-(* word-def *)
-*)
+export_thm num_bit_def;;
 
-let word_size_def = new_definition
-  `word_size = 2 EXP word_width`;;
+let num_to_bits_def = new_definition
+  `!n. num_to_bits n = MAP (num_bit n) (interval 0 (bitwidth n))`;;
 
-(*PARAMETRIC
-new_constant ("word_size", `:num`);;
-*)
+export_thm num_to_bits_def;;
 
-export_thm word_size_def;;
-
-(*PARAMETRIC
-let word_size_def = new_axiom
-  `word_size = 2 EXP word_width`;;
-*)
-
-let word_size_nonzero = prove
-  (`~(word_size = 0)`,
-   REWRITE_TAC [word_size_def; EXP_EQ_0] THEN
-   NUM_REDUCE_TAC);;
-
-export_thm word_size_nonzero;;
-
-(*PARAMETRIC
-let word_size_nonzero = new_axiom
-  `~(word_size = 0)`;;
-*)
-
-(* Parametric theory instantiation: modular *)
-
-loads "opentheory/examples/word-modular.ml";;
-
-logfile "word-bits-def";;
-
-(*PARAMETRIC
-(* word-bits-def *)
-*)
-
-let word_shl_def = new_definition
-  `!w n. word_shl w n = num_to_word ((2 EXP n) * word_to_num w)`;;
-
-(*PARAMETRIC
-new_constant ("word_shl", `:word -> num -> word`);;
-*)
-
-export_thm word_shl_def;;
-
-(*PARAMETRIC
-let word_shl_def = new_axiom
-  `!w n. word_shl w n = num_to_word ((2 EXP n) * word_to_num w)`;;
-*)
-
-let word_shr_def = new_definition
-  `!w n. word_shr w n = num_to_word (word_to_num w DIV (2 EXP n))`;;
-
-(*PARAMETRIC
-new_constant ("word_shr", `:word -> num -> word`);;
-*)
-
-export_thm word_shr_def;;
-
-(*PARAMETRIC
-let word_shr_def = new_axiom
-  `!w n. word_shr w n = num_to_word (word_to_num w DIV (2 EXP n))`;;
-*)
-
-let word_bit_def = new_definition
-  `!w n. word_bit w n = ODD (word_to_num (word_shr w n))`;;
-
-(*PARAMETRIC
-new_constant ("word_bit", `:word -> num -> bool`);;
-*)
-
-export_thm word_bit_def;;
-
-(*PARAMETRIC
-let word_bit_def = new_axiom
-  `!w n. word_bit w n = ODD (word_to_num (word_shr w n))`;;
-*)
-
-let word_to_list_def = new_definition
-  `!w. word_to_list w = MAP (word_bit w) (interval 0 word_width)`;;
-
-(*PARAMETRIC
-new_constant ("word_to_list", `:word -> bool list`);;
-*)
-
-export_thm word_to_list_def;;
-
-(*PARAMETRIC
-let word_to_list_def = new_axiom
-  `!w. word_to_list w = MAP (word_bit w) (interval 0 word_width)`;;
-*)
-
-let (list_to_word_nil,list_to_word_cons) =
+let (bits_to_num_nil,num_to_bits_cons) =
   let def = new_recursive_definition list_RECURSION
-    `(list_to_word [] = num_to_word 0) /\
+    `(bits_to_num [] = 0) /\
      (!h t.
-        list_to_word (CONS h t) =
-        if h then word_add (word_shl (list_to_word t) 1) (num_to_word 1)
-        else word_shl (list_to_word t) 1)` in
+        bits_to_num (CONS h t) =
+        (if h then 1 else 0) + 2 * bits_to_num t)` in
   CONJ_PAIR def;;
 
-(*PARAMETRIC
-new_constant ("list_to_word", `:bool list -> word`);;
-*)
-
-export_thm list_to_word_nil;;
+export_thm bits_to_list_to_word_nil;;
 export_thm list_to_word_cons;;
 
 (*PARAMETRIC

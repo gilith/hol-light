@@ -102,6 +102,14 @@ new_constant ("word16_lt", `:word16 -> word16 -> bool`);;
 let word16_lt_def = new_axiom
   `!x y. word16_lt x y <=> word16_to_num x < word16_to_num y`;;
 
+new_constant ("rdecode_word16", `:random -> word16 # random`);;
+
+let rdecode_word16_def = new_axiom
+  `!r.
+     rdecode_word16 r =
+     let (n,r') = rdecode_uniform word16_size r in
+     (num_to_word16 n, r')`;;
+
 (* word16-thm *)
 
 let word16_to_num_inj = new_axiom
@@ -326,14 +334,6 @@ and word16_bits_lte_cons = new_axiom
       word16_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2`;;
 
 let word16_bits_lte_def = CONJ word16_bits_lte_nil word16_bits_lte_cons;;
-
-new_constant ("rdecode_word16", `:random -> word16 # random`);;
-
-let redecode_word16_def = new_axiom
-  `!r.
-     rdecode_word16 r =
-     let (l,r') = rbits word16_width r in
-     (list_to_word16 l, r')`;;
 
 (* word16-bits-thm *)
 

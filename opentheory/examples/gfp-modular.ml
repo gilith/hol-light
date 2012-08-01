@@ -90,6 +90,14 @@ new_constant ("gfp_lt", `:gfp -> gfp -> bool`);;
 let gfp_lt_def = new_axiom
   `!x y. gfp_lt x y <=> gfp_to_num x < gfp_to_num y`;;
 
+new_constant ("rdecode_gfp", `:random -> gfp # random`);;
+
+let rdecode_gfp_def = new_axiom
+  `!r.
+     rdecode_gfp r =
+     let (n,r') = rdecode_uniform oddprime r in
+     (num_to_gfp n, r')`;;
+
 (* gfp-thm *)
 
 let gfp_to_num_inj = new_axiom
@@ -338,6 +346,14 @@ new_constant ("gfp_lt", `:gfp -> gfp -> bool`);;
 
 let gfp_lt_def = new_axiom
   `!x y. gfp_lt x y <=> gfp_to_num x < gfp_to_num y`;;
+
+new_constant ("rdecode_gfp", `:random -> gfp # random`);;
+
+let rdecode_gfp_def = new_axiom
+  `!r.
+     rdecode_gfp r =
+     let (n,r') = rdecode_uniform oddprime r in
+     (num_to_gfp n, r')`;;
 
 (* gfp-thm *)
 
