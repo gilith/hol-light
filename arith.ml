@@ -2292,7 +2292,7 @@ export_thm log_eq_zero_imp;;
 let log_one = prove
   (`!k. 1 < k ==> log k 1 = 0`,
    REPEAT STRIP_TAC THEN
-   MATCH_MP_TAC log_eq_0 THEN
+   MATCH_MP_TAC log_eq_zero_imp THEN
    ASM_REWRITE_TAC [] THEN
    REWRITE_TAC [ONE; NOT_SUC]);;
 
