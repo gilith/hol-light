@@ -278,6 +278,14 @@ const "HOLLight.gcd" as "Number.Natural.gcd"
 const "HOLLight.lcm" as "Number.Natural.lcm"
 const "HOLLight.prime" as "Number.Natural.prime"
 
+# Number.Natural.Bits
+
+const "HOLLight.num_bit" as "Number.Natural.Bits.bit"
+const "HOLLight.num_to_bits" as "Number.Natural.Bits.fromNatural"
+const "HOLLight.is_bits" as "Number.Natural.Bits.normal"
+const "HOLLight.bits_to_num" as "Number.Natural.Bits.toNatural"
+const "HOLLight.bitwidth" as "Number.Natural.Bits.width"
+
 # Number.Natural.Fibonacci
 
 const "HOLLight.decode_fib" as "Number.Natural.Fibonacci.decode"
@@ -312,7 +320,6 @@ const "HOLLight.primes_sieve" as "Number.Natural.Prime.Sieve.primes"
 # Number.Natural.Uniform
 
 const "HOLLight.rdecode_uniform" as "Number.Natural.Uniform.fromRandom"
-const "HOLLight.rdecode_uniform_dest" as "Number.Natural.Uniform.fromRandom.dest"
 const "HOLLight.rdecode_uniform_loop" as "Number.Natural.Uniform.fromRandom.loop"
 
 # Parser
