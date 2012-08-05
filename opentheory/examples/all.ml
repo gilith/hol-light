@@ -28,6 +28,12 @@ loads "opentheory/examples/stream.ml";;
 loads "opentheory/examples/probability.ml";;
 
 (* ------------------------------------------------------------------------- *)
+(* Representing natural numbers with bit-vectors.                            *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/examples/bits.ml";;
+
+(* ------------------------------------------------------------------------- *)
 (* Natural number division.                                                  *)
 (* ------------------------------------------------------------------------- *)
 

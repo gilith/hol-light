@@ -332,21 +332,6 @@ let div_exp_two_lt = prove
    MATCH_MP_TAC DIV_EQ_0 THEN
    MATCH_ACCEPT_TAC exp_two_nz);;
 
-let cond_mod_two = prove
-  (`!n. (if ODD n then 1 else 0) = n MOD 2`,
-   GEN_TAC THEN
-   MP_TAC (SPEC `n:num` EVEN_OR_ODD) THEN
-   STRIP_TAC THENL
-   [MP_TAC (SPEC `n:num` EVEN_MOD) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-    MP_TAC (SPEC `n:num` NOT_ODD) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (fun th -> REWRITE_TAC [th]);
-    MP_TAC (SPEC `n:num` ODD_MOD) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
-
 let odd_mod_exp_two = prove
   (`!m n. ODD (m MOD (2 EXP n)) <=> ODD m /\ ~(n = 0)`,
    REPEAT GEN_TAC THEN

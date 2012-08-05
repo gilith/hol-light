@@ -315,14 +315,20 @@ let drop_haskell_type tyH =
 (* Maintaining a mapping from HOL constants to Haskell-in-HOL constants.     *)
 (* ------------------------------------------------------------------------- *)
 
-let define_haskell_const tm =
-    let (c,ty) = dest_const tm in
-    let cH = mk_haskell_name c in
-    let (tyH,ltm) = lift_haskell_type ty in
-    let def = mk_eq (mk_var (cH,tyH), mk_comb (ltm,tm)) in
-    let th = new_definition def in
-    let () = add_haskell_thm th in
-    th;;
+let define_haskell_const =
+    let is_i tm =
+        try let (s,_) = dest_const tm in
+            s = "I"
+        with Failure _ -> false in
+    fun tm ->
+      let (c,ty) = dest_const tm in
+      let cH = mk_haskell_name c in
+      let (tyH,ltm) = lift_haskell_type ty in
+      let def = if is_i ltm then tm else mk_comb (ltm,tm) in
+      let def = mk_eq (mk_var (cH,tyH), def) in
+      let th = new_definition def in
+      let () = add_haskell_thm th in
+      th;;
 
 (* ------------------------------------------------------------------------- *)
 (* Haskellizing type variables in theorems.                                  *)

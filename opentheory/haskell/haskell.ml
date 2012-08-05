@@ -118,60 +118,49 @@ let lengthH_def = new_definition
 add_haskell_thm lengthH_def;;
 export_thm lengthH_def;;
 
-let rdecode_list_destH_def = new_definition
-  `rdecode_list_destH =
-     (rdecode_list_dest :
-        (random -> A # random) -> A list -> random -> A list)`;;
+let rdecode_list_destH_def = define_haskell_const
+  `rdecode_list_dest :
+     (random -> A # random) -> A list -> random -> A list`;;
 
-add_haskell_thm rdecode_list_destH_def;;
 export_thm rdecode_list_destH_def;;
 
-let rdecode_listH_def = new_definition
-  `rdecode_listH =
-     (rdecode_list :
-       (random -> A # random) -> random -> A list # random)`;;
+let rdecode_listH_def = define_haskell_const
+  `rdecode_list : (random -> A # random) -> random -> A list # random`;;
 
-add_haskell_thm rdecode_listH_def;;
 export_thm rdecode_listH_def;;
 
 (* Natural numbers *)
 
-let rdecode_fib_destH_def = new_definition
-  `rdecode_fib_destH = rdecode_fib_dest`;;
+let rdecode_fib_destH_def = define_haskell_const
+  `rdecode_fib_dest : bool -> num -> num -> num -> random -> num`;;
 
-add_haskell_thm rdecode_fib_destH_def;;
 export_thm rdecode_fib_destH_def;;
 
-let rdecode_fibH_def = new_definition
-  `rdecode_fibH = rdecode_fib`;;
+let rdecode_fibH_def = define_haskell_const
+  `rdecode_fib : random -> num # random`;;
 
-add_haskell_thm rdecode_fibH_def;;
 export_thm rdecode_fibH_def;;
 
-let rdecode_uniform_destH_def = new_definition
-  `rdecode_uniform_destH = rdecode_uniform_dest`;;
+let bitwidthH_def = define_haskell_const
+  `bitwidth : num -> num`;;
 
-add_haskell_thm rdecode_uniform_destH_def;;
-export_thm rdecode_uniform_destH_def;;
+export_thm bitwidthH_def;;
 
-let rdecode_uniform_loopH_def = new_definition
-  `rdecode_uniform_loopH = rdecode_uniform`;;
+let rdecode_uniform_loopH_def = define_haskell_const
+  `rdecode_uniform_loop : num -> num -> random -> num`;;
 
-add_haskell_thm rdecode_uniform_loopH_def;;
 export_thm rdecode_uniform_loopH_def;;
 
-let rdecode_uniformH_def = new_definition
-  `rdecode_uniformH = rdecode_uniform`;;
+let rdecode_uniformH_def = define_haskell_const
+  `rdecode_uniform : num -> random -> num # random`;;
 
-add_haskell_thm rdecode_uniformH_def;;
 export_thm rdecode_uniformH_def;;
 
 (* Random streams *)
 
-let rbitsH_def = new_definition
-  `rbitsH = rbits`;;
+let rbitsH_def = define_haskell_const
+  `rbits : num -> random -> bool list # random`;;
 
-add_haskell_thm rbitsH_def;;
 export_thm rbitsH_def;;
 
 (* Bytes *)
@@ -179,11 +168,6 @@ export_thm rbitsH_def;;
 (***
 Need rdecode_byte
 
-let rbitsH_def = new_definition
-  `rbitsH = rbits`;;
-
-add_haskell_thm rbitsH_def;;
-export_thm rbitsH_def;;
 ***)
 
 (* ------------------------------------------------------------------------- *)
@@ -444,8 +428,8 @@ let () = (export_haskell_thm o prove)
 let () = (export_haskell_thm o prove)
  (`!n.
      rdecode_uniformH n =
-     let w = logH 2 n in
      \r.
+       let w = bitwidthH (n - 1) in
        let r1,r2 = rsplit r in
        (rdecode_uniform_loopH n w r1 MOD n, r2)`,
   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN

@@ -1591,6 +1591,16 @@ let length_interval = prove
 
 export_thm length_interval;;
 
+let map_suc_interval = prove
+  (`!m n. MAP SUC (interval m n) = interval (SUC m) n`,
+   ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [interval_zero; MAP];
+    GEN_TAC THEN
+    ASM_REWRITE_TAC [interval_suc; MAP]]);;
+
+export_thm map_suc_interval;;
+
 let nth_interval = prove
   (`!m n i. i < n ==> nth (interval m n) i = m + i`,
    ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
