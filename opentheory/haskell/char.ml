@@ -197,6 +197,7 @@ let () = (export_haskell_thm o prove)
      rdecode_positionH r =
      let (w,r') = rdecode_word16H r in
      (mk_positionH w, r')`,
+  HASKELL_TAC []
   GEN_TAC THEN
   HASKELL_TAC [rdecode_plane_def] THEN
   PAIR_CASES_TAC `rdecode_uniform 17 r` THEN

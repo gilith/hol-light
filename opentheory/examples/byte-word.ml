@@ -20,6 +20,9 @@ let mod_refl_byte_size = new_axiom
 let mod_lt_byte_size = new_axiom
   `!n. n < byte_size ==> n MOD byte_size = n`;;
 
+let mod_le_byte_size = new_axiom
+  `!n. n MOD byte_size <= n`;;
+
 let zero_mod_byte_size = new_axiom
   `0 MOD byte_size = 0`;;
 
@@ -343,6 +346,9 @@ let length_byte_to_list = new_axiom
 let is_byte_to_list = new_axiom
   `!w. is_byte_list (byte_to_list w)`;;
 
+let bits_to_num_to_byte = new_axiom
+   `!l. num_to_byte (bits_to_num l) = list_to_byte l`;;
+
 let byte_bit_div = new_axiom
   `!w n. byte_bit w n = ODD (byte_to_num w DIV (2 EXP n))`;;
 
@@ -457,6 +463,13 @@ let byte_le_list = new_axiom
 let byte_lt_list = new_axiom
    `!w1 w2.
       byte_bits_lte F (byte_to_list w1) (byte_to_list w2) <=> byte_lt w1 w2`;;
+
+let rdecode_byte = new_axiom
+   `!r.
+      rdecode_byte r =
+      let (r1,r2) = rsplit r in
+      let (l,r1') = rbits byte_width r1 in
+      (list_to_byte l, r2)`;;
 
 let byte_reduce_conv =
     REWRITE_CONV

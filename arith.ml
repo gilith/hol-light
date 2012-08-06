@@ -2367,6 +2367,105 @@ let log_recursion = prove
 
 export_thm log_recursion;;
 
+let log_min = prove
+  (`!k m. 1 < k ==> log k (k EXP m) = m`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC log_def THEN
+   REWRITE_TAC [LE_REFL; LT_EXP] THEN
+   DISJ1_TAC THEN
+   ASM_REWRITE_TAC [TWO; LE_SUC_LT; GSYM ADD1; SUC_LT]);;
+
+export_thm log_min;;
+
+let log_max = prove
+  (`!k m. 1 < k ==> log k (k EXP (m + 1) - 1) = m`,
+   REPEAT STRIP_TAC THEN
+   ASM_CASES_TAC `k = 0` THENL
+   [SUBGOAL_THEN `F` CONTR_TAC THEN
+    UNDISCH_TAC `1 < k` THEN
+    ASM_REWRITE_TAC [NOT_LT; LE_0];
+    MATCH_MP_TAC log_def THEN
+    NUM_CASES_TAC `k EXP (m + 1)` THENL
+    [ASM_REWRITE_TAC [EXP_EQ_0];
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC [SUC_SUB1; SUC_LT] THEN
+     ONCE_REWRITE_TAC [GSYM LE_SUC] THEN
+     POP_ASSUM (SUBST1_TAC o SYM) THEN
+     REWRITE_TAC [EXP; GSYM ADD1] THEN
+     NUM_CASES_TAC `k EXP m` THENL
+     [ASM_REWRITE_TAC [EXP_EQ_0];
+      STRIP_TAC THEN
+      ASM_REWRITE_TAC [MULT_SUC; LE_SUC_LT] THEN
+      POP_ASSUM (K ALL_TAC) THEN
+      MATCH_MP_TAC LTE_TRANS THEN
+      EXISTS_TAC `k + 1 * n` THEN
+      CONJ_TAC THENL
+      [ONCE_REWRITE_TAC [ADD_SYM] THEN
+       ASM_REWRITE_TAC [ADD1; ONE_MULT; LT_ADD_LCANCEL];
+       REWRITE_TAC [LE_ADD_LCANCEL; LE_MULT_RCANCEL] THEN
+       DISJ1_TAC THEN
+       MATCH_MP_TAC LT_IMP_LE THEN
+       FIRST_ASSUM ACCEPT_TAC]]]]);;
+
+export_thm log_max;;
+
+let log_upper_bound = prove
+  (`!k m n. 1 < k /\ ~(n = 0) /\ n < k EXP m ==> log k n < m`,
+   REPEAT STRIP_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   CONV_TAC (REWR_CONV (GSYM CONTRAPOS_THM)) THEN
+   REWRITE_TAC [NOT_LT] THEN
+   STRIP_TAC THEN
+   ASM_CASES_TAC `k = 0` THENL
+   [SUBGOAL_THEN `F` CONTR_TAC THEN
+    UNDISCH_TAC `1 < k` THEN
+    ASM_REWRITE_TAC [NOT_LT; LE_0];
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `k EXP (log k n)` THEN
+    CONJ_TAC THENL
+    [ASM_REWRITE_TAC [LE_EXP];
+     MATCH_MP_TAC exp_log_le THEN
+     ASM_REWRITE_TAC []]]);;
+
+export_thm log_upper_bound;;
+
+let log_lower_bound = prove
+  (`!k m n. 1 < k /\ k EXP m <= n ==> m <= log k n`,
+   REPEAT STRIP_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   ASM_CASES_TAC `k = 0` THENL
+   [SUBGOAL_THEN `F` CONTR_TAC THEN
+    UNDISCH_TAC `1 < k` THEN
+    ASM_REWRITE_TAC [NOT_LT; LE_0];
+    ASM_CASES_TAC `n = 0` THENL
+    [ASM_REWRITE_TAC [LE; EXP_EQ_0];
+     CONV_TAC (REWR_CONV (GSYM CONTRAPOS_THM)) THEN
+     REWRITE_TAC [NOT_LE] THEN
+     STRIP_TAC THEN
+     MATCH_MP_TAC LTE_TRANS THEN
+     EXISTS_TAC `k EXP (log k n + 1)` THEN
+     CONJ_TAC THENL
+     [MATCH_MP_TAC lt_exp_log THEN
+      ASM_REWRITE_TAC [];
+      ASM_REWRITE_TAC [LE_EXP] THEN
+      DISJ2_TAC THEN
+      ASM_REWRITE_TAC [GSYM ADD1; LE_SUC_LT]]]]);;
+
+export_thm log_lower_bound;;
+
+let log_mono = prove
+  (`!k n1 n2. 1 < k /\ ~(n1 = 0) /\ n1 <= n2 ==> log k n1 <= log k n2`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC log_lower_bound THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `n1 : num` THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC exp_log_le THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm log_mono;;
+
 (* ------------------------------------------------------------------------- *)
 (* The factorial function.                                                   *)
 (* ------------------------------------------------------------------------- *)

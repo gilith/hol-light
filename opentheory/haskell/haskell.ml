@@ -170,10 +170,10 @@ export_thm rbitsH_def;;
 
 (* Bytes *)
 
-(***
-Need rdecode_byte
+let rdecode_byteH_def = define_haskell_const
+  `rdecode_byte : random -> byte # random`;;
 
-***)
+export_thm rdecode_byteH_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties.                                                               *)
@@ -478,6 +478,24 @@ let () = (export_haskell_thm o prove)
    REWRITE_TAC [rbits_zero];
    DISCH_THEN (X_CHOOSE_THEN `m : num` SUBST1_TAC) THEN
    REWRITE_TAC [NOT_SUC; rbits_suc; SUC_SUB1]]);;
+
+(* Bytes *)
+
+(***
+let () = (export_haskell_thm o prove)
+ (`!n r.
+     rdecode_byteH r =
+     let (n,r') = rbit r in
+     let (l,r'') = rbitsH (n - 1) r' in
+     (CONS b l, r'')`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [rbitsH_def] THEN
+  NUM_CASES_TAC `n : num` THENL
+  [DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [rbits_zero];
+   DISCH_THEN (X_CHOOSE_THEN `m : num` SUBST1_TAC) THEN
+   REWRITE_TAC [NOT_SUC; rbits_suc; SUC_SUB1]]);;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Testing.                                                                  *)

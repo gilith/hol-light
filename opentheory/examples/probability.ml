@@ -95,4 +95,24 @@ let rdecode_list_def = new_definition
 
 export_thm rdecode_list_def;;
 
+logfile "probability-thm";;
+
+let length_rbits = prove
+ (`!n r. LENGTH (FST (rbits n r)) = n`,
+  INDUCT_TAC THENL
+  [REWRITE_TAC [rbits_def; LENGTH];
+   GEN_TAC THEN
+   PAIR_CASES_TAC `rbit r` THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `b : bool`
+       (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
+   PAIR_CASES_TAC `rbits n r'` THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `l : bool list`
+       (X_CHOOSE_THEN `r'' : random` STRIP_ASSUME_TAC)) THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `r' : random`) THEN
+   ASM_REWRITE_TAC [rbits_def; LENGTH; LET_DEF; LET_END_DEF; SUC_INJ]]);;
+
+export_thm length_rbits;;
+
 logfile_end ();;

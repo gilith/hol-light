@@ -49,6 +49,19 @@ let mod_lt_modulus = new_axiom
   `!n. n < modulus ==> n MOD modulus = n`;;
 *)
 
+let mod_le_modulus = prove
+  (`!n. n MOD modulus <= n`,
+   GEN_TAC THEN
+   MATCH_MP_TAC MOD_LE THEN
+   ACCEPT_TAC modulus_nonzero);;
+
+export_thm mod_le_modulus;;
+
+(*PARAMETRIC
+let mod_le_modulus = new_axiom
+  `!n. n MOD modulus <= n`;;
+*)
+
 let zero_mod_modulus = prove
   (`0 MOD modulus = 0`,
    MATCH_MP_TAC mod_lt_modulus THEN

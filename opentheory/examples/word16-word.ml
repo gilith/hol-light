@@ -20,6 +20,9 @@ let mod_refl_word16_size = new_axiom
 let mod_lt_word16_size = new_axiom
   `!n. n < word16_size ==> n MOD word16_size = n`;;
 
+let mod_le_word16_size = new_axiom
+  `!n. n MOD word16_size <= n`;;
+
 let zero_mod_word16_size = new_axiom
   `0 MOD word16_size = 0`;;
 
@@ -343,6 +346,9 @@ let length_word16_to_list = new_axiom
 let is_word16_to_list = new_axiom
   `!w. is_word16_list (word16_to_list w)`;;
 
+let bits_to_num_to_word16 = new_axiom
+   `!l. num_to_word16 (bits_to_num l) = list_to_word16 l`;;
+
 let word16_bit_div = new_axiom
   `!w n. word16_bit w n = ODD (word16_to_num w DIV (2 EXP n))`;;
 
@@ -457,6 +463,13 @@ let word16_le_list = new_axiom
 let word16_lt_list = new_axiom
    `!w1 w2.
       word16_bits_lte F (word16_to_list w1) (word16_to_list w2) <=> word16_lt w1 w2`;;
+
+let rdecode_word16 = new_axiom
+   `!r.
+      rdecode_word16 r =
+      let (r1,r2) = rsplit r in
+      let (l,r1') = rbits word16_width r1 in
+      (list_to_word16 l, r2)`;;
 
 let word16_reduce_conv =
     REWRITE_CONV
