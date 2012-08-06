@@ -146,6 +146,11 @@ let bitwidthH_def = define_haskell_const
 
 export_thm bitwidthH_def;;
 
+let bits_to_numH_def = define_haskell_const
+  `bits_to_num : bool list -> num`;;
+
+export_thm bits_to_numH_def;;
+
 let rdecode_uniform_loopH_def = define_haskell_const
   `rdecode_uniform_loop : num -> num -> random -> num`;;
 
@@ -424,7 +429,28 @@ let () = (export_haskell_thm o prove)
   REWRITE_TAC [rdecode_fibH_def; rdecode_fib_destH_def] THEN
   ACCEPT_TAC rdecode_fib_def);;
 
-(***
+let () = (export_haskell_thm o prove)
+ (`!n.
+     bitwidthH n =
+     if n = 0 then 0 else bitwidthH (n DIV 2) + 1`,
+  HASKELL_TAC [] THEN
+  ACCEPT_TAC bitwidth_recursion);;
+
+let () = (export_haskell_thm o prove)
+ (`bits_to_numH [] = 0 /\
+   (!h t.
+      bits_to_numH (CONS h t) = 2 * bits_to_numH t + (if h then 1 else 0))`,
+  HASKELL_TAC [bits_to_num_def]);;
+
+let () = (export_haskell_thm o prove)
+ (`!n w r.
+     rdecode_uniform_loopH n w r =
+     let (l,r') = rbitsH w r in
+     let m = bits_to_numH l in
+     if m < n then m else rdecode_uniform_loopH n w r'`,
+  HASKELL_TAC [] THEN
+  ACCEPT_TAC rdecode_uniform_loop_def);;
+
 let () = (export_haskell_thm o prove)
  (`!n.
      rdecode_uniformH n =
@@ -433,9 +459,8 @@ let () = (export_haskell_thm o prove)
        let r1,r2 = rsplit r in
        (rdecode_uniform_loopH n w r1 MOD n, r2)`,
   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
-  REWRITE_TAC [rdecode_fibH_def; rdecode_fib_destH_def] THEN
-  ACCEPT_TAC rdecode_fib_def);;
-***)
+  HASKELL_TAC [] THEN
+  ACCEPT_TAC rdecode_uniform_def);;
 
 (* Random streams *)
 
