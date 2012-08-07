@@ -19,6 +19,14 @@ const "HOLLight.map_range" as "Function.mapRange"
 
 # Haskell.Data
 
+# Haskell.Data.Byte
+
+const "HOLLight.rdecode_byteH" as "Haskell.Data.Byte.fromRandom"
+
+# Haskell.Data.Byte.Bits
+
+const "HOLLight.list_to_byteH" as "Haskell.Data.Byte.Bits.toByte"
+
 # Haskell.Data.List
 
 const "HOLLight.equal_listH" as "Haskell.Data.List.equal"

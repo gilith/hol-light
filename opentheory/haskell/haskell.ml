@@ -175,6 +175,11 @@ let rdecode_byteH_def = define_haskell_const
 
 export_thm rdecode_byteH_def;;
 
+let list_to_byteH_def = define_haskell_const
+  `list_to_byte : bool list -> byte`;;
+
+export_thm list_to_byteH_def;;
+
 (* ------------------------------------------------------------------------- *)
 (* Properties.                                                               *)
 (* ------------------------------------------------------------------------- *)
@@ -481,21 +486,21 @@ let () = (export_haskell_thm o prove)
 
 (* Bytes *)
 
-(***
 let () = (export_haskell_thm o prove)
- (`!n r.
+ (`(list_to_byteH [] = num_to_byte 0) /\
+   (!h t.
+      list_to_byteH (CONS h t) =
+      if h then byte_add (byte_shl (list_to_byteH t) 1) (num_to_byte 1)
+      else byte_shl (list_to_byteH t) 1)`,
+  HASKELL_TAC [list_to_byte_def]);;
+
+let () = (export_haskell_thm o prove)
+ (`!r.
      rdecode_byteH r =
-     let (n,r') = rbit r in
-     let (l,r'') = rbitsH (n - 1) r' in
-     (CONS b l, r'')`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [rbitsH_def] THEN
-  NUM_CASES_TAC `n : num` THENL
-  [DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [rbits_zero];
-   DISCH_THEN (X_CHOOSE_THEN `m : num` SUBST1_TAC) THEN
-   REWRITE_TAC [NOT_SUC; rbits_suc; SUC_SUB1]]);;
-***)
+     let (r1,r2) = rsplit r in
+     let (l,r1') = rbitsH 8 r1 in
+     (list_to_byteH l, r2)`,
+  HASKELL_TAC [rdecode_byte; byte_width_def]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Testing.                                                                  *)
