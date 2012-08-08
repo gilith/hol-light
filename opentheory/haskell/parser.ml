@@ -412,7 +412,7 @@ let () = (export_haskell_thm o prove)
 let () = (export_haskell_thm o prove)
  (`!r.
      let (l,r') = rdecode_listH rdecode_fibH r in
-     length_pstreamH (list_to_pstreamH l) = LENGTH l`,
+     length_pstreamH (list_to_pstreamH l) = lengthH l`,
   GEN_TAC THEN
   PAIR_CASES_TAC `rdecode_listH rdecode_fibH r` THEN
   DISCH_THEN
@@ -425,7 +425,7 @@ let () = (export_haskell_thm o prove)
 let () = (export_haskell_thm o prove)
  (`!r.
      let (s,r') = rdecode_pstreamH rdecode_fibH r in
-     case_option T (\l. LENGTH l = length_pstreamH s) (pstream_to_listH s)`,
+     case_option T (\l. lengthH l = length_pstreamH s) (pstream_to_listH s)`,
   GEN_TAC THEN
   PAIR_CASES_TAC `rdecode_pstreamH rdecode_fibH r` THEN
   DISCH_THEN

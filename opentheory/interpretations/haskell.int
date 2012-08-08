@@ -82,6 +82,14 @@ const "HOLLight.parse_contH" as "Haskell.Data.Unicode.UTF8.parseContinuationByte
 const "HOLLight.parse_cont2H" as "Haskell.Data.Unicode.UTF8.parseTwoContinuationBytes"
 const "HOLLight.parse_cont3H" as "Haskell.Data.Unicode.UTF8.parseThreeContinuationBytes"
 
+# Haskell.Data.Word16
+
+const "HOLLight.rdecode_word16H" as "Haskell.Data.Word16.fromRandom"
+
+# Haskell.Data.Word16.Bits
+
+const "HOLLight.list_to_word16H" as "Haskell.Data.Word16.Bits.toWord16"
+
 # Haskell.Number
 
 # Haskell.Number.Natural

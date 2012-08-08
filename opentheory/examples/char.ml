@@ -251,11 +251,11 @@ let decode_cont1_def = new_definition
   `!b0 b1.
      decode_cont1 b0 b1 =
      let pl = mk_plane (num_to_byte 0) in
-     let p0 = byte_shr (byte_and b0 (num_to_byte 28)) 2 in
-     let y1 = byte_shl (byte_and b0 (num_to_byte 3)) 6 in
-     let x1 = byte_and b1 (num_to_byte 63) in
-     let p1 = byte_or y1 x1 in
-     if p0 = num_to_byte 0 /\ byte_lt p1 (num_to_byte 128) then
+     let p1 = byte_shr (byte_and b0 (num_to_byte 28)) 2 in
+     let y0 = byte_shl (byte_and b0 (num_to_byte 3)) 6 in
+     let x0 = byte_and b1 (num_to_byte 63) in
+     let p0 = byte_or y0 x0 in
+     if p1 = num_to_byte 0 /\ ~byte_bit p0 7 then
        NONE
      else
        let pos = mk_position (bytes_to_word16 p0 p1) in
@@ -267,17 +267,17 @@ export_thm decode_cont1_def;;
 let decode_cont2_def = new_definition
   `!b0 b1 b2.
      decode_cont2 b0 (b1,b2) =
-     let z0 = byte_shl (byte_and b0 (num_to_byte 15)) 4 in
-     let y0 = byte_shr (byte_and b1 (num_to_byte 60)) 2 in
-     let p0 = byte_or z0 y0 in
-     if byte_lt p0 (num_to_byte 8) \/
-        (byte_le (num_to_byte 216) p0 /\
-         byte_le p0 (num_to_byte 223)) then NONE
+     let z1 = byte_shl (byte_and b0 (num_to_byte 15)) 4 in
+     let y1 = byte_shr (byte_and b1 (num_to_byte 60)) 2 in
+     let p1 = byte_or z1 y1 in
+     if byte_lt p1 (num_to_byte 8) \/
+        (byte_le (num_to_byte 216) p1 /\
+         byte_le p1 (num_to_byte 223)) then NONE
      else
-       let y1 = byte_shl (byte_and b1 (num_to_byte 3)) 6 in
-       let x1 = byte_and b2 (num_to_byte 63) in
-       let p1 = byte_or y1 x1 in
-       if p0 = num_to_byte 255 /\ byte_le (num_to_byte 254) p1 then NONE
+       let y0 = byte_shl (byte_and b1 (num_to_byte 3)) 6 in
+       let x0 = byte_and b2 (num_to_byte 63) in
+       let p0 = byte_or y0 x0 in
+       if p1 = num_to_byte 255 /\ byte_le (num_to_byte 254) p0 then NONE
        else
          let pl = mk_plane (num_to_byte 0) in
          let pos = mk_position (bytes_to_word16 p0 p1) in
@@ -295,12 +295,12 @@ let decode_cont3_def = new_definition
      if p = num_to_byte 0 \/ byte_lt (num_to_byte 16) p then NONE
      else
        let pl = mk_plane p in
-       let z0 = byte_shl (byte_and b1 (num_to_byte 15)) 4 in
-       let y0 = byte_shr (byte_and b2 (num_to_byte 60)) 2 in
-       let p0 = byte_or z0 y0 in
-       let y1 = byte_shl (byte_and b2 (num_to_byte 3)) 6 in
-       let x1 = byte_and b3 (num_to_byte 63) in
-       let p1 = byte_or y1 x1 in
+       let z1 = byte_shl (byte_and b1 (num_to_byte 15)) 4 in
+       let y1 = byte_shr (byte_and b2 (num_to_byte 60)) 2 in
+       let p1 = byte_or z1 y1 in
+       let y0 = byte_shl (byte_and b2 (num_to_byte 3)) 6 in
+       let x0 = byte_and b3 (num_to_byte 63) in
+       let p0 = byte_or y0 x0 in
        let pos = mk_position (bytes_to_word16 p0 p1) in
        let ch = mk_unicode (pl,pos) in
        SOME ch`;;
@@ -324,7 +324,7 @@ let decoder_parse_def = new_definition
          NONE
      else
        let pl = mk_plane (num_to_byte 0) in
-       let pos = mk_position (bytes_to_word16 (num_to_byte 0) b0) in
+       let pos = mk_position (bytes_to_word16 b0 (num_to_byte 0)) in
        let ch = mk_unicode (pl,pos) in
        SOME (ch,s)`;;
 
@@ -346,43 +346,43 @@ let decode_def = new_definition
 export_thm decode_def;;
 
 let encode_cont1_def = new_definition
-  `!p0 p1.
-     encode_cont1 p0 p1 =
-     let b00 = byte_shl p0 2 in
-     let b01 = byte_shr (byte_and p1 (num_to_byte 192)) 6 in
+  `!p1 p0.
+     encode_cont1 p1 p0 =
+     let b00 = byte_shl p1 2 in
+     let b01 = byte_shr (byte_and p0 (num_to_byte 192)) 6 in
      let b0 = byte_or (num_to_byte 192) (byte_or b00 b01) in
-     let b10 = byte_and p1 (num_to_byte 63) in
+     let b10 = byte_and p0 (num_to_byte 63) in
      let b1 = byte_or (num_to_byte 128) b10 in
      CONS b0 (CONS b1 [])`;;
 
 export_thm encode_cont1_def;;
 
 let encode_cont2_def = new_definition
-  `!p0 p1.
-     encode_cont2 p0 p1 =
-     let b00 = byte_shr (byte_and p0 (num_to_byte 240)) 4 in
+  `!p1 p0.
+     encode_cont2 p1 p0 =
+     let b00 = byte_shr (byte_and p1 (num_to_byte 240)) 4 in
      let b0 = byte_or (num_to_byte 224) b00 in
-     let b10 = byte_shl (byte_and p0 (num_to_byte 15)) 2 in
-     let b11 = byte_shr (byte_and p1 (num_to_byte 192)) 6 in
+     let b10 = byte_shl (byte_and p1 (num_to_byte 15)) 2 in
+     let b11 = byte_shr (byte_and p0 (num_to_byte 192)) 6 in
      let b1 = byte_or (num_to_byte 128) (byte_or b10 b11) in
-     let b20 = byte_and p1 (num_to_byte 63) in
+     let b20 = byte_and p0 (num_to_byte 63) in
      let b2 = byte_or (num_to_byte 128) b20 in
      CONS b0 (CONS b1 (CONS b2 []))`;;
 
 export_thm encode_cont2_def;;
 
 let encode_cont3_def = new_definition
-  `!p p0 p1.
-     encode_cont3 p p0 p1 =
+  `!p p1 p0.
+     encode_cont3 p p1 p0 =
      let b00 = byte_shr (byte_and p (num_to_byte 28)) 2 in
      let b0 = byte_or (num_to_byte 240) b00 in
      let b10 = byte_shl (byte_and p (num_to_byte 3)) 4 in
-     let b11 = byte_shr (byte_and p0 (num_to_byte 240)) 4 in
+     let b11 = byte_shr (byte_and p1 (num_to_byte 240)) 4 in
      let b1 = byte_or (num_to_byte 128) (byte_or b10 b11) in
-     let b20 = byte_shl (byte_and p0 (num_to_byte 15)) 2 in
-     let b21 = byte_shr (byte_and p1 (num_to_byte 192)) 6 in
+     let b20 = byte_shl (byte_and p1 (num_to_byte 15)) 2 in
+     let b21 = byte_shr (byte_and p0 (num_to_byte 192)) 6 in
      let b2 = byte_or (num_to_byte 128) (byte_or b20 b21) in
-     let b30 = byte_and p1 (num_to_byte 63) in
+     let b30 = byte_and p0 (num_to_byte 63) in
      let b3 = byte_or (num_to_byte 128) b30 in
      CONS b0 (CONS b1 (CONS b2 (CONS b3 [])))`;;
 
@@ -395,15 +395,15 @@ let encoder_def = new_definition
      let p = dest_plane pl in
      let (p0,p1) = word16_to_bytes (dest_position pos) in
      if p = num_to_byte 0 then
-       if p0 = num_to_byte 0 /\ ~byte_bit p1 7 then
-         CONS p1 []
+       if p1 = num_to_byte 0 /\ ~byte_bit p0 7 then
+         CONS p0 []
        else
-         if byte_and (num_to_byte 248) p0 = num_to_byte 0 then
-           encode_cont1 p0 p1
+         if byte_and (num_to_byte 248) p1 = num_to_byte 0 then
+           encode_cont1 p1 p0
          else
-           encode_cont2 p0 p1
+           encode_cont2 p1 p0
      else
-       encode_cont3 p p0 p1`;;
+       encode_cont3 p p1 p0`;;
 
 export_thm encoder_def;;
 
@@ -485,7 +485,7 @@ let decoder_encoder_inverse = prove
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    POP_ASSUM MP_TAC THEN
    MP_TAC (SPEC `pl : plane` dest_plane_cases) THEN
-   STRIP_TAC THEN
+   DISCH_THEN (X_CHOOSE_THEN `p : byte` STRIP_ASSUME_TAC) THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    MP_TAC (SPEC `pos : position` dest_position_cases) THEN
@@ -494,28 +494,30 @@ let decoder_encoder_inverse = prove
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    POP_ASSUM MP_TAC THEN
    MP_TAC (SPEC `w : word16` dest_bytes_to_word16_cases) THEN
-   STRIP_TAC THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `p0 : byte`
+       (X_CHOOSE_THEN `p1 : byte` STRIP_ASSUME_TAC)) THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    STRIP_TAC THEN
    STRIP_TAC THEN
-   bool_cases_tac `b = num_to_byte 0` THENL
+   bool_cases_tac `p = num_to_byte 0` THENL
    [FIRST_X_ASSUM SUBST_VAR_TAC THEN
     ASM_REWRITE_TAC [] THEN
-    bool_cases_tac `b0 = num_to_byte 0 /\ ~byte_bit b1 7` THENL
+    bool_cases_tac `p1 = num_to_byte 0 /\ ~byte_bit p0 7` THENL
     [FIRST_X_ASSUM SUBST_VAR_TAC THEN
      ASM_REWRITE_TAC [append_pstream_def] THEN
      REWRITE_TAC [parse_decoder; case_pstream_def; decoder_parse_def] THEN
      ASM_REWRITE_TAC [LET_DEF; LET_END_DEF];
      ASM_REWRITE_TAC [] THEN
-     bool_cases_tac `byte_and (num_to_byte 248) b0 = num_to_byte 0` THENL
+     bool_cases_tac `byte_and (num_to_byte 248) p1 = num_to_byte 0` THENL
      [ASM_REWRITE_TAC [] THEN
       REWRITE_TAC [encode_cont1_def] THEN
       REPEAT (POP_ASSUM MP_TAC) THEN
-      MP_TAC (SPEC `b0 : byte` byte_list_cases) THEN
+      MP_TAC (SPEC `p1 : byte` byte_list_cases) THEN
       STRIP_TAC THEN
       POP_ASSUM SUBST_VAR_TAC THEN
-      MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
+      MP_TAC (SPEC `p0 : byte` byte_list_cases) THEN
       STRIP_TAC THEN
       POP_ASSUM SUBST_VAR_TAC THEN
       bit_blast_tac THEN
@@ -552,10 +554,10 @@ let decoder_encoder_inverse = prove
       ASM_REWRITE_TAC [] THEN
       REWRITE_TAC [encode_cont2_def] THEN
       REPEAT (POP_ASSUM MP_TAC) THEN
-      MP_TAC (SPEC `b0 : byte` byte_list_cases) THEN
+      MP_TAC (SPEC `p1 : byte` byte_list_cases) THEN
       STRIP_TAC THEN
       POP_ASSUM SUBST_VAR_TAC THEN
-      MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
+      MP_TAC (SPEC `p0 : byte` byte_list_cases) THEN
       STRIP_TAC THEN
       POP_ASSUM SUBST_VAR_TAC THEN
       bit_blast_tac THEN
@@ -620,13 +622,13 @@ let decoder_encoder_inverse = prove
     DISCH_THEN (K ALL_TAC) THEN
     REWRITE_TAC [encode_cont3_def] THEN
     REPEAT (POP_ASSUM MP_TAC) THEN
-    MP_TAC (SPEC `b : byte` byte_list_cases) THEN
+    MP_TAC (SPEC `p : byte` byte_list_cases) THEN
     STRIP_TAC THEN
     POP_ASSUM SUBST_VAR_TAC THEN
-    MP_TAC (SPEC `b0 : byte` byte_list_cases) THEN
+    MP_TAC (SPEC `p1 : byte` byte_list_cases) THEN
     STRIP_TAC THEN
     POP_ASSUM SUBST_VAR_TAC THEN
-    MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
+    MP_TAC (SPEC `p0 : byte` byte_list_cases) THEN
     STRIP_TAC THEN
     POP_ASSUM SUBST_VAR_TAC THEN
     bit_blast_tac THEN
@@ -687,85 +689,129 @@ let decoder_encoder_strong_inverse = prove
      [parse_strong_inverse_def; decoder_encoder_inverse; parse_decoder] THEN
    REPEAT GEN_TAC THEN
    MP_TAC (ISPEC `s : byte pstream` pstream_cases) THEN
-   STRIP_TAC THENL
+   DISCH_THEN
+     (DISJ_CASES_THEN2 SUBST_VAR_TAC
+       (DISJ_CASES_THEN2 SUBST_VAR_TAC
+         (X_CHOOSE_THEN `b0 : byte`
+           (X_CHOOSE_THEN `s0 : byte pstream` SUBST_VAR_TAC)))) THENL
    [ASM_REWRITE_TAC [case_pstream_def; option_distinct];
     ASM_REWRITE_TAC [case_pstream_def; option_distinct];
     ALL_TAC] THEN
-   POP_ASSUM SUBST_VAR_TAC THEN
    REWRITE_TAC [case_pstream_def; decoder_parse_def] THEN
-   MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
-   STRIP_TAC THEN
-   POP_ASSUM SUBST_VAR_TAC THEN
+   MP_TAC (SPEC `b0 : byte` byte_list_cases) THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `b00 : bool`
+       (X_CHOOSE_THEN `b01 : bool`
+         (X_CHOOSE_THEN `b02 : bool`
+           (X_CHOOSE_THEN `b03 : bool`
+             (X_CHOOSE_THEN `b04 : bool`
+               (X_CHOOSE_THEN `b05 : bool`
+                 (X_CHOOSE_THEN `b06 : bool`
+                   (X_CHOOSE_THEN `b07 : bool`
+                      SUBST_VAR_TAC)))))))) THEN
    bit_blast_tac THEN
-   BOOL_CASES_TAC `x7 : bool` THENL
+   BOOL_CASES_TAC `b07 : bool` THENL
    [REWRITE_TAC [] THEN
-    BOOL_CASES_TAC `x6 : bool` THENL
+    BOOL_CASES_TAC `b06 : bool` THENL
     [REWRITE_TAC [] THEN
-     BOOL_CASES_TAC `x5 : bool` THENL
+     BOOL_CASES_TAC `b05 : bool` THENL
      [REWRITE_TAC [] THEN
-      BOOL_CASES_TAC `x4 : bool` THENL
+      BOOL_CASES_TAC `b04 : bool` THENL
       [REWRITE_TAC [] THEN
-       BOOL_CASES_TAC `x3 : bool` THENL
+       BOOL_CASES_TAC `b03 : bool` THENL
        [REWRITE_TAC [option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC
          [parse_parse_partial_map; parse_parse_some; parse_cont3_def;
           parse_parse_pair; parse_cont2_def; parse_cont_def;
           case_option_def; case_pstream_def; is_cont_def] THEN
-       MP_TAC (ISPEC `a1 : byte pstream` pstream_cases) THEN
-       STRIP_TAC THENL
+       MP_TAC (ISPEC `s0 : byte pstream` pstream_cases) THEN
+       DISCH_THEN
+         (DISJ_CASES_THEN2 SUBST_VAR_TAC
+           (DISJ_CASES_THEN2 SUBST_VAR_TAC
+              (X_CHOOSE_THEN `b1 : byte`
+                (X_CHOOSE_THEN `s1 : byte pstream` SUBST_VAR_TAC)))) THENL
        [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ALL_TAC] THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
        REWRITE_TAC [case_pstream_def] THEN
-       MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
-       STRIP_TAC THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
+       MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
+       DISCH_THEN
+         (X_CHOOSE_THEN `b10 : bool`
+           (X_CHOOSE_THEN `b11 : bool`
+             (X_CHOOSE_THEN `b12 : bool`
+               (X_CHOOSE_THEN `b13 : bool`
+                 (X_CHOOSE_THEN `b14 : bool`
+                   (X_CHOOSE_THEN `b15 : bool`
+                     (X_CHOOSE_THEN `b16 : bool`
+                       (X_CHOOSE_THEN `b17 : bool`
+                          SUBST_VAR_TAC)))))))) THEN
        bit_blast_tac THEN
-       BOOL_CASES_TAC' `x7 : bool` THENL
+       BOOL_CASES_TAC' `b17 : bool` THENL
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [] THEN
-       BOOL_CASES_TAC `x6 : bool` THENL
+       BOOL_CASES_TAC `b16 : bool` THENL
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [case_option_def] THEN
-       MP_TAC (ISPEC `a1' : byte pstream` pstream_cases) THEN
-       STRIP_TAC THENL
+       MP_TAC (ISPEC `s1 : byte pstream` pstream_cases) THEN
+       DISCH_THEN
+         (DISJ_CASES_THEN2 SUBST_VAR_TAC
+           (DISJ_CASES_THEN2 SUBST_VAR_TAC
+              (X_CHOOSE_THEN `b2 : byte`
+                (X_CHOOSE_THEN `s2 : byte pstream` SUBST_VAR_TAC)))) THENL
        [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ALL_TAC] THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
        REWRITE_TAC [case_pstream_def] THEN
-       MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
-       STRIP_TAC THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
+       MP_TAC (SPEC `b2 : byte` byte_list_cases) THEN
+       DISCH_THEN
+         (X_CHOOSE_THEN `b20 : bool`
+           (X_CHOOSE_THEN `b21 : bool`
+             (X_CHOOSE_THEN `b22 : bool`
+               (X_CHOOSE_THEN `b23 : bool`
+                 (X_CHOOSE_THEN `b24 : bool`
+                   (X_CHOOSE_THEN `b25 : bool`
+                     (X_CHOOSE_THEN `b26 : bool`
+                       (X_CHOOSE_THEN `b27 : bool`
+                          SUBST_VAR_TAC)))))))) THEN
        bit_blast_tac THEN
-       BOOL_CASES_TAC' `x7 : bool` THENL
+       BOOL_CASES_TAC' `b27 : bool` THENL
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [] THEN
-       BOOL_CASES_TAC `x6 : bool` THENL
+       BOOL_CASES_TAC `b26 : bool` THENL
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [case_option_def] THEN
-       MP_TAC (ISPEC `a1 : byte pstream` pstream_cases) THEN
-       STRIP_TAC THENL
+       MP_TAC (ISPEC `s2 : byte pstream` pstream_cases) THEN
+       DISCH_THEN
+         (DISJ_CASES_THEN2 SUBST_VAR_TAC
+           (DISJ_CASES_THEN2 SUBST_VAR_TAC
+              (X_CHOOSE_THEN `b3 : byte`
+                (X_CHOOSE_THEN `s3 : byte pstream` SUBST_VAR_TAC)))) THENL
        [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ALL_TAC] THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
        REWRITE_TAC [case_pstream_def] THEN
-       MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
-       STRIP_TAC THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
+       MP_TAC (SPEC `b3 : byte` byte_list_cases) THEN
+       DISCH_THEN
+         (X_CHOOSE_THEN `b30 : bool`
+           (X_CHOOSE_THEN `b31 : bool`
+             (X_CHOOSE_THEN `b32 : bool`
+               (X_CHOOSE_THEN `b33 : bool`
+                 (X_CHOOSE_THEN `b34 : bool`
+                   (X_CHOOSE_THEN `b35 : bool`
+                     (X_CHOOSE_THEN `b36 : bool`
+                       (X_CHOOSE_THEN `b37 : bool`
+                          SUBST_VAR_TAC)))))))) THEN
        bit_blast_tac THEN
-       BOOL_CASES_TAC' `x7 : bool` THENL
+       BOOL_CASES_TAC' `b37 : bool` THENL
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [] THEN
-       BOOL_CASES_TAC `x6 : bool` THENL
+       BOOL_CASES_TAC `b36 : bool` THENL
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [case_option_def] THEN
@@ -780,9 +826,17 @@ let decoder_encoder_strong_inverse = prove
        MATCH_MP_TAC
          (TAUT `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d`) THEN
        STRIP_TAC THEN
+       SUBGOAL_THEN `b02 <=> ~b01 /\ ~b00 /\ ~b15 /\ ~b14`
+         (fun th -> POP_ASSUM (K ALL_TAC) THEN SUBST_VAR_TAC th) THENL
+       [POP_ASSUM MP_TAC THEN
+        BOOL_CASES_TAC `b02 : bool` THEN
+        REWRITE_TAC [DE_MORGAN_THM] THEN
+        STRIP_TAC THEN
+        ASM_REWRITE_TAC [];
+        ALL_TAC] THEN
        REWRITE_TAC [option_inj; PAIR_EQ] THEN
        STRIP_TAC THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
+       POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
        POP_ASSUM SUBST_VAR_TAC THEN
        REWRITE_TAC [encoder_def] THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
@@ -805,27 +859,25 @@ let decoder_encoder_strong_inverse = prove
        DISCH_THEN MATCH_MP_TAC THEN
        CONJ_TAC THENL
        [REWRITE_TAC [is_plane_def] THEN
-        bit_blast_tac THEN
-        ASM_TAUT_TAC;
+        bit_blast_tac;
         ALL_TAC] THEN
        REWRITE_TAC [is_unicode_def; position_tybij] THEN
        DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_tybij] th]) THEN
-       CONJ_TAC THENL
-       [REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-        DISJ1_TAC THEN
-        bit_blast_tac THEN
-        ASM_TAUT_TAC;
+       SUBGOAL_THEN
+         `(list_to_byte
+             [b14; b15; b00; b01; ~b01 /\ ~b00 /\ ~b15 /\ ~b14; F; F; F] =
+           num_to_byte 0) <=> F` ASSUME_TAC THENL
+       [bit_blast_tac THEN
+        TAUT_TAC;
         ALL_TAC] THEN
-       bit_blast_tac THEN
+       CONJ_TAC THENL
+       [ASM_REWRITE_TAC [LET_DEF; LET_END_DEF];
+        ALL_TAC] THEN
+       POP_ASSUM SUBST1_TAC THEN
        REWRITE_TAC [] THEN
+       SPEC_TAC (`~b01 /\ ~b00 /\ ~b15 /\ ~b14`, `b02 : bool`) THEN
+       GEN_TAC THEN
        bit_blast_tac THEN
-       ONCE_REWRITE_TAC [COND_RAND] THEN
-       ONCE_REWRITE_TAC [COND_RATOR] THEN
-       ONCE_REWRITE_TAC [COND_RAND] THEN
-       MATCH_MP_TAC (TAUT `~X /\ Z ==> (if X then Y else Z)`) THEN
-       CONJ_TAC THENL
-       [ASM_TAUT_TAC;
-        ALL_TAC] THEN
        REWRITE_TAC [encode_cont3_def] THEN
        bit_blast_tac THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
@@ -835,41 +887,63 @@ let decoder_encoder_strong_inverse = prove
          [parse_parse_partial_map; parse_parse_some; parse_cont3_def;
           parse_parse_pair; parse_cont2_def; parse_cont_def;
           case_option_def; case_pstream_def; is_cont_def] THEN
-       MP_TAC (ISPEC `a1 : byte pstream` pstream_cases) THEN
-       STRIP_TAC THENL
+       MP_TAC (ISPEC `s0 : byte pstream` pstream_cases) THEN
+       DISCH_THEN
+         (DISJ_CASES_THEN2 SUBST_VAR_TAC
+           (DISJ_CASES_THEN2 SUBST_VAR_TAC
+              (X_CHOOSE_THEN `b1 : byte`
+                (X_CHOOSE_THEN `s1 : byte pstream` SUBST_VAR_TAC)))) THENL
        [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ALL_TAC] THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
        REWRITE_TAC [case_pstream_def] THEN
-       MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
-       STRIP_TAC THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
+       MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
+       DISCH_THEN
+         (X_CHOOSE_THEN `b10 : bool`
+           (X_CHOOSE_THEN `b11 : bool`
+             (X_CHOOSE_THEN `b12 : bool`
+               (X_CHOOSE_THEN `b13 : bool`
+                 (X_CHOOSE_THEN `b14 : bool`
+                   (X_CHOOSE_THEN `b15 : bool`
+                     (X_CHOOSE_THEN `b16 : bool`
+                       (X_CHOOSE_THEN `b17 : bool`
+                          SUBST_VAR_TAC)))))))) THEN
        bit_blast_tac THEN
-       BOOL_CASES_TAC' `x7 : bool` THENL
+       BOOL_CASES_TAC' `b17 : bool` THENL
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [] THEN
-       BOOL_CASES_TAC `x6 : bool` THENL
+       BOOL_CASES_TAC `b16 : bool` THENL
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [case_option_def] THEN
-       MP_TAC (ISPEC `a1' : byte pstream` pstream_cases) THEN
-       STRIP_TAC THENL
+       MP_TAC (ISPEC `s1 : byte pstream` pstream_cases) THEN
+       DISCH_THEN
+         (DISJ_CASES_THEN2 SUBST_VAR_TAC
+           (DISJ_CASES_THEN2 SUBST_VAR_TAC
+              (X_CHOOSE_THEN `b2 : byte`
+                (X_CHOOSE_THEN `s2 : byte pstream` SUBST_VAR_TAC)))) THENL
        [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
         ALL_TAC] THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
        REWRITE_TAC [case_pstream_def] THEN
-       MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
-       STRIP_TAC THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
+       MP_TAC (SPEC `b2 : byte` byte_list_cases) THEN
+       DISCH_THEN
+         (X_CHOOSE_THEN `b20 : bool`
+           (X_CHOOSE_THEN `b21 : bool`
+             (X_CHOOSE_THEN `b22 : bool`
+               (X_CHOOSE_THEN `b23 : bool`
+                 (X_CHOOSE_THEN `b24 : bool`
+                   (X_CHOOSE_THEN `b25 : bool`
+                     (X_CHOOSE_THEN `b26 : bool`
+                       (X_CHOOSE_THEN `b27 : bool`
+                          SUBST_VAR_TAC)))))))) THEN
        bit_blast_tac THEN
-       BOOL_CASES_TAC' `x7 : bool` THENL
+       BOOL_CASES_TAC' `b27 : bool` THENL
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [] THEN
-       BOOL_CASES_TAC `x6 : bool` THENL
+       BOOL_CASES_TAC `b26 : bool` THENL
        [REWRITE_TAC [case_option_def; option_distinct];
         ALL_TAC] THEN
        REWRITE_TAC [case_option_def] THEN
@@ -892,7 +966,7 @@ let decoder_encoder_strong_inverse = prove
        STRIP_TAC THEN
        REWRITE_TAC [option_inj; PAIR_EQ] THEN
        STRIP_TAC THEN
-       POP_ASSUM SUBST_VAR_TAC THEN
+       POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
        POP_ASSUM SUBST_VAR_TAC THEN
        REWRITE_TAC [encoder_def] THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
@@ -951,22 +1025,33 @@ let decoder_encoder_strong_inverse = prove
         [parse_parse_partial_map; parse_parse_some; parse_cont3_def;
          parse_parse_pair; parse_cont2_def; parse_cont_def;
          case_option_def; case_pstream_def; is_cont_def] THEN
-      MP_TAC (ISPEC `a1 : byte pstream` pstream_cases) THEN
-      STRIP_TAC THENL
+      MP_TAC (ISPEC `s0 : byte pstream` pstream_cases) THEN
+      DISCH_THEN
+        (DISJ_CASES_THEN2 SUBST_VAR_TAC
+          (DISJ_CASES_THEN2 SUBST_VAR_TAC
+             (X_CHOOSE_THEN `b1 : byte`
+               (X_CHOOSE_THEN `s1 : byte pstream` SUBST_VAR_TAC)))) THENL
       [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
        ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
        ALL_TAC] THEN
-      POP_ASSUM SUBST_VAR_TAC THEN
       REWRITE_TAC [case_pstream_def] THEN
-      MP_TAC (SPEC `a0 : byte` byte_list_cases) THEN
-      STRIP_TAC THEN
-      POP_ASSUM SUBST_VAR_TAC THEN
+      MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
+      DISCH_THEN
+        (X_CHOOSE_THEN `b10 : bool`
+          (X_CHOOSE_THEN `b11 : bool`
+            (X_CHOOSE_THEN `b12 : bool`
+              (X_CHOOSE_THEN `b13 : bool`
+                (X_CHOOSE_THEN `b14 : bool`
+                  (X_CHOOSE_THEN `b15 : bool`
+                    (X_CHOOSE_THEN `b16 : bool`
+                      (X_CHOOSE_THEN `b17 : bool`
+                         SUBST_VAR_TAC)))))))) THEN
       bit_blast_tac THEN
-      BOOL_CASES_TAC' `x7 : bool` THENL
+      BOOL_CASES_TAC' `b17 : bool` THENL
       [REWRITE_TAC [case_option_def; option_distinct];
        ALL_TAC] THEN
       REWRITE_TAC [] THEN
-      BOOL_CASES_TAC `x6 : bool` THENL
+      BOOL_CASES_TAC `b16 : bool` THENL
       [REWRITE_TAC [case_option_def; option_distinct];
        ALL_TAC] THEN
       REWRITE_TAC [case_option_def] THEN
@@ -983,7 +1068,7 @@ let decoder_encoder_strong_inverse = prove
       STRIP_TAC THEN
       REWRITE_TAC [option_inj; PAIR_EQ] THEN
       STRIP_TAC THEN
-      POP_ASSUM SUBST_VAR_TAC THEN
+      POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
       POP_ASSUM SUBST_VAR_TAC THEN
       REWRITE_TAC [encoder_def] THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
@@ -1035,7 +1120,7 @@ let decoder_encoder_strong_inverse = prove
     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
     REWRITE_TAC [option_inj; PAIR_EQ] THEN
     STRIP_TAC THEN
-    POP_ASSUM SUBST_VAR_TAC THEN
+    POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
     POP_ASSUM SUBST_VAR_TAC THEN
     REWRITE_TAC [encoder_def] THEN
     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN

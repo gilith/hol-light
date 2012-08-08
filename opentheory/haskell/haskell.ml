@@ -170,15 +170,27 @@ export_thm rbitsH_def;;
 
 (* Bytes *)
 
+let list_to_byteH_def = define_haskell_const
+  `list_to_byte : bool list -> byte`;;
+
+export_thm list_to_byteH_def;;
+
 let rdecode_byteH_def = define_haskell_const
   `rdecode_byte : random -> byte # random`;;
 
 export_thm rdecode_byteH_def;;
 
-let list_to_byteH_def = define_haskell_const
-  `list_to_byte : bool list -> byte`;;
+(* 16-bit words *)
 
-export_thm list_to_byteH_def;;
+let list_to_word16H_def = define_haskell_const
+  `list_to_word16 : bool list -> word16`;;
+
+export_thm list_to_word16H_def;;
+
+let rdecode_word16H_def = define_haskell_const
+  `rdecode_word16 : random -> word16 # random`;;
+
+export_thm rdecode_word16H_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties.                                                               *)
@@ -501,6 +513,24 @@ let () = (export_haskell_thm o prove)
      let (l,r1') = rbitsH 8 r1 in
      (list_to_byteH l, r2)`,
   HASKELL_TAC [rdecode_byte; byte_width_def]);;
+
+(* 16-bit words *)
+
+let () = (export_haskell_thm o prove)
+ (`(list_to_word16H [] = num_to_word16 0) /\
+   (!h t.
+      list_to_word16H (CONS h t) =
+      if h then word16_add (word16_shl (list_to_word16H t) 1) (num_to_word16 1)
+      else word16_shl (list_to_word16H t) 1)`,
+  HASKELL_TAC [list_to_word16_def]);;
+
+let () = (export_haskell_thm o prove)
+ (`!r.
+     rdecode_word16H r =
+     let (r1,r2) = rsplit r in
+     let (l,r1') = rbitsH 16 r1 in
+     (list_to_word16H l, r2)`,
+  HASKELL_TAC [rdecode_word16; word16_width_def]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Testing.                                                                  *)
