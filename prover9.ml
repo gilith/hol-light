@@ -97,10 +97,9 @@ loads "fusion.ml";;
 (* OpenTheory proof logging.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/logging.ml";;
+loads "opentheory/opentheory.ml";;
 loads "basics.ml";;
 loads "equal.ml";;
-loads "opentheory/reading.ml";;
 loads "bool.ml";;
 loads "simp.ml";;
 loads "class.ml";;

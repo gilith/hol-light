@@ -1,10 +1,8 @@
 exception Tm of term
 let t = try
-  let _ = read_article_from {axiom=fun _ (_,c) -> raise (Tm c)} stdin in
+  let ctxt = {import_context with Import.axiom_context=fun (_,c) -> raise (Tm c)} in
+  let _ = Import.read_article ctxt "stdin" stdin in
   failwith "no theorem"
-  with Tm t -> t in
-let () = start_logging_to stdout in
-let th = PROVER9 t in
-let () = export_thm th in
-let () = stop_logging_to () in
+  with Tm t -> rand t in
+let () = export_proof stdout (PROVER9 t) in
 ()
