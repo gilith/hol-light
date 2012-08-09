@@ -272,14 +272,13 @@ let process_command context state cmd =
     {stack = stack; dict = dict; asms = asms; thms = thms}
   | _ -> failwith ("unhandled article line: " ^ cmd);;
 
-let read_article context filename =
-    let file = open_in filename in
+let read_article context name h =
     let rec loop line_number state =
-        try let line = input_line file in
+        try let line = input_line h in
             let state =
                 try process_command context state line
                 with Failure f ->
-                     failwith ("in article " ^ filename ^ " at line " ^
+                     failwith ("in article " ^ name ^ " at line " ^
                                string_of_int line_number ^ ": " ^ line ^
                                "\nstack = " ^
                                Object.option_list_to_string (state.stack) ^
@@ -287,7 +286,6 @@ let read_article context filename =
             loop (line_number + 1) state
         with End_of_file -> state in
     let {stack = _; dict = _; asms = asms; thms = thms} = loop 1 initial_state in
-    let () = close_in file in
     (asms,thms);;
 
 end
@@ -315,4 +313,8 @@ let import_context =
      Import.type_op_context = type_op_context;
      Import.axiom_context = axiom_context};;
 
-let import_article = Import.read_article import_context;;
+let import_article filename =
+  let h = open_in filename in
+  let r = Import.read_article import_context filename h in
+  let _ = close_in h in
+  r
