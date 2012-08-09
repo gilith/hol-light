@@ -282,9 +282,9 @@ let () = (export_haskell_thm o prove)
      let pli = dest_planeH pl in
      let (pos,r'') =
          if ~(pli = num_to_byte 0) then rdecode_positionH r' else
-         let (n,r'') = rdecode_uniformH 63486 r' in
+         let (n,r''') = rdecode_uniformH 63486 r' in
          let n' = if n < 55296 then n else n + 2048 in
-         (mk_positionH (num_to_word16 n'), r'') in
+         (mk_positionH (num_to_word16 n'), r''') in
      (mk_unicodeH (pl,pos), r'')`,
   GEN_TAC THEN
   HASKELL_TAC [rdecode_unicode_def] THEN

@@ -116,9 +116,9 @@ let rdecode_unicode_def = new_definition
      let pli = dest_plane pl in
      let (pos,r'') =
          if ~(pli = num_to_byte 0) then rdecode_position r' else
-         let (n,r'') = rdecode_uniform 63486 r' in
+         let (n,r''') = rdecode_uniform 63486 r' in
          let n' = if n < 55296 then n else n + 2048 in
-         (mk_position (num_to_word16 n'), r'') in
+         (mk_position (num_to_word16 n'), r''') in
      (mk_unicode (pl,pos), r'')`;;
 
 export_thm rdecode_unicode_def;;
