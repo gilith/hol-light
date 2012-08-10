@@ -69,7 +69,8 @@ let haskell_simp_thms st =
 let initial_haskell_simp_thms =
     add_haskell_simp_thms empty_haskell_simp_thms
       [map_option_id; map_option_o';
-       MAP_I; MAP_o'];;
+       MAP_I; MAP_o';
+       smap_id; smap_o'];;
 
 let the_haskell_thms = ref initial_haskell_simp_thms;;
 
@@ -272,6 +273,7 @@ let initial_haskell_type_base =
      ("option", None, [("map_option", true, false)]);
      ("prod", None, [("map_fst", true, false); ("map_snd", true, false)]);
      ("random", None, []);
+     ("stream", None, [("smap", true, false)]);
      ("word16", None, [])];;
 
 let the_haskell_type_base =

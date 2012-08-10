@@ -74,6 +74,12 @@ let sappend_def = new_definition
 
 export_thm sappend_def;;
 
+let smap_def = new_definition
+  `!(f : A -> B) (s : A stream).
+     smap f s = stream (f o snth s)`;;
+
+export_thm smap_def;;
+
 let sunfold_def = new_definition
   `!(f : B -> A # B) b.
      sunfold f b =
@@ -220,6 +226,24 @@ let cons_sappend = prove
     REWRITE_TAC [GSYM SUC_ADD; ADD_SUB2]]);;
 
 export_thm cons_sappend;;
+
+let smap_id = prove
+  (`smap (I : A -> A) = I`,
+   REWRITE_TAC [FUN_EQ_THM; smap_def; I_O; stream_tybij; I_THM]);;
+
+export_thm smap_id;;
+
+let smap_o = prove
+ (`!(f : B -> C) (g : A -> B) s. smap (f o g) s = smap f (smap g s)`,
+  REWRITE_TAC [smap_def; stream_tybij; o_ASSOC]);;
+
+export_thm smap_o;;
+
+let smap_o' = prove
+  (`!(f : B -> C) (g : A -> B). smap f o smap g = smap (f o g)`,
+   REWRITE_TAC [FUN_EQ_THM; smap_o; o_THM]);;
+
+export_thm smap_o';;
 
 let sdrop_zero = prove
   (`!s : A stream. sdrop s 0 = s`,
