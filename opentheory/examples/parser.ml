@@ -332,6 +332,22 @@ let pstream_to_list_length = prove
 
 export_thm pstream_to_list_length;;
 
+let pstream_to_list_map = prove
+  (`!(f : A -> B) (s : A pstream).
+      pstream_to_list (map_pstream f s) =
+      map_option (MAP f) (pstream_to_list s)`,
+   GEN_TAC THEN
+   MATCH_MP_TAC pstream_induct THEN
+   REWRITE_TAC [map_pstream_def; pstream_to_list_def; map_option_def; MAP] THEN
+   X_GEN_TAC `a : A` THEN
+   X_GEN_TAC `s' : A pstream` THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC (ISPEC `pstream_to_list (s' : A pstream)` option_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [map_option_def; case_option_def; MAP]);;
+
+export_thm pstream_to_list_map;;
+
 logfile "parser-comb-def";;
 
 let is_parser_def = new_definition
@@ -1052,6 +1068,41 @@ let parse_pstream_def =
     (CONJ parse_pstream_error (CONJ parse_pstream_eof parse_pstream_cons));;
 
 logfile "parser-all-thm";;
+
+let parse_pstream_map = prove
+  (`!(f : B -> C) (p : (A,B) parser).
+      parse_pstream (parse_map f p) = map_pstream f o parse_pstream p`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [FUN_EQ_THM; o_THM] THEN
+   MATCH_MP_TAC is_proper_suffix_pstream_induct THEN
+   X_GEN_TAC `s : A pstream` THEN
+   STRIP_TAC THEN
+   MP_TAC (SPEC `s : A pstream` pstream_cases) THEN
+   DISCH_THEN
+     (DISJ_CASES_THEN2 SUBST_VAR_TAC
+       (DISJ_CASES_THEN2 SUBST_VAR_TAC
+         (X_CHOOSE_THEN `a : A`
+           (X_CHOOSE_THEN `s' : A pstream` SUBST_VAR_TAC)))) THENL
+   [REWRITE_TAC [parse_pstream_def; map_pstream_def];
+    REWRITE_TAC [parse_pstream_def; map_pstream_def];
+    ALL_TAC] THEN
+   REWRITE_TAC [parse_pstream_def; dest_parse_map] THEN
+   MP_TAC (SPECL [`p : (A,B) parser`; `a : A`; `s' : A pstream`]
+           dest_parser_cases) THEN
+   DISCH_THEN
+     (DISJ_CASES_THEN2 SUBST1_TAC
+       (X_CHOOSE_THEN `b : B`
+         (X_CHOOSE_THEN `s'' : A pstream` STRIP_ASSUME_TAC))) THENL
+   [REWRITE_TAC [case_option_def; map_pstream_def];
+    ALL_TAC] THEN
+   FIRST_X_ASSUM SUBST1_TAC THEN
+   REWRITE_TAC [case_option_def; map_pstream_def] THEN
+   AP_TERM_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC
+     [is_proper_suffix_pstream_def; GSYM is_suffix_pstream_def]);;
+
+export_thm parse_pstream_map;;
 
 let parse_pstream_append = prove
   (`!p (e : A -> B list) x s.

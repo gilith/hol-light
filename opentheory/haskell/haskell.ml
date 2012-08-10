@@ -288,9 +288,6 @@ export_thm map_snd_o;;
 
 (* Options *)
 
-add_haskell_thm map_option_id;;
-add_haskell_thm map_option_o';;
-
 let equal_optionH_left_none = prove
   (`!(eq : A -> A -> bool) x. equal_optionH eq NONE x <=> is_none x`,
    REPEAT GEN_TAC THEN

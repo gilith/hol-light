@@ -68,7 +68,8 @@ let haskell_simp_thms st =
 
 let initial_haskell_simp_thms =
     add_haskell_simp_thms empty_haskell_simp_thms
-    [MAP_I];;
+      [map_option_id; map_option_o';
+       MAP_I; MAP_o'];;
 
 let the_haskell_thms = ref initial_haskell_simp_thms;;
 

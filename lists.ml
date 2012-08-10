@@ -638,6 +638,12 @@ let MAP_o = prove
 
 export_thm MAP_o;;
 
+let MAP_o' = prove
+  (`!(f : B -> C) (g : A -> B). MAP f o MAP g = MAP (f o g)`,
+   REWRITE_TAC [FUN_EQ_THM; MAP_o; o_THM]);;
+
+export_thm MAP_o';;
+
 let NULL_MAP = prove
  (`!(f : A -> B) l. NULL (MAP f l) <=> NULL l`,
   REWRITE_TAC [GSYM NULL_LENGTH; LENGTH_MAP]);;

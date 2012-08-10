@@ -3,10 +3,6 @@
 (* Joe Hurd                                                                  *)
 (* ========================================================================= *)
 
-(***
-type_invention_error := false;;
-***)
-
 (* ------------------------------------------------------------------------- *)
 (* Definition.                                                               *)
 (* ------------------------------------------------------------------------- *)
@@ -148,6 +144,36 @@ let decode_pstreamH_def = define_haskell_const
   `decode_pstream : byte pstream -> unicode pstream`;;
 
 export_thm decode_pstreamH_def;;
+
+let decodeH_def = define_haskell_const
+  `decode : byte list -> (unicode list) option`;;
+
+export_thm decodeH_def;;
+
+let encode_cont1H_def = define_haskell_const
+  `encode_cont1 : byte -> byte -> byte list`;;
+
+export_thm encode_cont1H_def;;
+
+let encode_cont2H_def = define_haskell_const
+  `encode_cont2 : byte -> byte -> byte list`;;
+
+export_thm encode_cont2H_def;;
+
+let encode_cont3H_def = define_haskell_const
+  `encode_cont3 : byte -> byte -> byte -> byte list`;;
+
+export_thm encode_cont3H_def;;
+
+let encoderH_def = define_haskell_const
+  `encoder : unicode -> byte list`;;
+
+export_thm encoderH_def;;
+
+let encodeH_def = define_haskell_const
+  `encode : unicode list -> byte list`;;
+
+export_thm encodeH_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties.                                                               *)
@@ -495,6 +521,85 @@ let () = (export_haskell_thm o prove)
   STRIP_TAC THEN
   ASM_REWRITE_TAC [map_option_def; case_option_def; map_fst_def]);;
 
+let () = (export_haskell_thm o prove)
+ (`decode_pstreamH = parse_pstreamH decoderH`,
+  HASKELL_TAC [decode_pstream_def; parse_pstream_map]);;
+
+let () = (export_haskell_thm o prove)
+ (`!bs. decodeH bs = pstream_to_listH (decode_pstreamH (list_to_pstreamH bs))`,
+  HASKELL_TAC [decode_def; pstream_to_list_map]);;
+
+let () = (export_haskell_thm o prove)
+ (`!p1 p0.
+     encode_cont1H p1 p0 =
+     let b00 = byte_shl p1 2 in
+     let b01 = byte_shr (byte_and p0 (num_to_byte 192)) 6 in
+     let b0 = byte_or (num_to_byte 192) (byte_or b00 b01) in
+     let b10 = byte_and p0 (num_to_byte 63) in
+     let b1 = byte_or (num_to_byte 128) b10 in
+     CONS b0 (CONS b1 [])`,
+  HASKELL_TAC [encode_cont1_def]);;
+
+let () = (export_haskell_thm o prove)
+ (`!p1 p0.
+     encode_cont2H p1 p0 =
+     let b00 = byte_shr (byte_and p1 (num_to_byte 240)) 4 in
+     let b0 = byte_or (num_to_byte 224) b00 in
+     let b10 = byte_shl (byte_and p1 (num_to_byte 15)) 2 in
+     let b11 = byte_shr (byte_and p0 (num_to_byte 192)) 6 in
+     let b1 = byte_or (num_to_byte 128) (byte_or b10 b11) in
+     let b20 = byte_and p0 (num_to_byte 63) in
+     let b2 = byte_or (num_to_byte 128) b20 in
+     CONS b0 (CONS b1 (CONS b2 []))`,
+  HASKELL_TAC [encode_cont2_def]);;
+
+let () = (export_haskell_thm o prove)
+ (`!p p1 p0.
+     encode_cont3H p p1 p0 =
+     let b00 = byte_shr (byte_and p (num_to_byte 28)) 2 in
+     let b0 = byte_or (num_to_byte 240) b00 in
+     let b10 = byte_shl (byte_and p (num_to_byte 3)) 4 in
+     let b11 = byte_shr (byte_and p1 (num_to_byte 240)) 4 in
+     let b1 = byte_or (num_to_byte 128) (byte_or b10 b11) in
+     let b20 = byte_shl (byte_and p1 (num_to_byte 15)) 2 in
+     let b21 = byte_shr (byte_and p0 (num_to_byte 192)) 6 in
+     let b2 = byte_or (num_to_byte 128) (byte_or b20 b21) in
+     let b30 = byte_and p0 (num_to_byte 63) in
+     let b3 = byte_or (num_to_byte 128) b30 in
+     CONS b0 (CONS b1 (CONS b2 (CONS b3 [])))`,
+  HASKELL_TAC [encode_cont3_def]);;
+
+let () = (export_haskell_thm o prove)
+ (`encoderH =
+   \ch.
+     let (pl,pos) = dest_unicodeH ch in
+     let p = dest_planeH pl in
+     let (p0,p1) = word16_to_bytes (dest_positionH pos) in
+     if p = num_to_byte 0 then
+       if p1 = num_to_byte 0 /\ ~byte_bit p0 7 then
+         CONS p0 []
+       else
+         if byte_and (num_to_byte 248) p1 = num_to_byte 0 then
+           encode_cont1H p1 p0
+         else
+           encode_cont2H p1 p0
+     else
+       encode_cont3H p p1 p0`,
+   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+   X_GEN_TAC `ch : unicodeH` THEN
+   HASKELL_TAC [encoder_def] THEN
+   MP_TAC (SPEC `destH_unicodeH ch` dest_unicode_cases) THEN
+   STRIP_TAC THEN
+   POP_ASSUM SUBST1_TAC THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REWRITE_TAC [LET_DEF; LET_END_DEF; map_fst_def; map_snd_def] THEN
+   HASKELL_TAC []);;
+
+let () = (export_haskell_thm o prove)
+ (`!chs. encodeH chs = concat (MAP encoderH chs)`,
+   GEN_TAC THEN
+   HASKELL_TAC [encode_def]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Testing.                                                                  *)
 (* ------------------------------------------------------------------------- *)
@@ -527,8 +632,53 @@ let () = (export_haskell_thm o prove)
   UNDISCH_TAC `is_unicode (pl,pos)` THEN
   REWRITE_TAC [is_unicode_def; LET_DEF; LET_END_DEF]);;
 
-(***
 (* UTF-8 encoding *)
-***)
+
+let () = (export_haskell_thm o prove)
+ (`!r.
+     let (cs,r') = rdecode_listH rdecode_unicodeH r in
+     equal_optionH (equal_listH equal_unicodeH)
+       (decodeH (encodeH cs)) (SOME cs)`,
+  GEN_TAC THEN
+  PAIR_CASES_TAC `rdecode_listH rdecode_unicodeH r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `cs : unicodeH list`
+      (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  HASKELL_TAC [decode_encode; map_option_def]);;
+
+let () = (export_haskell_thm o prove)
+ (`!r.
+     let (bs,r') = rdecode_listH rdecode_byteH r in
+     case_option T (\cs. (equal_listH (=)) (encodeH cs) bs) (decodeH bs)`,
+  GEN_TAC THEN
+  PAIR_CASES_TAC `rdecode_listH rdecode_byteH r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `bs : byte list`
+      (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  HASKELL_TAC [] THEN
+  MP_TAC (SPEC `bs : byte list` encode_decode) THEN
+  option_cases_tac `decode bs` THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [map_option_def; case_option_def] THEN
+  HASKELL_TAC []);;
+
+let () = (export_haskell_thm o prove)
+ (`!r.
+     let (cs,r') = rdecode_listH rdecode_unicodeH r in
+     lengthH cs <= lengthH (encodeH cs)`,
+  GEN_TAC THEN
+  PAIR_CASES_TAC `rdecode_listH rdecode_unicodeH r` THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `cs : unicodeH list`
+      (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  HASKELL_TAC [] THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC `LENGTH (MAP destH_unicodeH cs)` THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [LENGTH_MAP; LE_REFL];
+   MATCH_ACCEPT_TAC encode_length]);;
 
 logfile_end ();;
