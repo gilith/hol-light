@@ -294,6 +294,15 @@ let prime_primes = prove
 
 export_thm prime_primes;;
 
+let primes_nonzero = prove
+  (`!i. ~(snth primes i = 0)`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC prime_zero THEN
+   FIRST_X_ASSUM (SUBST1_TAC o SYM) THEN
+   REWRITE_TAC [prime_primes]);;
+
+export_thm primes_nonzero;;
+
 let primes_mono_lt = prove
   (`!i j. snth primes i < snth primes j <=> i < j`,
    REWRITE_TAC [GSYM MONO_LE_LT] THEN
@@ -427,6 +436,45 @@ let primes_below_divides = prove
    REWRITE_TAC [GSYM ALL_MEM; mem_primes_below]);;
 
 export_thm primes_below_divides;;
+
+let primes_inj_imp = prove
+  (`!n1 n2. snth primes n1 = snth primes n2 ==> n1 = n2`,
+   REPEAT STRIP_TAC THEN
+   ONCE_REWRITE_TAC [GSYM LE_ANTISYM] THEN
+   ONCE_REWRITE_TAC [GSYM primes_mono_le] THEN
+   REWRITE_TAC [LE_ANTISYM] THEN
+   FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm primes_inj_imp;;
+
+let primes_inj = prove
+  (`!n1 n2. snth primes n1 = snth primes n2 <=> n1 = n2`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC primes_inj_imp;
+    DISCH_THEN SUBST1_TAC THEN
+    REFL_TAC]);;
+
+export_thm primes_inj;;
+
+let primes_divides_inj_imp = prove
+  (`!n1 n2. divides (snth primes n1) (snth primes n2) ==> n1 = n2`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC primes_inj_imp THEN
+   MATCH_MP_TAC prime_divides_inj THEN
+   ASM_REWRITE_TAC [prime_primes]);;
+
+export_thm primes_divides_inj_imp;;
+
+let primes_divides_inj = prove
+  (`!n1 n2. divides (snth primes n1) (snth primes n2) <=> n1 = n2`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC primes_divides_inj_imp;
+    DISCH_THEN SUBST1_TAC THEN
+    MATCH_ACCEPT_TAC divides_refl]);;
+
+export_thm primes_divides_inj;;
 
 (* ------------------------------------------------------------------------- *)
 (* The sieve of Eratosthenes.                                                *)

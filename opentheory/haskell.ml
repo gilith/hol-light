@@ -88,6 +88,8 @@ let haskell_thms () =
 
 let HASKELL_TAC ths goal = REWRITE_TAC (ths @ haskell_thms ()) goal;;
 
+let ASM_HASKELL_TAC ths goal = ASM_REWRITE_TAC (ths @ haskell_thms ()) goal;;
+
 (* ------------------------------------------------------------------------- *)
 (* Maintaining a mapping from HOL types to Haskell-in-HOL types.             *)
 (* ------------------------------------------------------------------------- *)

@@ -118,11 +118,11 @@ let lengthH_def = new_definition
 add_haskell_thm lengthH_def;;
 export_thm lengthH_def;;
 
-let rdecode_list_destH_def = define_haskell_const
-  `rdecode_list_dest :
-     (random -> A # random) -> A list -> random -> A list`;;
+let rdecode_vectorH_def = define_haskell_const
+  `rdecode_vector :
+   (random -> A # random) -> num -> random -> A list # random`;;
 
-export_thm rdecode_list_destH_def;;
+export_thm rdecode_vectorH_def;;
 
 let rdecode_listH_def = define_haskell_const
   `rdecode_list : (random -> A # random) -> random -> A list # random`;;
@@ -140,6 +140,16 @@ let rdecode_fibH_def = define_haskell_const
   `rdecode_fib : random -> num # random`;;
 
 export_thm rdecode_fibH_def;;
+
+let rdecode_geometric_loopH_def = define_haskell_const
+  `rdecode_geometric_loop : num -> random -> num`;;
+
+export_thm rdecode_geometric_loopH_def;;
+
+let rdecode_geometricH_def = define_haskell_const
+  `rdecode_geometric : random -> num # random`;;
+
+export_thm rdecode_geometricH_def;;
 
 let bitwidthH_def = define_haskell_const
   `bitwidth : num -> num`;;
@@ -160,6 +170,18 @@ let rdecode_uniformH_def = define_haskell_const
   `rdecode_uniform : num -> random -> num # random`;;
 
 export_thm rdecode_uniformH_def;;
+
+(* Streams *)
+
+let snthH_def = define_haskell_const
+  `snth : A stream -> num -> A`;;
+
+export_thm snthH_def;;
+
+let sunfoldH_def = define_haskell_const
+  `sunfold : (A -> B # A) -> A -> B stream`;;
+
+export_thm sunfoldH_def;;
 
 (* Random streams *)
 
@@ -403,22 +425,26 @@ let () = (export_haskell_thm o prove)
   REWRITE_TAC [lengthH_def; LENGTH_NIL; LENGTH_CONS; ADD1]);;
 
 let () = (export_haskell_thm o prove)
- (`!(d : random -> A # random) l r.
-     rdecode_list_destH d l r =
-     let b,r' = rbit r in
-     if b then l else
-     let (x,r'') = d r' in
-     rdecode_list_destH d (CONS x l) r''`,
-  REWRITE_TAC [rdecode_list_destH_def] THEN
-  ACCEPT_TAC rdecode_list_dest_def);;
+ (`!(d : random -> A # random) n r.
+     rdecode_vectorH d n r =
+     if n = 0 then ([],r) else
+     let (h,r') = d r in
+     let (t,r'') = rdecode_vectorH d (n - 1) r' in
+     (CONS h t, r'')`,
+  REPEAT GEN_TAC THEN
+  HASKELL_TAC [] THEN
+  NUM_CASES_TAC `n : num` THENL
+  [DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [rdecode_vector_zero];
+   DISCH_THEN (X_CHOOSE_THEN `m : num` SUBST1_TAC) THEN
+   REWRITE_TAC [NOT_SUC; rdecode_vector_suc; SUC_SUB1]]);;
 
 let () = (export_haskell_thm o prove)
- (`!(d : random -> A # random).
-     rdecode_listH d =
-     \r.
-       let (r1,r2) = rsplit r in
-       (rdecode_list_destH d [] r1, r2)`,
-  REWRITE_TAC [rdecode_listH_def; rdecode_list_destH_def; FUN_EQ_THM] THEN
+ (`!(d : random -> A # random) r.
+     rdecode_listH d r =
+     let (n,r') = rdecode_geometricH r in
+     rdecode_vectorH d n r'`,
+  HASKELL_TAC [] THEN
   ACCEPT_TAC rdecode_list_def);;
 
 (* Natural numbers *)
@@ -442,6 +468,24 @@ let () = (export_haskell_thm o prove)
   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
   REWRITE_TAC [rdecode_fibH_def; rdecode_fib_destH_def] THEN
   ACCEPT_TAC rdecode_fib_def);;
+
+let () = (export_haskell_thm o prove)
+ (`!n r.
+     rdecode_geometric_loopH n r =
+     let (b,r') = rbit r in
+     if b then n else
+     rdecode_geometric_loopH (n + 1) r'`,
+  HASKELL_TAC [GSYM ADD1] THEN
+  ACCEPT_TAC rdecode_geometric_loop_def);;
+
+let () = (export_haskell_thm o prove)
+ (`rdecode_geometricH =
+   \r.
+     let (r1,r2) = rsplit r in
+     (rdecode_geometric_loopH 0 r1, r2)`,
+  ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+  HASKELL_TAC [] THEN
+  ACCEPT_TAC rdecode_geometric_def);;
 
 let () = (export_haskell_thm o prove)
  (`!n.
@@ -476,22 +520,31 @@ let () = (export_haskell_thm o prove)
   HASKELL_TAC [] THEN
   ACCEPT_TAC rdecode_uniform_def);;
 
+(* Streams *)
+
+let () = (export_haskell_thm o prove)
+ (`!(s : A stream) n.
+     snthH s n = if n = 0 then shd s else snthH (stl s) (n - 1)`,
+  GEN_TAC THEN
+  HASKELL_TAC [] THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [shd_def];
+   REWRITE_TAC [NOT_SUC; SUC_SUB1; snth_suc]]);;
+
+let () = (export_haskell_thm o prove)
+ (`!(f : B -> A # B) b.
+     sunfoldH f b =
+     let (a,b') = f b in
+     scons a (sunfoldH f b')`,
+  HASKELL_TAC [] THEN
+  ACCEPT_TAC sunfold);;
+
 (* Random streams *)
 
 let () = (export_haskell_thm o prove)
- (`!n r.
-     rbitsH n r =
-     if n = 0 then ([],r) else
-     let (b,r') = rbit r in
-     let (l,r'') = rbitsH (n - 1) r' in
-     (CONS b l, r'')`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [rbitsH_def] THEN
-  NUM_CASES_TAC `n : num` THENL
-  [DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [rbits_zero];
-   DISCH_THEN (X_CHOOSE_THEN `m : num` SUBST1_TAC) THEN
-   REWRITE_TAC [NOT_SUC; rbits_suc; SUC_SUB1]]);;
+ (`rbitsH = rdecode_vectorH rbit`,
+  HASKELL_TAC [] THEN
+  ACCEPT_TAC rbits_def);;
 
 (* Bytes *)
 

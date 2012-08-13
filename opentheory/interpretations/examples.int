@@ -90,8 +90,8 @@ const "HOLLight.parse_cont3" as "Data.Char.UTF8.parseThreeContinuationBytes"
 
 # Data.List
 
-const "HOLLight.rdecode_list" as "Data.List.fromRandom"
-const "HOLLight.rdecode_list_dest" as "Data.List.fromRandom.dest"
+const "HOLLight.rdecode_list" as "Data.List.fromGeometricRandom"
+const "HOLLight.rdecode_vector" as "Data.List.fromRandom"
 
 # Data.Stream
 
@@ -298,6 +298,11 @@ const "HOLLight.rdecode_fib" as "Number.Natural.Fibonacci.fromRandom"
 const "HOLLight.rdecode_fib_dest" as "Number.Natural.Fibonacci.fromRandom.dest"
 const "HOLLight.zeckendorf" as "Number.Natural.Fibonacci.zeckendorf"
 
+# Number.Natural.Geometric
+
+const "HOLLight.rdecode_geometric" as "Number.Natural.Geometric.fromRandom"
+const "HOLLight.rdecode_geometric_loop" as "Number.Natural.Geometric.fromRandom.loop"
+
 # Number.Natural.Prime
 
 const "HOLLight.primes" as "Number.Natural.Prime.all"
@@ -309,10 +314,10 @@ type "HOLLight.sieve" as "Number.Natural.Prime.Sieve.sieve"
 
 const "HOLLight.dest_sieve" as "Number.Natural.Prime.Sieve.dest"
 const "HOLLight.inc_sieve" as "Number.Natural.Prime.Sieve.increment"
-const "HOLLight.inc_counters_sieve" as "Number.Natural.Prime.Sieve.incrementCounters"
+const "HOLLight.inc_counters_sieve" as "Number.Natural.Prime.Sieve.increment.inc"
 const "HOLLight.init_sieve" as "Number.Natural.Prime.Sieve.initial"
 const "HOLLight.is_sieve" as "Number.Natural.Prime.Sieve.invariant"
-const "HOLLight.is_counters_sieve" as "Number.Natural.Prime.Sieve.invariantCounters"
+const "HOLLight.is_counters_sieve" as "Number.Natural.Prime.Sieve.invariant.inv"
 const "HOLLight.max_sieve" as "Number.Natural.Prime.Sieve.max"
 const "HOLLight.mk_sieve" as "Number.Natural.Prime.Sieve.mk"
 const "HOLLight.next_sieve" as "Number.Natural.Prime.Sieve.next"

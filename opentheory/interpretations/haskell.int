@@ -30,13 +30,18 @@ const "HOLLight.list_to_byteH" as "Haskell.Data.Byte.Bits.toByte"
 # Haskell.Data.List
 
 const "HOLLight.equal_listH" as "Haskell.Data.List.equal"
-const "HOLLight.rdecode_listH" as "Haskell.Data.List.fromRandom"
-const "HOLLight.rdecode_list_destH" as "Haskell.Data.List.fromRandom.dest"
+const "HOLLight.rdecode_listH" as "Haskell.Data.List.fromGeometricRandom"
+const "HOLLight.rdecode_vectorH" as "Haskell.Data.List.fromRandom"
 const "HOLLight.lengthH" as "Haskell.Data.List.size"
 
 # Haskell.Data.Option
 
 const "HOLLight.equal_optionH" as "Haskell.Data.Option.equal"
+
+# Haskell.Data.Stream
+
+const "HOLLight.snthH" as "Haskell.Data.Stream.nth"
+const "HOLLight.sunfoldH" as "Haskell.Data.Stream.unfold"
 
 # Haskell.Data.Unicode
 
@@ -101,6 +106,29 @@ const "HOLLight.rdecode_fib_destH" as "Haskell.Number.Natural.fromRandom.dest"
 
 const "HOLLight.bits_to_numH" as "Haskell.Number.Natural.Bits.toNatural"
 const "HOLLight.bitwidthH" as "Haskell.Number.Natural.Bits.width"
+
+# Haskell.Number.Natural.Geometric
+
+const "HOLLight.rdecode_geometricH" as "Haskell.Number.Natural.Geometric.fromRandom"
+const "HOLLight.rdecode_geometric_loopH" as "Haskell.Number.Natural.Geometric.fromRandom.loop"
+
+# Haskell.Number.Natural.Prime
+
+const "HOLLight.primesH" as "Haskell.Number.Natural.Prime.all"
+
+# Haskell.Number.Natural.Prime.Sieve
+
+type "HOLLight.sieveH" as "Haskell.Number.Natural.Prime.Sieve.Sieve"
+
+const "HOLLight.mk_sieveH" as "Haskell.Number.Natural.Prime.Sieve.Sieve"
+const "HOLLight.mkH_sieveH" as "Haskell.Number.Natural.Prime.Sieve.fromHol"
+const "HOLLight.inc_sieveH" as "Haskell.Number.Natural.Prime.Sieve.increment"
+const "HOLLight.inc_counters_sieveH" as "Haskell.Number.Natural.Prime.Sieve.increment.inc"
+const "HOLLight.init_sieveH" as "Haskell.Number.Natural.Prime.Sieve.initial"
+const "HOLLight.max_sieveH" as "Haskell.Number.Natural.Prime.Sieve.perimeter"
+const "HOLLight.next_sieveH" as "Haskell.Number.Natural.Prime.Sieve.next"
+const "HOLLight.destH_sieveH" as "Haskell.Number.Natural.Prime.Sieve.toHol"
+const "HOLLight.dest_sieveH" as "Haskell.Number.Natural.Prime.Sieve.unSieve"
 
 # Haskell.Number.Natural.Uniform
 

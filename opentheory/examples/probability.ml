@@ -25,46 +25,48 @@ let rsplit_def = new_definition
 
 export_thm rsplit_def;;
 
-let (rbits_zero,rbits_suc) =
+let (rdecode_vector_zero,rdecode_vector_suc) =
   let def = new_recursive_definition num_RECURSION
-    `(!r. rbits 0 r = ([],r)) /\
-     (!r n.
-        rbits (SUC n) r =
-        let (b,r') = rbit r in
-        let (l,r'') = rbits n r' in
-        (CONS b l, r''))` in
+    `(!(d : random -> A # random) r. rdecode_vector d 0 r = ([],r)) /\
+     (!d r n.
+        rdecode_vector d (SUC n) r =
+        let (h,r') = d r in
+        let (t,r'') = rdecode_vector d n r' in
+        (CONS h t, r''))` in
   CONJ_PAIR def;;
 
-export_thm rbits_zero;;
-export_thm rbits_suc;;
+export_thm rdecode_vector_zero;;
+export_thm rdecode_vector_suc;;
 
-let rbits_def = CONJ rbits_zero rbits_suc;;
+let rdecode_vector_def = CONJ rdecode_vector_zero rdecode_vector_suc;;
 
-let rdecode_list_dest_exists = prove
- (`!d. ?dest. !(l : A list) r.
-     dest l r =
+let rbits_def = new_definition
+  `rbits = rdecode_vector rbit`;;
+
+export_thm rbits_def;;
+
+let rdecode_geometric_loop_exists = prove
+ (`?loop. !n r.
+     loop n r =
        let (b,r') = rbit r in
-       if b then l else
-       let (x,r'') = d r' in
-       dest (CONS x l) r''`,
-  GEN_TAC THEN
+       if b then n else
+       loop (SUC n) r'`,
   MP_TAC
    (ISPECL
-      [`\ ((l : A list), (r : random)).
+      [`\ ((n : num), (r : random)).
           let (b,r') = rbit r in
           ~b`;
-       `\ ((l : A list), (r : random)).
+       `\ ((n : num), (r : random)).
           let (b,r') = rbit r in
-          let (x,r'') = (d : random -> A # random) r' in
-          (CONS x l, r'')`;
-       `\ ((l : A list), (r : random)).
-          l`] WF_REC_TAIL) THEN
+          (SUC n, r')`;
+       `\ ((n : num), (r : random)).
+          n`] WF_REC_TAIL) THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `dest : A list # random -> A list`
+    (X_CHOOSE_THEN `loop : num # random -> num`
      STRIP_ASSUME_TAC) THEN
   EXISTS_TAC
-    `\ (l : A list) (r : random).
-       ((dest (l,r)) : A list)` THEN
+    `\ (n : num) (r : random).
+       ((loop (n,r)) : num)` THEN
   REPEAT GEN_TAC THEN
   REWRITE_TAC [] THEN
   FIRST_X_ASSUM (fun th -> CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [th]))) THEN
@@ -73,45 +75,56 @@ let rdecode_list_dest_exists = prove
   DISCH_THEN
     (X_CHOOSE_THEN `b : bool` (X_CHOOSE_THEN `r' : random` SUBST1_TAC)) THEN
   REWRITE_TAC [] THEN
-  BOOL_CASES_TAC `b : bool` THENL
-  [REWRITE_TAC [];
-   REWRITE_TAC [] THEN
-   PAIR_CASES_TAC `(d : random -> A # random) r'` THEN
-   DISCH_THEN
-     (X_CHOOSE_THEN `x : A` (X_CHOOSE_THEN `r'' : random` SUBST1_TAC)) THEN
-   REWRITE_TAC []]);;
+  BOOL_CASES_TAC `b : bool` THEN
+  REWRITE_TAC []);;
 
-let rdecode_list_dest_def =
-  new_specification ["rdecode_list_dest"]
-    (ONCE_REWRITE_RULE [SKOLEM_THM] rdecode_list_dest_exists);;
+let rdecode_geometric_loop_def =
+  new_specification ["rdecode_geometric_loop"]
+    rdecode_geometric_loop_exists;;
 
-export_thm rdecode_list_dest_def;;
+export_thm rdecode_geometric_loop_def;;
+
+let rdecode_geometric_def = new_definition
+  `!r.
+     rdecode_geometric r =
+     let (r1,r2) = rsplit r in
+     (rdecode_geometric_loop 0 r1, r2)`;;
+
+export_thm rdecode_geometric_def;;
 
 let rdecode_list_def = new_definition
   `!d r.
      rdecode_list (d : random -> A # random) r =
-     let (r1,r2) = rsplit r in
-     (rdecode_list_dest d [] r1, r2)`;;
+     let (n,r') = rdecode_geometric r in
+     rdecode_vector d n r'`;;
 
 export_thm rdecode_list_def;;
 
 logfile "probability-thm";;
 
-let length_rbits = prove
- (`!n r. LENGTH (FST (rbits n r)) = n`,
+let length_rdecode_vector = prove
+ (`!(d : random -> A # random) n r. LENGTH (FST (rdecode_vector d n r)) = n`,
+  GEN_TAC THEN
   INDUCT_TAC THENL
-  [REWRITE_TAC [rbits_def; LENGTH];
+  [REWRITE_TAC [rdecode_vector_def; LENGTH];
    GEN_TAC THEN
-   PAIR_CASES_TAC `rbit r` THEN
+   PAIR_CASES_TAC `(d : random -> A # random) r` THEN
    DISCH_THEN
-     (X_CHOOSE_THEN `b : bool`
+     (X_CHOOSE_THEN `h : A`
        (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
-   PAIR_CASES_TAC `rbits n r'` THEN
+   PAIR_CASES_TAC `rdecode_vector (d : random -> A # random) n r'` THEN
    DISCH_THEN
-     (X_CHOOSE_THEN `l : bool list`
+     (X_CHOOSE_THEN `t : A list`
        (X_CHOOSE_THEN `r'' : random` STRIP_ASSUME_TAC)) THEN
    FIRST_X_ASSUM (MP_TAC o SPEC `r' : random`) THEN
-   ASM_REWRITE_TAC [rbits_def; LENGTH; LET_DEF; LET_END_DEF; SUC_INJ]]);;
+   ASM_REWRITE_TAC
+     [rdecode_vector_def; LENGTH; LET_DEF; LET_END_DEF; SUC_INJ]]);;
+
+export_thm length_rdecode_vector;;
+
+let length_rbits = prove
+ (`!n r. LENGTH (FST (rbits n r)) = n`,
+  REWRITE_TAC [rbits_def; length_rdecode_vector]);;
 
 export_thm length_rbits;;
 
