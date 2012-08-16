@@ -30,9 +30,12 @@ const "HOLLight.list_to_byteH" as "Haskell.Data.Byte.Bits.toByte"
 # Haskell.Data.List
 
 const "HOLLight.equal_listH" as "Haskell.Data.List.equal"
-const "HOLLight.rdecode_listH" as "Haskell.Data.List.fromGeometricRandom"
 const "HOLLight.rdecode_vectorH" as "Haskell.Data.List.fromRandom"
 const "HOLLight.lengthH" as "Haskell.Data.List.size"
+
+# Haskell.Data.List.Geometric
+
+const "HOLLight.rdecode_listH" as "Haskell.Data.List.Geometric.fromRandom"
 
 # Haskell.Data.Option
 

@@ -90,8 +90,11 @@ const "HOLLight.parse_cont3" as "Data.Char.UTF8.parseThreeContinuationBytes"
 
 # Data.List
 
-const "HOLLight.rdecode_list" as "Data.List.fromGeometricRandom"
 const "HOLLight.rdecode_vector" as "Data.List.fromRandom"
+
+# Data.List.Geometric
+
+const "HOLLight.rdecode_list" as "Data.List.Geometric.fromRandom"
 
 # Data.Stream
 
