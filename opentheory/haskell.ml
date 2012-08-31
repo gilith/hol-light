@@ -5,10 +5,8 @@
 
 module String_map = Map.Make(String);;
 
-(***
 module Haskell =
 struct
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Haskell-in-HOL names.                                                     *)
@@ -127,7 +125,7 @@ let peek_haskell_type_base tb n =
 let to_list_haskell_type_base tb =
     match tb with
       Haskell_type_base m ->
-        String_map.bindings m;;
+        rev (String_map.fold (fun k -> fun _ -> fun ks -> k :: ks) m []);;
 
 let lift_drop_haskell_type tb =
     let mk_const_at_type (c,ty) =
@@ -351,12 +349,14 @@ let haskellize_thm =
 
 let export_haskell_thm th = export_thm (haskellize_thm th);;
 
-(***
 end
 
-let define_haskell_type = Haskell.register_haskell_type
-and drop_haskell_type = Haskell.drop_haskell_type
+let add_haskell_thm = Haskell.add_haskell_thm
+and add_haskell_thms = Haskell.add_haskell_thms
+and define_haskell_const = Haskell.define_haskell_const
+and define_haskell_type = Haskell.define_haskell_type
 and export_haskell_thm = Haskell.export_haskell_thm
+and haskell_thms = Haskell.haskell_thms
 and haskell_types = Haskell.haskell_types
-and lift_haskell_type = Haskell.lift_haskell_type;;
-***)
+and ASM_HASKELL_TAC = Haskell.ASM_HASKELL_TAC
+and HASKELL_TAC = Haskell.HASKELL_TAC;;
