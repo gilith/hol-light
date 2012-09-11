@@ -8,7 +8,7 @@ if test "$OPENTHEORY_LOGGING" = ""
 then
     echo '#use "opentheory/examples/all.ml";;'
     echo '#use "opentheory/haskell/all.ml";;'
-fi) | ocaml &> $log
+fi) | ocaml >$log 2>&1
 
 if grep '^Exception:\|^Error:\|^Error in included file\|Warning: inventing type variables' $log
 then
