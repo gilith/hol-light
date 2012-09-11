@@ -8,7 +8,11 @@
 
 (* The theory parameters *)
 
-new_constant ("word_width", `:num`);;
+logfile "word-witness";;
+
+let () =
+  let _ = new_definition `word_width = 0` in
+  export_thm (REFL `word_width`);;
 
 logfile "word-def";;
 
