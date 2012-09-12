@@ -109,34 +109,39 @@ let group_add_right_neg = new_axiom
    `!x. group_add x (group_neg x) = group_zero`;;
 *)
 
+let group_add_right_zero = prove
+  (`!x. group_add x group_zero = x`,
+   GEN_TAC THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `group_add x (group_add (group_neg x) x)` THEN
+   CONJ_TAC THENL
+   [AP_TERM_TAC THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    MATCH_ACCEPT_TAC group_add_left_neg;
+    ALL_TAC] THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `group_add (group_add x (group_neg x)) x` THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC EQ_SYM THEN
+    MATCH_ACCEPT_TAC group_add_assoc;
+    ALL_TAC] THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `group_add group_zero x` THEN
+   CONJ_TAC THENL
+   [AP_THM_TAC THEN
+    AP_TERM_TAC THEN
+    MATCH_ACCEPT_TAC group_add_right_neg;
+    ALL_TAC] THEN
+   MATCH_ACCEPT_TAC group_add_left_zero);;
+
+export_thm group_add_right_zero;;
+
+(*PARAMETRIC
+let group_add_right_zero = new_axiom
+   `!x. group_add x group_zero = x`;;
+*)
+
 (***
-val group_rid = store_thm
-  ("group_rid",
-   ``!g :: Group. !x :: (g.carrier). group_add x group_zero = x``,
-   RW_TAC resq_ss []
-   ++ MATCH_MP_TAC EQ_TRANS
-   ++ Q.EXISTS_TAC `group_add x (group_add (group_neg x) x)`
-   ++ CONJ_TAC
-   >> (REPEAT (AP_TERM_TAC || AP_THM_TAC)
-       ++ match_tac (GSYM group_linv)
-       ++ METIS_TAC [group_inv_carrier, group_mult_carrier])
-   ++ MATCH_MP_TAC EQ_TRANS
-   ++ Q.EXISTS_TAC `group_add (group_add x (group_neg x)) x`
-   ++ CONJ_TAC
-   >> (match_tac (GSYM group_assoc)
-       ++ METIS_TAC [group_inv_carrier, group_mult_carrier])
-   ++ MATCH_MP_TAC EQ_TRANS
-   ++ Q.EXISTS_TAC `group_add group_zero x`
-   ++ CONJ_TAC
-   >> (REPEAT (AP_TERM_TAC || AP_THM_TAC)
-       ++ match_tac group_rinv
-       ++ METIS_TAC [group_inv_carrier, group_mult_carrier])
-   ++ match_tac group_lid
-   ++ METIS_TAC [group_inv_carrier, group_mult_carrier]);
-
-val context = subtypeTools.add_rewrite2 group_rid context;
-val {simplify = alg_ss, normalize = alg_ss'} = subtypeTools.simpset2 context;
-
 val group_lcancel = store_thm
   ("group_lcancel",
    ``!g :: Group. !x y z :: (g.carrier). (group_add x y = group_add x z) = (y = z)``,
