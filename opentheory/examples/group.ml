@@ -56,6 +56,18 @@ logfile "group-thm";;
 (* group-thm *)
 *)
 
+let group_add_left_neg' = prove
+  (`!x y. group_add (group_neg x) (group_add x y) = y`,
+   REWRITE_TAC
+     [GSYM group_add_assoc; group_add_left_neg; group_add_left_zero]);;
+
+export_thm group_add_left_neg';;
+
+(*PARAMETRIC
+let group_add_left_neg' = prove
+   `!x y. group_add (group_neg x) (group_add x y) = y`;;
+*)
+
 let group_add_right_neg = prove
   (`!x. group_add x (group_neg x) = group_zero`,
    GEN_TAC THEN
@@ -114,6 +126,18 @@ export_thm group_add_right_neg;;
 (*PARAMETRIC
 let group_add_right_neg = new_axiom
    `!x. group_add x (group_neg x) = group_zero`;;
+*)
+
+let group_add_right_neg' = prove
+  (`!x y. group_add x (group_add (group_neg x) y) = y`,
+   REWRITE_TAC
+     [GSYM group_add_assoc; group_add_right_neg; group_add_left_zero]);;
+
+export_thm group_add_right_neg';;
+
+(*PARAMETRIC
+let group_add_right_neg' = prove
+   `!x y. group_add x (group_add (group_neg x) y) = y`;;
 *)
 
 let group_add_right_zero = prove
@@ -303,8 +327,29 @@ let group_neg_neg = new_axiom
    `!x. group_neg (group_neg x) = x`;;
 *)
 
-(***
-***)
+let group_neg_zero = prove
+  (`group_neg group_zero = group_zero`,
+   MATCH_MP_TAC group_add_left_cancel_zero_imp THEN
+   EXISTS_TAC `group_zero` THEN
+   REWRITE_TAC [group_add_right_neg]);;
+
+(*PARAMETRIC
+let group_neg_zero = new_axiom
+   `group_neg group_zero = group_zero`;;
+*)
+
+let group_neg_add = prove
+  (`!x y. group_neg (group_add x y) = group_add (group_neg y) (group_neg x)`,
+   REPEAT GEN_TAC THEN
+   MATCH_MP_TAC group_add_right_cancel_imp THEN
+   EXISTS_TAC `group_add x y` THEN
+   REWRITE_TAC [group_add_left_neg] THEN
+   REWRITE_TAC [group_add_assoc; group_add_left_neg; group_add_left_neg']);;
+
+(*PARAMETRIC
+let group_neg_add = new_axiom
+   `!x y. group_neg (group_add x y) = group_add (group_neg y) (group_neg x)`;;
+*)
 
 logfile "group-mult-def";;
 
@@ -388,6 +433,90 @@ let group_mult_suc' = prove
 (*PARAMETRIC
 let group_mult_suc' = new_axiom
    `!x n. group_mult x (SUC n) = group_add (group_mult x n) x`;;
+*)
+
+let group_mult_mult = prove
+  (`!x m n. group_mult (group_mult x m) n = group_mult x (m * n)`,
+   GEN_TAC THEN
+   GEN_TAC THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [group_mult_zero; MULT_0];
+    ASM_REWRITE_TAC [group_mult_suc; MULT_SUC; group_mult_add]]);;
+
+(*PARAMETRIC
+let group_mult_mult = new_axiom
+   `!x m n. group_mult (group_mult x m) n = group_mult x (m * n)`;;
+*)
+
+logfile "group-elgamal-def";;
+
+(*PARAMETRIC
+(* group-elgamal-def *)
+*)
+
+let group_elgamal_encrypt_def = new_definition
+  `!g h m k.
+     group_elgamal_encrypt g h m k =
+     (group_mult g k, group_add (group_mult h k) m)`;;
+
+(*PARAMETRIC
+new_constant
+  ("group_elgamal_encrypt",
+   `:group -> group -> group -> num -> group # group`);;
+*)
+
+export_thm group_elgamal_encrypt_def;;
+
+(*PARAMETRIC
+let group_elgamal_encrypt_def = new_axiom
+  `!g h m k.
+     group_elgamal_encrypt g h m k =
+     (group_mult g k, group_add (group_mult h k) m)`;;
+*)
+
+let group_elgamal_decrypt_def = new_definition
+  `!x a b.
+     group_elgamal_decrypt x (a,b) =
+     group_add (group_neg (group_mult a x)) b`;;
+
+(*PARAMETRIC
+new_constant
+  ("group_elgamal_decrypt",
+   `:num -> group # group -> group`);;
+*)
+
+export_thm group_elgamal_decrypt_def;;
+
+(*PARAMETRIC
+let group_elgamal_decrypt_def = new_axiom
+  `!x a b.
+     group_elgamal_decrypt x (a,b) =
+     group_add (group_neg (group_mult a x)) b`;;
+*)
+
+logfile "group-elgamal-thm";;
+
+(*PARAMETRIC
+(* group-elgamal-thm *)
+*)
+
+let group_elgamal_correctness = prove
+  (`!g h m k x.
+      (h = group_mult g x) ==>
+      (group_elgamal_decrypt x (group_elgamal_encrypt g h m k) = m)`,
+   REPEAT GEN_TAC THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC
+     [group_elgamal_encrypt_def; group_elgamal_decrypt_def;
+      group_mult_mult] THEN
+   CONV_TAC (LAND_CONV (RAND_CONV (ONCE_REWRITE_CONV [MULT_SYM]))) THEN
+   MATCH_ACCEPT_TAC group_add_left_neg');;
+
+(*PARAMETRIC
+let group_elgamal_correctness = new_axiom
+   `!g h m k x.
+      (h = group_mult g x) ==>
+      (group_elgamal_decrypt x (group_elgamal_encrypt g h m k) = m)`;;
 *)
 
 logfile_end ();;
