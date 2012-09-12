@@ -30,18 +30,25 @@ let (group_add_left_zero,group_add_left_neg,group_add_assoc) =
     `!x y z. group_add (group_add x y) z = group_add x (group_add y z)` in
   (th1,th2,th3);;
 
+logfile "group-def";;
+
+(*PARAMETRIC
+(* group-def *)
+*)
+
 let group_sub_def = new_definition
-  `!(x : group) (y : group).
-     group_sub x y = group_add x (group_neg y)`;;
+  `!(x : group) (y : group). group_sub x y = group_add x (group_neg y)`;;
 
-let (group_mult_zero,group_mult_suc) =
-    let def = new_recursive_definition num_RECURSION
-          `(!(x : group). group_mult x 0 = group_zero) /\
-           (!(x : group) n.
-              group_mult x (SUC n) = group_add x (group_mult x n))` in
-    CONJ_PAIR def;;
+(*PARAMETRIC
+new_constant ("group_sub", `:group -> group -> group`);;
+*)
 
-let group_mult_def = CONJ group_mult_zero group_mult_suc;;
+export_thm group_sub_def;;
+
+(*PARAMETRIC
+let group_sub_def = new_axiom
+  `!(x : group) (y : group). group_sub x y = group_add x (group_neg y)`;;
+*)
 
 logfile "group-thm";;
 
@@ -162,5 +169,41 @@ val group_lcancel = store_thm
    >> (match_tac (GSYM group_assoc) ++ METIS_TAC [group_inv_carrier])
    ++ RW_TAC std_ss []);
 ***)
+
+logfile "group-mult-def";;
+
+(*PARAMETRIC
+(* group-mult-def *)
+*)
+
+let (group_mult_zero,group_mult_suc) =
+    let def = new_recursive_definition num_RECURSION
+          `(!(x : group). group_mult x 0 = group_zero) /\
+           (!(x : group) n.
+              group_mult x (SUC n) = group_add x (group_mult x n))` in
+    CONJ_PAIR def;;
+
+let group_mult_def = CONJ group_mult_zero group_mult_suc;;
+
+(*PARAMETRIC
+new_constant ("group_mult", `:group -> num -> group`);;
+*)
+
+export_thm group_mult_zero;;
+export_thm group_mult_suc;;
+
+(*PARAMETRIC
+let group_mult_zero = new_axiom
+  `!x. group_mult x 0 = group_zero`;;
+
+let group_mult_suc = new_axiom
+  `!x n. group_mult x (SUC n) = group_add x (group_mult x n))`;;
+*)
+
+let group_mult_def = CONJ group_mult_zero group_mult_suc;;
+
+(*PARAMETRIC
+let group_mult_def = CONJ group_mult_zero group_mult_suc;;
+*)
 
 logfile_end ();;
