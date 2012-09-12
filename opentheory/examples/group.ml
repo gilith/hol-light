@@ -148,26 +148,162 @@ let group_add_right_zero = new_axiom
    `!x. group_add x group_zero = x`;;
 *)
 
+let group_add_left_cancel_imp = prove
+  (`!x y z. group_add x y = group_add x z ==> y = z`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `group_add group_zero y` THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC EQ_SYM THEN
+    MATCH_ACCEPT_TAC group_add_left_zero;
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `group_add group_zero z` THEN
+    CONJ_TAC THENL
+    [SUBST1_TAC (SYM (SPEC `x : group` group_add_left_neg)) THEN
+     ASM_REWRITE_TAC [group_add_assoc];
+     MATCH_ACCEPT_TAC group_add_left_zero]]);;
+
+(*PARAMETRIC
+let group_add_left_cancel_imp = new_axiom
+   `!x y z. group_add x y = group_add x z ==> y = z`;;
+*)
+
+let group_add_left_cancel = prove
+  (`!x y z. group_add x y = group_add x z <=> y = z`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC group_add_left_cancel_imp;
+    DISCH_THEN SUBST1_TAC THEN
+    REFL_TAC]);;
+
+(*PARAMETRIC
+let group_add_left_cancel = new_axiom
+   `!x y z. group_add x y = group_add x z <=> y = z`;;
+*)
+
+let group_add_left_cancel_zero_imp = prove
+  (`!x y. group_add x y = x ==> y = group_zero`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC group_add_left_cancel_imp THEN
+   EXISTS_TAC `x : group` THEN
+   ASM_REWRITE_TAC [group_add_right_zero]);;
+
+(*PARAMETRIC
+let group_add_left_cancel_zero_imp = new_axiom
+   `!x y. group_add x y = x ==> y = group_zero`;;
+*)
+
+let group_add_left_cancel_zero = prove
+  (`!x y. group_add x y = x <=> y = group_zero`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC group_add_left_cancel_zero_imp;
+    DISCH_THEN SUBST1_TAC THEN
+    MATCH_ACCEPT_TAC group_add_right_zero]);;
+
+(*PARAMETRIC
+let group_add_left_cancel_zero = new_axiom
+   `!x y. group_add x y = x <=> y = group_zero`;;
+*)
+
+let group_add_right_cancel_imp = prove
+  (`!x y z. group_add y x = group_add z x ==> y = z`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `group_add y group_zero` THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC EQ_SYM THEN
+    MATCH_ACCEPT_TAC group_add_right_zero;
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `group_add z group_zero` THEN
+    CONJ_TAC THENL
+    [SUBST1_TAC (SYM (SPEC `x : group` group_add_right_neg)) THEN
+     ASM_REWRITE_TAC [GSYM group_add_assoc];
+     MATCH_ACCEPT_TAC group_add_right_zero]]);;
+
+(*PARAMETRIC
+let group_add_right_cancel_imp = new_axiom
+   `!x y z. group_add y x = group_add z x ==> y = z`;;
+*)
+
+let group_add_right_cancel = prove
+  (`!x y z. group_add y x = group_add z x <=> y = z`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC group_add_right_cancel_imp;
+    DISCH_THEN SUBST1_TAC THEN
+    REFL_TAC]);;
+
+(*PARAMETRIC
+let group_add_right_cancel = new_axiom
+   `!x y z. group_add y x = group_add z x <=> y = z`;;
+*)
+
+let group_add_right_cancel_zero_imp = prove
+  (`!x y. group_add y x = x ==> y = group_zero`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC group_add_right_cancel_imp THEN
+   EXISTS_TAC `x : group` THEN
+   ASM_REWRITE_TAC [group_add_left_zero]);;
+
+(*PARAMETRIC
+let group_add_right_cancel_zero_imp = new_axiom
+   `!x y. group_add y x = x ==> y = group_zero`;;
+*)
+
+let group_add_right_cancel_zero = prove
+  (`!x y. group_add y x = x <=> y = group_zero`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC group_add_right_cancel_zero_imp;
+    DISCH_THEN SUBST1_TAC THEN
+    MATCH_ACCEPT_TAC group_add_left_zero]);;
+
+(*PARAMETRIC
+let group_add_right_cancel_zero = new_axiom
+   `!x y. group_add y x = x <=> y = group_zero`;;
+*)
+
+let group_neg_inj_imp = prove
+  (`!x y. group_neg x = group_neg y ==> x = y`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC group_add_left_cancel_imp THEN
+   EXISTS_TAC `group_neg x` THEN
+   REWRITE_TAC [group_add_left_neg] THEN
+   POP_ASSUM SUBST1_TAC THEN
+   REWRITE_TAC [group_add_left_neg]);;
+
+(*PARAMETRIC
+let group_neg_inj_imp = new_axiom
+   `!x y. group_neg x = group_neg y ==> x = y`;;
+*)
+
+let group_neg_inj = prove
+  (`!x y. group_neg x = group_neg y <=> x = y`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC group_neg_inj_imp;
+    DISCH_THEN SUBST1_TAC THEN
+    REFL_TAC]);;
+
+(*PARAMETRIC
+let group_neg_inj = new_axiom
+   `!x y. group_neg x = group_neg y <=> x = y`;;
+*)
+
+let group_neg_neg = prove
+  (`!x. group_neg (group_neg x) = x`,
+   GEN_TAC THEN
+   MATCH_MP_TAC group_add_left_cancel_imp THEN
+   EXISTS_TAC `group_neg x` THEN
+   REWRITE_TAC [group_add_left_neg; group_add_right_neg]);;
+
+(*PARAMETRIC
+let group_neg_neg = new_axiom
+   `!x. group_neg (group_neg x) = x`;;
+*)
+
 (***
-val group_lcancel = store_thm
-  ("group_lcancel",
-   ``!g :: Group. !x y z :: (g.carrier). (group_add x y = group_add x z) = (y = z)``,
-   RW_TAC resq_ss []
-   ++ REVERSE EQ_TAC >> RW_TAC std_ss []
-   ++ RW_TAC std_ss []
-   ++ Suff `group_add group_zero y = group_add group_zero z`
-   >> METIS_TAC [group_lid]
-   ++ Suff `group_add (group_add (group_neg x) x) y = group_add (group_add (group_neg x) x) z`
-   >> METIS_TAC [group_linv]
-   ++ MATCH_MP_TAC EQ_TRANS
-   ++ Q.EXISTS_TAC `group_add (group_neg x) (group_add x y)`
-   ++ CONJ_TAC
-   >> (match_tac group_assoc ++ METIS_TAC [group_inv_carrier])
-   ++ MATCH_MP_TAC EQ_TRANS
-   ++ Q.EXISTS_TAC `group_add (group_neg x) (group_add x z)`
-   ++ REVERSE CONJ_TAC
-   >> (match_tac (GSYM group_assoc) ++ METIS_TAC [group_inv_carrier])
-   ++ RW_TAC std_ss []);
 ***)
 
 logfile "group-mult-def";;
@@ -183,8 +319,6 @@ let (group_mult_zero,group_mult_suc) =
               group_mult x (SUC n) = group_add x (group_mult x n))` in
     CONJ_PAIR def;;
 
-let group_mult_def = CONJ group_mult_zero group_mult_suc;;
-
 (*PARAMETRIC
 new_constant ("group_mult", `:group -> num -> group`);;
 *)
@@ -197,13 +331,63 @@ let group_mult_zero = new_axiom
   `!x. group_mult x 0 = group_zero`;;
 
 let group_mult_suc = new_axiom
-  `!x n. group_mult x (SUC n) = group_add x (group_mult x n))`;;
+  `!x n. group_mult x (SUC n) = group_add x (group_mult x n)`;;
 *)
 
 let group_mult_def = CONJ group_mult_zero group_mult_suc;;
 
 (*PARAMETRIC
 let group_mult_def = CONJ group_mult_zero group_mult_suc;;
+*)
+
+logfile "group-mult-thm";;
+
+(*PARAMETRIC
+(* group-mult-thm *)
+*)
+
+let group_zero_mult = prove
+  (`!n. group_mult group_zero n = group_zero`,
+   INDUCT_TAC THENL
+   [REWRITE_TAC [group_mult_zero];
+    ASM_REWRITE_TAC [group_mult_suc; group_add_right_zero]]);;
+
+(*PARAMETRIC
+let group_zero_mult = new_axiom
+   `!n. group_mult group_zero n = group_zero`;;
+*)
+
+let group_mult_one = prove
+  (`!x. group_mult x 1 = x`,
+   REWRITE_TAC [ONE; group_mult_def; group_add_right_zero]);;
+
+(*PARAMETRIC
+let group_mult_one = new_axiom
+   `!x. group_mult x 1 = x`;;
+*)
+
+let group_mult_add = prove
+  (`!x m n.
+      group_mult x (m + n) = group_add (group_mult x m) (group_mult x n)`,
+   REPEAT GEN_TAC THEN
+   SPEC_TAC (`m : num`, `m : num`) THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [group_mult_zero; ZERO_ADD; group_add_left_zero];
+    ASM_REWRITE_TAC [group_mult_suc; group_add_assoc; SUC_ADD]]);;
+
+(*PARAMETRIC
+let group_mult_add = new_axiom
+   `!x m n.
+      group_mult x (m + n) = group_add (group_mult x m) (group_mult x n)`;;
+*)
+
+let group_mult_suc' = prove
+  (`!x n. group_mult x (SUC n) = group_add (group_mult x n) x`,
+   REWRITE_TAC [ADD1; group_mult_add; group_mult_one]);;
+
+(*PARAMETRIC
+let group_mult_suc' = new_axiom
+   `!x n. group_mult x (SUC n) = group_add (group_mult x n) x`;;
 *)
 
 logfile_end ();;
