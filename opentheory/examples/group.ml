@@ -541,6 +541,41 @@ let group_neg_sub = prove
    `!x y. group_neg (group_sub x y) = group_sub y x`;;
 *)
 
+let group_comm_left_sub = prove
+  (`!x y z.
+      group_add x z = group_add z x /\
+      group_add y z = group_add z y ==>
+      group_add (group_sub x y) z = group_add z (group_sub x y)`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [group_sub_def] THEN
+   MATCH_MP_TAC group_comm_left_add THEN
+   ASM_REWRITE_TAC [group_comm_left_neg]);;
+
+(*PARAMETRIC
+let group_comm_left_sub = new_axiom
+   `!x y z.
+      group_add x z = group_add z x /\
+      group_add y z = group_add z y ==>
+      group_add (group_sub x y) z = group_add z (group_sub x y)`;;
+*)
+
+let group_comm_right_sub = prove
+  (`!x y z.
+      group_add z x = group_add x z /\
+      group_add z y = group_add y z ==>
+      group_add z (group_sub x y) = group_add (group_sub x y) z`,
+   REPEAT GEN_TAC THEN
+   ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+   MATCH_ACCEPT_TAC group_comm_left_sub);;
+
+(*PARAMETRIC
+let group_comm_right_sub = new_axiom
+   `!x y z.
+      group_add z x = group_add x z /\
+      group_add z y = group_add y z ==>
+      group_add z (group_sub x y) = group_add (group_sub x y) z`;;
+*)
+
 logfile "group-mult-def";;
 
 (*PARAMETRIC
@@ -716,7 +751,6 @@ let group_mult_sub_def = CONJ group_mult_sub_nil group_mult_sub_cons;;
 let group_mult_sub_def = CONJ group_mult_sub_nil group_mult_sub_cons;;
 *)
 
-(***
 logfile "group-mult-sub-thm";;
 
 (*PARAMETRIC
@@ -725,12 +759,12 @@ logfile "group-mult-sub-thm";;
 
 let group_mult_sub_invariant = prove
   (`!x n d f p l.
-      (group_add x n = group_add n x) /\
-      (group_add x d = group_add d x) ==>
-      (group_mult_sub T n d (group_mult x f) (group_neg (group_mult x p)) l =
-       group_add (group_sub n d) (group_mult x (decode_fib_dest f p l))) /\
-      (group_mult_sub F n d (group_neg (group_mult x f)) (group_mult x p) l =
-       group_add (group_sub d n) (group_mult x (decode_fib_dest f p l)))`,
+      group_add x n = group_add n x /\
+      group_add x d = group_add d x ==>
+      group_mult_sub T n d (group_mult x f) (group_neg (group_mult x p)) l =
+      group_add (group_sub n d) (group_mult x (decode_fib_dest f p l)) /\
+      group_mult_sub F n d (group_neg (group_mult x f)) (group_mult x p) l =
+      group_add (group_sub d n) (group_mult x (decode_fib_dest f p l))`,
    REPEAT GEN_TAC THEN
    SPEC_TAC (`p : num`, `p : num`) THEN
    SPEC_TAC (`f : num`, `f : num`) THEN
@@ -744,6 +778,7 @@ let group_mult_sub_invariant = prove
        group_add_right_zero];
     ALL_TAC] THEN
    REPEAT GEN_TAC THEN
+   STRIP_TAC THEN
    ASM_REWRITE_TAC
      [group_mult_def; decode_fib_dest_def; group_mult_sub_def;
       LET_DEF; LET_END_DEF; ADD_CLAUSES] THEN
@@ -751,163 +786,107 @@ let group_mult_sub_invariant = prove
      [group_sub_def; group_neg_neg; GSYM group_neg_add;
       GSYM group_mult_add] THEN
    SUBST1_TAC (SPECL [`p : num`; `f : num`] ADD_SYM) THEN
-   ASM_REWRITE_TAC [] THEN
-   BOOL_CASES_TAC `h : bool` THEN
-   REWRITE_TAC
-     [group_mult_add; group_sub_def; group_add_assoc; group_add_left_cancel;
-      group_neg_add; group_neg_neg]
-
-; group_neg_add] THEN
-   REWRITE_TAC [group_sub_def; group_neg_neg; group_neg_add] THEN
-
-
-   SUBGOAL_THEN
-     `group_sub (group_neg (group_mult x p)) (group_mult x f) =
-      group_neg (group_mult x (f + p))` SUBST1_TAC THENL
-   [REWRITE_TAC [group_sub_def; GSYM group_neg_add; group_mult_add];
-    ALL_TAC] THEN
-   CONJ_TAC THENL
-
-
-   [REWRITE_TAC [
-SUBGOAL_THEN
-      `group_sub n (group_neg (group_mult x (f + p))) =
-       group_add n (group_mult x (f + p))` SUBST1_TAC THENL
-    [MP_TAC (SPECL [`group_neg (group_mult x (f + p))`; `n : group`] group_sub_inv) THEN
+   SPEC_TAC (`f + p : num`, `p : num`) THEN
+   GEN_TAC THEN
+   BOOL_CASES_TAC `h : bool` THENL
+   [REWRITE_TAC [] THEN
+    CONJ_TAC THENL
+    [FIRST_X_ASSUM
+       (MP_TAC o
+        SPECL
+          [`d : group`;
+           `group_add n (group_mult x p)`;
+           `p : num`;
+           `f : num`]) THEN
      ANTS_TAC THENL
-     [MATCH_MP_TAC group_neg_nonzero THEN
-      ASM_REWRITE_TAC [group_mult_eq_zero];
-      ALL_TAC] THEN
-     DISCH_THEN SUBST1_TAC THEN
-     REWRITE_TAC [group_add_left_cancel] THEN
-     DISJ2_TAC THEN
-     MATCH_MP_TAC group_neg_inv THEN
-     ASM_REWRITE_TAC [group_mult_eq_zero];
-     ALL_TAC] THEN
-    FIRST_X_ASSUM (MP_TAC o SPECL
-      [`d : group`; `if h then group_add n (group_mult x (f + p)) else n`;
-       `f + p : num`; `f : num`]) THEN
-    ANTS_TAC THENL
-    [ASM_REWRITE_TAC [] THEN
-     BOOL_CASES_TAC `h : bool` THEN
-     ASM_REWRITE_TAC [group_add_eq_zero; group_mult_eq_zero];
-     ALL_TAC] THEN
-    DISCH_THEN (SUBST1_TAC o CONJUNCT2) THEN
-    BOOL_CASES_TAC `h : bool` THENL
-    [ASM_REWRITE_TAC [] THEN
-     CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM group_mult_add])) THEN
-     REWRITE_TAC [GSYM group_add_assoc; group_add_right_cancel] THEN
-     DISJ2_TAC THEN
-     MATCH_MP_TAC group_add_right_cancel_imp THEN
-     EXISTS_TAC `d : group` THEN
-     ASM_REWRITE_TAC [] THEN
-     MATCH_MP_TAC EQ_TRANS THEN
-     EXISTS_TAC `group_add n (group_mult x (f + p))` THEN
-     CONJ_TAC THENL
-     [MATCH_MP_TAC group_sub_right_mult THEN
-      FIRST_ASSUM ACCEPT_TAC;
-      MATCH_MP_TAC EQ_SYM THEN
-      REWRITE_TAC [group_add_assoc] THEN
-      CONV_TAC (LAND_CONV (RAND_CONV (ONCE_REWRITE_CONV [group_add_comm]))) THEN
-      REWRITE_TAC [GSYM group_add_assoc; group_add_right_cancel] THEN
-      DISJ2_TAC THEN
-      MATCH_MP_TAC group_sub_right_mult THEN
-      FIRST_ASSUM ACCEPT_TAC];
-     ASM_REWRITE_TAC []];
-    SUBGOAL_THEN
-      `group_sub (group_mult x p) (group_neg (group_mult x f)) =
-       group_mult x (f + p)` SUBST1_TAC THENL
-    [MP_TAC (SPECL [`group_neg (group_mult x f)`; `group_mult x p`] group_sub_inv) THEN
-     ANTS_TAC THENL
-     [MATCH_MP_TAC group_neg_nonzero THEN
-      ASM_REWRITE_TAC [group_mult_eq_zero];
-      ALL_TAC] THEN
-     DISCH_THEN SUBST1_TAC THEN
-     ONCE_REWRITE_TAC [ADD_SYM] THEN
-     REWRITE_TAC [GSYM group_mult_add; group_add_left_cancel] THEN
-     DISJ2_TAC THEN
-     MATCH_MP_TAC group_neg_inv THEN
-     ASM_REWRITE_TAC [group_mult_eq_zero];
-     ALL_TAC] THEN
-    FIRST_X_ASSUM (MP_TAC o SPECL
-      [`d : group`; `if h then group_sub n (group_mult x (f + p)) else n`;
-       `f + p : num`; `f : num`]) THEN
-    ANTS_TAC THENL
-    [ASM_REWRITE_TAC [] THEN
-     BOOL_CASES_TAC `h : bool` THENL
      [ASM_REWRITE_TAC [] THEN
-      MATCH_MP_TAC group_sub_nonzero THEN
-      ASM_REWRITE_TAC [group_mult_eq_zero];
-      ASM_REWRITE_TAC []];
-     ALL_TAC] THEN
-    DISCH_THEN (SUBST1_TAC o CONJUNCT1) THEN
-    BOOL_CASES_TAC `h : bool` THENL
-    [ASM_REWRITE_TAC [] THEN
-     CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM group_mult_add])) THEN
-     REWRITE_TAC [GSYM group_add_assoc; group_add_right_cancel] THEN
-     DISJ2_TAC THEN
-     MATCH_MP_TAC group_add_left_cancel_imp THEN
-     EXISTS_TAC `group_sub n (group_mult x (f + p))` THEN
-     CONJ_TAC THENL
-     [MATCH_MP_TAC group_sub_nonzero THEN
-      ASM_REWRITE_TAC [group_mult_eq_zero];
-      ALL_TAC] THEN
-     MATCH_MP_TAC EQ_TRANS THEN
-     EXISTS_TAC `d : group` THEN
-     CONJ_TAC THENL
-     [MATCH_MP_TAC group_sub_left_mult THEN
-      MATCH_MP_TAC group_sub_nonzero THEN
-      ASM_REWRITE_TAC [group_mult_eq_zero];
-      ALL_TAC] THEN
-     MATCH_MP_TAC EQ_SYM THEN
-     MATCH_MP_TAC EQ_TRANS THEN
-     EXISTS_TAC `group_add n (group_sub d n)` THEN
-     CONJ_TAC THENL
-     [CONV_TAC (LAND_CONV (RAND_CONV (ONCE_REWRITE_CONV [group_add_comm]))) THEN
+      MATCH_MP_TAC group_comm_right_add THEN
+      ASM_REWRITE_TAC [] THEN
+      MATCH_MP_TAC group_comm_right_mult THEN
+      REFL_TAC;
+      DISCH_THEN (SUBST1_TAC o CONJUNCT2) THEN
+      REWRITE_TAC
+        [group_add_assoc; group_sub_def; group_mult_add;
+         group_add_left_cancel] THEN
       REWRITE_TAC [GSYM group_add_assoc; group_add_right_cancel] THEN
-      DISJ2_TAC THEN
-      MATCH_MP_TAC group_sub_right_mult THEN
-      ASM_REWRITE_TAC [group_mult_eq_zero];
-      MATCH_MP_TAC group_sub_left_mult THEN
+      MATCH_MP_TAC group_comm_right_neg_imp THEN
+      MATCH_MP_TAC group_comm_left_mult THEN
       FIRST_ASSUM ACCEPT_TAC];
-     ASM_REWRITE_TAC []]]);;
+     FIRST_X_ASSUM
+       (MP_TAC o
+        SPECL
+          [`d : group`;
+           `group_add n (group_neg (group_mult x p))`;
+           `p : num`;
+           `f : num`]) THEN
+     ANTS_TAC THENL
+     [ASM_REWRITE_TAC [] THEN
+      MATCH_MP_TAC group_comm_right_add THEN
+      ASM_REWRITE_TAC [group_comm_right_neg] THEN
+      MATCH_MP_TAC group_comm_right_mult THEN
+      REFL_TAC;
+      DISCH_THEN (SUBST1_TAC o CONJUNCT1) THEN
+      REWRITE_TAC
+        [group_add_assoc; group_sub_def; group_mult_add;
+         group_add_left_cancel; group_neg_add; group_neg_neg] THEN
+      REWRITE_TAC [GSYM group_add_assoc; group_add_right_cancel] THEN
+      MATCH_MP_TAC group_comm_right_neg_imp THEN
+      MATCH_MP_TAC group_comm_left_mult THEN
+      FIRST_ASSUM ACCEPT_TAC]];
+    REWRITE_TAC [] THEN
+    CONJ_TAC THENL
+    [FIRST_X_ASSUM
+       (MP_TAC o
+        SPECL
+          [`d : group`;
+           `n : group`;
+           `p : num`;
+           `f : num`]) THEN
+     ANTS_TAC THENL
+     [ASM_REWRITE_TAC [];
+      DISCH_THEN (SUBST1_TAC o CONJUNCT2) THEN
+      REWRITE_TAC [group_sub_def]];
+     FIRST_X_ASSUM
+       (MP_TAC o
+        SPECL
+          [`d : group`;
+           `n : group`;
+           `p : num`;
+           `f : num`]) THEN
+     ANTS_TAC THENL
+     [ASM_REWRITE_TAC [];
+      DISCH_THEN (SUBST1_TAC o CONJUNCT1) THEN
+      REWRITE_TAC [group_sub_def]]]]);;
 
 export_thm group_mult_sub_invariant;;
 
 (*PARAMETRIC
 let group_mult_sub_invariant = new_axiom
    `!x n d f p l.
-      ~(x = num_to_group 0) /\ ~(n = num_to_group 0) /\ ~(d = num_to_group 0) ==>
-      (group_mult_sub T n d (group_mult x f) (group_neg (group_mult x p)) l =
-       group_add (group_sub n d) (group_mult x (decode_fib_dest f p l))) /\
-      (group_mult_sub F n d (group_neg (group_mult x f)) (group_mult x p) l =
-       group_add (group_sub d n) (group_mult x (decode_fib_dest f p l)))`;;
+      group_add x n = group_add n x /\
+      group_add x d = group_add d x ==>
+      group_mult_sub T n d (group_mult x f) (group_neg (group_mult x p)) l =
+      group_add (group_sub n d) (group_mult x (decode_fib_dest f p l)) /\
+      group_mult_sub F n d (group_neg (group_mult x f)) (group_mult x p) l =
+      group_add (group_sub d n) (group_mult x (decode_fib_dest f p l))`;;
 *)
 
 let group_mult_sub = prove
   (`!x n.
       group_mult x n =
-      (if n = 0 then group_zero
-       else if x = num_to_group 0 then num_to_group 0
-       else group_mult_sub T (group_zero) (group_zero) x (group_zero)
-              (encode_fib n))`,
+      group_mult_sub T group_zero group_zero x group_zero (encode_fib n)`,
    REPEAT GEN_TAC THEN
-   COND_CASES_TAC THENL
-   [ASM_REWRITE_TAC [group_mult_def];
-    ALL_TAC] THEN
-   COND_CASES_TAC THENL
-   [ASM_REWRITE_TAC [group_mult_eq_zero];
-    ALL_TAC] THEN
    MP_TAC (SPECL [`x : group`; `group_zero`; `group_zero`; `1`; `0`;
                   `encode_fib n`] group_mult_sub_invariant) THEN
    ANTS_TAC THENL
-   [ASM_REWRITE_TAC [group_one_nonzero];
-    ALL_TAC] THEN
-   DISCH_THEN
-     (SUBST1_TAC o REWRITE_RULE [group_mult_def; group_neg_one; group_mult_one] o
-      CONJUNCT1) THEN
-   REWRITE_TAC
-     [group_sub_one; group_add_left_one; GSYM decode_fib_def; encode_decode_fib]);;
+   [REWRITE_TAC [group_comm_right_zero];
+    DISCH_THEN
+      (SUBST1_TAC o
+       REWRITE_RULE [group_mult_zero; group_mult_one; group_neg_zero] o
+       CONJUNCT1) THEN
+    REWRITE_TAC
+      [group_sub_refl; group_add_left_zero; GSYM decode_fib_def;
+       encode_decode_fib]]);;
 
 export_thm group_mult_sub;;
 
@@ -915,12 +894,8 @@ export_thm group_mult_sub;;
 let group_mult_sub = new_axiom
    `!x n.
       group_mult x n =
-      (if n = 0 then group_zero
-       else if x = num_to_group 0 then num_to_group 0
-       else group_mult_sub T (group_zero) (group_zero) x (group_zero)
-              (encode_fib n))`;;
+      group_mult_sub T group_zero group_zero x group_zero (encode_fib n)`;;
 *)
-***)
 
 logfile "group-elgamal-def";;
 
