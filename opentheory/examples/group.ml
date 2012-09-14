@@ -636,6 +636,15 @@ let group_mult_one = new_axiom
    `!x. group_mult x 1 = x`;;
 *)
 
+let group_mult_two = prove
+  (`!x. group_mult x 2 = group_add x x`,
+   REWRITE_TAC [TWO; group_mult_suc; group_mult_one]);;
+
+(*PARAMETRIC
+let group_mult_two = new_axiom
+   `!x. group_mult x 2 = group_add x x`;;
+*)
+
 let group_mult_add = prove
   (`!x m n.
       group_mult x (m + n) = group_add (group_mult x m) (group_mult x n)`,
@@ -661,7 +670,7 @@ let group_mult_suc' = new_axiom
 *)
 
 let group_mult_mult = prove
-  (`!x m n. group_mult (group_mult x m) n = group_mult x (m * n)`,
+  (`!x m n. group_mult x (m * n) = group_mult (group_mult x m) n`,
    GEN_TAC THEN
    GEN_TAC THEN
    INDUCT_TAC THENL
@@ -670,7 +679,7 @@ let group_mult_mult = prove
 
 (*PARAMETRIC
 let group_mult_mult = new_axiom
-   `!x m n. group_mult (group_mult x m) n = group_mult x (m * n)`;;
+   `!x m n. group_mult x (m * n) = group_mult (group_mult x m) n`;;
 *)
 
 let group_comm_left_mult = prove
@@ -705,6 +714,99 @@ let group_comm_right_mult = new_axiom
    `!x n y.
       group_add y x = group_add x y ==>
       group_add y (group_mult x n) = group_add (group_mult x n) y`;;
+
+(***
+logfile "group-mult-add-def";;
+
+(*PARAMETRIC
+(* group-mult-add-def *)
+*)
+
+let (group_mult_add_nil,group_mult_add_cons) =
+  let def = new_recursive_definition list_RECURSION
+    `(!z x. group_mult_add z x [] = z) /\
+     (!z x h t.
+        group_mult_add z x (CONS h t) =
+        group_mult_add (if h then group_add z x else z) (group_add x x) t)` in
+  CONJ_PAIR def;;
+
+(*PARAMETRIC
+new_constant ("group_mult_add", `:group -> group -> bool list -> group`);;
+*)
+
+export_thm group_mult_add_nil;;
+export_thm group_mult_add_cons;;
+
+(*PARAMETRIC
+let group_mult_add_nil = new_axiom
+    `!z x. group_mult_add z x [] = z`;;
+
+let group_mult_add_cons = new_axiom
+     `!z x h t.
+        group_mult_add z x (CONS h t) =
+        group_mult_add (if h then group_add z x else z) (group_add x x) t`;;
+*)
+
+let group_mult_add_def = CONJ group_mult_add_nil group_mult_add_cons;;
+
+(*PARAMETRIC
+let group_mult_add_def = CONJ group_mult_add_nil group_mult_add_cons;;
+*)
+
+logfile "group-mult-add-thm";;
+
+(*PARAMETRIC
+(* group-mult-add-thm *)
+*)
+
+let group_mult_add_invariant = prove
+  (`!z x l.
+      group_mult_add z x l =
+      group_add z (group_mult x (bits_to_num l))`,
+   REPEAT GEN_TAC THEN
+   SPEC_TAC (`x : group`, `x : group`) THEN
+   SPEC_TAC (`z : group`, `z : group`) THEN
+   SPEC_TAC (`l : bool list`, `l : bool list`) THEN
+   LIST_INDUCT_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    REWRITE_TAC
+      [bits_to_num_def; group_mult_add_def; group_mult_def;
+       group_add_right_zero];
+    ALL_TAC] THEN
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [group_mult_add_def; bits_to_num_def] THEN
+   FIRST_X_ASSUM (CONV_TAC o LAND_CONV o REWR_CONV) THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   REWRITE_TAC
+     [group_mult_add; group_mult_mult; group_mult_two; GSYM group_add_assoc;
+      group_add_right_cancel] THEN
+   BOOL_CASES_TAC `h : bool` THEN
+   REWRITE_TAC [group_mult_one; group_mult_zero; group_add_right_zero]);;
+
+export_thm group_mult_add_invariant;;
+
+(*PARAMETRIC
+let group_mult_add_invariant = new_axiom
+   `!z x l.
+      group_mult_add z x l =
+      group_add z (group_mult x (bits_to_num l))`;;
+*)
+
+let group_mult_add = prove
+  (`!x n.
+      group_mult x n =
+      group_mult_add group_zero x (num_to_bits n)`,
+   REWRITE_TAC
+     [group_mult_add_invariant; group_add_left_zero; num_to_bits_to_num]);;
+
+export_thm group_mult_add;;
+
+(*PARAMETRIC
+let group_mult_add = new_axiom
+   `!x n.
+      group_mult x n =
+      group_mult_add group_zero x (num_to_bits n)`;;
+*)
 
 logfile "group-mult-sub-def";;
 
@@ -957,7 +1059,7 @@ let group_elgamal_correctness = prove
    DISCH_THEN SUBST1_TAC THEN
    REWRITE_TAC
      [group_elgamal_encrypt_def; group_elgamal_decrypt_def;
-      group_mult_mult] THEN
+      GSYM group_mult_mult] THEN
    CONV_TAC (LAND_CONV (RAND_CONV (ONCE_REWRITE_CONV [MULT_SYM]))) THEN
    MATCH_ACCEPT_TAC group_add_left_neg');;
 
