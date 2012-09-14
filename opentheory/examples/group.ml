@@ -714,8 +714,8 @@ let group_comm_right_mult = new_axiom
    `!x n y.
       group_add y x = group_add x y ==>
       group_add y (group_mult x n) = group_add (group_mult x n) y`;;
+*)
 
-(***
 logfile "group-mult-add-def";;
 
 (*PARAMETRIC
@@ -792,17 +792,17 @@ let group_mult_add_invariant = new_axiom
       group_add z (group_mult x (bits_to_num l))`;;
 *)
 
-let group_mult_add = prove
+let group_mult_add_correct = prove
   (`!x n.
       group_mult x n =
       group_mult_add group_zero x (num_to_bits n)`,
    REWRITE_TAC
      [group_mult_add_invariant; group_add_left_zero; num_to_bits_to_num]);;
 
-export_thm group_mult_add;;
+export_thm group_mult_add_correct;;
 
 (*PARAMETRIC
-let group_mult_add = new_axiom
+let group_mult_add_correct = new_axiom
    `!x n.
       group_mult x n =
       group_mult_add group_zero x (num_to_bits n)`;;
@@ -973,7 +973,7 @@ let group_mult_sub_invariant = new_axiom
       group_add (group_sub d n) (group_mult x (decode_fib_dest f p l))`;;
 *)
 
-let group_mult_sub = prove
+let group_mult_sub_correct = prove
   (`!x n.
       group_mult x n =
       group_mult_sub T group_zero group_zero x group_zero (encode_fib n)`,
@@ -990,10 +990,10 @@ let group_mult_sub = prove
       [group_sub_refl; group_add_left_zero; GSYM decode_fib_def;
        encode_decode_fib]]);;
 
-export_thm group_mult_sub;;
+export_thm group_mult_sub_correct;;
 
 (*PARAMETRIC
-let group_mult_sub = new_axiom
+let group_mult_sub_correct = new_axiom
    `!x n.
       group_mult x n =
       group_mult_sub T group_zero group_zero x group_zero (encode_fib n)`;;
@@ -1051,7 +1051,7 @@ logfile "group-elgamal-thm";;
 (* group-elgamal-thm *)
 *)
 
-let group_elgamal_correctness = prove
+let group_elgamal_correct = prove
   (`!g h m k x.
       (h = group_mult g x) ==>
       (group_elgamal_decrypt x (group_elgamal_encrypt g h m k) = m)`,
@@ -1063,8 +1063,10 @@ let group_elgamal_correctness = prove
    CONV_TAC (LAND_CONV (RAND_CONV (ONCE_REWRITE_CONV [MULT_SYM]))) THEN
    MATCH_ACCEPT_TAC group_add_left_neg');;
 
+export_thm group_elgamal_correct;;
+
 (*PARAMETRIC
-let group_elgamal_correctness = new_axiom
+let group_elgamal_correct = new_axiom
    `!g h m k x.
       (h = group_mult g x) ==>
       (group_elgamal_decrypt x (group_elgamal_encrypt g h m k) = m)`;;
