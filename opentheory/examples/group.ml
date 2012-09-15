@@ -424,30 +424,17 @@ let group_comm_left_neg_imp = new_axiom
       group_add (group_neg x) y = group_add y (group_neg x)`;;
 *)
 
-let group_comm_left_neg_imp' = prove
-  (`!x y.
-      group_add (group_neg x) y = group_add y (group_neg x) ==>
-      group_add x y = group_add y x`,
-   REPEAT STRIP_TAC THEN
-   CONV_TAC (LAND_CONV (LAND_CONV (REWR_CONV (GSYM group_neg_neg)))) THEN
-   CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV (GSYM group_neg_neg)))) THEN
-   MATCH_MP_TAC group_comm_left_neg_imp THEN
-   FIRST_ASSUM ACCEPT_TAC);;
-
-(*PARAMETRIC
-let group_comm_left_neg_imp' = new_axiom
-   `!x y.
-      group_add (group_neg x) y = group_add y (group_neg x) ==>
-      group_add x y = group_add y x`;;
-*)
-
 let group_comm_left_neg = prove
   (`!x y.
       group_add (group_neg x) y = group_add y (group_neg x) <=>
       group_add x y = group_add y x`,
    REPEAT GEN_TAC THEN
    EQ_TAC THENL
-   [MATCH_ACCEPT_TAC group_comm_left_neg_imp';
+   [STRIP_TAC THEN
+    CONV_TAC (LAND_CONV (LAND_CONV (REWR_CONV (GSYM group_neg_neg)))) THEN
+    CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV (GSYM group_neg_neg)))) THEN
+    MATCH_MP_TAC group_comm_left_neg_imp THEN
+    FIRST_ASSUM ACCEPT_TAC;
     MATCH_ACCEPT_TAC group_comm_left_neg_imp]);;
 
 (*PARAMETRIC
@@ -471,22 +458,6 @@ let group_comm_right_neg_imp = new_axiom
    `!x y.
       group_add y x = group_add x y ==>
       group_add y (group_neg x) = group_add (group_neg x) y`;;
-*)
-
-let group_comm_right_neg_imp' = prove
-  (`!x y.
-      group_add y (group_neg x) = group_add (group_neg x) y ==>
-      group_add y x = group_add x y`,
-   REPEAT GEN_TAC THEN
-   CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
-   CONV_TAC (RAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
-   MATCH_ACCEPT_TAC group_comm_left_neg_imp');;
-
-(*PARAMETRIC
-let group_comm_right_neg_imp' = new_axiom
-   `!x y.
-      group_add y (group_neg x) = group_add (group_neg x) y ==>
-      group_add y x = group_add x y`;;
 *)
 
 let group_comm_right_neg = prove
