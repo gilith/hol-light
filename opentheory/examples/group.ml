@@ -10,12 +10,16 @@
 
 logfile "group-witness";;
 
-let (group_add_left_zero,group_add_left_neg,group_add_assoc) =
+let (group_add_left_zero,
+     group_add_left_neg,
+     group_add_assoc,
+     group_comm,
+     group_finite) =
   let tybij = define_newtype ("x","group") ("u",`:1`) in
   let _ = new_definition `group_zero = mk_group one` in
+  let _ = new_definition `!x : group. group_neg x = group_zero` in
   let _ = new_definition
     `!(x : group) (y : group). group_add x y = group_zero` in
-  let _ = new_definition `!x : group. group_neg x = group_zero` in
   let th = prove
     (`!x : group. x = group_zero`,
      GEN_TAC THEN
@@ -28,7 +32,14 @@ let (group_add_left_zero,group_add_left_neg,group_add_assoc) =
   let th2 = prove_eq `!x. group_add (group_neg x) x = group_zero` in
   let th3 = prove_eq
     `!x y z. group_add (group_add x y) z = group_add x (group_add y z)` in
-  (th1,th2,th3);;
+  let th4 = prove_eq `!x y. group_add x y = group_add y x` in
+  let th5 = prove
+    (`FINITE (UNIV : group set)`,
+     SUBGOAL_THEN `UNIV = group_zero INSERT EMPTY` SUBST1_TAC THENL
+     [REWRITE_TAC [EXTENSION; IN_UNIV; IN_INSERT; NOT_IN_EMPTY] THEN
+      ACCEPT_TAC th;
+      MATCH_ACCEPT_TAC FINITE_SING]) in
+  (th1,th2,th3,th4,th5);;
 
 logfile "group-def";;
 
@@ -64,7 +75,7 @@ let group_add_left_neg' = prove
 export_thm group_add_left_neg';;
 
 (*PARAMETRIC
-let group_add_left_neg' = prove
+let group_add_left_neg' = new_axiom
    `!x y. group_add (group_neg x) (group_add x y) = y`;;
 *)
 
@@ -136,7 +147,7 @@ let group_add_right_neg' = prove
 export_thm group_add_right_neg';;
 
 (*PARAMETRIC
-let group_add_right_neg' = prove
+let group_add_right_neg' = new_axiom
    `!x y. group_add x (group_add (group_neg x) y) = y`;;
 *)
 
@@ -490,7 +501,7 @@ let group_sub_right_zero = prove
    REWRITE_TAC [group_sub_def; group_neg_zero; group_add_right_zero]);;
 
 (*PARAMETRIC
-let group_sub_right_zero = prove
+let group_sub_right_zero = new_axiom
    `!x. group_sub x group_zero = x`;;
 *)
 
@@ -508,7 +519,7 @@ let group_neg_sub = prove
    REWRITE_TAC [group_sub_def; group_neg_add; group_neg_neg]);;
 
 (*PARAMETRIC
-let group_neg_sub = prove
+let group_neg_sub = new_axiom
    `!x y. group_neg (group_sub x y) = group_sub y x`;;
 *)
 
@@ -1041,6 +1052,25 @@ let group_elgamal_correct = new_axiom
    `!g h m k x.
       (h = group_mult g x) ==>
       (group_elgamal_decrypt x (group_elgamal_encrypt g h m k) = m)`;;
+*)
+
+logfile "group-abelian";;
+
+(*PARAMETRIC
+(* group-abelian *)
+*)
+
+let group_add_comm' = prove
+  (`!x y z. group_add x (group_add y z) = group_add y (group_add x z)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [GSYM group_add_assoc; group_add_right_cancel] THEN
+   MATCH_ACCEPT_TAC group_add_comm);;
+
+export_thm group_add_comm';;
+
+(*PARAMETRIC
+let group_add_comm' = new_axiom
+   `!x y z. group_add x (group_add y z) = group_add y (group_add x z)`;;
 *)
 
 logfile_end ();;

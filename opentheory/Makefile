@@ -18,6 +18,8 @@ default: example-theories
 
 THEORY_INTERPRETATIONS = \
   examples/byte-word.ml \
+  examples/field-group.ml \
+  examples/field-star-group.ml \
   examples/gfp-modular.ml \
   examples/word-modular.ml \
   examples/word10-word.ml \
@@ -26,6 +28,12 @@ THEORY_INTERPRETATIONS = \
 
 examples/byte-word.ml: examples/word.ml examples/word-modular.ml
 	scripts/instantiate -r "word/byte" $< > $@
+
+examples/field-group.ml: examples/group.ml
+	scripts/instantiate -r "group/field" $< > $@
+
+examples/field-star-group.ml: examples/group.ml
+	scripts/instantiate -r "group/field_star" $< > $@
 
 examples/gfp-modular.ml: examples/modular.ml
 	scripts/instantiate -r "modulus/oddprime:modular/gfp" -x $< > $@
