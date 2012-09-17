@@ -981,10 +981,10 @@ let group_mult_sub_correct = new_axiom
       group_mult_sub T group_zero group_zero x group_zero (encode_fib n)`;;
 *)
 
-logfile "group-elgamal-def";;
+logfile "group-crypt-def";;
 
 (*PARAMETRIC
-(* group-elgamal-def *)
+(* group-crypt-def *)
 *)
 
 let group_elgamal_encrypt_def = new_definition
@@ -1027,10 +1027,10 @@ let group_elgamal_decrypt_def = new_axiom
      group_add (group_neg (group_mult a x)) b`;;
 *)
 
-logfile "group-elgamal-thm";;
+logfile "group-crypt-thm";;
 
 (*PARAMETRIC
-(* group-elgamal-thm *)
+(* group-crypt-thm *)
 *)
 
 let group_elgamal_correct = prove
