@@ -6,7 +6,9 @@
 (* field *)
 *)
 
-(* The theory parameters *)
+(*PARAMETRIC
+(* field-witness: the theory parameters *)
+*)
 
 logfile "field-witness";;
 
@@ -94,20 +96,40 @@ let (field_add_left_zero,
 
 loads "opentheory/examples/field-group.ml";;
 
+(*PARAMETRIC
+(* field-thm: consequences of the field axioms and the additive group *)
+*)
+
+logfile "field-thm";;
+
+(***
+let field_mult_left_zero = prove
+  (`!x. field_mult field_zero x = field_zero`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    ONCE_REWRITE_TAC [GSYM mk_dest_field_star] THEN
+    ASM_REWRITE_TAC [];
+    DISCH_THEN SUBST1_TAC THEN
+    REFL_TAC]);;
+
+export_thm field_mult_left_zero;;
+***)
+
 logfile "field-star-def";;
 
 (*PARAMETRIC
 (* field-star-def *)
 *)
 
-let field_star_exists = prove
-  (`?x. ~(x = field_zero)`,
-   EXISTS_TAC `field_one` THEN
-   ACCEPT_TAC field_one_nonzero);;
-
 let (mk_dest_field_star,dest_mk_field_star) =
+  let exists = prove
+    (`?x. ~(x = field_zero)`,
+     EXISTS_TAC `field_one` THEN
+     ACCEPT_TAC field_one_nonzero) in
   let tybij =
-    new_type_definition "field_star" ("mk_field_star","dest_field_star") field_star_exists in
+    new_type_definition "field_star"
+     ("mk_field_star","dest_field_star") exists in
   CONJ_PAIR tybij;;
 
 export_thm mk_dest_field_star;;

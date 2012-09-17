@@ -226,7 +226,7 @@ let field_star_mult_sub_correct = new_axiom
       field_star_mult x n =
       field_star_mult_sub T field_star_zero field_star_zero x field_star_zero (encode_fib n)`;;
 
-(* field_star-elgamal-def *)
+(* field_star-crypt-def *)
 
 new_constant
   ("field_star_elgamal_encrypt",
@@ -246,7 +246,7 @@ let field_star_elgamal_decrypt_def = new_axiom
      field_star_elgamal_decrypt x (a,b) =
      field_star_add (field_star_neg (field_star_mult a x)) b`;;
 
-(* field_star-elgamal-thm *)
+(* field_star-crypt-thm *)
 
 let field_star_elgamal_correct = new_axiom
    `!g h m k x.

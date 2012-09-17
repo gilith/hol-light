@@ -226,7 +226,7 @@ let field_mult_sub_correct = new_axiom
       field_mult x n =
       field_mult_sub T field_zero field_zero x field_zero (encode_fib n)`;;
 
-(* field-elgamal-def *)
+(* field-crypt-def *)
 
 new_constant
   ("field_elgamal_encrypt",
@@ -246,7 +246,7 @@ let field_elgamal_decrypt_def = new_axiom
      field_elgamal_decrypt x (a,b) =
      field_add (field_neg (field_mult a x)) b`;;
 
-(* field-elgamal-thm *)
+(* field-crypt-thm *)
 
 let field_elgamal_correct = new_axiom
    `!g h m k x.
