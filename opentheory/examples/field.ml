@@ -65,10 +65,6 @@ let (field_add_left_zero,
   let mult_assoc = field_prove
     `!x y z. field_mult (field_mult x y) z = field_mult x (field_mult y z)` in
   let mult_comm = field_prove `!x y. field_mult x y = field_mult y x` in
-  let mult_left_zero = field_prove
-    `!x. field_mult field_zero x = field_zero` in
-  let mult_left_zero = field_prove
-    `!x. field_mult field_zero x = field_zero` in
   let add_left_distrib = field_prove
     `!x y z.
        field_mult x (field_add y z) =
@@ -102,19 +98,95 @@ loads "opentheory/examples/field-group.ml";;
 
 logfile "field-thm";;
 
-(***
+let field_add_right_distrib = prove
+  (`!x y z.
+      field_mult (field_add y z) x =
+      field_add (field_mult y x) (field_mult z x)`,
+   ONCE_REWRITE_TAC [field_mult_comm] THEN
+   ACCEPT_TAC field_add_left_distrib);;
+
+export_thm field_add_right_distrib;;
+
 let field_mult_left_zero = prove
   (`!x. field_mult field_zero x = field_zero`,
-   REPEAT GEN_TAC THEN
-   EQ_TAC THENL
-   [STRIP_TAC THEN
-    ONCE_REWRITE_TAC [GSYM mk_dest_field_star] THEN
-    ASM_REWRITE_TAC [];
-    DISCH_THEN SUBST1_TAC THEN
-    REFL_TAC]);;
+   GEN_TAC THEN
+   MATCH_MP_TAC field_add_left_cancel_zero_imp THEN
+   EXISTS_TAC `field_mult field_zero x` THEN
+   REWRITE_TAC [GSYM field_add_right_distrib; field_add_left_zero]);;
 
 export_thm field_mult_left_zero;;
-***)
+
+let field_mult_right_zero = prove
+  (`!x. field_mult x field_zero = field_zero`,
+   ONCE_REWRITE_TAC [field_mult_comm] THEN
+   ACCEPT_TAC field_mult_left_zero);;
+
+export_thm field_mult_left_zero;;
+
+let field_mult_left_neg = prove
+  (`!x y. field_mult (field_neg x) y = field_neg (field_mult x y)`,
+   REPEAT GEN_TAC THEN
+   MATCH_MP_TAC field_add_left_cancel_imp THEN
+   EXISTS_TAC `field_mult x y` THEN
+   REWRITE_TAC
+     [field_add_right_neg; GSYM field_add_right_distrib;
+      field_mult_left_zero]);;
+
+export_thm field_mult_left_neg;;
+
+let field_mult_right_neg = prove
+  (`!x y. field_mult y (field_neg x) = field_neg (field_mult y x)`,
+   ONCE_REWRITE_TAC [field_mult_comm] THEN
+   ACCEPT_TAC field_mult_left_neg);;
+
+export_thm field_mult_right_neg;;
+
+let field_sub_left_distrib = prove
+  (`!x y z.
+      field_mult x (field_sub y z) =
+      field_sub (field_mult x y) (field_mult x z)`,
+   REWRITE_TAC [field_sub_def; field_add_left_distrib; field_mult_right_neg]);;
+
+export_thm field_sub_left_distrib;;
+
+let field_sub_right_distrib = prove
+  (`!x y z.
+      field_mult (field_sub y z) x =
+      field_sub (field_mult y x) (field_mult z x)`,
+   ONCE_REWRITE_TAC [field_mult_comm] THEN
+   ACCEPT_TAC field_sub_left_distrib);;
+
+export_thm field_sub_right_distrib;;
+
+let field_inv_nonzero = prove
+  (`!x. ~(x = field_zero) ==> ~(field_inv x = field_zero)`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPEC `x : field` field_mult_left_inv) THEN
+   ASM_REWRITE_TAC [field_mult_left_zero; field_one_nonzero]);;
+
+export_thm field_inv_nonzero;;
+
+let field_mult_nonzero = prove
+  (`!x y.
+      ~(x = field_zero) /\ ~(y = field_zero) ==>
+      ~(field_mult x y = field_zero)`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`field_inv x`; `x : field`; `y : field`]
+        field_mult_assoc) THEN
+   MP_TAC (SPEC `x : field` field_mult_left_inv) THEN
+   ANTS_TAC THENL
+   [FIRST_ASSUM ACCEPT_TAC;
+    DISCH_THEN SUBST1_TAC THEN
+    ASM_REWRITE_TAC [field_mult_right_zero] THEN
+    MP_TAC (SPEC `y : field` field_mult_left_one) THEN
+    ANTS_TAC THENL
+    [FIRST_ASSUM ACCEPT_TAC;
+     DISCH_THEN SUBST1_TAC THEN
+     FIRST_ASSUM ACCEPT_TAC]]);;
+
+export_thm field_mult_nonzero;;
 
 logfile "field-star-def";;
 
@@ -179,13 +251,12 @@ let dest_field_star_zero = prove
 
 export_thm dest_field_star_zero;;
 
-(***   
 let dest_field_star_neg = prove
   (`!x. dest_field_star (field_star_neg x) = field_inv (dest_field_star x)`,
    GEN_TAC THEN
    REWRITE_TAC [field_star_neg_def; GSYM dest_mk_field_star] THEN
-   ***
-   ACCEPT_TAC field_one_nonzero);;
+   MATCH_MP_TAC field_inv_nonzero THEN
+   REWRITE_TAC [field_star_tybij]);;
 
 export_thm dest_field_star_neg;;
 
@@ -194,32 +265,55 @@ let dest_field_star_add = prove
       dest_field_star (field_star_add x y) =
       field_mult (dest_field_star x) (dest_field_star y)`,
    REPEAT GEN_TAC THEN
-   REWRITE_TAC [field_star_add_def; GSYM dest_mk_field_star]
-   REPEAT GEN_TAC THEN
-   EQ_TAC THENL
-   [STRIP_TAC THEN
-    ONCE_REWRITE_TAC [GSYM mk_dest_field_star] THEN
-    ASM_REWRITE_TAC [];
-    DISCH_THEN SUBST1_TAC THEN
-    REFL_TAC]);;
+   REWRITE_TAC [field_star_add_def; GSYM dest_mk_field_star] THEN
+   MATCH_MP_TAC field_mult_nonzero THEN
+   REWRITE_TAC [field_star_tybij]);;
 
 export_thm dest_field_star_add;;
 
 let field_star_add_left_zero = prove
   (`!x. field_star_add field_star_zero x = x`,
    GEN_TAC THEN
-   ONCE_REWRITE_TAC [GSYM dest_field_star_inj]
-   REWRITE_TAC [field_star_add_def; field_star_zero_def]
+   ONCE_REWRITE_TAC [GSYM dest_field_star_inj] THEN
+   REWRITE_TAC [dest_field_star_add; dest_field_star_zero] THEN
+   MATCH_MP_TAC field_mult_left_one THEN
+   REWRITE_TAC [field_star_tybij]);;
 
-val field_mult_left_inv : thm =
-  |- !x. ~(x = field_zero) ==> field_mult (field_inv x) x = field_one
-val field_mult_assoc : thm =
-  |- !x y z. field_mult (field_mult x y) z = field_mult x (field_mult y z)
-val field_mult_comm : thm = |- !x y. field_mult x y = field_mult y x
+export_thm field_star_add_left_zero;;
+
+let field_star_add_left_neg = prove
+  (`!x. field_star_add (field_star_neg x) x = field_star_zero`,
+   GEN_TAC THEN
+   ONCE_REWRITE_TAC [GSYM dest_field_star_inj] THEN
+   REWRITE_TAC
+     [dest_field_star_add; dest_field_star_neg; dest_field_star_zero] THEN
+   MATCH_MP_TAC field_mult_left_inv THEN
+   REWRITE_TAC [field_star_tybij]);;
+
+export_thm field_star_add_left_neg;;
+
+let field_star_add_assoc = prove
+  (`!x y z.
+      field_star_add (field_star_add x y) z =
+      field_star_add x (field_star_add y z)`,
+   REPEAT GEN_TAC THEN
+   ONCE_REWRITE_TAC [GSYM dest_field_star_inj] THEN
+   REWRITE_TAC [dest_field_star_add] THEN
+   MATCH_ACCEPT_TAC field_mult_assoc);;
+
+export_thm field_star_add_assoc;;
+
+let field_star_add_comm = prove
+  (`!x y. field_star_add x y = field_star_add y x`,
+   REPEAT GEN_TAC THEN
+   ONCE_REWRITE_TAC [GSYM dest_field_star_inj] THEN
+   REWRITE_TAC [dest_field_star_add] THEN
+   MATCH_ACCEPT_TAC field_mult_comm);;
+
+export_thm field_star_add_comm;;
 
 (* Parametric theory instantiation: multiplicative group *)
 
 loads "opentheory/examples/field-star-group.ml";;
-***)
 
 logfile_end ();;

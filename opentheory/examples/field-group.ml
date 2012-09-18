@@ -124,107 +124,107 @@ let field_comm_right_sub = new_axiom
 
 (* field-mult-def *)
 
-new_constant ("field_mult", `:field -> num -> field`);;
+new_constant ("field_scale", `:field -> num -> field`);;
 
-let field_mult_zero = new_axiom
-  `!x. field_mult x 0 = field_zero`;;
+let field_scale_zero = new_axiom
+  `!x. field_scale x 0 = field_zero`;;
 
-let field_mult_suc = new_axiom
-  `!x n. field_mult x (SUC n) = field_add x (field_mult x n)`;;
+let field_scale_suc = new_axiom
+  `!x n. field_scale x (SUC n) = field_add x (field_scale x n)`;;
 
-let field_mult_def = CONJ field_mult_zero field_mult_suc;;
+let field_scale_def = CONJ field_scale_zero field_scale_suc;;
 
 (* field-mult-thm *)
 
-let field_zero_mult = new_axiom
-   `!n. field_mult field_zero n = field_zero`;;
+let field_zero_scale = new_axiom
+   `!n. field_scale field_zero n = field_zero`;;
 
-let field_mult_one = new_axiom
-   `!x. field_mult x 1 = x`;;
+let field_scale_one = new_axiom
+   `!x. field_scale x 1 = x`;;
 
-let field_mult_two = new_axiom
-   `!x. field_mult x 2 = field_add x x`;;
+let field_scale_two = new_axiom
+   `!x. field_scale x 2 = field_add x x`;;
 
-let field_mult_add = new_axiom
+let field_scale_add = new_axiom
    `!x m n.
-      field_mult x (m + n) = field_add (field_mult x m) (field_mult x n)`;;
+      field_scale x (m + n) = field_add (field_scale x m) (field_scale x n)`;;
 
-let field_mult_suc' = new_axiom
-   `!x n. field_mult x (SUC n) = field_add (field_mult x n) x`;;
+let field_scale_suc' = new_axiom
+   `!x n. field_scale x (SUC n) = field_add (field_scale x n) x`;;
 
-let field_mult_mult = new_axiom
-   `!x m n. field_mult x (m * n) = field_mult (field_mult x m) n`;;
+let field_scale_scale = new_axiom
+   `!x m n. field_scale x (m * n) = field_scale (field_scale x m) n`;;
 
-let field_comm_left_mult = new_axiom
+let field_comm_left_scale = new_axiom
    `!x n y.
       field_add x y = field_add y x ==>
-      field_add (field_mult x n) y = field_add y (field_mult x n)`;;
+      field_add (field_scale x n) y = field_add y (field_scale x n)`;;
 
-let field_comm_right_mult = new_axiom
+let field_comm_right_scale = new_axiom
    `!x n y.
       field_add y x = field_add x y ==>
-      field_add y (field_mult x n) = field_add (field_mult x n) y`;;
+      field_add y (field_scale x n) = field_add (field_scale x n) y`;;
 
 (* field-mult-add-def *)
 
-new_constant ("field_mult_add", `:field -> field -> bool list -> field`);;
+new_constant ("field_scale_add", `:field -> field -> bool list -> field`);;
 
-let field_mult_add_nil = new_axiom
-    `!z x. field_mult_add z x [] = z`;;
+let field_scale_add_nil = new_axiom
+    `!z x. field_scale_add z x [] = z`;;
 
-let field_mult_add_cons = new_axiom
+let field_scale_add_cons = new_axiom
      `!z x h t.
-        field_mult_add z x (CONS h t) =
-        field_mult_add (if h then field_add z x else z) (field_add x x) t`;;
+        field_scale_add z x (CONS h t) =
+        field_scale_add (if h then field_add z x else z) (field_add x x) t`;;
 
-let field_mult_add_def = CONJ field_mult_add_nil field_mult_add_cons;;
+let field_scale_add_def = CONJ field_scale_add_nil field_scale_add_cons;;
 
 (* field-mult-add-thm *)
 
-let field_mult_add_invariant = new_axiom
+let field_scale_add_invariant = new_axiom
    `!z x l.
-      field_mult_add z x l =
-      field_add z (field_mult x (bits_to_num l))`;;
+      field_scale_add z x l =
+      field_add z (field_scale x (bits_to_num l))`;;
 
-let field_mult_add_correct = new_axiom
+let field_scale_add_correct = new_axiom
    `!x n.
-      field_mult x n =
-      field_mult_add field_zero x (num_to_bits n)`;;
+      field_scale x n =
+      field_scale_add field_zero x (num_to_bits n)`;;
 
 (* field-mult-sub-def *)
 
 new_constant
-  ("field_mult_sub",
+  ("field_scale_sub",
    `:bool -> field -> field -> field -> field -> bool list -> field`);;
 
-let field_mult_sub_nil = new_axiom
+let field_scale_sub_nil = new_axiom
     `(!b n d f p.
-        field_mult_sub b n d f p [] =
+        field_scale_sub b n d f p [] =
         if b then field_sub n d else field_sub d n)`;;
 
-let field_mult_sub_cons = new_axiom
+let field_scale_sub_cons = new_axiom
     `(!b n d f p h t.
-        field_mult_sub b n d f p (CONS h t) =
+        field_scale_sub b n d f p (CONS h t) =
         let s = field_sub p f in
-        field_mult_sub (~b) d (if h then field_sub n s else n) s f t)`;;
+        field_scale_sub (~b) d (if h then field_sub n s else n) s f t)`;;
 
-let field_mult_sub_def = CONJ field_mult_sub_nil field_mult_sub_cons;;
+let field_scale_sub_def = CONJ field_scale_sub_nil field_scale_sub_cons;;
 
 (* field-mult-sub-thm *)
 
-let field_mult_sub_invariant = new_axiom
+let field_scale_sub_invariant = new_axiom
    `!x n d f p l.
       field_add x n = field_add n x /\
       field_add x d = field_add d x ==>
-      field_mult_sub T n d (field_mult x f) (field_neg (field_mult x p)) l =
-      field_add (field_sub n d) (field_mult x (decode_fib_dest f p l)) /\
-      field_mult_sub F n d (field_neg (field_mult x f)) (field_mult x p) l =
-      field_add (field_sub d n) (field_mult x (decode_fib_dest f p l))`;;
+      field_scale_sub T n d (field_scale x f) (field_neg (field_scale x p)) l =
+      field_add (field_sub n d) (field_scale x (decode_fib_dest f p l)) /\
+      field_scale_sub F n d (field_neg (field_scale x f)) (field_scale x p) l =
+      field_add (field_sub d n) (field_scale x (decode_fib_dest f p l))`;;
 
-let field_mult_sub_correct = new_axiom
+let field_scale_sub_correct = new_axiom
    `!x n.
-      field_mult x n =
-      field_mult_sub T field_zero field_zero x field_zero (encode_fib n)`;;
+      field_scale x n =
+      field_scale_sub T field_zero field_zero x field_zero (encode_fib n)`;;
 
 (* field-crypt-def *)
 
@@ -235,7 +235,7 @@ new_constant
 let field_elgamal_encrypt_def = new_axiom
   `!g h m k.
      field_elgamal_encrypt g h m k =
-     (field_mult g k, field_add (field_mult h k) m)`;;
+     (field_scale g k, field_add (field_scale h k) m)`;;
 
 new_constant
   ("field_elgamal_decrypt",
@@ -244,13 +244,13 @@ new_constant
 let field_elgamal_decrypt_def = new_axiom
   `!x a b.
      field_elgamal_decrypt x (a,b) =
-     field_add (field_neg (field_mult a x)) b`;;
+     field_add (field_neg (field_scale a x)) b`;;
 
 (* field-crypt-thm *)
 
 let field_elgamal_correct = new_axiom
    `!g h m k x.
-      (h = field_mult g x) ==>
+      (h = field_scale g x) ==>
       (field_elgamal_decrypt x (field_elgamal_encrypt g h m k) = m)`;;
 
 (* field-abelian *)
