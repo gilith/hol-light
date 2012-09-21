@@ -316,4 +316,40 @@ export_thm field_star_add_comm;;
 
 loads "opentheory/examples/field-star-group.ml";;
 
+logfile "field-mult-def";;
+
+(*PARAMETRIC
+(* field-mult-def *)
+*)
+
+let field_div_def =
+  let def = new_definition
+    `!x y.
+       field_div x y =
+       dest_field_star (field_star_sub (mk_field_star x) (mk_field_star y))` in
+  prove
+  (`!x y.
+      ~(y = field_zero) ==>
+      field_div x y =
+      dest_field_star (field_star_sub (mk_field_star x) (mk_field_star y))`,
+   REWRITE_TAC [def]);;
+
+export_thm field_div_def;;
+
+let field_exp_def = new_definition
+  `!x n.
+     field_exp x n =
+     if x = field_zero then field_zero else
+     dest_field_star (field_star_scale (mk_field_star x) n)`;;
+
+export_thm field_exp_def;;
+
+logfile "field-mult-thm";;
+
+(*PARAMETRIC
+(* field-mult-thm *)
+*)
+
+
+
 logfile_end ();;
