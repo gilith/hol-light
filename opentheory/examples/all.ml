@@ -53,8 +53,10 @@ loads "opentheory/examples/fibonacci.ml";;
 (* Abstract algebra.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 loads "opentheory/examples/group.ml";;
+
+(***
+loads "opentheory/examples/ring.ml";;
 
 loads "opentheory/examples/field.ml";;
 ***)
