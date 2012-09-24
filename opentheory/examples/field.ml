@@ -88,6 +88,47 @@ let (field_add_left_zero,
    mult_left_one, mult_left_inv, mult_assoc, mult_comm,
    add_left_distrib, one_nonzero, finite);;
 
+(*PARAMETRIC
+(* field-def: field characteristic *)
+*)
+
+logfile "field-def";;
+
+let (num_to_field_zero,num_to_field_suc) =
+    let def = new_recursive_definition num_RECURSION
+          `(num_to_field 0 = field_zero) /\
+           (!n. num_to_field (SUC n) = field_add field_one (num_to_field n))` in
+    CONJ_PAIR def;;
+
+(*PARAMETRIC
+new_constant ("num_to_field", `:num -> field`);;
+*)
+
+export_thm num_to_field_zero;;
+export_thm num_to_field_suc;;
+
+(*PARAMETRIC
+let num_to_field_zero = new_axiom
+  `num_to_field 0 = field_zero`;;
+
+let num_to_field_suc = new_axiom
+  `!n. num_to_field (SUC n) = field_add field_one (num_to_field n)`;;
+*)
+
+let num_to_field_def = CONJ num_to_field_zero num_to_field_suc;;
+
+(*PARAMETRIC
+let num_to_field_def = CONJ num_to_field_zero num_to_field_suc;;
+*)
+
+let field_char_def = new_definition
+  `field_char =
+   if (?n. ~(n = 0) /\ num_to_field n = field_zero) then
+     (minimal n. ~(n = 0) /\ num_to_field n = field_zero)
+   else 0`;;
+
+export_thm field_char_def;;
+
 (* Parametric theory instantiation: additive group *)
 
 loads "opentheory/examples/field-group.ml";;
@@ -232,6 +273,14 @@ logfile "field-star-thm";;
 (* field-star-thm *)
 *)
 
+let dest_field_star_nonzero = prove
+  (`!x. ~(dest_field_star x = field_zero)`,
+   GEN_TAC THEN
+   REWRITE_TAC [dest_mk_field_star] THEN
+   REWRITE_TAC [mk_dest_field_star]);;
+
+export_thm dest_field_star_nonzero;;
+
 let dest_field_star_inj = prove
   (`!x y. dest_field_star x = dest_field_star y <=> x = y`,
    REPEAT GEN_TAC THEN
@@ -243,6 +292,16 @@ let dest_field_star_inj = prove
     REFL_TAC]);;
 
 export_thm dest_field_star_inj;;
+
+let dest_field_star_induct = prove
+  (`!p. p field_zero /\ (!x. p (dest_field_star x)) ==> !x. p x`,
+   REPEAT STRIP_TAC THEN
+   ASM_CASES_TAC `x = field_zero` THENL
+   [ASM_REWRITE_TAC [];
+    POP_ASSUM (SUBST1_TAC o SYM o REWRITE_RULE [dest_mk_field_star]) THEN
+    FIRST_ASSUM MATCH_ACCEPT_TAC]);;
+
+export_thm dest_field_star_induct;;
 
 let dest_field_star_zero = prove
   (`dest_field_star field_star_zero = field_one`,
@@ -350,6 +409,279 @@ logfile "field-mult-thm";;
 (* field-mult-thm *)
 *)
 
+(***
+let field_star_tactic =
+    let basic =
+        [dest_field_star_nonzero;
+         GSYM dest_field_star_zero;
+         GSYM dest_field_star_neg;
+         GSYM dest_field_star_add;
+         dest_field_star_inj;
+         field_mult_left_zero;
+         field_mult_right_zero] in
+    fun custom ->
+      let ths = custom @ basic in
+      REPEAT
+        (MATCH_MP_TAC dest_field_star_induct THEN
+         CONJ_TAC THENL
+         [REWRITE_TAC ths;
+          GEN_TAC THEN
+          REWRITE_TAC ths]);;
 
+let field_mult_left_inv' = prove
+  (`!x y.
+      ~(x = field_zero) ==>
+      field_mult (field_inv x) (field_mult x y) = y`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_left_neg'
+   MATCH_MP_TAC dest_field_star_induct
+   
+
+let field_mult_right_inv = new_axiom
+   `!x. field_mult x (field_inv x) = field_star_zero`;;
+
+let field_mult_right_inv' = new_axiom
+   `!x y. field_mult x (field_mult (field_inv x) y) = y`;;
+
+let field_mult_right_zero = new_axiom
+   `!x. field_mult x field_star_zero = x`;;
+
+let field_star_comm_left_zero = new_axiom
+   `!x. field_mult field_star_zero x = field_mult x field_star_zero`;;
+
+let field_star_comm_right_zero = new_axiom
+   `!x. field_mult x field_star_zero = field_mult field_star_zero x`;;
+
+let field_mult_left_cancel_imp = new_axiom
+   `!x y z. field_mult x y = field_mult x z ==> y = z`;;
+
+let field_mult_left_cancel = new_axiom
+   `!x y z. field_mult x y = field_mult x z <=> y = z`;;
+
+let field_mult_left_cancel_zero_imp = new_axiom
+   `!x y. field_mult x y = x ==> y = field_star_zero`;;
+
+let field_mult_left_cancel_zero = new_axiom
+   `!x y. field_mult x y = x <=> y = field_star_zero`;;
+
+let field_mult_right_cancel_imp = new_axiom
+   `!x y z. field_mult y x = field_mult z x ==> y = z`;;
+
+let field_mult_right_cancel = new_axiom
+   `!x y z. field_mult y x = field_mult z x <=> y = z`;;
+
+let field_mult_right_cancel_zero_imp = new_axiom
+   `!x y. field_mult y x = x ==> y = field_star_zero`;;
+
+let field_mult_right_cancel_zero = new_axiom
+   `!x y. field_mult y x = x <=> y = field_star_zero`;;
+
+let field_star_comm_left_mult = new_axiom
+   `!x y z.
+      field_mult x z = field_mult z x /\
+      field_mult y z = field_mult z y ==>
+      field_mult (field_mult x y) z = field_mult z (field_mult x y)`;;
+
+let field_star_comm_right_mult = new_axiom
+   `!x y z.
+      field_mult z x = field_mult x z /\
+      field_mult z y = field_mult y z ==>
+      field_mult z (field_mult x y) = field_mult (field_mult x y) z`;;
+
+let field_inv_inj_imp = new_axiom
+   `!x y. field_inv x = field_inv y ==> x = y`;;
+
+let field_inv_inj = new_axiom
+   `!x y. field_inv x = field_inv y <=> x = y`;;
+
+let field_inv_inv = new_axiom
+   `!x. field_inv (field_inv x) = x`;;
+
+let field_inv_zero = new_axiom
+   `field_inv field_star_zero = field_star_zero`;;
+
+let field_inv_mult = new_axiom
+   `!x y. field_inv (field_mult x y) = field_mult (field_inv y) (field_inv x)`;;
+
+let field_star_comm_left_inv_imp = new_axiom
+   `!x y.
+      field_mult x y = field_mult y x ==>
+      field_mult (field_inv x) y = field_mult y (field_inv x)`;;
+
+let field_star_comm_left_inv = new_axiom
+   `!x y.
+      field_mult (field_inv x) y = field_mult y (field_inv x) <=>
+      field_mult x y = field_mult y x`;;
+
+let field_star_comm_right_inv_imp = new_axiom
+   `!x y.
+      field_mult y x = field_mult x y ==>
+      field_mult y (field_inv x) = field_mult (field_inv x) y`;;
+
+let field_star_comm_right_inv = new_axiom
+   `!x y.
+      field_mult y (field_inv x) = field_mult (field_inv x) y <=>
+      field_mult y x = field_mult x y`;;
+
+let field_div_left_zero = new_axiom
+   `!x. field_div field_star_zero x = field_inv x`;;
+
+let field_div_right_zero = new_axiom
+   `!x. field_div x field_star_zero = x`;;
+
+let field_div_refl = new_axiom
+   `!x. field_div x x = field_star_zero`;;
+
+let field_inv_sub = new_axiom
+   `!x y. field_inv (field_div x y) = field_div y x`;;
+
+let field_star_comm_left_sub = new_axiom
+   `!x y z.
+      field_mult x z = field_mult z x /\
+      field_mult y z = field_mult z y ==>
+      field_mult (field_div x y) z = field_mult z (field_div x y)`;;
+
+let field_star_comm_right_sub = new_axiom
+   `!x y z.
+      field_mult z x = field_mult x z /\
+      field_mult z y = field_mult y z ==>
+      field_mult z (field_div x y) = field_mult (field_div x y) z`;;
+
+(* field_star-mult-def *)
+
+new_constant ("field_exp", `:field_star -> num -> field_star`);;
+
+let field_exp_zero = new_axiom
+  `!x. field_exp x 0 = field_star_zero`;;
+
+let field_exp_suc = new_axiom
+  `!x n. field_exp x (SUC n) = field_mult x (field_exp x n)`;;
+
+let field_exp_def = CONJ field_exp_zero field_exp_suc;;
+
+(* field_star-mult-thm *)
+
+let field_star_zero_exp = new_axiom
+   `!n. field_exp field_star_zero n = field_star_zero`;;
+
+let field_exp_one = new_axiom
+   `!x. field_exp x 1 = x`;;
+
+let field_exp_two = new_axiom
+   `!x. field_exp x 2 = field_mult x x`;;
+
+let field_exp_mult = new_axiom
+   `!x m n.
+      field_exp x (m + n) = field_mult (field_exp x m) (field_exp x n)`;;
+
+let field_exp_suc' = new_axiom
+   `!x n. field_exp x (SUC n) = field_mult (field_exp x n) x`;;
+
+let field_exp_exp = new_axiom
+   `!x m n. field_exp x (m * n) = field_exp (field_exp x m) n`;;
+
+let field_star_comm_left_exp = new_axiom
+   `!x n y.
+      field_mult x y = field_mult y x ==>
+      field_mult (field_exp x n) y = field_mult y (field_exp x n)`;;
+
+let field_star_comm_right_exp = new_axiom
+   `!x n y.
+      field_mult y x = field_mult x y ==>
+      field_mult y (field_exp x n) = field_mult (field_exp x n) y`;;
+
+(* field_star-mult-mult-def *)
+
+new_constant ("field_exp_mult", `:field_star -> field_star -> bool list -> field_star`);;
+
+let field_exp_mult_nil = new_axiom
+    `!z x. field_exp_mult z x [] = z`;;
+
+let field_exp_mult_cons = new_axiom
+     `!z x h t.
+        field_exp_mult z x (CONS h t) =
+        field_exp_mult (if h then field_mult z x else z) (field_mult x x) t`;;
+
+let field_exp_mult_def = CONJ field_exp_mult_nil field_exp_mult_cons;;
+
+(* field_star-mult-mult-thm *)
+
+let field_exp_mult_invariant = new_axiom
+   `!z x l.
+      field_exp_mult z x l =
+      field_mult z (field_exp x (bits_to_num l))`;;
+
+let field_exp_mult_correct = new_axiom
+   `!x n.
+      field_exp x n =
+      field_exp_mult field_star_zero x (num_to_bits n)`;;
+
+(* field_star-mult-sub-def *)
+
+new_constant
+  ("field_exp_sub",
+   `:bool -> field_star -> field_star -> field_star -> field_star -> bool list -> field_star`);;
+
+let field_exp_sub_nil = new_axiom
+    `(!b n d f p.
+        field_exp_sub b n d f p [] =
+        if b then field_div n d else field_div d n)`;;
+
+let field_exp_sub_cons = new_axiom
+    `(!b n d f p h t.
+        field_exp_sub b n d f p (CONS h t) =
+        let s = field_div p f in
+        field_exp_sub (~b) d (if h then field_div n s else n) s f t)`;;
+
+let field_exp_sub_def = CONJ field_exp_sub_nil field_exp_sub_cons;;
+
+(* field_star-mult-sub-thm *)
+
+let field_exp_sub_invariant = new_axiom
+   `!x n d f p l.
+      field_mult x n = field_mult n x /\
+      field_mult x d = field_mult d x ==>
+      field_exp_sub T n d (field_exp x f) (field_inv (field_exp x p)) l =
+      field_mult (field_div n d) (field_exp x (decode_fib_dest f p l)) /\
+      field_exp_sub F n d (field_inv (field_exp x f)) (field_exp x p) l =
+      field_mult (field_div d n) (field_exp x (decode_fib_dest f p l))`;;
+
+let field_exp_sub_correct = new_axiom
+   `!x n.
+      field_exp x n =
+      field_exp_sub T field_star_zero field_star_zero x field_star_zero (encode_fib n)`;;
+
+(* field_star-crypt-def *)
+
+new_constant
+  ("field_star_elgamal_encrypt",
+   `:field_star -> field_star -> field_star -> num -> field_star # field_star`);;
+
+let field_star_elgamal_encrypt_def = new_axiom
+  `!g h m k.
+     field_star_elgamal_encrypt g h m k =
+     (field_exp g k, field_mult (field_exp h k) m)`;;
+
+new_constant
+  ("field_star_elgamal_decrypt",
+   `:num -> field_star # field_star -> field_star`);;
+
+let field_star_elgamal_decrypt_def = new_axiom
+  `!x a b.
+     field_star_elgamal_decrypt x (a,b) =
+     field_mult (field_inv (field_exp a x)) b`;;
+
+(* field_star-crypt-thm *)
+
+let field_star_elgamal_correct = new_axiom
+   `!g h m k x.
+      (h = field_exp g x) ==>
+      (field_star_elgamal_decrypt x (field_star_elgamal_encrypt g h m k) = m)`;;
+
+(* field_star-abelian *)
+
+let field_mult_comm' = new_axiom
+   `!x y z. field_mult x (field_mult y z) = field_mult y (field_mult x z)`;;
+***)
 
 logfile_end ();;
