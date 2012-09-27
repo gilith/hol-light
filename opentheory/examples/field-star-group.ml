@@ -69,11 +69,11 @@ let field_star_neg_inj_imp = new_axiom
 let field_star_neg_inj = new_axiom
    `!x y. field_star_neg x = field_star_neg y <=> x = y`;;
 
-let field_star_neg_neg = new_axiom
-   `!x. field_star_neg (field_star_neg x) = x`;;
-
 let field_star_neg_zero = new_axiom
    `field_star_neg field_star_zero = field_star_zero`;;
+
+let field_star_neg_neg = new_axiom
+   `!x. field_star_neg (field_star_neg x) = x`;;
 
 let field_star_neg_add = new_axiom
    `!x y. field_star_neg (field_star_add x y) = field_star_add (field_star_neg y) (field_star_neg x)`;;

@@ -88,6 +88,18 @@ let (field_add_left_zero,
    mult_left_one, mult_left_inv, mult_assoc, mult_comm,
    add_left_distrib, one_nonzero, finite);;
 
+export_thm field_add_left_zero;;
+export_thm field_add_left_neg;;
+export_thm field_add_assoc;;
+export_thm field_add_comm;;
+export_thm field_mult_left_one;;
+export_thm field_mult_left_inv;;
+export_thm field_mult_assoc;;
+export_thm field_mult_comm;;
+export_thm field_add_left_distrib;;
+export_thm field_one_nonzero;;
+export_thm field_finite;;
+
 (*PARAMETRIC
 (* field-def: field characteristic *)
 *)
@@ -385,11 +397,13 @@ let field_div_def =
   let def = new_definition
     `!x y.
        field_div x y =
+       if x = field_zero then field_zero else
        dest_field_star (field_star_sub (mk_field_star x) (mk_field_star y))` in
   prove
   (`!x y.
       ~(y = field_zero) ==>
       field_div x y =
+       if x = field_zero then field_zero else
       dest_field_star (field_star_sub (mk_field_star x) (mk_field_star y))`,
    REWRITE_TAC [def]);;
 
@@ -409,139 +423,238 @@ logfile "field-mult-thm";;
 (* field-mult-thm *)
 *)
 
-(***
+let field_div_left_zero = prove
+  (`!x.
+      ~(x = field_zero) ==>
+      field_div field_zero x = field_zero`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPECL [`field_zero`; `x : field`] field_div_def) THEN
+   ANTS_TAC THENL
+   [FIRST_ASSUM ACCEPT_TAC;
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC []]);;
+
+export_thm field_div_left_zero;;
+
+let field_div_left_zero' = prove
+  (`!x. field_div field_zero (dest_field_star x) = field_zero`,
+   GEN_TAC THEN
+   MATCH_MP_TAC field_div_left_zero THEN
+   MATCH_ACCEPT_TAC dest_field_star_nonzero);;
+
+export_thm field_div_left_zero';;
+
+let dest_field_star_sub = prove
+  (`!x y.
+      dest_field_star (field_star_sub x y) =
+      field_div (dest_field_star x) (dest_field_star y)`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPECL [`dest_field_star x`; `dest_field_star y`] field_div_def) THEN
+   ANTS_TAC THENL
+   [MATCH_ACCEPT_TAC dest_field_star_nonzero;
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [dest_field_star_nonzero; mk_dest_field_star]]);;
+
+export_thm dest_field_star_sub;;
+
 let field_star_tactic =
     let basic =
         [dest_field_star_nonzero;
          GSYM dest_field_star_zero;
          GSYM dest_field_star_neg;
          GSYM dest_field_star_add;
+         GSYM dest_field_star_sub;
+         field_div_left_zero';
          dest_field_star_inj;
          field_mult_left_zero;
          field_mult_right_zero] in
     fun custom ->
       let ths = custom @ basic in
-      REPEAT
-        (MATCH_MP_TAC dest_field_star_induct THEN
-         CONJ_TAC THENL
-         [REWRITE_TAC ths;
-          GEN_TAC THEN
-          REWRITE_TAC ths]);;
+      let rewr = REWRITE_TAC ths in
+      let induct =
+          MATCH_MP_TAC dest_field_star_induct THEN
+          CONJ_TAC THENL [rewr; GEN_TAC THEN rewr] in
+      (induct THEN REPEAT induct) ORELSE rewr;;
 
 let field_mult_left_inv' = prove
   (`!x y.
       ~(x = field_zero) ==>
       field_mult (field_inv x) (field_mult x y) = y`,
    field_star_tactic [] THEN
-   MATCH_ACCEPT_TAC field_star_add_left_neg'
-   MATCH_MP_TAC dest_field_star_induct
-   
+   MATCH_ACCEPT_TAC field_star_add_left_neg');;
 
-let field_mult_right_inv = new_axiom
-   `!x. field_mult x (field_inv x) = field_star_zero`;;
+export_thm field_mult_left_inv';;
 
-let field_mult_right_inv' = new_axiom
-   `!x y. field_mult x (field_mult (field_inv x) y) = y`;;
+let field_mult_right_inv = prove
+  (`!x.
+      ~(x = field_zero) ==>
+      field_mult x (field_inv x) = field_one`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_right_neg);;
 
-let field_mult_right_zero = new_axiom
-   `!x. field_mult x field_star_zero = x`;;
+export_thm field_mult_right_inv;;
 
-let field_star_comm_left_zero = new_axiom
-   `!x. field_mult field_star_zero x = field_mult x field_star_zero`;;
+let field_mult_right_inv' = prove
+  (`!x y.
+      ~(x = field_zero) ==>
+      field_mult x (field_mult (field_inv x) y) = y`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_right_neg');;
 
-let field_star_comm_right_zero = new_axiom
-   `!x. field_mult x field_star_zero = field_mult field_star_zero x`;;
+export_thm field_mult_right_inv';;
 
-let field_mult_left_cancel_imp = new_axiom
-   `!x y z. field_mult x y = field_mult x z ==> y = z`;;
+let field_mult_right_one = prove
+  (`!x. field_mult x field_one = x`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_right_zero);;
 
-let field_mult_left_cancel = new_axiom
-   `!x y z. field_mult x y = field_mult x z <=> y = z`;;
+export_thm field_mult_right_one;;
 
-let field_mult_left_cancel_zero_imp = new_axiom
-   `!x y. field_mult x y = x ==> y = field_star_zero`;;
+let field_mult_left_cancel_imp = prove
+  (`!x y z.
+      ~(x = field_zero) /\ field_mult x y = field_mult x z ==>
+      y = z`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_left_cancel_imp);;
 
-let field_mult_left_cancel_zero = new_axiom
-   `!x y. field_mult x y = x <=> y = field_star_zero`;;
+export_thm field_mult_left_cancel_imp;;
 
-let field_mult_right_cancel_imp = new_axiom
-   `!x y z. field_mult y x = field_mult z x ==> y = z`;;
+let field_mult_left_cancel = prove
+  (`!x y z.
+      field_mult x y = field_mult x z <=>
+      x = field_zero \/ y = z`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_left_cancel);;
 
-let field_mult_right_cancel = new_axiom
-   `!x y z. field_mult y x = field_mult z x <=> y = z`;;
+export_thm field_mult_left_cancel;;
 
-let field_mult_right_cancel_zero_imp = new_axiom
-   `!x y. field_mult y x = x ==> y = field_star_zero`;;
+let field_mult_left_cancel_one_imp = prove
+  (`!x y.
+      ~(x = field_zero) /\ field_mult x y = x ==>
+      y = field_one`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_left_cancel_zero_imp);;
 
-let field_mult_right_cancel_zero = new_axiom
-   `!x y. field_mult y x = x <=> y = field_star_zero`;;
+export_thm field_mult_left_cancel_one_imp;;
 
-let field_star_comm_left_mult = new_axiom
-   `!x y z.
-      field_mult x z = field_mult z x /\
-      field_mult y z = field_mult z y ==>
-      field_mult (field_mult x y) z = field_mult z (field_mult x y)`;;
+let field_mult_left_cancel_one = prove
+  (`!x y.
+      field_mult x y = x <=>
+      x = field_zero \/ y = field_one`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_left_cancel_zero);;
 
-let field_star_comm_right_mult = new_axiom
-   `!x y z.
-      field_mult z x = field_mult x z /\
-      field_mult z y = field_mult y z ==>
-      field_mult z (field_mult x y) = field_mult (field_mult x y) z`;;
+export_thm field_mult_left_cancel_one;;
 
-let field_inv_inj_imp = new_axiom
-   `!x y. field_inv x = field_inv y ==> x = y`;;
+let field_mult_right_cancel_imp = prove
+  (`!x y z.
+      ~(x = field_zero) /\ field_mult y x = field_mult z x ==>
+      y = z`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_right_cancel_imp);;
 
-let field_inv_inj = new_axiom
-   `!x y. field_inv x = field_inv y <=> x = y`;;
+export_thm field_mult_right_cancel_imp;;
 
-let field_inv_inv = new_axiom
-   `!x. field_inv (field_inv x) = x`;;
+let field_mult_right_cancel = prove
+  (`!x y z.
+      field_mult y x = field_mult z x <=>
+      x = field_zero \/ y = z`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_right_cancel);;
 
-let field_inv_zero = new_axiom
-   `field_inv field_star_zero = field_star_zero`;;
+export_thm field_mult_right_cancel;;
 
-let field_inv_mult = new_axiom
-   `!x y. field_inv (field_mult x y) = field_mult (field_inv y) (field_inv x)`;;
+let field_mult_right_cancel_one_imp = prove
+  (`!x y.
+     ~(x = field_zero) /\ field_mult y x = x ==>
+     y = field_one`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_right_cancel_zero_imp);;
 
-let field_star_comm_left_inv_imp = new_axiom
-   `!x y.
-      field_mult x y = field_mult y x ==>
-      field_mult (field_inv x) y = field_mult y (field_inv x)`;;
+export_thm field_mult_right_cancel_one_imp;;
 
-let field_star_comm_left_inv = new_axiom
-   `!x y.
-      field_mult (field_inv x) y = field_mult y (field_inv x) <=>
-      field_mult x y = field_mult y x`;;
+let field_mult_right_cancel_one = prove
+  (`!x y. field_mult y x = x <=> x = field_zero \/ y = field_one`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_add_right_cancel_zero);;
 
-let field_star_comm_right_inv_imp = new_axiom
-   `!x y.
-      field_mult y x = field_mult x y ==>
-      field_mult y (field_inv x) = field_mult (field_inv x) y`;;
+export_thm field_mult_right_cancel_one;;
 
-let field_star_comm_right_inv = new_axiom
-   `!x y.
-      field_mult y (field_inv x) = field_mult (field_inv x) y <=>
-      field_mult y x = field_mult x y`;;
+let field_inv_inj_imp = prove
+  (`!x y.
+      ~(x = field_zero) /\
+      ~(y = field_zero) /\
+      field_inv x = field_inv y ==>
+      x = y`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_neg_inj_imp);;
 
-let field_div_left_zero = new_axiom
-   `!x. field_div field_star_zero x = field_inv x`;;
+export_thm field_inv_inj_imp;;
 
-let field_div_right_zero = new_axiom
-   `!x. field_div x field_star_zero = x`;;
+let field_inv_inj = prove
+  (`!x y.
+      (x = field_zero <=> y = field_zero) /\
+      field_inv x = field_inv y <=>
+      x = y`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_neg_inj);;
 
+export_thm field_inv_inj;;
+
+let field_inv_one = prove
+  (`field_inv field_one = field_one`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_neg_zero);;
+
+export_thm field_inv_one;;
+
+let field_inv_inv = prove
+  (`!x. ~(x = field_zero) ==> field_inv (field_inv x) = x`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_neg_neg);;
+
+export_thm field_inv_inv;;
+
+let field_inv_mult = prove
+  (`!x y.
+      ~(x = field_zero) /\
+      ~(y = field_zero) ==>
+      field_inv (field_mult x y) = field_mult (field_inv y) (field_inv x)`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_neg_add);;
+
+export_thm field_inv_mult;;
+
+let field_div_left_one = prove
+  (`!x.
+      ~(x = field_zero) ==>
+      field_div field_one x = field_inv x`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_sub_left_zero);;
+
+export_thm field_div_left_one;;
+
+let field_div_right_one = prove
+  (`!x. field_div x field_one = x`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_sub_right_zero);;
+
+export_thm field_div_right_one;;
+
+(***
 let field_div_refl = new_axiom
-   `!x. field_div x x = field_star_zero`;;
+   `!x. field_div x x = field_one`;;
 
-let field_inv_sub = new_axiom
+let field_inv_div = new_axiom
    `!x y. field_inv (field_div x y) = field_div y x`;;
 
-let field_star_comm_left_sub = new_axiom
+let field_star_comm_left_div = new_axiom
    `!x y z.
       field_mult x z = field_mult z x /\
       field_mult y z = field_mult z y ==>
       field_mult (field_div x y) z = field_mult z (field_div x y)`;;
 
-let field_star_comm_right_sub = new_axiom
+let field_star_comm_right_div = new_axiom
    `!x y z.
       field_mult z x = field_mult x z /\
       field_mult z y = field_mult y z ==>
@@ -551,18 +664,18 @@ let field_star_comm_right_sub = new_axiom
 
 new_constant ("field_exp", `:field_star -> num -> field_star`);;
 
-let field_exp_zero = new_axiom
-  `!x. field_exp x 0 = field_star_zero`;;
+let field_exp_one = new_axiom
+  `!x. field_exp x 0 = field_one`;;
 
 let field_exp_suc = new_axiom
   `!x n. field_exp x (SUC n) = field_mult x (field_exp x n)`;;
 
-let field_exp_def = CONJ field_exp_zero field_exp_suc;;
+let field_exp_def = CONJ field_exp_one field_exp_suc;;
 
 (* field_star-mult-thm *)
 
-let field_star_zero_exp = new_axiom
-   `!n. field_exp field_star_zero n = field_star_zero`;;
+let field_one_exp = new_axiom
+   `!n. field_exp field_one n = field_one`;;
 
 let field_exp_one = new_axiom
    `!x. field_exp x 1 = x`;;
@@ -614,42 +727,42 @@ let field_exp_mult_invariant = new_axiom
 let field_exp_mult_correct = new_axiom
    `!x n.
       field_exp x n =
-      field_exp_mult field_star_zero x (num_to_bits n)`;;
+      field_exp_mult field_one x (num_to_bits n)`;;
 
-(* field_star-mult-sub-def *)
+(* field_star-mult-div-def *)
 
 new_constant
-  ("field_exp_sub",
+  ("field_exp_div",
    `:bool -> field_star -> field_star -> field_star -> field_star -> bool list -> field_star`);;
 
-let field_exp_sub_nil = new_axiom
+let field_exp_div_nil = new_axiom
     `(!b n d f p.
-        field_exp_sub b n d f p [] =
+        field_exp_div b n d f p [] =
         if b then field_div n d else field_div d n)`;;
 
-let field_exp_sub_cons = new_axiom
+let field_exp_div_cons = new_axiom
     `(!b n d f p h t.
-        field_exp_sub b n d f p (CONS h t) =
+        field_exp_div b n d f p (CONS h t) =
         let s = field_div p f in
-        field_exp_sub (~b) d (if h then field_div n s else n) s f t)`;;
+        field_exp_div (~b) d (if h then field_div n s else n) s f t)`;;
 
-let field_exp_sub_def = CONJ field_exp_sub_nil field_exp_sub_cons;;
+let field_exp_div_def = CONJ field_exp_div_nil field_exp_div_cons;;
 
-(* field_star-mult-sub-thm *)
+(* field_star-mult-div-thm *)
 
-let field_exp_sub_invariant = new_axiom
+let field_exp_div_invariant = new_axiom
    `!x n d f p l.
       field_mult x n = field_mult n x /\
       field_mult x d = field_mult d x ==>
-      field_exp_sub T n d (field_exp x f) (field_inv (field_exp x p)) l =
+      field_exp_div T n d (field_exp x f) (field_inv (field_exp x p)) l =
       field_mult (field_div n d) (field_exp x (decode_fib_dest f p l)) /\
-      field_exp_sub F n d (field_inv (field_exp x f)) (field_exp x p) l =
+      field_exp_div F n d (field_inv (field_exp x f)) (field_exp x p) l =
       field_mult (field_div d n) (field_exp x (decode_fib_dest f p l))`;;
 
-let field_exp_sub_correct = new_axiom
+let field_exp_div_correct = new_axiom
    `!x n.
       field_exp x n =
-      field_exp_sub T field_star_zero field_star_zero x field_star_zero (encode_fib n)`;;
+      field_exp_div T field_one field_one x field_one (encode_fib n)`;;
 
 (* field_star-crypt-def *)
 

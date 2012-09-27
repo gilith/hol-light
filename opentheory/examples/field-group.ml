@@ -69,11 +69,11 @@ let field_neg_inj_imp = new_axiom
 let field_neg_inj = new_axiom
    `!x y. field_neg x = field_neg y <=> x = y`;;
 
-let field_neg_neg = new_axiom
-   `!x. field_neg (field_neg x) = x`;;
-
 let field_neg_zero = new_axiom
    `field_neg field_zero = field_zero`;;
+
+let field_neg_neg = new_axiom
+   `!x. field_neg (field_neg x) = x`;;
 
 let field_neg_add = new_axiom
    `!x y. field_neg (field_add x y) = field_add (field_neg y) (field_neg x)`;;

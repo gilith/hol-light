@@ -41,6 +41,12 @@ let (group_add_left_zero,
       MATCH_ACCEPT_TAC FINITE_SING]) in
   (add_left_zero,add_left_neg,add_assoc,add_comm,finite);;
 
+export_thm group_add_left_zero;;
+export_thm group_add_left_neg;;
+export_thm group_add_assoc;;
+export_thm group_add_comm;;
+export_thm group_finite;;
+
 logfile "group-def";;
 
 (*PARAMETRIC
@@ -380,6 +386,17 @@ let group_neg_inj = new_axiom
    `!x y. group_neg x = group_neg y <=> x = y`;;
 *)
 
+let group_neg_zero = prove
+  (`group_neg group_zero = group_zero`,
+   MATCH_MP_TAC group_add_left_cancel_zero_imp THEN
+   EXISTS_TAC `group_zero` THEN
+   REWRITE_TAC [group_add_right_neg]);;
+
+(*PARAMETRIC
+let group_neg_zero = new_axiom
+   `group_neg group_zero = group_zero`;;
+*)
+
 let group_neg_neg = prove
   (`!x. group_neg (group_neg x) = x`,
    GEN_TAC THEN
@@ -390,17 +407,6 @@ let group_neg_neg = prove
 (*PARAMETRIC
 let group_neg_neg = new_axiom
    `!x. group_neg (group_neg x) = x`;;
-*)
-
-let group_neg_zero = prove
-  (`group_neg group_zero = group_zero`,
-   MATCH_MP_TAC group_add_left_cancel_zero_imp THEN
-   EXISTS_TAC `group_zero` THEN
-   REWRITE_TAC [group_add_right_neg]);;
-
-(*PARAMETRIC
-let group_neg_zero = new_axiom
-   `group_neg group_zero = group_zero`;;
 *)
 
 let group_neg_add = prove
@@ -604,6 +610,8 @@ let group_zero_scale = prove
    [REWRITE_TAC [group_scale_zero];
     ASM_REWRITE_TAC [group_scale_suc; group_add_right_zero]]);;
 
+export_thm group_zero_scale;;
+
 (*PARAMETRIC
 let group_zero_scale = new_axiom
    `!n. group_scale group_zero n = group_zero`;;
@@ -613,6 +621,8 @@ let group_scale_one = prove
   (`!x. group_scale x 1 = x`,
    REWRITE_TAC [ONE; group_scale_def; group_add_right_zero]);;
 
+export_thm group_scale_one;;
+
 (*PARAMETRIC
 let group_scale_one = new_axiom
    `!x. group_scale x 1 = x`;;
@@ -621,6 +631,8 @@ let group_scale_one = new_axiom
 let group_scale_two = prove
   (`!x. group_scale x 2 = group_add x x`,
    REWRITE_TAC [TWO; group_scale_suc; group_scale_one]);;
+
+export_thm group_scale_two;;
 
 (*PARAMETRIC
 let group_scale_two = new_axiom
@@ -636,6 +648,8 @@ let group_scale_add = prove
    [REWRITE_TAC [group_scale_zero; ZERO_ADD; group_add_left_zero];
     ASM_REWRITE_TAC [group_scale_suc; group_add_assoc; SUC_ADD]]);;
 
+export_thm group_scale_add;;
+
 (*PARAMETRIC
 let group_scale_add = new_axiom
    `!x m n.
@@ -645,6 +659,8 @@ let group_scale_add = new_axiom
 let group_scale_suc' = prove
   (`!x n. group_scale x (SUC n) = group_add (group_scale x n) x`,
    REWRITE_TAC [ADD1; group_scale_add; group_scale_one]);;
+
+export_thm group_scale_suc';;
 
 (*PARAMETRIC
 let group_scale_suc' = new_axiom
@@ -658,6 +674,8 @@ let group_scale_scale = prove
    INDUCT_TAC THENL
    [REWRITE_TAC [group_scale_zero; MULT_0];
     ASM_REWRITE_TAC [group_scale_suc; MULT_SUC; group_scale_add]]);;
+
+export_thm group_scale_scale;;
 
 (*PARAMETRIC
 let group_scale_scale = new_axiom
@@ -676,6 +694,8 @@ let group_comm_left_scale = prove
     MATCH_MP_TAC group_comm_left_add THEN
     ASM_REWRITE_TAC []]);;
 
+export_thm group_comm_left_scale;;
+
 (*PARAMETRIC
 let group_comm_left_scale = new_axiom
    `!x n y.
@@ -690,6 +710,8 @@ let group_comm_right_scale = prove
    REPEAT GEN_TAC THEN
    ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
    MATCH_ACCEPT_TAC group_comm_left_scale);;
+
+export_thm group_comm_right_scale;;
 
 (*PARAMETRIC
 let group_comm_right_scale = new_axiom
