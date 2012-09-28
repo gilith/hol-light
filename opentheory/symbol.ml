@@ -1,6 +1,6 @@
 (* ========================================================================= *)
 (* MAPPING SYMBOLS BETWEEN NAMESPACES                                        *)
-(* Ramana Kumar and Joe Hurd                                                 *)
+(* Ramana Kumar and Joe Leslie-Hurd                                          *)
 (* ========================================================================= *)
 
 #load "str.cma";;

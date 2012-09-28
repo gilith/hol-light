@@ -1,6 +1,6 @@
 (* ========================================================================= *)
 (* EXPORTING HOL LIGHT THEOREMS TO HASKELL                                   *)
-(* Joe Hurd                                                                  *)
+(* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
 module String_map = Map.Make(String);;

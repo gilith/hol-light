@@ -1,7 +1,7 @@
 (* ========================================================================= *)
 (* MEMORY SAFETY FOR THE H INTERFACE                                         *)
 (*                                                                           *)
-(* Joe Hurd and Rebekah Leslie                                               *)
+(* Joe Leslie-Hurd and Rebekah Leslie-Hurd                                   *)
 (*                                                                           *)
 (* A formalization of Rebekah Leslie's PhD thesis:                           *)
 (*   http://leslier.com/thesis.pdf                                           *)

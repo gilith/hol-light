@@ -1,6 +1,6 @@
 (* ------------------------------------------------------------------------- *)
 (* Fibonacci encoding of natural numbers.                                    *)
-(* Joe Hurd                                                                  *)
+(* Joe Leslie-Hurd                                                           *)
 (*                                                                           *)
 (* See http://en.wikipedia.org/wiki/Fibonacci_coding                         *)
 (* ------------------------------------------------------------------------- *)
