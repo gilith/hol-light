@@ -48,7 +48,7 @@ let word_size_nonzero = new_axiom
 
 (* Parametric theory instantiation: modular *)
 
-loads "opentheory/examples/word-modular.ml";;
+loads "opentheory/theories/word-modular.ml";;
 
 logfile "word-bits-def";;
 

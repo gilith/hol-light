@@ -13,7 +13,7 @@ logfile_end ();;
 
 (* Parametric theory instantiation: word *)
 
-loads "opentheory/examples/word16-word.ml";;
+loads "opentheory/theories/word16-word.ml";;
 
 logfile "word16-bits";;
 

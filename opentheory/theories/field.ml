@@ -143,7 +143,7 @@ export_thm field_char_def;;
 
 (* Parametric theory instantiation: additive group *)
 
-loads "opentheory/examples/field-group.ml";;
+loads "opentheory/theories/field-group.ml";;
 
 (*PARAMETRIC
 (* field-thm: consequences of the field axioms and the additive group *)
@@ -385,7 +385,7 @@ export_thm field_star_add_comm;;
 
 (* Parametric theory instantiation: multiplicative group *)
 
-loads "opentheory/examples/field-star-group.ml";;
+loads "opentheory/theories/field-star-group.ml";;
 
 logfile "field-mult-def";;
 
@@ -456,6 +456,42 @@ let dest_field_star_sub = prove
     REWRITE_TAC [dest_field_star_nonzero; mk_dest_field_star]]);;
 
 export_thm dest_field_star_sub;;
+
+(***
+let field_exp_left_zero = prove
+  (`!n.
+      ~(x = field_zero) ==>
+      field_div field_zero x = field_zero`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPECL [`field_zero`; `x : field`] field_div_def) THEN
+   ANTS_TAC THENL
+   [FIRST_ASSUM ACCEPT_TAC;
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC []]);;
+
+export_thm field_div_left_zero;;
+
+let field_div_left_zero' = prove
+  (`!x. field_div field_zero (dest_field_star x) = field_zero`,
+   GEN_TAC THEN
+   MATCH_MP_TAC field_div_left_zero THEN
+   MATCH_ACCEPT_TAC dest_field_star_nonzero);;
+
+export_thm field_div_left_zero';;
+
+let dest_field_star_sub = prove
+  (`!x y.
+      dest_field_star (field_star_sub x y) =
+      field_div (dest_field_star x) (dest_field_star y)`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPECL [`dest_field_star x`; `dest_field_star y`] field_div_def) THEN
+   ANTS_TAC THENL
+   [MATCH_ACCEPT_TAC dest_field_star_nonzero;
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [dest_field_star_nonzero; mk_dest_field_star]]);;
+
+export_thm dest_field_star_sub;;
+***)
 
 let field_star_tactic =
     let basic =
@@ -641,31 +677,31 @@ let field_div_right_one = prove
 
 export_thm field_div_right_one;;
 
+let field_div_refl = prove
+  (`!x.
+      ~(x = field_zero) ==>
+      field_div x x = field_one`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_sub_refl);;
+
+export_thm field_div_refl;;
+
+let field_inv_div = prove
+  (`!x y.
+      ~(x = field_zero) /\ ~(y = field_zero) ==>
+      field_inv (field_div x y) = field_div y x`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_neg_sub);;
+
+export_thm field_inv_div;;
+
 (***
-let field_div_refl = new_axiom
-   `!x. field_div x x = field_one`;;
+let field_exp_one = prove
+  (`!x. field_exp x 0 = field_one`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_neg_sub);;
 
-let field_inv_div = new_axiom
-   `!x y. field_inv (field_div x y) = field_div y x`;;
-
-let field_star_comm_left_div = new_axiom
-   `!x y z.
-      field_mult x z = field_mult z x /\
-      field_mult y z = field_mult z y ==>
-      field_mult (field_div x y) z = field_mult z (field_div x y)`;;
-
-let field_star_comm_right_div = new_axiom
-   `!x y z.
-      field_mult z x = field_mult x z /\
-      field_mult z y = field_mult y z ==>
-      field_mult z (field_div x y) = field_mult (field_div x y) z`;;
-
-(* field_star-mult-def *)
-
-new_constant ("field_exp", `:field_star -> num -> field_star`);;
-
-let field_exp_one = new_axiom
-  `!x. field_exp x 0 = field_one`;;
+export_thm field_inv_div;;
 
 let field_exp_suc = new_axiom
   `!x n. field_exp x (SUC n) = field_mult x (field_exp x n)`;;

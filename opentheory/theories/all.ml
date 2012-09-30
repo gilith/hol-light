@@ -1,116 +1,157 @@
 (* ========================================================================= *)
-(* OPENTHEORY EXAMPLE THEORIES                                               *)
+(* OPENTHEORY THEORIES                                                       *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-(* ------------------------------------------------------------------------- *)
-(* The interpretation for the example theories.                              *)
-(* ------------------------------------------------------------------------- *)
-
 extend_the_interpretation "opentheory/interpretations/examples.int";;
+extend_the_interpretation "opentheory/interpretations/haskell.int";;
 
 (* ------------------------------------------------------------------------- *)
-(* Start proof logging.                                                      *)
+(* Useful tactics.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-start_logging ();;
+loads "opentheory/theories/tactics.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Options.                                                                  *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/option/option.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Lists.                                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/list.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Streams.                                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/stream.ml";;
+loads "opentheory/theories/stream.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Probability.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/probability.ml";;
+loads "opentheory/theories/probability.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Representing natural numbers with bit-vectors.                            *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/bits.ml";;
+loads "opentheory/theories/bits.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Natural number division.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/divides.ml";;
+loads "opentheory/theories/divides.ml";;
 
-loads "opentheory/examples/gcd.ml";;
+loads "opentheory/theories/gcd.ml";;
 
-loads "opentheory/examples/prime.ml";;
+loads "opentheory/theories/prime.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Fibonacci encoding of natural numbers.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/fibonacci.ml";;
+loads "opentheory/theories/fibonacci.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Abstract algebra.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/group.ml";;
+loads "opentheory/theories/group.ml";;
 
 (***
-loads "opentheory/examples/ring.ml";;
+loads "opentheory/theories/ring.ml";;
 
-loads "opentheory/examples/field.ml";;
+loads "opentheory/theories/field.ml";;
 ***)
 
 (* ------------------------------------------------------------------------- *)
 (* Modular arithmetic.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/modular.ml";;
+loads "opentheory/theories/modular.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Finite fields GF(p).                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/gfp.ml";;
+loads "opentheory/theories/gfp.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Bit-vectors.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/word.ml";;
+loads "opentheory/theories/word.ml";;
 
-loads "opentheory/examples/byte.ml";;
+loads "opentheory/theories/byte.ml";;
 
-loads "opentheory/examples/word10.ml";;
+loads "opentheory/theories/word10.ml";;
 
-loads "opentheory/examples/word12.ml";;
+loads "opentheory/theories/word12.ml";;
 
-loads "opentheory/examples/word16.ml";;
+loads "opentheory/theories/word16.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Simple stream parsers.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/parser.ml";;
+loads "opentheory/theories/parser.ml";;
 
-loads "opentheory/examples/char.ml";;
+loads "opentheory/theories/char.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Memory safety for the H interface.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/examples/h.ml";;
+loads "opentheory/theories/h.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Map reduce example using Minisat.                                         *)
 (* ------------------------------------------------------------------------- *)
 
 (*
-loads "opentheory/examples/map-reduce.ml";;
+loads "opentheory/theories/map-reduce.ml";;
 *)
 
 (* ------------------------------------------------------------------------- *)
-(* Stop proof logging.                                                       *)
+(* The Haskell export infrastructure.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-stop_logging ();;
+#use "opentheory/haskell.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* OpenTheory Haskell base.                                                  *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/haskell.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Simple stream parsers.                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/haskell-parser.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Unicode.                                                                  *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/haskell-char.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Prime numbers.                                                            *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/haskell-prime.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Test theory.                                                              *)
+(* ------------------------------------------------------------------------- *)
+
+(*
+#use "opentheory/test.ml";;
+*)

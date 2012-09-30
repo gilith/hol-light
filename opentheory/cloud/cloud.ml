@@ -9,7 +9,7 @@
 (* The interpretation for the cloud tactics.                                 *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/interpretations/cloud.int";;
+extend_the_interpretation "opentheory/cloud/cloud.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* A general interface for calling cloud tactics.                            *)

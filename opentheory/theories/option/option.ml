@@ -1,5 +1,16 @@
+(* ========================================================================= *)
+(* OPTION TYPES                                                              *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* Additions to the standard option theory.                                  *)
+(* Interpretations for option types.                                         *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation "opentheory/theories/option/option.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of option types.                                               *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "option-thm";;
@@ -17,6 +28,10 @@ let option_cases = prove_cases_thm option_INDUCT;;
 export_thm option_cases;;
 
 let option_cases_tac = CASES_TAC option_cases;;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of option type destructors.                                    *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "option-dest-def";;
 
@@ -53,6 +68,10 @@ export_thm is_none_some;;
 
 let is_none_def = CONJ is_none_none is_none_some;;
 
+(* ------------------------------------------------------------------------- *)
+(* Properties of option type destructors.                                    *)
+(* ------------------------------------------------------------------------- *)
+
 logfile "option-dest-thm";;
 
 let case_option_id = prove
@@ -63,6 +82,10 @@ let case_option_id = prove
    ASM_REWRITE_TAC [case_option_def]);;
 
 export_thm case_option_id;;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of the option map function.                                    *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "option-map-def";;
 
@@ -76,6 +99,10 @@ export_thm map_option_none;;
 export_thm map_option_some;;
 
 let map_option_def = CONJ map_option_none map_option_some;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of the option map function.                                    *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "option-map-thm";;
 

@@ -10,44 +10,44 @@
 ###############################################################################
 
 .PHONY: default
-default: example-theories
+default: theories
 
 ###############################################################################
 # Parametric theory interpretations.
 ###############################################################################
 
 THEORY_INTERPRETATIONS = \
-  examples/byte-word.ml \
-  examples/field-group.ml \
-  examples/field-star-group.ml \
-  examples/gfp-modular.ml \
-  examples/word-modular.ml \
-  examples/word10-word.ml \
-  examples/word12-word.ml \
-  examples/word16-word.ml
+  theories/byte-word.ml \
+  theories/field-group.ml \
+  theories/field-star-group.ml \
+  theories/gfp-modular.ml \
+  theories/word-modular.ml \
+  theories/word10-word.ml \
+  theories/word12-word.ml \
+  theories/word16-word.ml
 
-examples/byte-word.ml: examples/word.ml examples/word-modular.ml
+theories/byte-word.ml: theories/word.ml theories/word-modular.ml
 	scripts/instantiate -r "word/byte" $< > $@
 
-examples/field-group.ml: examples/group.ml
+theories/field-group.ml: theories/group.ml
 	scripts/instantiate -r "group/field" $< > $@
 
-examples/field-star-group.ml: examples/group.ml
+theories/field-star-group.ml: theories/group.ml
 	scripts/instantiate -r "group/field_star" $< > $@
 
-examples/gfp-modular.ml: examples/modular.ml
+theories/gfp-modular.ml: theories/modular.ml
 	scripts/instantiate -r "modulus/oddprime:modular/gfp" -x $< > $@
 
-examples/word-modular.ml: examples/modular.ml
+theories/word-modular.ml: theories/modular.ml
 	scripts/instantiate -r "modulus/word_size:modular/word" -x $< > $@
 
-examples/word10-word.ml: examples/word.ml examples/word-modular.ml
+theories/word10-word.ml: theories/word.ml theories/word-modular.ml
 	scripts/instantiate -r "word/word10" $< > $@
 
-examples/word12-word.ml: examples/word.ml examples/word-modular.ml
+theories/word12-word.ml: theories/word.ml theories/word-modular.ml
 	scripts/instantiate -r "word/word12" $< > $@
 
-examples/word16-word.ml: examples/word.ml examples/word-modular.ml
+theories/word16-word.ml: theories/word.ml theories/word-modular.ml
 	scripts/instantiate -r "word/word16" $< > $@
 
 .PHONY: theory-interpretations
@@ -71,21 +71,11 @@ clean:
 	rm -f $(TEMP)
 
 ###############################################################################
-# The standard theory library.
+# Export the theories.
 ###############################################################################
 
-.PHONY: standard-theories
-standard-theories:
+.PHONY: theories
+theories:
 	$(MAKE) clean
 	$(MAKE) theory-interpretations
 	cd .. && OPENTHEORY_LOGGING=1 opentheory/scripts/capture
-
-###############################################################################
-# Example theories.
-###############################################################################
-
-.PHONY: example-theories
-example-theories:
-	$(MAKE) clean
-	$(MAKE) theory-interpretations
-	cd .. && opentheory/scripts/capture

@@ -13,7 +13,7 @@ logfile_end ();;
 
 (* Parametric theory instantiation: word *)
 
-loads "opentheory/examples/byte-word.ml";;
+loads "opentheory/theories/byte-word.ml";;
 
 logfile "byte-bits";;
 

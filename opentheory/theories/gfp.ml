@@ -45,7 +45,7 @@ let oddprime_nonzero = new_axiom
 
 (* Parametric theory instantiation: modular *)
 
-loads "opentheory/examples/gfp-modular.ml";;
+loads "opentheory/theories/gfp-modular.ml";;
 
 logfile "gfp-thm";;
 
