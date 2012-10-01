@@ -22,31 +22,31 @@ loads "opentheory/theories/option/option.ml";;
 (* Lists.                                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/list.ml";;
+loads "opentheory/theories/list/list.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Streams.                                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/stream.ml";;
+loads "opentheory/theories/stream/stream.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Probability.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/probability.ml";;
+loads "opentheory/theories/probability/probability.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Representing natural numbers with bit-vectors.                            *)
+(* Natural number to bit-list conversions.                                   *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/bits.ml";;
+loads "opentheory/theories/natural-bits/natural-bits.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Natural number division.                                                  *)
+(* The divides relation on natural numbers.                                  *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/divides.ml";;
+loads "opentheory/theories/natural-divides/natural-divides.ml";;
 
 loads "opentheory/theories/gcd.ml";;
 

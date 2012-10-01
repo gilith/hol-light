@@ -1,0 +1,16 @@
+###############################################################################
+# INTERPRETATIONS FOR NATURAL NUMBER TO BIT-LIST CONVERSIONS
+# Joe Leslie-Hurd
+###############################################################################
+
+# Number
+
+# Number.Natural
+
+# Number.Natural.Bits
+
+const "HOLLight.num_bit" as "Number.Natural.Bits.bit"
+const "HOLLight.num_to_bits" as "Number.Natural.Bits.fromNatural"
+const "HOLLight.is_bits" as "Number.Natural.Bits.normal"
+const "HOLLight.bits_to_num" as "Number.Natural.Bits.toNatural"
+const "HOLLight.bitwidth" as "Number.Natural.Bits.width"

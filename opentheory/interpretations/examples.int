@@ -115,23 +115,6 @@ const "HOLLight.rdecode_vector" as "Data.List.fromRandom"
 
 const "HOLLight.rdecode_list" as "Data.List.Geometric.fromRandom"
 
-# Data.Stream
-
-type "HOLLight.stream" as "Data.Stream.stream"
-
-const "HOLLight.sappend" as "Data.Stream.@"
-const "HOLLight.scons" as "Data.Stream.::"
-const "HOLLight.sdrop" as "Data.Stream.drop"
-const "HOLLight.stream" as "Data.Stream.fromFunction"
-const "HOLLight.shd" as "Data.Stream.head"
-const "HOLLight.sinterleave" as "Data.Stream.interleave"
-const "HOLLight.smap" as "Data.Stream.map"
-const "HOLLight.snth" as "Data.Stream.nth"
-const "HOLLight.ssplit" as "Data.Stream.split"
-const "HOLLight.stl" as "Data.Stream.tail"
-const "HOLLight.stake" as "Data.Stream.take"
-const "HOLLight.sunfold" as "Data.Stream.unfold"
-
 # Data.Word
 
 type "HOLLight.word" as "Data.Word.word"
@@ -295,19 +278,10 @@ const "HOLLight.modular_to_num" as "Number.Modular.toNatural"
 
 # Number.Natural
 
-const "HOLLight.divides" as "Number.Natural.divides"
 const "HOLLight.fibonacci" as "Number.Natural.fibonacci"
 const "HOLLight.gcd" as "Number.Natural.gcd"
 const "HOLLight.lcm" as "Number.Natural.lcm"
 const "HOLLight.prime" as "Number.Natural.prime"
-
-# Number.Natural.Bits
-
-const "HOLLight.num_bit" as "Number.Natural.Bits.bit"
-const "HOLLight.num_to_bits" as "Number.Natural.Bits.fromNatural"
-const "HOLLight.is_bits" as "Number.Natural.Bits.normal"
-const "HOLLight.bits_to_num" as "Number.Natural.Bits.toNatural"
-const "HOLLight.bitwidth" as "Number.Natural.Bits.width"
 
 # Number.Natural.Fibonacci
 
@@ -391,18 +365,6 @@ const "HOLLight.is_suffix_pstream" as "Parser.Stream.isSuffix"
 const "HOLLight.length_pstream" as "Parser.Stream.length"
 const "HOLLight.map_pstream" as "Parser.Stream.map"
 const "HOLLight.pstream_to_list" as "Parser.Stream.toList"
-
-# Probability
-
-# Probability.Random
-
-type "HOLLight.random" as "Probability.Random.random"
-
-const "HOLLight.rbit" as "Probability.Random.bit"
-const "HOLLight.rbits" as "Probability.Random.bits"
-const "HOLLight.mk_random" as "Probability.Random.fromStream"
-const "HOLLight.rsplit" as "Probability.Random.split"
-const "HOLLight.dest_random" as "Probability.Random.toStream"
 
 # System
 

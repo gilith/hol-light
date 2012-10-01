@@ -1,5 +1,16 @@
+(* ========================================================================= *)
+(* NATURAL NUMBER TO BIT-LIST CONVERSIONS                                    *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* A theory of natural numbers represented as bits.                          *)
+(* Interpretations for natural number to bit-list conversions.               *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation "opentheory/theories/natural-bits/natural-bits.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of natural number to bit-list conversions.                     *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "natural-bits-def";;
@@ -91,6 +102,10 @@ let rdecode_uniform_def = new_definition
      (rdecode_uniform_loop n w r1 MOD n, r2)`;;
 
 export_thm rdecode_uniform_def;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of natural number to bit-list conversions.                     *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "natural-bits-thm";;
 

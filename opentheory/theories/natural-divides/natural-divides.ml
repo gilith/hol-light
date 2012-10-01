@@ -1,5 +1,17 @@
+(* ========================================================================= *)
+(* THE DIVIDES RELATION ON NATURAL NUMBERS                                   *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* Natural number divisibility.                                              *)
+(* Interpretations for the divides relation on natural numbers.              *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation
+  "opentheory/theories/natural-divides/natural-divides.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of the divides relation on natural numbers.                    *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "natural-divides-def";;
@@ -8,6 +20,10 @@ let divides_def = new_definition
   `!(a:num) b. divides a b <=> ?c. c * a = b`;;
 
 export_thm divides_def;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of the divides relation on natural numbers.                    *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "natural-divides-thm";;
 
