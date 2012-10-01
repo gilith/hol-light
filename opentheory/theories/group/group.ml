@@ -1,12 +1,17 @@
+(* ========================================================================= *)
+(* PARAMETRIC THEORY OF GROUPS                                               *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* A parametric theory of groups.                                            *)
+(* Interpretations for a parametric theory of groups.                        *)
 (* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* group *)
-*)
+extend_the_interpretation "opentheory/theories/group/group.int";;
 
-(* The theory parameters *)
+(* ------------------------------------------------------------------------- *)
+(* Parametric theory witness for groups.                                     *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "group-witness";;
 
@@ -47,6 +52,10 @@ export_thm group_add_assoc;;
 export_thm group_add_comm;;
 export_thm group_finite;;
 
+(* ------------------------------------------------------------------------- *)
+(* Definition of group subtraction.                                          *)
+(* ------------------------------------------------------------------------- *)
+
 logfile "group-def";;
 
 (*PARAMETRIC
@@ -66,6 +75,10 @@ export_thm group_sub_def;;
 let group_sub_def = new_axiom
   `!(x : group) (y : group). group_sub x y = group_add x (group_neg y)`;;
 *)
+
+(* ------------------------------------------------------------------------- *)
+(* Consequences of the group axioms and subtraction.                         *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "group-thm";;
 
@@ -564,6 +577,10 @@ let group_comm_right_sub = new_axiom
       group_add z (group_sub x y) = group_add (group_sub x y) z`;;
 *)
 
+(* ------------------------------------------------------------------------- *)
+(* Definition of group multiplication.                                       *)
+(* ------------------------------------------------------------------------- *)
+
 logfile "group-mult-def";;
 
 (*PARAMETRIC
@@ -597,6 +614,10 @@ let group_scale_def = CONJ group_scale_zero group_scale_suc;;
 (*PARAMETRIC
 let group_scale_def = CONJ group_scale_zero group_scale_suc;;
 *)
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of group multiplication.                                       *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "group-mult-thm";;
 
@@ -720,6 +741,10 @@ let group_comm_right_scale = new_axiom
       group_add y (group_scale x n) = group_add (group_scale x n) y`;;
 *)
 
+(* ------------------------------------------------------------------------- *)
+(* Definition of group multiplication by repeated addition.                  *)
+(* ------------------------------------------------------------------------- *)
+
 logfile "group-mult-add-def";;
 
 (*PARAMETRIC
@@ -751,11 +776,13 @@ let group_scale_add_cons = new_axiom
         group_scale_add (if h then group_add z x else z) (group_add x x) t`;;
 *)
 
+(*BEGIN-PARAMETRIC*)
 let group_scale_add_def = CONJ group_scale_add_nil group_scale_add_cons;;
+(*END-PARAMETRIC*)
 
-(*PARAMETRIC
-let group_scale_add_def = CONJ group_scale_add_nil group_scale_add_cons;;
-*)
+(* ------------------------------------------------------------------------- *)
+(* Correctness of group multiplication by repeated addition.                 *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "group-mult-add-thm";;
 
@@ -812,6 +839,10 @@ let group_scale_add_correct = new_axiom
       group_scale_add group_zero x (num_to_bits n)`;;
 *)
 
+(* ------------------------------------------------------------------------- *)
+(* Definition of group multiplication by repeated subtraction.               *)
+(* ------------------------------------------------------------------------- *)
+
 logfile "group-mult-sub-def";;
 
 (*PARAMETRIC
@@ -856,6 +887,10 @@ let group_scale_sub_def = CONJ group_scale_sub_nil group_scale_sub_cons;;
 (*PARAMETRIC
 let group_scale_sub_def = CONJ group_scale_sub_nil group_scale_sub_cons;;
 *)
+
+(* ------------------------------------------------------------------------- *)
+(* Correctness of group multiplication by repeated subtraction.              *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "group-mult-sub-thm";;
 
@@ -1003,6 +1038,10 @@ let group_scale_sub_correct = new_axiom
       group_scale_sub T group_zero group_zero x group_zero (encode_fib n)`;;
 *)
 
+(* ------------------------------------------------------------------------- *)
+(* Definition of group cryptography.                                         *)
+(* ------------------------------------------------------------------------- *)
+
 logfile "group-crypt-def";;
 
 (*PARAMETRIC
@@ -1049,6 +1088,10 @@ let group_elgamal_decrypt_def = new_axiom
      group_add (group_neg (group_scale a x)) b`;;
 *)
 
+(* ------------------------------------------------------------------------- *)
+(* Properties of group cryptography.                                         *)
+(* ------------------------------------------------------------------------- *)
+
 logfile "group-crypt-thm";;
 
 (*PARAMETRIC
@@ -1075,6 +1118,10 @@ let group_elgamal_correct = new_axiom
       (h = group_scale g x) ==>
       (group_elgamal_decrypt x (group_elgamal_encrypt g h m k) = m)`;;
 *)
+
+(* ------------------------------------------------------------------------- *)
+(* Abelian groups.                                                           *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "group-abelian";;
 

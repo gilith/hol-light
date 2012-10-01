@@ -1,8 +1,19 @@
-(* ------------------------------------------------------------------------- *)
-(* Fibonacci encoding of natural numbers.                                    *)
+(* ========================================================================= *)
+(* FIBONACCI NUMBERS                                                         *)
 (* Joe Leslie-Hurd                                                           *)
 (*                                                                           *)
 (* See http://en.wikipedia.org/wiki/Fibonacci_coding                         *)
+(* ========================================================================= *)
+
+(* ------------------------------------------------------------------------- *)
+(* Interpretations for Fibonacci numbers.                                    *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation
+  "opentheory/theories/natural-fibonacci/natural-fibonacci.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Existence of Fibonacci numbers.                                           *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "natural-fibonacci-exists";;
@@ -100,7 +111,8 @@ let fibonacci_exists = prove
      NUM_REDUCE_TAC;
      FIRST_X_ASSUM (fun th -> ONCE_REWRITE_TAC [th]) THEN
      NUM_REDUCE_TAC;
-     FIRST_X_ASSUM (fun th -> CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [th]))) THEN
+     FIRST_X_ASSUM
+       (fun th -> CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [th]))) THEN
      SUBGOAL_THEN `n + 2 < 2 <=> F` SUBST1_TAC THENL
      [REWRITE_TAC [NOT_LT; LE_ADDR];
       REWRITE_TAC [ADD_SUB; EQ_ADD_RCANCEL] THEN
@@ -108,6 +120,10 @@ let fibonacci_exists = prove
       REWRITE_TAC [ADD_SUB; ADD1]]]]);;
 
 export_thm fibonacci_exists;;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of Fibonacci numbers.                                          *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "natural-fibonacci-def";;
 
@@ -275,6 +291,10 @@ let rdecode_fib_def = new_definition
      (rdecode_fib_dest F 0 1 0 r1 - 1, r2)`;;
 
 export_thm rdecode_fib_def;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of Fibonacci numbers.                                          *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "natural-fibonacci-thm";;
 
@@ -1080,7 +1100,8 @@ let zeckendorf_encode_fib = prove
   MP_TAC (SPEC `n : num` num_CASES) THEN
   STRIP_TAC THENL
   [ONCE_REWRITE_TAC [encode_fib_find_def] THEN
-   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF; ONE; LT_SUC_LE; LE_0; ADD_CLAUSES] THEN
+   ASM_REWRITE_TAC
+     [LET_DEF; LET_END_DEF; ONE; LT_SUC_LE; LE_0; ADD_CLAUSES] THEN
    ONCE_REWRITE_TAC [encode_fib_mk_def] THEN
    REWRITE_TAC [zeckendorf_nil];
    MP_TAC (SPECL [`n : num`; `0`] zeckendorf_encode_fib_find) THEN
@@ -1187,8 +1208,11 @@ export_thm encode_rdecode_fib;;
 
 logfile_end ();;
 
-(* Prototyping in Standard ML
+(* ------------------------------------------------------------------------- *)
+(* Prototyping in Standard ML.                                               *)
+(* ------------------------------------------------------------------------- *)
 
+(*
 local
   fun mkFib l n f p =
       if p = 0 then l

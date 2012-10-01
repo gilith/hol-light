@@ -1,5 +1,17 @@
+(* ========================================================================= *)
+(* PRIME NATURAL NUMBERS                                                     *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* Natural number primes.                                                    *)
+(* Interpretations for prime natural numbers.                                *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation
+  "opentheory/theories/natural-prime/natural-prime.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of prime natural numbers.                                      *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "natural-prime-def";;
@@ -8,6 +20,10 @@ let prime_def = new_definition
   `!p. prime p <=> ~(p = 1) /\ !n. divides n p ==> n = 1 \/ n = p`;;
 
 export_thm prime_def;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of prime natural numbers.                                      *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "natural-prime-thm";;
 
@@ -261,7 +277,7 @@ let large_prime = prove
 export_thm large_prime;;
 
 (* ------------------------------------------------------------------------- *)
-(* The stream of all primes in order.                                        *)
+(* Definition of the ordered stream of all prime numbers.                    *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "natural-prime-stream-def";;
@@ -282,6 +298,10 @@ let primes_below_def = new_definition
      stake primes (minimal i. n <= snth primes i)`;;
 
 export_thm primes_below_def;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of the ordered stream of all prime numbers.                    *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "natural-prime-stream-thm";;
 
@@ -477,7 +497,7 @@ let primes_divides_inj = prove
 export_thm primes_divides_inj;;
 
 (* ------------------------------------------------------------------------- *)
-(* The sieve of Eratosthenes.                                                *)
+(* Definition of the sieve of Eratosthenes.                                  *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "natural-prime-sieve-def";;
@@ -629,6 +649,10 @@ let next_sieve_def =
   new_specification ["next_sieve"] next_sieve_exists;;
 
 export_thm next_sieve_def;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of the sieve of Eratosthenes.                                  *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "natural-prime-sieve-thm";;
 

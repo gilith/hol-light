@@ -9,7 +9,7 @@ use Getopt::Std;
 
 use vars qw($opt_h $opt_r $opt_x);
 
-getopts('hr:x');
+getopts('hr:');
 
 if ($opt_h or scalar @ARGV == 0)
 {
@@ -26,220 +26,251 @@ my $revealed_comment = 0;
 my @revealed_text = ();
 
 sub print_normal {
-    (scalar @_ == 1) or die;
-    my $text = shift @_;
+  (scalar @_ == 1) or die;
+  my $text = shift @_;
 
-    if ($revealed_comment > 0) {
-        push @revealed_text, $text;
-    }
+  if ($revealed_comment != 0) {
+    push @revealed_text, $text;
+  }
 }
 
 sub replace_line {
-    (scalar @_ == 1) or die;
-    my $line = shift @_;
+  (scalar @_ == 1) or die;
+  my $line = shift @_;
 
-    for my $rep (split /:/, $opt_r) {
-        $rep =~ m{^([[:alnum:]_]+)/([[:alnum:]_]+)$} or
-            die "instantiate: bad replacement: $rep\n";
-        my $x = $1;
-        my $y = $2;
+  for my $rep (split /:/, $opt_r) {
+    $rep =~ m{^([[:alnum:]_]+)/([[:alnum:]_]+)$} or
+      die "instantiate: bad replacement: $rep\n";
+    my $x = $1;
+    my $y = $2;
 
-        $line =~ s/$x/$y/g;
-    }
+    $line =~ s/$x/$y/g;
+  }
 
-    return $line;
+  return $line;
 }
 
 sub replace_revealed {
-    (scalar @_ == 0) or die;
+  (scalar @_ == 0) or die;
 
-    my $line = '';
-    my $ret = '';
+  my $line = '';
+  my $ret = '';
 
-    for my $text (@revealed_text) {
-        my $eol = (chomp ($text) == 1);
+  for my $text (@revealed_text) {
+    my $eol = (chomp ($text) == 1);
 
-        $line .= $text;
+    $line .= $text;
 
-        if ($eol) {
-            $line = replace_line($line);
-            $ret .= $line;
-            if ($ret ne "") { $ret .= "\n"; }
-            $line = '';
-        }
+    if ($eol) {
+      $line = replace_line($line);
+      $ret .= $line;
+      if ($ret ne "") { $ret .= "\n"; }
+      $line = '';
     }
+  }
 
-    return $ret;
+  return $ret;
 }
 
 sub unquotify {
-    if (scalar @_ == 0) { return; }
+  if (scalar @_ == 0) { return; }
 
-    print_normal '`';
+  print_normal '`';
 
-    for my $quote (@_) {
-        print_normal $quote;
-    }
+  for my $quote (@_) {
+    print_normal $quote;
+  }
 
-    print_normal '`';
+  print_normal '`';
 }
 
 sub process_file {
-    (scalar @_ == 1) or die;
-    my $filename = shift @_;
+  (scalar @_ == 1) or die;
+  my $filename = shift @_;
 
-    open my $INPUT, "$filename" or
-        die "instantiate: couldn't open $filename: $!\n";
+  open my $INPUT, "$filename" or
+    die "instantiate: couldn't open $filename: $!\n";
 
-    my $state = "normal";
-    my $comment = 0;
-    my @quotes = ();
+  my $state = "normal";
+  my $comment = 0;
+  my @quotes = ();
 
-    while (my $line = <$INPUT>) {
-        (chomp ($line) == 1)
-            or warn "no terminating newline in $filename\nline = '$line'\n";
+  while (my $line = <$INPUT>) {
+    (chomp ($line) == 1)
+      or warn "no terminating newline in $filename\nline = '$line'\n";
 
-        while (1) {
-            if ($state eq "quote") {
-                if ($line =~ /(.*?)\`(.*)$/) {
-                    push @quotes, $1;
-                    $line = $2;
-                    unquotify @quotes;
-                    @quotes = ();
-                    $state = "normal";
-                }
-                else {
-                    push @quotes, "$line\n";
-                    last;
-                }
+    while (1) {
+      if ($state eq "quote") {
+        if ($line =~ /(.*?)\`(.*)$/) {
+          push @quotes, $1;
+          $line = $2;
+          unquotify @quotes;
+          @quotes = ();
+          $state = "normal";
+        }
+        else {
+          push @quotes, "$line\n";
+          last;
+        }
+      }
+      elsif ($state eq "comment") {
+        if ($line =~ /^(.*?)(\(\*|\*\))(.*)$/) {
+          my $leadup = $1;
+          my $pat = $2;
+          $line = $3;
+          print_normal $leadup;
+
+          if ($pat eq "(*") {
+            print_normal $pat;
+            ++$comment;
+          }
+          elsif ($pat eq "*)") {
+            print_normal $pat;
+            --$comment;
+            if ($comment == 0) { $state = "normal"; }
+          }
+          else {
+            die;
+          }
+        }
+        else {
+          print_normal "$line\n";
+          last;
+        }
+      }
+      elsif ($state eq "dquote") {
+        if ($line =~ /^(.*?)\"(.*)$/) {
+          my $leadup = $1;
+          $line = $2;
+          print_normal ($leadup . "\"");
+
+          if ($leadup =~ /(\\+)$/ && ((length $1) % 2 == 1)) {
+            # This is an escaped double quote
+          }
+          else {
+            $state = "normal";
+          }
+        }
+        else {
+          die "EOL inside \" quote\n";
+        }
+      }
+      elsif ($state eq "normal") {
+        if ($line =~ /^loads \"([^"]+)\";;$/) {
+          my $use_filename = $1;
+          if ($use_filename !~ /^\//) {
+            $use_filename = '../' . $use_filename;
+          }
+          process_file ($use_filename);
+          print_normal "\n";
+          last;
+        }
+        elsif ($line =~ /^(.*?)(\`|\(\*|\*\)|\")(.*)$/) {
+          my $leadup = $1;
+          my $pat = $2;
+          $line = $3;
+          print_normal $leadup;
+
+          if ($pat eq "`") {
+            $state = "quote";
+          }
+          elsif ($pat eq "(*") {
+            if ($line =~ /^BEGIN-PARAMETRIC\*\)(.*)$/) {
+              if ($revealed_comment == 0) {
+                $revealed_comment = -1;
+                $line = $1;
+              }
+              else {
+                die "instantiate: BEGIN-PARAMETRIC inside a PARAMETRIC block";
+              }
             }
-            elsif ($state eq "comment") {
-                if ($line =~ /^(.*?)(\(\*|\*\))(.*)$/) {
-                    my $leadup = $1;
-                    my $pat = $2;
-                    $line = $3;
-                    print_normal $leadup;
-
-                    if ($pat eq "(*") {
-                        print_normal $pat;
-                        ++$comment;
-                    }
-                    elsif ($pat eq "*)") {
-                        print_normal $pat;
-                        --$comment;
-                        if ($comment == 0) { $state = "normal"; }
-                    }
-                    else {
-                        die;
-                    }
-                }
-                else {
-                    print_normal "$line\n";
-                    last;
-                }
-            }
-            elsif ($state eq "dquote") {
-                if ($line =~ /^(.*?)\"(.*)$/) {
-                    my $leadup = $1;
-                    $line = $2;
-                    print_normal ($leadup . "\"");
-
-                    if ($leadup =~ /(\\+)$/ && ((length $1) % 2 == 1)) {
-                        # This is an escaped double quote
-                    }
-                    else {
-                        $state = "normal";
-                    }
-                }
-                else {
-                    die "EOL inside \" quote\n";
-                }
-            }
-            elsif ($state eq "normal") {
-                if ($line =~ /^loads \"([^"]+)\";;$/) {
-                    my $use_filename = $1;
-                    if ($use_filename !~ /^\//) {
-                        $use_filename = '../' . $use_filename;
-                    }
-                    process_file ($use_filename);
-                    print_normal "\n";
-                    last;
-                }
-                elsif ($line =~ /^(.*?)(\`|\(\*|\*\)|\")(.*)$/) {
-                    my $leadup = $1;
-                    my $pat = $2;
-                    $line = $3;
-                    print_normal $leadup;
-
-                    if ($pat eq "`") {
-                        $state = "quote";
-                    }
-                    elsif ($pat eq "(*") {
-                        my $is_revealed = 0;
-                        if ($line =~ /^([[:alnum:]_-]+)/) {
-                            my $rev = $1;
-                            if ($rev eq "PARAMETRIC") {
-                                my $rev_len = length $rev;
-                                $line = substr $line, $rev_len;
-                                ++$revealed_comment;
-                                $is_revealed = 1;
-                            }
-                        }
-                        if (!$is_revealed) {
-                            print_normal $pat;
-                            $state = "comment";
-                            ++$comment;
-                        }
-                    }
-                    elsif ($pat eq "*)") {
-                        if ($revealed_comment == 0) {
-                            die "instantiate: too many comment closers.\n"
-                        }
-                        --$revealed_comment;
-                    }
-                    elsif ($pat eq "\"") {
-                        print_normal $pat;
-                        $state = "dquote";
-                    }
-                    else {
-                        die;
-                    }
-                }
-                else {
-                    print_normal "$line\n";
-                    last;
-                }
+            elsif ($line =~ /^END-PARAMETRIC\*\)(.*)$/) {
+              if ($revealed_comment == -1) {
+                $revealed_comment = 0;
+                $line = $1;
+              }
+              else {
+                die "instantiate: END-PARAMETRIC without a BEGIN-PARAMETRIC";
+              }
             }
             else {
-                die;
+              my $is_revealed = 0;
+              if ($line =~ /^([[:alnum:]_-]+)/) {
+                my $rev = $1;
+                if ($rev eq "PARAMETRIC") {
+                  my $rev_len = length $rev;
+                  $line = substr $line, $rev_len;
+                  if ($revealed_comment == -1) {
+                    die "instantiate: PARAMETRIC inside a BEGIN-PARAMETRIC block";
+                  }
+                  ++$revealed_comment;
+                  $is_revealed = 1;
+                }
+              }
+              if (!$is_revealed) {
+                print_normal $pat;
+                $state = "comment";
+                ++$comment;
+              }
             }
+          }
+          elsif ($pat eq "*)") {
+            if ($revealed_comment == 0) {
+              die "instantiate: too many comment closers.\n"
+            }
+            --$revealed_comment;
+          }
+          elsif ($pat eq "\"") {
+            print_normal $pat;
+            $state = "dquote";
+          }
+          else {
+            die;
+          }
         }
+        else {
+          print_normal "$line\n";
+          last;
+        }
+      }
+      else {
+        die;
+      }
     }
+  }
 
-    if ($state eq "quote") {
-        die "instantiate: EOF inside \` quote\n";
-    }
-    elsif ($state eq "dquote") {
-        die "instantiate: EOF inside \" quote\n";
-    }
-    elsif ($state eq "comment") {
-        die "instantiate: EOF inside comment\n";
-    }
-    else {
-        ($state eq "normal") or die;
-    }
+  if ($state eq "quote") {
+    die "instantiate: EOF inside \` quote\n";
+  }
+  elsif ($state eq "dquote") {
+    die "instantiate: EOF inside \" quote\n";
+  }
+  elsif ($state eq "comment") {
+    die "instantiate: EOF inside comment\n";
+  }
+  else {
+    ($state eq "normal") or die;
 
-    close $INPUT;
+    if ($revealed_comment == -1) {
+      die "instantiate: EOF inside BEGIN-PARAMETRIC block\n";
+    }
+    elsif ($revealed_comment != 0) {
+      die "instantiate: EOF inside PARAMETRIC block\n";
+    }
+  }
+
+  close $INPUT;
 }
 
 while (0 < scalar @ARGV) {
-    my $filename = shift @ARGV;
-    process_file $filename;
+  my $filename = shift @ARGV;
+  process_file $filename;
 }
 
 my $output = replace_revealed ();
+print STDOUT "(*BEGIN-PARAMETRIC*)\n\n";
 print STDOUT $output;
-if ($opt_x) { print STDOUT ("\n(*PARAMETRIC\n" . $output . "*)\n"); }
+print STDOUT "\n(*END-PARAMETRIC*)\n";
 
 __END__
 

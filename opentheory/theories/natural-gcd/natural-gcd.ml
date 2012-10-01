@@ -1,5 +1,17 @@
+(* ========================================================================= *)
+(* NATURAL NUMBER GREATEST COMMON DIVISOR                                    *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* Natural number greatest common divisor.                                   *)
+(* Interpretations for natural number greatest common divisor.               *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation
+  "opentheory/theories/natural-gcd/natural-gcd.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of natural number greatest common divisor.                     *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "natural-gcd-def";;
@@ -17,6 +29,10 @@ let (gcd_divides1,gcd_divides2,gcd_greatest_imp) =
 export_thm gcd_divides1;;
 export_thm gcd_divides2;;
 export_thm gcd_greatest_imp;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of natural number greatest common divisor.                     *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "natural-gcd-thm";;
 

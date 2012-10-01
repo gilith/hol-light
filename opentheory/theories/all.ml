@@ -48,25 +48,43 @@ loads "opentheory/theories/natural-bits/natural-bits.ml";;
 
 loads "opentheory/theories/natural-divides/natural-divides.ml";;
 
-loads "opentheory/theories/gcd.ml";;
-
-loads "opentheory/theories/prime.ml";;
-
 (* ------------------------------------------------------------------------- *)
-(* Fibonacci encoding of natural numbers.                                    *)
+(* Natural number greatest common divisor.                                   *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/fibonacci.ml";;
+loads "opentheory/theories/natural-gcd/natural-gcd.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Abstract algebra.                                                         *)
+(* Prime natural numbers.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/group.ml";;
+loads "opentheory/theories/natural-prime/natural-prime.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Fibonacci numbers.                                                        *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/natural-fibonacci/natural-fibonacci.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Parametric theory of groups.                                              *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/group/group.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Parametric theory of rings.                                               *)
+(* ------------------------------------------------------------------------- *)
 
 (***
 loads "opentheory/theories/ring.ml";;
+***)
 
+(* ------------------------------------------------------------------------- *)
+(* Parametric theory of fields.                                              *)
+(* ------------------------------------------------------------------------- *)
+
+(***
 loads "opentheory/theories/field.ml";;
 ***)
 

@@ -29,17 +29,17 @@ THEORY_INTERPRETATIONS = \
 theories/byte-word.ml: theories/word.ml theories/word-modular.ml
 	scripts/instantiate -r "word/byte" $< > $@
 
-theories/field-group.ml: theories/group.ml
+theories/field-group.ml: theories/group/group.ml
 	scripts/instantiate -r "group/field" $< > $@
 
-theories/field-star-group.ml: theories/group.ml
+theories/field-star-group.ml: theories/group/group.ml
 	scripts/instantiate -r "group/field_star" $< > $@
 
 theories/gfp-modular.ml: theories/modular.ml
-	scripts/instantiate -r "modulus/oddprime:modular/gfp" -x $< > $@
+	scripts/instantiate -r "modulus/oddprime:modular/gfp" $< > $@
 
 theories/word-modular.ml: theories/modular.ml
-	scripts/instantiate -r "modulus/word_size:modular/word" -x $< > $@
+	scripts/instantiate -r "modulus/word_size:modular/word" $< > $@
 
 theories/word10-word.ml: theories/word.ml theories/word-modular.ml
 	scripts/instantiate -r "word/word10" $< > $@

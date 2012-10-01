@@ -3,25 +3,6 @@
 # Joe Lerd
 ###############################################################################
 
-# Algebra
-
-# Algebra.Group
-
-type "HOLLight.group" as "Algebra.Group.group"
-
-const "HOLLight.group_add" as "Algebra.Group.+"
-const "HOLLight.group_neg" as "Algebra.Group.~"
-const "HOLLight.group_scale" as "Algebra.Group.*"
-const "HOLLight.group_sub" as "Algebra.Group.-"
-const "HOLLight.group_zero" as "Algebra.Group.0"
-const "HOLLight.group_scale_add" as "Algebra.Group.multAdd"
-const "HOLLight.group_scale_sub" as "Algebra.Group.multSub"
-
-# Algebra.Group.ElGamal
-
-const "HOLLight.group_elgamal_decrypt" as "Algebra.Group.ElGamal.decrypt"
-const "HOLLight.group_elgamal_encrypt" as "Algebra.Group.ElGamal.encrypt"
-
 # Bit
 
 const "HOLLight.bit_add" as "Bit.+"
@@ -278,46 +259,10 @@ const "HOLLight.modular_to_num" as "Number.Modular.toNatural"
 
 # Number.Natural
 
-const "HOLLight.fibonacci" as "Number.Natural.fibonacci"
-const "HOLLight.gcd" as "Number.Natural.gcd"
-const "HOLLight.lcm" as "Number.Natural.lcm"
-const "HOLLight.prime" as "Number.Natural.prime"
-
-# Number.Natural.Fibonacci
-
-const "HOLLight.decode_fib" as "Number.Natural.Fibonacci.decode"
-const "HOLLight.decode_fib_dest" as "Number.Natural.Fibonacci.decode.dest"
-const "HOLLight.encode_fib" as "Number.Natural.Fibonacci.encode"
-const "HOLLight.encode_fib_find" as "Number.Natural.Fibonacci.encode.find"
-const "HOLLight.encode_fib_mk" as "Number.Natural.Fibonacci.encode.mk"
-const "HOLLight.rdecode_fib" as "Number.Natural.Fibonacci.fromRandom"
-const "HOLLight.rdecode_fib_dest" as "Number.Natural.Fibonacci.fromRandom.dest"
-const "HOLLight.zeckendorf" as "Number.Natural.Fibonacci.zeckendorf"
-
 # Number.Natural.Geometric
 
 const "HOLLight.rdecode_geometric" as "Number.Natural.Geometric.fromRandom"
 const "HOLLight.rdecode_geometric_loop" as "Number.Natural.Geometric.fromRandom.loop"
-
-# Number.Natural.Prime
-
-const "HOLLight.primes" as "Number.Natural.Prime.all"
-const "HOLLight.primes_below" as "Number.Natural.Prime.below"
-
-# Number.Natural.Prime.Sieve
-
-type "HOLLight.sieve" as "Number.Natural.Prime.Sieve.sieve"
-
-const "HOLLight.dest_sieve" as "Number.Natural.Prime.Sieve.dest"
-const "HOLLight.inc_sieve" as "Number.Natural.Prime.Sieve.increment"
-const "HOLLight.inc_counters_sieve" as "Number.Natural.Prime.Sieve.increment.inc"
-const "HOLLight.init_sieve" as "Number.Natural.Prime.Sieve.initial"
-const "HOLLight.is_sieve" as "Number.Natural.Prime.Sieve.invariant"
-const "HOLLight.is_counters_sieve" as "Number.Natural.Prime.Sieve.invariant.inv"
-const "HOLLight.max_sieve" as "Number.Natural.Prime.Sieve.max"
-const "HOLLight.mk_sieve" as "Number.Natural.Prime.Sieve.mk"
-const "HOLLight.next_sieve" as "Number.Natural.Prime.Sieve.next"
-const "HOLLight.primes_sieve" as "Number.Natural.Prime.Sieve.primes"
 
 # Number.Natural.Uniform
 

@@ -1,4 +1,4 @@
-(* field *)
+(*BEGIN-PARAMETRIC*)
 
 (* field-def *)
 
@@ -257,3 +257,5 @@ let field_elgamal_correct = new_axiom
 
 let field_add_comm' = new_axiom
    `!x y z. field_add x (field_add y z) = field_add y (field_add x z)`;;
+
+(*END-PARAMETRIC*)

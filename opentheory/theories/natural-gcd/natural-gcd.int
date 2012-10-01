@@ -1,0 +1,11 @@
+###############################################################################
+# INTERPRETATIONS FOR NATURAL NUMBER GREATEST COMMON DIVISOR
+# Joe Leslie-Hurd
+###############################################################################
+
+# Number
+
+# Number.Natural
+
+const "HOLLight.gcd" as "Number.Natural.gcd"
+const "HOLLight.lcm" as "Number.Natural.lcm"
