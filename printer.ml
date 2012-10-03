@@ -180,10 +180,12 @@ let pp_print_term =
       with Failure _ ->
       try if not (s = "GSPEC") then fail() else
           let evs,bod = strip_exists(body(rand tm)) in
-          let bod1,fabs = dest_comb bod in
-          let bod2,babs = dest_comb bod1 in
-          let c = rator bod2 in
-          if fst(dest_const c) <> "SETSPEC" then fail() else
+          let bod1,babs = dest_comb bod in
+          let bod2,bod3 = dest_comb bod1 in
+          if fst (dest_const bod2) <> "/\\" then fail() else
+          let bod4,fabs = dest_comb bod3 in
+          let bod5,bod6 = dest_comb bod4 in
+          if fst (dest_const bod5) <> "=" then fail() else
           pp_print_string fmt "{";
           print_term 0 fabs;
           pp_print_string fmt " | ";

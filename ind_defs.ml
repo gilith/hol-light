@@ -245,24 +245,48 @@ let derive_nonschematic_inductive_relations =
 (* Part 2: Tactic-integrated tools for proving monotonicity automatically.   *)
 (* ========================================================================= *)
 
-let MONO_AND = ITAUT `(A ==> B) /\ (C ==> D) ==> (A /\ C ==> B /\ D)`;;
+logfile "bool-int";;
 
-let MONO_OR = ITAUT `(A ==> B) /\ (C ==> D) ==> (A \/ C ==> B \/ D)`;;
+let MONO_AND =
+    ITAUT
+      `!p1 p2 q1 q2.
+         (p1 ==> p2) /\ (q1 ==> q2) ==> (p1 /\ q1 ==> p2 /\ q2)`;;
 
-let MONO_IMP = ITAUT `(B ==> A) /\ (C ==> D) ==> ((A ==> C) ==> (B ==> D))`;;
+export_thm MONO_AND;;
 
-let MONO_NOT = ITAUT `(B ==> A) ==> (~A ==> ~B)`;;
+let MONO_OR =
+    ITAUT
+      `!p1 p2 q1 q2.
+         (p1 ==> p2) /\ (q1 ==> q2) ==> (p1 \/ q1 ==> p2 \/ q2)`;;
+
+export_thm MONO_OR;;
+
+let MONO_IMP =
+    ITAUT
+      `!p1 p2 q1 q2.
+         (p2 ==> p1) /\ (q1 ==> q2) ==> ((p1 ==> q1) ==> (p2 ==> q2))`;;
+
+export_thm MONO_IMP;;
+
+let MONO_NOT = ITAUT `!p q. (q ==> p) ==> (~p ==> ~q)`;;
+
+export_thm MONO_NOT;;
 
 let MONO_FORALL = prove
- (`(!x:A. P x ==> Q x) ==> ((!x. P x) ==> (!x. Q x))`,
+ (`!p q. (!x:A. p x ==> q x) ==> ((!x. p x) ==> (!x. q x))`,
   REPEAT STRIP_TAC THEN FIRST_ASSUM MATCH_MP_TAC THEN
   ASM_REWRITE_TAC[]);;
 
+export_thm MONO_FORALL;;
+
 let MONO_EXISTS = prove
- (`(!x:A. P x ==> Q x) ==> ((?x. P x) ==> (?x. Q x))`,
+ (`!p q. (!x:A. p x ==> q x) ==> ((?x. p x) ==> (?x. q x))`,
+  REPEAT GEN_TAC THEN
   DISCH_TAC THEN DISCH_THEN(X_CHOOSE_TAC `x:A`) THEN
   EXISTS_TAC `x:A` THEN FIRST_ASSUM MATCH_MP_TAC THEN
   ASM_REWRITE_TAC[]);;
+
+export_thm MONO_EXISTS;;
 
 (* ------------------------------------------------------------------------- *)
 (* Assignable list of monotonicity theorems, so users can add their own.     *)
@@ -300,7 +324,8 @@ let MONO_TAC =
     tryfind (fun (k,t) -> if k = cn then t (asl,w) else fail()) tacs in
   fun gl ->
     let tacs = itlist
-      (fun th l -> let ft = repeat rator (funpow 2 rand (concl th)) in
+      (fun th l -> let th = SPEC_ALL th in
+                   let ft = repeat rator (funpow 2 rand (concl th)) in
                    let c = try fst(dest_const ft) with Failure _ -> "" in
                    (c,BACKCHAIN_TAC th THEN REPEAT CONJ_TAC)::l)
       (!monotonicity_theorems) ["",MONO_ABS_TAC] in
@@ -461,3 +486,5 @@ let derive_strong_induction =
     let nasm = lhand(concl th3) in
     let th4 = GENL ps (DISCH nasm (weaken_triv(UNDISCH th3))) in
     GENL svs (prove_monotonicity_hyps th4);;
+
+logfile_end ();;

@@ -1,0 +1,10 @@
+###############################################################################
+# INTERPRETATIONS FOR THE DIVIDES RELATION ON NATURAL NUMBERS
+# Joe Leslie-Hurd
+###############################################################################
+
+# Number
+
+# Number.Natural
+
+const "HOLLight.divides" as "Number.Natural.divides"

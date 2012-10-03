@@ -94,6 +94,12 @@ loads "lib.ml";;        (* Various useful general library functions          *)
 loads "fusion.ml";;
 
 (* ------------------------------------------------------------------------- *)
+(* Load the OpenTheory infrastructure.                                       *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/opentheory.ml";;
+
+(* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)
 (* ------------------------------------------------------------------------- *)
 
@@ -134,19 +140,21 @@ loads "pair.ml";;       (* Theory of pairs                                   *)
 loads "nums.ml";;       (* Axiom of Infinity, definition of natural numbers  *)
 loads "recursion.ml";;  (* Tools for primitive recursion on inductive types  *)
 loads "arith.ml";;      (* Natural number arithmetic                         *)
-loads "wf.ml";;         (* Theory of wellfounded relations                   *)
 loads "calc_num.ml";;   (* Calculation with natural numbers                  *)
+loads "sets.ml";;       (* Basic set theory.                                 *)
+loads "relations.ml";;  (* Basic theory of relations                         *)
+loads "wf.ml";;         (* Theory of wellfounded relations                   *)
 loads "normalizer.ml";; (* Polynomial normalizer for rings and semirings     *)
 loads "grobner.ml";;    (* Groebner basis procedure for most semirings.      *)
 loads "ind_types.ml";;  (* Tools for defining inductive types                *)
 loads "lists.ml";;      (* Theory of lists                                   *)
 loads "realax.ml";;     (* Definition of real numbers                        *)
+(* Not yet ported to OpenTheory
 loads "calc_int.ml";;   (* Calculation with integer-valued reals             *)
 loads "realarith.ml";;  (* Universal linear real decision procedure          *)
 loads "real.ml";;       (* Derived properties of reals                       *)
 loads "calc_rat.ml";;   (* Calculation with rational-valued reals            *)
 loads "int.ml";;        (* Definition of integers                            *)
-loads "sets.ml";;       (* Basic set theory.                                 *)
 loads "iterate.ml";;    (* Iterated operations                               *)
 loads "cart.ml";;       (* Finite Cartesian products                         *)
 loads "define.ml";;     (* Support for general recursive definitions         *)
@@ -157,3 +165,4 @@ loads "define.ml";;     (* Support for general recursive definitions         *)
 
 loads "help.ml";;       (* Online help using the entries in Help directory   *)
 loads "database.ml";;   (* List of name-theorem pairs for search system      *)
+*)

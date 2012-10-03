@@ -41,7 +41,7 @@ make_overloadable "&" `:num->A`;;
 
 do_list overload_interface
  ["+",`(+):num->num->num`; "-",`(-):num->num->num`;
-  "*",`(*):num->num->num`; "<",`(<):num->num->bool`;
+  "*",`( * ):num->num->num`; "<",`(<):num->num->bool`;
   "<=",`(<=):num->num->bool`; ">",`(>):num->num->bool`;
   ">=",`(>=):num->num->bool`];;
 
@@ -51,116 +51,298 @@ let prioritize_num() = prioritize_overload(mk_type("num",[]));;
 (* Absolute distance function on the naturals.                               *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-distance-def";;
+
 let dist = new_definition
-  `dist(m,n) = (m - n) + (n - m)`;;
+  `!m n. dist m n = if m <= n then n - m else m - n`;;
+
+export_thm dist;;
 
 (* ------------------------------------------------------------------------- *)
 (* Some easy theorems.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-distance-thm";;
+
 let DIST_REFL = prove
- (`!n. dist(n,n) = 0`,
-  REWRITE_TAC[dist; SUB_REFL; ADD_CLAUSES]);;
+ (`!n. dist n n = 0`,
+  REWRITE_TAC[dist; SUB_REFL; LE_REFL]);;
+
+export_thm DIST_REFL;;
 
 let DIST_LZERO = prove
- (`!n. dist(0,n) = n`,
-  REWRITE_TAC[dist; SUB_0; ADD_CLAUSES]);;
+ (`!n. dist 0 n = n`,
+  REWRITE_TAC[dist; LE_0; SUB_0]);;
 
-let DIST_RZERO = prove
- (`!n. dist(n,0) = n`,
-  REWRITE_TAC[dist; SUB_0; ADD_CLAUSES]);;
+export_thm DIST_LZERO;;
 
 let DIST_SYM = prove
- (`!m n. dist(m,n) = dist(n,m)`,
-  REWRITE_TAC[dist] THEN MATCH_ACCEPT_TAC ADD_SYM);;
+ (`!m n. dist m n = dist n m`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[dist] THEN
+  ASM_CASES_TAC `n <= m` THENL
+  [ASM_CASES_TAC `m <= n` THENL
+   [MP_TAC (SPECL [`m:num`; `n:num`] LE_ANTISYM) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REFL_TAC;
+    ASM_REWRITE_TAC []];
+   ASM_CASES_TAC `m <= n` THENL
+   [ASM_REWRITE_TAC [];
+    MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
+    ASM_REWRITE_TAC []]]);;
+
+export_thm DIST_SYM;;
+
+let DIST_RZERO = prove
+ (`!n. dist n 0 = n`,
+  ONCE_REWRITE_TAC [DIST_SYM] THEN
+  ACCEPT_TAC DIST_LZERO);;
+
+export_thm DIST_RZERO;;
 
 let DIST_LADD = prove
- (`!m p n. dist(m + n,m + p) = dist(n,p)`,
-  REWRITE_TAC[dist; SUB_ADD_LCANCEL]);;
+ (`!m n p. dist (m + n) (m + p) = dist n p`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[dist; LE_ADD_LCANCEL] THEN
+  ASM_CASES_TAC `n <= p` THENL
+  [ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC SUB_ADD_LCANCEL THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC SUB_ADD_LCANCEL THEN
+   MP_TAC (SPECL [`n:num`; `p:num`] LE_CASES) THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm DIST_LADD;;
 
 let DIST_RADD = prove
- (`!m p n. dist(m + p,n + p) = dist(m,n)`,
-  REWRITE_TAC[dist; SUB_ADD_RCANCEL]);;
+ (`!p m n. dist (m + p) (n + p) = dist m n`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  MATCH_ACCEPT_TAC DIST_LADD);;
 
-let DIST_LADD_0 = prove
- (`!m n. dist(m + n,m) = n`,
-  REWRITE_TAC[dist; ADD_SUB2; ADD_SUBR2; ADD_CLAUSES]);;
+export_thm DIST_RADD;;
+
+let DIST_SUC = prove
+ (`!m n. dist (SUC m) (SUC n) = dist m n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [ADD1] THEN
+  MATCH_ACCEPT_TAC DIST_RADD);;
+
+export_thm DIST_SUC;;
 
 let DIST_RADD_0 = prove
- (`!m n. dist(m,m + n) = n`,
-  ONCE_REWRITE_TAC[DIST_SYM] THEN MATCH_ACCEPT_TAC DIST_LADD_0);;
+ (`!m n. dist m (m + n) = n`,
+  REWRITE_TAC[dist; LE_ADD; ADD_SUB2]);;
+
+export_thm DIST_RADD_0;;
+
+let DIST_LADD_0 = prove
+ (`!m n. dist (m + n) m = n`,
+  ONCE_REWRITE_TAC [DIST_SYM] THEN
+  ACCEPT_TAC DIST_RADD_0);;
+
+export_thm DIST_LADD_0;;
 
 let DIST_LMUL = prove
- (`!m n p. m * dist(n,p) = dist(m * n,m * p)`,
-  REWRITE_TAC[dist; LEFT_ADD_DISTRIB; LEFT_SUB_DISTRIB]);;
+ (`!m n p. m * dist n p = dist (m * n) (m * p)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [dist] THEN
+  ASM_CASES_TAC `m = 0` THENL
+  [ASM_REWRITE_TAC [MULT; LE_REFL; SUB_REFL];
+   ASM_REWRITE_TAC [LE_MULT_LCANCEL] THEN
+   COND_CASES_TAC THENL
+   [ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LEFT_SUB_DISTRIB THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LEFT_SUB_DISTRIB THEN
+    MP_TAC (SPECL [`n:num`; `p:num`] LE_CASES) THEN
+    ASM_REWRITE_TAC []]]);;
+
+export_thm DIST_LMUL;;
 
 let DIST_RMUL = prove
- (`!m n p. dist(m,n) * p = dist(m * p,n * p)`,
-  REWRITE_TAC[dist; RIGHT_ADD_DISTRIB; RIGHT_SUB_DISTRIB]);;
+ (`!p m n. dist m n * p = dist (m * p) (n * p)`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [MULT_SYM] THEN
+  MATCH_ACCEPT_TAC DIST_LMUL);;
+
+export_thm DIST_RMUL;;
 
 let DIST_EQ_0 = prove
- (`!m n. (dist(m,n) = 0) <=> (m = n)`,
-  REWRITE_TAC[dist; ADD_EQ_0; SUB_EQ_0; LE_ANTISYM]);;
+ (`!m n. (dist m n = 0) <=> (m = n)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [dist] THEN
+  COND_CASES_TAC THENL
+  [CONV_TAC (RAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
+   MATCH_MP_TAC SUB_EQ_0 THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   MATCH_MP_TAC SUB_EQ_0 THEN
+   MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm DIST_EQ_0;;
 
 (* ------------------------------------------------------------------------- *)
 (* Simplifying theorem about the distance operation.                         *)
 (* ------------------------------------------------------------------------- *)
 
 let DIST_ELIM_THM = prove
- (`P(dist(x,y)) <=> !d. ((x = y + d) ==> P(d)) /\ ((y = x + d) ==> P(d))`,
-  DISJ_CASES_TAC(SPECL [`x:num`; `y:num`] LE_CASES) THEN
-  POP_ASSUM(X_CHOOSE_THEN `e:num` SUBST1_TAC o REWRITE_RULE[LE_EXISTS]) THEN
-  REWRITE_TAC[dist; ADD_SUB; ADD_SUB2; ADD_SUBR; ADD_SUBR2] THEN
-  REWRITE_TAC[ADD_CLAUSES; EQ_ADD_LCANCEL] THEN
-  GEN_REWRITE_TAC (RAND_CONV o ONCE_DEPTH_CONV) [EQ_SYM_EQ] THEN
-  REWRITE_TAC[GSYM ADD_ASSOC; EQ_ADD_LCANCEL_0; ADD_EQ_0] THEN
-  ASM_CASES_TAC `e = 0` THEN ASM_REWRITE_TAC[] THEN
-  EQ_TAC THEN REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[] THEN
-  FIRST_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[]);;
+ (`!p x y.
+     p (dist x y) <=>
+     !d. ((x = y + d) ==> p d) /\ ((y = x + d) ==> p d)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [dist] THEN
+  COND_CASES_TAC THENL
+  [ASM_CASES_TAC `y <= (x : num)` THENL
+   [MP_TAC (SPECL [`x:num`; `y:num`] LE_ANTISYM) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [SUB_REFL] THEN
+    CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+    REWRITE_TAC [EQ_ADD_LCANCEL_0; FORALL_UNWIND_THM2];
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [LE_EXISTS; NOT_EXISTS_THM] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [LE_EXISTS] THEN
+    DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+    REWRITE_TAC [ADD_SUB2; EQ_ADD_LCANCEL] THEN
+    CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+    REWRITE_TAC [FORALL_UNWIND_THM2]];
+   ASM_CASES_TAC `y <= (x:num)` THENL
+   [UNDISCH_TAC `~(x <= (y:num))` THEN
+    REWRITE_TAC [LE_EXISTS; NOT_EXISTS_THM] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [LE_EXISTS] THEN
+    DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+    REWRITE_TAC [ADD_SUB2; EQ_ADD_LCANCEL] THEN
+    CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [EQ_SYM_EQ])) THEN
+    REWRITE_TAC [FORALL_UNWIND_THM2];
+    MP_TAC (SPECL [`x:num`; `y:num`] LE_CASES) THEN
+    ASM_REWRITE_TAC []]]);;
+
+export_thm DIST_ELIM_THM;;
 
 (* ------------------------------------------------------------------------- *)
 (* Now some more theorems.                                                   *)
 (* ------------------------------------------------------------------------- *)
 
-let DIST_LE_CASES,DIST_ADDBOUND,DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV =
+let DIST_CASES,DIST_LE_CASES,DIST_ADDBOUND,
+    DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV,
+    DIST_DIST_SUC =
   let DIST_ELIM_TAC =
-    let conv =
-      HIGHER_REWRITE_CONV[SUB_ELIM_THM; COND_ELIM_THM; DIST_ELIM_THM] false in
+    let conv = HIGHER_REWRITE_CONV[COND_ELIM_THM; DIST_ELIM_THM] false in
     CONV_TAC conv THEN TRY GEN_TAC THEN CONJ_TAC THEN
     DISCH_THEN(fun th -> SUBST_ALL_TAC th THEN
                          (let l,r = dest_eq (concl th) in
                           if is_var l & not (vfree_in l r) then ALL_TAC
                           else ASSUME_TAC th)) in
-  let DIST_ELIM_TAC' =
-    REPEAT STRIP_TAC THEN REPEAT DIST_ELIM_TAC THEN
-    REWRITE_TAC[GSYM NOT_LT; LT_EXISTS] THEN
-    DISCH_THEN(CHOOSE_THEN SUBST_ALL_TAC) THEN POP_ASSUM MP_TAC THEN
-    CONV_TAC(LAND_CONV NUM_CANCEL_CONV) THEN
-    REWRITE_TAC[ADD_CLAUSES; NOT_SUC] in
-  let DIST_LE_CASES = prove
-   (`!m n p. dist(m,n) <= p <=> (m <= n + p) /\ (n <= m + p)`,
+  let DIST_CASES = prove
+   (`!m n p. dist m n = p <=> m + p = n \/ n + p = m`,
+    REPEAT GEN_TAC THEN
+    REPEAT DIST_ELIM_TAC THEN
+    REWRITE_TAC
+      [EQ_ADD_LCANCEL; GSYM ADD_ASSOC; ADD_EQ_0; EQ_ADD_LCANCEL_0] THEN
+    EQ_TAC THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [])
+  and DIST_LE_CASES = prove
+   (`!m n p. dist m n <= p <=> (m <= n + p) /\ (n <= m + p)`,
     REPEAT GEN_TAC THEN REPEAT DIST_ELIM_TAC THEN
     REWRITE_TAC[GSYM ADD_ASSOC; LE_ADD; LE_ADD_LCANCEL])
   and DIST_ADDBOUND = prove
-   (`!m n. dist(m,n) <= m + n`,
+   (`!m n. dist m n <= m + n`,
     REPEAT GEN_TAC THEN DIST_ELIM_TAC THENL
      [ONCE_REWRITE_TAC[ADD_SYM]; ALL_TAC] THEN
-    REWRITE_TAC[ADD_ASSOC; LE_ADDR])
-  and [DIST_TRIANGLE; DIST_ADD2; DIST_ADD2_REV] = (CONJUNCTS o prove)
-   (`(!m n p. dist(m,p) <= dist(m,n) + dist(n,p)) /\
-     (!m n p q. dist(m + n,p + q) <= dist(m,p) + dist(n,q)) /\
-     (!m n p q. dist(m,p) <= dist(m + n,p + q) + dist(n,q))`,
-    DIST_ELIM_TAC') in
-  DIST_LE_CASES,DIST_ADDBOUND,DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV;;
+    REWRITE_TAC[ADD_ASSOC; LE_ADDR]) in
+  let DIST_LEMMA = prove
+   (`!m n. n <= m + dist m n`,
+    REPEAT GEN_TAC THEN
+    DIST_ELIM_TAC THENL
+    [REWRITE_TAC [GSYM ADD_ASSOC; LE_ADD];
+     MATCH_ACCEPT_TAC LE_REFL]) in
+  let DIST_TRIANGLE = prove
+   (`!m n p. dist m p <= dist m n + dist n p`,
+    REPEAT GEN_TAC THEN
+    REWRITE_TAC [DIST_LE_CASES] THEN
+    CONJ_TAC THENL
+    [CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
+     ONCE_REWRITE_TAC [DIST_SYM] THEN
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `n + dist n m` THEN
+     REWRITE_TAC [DIST_LEMMA; LE_ADD_RCANCEL; ADD_ASSOC];
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `n + dist n p` THEN
+     REWRITE_TAC [DIST_LEMMA; LE_ADD_RCANCEL; ADD_ASSOC]]) in
+  let DIST_ADD2 = prove
+   (`!m n p q. dist (m + n) (p + q) <= dist m p + dist n q`,
+    REPEAT GEN_TAC THEN
+    REWRITE_TAC [DIST_LE_CASES] THEN
+    CONJ_TAC THENL
+    [ONCE_REWRITE_TAC [DIST_SYM] THEN
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `m + (q + dist q n)` THEN
+     REWRITE_TAC [DIST_LEMMA; LE_ADD_LCANCEL] THEN
+     REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL] THEN
+     REWRITE_TAC [GSYM ADD_ASSOC] THEN
+     CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
+     REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL; DIST_LEMMA];
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `p + (n + dist n q)` THEN
+     REWRITE_TAC [DIST_LEMMA; LE_ADD_LCANCEL] THEN
+     REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL] THEN
+     REWRITE_TAC [GSYM ADD_ASSOC] THEN
+     CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
+     REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL; DIST_LEMMA]]) in
+  let DIST_ADD2_REV = prove
+   (`!m n p q. dist m p <= dist (m + n) (p + q) + dist n q`,
+    REPEAT GEN_TAC THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `dist ((m + n) + q) ((p + q) + n)` THEN
+    CONJ_TAC THENL
+    [REWRITE_TAC [GSYM ADD_ASSOC] THEN
+     CONV_TAC (RAND_CONV (RAND_CONV (RAND_CONV (REWR_CONV ADD_SYM)))) THEN
+     REWRITE_TAC [DIST_RADD; LE_REFL];
+     CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV DIST_SYM))) THEN
+     MATCH_ACCEPT_TAC DIST_ADD2]) in
+  let DIST_DIST_SUC = prove
+   (`!m n. dist (dist m n) (dist m (n + 1)) = 1`,
+    REPEAT GEN_TAC THEN
+    DIST_ELIM_TAC THENL
+    [REWRITE_TAC [DIST_LADD] THEN
+     MP_TAC (SPEC `d : num` num_CASES) THEN
+     STRIP_TAC THENL
+     [ASM_REWRITE_TAC [DIST_LZERO];
+      POP_ASSUM SUBST1_TAC THEN
+      REWRITE_TAC [ONE; DIST_SUC; DIST_RZERO] THEN
+      REWRITE_TAC [ADD1; DIST_LADD_0; ZERO_ADD]];
+     REWRITE_TAC [GSYM ADD_ASSOC; DIST_RADD_0]]) in
+  DIST_CASES,DIST_LE_CASES,DIST_ADDBOUND,
+  DIST_TRIANGLE,DIST_ADD2,DIST_ADD2_REV,
+  DIST_DIST_SUC;;
+
+export_thm DIST_CASES;;
+export_thm DIST_LE_CASES;;
+export_thm DIST_ADDBOUND;;
+export_thm DIST_TRIANGLE;;
+export_thm DIST_ADD2;;
+export_thm DIST_ADD2_REV;;
+export_thm DIST_DIST_SUC;;
 
 let DIST_TRIANGLE_LE = prove
- (`!m n p q. dist(m,n) + dist(n,p) <= q ==> dist(m,p) <= q`,
+ (`!m n p q. dist m n + dist n p <= q ==> dist m p <= q`,
   REPEAT STRIP_TAC THEN MATCH_MP_TAC LE_TRANS THEN
-  EXISTS_TAC `dist(m,n) + dist(n,p)` THEN ASM_REWRITE_TAC[DIST_TRIANGLE]);;
+  EXISTS_TAC `dist m n + dist n p` THEN ASM_REWRITE_TAC[DIST_TRIANGLE]);;
+
+export_thm DIST_TRIANGLE_LE;;
 
 let DIST_TRIANGLES_LE = prove
  (`!m n p q r s.
-        dist(m,n) <= r /\ dist(p,q) <= s ==> dist(m,p) <= dist(n,q) + r + s`,
+        dist m n <= r /\ dist p q <= s ==> dist m p <= dist n q + r + s`,
   REPEAT STRIP_TAC THEN MATCH_MP_TAC DIST_TRIANGLE_LE THEN
   EXISTS_TAC `n:num` THEN GEN_REWRITE_TAC RAND_CONV [ADD_SYM] THEN
   REWRITE_TAC[GSYM ADD_ASSOC] THEN MATCH_MP_TAC LE_ADD2 THEN
@@ -169,87 +351,105 @@ let DIST_TRIANGLES_LE = prove
   REWRITE_TAC[LE_ADD_LCANCEL] THEN ONCE_REWRITE_TAC[DIST_SYM] THEN
   ASM_REWRITE_TAC[]);;
 
+export_thm DIST_TRIANGLES_LE;;
+
 (* ------------------------------------------------------------------------- *)
 (* Useful lemmas about bounds.                                               *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "natural-mult-thm";;
+
 let BOUNDS_LINEAR = prove
- (`!A B C. (!n. A * n <= B * n + C) <=> A <= B`,
+ (`!a b c. (!n. a * n <= b * n + c) <=> a <= b`,
   REPEAT GEN_TAC THEN EQ_TAC THENL
    [CONV_TAC CONTRAPOS_CONV THEN REWRITE_TAC[NOT_LE] THEN
     DISCH_THEN(CHOOSE_THEN SUBST1_TAC o REWRITE_RULE[LT_EXISTS]) THEN
     REWRITE_TAC[RIGHT_ADD_DISTRIB; LE_ADD_LCANCEL] THEN
-    DISCH_THEN(MP_TAC o SPEC `SUC C`) THEN
+    DISCH_THEN(MP_TAC o SPEC `SUC c`) THEN
     REWRITE_TAC[NOT_LE; MULT_CLAUSES; ADD_CLAUSES; LT_SUC_LE] THEN
     REWRITE_TAC[ADD_ASSOC; LE_ADDR];
     DISCH_THEN(CHOOSE_THEN SUBST1_TAC o REWRITE_RULE[LE_EXISTS]) THEN
     REWRITE_TAC[RIGHT_ADD_DISTRIB; GSYM ADD_ASSOC; LE_ADD]]);;
 
+export_thm BOUNDS_LINEAR;;
+
 let BOUNDS_LINEAR_0 = prove
- (`!A B. (!n. A * n <= B) <=> (A = 0)`,
-  REPEAT GEN_TAC THEN MP_TAC(SPECL [`A:num`; `0`; `B:num`] BOUNDS_LINEAR) THEN
+ (`!a b. (!n. a * n <= b) <=> (a = 0)`,
+  REPEAT GEN_TAC THEN MP_TAC(SPECL [`a:num`; `0`; `b:num`] BOUNDS_LINEAR) THEN
   REWRITE_TAC[MULT_CLAUSES; ADD_CLAUSES; LE]);;
 
+export_thm BOUNDS_LINEAR_0;;
+
 let BOUNDS_DIVIDED = prove
- (`!P. (?B. !n. P(n) <= B) <=>
-       (?A B. !n. n * P(n) <= A * n + B)`,
+ (`!p. (?b. !n. p n <= b) <=>
+       (?a b. !n. n * p n <= a * n + b)`,
   GEN_TAC THEN EQ_TAC THEN STRIP_TAC THENL
-   [MAP_EVERY EXISTS_TAC [`B:num`; `0`] THEN
+   [MAP_EVERY EXISTS_TAC [`b:num`; `0`] THEN
     GEN_TAC THEN REWRITE_TAC[ADD_CLAUSES] THEN
     GEN_REWRITE_TAC RAND_CONV [MULT_SYM] THEN
     ASM_REWRITE_TAC[LE_MULT_LCANCEL];
-    EXISTS_TAC `P(0) + A + B` THEN GEN_TAC THEN
-    MP_TAC(SPECL [`n:num`; `(P:num->num) n`; `P(0) + A + B`]
+    EXISTS_TAC `p(0) + a + b` THEN GEN_TAC THEN
+    MP_TAC(SPECL [`n:num`; `(p:num->num) n`; `p(0) + a + b`]
      LE_MULT_LCANCEL) THEN
     ASM_CASES_TAC `n = 0` THEN ASM_REWRITE_TAC[LE_ADD] THEN
     DISCH_THEN(SUBST1_TAC o SYM) THEN
-    MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `A * n + B` THEN
+    MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `a * n + b` THEN
     ASM_REWRITE_TAC[] THEN REWRITE_TAC[LEFT_ADD_DISTRIB] THEN
     GEN_REWRITE_TAC RAND_CONV [ADD_SYM] THEN
     GEN_REWRITE_TAC (RAND_CONV o ONCE_DEPTH_CONV) [MULT_SYM] THEN
     REWRITE_TAC[GSYM ADD_ASSOC; LE_ADD_LCANCEL] THEN
-    MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `B * n` THEN
+    MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `b * n` THEN
     REWRITE_TAC[LE_ADD] THEN UNDISCH_TAC `~(n = 0)` THEN
     SPEC_TAC(`n:num`,`n:num`) THEN INDUCT_TAC THEN
     ASM_REWRITE_TAC[MULT_CLAUSES; LE_ADD]]);;
 
+export_thm BOUNDS_DIVIDED;;
+
 let BOUNDS_NOTZERO = prove
- (`!P A B. (P 0 0 = 0) /\ (!m n. P m n <= A * (m + n) + B) ==>
-       (?B. !m n. P m n <= B * (m + n))`,
-  REPEAT STRIP_TAC THEN EXISTS_TAC `A + B` THEN
+ (`!p a b. (p 0 0 = 0) /\ (!m n. p m n <= a * (m + n) + b) ==>
+       (?c. !m n. p m n <= c * (m + n))`,
+  REPEAT STRIP_TAC THEN EXISTS_TAC `a + b` THEN
   REPEAT GEN_TAC THEN ASM_CASES_TAC `m + n = 0` THENL
    [RULE_ASSUM_TAC(REWRITE_RULE[ADD_EQ_0]) THEN ASM_REWRITE_TAC[LE_0];
-    MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `A * (m + n) + B` THEN
+    MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `a * (m + n) + b` THEN
     ASM_REWRITE_TAC[] THEN REWRITE_TAC[RIGHT_ADD_DISTRIB; LE_ADD_LCANCEL] THEN
     UNDISCH_TAC `~(m + n = 0)` THEN SPEC_TAC(`m + n`,`p:num`) THEN
     INDUCT_TAC THEN REWRITE_TAC[MULT_CLAUSES; LE_ADD]]);;
 
+export_thm BOUNDS_NOTZERO;;
+
+logfile "natural-add-thm";;
+
 let BOUNDS_IGNORE = prove
- (`!P Q. (?B. !i. P(i) <= Q(i) + B) <=>
-         (?B N. !i. N <= i ==> P(i) <= Q(i) + B)`,
+ (`!p q. (?b. !i. p(i) <= q(i) + b) <=>
+         (?b n. !i. n <= i ==> p(i) <= q(i) + b)`,
   REPEAT GEN_TAC THEN EQ_TAC THEN STRIP_TAC THENL
-   [EXISTS_TAC `B:num` THEN ASM_REWRITE_TAC[];
-    POP_ASSUM MP_TAC THEN SPEC_TAC(`B:num`,`B:num`) THEN
-    SPEC_TAC(`N:num`,`N:num`) THEN INDUCT_TAC THENL
+   [EXISTS_TAC `b:num` THEN ASM_REWRITE_TAC[];
+    POP_ASSUM MP_TAC THEN SPEC_TAC(`b:num`,`b:num`) THEN
+    SPEC_TAC(`n:num`,`n:num`) THEN INDUCT_TAC THENL
      [REWRITE_TAC[LE_0] THEN GEN_TAC THEN DISCH_TAC THEN
-      EXISTS_TAC `B:num` THEN ASM_REWRITE_TAC[];
+      EXISTS_TAC `b:num` THEN ASM_REWRITE_TAC[];
       GEN_TAC THEN DISCH_TAC THEN FIRST_ASSUM MATCH_MP_TAC THEN
-      EXISTS_TAC `B + P(N:num)` THEN X_GEN_TAC `i:num` THEN
-      DISCH_TAC THEN ASM_CASES_TAC `SUC N <= i` THENL
-       [MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `Q(i:num) + B` THEN
+      EXISTS_TAC `b + p(n:num)` THEN X_GEN_TAC `i:num` THEN
+      DISCH_TAC THEN ASM_CASES_TAC `SUC n <= i` THENL
+       [MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `q(i:num) + b` THEN
         REWRITE_TAC[LE_ADD; ADD_ASSOC] THEN FIRST_ASSUM MATCH_MP_TAC THEN
         ASM_REWRITE_TAC[];
-        UNDISCH_TAC `~(SUC N <= i)` THEN REWRITE_TAC[NOT_LE; LT] THEN
+        UNDISCH_TAC `~(SUC n <= i)` THEN REWRITE_TAC[NOT_LE; LT] THEN
         ASM_REWRITE_TAC[GSYM NOT_LE] THEN DISCH_THEN SUBST1_TAC THEN
         REWRITE_TAC[ADD_ASSOC] THEN ONCE_REWRITE_TAC[ADD_SYM] THEN
         REWRITE_TAC[LE_ADD]]]]);;
+
+export_thm BOUNDS_IGNORE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Define type of nearly additive functions.                                 *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "real-def";;
+
 let is_nadd = new_definition
-  `is_nadd x <=> (?B. !m n. dist(m * x(n),n * x(m)) <= B * (m + n))`;;
+  `!x. is_nadd x <=> (?B. !m n. dist (m * x n) (n * x m) <= B * (m + n))`;;
 
 let is_nadd_0 = prove
  (`is_nadd (\n. 0)`,
@@ -266,7 +466,7 @@ override_interface ("afn",`mk_nadd`);;
 (* ------------------------------------------------------------------------- *)
 
 let NADD_CAUCHY = prove
- (`!x. ?B. !m n. dist(m * fn x n,n * fn x m) <= B * (m + n)`,
+ (`!x. ?B. !m n. dist (m * fn x n) (n * fn x m) <= B * (m + n)`,
   REWRITE_TAC[GSYM is_nadd; nadd_rep; nadd_abs; ETA_AX]);;
 
 let NADD_BOUND = prove
@@ -280,8 +480,9 @@ let NADD_BOUND = prove
   REWRITE_TAC[ADD_AC; MULT_AC]);;
 
 let NADD_MULTIPLICATIVE = prove
- (`!x. ?B. !m n. dist(fn x (m * n),m * fn x n) <= B * m + B`,
-  GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
+ (`!x. ?B. !m n. dist (fn x (m * n)) (m * fn x n) <= B * m + B`,
+  GEN_TAC THEN
+  X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
   EXISTS_TAC `B + fn x 0` THEN REPEAT GEN_TAC THEN
   ASM_CASES_TAC `n = 0` THENL
    [MATCH_MP_TAC (LE_IMP DIST_ADDBOUND) THEN
@@ -290,17 +491,19 @@ let NADD_MULTIPLICATIVE = prove
     REWRITE_TAC[GSYM EXISTS_REFL]; UNDISCH_TAC `~(n = 0)`] THEN
   REWRITE_TAC[TAUT `(~a ==> b) <=> a \/ b`; GSYM LE_MULT_LCANCEL;
               DIST_LMUL] THEN
-  REWRITE_TAC[MULT_ASSOC] THEN GEN_REWRITE_TAC
-   (LAND_CONV o RAND_CONV o RAND_CONV o LAND_CONV) [MULT_SYM] THEN
+  REWRITE_TAC[MULT_ASSOC] THEN
+  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV o LAND_CONV) [MULT_SYM] THEN
   POP_ASSUM(MATCH_MP_TAC o LE_IMP) THEN
   REWRITE_TAC[LE_EXISTS; RIGHT_ADD_DISTRIB; LEFT_ADD_DISTRIB; MULT_AC] THEN
   CONV_TAC(ONCE_DEPTH_CONV NUM_CANCEL_CONV) THEN
   REWRITE_TAC[GSYM EXISTS_REFL]);;
 
 let NADD_ADDITIVE = prove
- (`!x. ?B. !m n. dist(fn x (m + n),fn x m + fn x n) <= B`,
-  GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
-  EXISTS_TAC `3 * B + fn x 0` THEN REPEAT GEN_TAC THEN
+ (`!x. ?B. !m n. dist (fn x (m + n)) (fn x m + fn x n) <= B`,
+  GEN_TAC THEN
+  X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
+  EXISTS_TAC `3 * B + fn x 0` THEN
+  REPEAT GEN_TAC THEN
   ASM_CASES_TAC `m + n = 0` THENL
    [RULE_ASSUM_TAC(REWRITE_RULE[ADD_EQ_0]) THEN ONCE_REWRITE_TAC[DIST_SYM] THEN
     ASM_REWRITE_TAC[ADD_CLAUSES; DIST_LADD_0; LE_ADDR];
@@ -308,7 +511,7 @@ let NADD_ADDITIVE = prove
     REWRITE_TAC[LE_ADD] THEN UNDISCH_TAC `~(m + n = 0)`] THEN
   REWRITE_TAC[TAUT `(~a ==> b) <=> a \/ b`; GSYM LE_MULT_LCANCEL] THEN
   REWRITE_TAC[DIST_LMUL; LEFT_ADD_DISTRIB] THEN
-  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV o LAND_CONV) [RIGHT_ADD_DISTRIB] THEN
+  GEN_REWRITE_TAC (LAND_CONV o LAND_CONV) [RIGHT_ADD_DISTRIB] THEN
   MATCH_MP_TAC(LE_IMP DIST_ADD2) THEN
   SUBGOAL_THEN `(m + n) * 3 * B = B * (m + m + n) + B * (n + m + n)`
   SUBST1_TAC THENL
@@ -318,7 +521,7 @@ let NADD_ADDITIVE = prove
     MATCH_MP_TAC LE_ADD2 THEN ASM_REWRITE_TAC[]]);;
 
 let NADD_SUC = prove
- (`!x. ?B. !n. dist(fn x (SUC n),fn x n) <= B`,
+ (`!x. ?B. !n. dist (fn x (SUC n)) (fn x n) <= B`,
   GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_ADDITIVE) THEN
   EXISTS_TAC `B + fn x 1` THEN GEN_TAC THEN
   MATCH_MP_TAC(LE_IMP DIST_TRIANGLE) THEN
@@ -327,7 +530,7 @@ let NADD_SUC = prove
   ASM_REWRITE_TAC[DIST_LADD_0; LE_REFL]);;
 
 let NADD_DIST_LEMMA = prove
- (`!x. ?B. !m n. dist(fn x (m + n),fn x m) <= B * n`,
+ (`!x. ?B. !m n. dist (fn x (m + n)) (fn x m) <= B * n`,
   GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_SUC) THEN
   EXISTS_TAC `B:num` THEN GEN_TAC THEN
   INDUCT_TAC THEN REWRITE_TAC[ADD_CLAUSES; DIST_REFL; LE_0] THEN
@@ -338,7 +541,7 @@ let NADD_DIST_LEMMA = prove
   MATCH_MP_TAC LE_ADD2 THEN ASM_REWRITE_TAC[GSYM ADD1; MULT_CLAUSES]);;
 
 let NADD_DIST = prove
- (`!x. ?B. !m n. dist(fn x m,fn x n) <= B * dist(m,n)`,
+ (`!x. ?B. !m n. dist (fn x m) (fn x n) <= B * dist m n`,
   GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_DIST_LEMMA) THEN
   EXISTS_TAC `B:num` THEN REPEAT GEN_TAC THEN
   DISJ_CASES_THEN MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
@@ -347,12 +550,12 @@ let NADD_DIST = prove
   ASM_REWRITE_TAC[DIST_LADD_0]);;
 
 let NADD_ALTMUL = prove
- (`!x y. ?A B. !n. dist(n * fn x (fn y n),fn x n * fn y n) <= A * n + B`,
+ (`!x y. ?A B. !n. dist (n * fn x (fn y n)) (fn x n * fn y n) <= A * n + B`,
   REPEAT GEN_TAC THEN X_CHOOSE_TAC `B:num` (SPEC `x:nadd` NADD_CAUCHY) THEN
   MP_TAC(SPEC `y:nadd` NADD_BOUND) THEN
   DISCH_THEN(X_CHOOSE_THEN `M:num` (X_CHOOSE_TAC `L:num`)) THEN
   MAP_EVERY EXISTS_TAC [`B * (1 + M)`; `B * L`] THEN GEN_TAC THEN
-  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV o RAND_CONV) [MULT_SYM] THEN
+  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [MULT_SYM] THEN
   MATCH_MP_TAC LE_TRANS THEN  EXISTS_TAC `B * (n + fn y n)` THEN
   ASM_REWRITE_TAC[] THEN REWRITE_TAC[LEFT_ADD_DISTRIB; RIGHT_ADD_DISTRIB] THEN
   REWRITE_TAC[MULT_CLAUSES; GSYM ADD_ASSOC; LE_ADD_LCANCEL] THEN
@@ -365,7 +568,7 @@ let NADD_ALTMUL = prove
 override_interface ("===",`(nadd_eq):nadd->nadd->bool`);;
 
 let nadd_eq = new_definition
-  `x === y <=> ?B. !n. dist(fn x n,fn y n) <= B`;;
+  `!x y. x === y <=> ?B. !n. dist (fn x n) (fn y n) <= B`;;
 
 let NADD_EQ_REFL = prove
  (`!x. x === x`,
@@ -392,7 +595,7 @@ let NADD_EQ_TRANS = prove
 override_interface ("&",`nadd_of_num:num->nadd`);;
 
 let nadd_of_num = new_definition
-  `&k = afn(\n. k * n)`;;
+  `!k. &k = afn(\n. k * n)`;;
 
 let NADD_OF_NUM = prove
  (`!k. fn(&k) = \n. k * n`,
@@ -417,7 +620,7 @@ let NADD_OF_NUM_EQ = prove
 override_interface ("<<=",`nadd_le:nadd->nadd->bool`);;
 
 let nadd_le = new_definition
-  `x <<= y <=> ?B. !n. fn x n <= fn y n + B`;;
+  `!x y. x <<= y <=> ?B. !n. fn x n <= fn y n + B`;;
 
 let NADD_LE_WELLDEF_LEMMA = prove
  (`!x x' y y'. x === x' /\ y === y' /\ x <<= y ==> x' <<= y'`,
@@ -513,7 +716,7 @@ let NADD_OF_NUM_LE = prove
 override_interface ("++",`nadd_add:nadd->nadd->nadd`);;
 
 let nadd_add = new_definition
-  `x ++ y = afn(\n. fn x n + fn y n)`;;
+  `!x y. x ++ y = afn(\n. fn x n + fn y n)`;;
 
 let NADD_ADD = prove
  (`!x y. fn(x ++ y) = \n. fn x n + fn y n`,
@@ -604,20 +807,20 @@ let NADD_OF_NUM_ADD = prove
 override_interface ("**",`nadd_mul:nadd->nadd->nadd`);;
 
 let nadd_mul = new_definition
-  `x ** y = afn(\n. fn x (fn y n))`;;
+  `!x y. x ** y = afn(\n. fn x (fn y n))`;;
 
 let NADD_MUL = prove
  (`!x y. fn(x ** y) = \n. fn x (fn y n)`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC[nadd_mul; GSYM nadd_rep; is_nadd] THEN
-  X_CHOOSE_TAC `B:num` (SPEC `y:nadd` NADD_CAUCHY) THEN
-  X_CHOOSE_TAC `C:num` (SPEC `x:nadd` NADD_DIST) THEN
-  X_CHOOSE_TAC `D:num` (SPEC `x:nadd` NADD_MULTIPLICATIVE) THEN
+  X_CHOOSE_TAC `b:num` (SPEC `y:nadd` NADD_CAUCHY) THEN
+  X_CHOOSE_TAC `c:num` (SPEC `x:nadd` NADD_DIST) THEN
+  X_CHOOSE_TAC `d:num` (SPEC `x:nadd` NADD_MULTIPLICATIVE) THEN
   MATCH_MP_TAC BOUNDS_NOTZERO THEN
   REWRITE_TAC[MULT_CLAUSES; DIST_REFL] THEN
-  MAP_EVERY EXISTS_TAC [`D + C * B`; `D + D`] THEN
+  MAP_EVERY EXISTS_TAC [`d + c * b`; `d + d`] THEN
   REPEAT GEN_TAC THEN MATCH_MP_TAC LE_TRANS THEN
-  EXISTS_TAC `(D * m + D) + (D * n + D) + C * B * (m + n)` THEN CONJ_TAC THENL
+  EXISTS_TAC `(d * m + d) + (d * n + d) + c * b * (m + n)` THEN CONJ_TAC THENL
    [MATCH_MP_TAC (LE_IMP DIST_TRIANGLE) THEN
     EXISTS_TAC `fn x (m * fn y n)` THEN
     MATCH_MP_TAC LE_ADD2 THEN
@@ -627,7 +830,7 @@ let NADD_MUL = prove
     MATCH_MP_TAC LE_ADD2 THEN
     ONCE_REWRITE_TAC[DIST_SYM] THEN ASM_REWRITE_TAC[] THEN
     MATCH_MP_TAC LE_TRANS THEN
-    EXISTS_TAC `C * dist(m * fn y n,n * fn y m)` THEN
+    EXISTS_TAC `c * dist (m * fn y n) (n * fn y m)` THEN
     ASM_REWRITE_TAC[LE_MULT_LCANCEL];
     MATCH_MP_TAC EQ_IMP_LE THEN
     REWRITE_TAC[LEFT_ADD_DISTRIB; RIGHT_ADD_DISTRIB; MULT_ASSOC; ADD_AC]]);;
@@ -650,7 +853,7 @@ let NADD_MUL_SYM = prove
   EXISTS_TAC `fn x n * fn y n` THEN
   MATCH_MP_TAC LE_ADD2 THEN ASM_REWRITE_TAC[] THEN
   ONCE_REWRITE_TAC [DIST_SYM] THEN
-  GEN_REWRITE_TAC (LAND_CONV o funpow 2 RAND_CONV) [MULT_SYM] THEN
+  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [MULT_SYM] THEN
   ASM_REWRITE_TAC[]);;
 
 let NADD_MUL_ASSOC = prove
@@ -677,7 +880,7 @@ let NADD_MUL_WELLDEF_LEMMA = prove
   X_CHOOSE_TAC `B2:num` (SPEC `x:nadd` NADD_DIST) THEN
   EXISTS_TAC `B2 * B1` THEN X_GEN_TAC `n:num` THEN
   MATCH_MP_TAC LE_TRANS THEN
-  EXISTS_TAC `B2 * dist(fn y n,fn y' n)` THEN
+  EXISTS_TAC `B2 * dist (fn y n) (fn y' n)` THEN
   ASM_REWRITE_TAC[LE_MULT_LCANCEL]);;
 
 let NADD_MUL_WELLDEF = prove
@@ -972,33 +1175,33 @@ let NADD_LBOUND = prove
 (* ------------------------------------------------------------------------- *)
 
 let nadd_rinv = new_definition
- `nadd_rinv(x) = \n. (n * n) DIV (fn x n)`;;
+ `!x. nadd_rinv(x) = \n. (n * n) DIV (fn x n)`;;
 
 let NADD_MUL_LINV_LEMMA0 = prove
- (`!x. ~(x === &0) ==> ?A B. !n. nadd_rinv x n <= A * n + B`,
+ (`!x. ~(x === &0) ==> ?a b. !n. nadd_rinv x n <= a * n + b`,
   GEN_TAC THEN DISCH_TAC THEN ONCE_REWRITE_TAC[BOUNDS_IGNORE] THEN
   FIRST_ASSUM(MP_TAC o MATCH_MP NADD_LBOUND) THEN
-  DISCH_THEN(X_CHOOSE_THEN `A:num` (X_CHOOSE_TAC `N:num`)) THEN
-  MAP_EVERY EXISTS_TAC [`A:num`; `0`; `SUC N`] THEN
+  DISCH_THEN(X_CHOOSE_THEN `a:num` (X_CHOOSE_TAC `n:num`)) THEN
+  MAP_EVERY EXISTS_TAC [`a:num`; `0`; `SUC n`] THEN
   GEN_TAC THEN DISCH_TAC THEN REWRITE_TAC[ADD_CLAUSES] THEN
-  MP_TAC(SPECL [`nadd_rinv x n`; `A * n`; `n:num`] LE_MULT_RCANCEL) THEN
-  UNDISCH_TAC `SUC N <= n` THEN ASM_CASES_TAC `n = 0` THEN
+  MP_TAC(SPECL [`nadd_rinv x n'`; `a * n'`; `n':num`] LE_MULT_RCANCEL) THEN
+  UNDISCH_TAC `SUC n <= n'` THEN ASM_CASES_TAC `n' = 0` THEN
   ASM_REWRITE_TAC[LE; NOT_SUC] THEN DISCH_TAC THEN
   DISCH_THEN(SUBST1_TAC o SYM) THEN
-  MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `nadd_rinv x n * A * fn x n` THEN
+  MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `nadd_rinv x n' * a * fn x n'` THEN
   ASM_REWRITE_TAC[LE_MULT_LCANCEL] THEN CONJ_TAC THENL
    [DISJ2_TAC THEN FIRST_ASSUM MATCH_MP_TAC THEN MATCH_MP_TAC LE_TRANS THEN
-    EXISTS_TAC `SUC N` THEN ASM_REWRITE_TAC[LE; LE_REFL];
+    EXISTS_TAC `SUC n` THEN ASM_REWRITE_TAC[LE; LE_REFL];
     GEN_REWRITE_TAC LAND_CONV [MULT_SYM] THEN
     REWRITE_TAC[GSYM MULT_ASSOC; LE_MULT_LCANCEL] THEN
-    DISJ2_TAC THEN ASM_CASES_TAC `fn x n = 0` THEN
+    DISJ2_TAC THEN ASM_CASES_TAC `fn x n' = 0` THEN
     ASM_REWRITE_TAC[MULT_CLAUSES; LE_0; nadd_rinv] THEN
     FIRST_ASSUM(MP_TAC o MATCH_MP DIVISION) THEN
     DISCH_THEN(fun t -> GEN_REWRITE_TAC RAND_CONV [CONJUNCT1(SPEC_ALL t)]) THEN
     GEN_REWRITE_TAC LAND_CONV [MULT_SYM] THEN REWRITE_TAC[LE_ADD]]);;
 
 let NADD_MUL_LINV_LEMMA1 = prove
- (`!x n. ~(fn x n = 0) ==> dist(fn x n * nadd_rinv(x) n, n * n) <= fn x n`,
+ (`!x n. ~(fn x n = 0) ==> dist (fn x n * nadd_rinv(x) n) (n * n) <= fn x n`,
   REPEAT GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP DIVISION) THEN
   DISCH_THEN(CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC o SPEC `n * n`) THEN
   REWRITE_TAC[nadd_rinv] THEN
@@ -1008,7 +1211,7 @@ let NADD_MUL_LINV_LEMMA1 = prove
 
 let NADD_MUL_LINV_LEMMA2 = prove
  (`!x. ~(x === &0) ==> ?N. !n. N <= n ==>
-         dist(fn x n * nadd_rinv(x) n, n * n) <= fn x n`,
+         dist (fn x n * nadd_rinv(x) n) (n * n) <= fn x n`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_NONZERO) THEN
   DISCH_THEN(X_CHOOSE_TAC `N:num`) THEN EXISTS_TAC `N:num` THEN
   REPEAT STRIP_TAC THEN MATCH_MP_TAC NADD_MUL_LINV_LEMMA1 THEN
@@ -1016,8 +1219,8 @@ let NADD_MUL_LINV_LEMMA2 = prove
 
 let NADD_MUL_LINV_LEMMA3 = prove
  (`!x. ~(x === &0) ==> ?N. !m n. N <= n ==>
-        dist(m * fn x m * fn x n * nadd_rinv(x) n,
-             m * fn x m * n * n) <= m * fn x m * fn x n`,
+        dist (m * fn x m * fn x n * nadd_rinv(x) n)
+             (m * fn x m * n * n) <= m * fn x m * fn x n`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA2) THEN
   DISCH_THEN(X_CHOOSE_TAC `N:num`) THEN EXISTS_TAC `N:num` THEN
   REPEAT STRIP_TAC THEN REWRITE_TAC[GSYM DIST_LMUL; MULT_ASSOC] THEN
@@ -1026,8 +1229,8 @@ let NADD_MUL_LINV_LEMMA3 = prove
 
 let NADD_MUL_LINV_LEMMA4 = prove
  (`!x. ~(x === &0) ==> ?N. !m n. N <= m /\ N <= n ==>
-        (fn x m * fn x n) * dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <=
-          (m * n) * dist(m * fn x n,n * fn x m) + (fn x m * fn x n) * (m + n)`,
+        (fn x m * fn x n) * dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <=
+          (m * n) * dist (m * fn x n) (n * fn x m) + (fn x m * fn x n) * (m + n)`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA3) THEN
   DISCH_THEN(X_CHOOSE_TAC `N:num`) THEN EXISTS_TAC `N:num` THEN
   REPEAT STRIP_TAC THEN REWRITE_TAC[DIST_LMUL; LEFT_ADD_DISTRIB] THEN
@@ -1039,7 +1242,7 @@ let NADD_MUL_LINV_LEMMA4 = prove
 
 let NADD_MUL_LINV_LEMMA5 = prove
  (`!x. ~(x === &0) ==> ?B N. !m n. N <= m /\ N <= n ==>
-        (fn x m * fn x n) * dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <=
+        (fn x m * fn x n) * dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <=
         B * (m * n) * (m + n)`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA4) THEN
   DISCH_THEN(X_CHOOSE_TAC `N1:num`) THEN
@@ -1048,7 +1251,7 @@ let NADD_MUL_LINV_LEMMA5 = prove
     (SPEC `x:nadd` NADD_UBOUND) THEN
   EXISTS_TAC `B1 + B2 * B2` THEN EXISTS_TAC `N1 + N2` THEN
   REPEAT STRIP_TAC THEN MATCH_MP_TAC LE_TRANS THEN
-  EXISTS_TAC `(m * n) * dist(m * fn x n,n * fn x m) +
+  EXISTS_TAC `(m * n) * dist (m * fn x n) (n * fn x m) +
               (fn x m * fn x n) * (m + n)` THEN
   CONJ_TAC THENL
    [FIRST_ASSUM MATCH_MP_TAC THEN CONJ_TAC THEN
@@ -1070,7 +1273,7 @@ let NADD_MUL_LINV_LEMMA5 = prove
 
 let NADD_MUL_LINV_LEMMA6 = prove
  (`!x. ~(x === &0) ==> ?B N. !m n. N <= m /\ N <= n ==>
-        (m * n) * dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <=
+        (m * n) * dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <=
         B * (m * n) * (m + n)`,
   GEN_TAC THEN DISCH_TAC THEN
   FIRST_ASSUM(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA5) THEN
@@ -1080,7 +1283,7 @@ let NADD_MUL_LINV_LEMMA6 = prove
   EXISTS_TAC `B1 * B2 * B2` THEN EXISTS_TAC `N1 + N2` THEN
   REPEAT STRIP_TAC THEN MATCH_MP_TAC LE_TRANS THEN
   EXISTS_TAC `(B2 * B2) * (fn x m * fn x n) *
-              dist (m * nadd_rinv x n,n * nadd_rinv x m)` THEN
+              dist (m * nadd_rinv x n) (n * nadd_rinv x m)` THEN
   CONJ_TAC THENL
    [REWRITE_TAC[MULT_ASSOC; LE_MULT_RCANCEL] THEN DISJ1_TAC THEN
     ONCE_REWRITE_TAC[AC MULT_AC `((a * b) * c) * d = (a * c) * (b * d)`] THEN
@@ -1094,7 +1297,7 @@ let NADD_MUL_LINV_LEMMA6 = prove
 
 let NADD_MUL_LINV_LEMMA7 = prove
  (`!x. ~(x === &0) ==> ?B N. !m n. N <= m /\ N <= n ==>
-        dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <= B * (m + n)`,
+        dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <= B * (m + n)`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA6) THEN
   DISCH_THEN(X_CHOOSE_THEN `B:num` (X_CHOOSE_TAC `N:num`)) THEN
   MAP_EVERY EXISTS_TAC [`B:num`; `N + 1`] THEN
@@ -1116,7 +1319,7 @@ let NADD_MUL_LINV_LEMMA7 = prove
 
 let NADD_MUL_LINV_LEMMA7a = prove
  (`!x. ~(x === &0) ==> !N. ?A B. !m n. m <= N ==>
-        dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <= A * n + B`,
+        dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <= A * n + B`,
   GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA0) THEN
   DISCH_THEN(X_CHOOSE_THEN `A0:num` (X_CHOOSE_TAC `B0:num`)) THEN
   INDUCT_TAC THENL
@@ -1146,7 +1349,7 @@ let NADD_MUL_LINV_LEMMA7a = prove
 
 let NADD_MUL_LINV_LEMMA8 = prove
  (`!x. ~(x === &0) ==>
-        ?B. !m n. dist(m * nadd_rinv(x) n,n * nadd_rinv(x) m) <= B * (m + n)`,
+        ?B. !m n. dist (m * nadd_rinv(x) n) (n * nadd_rinv(x) m) <= B * (m + n)`,
   GEN_TAC THEN DISCH_TAC THEN
   FIRST_ASSUM(MP_TAC o MATCH_MP NADD_MUL_LINV_LEMMA7) THEN
   DISCH_THEN(X_CHOOSE_THEN `B0:num` (X_CHOOSE_TAC `N:num`)) THEN
@@ -1179,7 +1382,7 @@ let NADD_MUL_LINV_LEMMA8 = prove
 (* ------------------------------------------------------------------------- *)
 
 let nadd_inv = new_definition
-  `nadd_inv(x) = if x === &0 then &0 else afn(nadd_rinv x)`;;
+  `!x. nadd_inv(x) = if x === &0 then &0 else afn(nadd_rinv x)`;;
 
 override_interface ("inv",`nadd_inv:nadd->nadd`);;
 
@@ -1200,11 +1403,11 @@ let NADD_MUL_LINV = prove
   FIRST_ASSUM(X_CHOOSE_TAC `N:num` o MATCH_MP NADD_MUL_LINV_LEMMA2) THEN
   X_CHOOSE_THEN `A':num` (X_CHOOSE_TAC `B':num`)
     (SPEC `x:nadd` NADD_BOUND) THEN
-  SUBGOAL_THEN `?A2 B2. !n. dist(fn x n * nadd_rinv x n,n * n) <= A2 * n + B2`
+  SUBGOAL_THEN `?A2 B2. !n. dist (fn x n * nadd_rinv x n) (n * n) <= A2 * n + B2`
   STRIP_ASSUME_TAC THENL
    [EXISTS_TAC `A':num` THEN ONCE_REWRITE_TAC[BOUNDS_IGNORE] THEN
     MAP_EVERY EXISTS_TAC [`B':num`; `N:num`] THEN REPEAT STRIP_TAC THEN
-    MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `fn x n` THEN ASM_REWRITE_TAC[] THEN
+    MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `fn x n'` THEN ASM_REWRITE_TAC[] THEN
     FIRST_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[];
     MAP_EVERY EXISTS_TAC [`A1 + A2`; `B1 + B2`] THEN
     GEN_TAC THEN MATCH_MP_TAC DIST_TRIANGLE_LE THEN
@@ -1212,7 +1415,7 @@ let NADD_MUL_LINV = prove
     REWRITE_TAC[RIGHT_ADD_DISTRIB] THEN
     ONCE_REWRITE_TAC[AC ADD_AC `(a + b) + c + d = (a + c) + (b + d)`] THEN
     MATCH_MP_TAC LE_ADD2 THEN ASM_REWRITE_TAC[] THEN
-    GEN_REWRITE_TAC (LAND_CONV o RAND_CONV o LAND_CONV) [MULT_SYM] THEN
+    GEN_REWRITE_TAC (LAND_CONV o LAND_CONV) [MULT_SYM] THEN
     ASM_REWRITE_TAC[NADD_INV]]);;
 
 let NADD_INV_0 = prove
@@ -1381,31 +1584,33 @@ let HREAL_LE_MUL_RCANCEL_IMP = prove
 (* ------------------------------------------------------------------------- *)
 
 let treal_of_num = new_definition
-  `treal_of_num n = (&n, &0)`;;
+  `!n. treal_of_num n = (&n, &0)`;;
 
 let treal_neg = new_definition
-  `treal_neg ((x:hreal),(y:hreal)) = (y,x)`;;
+  `!x y. treal_neg ((x:hreal),(y:hreal)) = (y,x)`;;
 
 let treal_add = new_definition
-  `(x1,y1) treal_add (x2,y2) = (x1 + x2, y1 + y2)`;;
+  `!x1 y1 x2 y2. (x1,y1) treal_add (x2,y2) = (x1 + x2, y1 + y2)`;;
 
 let treal_mul = new_definition
-  `(x1,y1) treal_mul (x2,y2) = ((x1 * x2) + (y1 * y2),(x1 * y2) + (y1 * x2))`;;
+  `!x1 y1 x2 y2.
+     (x1,y1) treal_mul (x2,y2) = ((x1 * x2) + (y1 * y2),(x1 * y2) + (y1 * x2))`;;
 
 let treal_le = new_definition
-  `(x1,y1) treal_le (x2,y2) <=> x1 + y2 <= x2 + y1`;;
+  `!x1 y1 x2 y2. (x1,y1) treal_le (x2,y2) <=> x1 + y2 <= x2 + y1`;;
 
 let treal_inv = new_definition
-  `treal_inv(x,y) = if x = y then (&0, &0)
-                    else if y <= x then (inv(@d. x = y + d), &0)
-                    else (&0, inv(@d. y = x + d))`;;
+  `!x y.
+     treal_inv(x,y) = if x = y then (&0, &0)
+                      else if y <= x then (inv(@d. x = y + d), &0)
+                      else (&0, inv(@d. y = x + d))`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Define the equivalence relation and prove it *is* one.                    *)
 (* ------------------------------------------------------------------------- *)
 
 let treal_eq = new_definition
-  `(x1,y1) treal_eq (x2,y2) <=> (x1 + y2 = x2 + y1)`;;
+  `!x1 y1 x2 y2. (x1,y1) treal_eq (x2,y2) <=> (x1 + y2 = x2 + y1)`;;
 
 let TREAL_EQ_REFL = prove
  (`!x. x treal_eq x`,
@@ -1739,7 +1944,7 @@ let [REAL_ADD_SYM; REAL_ADD_ASSOC; REAL_ADD_LID; REAL_ADD_LINV;
      REAL_ADD_LDISTRIB;
      REAL_LE_REFL; REAL_LE_ANTISYM; REAL_LE_TRANS; REAL_LE_TOTAL;
      REAL_LE_LADD_IMP; REAL_LE_MUL;
-     REAL_INV_0; REAL_MUL_LINV;
+     REAL_MUL_LINV;
      REAL_OF_NUM_EQ; REAL_OF_NUM_LE; REAL_OF_NUM_ADD; REAL_OF_NUM_MUL] =
   map
     (lift_theorem real_tybij (TREAL_EQ_REFL,TREAL_EQ_SYM,TREAL_EQ_TRANS)
@@ -1750,8 +1955,28 @@ let [REAL_ADD_SYM; REAL_ADD_ASSOC; REAL_ADD_LID; REAL_ADD_LINV;
      TREAL_ADD_LDISTRIB;
      TREAL_LE_REFL; TREAL_LE_ANTISYM; TREAL_LE_TRANS; TREAL_LE_TOTAL;
      TREAL_LE_LADD_IMP; TREAL_LE_MUL;
-     TREAL_INV_0; TREAL_MUL_LINV;
+     TREAL_MUL_LINV;
      TREAL_OF_NUM_EQ; TREAL_OF_NUM_LE; TREAL_OF_NUM_ADD; TREAL_OF_NUM_MUL];;
+
+export_thm REAL_ADD_SYM;;
+export_thm REAL_ADD_ASSOC;;
+export_thm REAL_ADD_LID;;
+export_thm REAL_ADD_LINV;;
+export_thm REAL_MUL_SYM;;
+export_thm REAL_MUL_ASSOC;;
+export_thm REAL_MUL_LID;;
+export_thm REAL_ADD_LDISTRIB;;
+export_thm REAL_LE_REFL;;
+export_thm REAL_LE_ANTISYM;;
+export_thm REAL_LE_TRANS;;
+export_thm REAL_LE_TOTAL;;
+export_thm REAL_LE_LADD_IMP;;
+export_thm REAL_LE_MUL;;
+export_thm REAL_MUL_LINV;;
+export_thm REAL_OF_NUM_EQ;;
+export_thm REAL_OF_NUM_LE;;
+export_thm REAL_OF_NUM_ADD;;
+export_thm REAL_OF_NUM_MUL;;
 
 (* ------------------------------------------------------------------------- *)
 (* Set up a friendly interface.                                              *)
@@ -1778,32 +2003,59 @@ let prioritize_real() = prioritize_overload(mk_type("real",[]));;
 (* ------------------------------------------------------------------------- *)
 
 let real_sub = new_definition
-  `x - y = x + --y`;;
+  `!x y. x - y = x + --y`;;
+
+export_thm real_sub;;
 
 let real_lt = new_definition
-  `x < y <=> ~(y <= x)`;;
+  `!x y. x < y <=> ~(y <= x)`;;
+
+export_thm real_lt;;
 
 let real_ge = new_definition
-  `x >= y <=> y <= x`;;
+  `!x y. x >= y <=> y <= x`;;
+
+export_thm real_ge;;
 
 let real_gt = new_definition
-  `x > y <=> y < x`;;
+  `!x y. x > y <=> y < x`;;
+
+export_thm real_gt;;
 
 let real_abs = new_definition
-  `abs(x) = if &0 <= x then x else --x`;;
+  `!x. abs(x) = if &0 <= x then x else --x`;;
 
-let real_pow = new_recursive_definition num_RECURSION
-  `(x pow 0 = &1) /\
-   (!n. x pow (SUC n) = x * (x pow n))`;;
+export_thm real_abs;;
 
-let real_div = new_definition
-  `x / y = x * inv(y)`;;
+let (real_pow_zero,real_pow_suc) =
+  let def = new_recursive_definition num_RECURSION
+    `(!x. x pow 0 = &1) /\
+     (!x n. x pow (SUC n) = x * (x pow n))` in
+  CONJ_PAIR def;;
+
+export_thm real_pow_zero;;
+export_thm real_pow_suc;;
+
+let real_pow = CONJ real_pow_zero real_pow_suc;;
+
+let real_div =
+  let def = new_definition
+    `!x y. x / y = x * inv(y)` in
+  prove
+  (`!x y. ~(y = &0) ==> x / y = x * inv(y)`,
+   REWRITE_TAC [def]);;
+
+export_thm real_div;;
 
 let real_max = new_definition
-  `real_max m n = if m <= n then n else m`;;
+  `!m n. real_max m n = if m <= n then n else m`;;
+
+export_thm real_max;;
 
 let real_min = new_definition
-  `real_min m n = if m <= n then m else n`;;
+  `!m n. real_min m n = if m <= n then m else n`;;
+
+export_thm real_min;;
 
 (*----------------------------------------------------------------------------*)
 (* Derive the supremum property for an arbitrary bounded nonempty set         *)
@@ -1893,17 +2145,17 @@ let REAL_COMPLETE_SOMEPOS = prove
       ASM_REWRITE_TAC[];
       MATCH_MP_TAC REAL_LE_TRANS THEN EXISTS_TAC `&0` THEN
       ASM_REWRITE_TAC[]];
-    X_GEN_TAC `C:real` THEN DISCH_TAC THEN
-    SUBGOAL_THEN `B:hreal <= (h(C:real))` MP_TAC THENL
+    X_GEN_TAC `c:real` THEN DISCH_TAC THEN
+    SUBGOAL_THEN `B:hreal <= (h(c:real))` MP_TAC THENL
      [FIRST_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[] THEN
-      SUBGOAL_THEN `(r:hreal->real)(h C) = C` (fun th -> ASM_REWRITE_TAC[th]);
+      SUBGOAL_THEN `(r:hreal->real)(h c) = c` (fun th -> ASM_REWRITE_TAC[th]);
       ASM_REWRITE_TAC[] THEN MATCH_MP_TAC EQ_IMP THEN AP_TERM_TAC] THEN
     FIRST_ASSUM MATCH_MP_TAC THEN
     MATCH_MP_TAC REAL_LE_TRANS THEN EXISTS_TAC `x:real` THEN
     ASM_REWRITE_TAC[] THEN FIRST_ASSUM MATCH_MP_TAC THEN
     ASM_REWRITE_TAC[]]);;
 
-let REAL_COMPLETE = prove
+let REAL_COMPLETE_LEMMA = prove
  (`!P. (?x. P x) /\
        (?M. !x. P x ==> x <= M)
        ==> ?M. (!x. P x ==> x <= M) /\
@@ -1962,6 +2214,63 @@ let REAL_COMPLETE = prove
            REWRITE_TAC[GSYM REAL_ADD_ASSOC; REAL_ADD_LINV] THEN
            REWRITE_TAC[ONCE_REWRITE_RULE[REAL_ADD_SYM] REAL_ADD_LID]]]]]);;
 
+let SUP_EXISTS = prove
+ (`!s. ~(s = {}) /\
+       (?m. !x. x IN s ==> x <= m)
+       ==> ?y. (!x. x IN s ==> x <= y) /\
+               !m. (!x. x IN s ==> x <= m) ==> y <= m`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPEC `\z. (z:real) IN s` REAL_COMPLETE_LEMMA) THEN
+  REWRITE_TAC [] THEN
+  ANTS_TAC THENL
+  [CONJ_TAC THENL
+   [ASM_REWRITE_TAC [MEMBER_NOT_EMPTY];
+    EXISTS_TAC `m : real` THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   DISCH_THEN (X_CHOOSE_THEN `y:real` STRIP_ASSUME_TAC) THEN
+   EXISTS_TAC `y:real` THEN
+   ASM_REWRITE_TAC []]);;
+
+let (sup_bound,sup_least) =
+    let th0 = SUP_EXISTS in
+    let th1 = ONCE_REWRITE_RULE [RIGHT_IMP_EXISTS_THM] th0 in
+    let th2 = ONCE_REWRITE_RULE [SKOLEM_THM] th1 in
+    let def = new_specification ["sup"] th2 in
+    let th3 = REWRITE_RULE [IMP_AND_DISTRIB; FORALL_AND_THM] def in
+    let th4 = REWRITE_RULE [RIGHT_IMP_FORALL_THM] th3 in
+    let th5 = REWRITE_RULE [IMP_IMP; CONJ_ASSOC'] th4 in
+    CONJ_PAIR th5;;
+
+export_thm sup_bound;;
+export_thm sup_least;;
+
+logfile "real-thm";;
+
+let REAL_COMPLETE = prove
+ (`!p. (?x. p x) /\
+       (?m. !x. p x ==> x <= m)
+       ==> ?s. (!x. p x ==> x <= s) /\
+               !m. (!x. p x ==> x <= m) ==> s <= m`,
+  REPEAT STRIP_TAC THEN
+  EXISTS_TAC `sup { y | p y }` THEN
+  REPEAT STRIP_TAC THENL
+  [MATCH_MP_TAC sup_bound THEN
+   ASM_REWRITE_TAC [IN_ELIM; GSYM MEMBER_NOT_EMPTY] THEN
+   CONJ_TAC THENL
+   [EXISTS_TAC `x:real` THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    EXISTS_TAC `m:real` THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   MATCH_MP_TAC sup_least THEN
+   ASM_REWRITE_TAC [IN_ELIM; GSYM MEMBER_NOT_EMPTY] THEN
+   CONJ_TAC THENL
+   [EXISTS_TAC `x:real` THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    EXISTS_TAC `m:real` THEN
+    FIRST_ASSUM ACCEPT_TAC]]);;
+
+export_thm REAL_COMPLETE;;
+
 do_list reduce_interface
  ["+",`hreal_add:hreal->hreal->hreal`;
   "*",`hreal_mul:hreal->hreal->hreal`;
@@ -1969,3 +2278,5 @@ do_list reduce_interface
   "inv",`hreal_inv:hreal->hreal`];;
 
 do_list remove_interface ["**"; "++"; "<<="; "==="; "fn"; "afn"];;
+
+logfile_end ();;

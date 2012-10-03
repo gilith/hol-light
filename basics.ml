@@ -28,6 +28,8 @@ let dest_fun_ty ty =
     Tyapp("fun",[ty1;ty2]) -> (ty1,ty2)
   | _ -> failwith "dest_fun_ty";;
 
+let is_fun_ty = can dest_fun_ty;;
+
 let rec occurs_in ty bigty =
   bigty = ty or
   is_type bigty & exists (occurs_in ty) (snd(dest_type bigty));;
@@ -355,9 +357,10 @@ let mk_gabs =
   let mk_geq(t1,t2) =
     let p = mk_const("GEQ",[type_of t1,aty]) in
     mk_comb(mk_comb(p,t1),t2) in
+  let cmpvars v1 v2 = dest_var v1 <= dest_var v2 in
   fun (tm1,tm2) ->
     if is_var tm1 then mk_abs(tm1,tm2) else
-    let fvs = frees tm1 in
+    let fvs = sort cmpvars (frees tm1) in
     let fty = mk_fun_ty (type_of tm1) (type_of tm2) in
     let f = variant (frees tm1 @ frees tm2) (mk_var("f",fty)) in
     let bod = mk_abs(f,list_mk_forall(fvs,mk_geq(mk_comb(f,tm1),tm2))) in

@@ -359,7 +359,7 @@ let SUPERADMISSIBLE_MATCH_GUARDED_PATTERN = prove
 
 let WF_REC_TAIL_GENERAL' = prove
  (`!P G H H'.
-         WF (<<) /\
+         WF((<<):A->A->bool) /\
          (!f g x. (!z. z << x ==> (f z = g z))
                   ==> (P f x <=> P g x) /\
                       (G f x = G g x) /\ (H' f x = H' g x)) /\
@@ -367,7 +367,9 @@ let WF_REC_TAIL_GENERAL' = prove
          (!f x. H f x = if P f x then f(G f x) else H' f x)
          ==> ?f. !x. f x = H f x`,
   REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[] THEN
-  MATCH_MP_TAC WF_REC_TAIL_GENERAL THEN ASM_MESON_TAC[]);;
+  MATCH_MP_TAC WF_REC_TAIL_GENERAL THEN
+  EXISTS_TAC `(<<):A->A->bool` THEN
+  ASM_MESON_TAC[]);;
 
 let WF_REC_CASES = prove
  (`!(<<) clauses.
@@ -911,7 +913,8 @@ let instantiate_casewise_recursion,
       EXISTS_TAC `\u:A#B v:A#B.
                     (\(x1:B,y1:A) (x2:B,y2:A). r x1 x2 \/ (x1 = x2) /\ s y1 y2)
                      ((\(a,b). b,a) u) ((\(a,b). b,a) v)` THEN
-      ASM_SIMP_TAC[ISPEC `\(a,b). b,a` WF_MEASURE_GEN; WF_LEX; ETA_AX] THEN
+      ASM_SIMP_TAC [WF_LEX; ETA_AX;
+        ISPECL [`(<<):B#A->B#A->bool`; `\(a:A,b:B). b,a`] WF_MEASURE_GEN] THEN
       FIRST_X_ASSUM(fun th -> MP_TAC th THEN
                               MATCH_MP_TAC EQ_IMP THEN
                               AP_TERM_TAC) THEN

@@ -1,0 +1,183 @@
+###############################################################################
+# INTERPRETING THE HOL LIGHT HASKELL THEORIES
+# Joe Lerd
+###############################################################################
+
+# Data
+
+# Data.Pair
+
+const "HOLLight.map_fst" as "Data.Pair.mapFst"
+const "HOLLight.map_snd" as "Data.Pair.mapSnd"
+
+# Function
+
+const "HOLLight.map_domain" as "Function.mapDomain"
+const "HOLLight.map_range" as "Function.mapRange"
+
+# Haskell
+
+# Haskell.Data
+
+# Haskell.Data.Byte
+
+const "HOLLight.rdecode_byteH" as "Haskell.Data.Byte.fromRandom"
+
+# Haskell.Data.Byte.Bits
+
+const "HOLLight.list_to_byteH" as "Haskell.Data.Byte.Bits.toByte"
+
+# Haskell.Data.List
+
+const "HOLLight.equal_listH" as "Haskell.Data.List.equal"
+const "HOLLight.rdecode_vectorH" as "Haskell.Data.List.fromRandom"
+const "HOLLight.lengthH" as "Haskell.Data.List.size"
+
+# Haskell.Data.List.Geometric
+
+const "HOLLight.rdecode_listH" as "Haskell.Data.List.Geometric.fromRandom"
+
+# Haskell.Data.Option
+
+const "HOLLight.equal_optionH" as "Haskell.Data.Option.equal"
+
+# Haskell.Data.Stream
+
+const "HOLLight.snthH" as "Haskell.Data.Stream.nth"
+const "HOLLight.sunfoldH" as "Haskell.Data.Stream.unfold"
+
+# Haskell.Data.Unicode
+
+type "HOLLight.unicodeH" as "Haskell.Data.Unicode.Unicode"
+type "HOLLight.planeH" as "Haskell.Data.Unicode.Plane"
+type "HOLLight.positionH" as "Haskell.Data.Unicode.Position"
+
+const "HOLLight.mk_unicodeH" as "Haskell.Data.Unicode.Unicode"
+const "HOLLight.mk_planeH" as "Haskell.Data.Unicode.Plane"
+const "HOLLight.mk_positionH" as "Haskell.Data.Unicode.Position"
+const "HOLLight.equal_unicodeH" as "Haskell.Data.Unicode.equal"
+const "HOLLight.equal_planeH" as "Haskell.Data.Unicode.equalPlane"
+const "HOLLight.equal_positionH" as "Haskell.Data.Unicode.equalPosition"
+const "HOLLight.mkH_unicodeH" as "Haskell.Data.Unicode.fromHol"
+const "HOLLight.rdecode_unicodeH" as "Haskell.Data.Unicode.fromRandom"
+const "HOLLight.mkH_planeH" as "Haskell.Data.Unicode.planeFromHol"
+const "HOLLight.rdecode_planeH" as "Haskell.Data.Unicode.planeFromRandom"
+const "HOLLight.destH_planeH" as "Haskell.Data.Unicode.planeToHol"
+const "HOLLight.mkH_positionH" as "Haskell.Data.Unicode.positionFromHol"
+const "HOLLight.rdecode_positionH" as "Haskell.Data.Unicode.positionFromRandom"
+const "HOLLight.destH_positionH" as "Haskell.Data.Unicode.positionToHol"
+const "HOLLight.destH_unicodeH" as "Haskell.Data.Unicode.toHol"
+const "HOLLight.dest_unicodeH" as "Haskell.Data.Unicode.unUnicode"
+const "HOLLight.dest_planeH" as "Haskell.Data.Unicode.unPlane"
+const "HOLLight.dest_positionH" as "Haskell.Data.Unicode.unPosition"
+
+# Haskell.Data.Unicode.UTF8
+
+const "HOLLight.decodeH" as "Haskell.Data.Unicode.UTF8.decode"
+const "HOLLight.decode_pstreamH" as "Haskell.Data.Unicode.UTF8.decodeStream"
+const "HOLLight.decoderH" as "Haskell.Data.Unicode.UTF8.decoder"
+const "HOLLight.decode_cont1H" as "Haskell.Data.Unicode.UTF8.decoder.decode1"
+const "HOLLight.decode_cont2H" as "Haskell.Data.Unicode.UTF8.decoder.decode2"
+const "HOLLight.decode_cont3H" as "Haskell.Data.Unicode.UTF8.decoder.decode3"
+const "HOLLight.decoder_parseH" as "Haskell.Data.Unicode.UTF8.decoder.parse"
+const "HOLLight.encodeH" as "Haskell.Data.Unicode.UTF8.encode"
+const "HOLLight.encoderH" as "Haskell.Data.Unicode.UTF8.encoder"
+const "HOLLight.encode_cont1H" as "Haskell.Data.Unicode.UTF8.encoder.encode1"
+const "HOLLight.encode_cont2H" as "Haskell.Data.Unicode.UTF8.encoder.encode2"
+const "HOLLight.encode_cont3H" as "Haskell.Data.Unicode.UTF8.encoder.encode3"
+const "HOLLight.is_contH" as "Haskell.Data.Unicode.UTF8.isContinuationByte"
+const "HOLLight.parse_contH" as "Haskell.Data.Unicode.UTF8.parseContinuationByte"
+const "HOLLight.parse_cont2H" as "Haskell.Data.Unicode.UTF8.parseTwoContinuationBytes"
+const "HOLLight.parse_cont3H" as "Haskell.Data.Unicode.UTF8.parseThreeContinuationBytes"
+
+# Haskell.Data.Word16
+
+const "HOLLight.rdecode_word16H" as "Haskell.Data.Word16.fromRandom"
+
+# Haskell.Data.Word16.Bits
+
+const "HOLLight.list_to_word16H" as "Haskell.Data.Word16.Bits.toWord16"
+
+# Haskell.Number
+
+# Haskell.Number.Natural
+
+const "HOLLight.rdecode_fibH" as "Haskell.Number.Natural.fromRandom"
+const "HOLLight.rdecode_fib_destH" as "Haskell.Number.Natural.fromRandom.dest"
+
+# Haskell.Number.Natural.Bits
+
+const "HOLLight.bits_to_numH" as "Haskell.Number.Natural.Bits.toNatural"
+const "HOLLight.bitwidthH" as "Haskell.Number.Natural.Bits.width"
+
+# Haskell.Number.Natural.Geometric
+
+const "HOLLight.rdecode_geometricH" as "Haskell.Number.Natural.Geometric.fromRandom"
+const "HOLLight.rdecode_geometric_loopH" as "Haskell.Number.Natural.Geometric.fromRandom.loop"
+
+# Haskell.Number.Natural.Prime
+
+const "HOLLight.primesH" as "Haskell.Number.Natural.Prime.all"
+
+# Haskell.Number.Natural.Prime.Sieve
+
+type "HOLLight.sieveH" as "Haskell.Number.Natural.Prime.Sieve.Sieve"
+
+const "HOLLight.mk_sieveH" as "Haskell.Number.Natural.Prime.Sieve.Sieve"
+const "HOLLight.mkH_sieveH" as "Haskell.Number.Natural.Prime.Sieve.fromHol"
+const "HOLLight.inc_sieveH" as "Haskell.Number.Natural.Prime.Sieve.increment"
+const "HOLLight.inc_counters_sieveH" as "Haskell.Number.Natural.Prime.Sieve.increment.inc"
+const "HOLLight.init_sieveH" as "Haskell.Number.Natural.Prime.Sieve.initial"
+const "HOLLight.max_sieveH" as "Haskell.Number.Natural.Prime.Sieve.perimeter"
+const "HOLLight.next_sieveH" as "Haskell.Number.Natural.Prime.Sieve.next"
+const "HOLLight.destH_sieveH" as "Haskell.Number.Natural.Prime.Sieve.toHol"
+const "HOLLight.dest_sieveH" as "Haskell.Number.Natural.Prime.Sieve.unSieve"
+
+# Haskell.Number.Natural.Uniform
+
+const "HOLLight.rdecode_uniformH" as "Haskell.Number.Natural.Uniform.fromRandom"
+const "HOLLight.rdecode_uniform_loopH" as "Haskell.Number.Natural.Uniform.fromRandom.loop"
+
+# Haskell.Parser
+
+type "HOLLight.parserH" as "Haskell.Parser.Parser"
+
+const "HOLLight.mk_parserH" as "Haskell.Parser.Parser"
+const "HOLLight.mkH_parserH" as "Haskell.Parser.fromHol"
+const "HOLLight.parse_mapH" as "Haskell.Parser.map"
+const "HOLLight.parseH" as "Haskell.Parser.parse"
+const "HOLLight.parse_allH" as "Haskell.Parser.parseAll"
+const "HOLLight.parser_allH" as "Haskell.Parser.parseAll.pa"
+const "HOLLight.parse_noneH" as "Haskell.Parser.parseNone"
+const "HOLLight.parser_noneH" as "Haskell.Parser.parseNone.pn"
+const "HOLLight.parse_optionH" as "Haskell.Parser.parseOption"
+const "HOLLight.parse_pairH" as "Haskell.Parser.parsePair"
+const "HOLLight.parser_pairH" as "Haskell.Parser.parsePair.pbc"
+const "HOLLight.parse_someH" as "Haskell.Parser.parseSome"
+const "HOLLight.parse_pstreamH" as "Haskell.Parser.parseStream"
+const "HOLLight.parse_partial_mapH" as "Haskell.Parser.partialMap"
+const "HOLLight.parser_partial_mapH" as "Haskell.Parser.partialMap.pf"
+const "HOLLight.destH_parserH" as "Haskell.Parser.toHol"
+const "HOLLight.dest_parserH" as "Haskell.Parser.unParser"
+
+# Haskell.Parser.Stream
+
+type "HOLLight.pstreamH" as "Haskell.Parser.Stream.Stream"
+
+const "HOLLight.append_pstreamH" as "Haskell.Parser.Stream.append"
+const "HOLLight.case_pstreamH" as "Haskell.Parser.Stream.case.Error.Eof.Cons"
+const "HOLLight.ConsPstreamH" as "Haskell.Parser.Stream.Cons"
+const "HOLLight.EofPstreamH" as "Haskell.Parser.Stream.Eof"
+const "HOLLight.ErrorPstreamH" as "Haskell.Parser.Stream.Error"
+const "HOLLight.mkH_pstreamH" as "Haskell.Parser.Stream.fromHol"
+const "HOLLight.list_to_pstreamH" as "Haskell.Parser.Stream.fromList"
+const "HOLLight.rdecode_pstreamH" as "Haskell.Parser.Stream.fromRandom"
+const "HOLLight.length_pstreamH" as "Haskell.Parser.Stream.size"
+const "HOLLight.destH_pstreamH" as "Haskell.Parser.Stream.toHol"
+const "HOLLight.pstream_to_listH" as "Haskell.Parser.Stream.toList"
+
+# Haskell.Probability
+
+# Haskell.Probability.Random
+
+const "HOLLight.rbitsH" as "Haskell.Probability.Random.bits"

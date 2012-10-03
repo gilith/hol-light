@@ -144,9 +144,12 @@ let net_of_cong th sofar =
 (* ------------------------------------------------------------------------- *)
 
 let mk_rewrites =
-  let IMP_CONJ_CONV = REWR_CONV(ITAUT `p ==> q ==> r <=> p /\ q ==> r`)
+  let IMP_CONJ_CONV =
+    let pth = ITAUT `p ==> q ==> r <=> p /\ q ==> r` in
+    REWR_CONV pth
   and IMP_EXISTS_RULE =
-    let cnv = REWR_CONV(ITAUT `(!x. P x ==> Q) <=> (?x. P x) ==> Q`) in
+    let pth = ITAUT `(!(x:A). P x ==> Q) <=> (?x. P x) ==> Q` in
+    let cnv = REWR_CONV pth in
     fun v th -> CONV_RULE cnv (GEN v th) in
   let collect_condition oldhyps th =
     let conds = subtract (hyp th) oldhyps in
@@ -559,3 +562,5 @@ let ABBREV_TAC tm =
 
 let EXPAND_TAC s = FIRST_ASSUM(SUBST1_TAC o SYM o
   check((=) s o fst o dest_var o rhs o concl)) THEN BETA_TAC;;
+
+logfile_end ();;

@@ -1,0 +1,13 @@
+###############################################################################
+# INTERPRETATIONS FOR OPTION TYPES
+# Joe Leslie-Hurd
+###############################################################################
+
+# Data
+
+# Data.Option
+
+const "HOLLight.case_option" as "Data.Option.case.none.some"
+const "HOLLight.is_none" as "Data.Option.isNone"
+const "HOLLight.is_some" as "Data.Option.isSome"
+const "HOLLight.map_option" as "Data.Option.map"

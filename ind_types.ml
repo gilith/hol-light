@@ -765,14 +765,34 @@ let parse_inductive_type_specification =
 (* Use this temporary version to define the sum type.                        *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "sum-def";;
+
 let sum_INDUCT,sum_RECURSION =
-  define_type_raw (parse_inductive_type_specification "sum = INL A | INR B");;
+  let (induct,recursion) =
+    define_type_raw
+      (parse_inductive_type_specification "sum = INL A | INR B") in
+  let th1 = prove
+    (`!(p : A + B -> bool).
+        (!a. p (INL a)) /\ (!b. p (INR b)) ==> (!x. p x)`,
+     MATCH_ACCEPT_TAC induct)
+  and th2 = prove
+    (`!f g. ?(fn : A + B -> C).
+        (!a. fn (INL a) = f a) /\ (!b. fn (INR b) = g b)`,
+     MATCH_ACCEPT_TAC recursion) in
+  (th1,th2);;
+
+export_thm sum_INDUCT;;
+export_thm sum_RECURSION;;
 
 let OUTL = new_recursive_definition sum_RECURSION
-  `OUTL (INL x :A+B) = x`;;
+  `!a. OUTL ((INL a) : A + B) = a`;;
+
+export_thm OUTL;;
 
 let OUTR = new_recursive_definition sum_RECURSION
-  `OUTR (INR y :A+B) = y`;;
+  `!b. OUTR ((INR b) : A + B) = b`;;
+
+export_thm OUTR;;
 
 (* ------------------------------------------------------------------------- *)
 (* Generalize the recursion theorem to multiple domain types.                *)
@@ -878,13 +898,41 @@ let define_type_raw =
 (* Set up options and lists.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "option-def";;
+
 let option_INDUCT,option_RECURSION =
-  define_type_raw
-   (parse_inductive_type_specification "option = NONE | SOME A");;
+  let (induct,recursion) =
+    define_type_raw
+      (parse_inductive_type_specification "option = NONE | SOME A") in
+  let th1 = prove
+    (`!(p : A option -> bool). p NONE /\ (!a. p (SOME a)) ==> (!x. p x)`,
+     MATCH_ACCEPT_TAC induct)
+  and th2 = prove
+    (`!b f. ?(fn : A option -> B). fn NONE = b /\ !a. fn (SOME a) = f a`,
+     MATCH_ACCEPT_TAC recursion) in
+  (th1,th2);;
+
+export_thm option_INDUCT;;
+export_thm option_RECURSION;;
+
+logfile "list-def";;
 
 let list_INDUCT,list_RECURSION =
-  define_type_raw
-   (parse_inductive_type_specification "list = NIL | CONS A list");;
+  let (induct,recursion) =
+    define_type_raw
+      (parse_inductive_type_specification "list = NIL | CONS A list") in
+  let th1 = prove
+    (`!(p : A list -> bool).
+        p [] /\ (!h t. p t ==> p (CONS h t)) ==> (!l. p l)`,
+     MATCH_ACCEPT_TAC induct)
+  and th2 = prove
+    (`!b f. ?(fn : A list -> B).
+        fn [] = b /\ !h t. fn (CONS h t) = f h t (fn t)`,
+     MATCH_ACCEPT_TAC recursion) in
+  (th1,th2);;
+
+export_thm list_INDUCT;;
+export_thm list_RECURSION;;
 
 (* ------------------------------------------------------------------------- *)
 (* Tools for proving injectivity and distinctness of constructors.           *)
@@ -1011,12 +1059,16 @@ inductive_type_store :=
 (* ------------------------------------------------------------------------- *)
 
 let basic_rectype_net = ref empty_net;;
-let distinctness_store = ref ["bool",TAUT `(T <=> F) <=> F`];;
+let distinctness_store =
+    let pth = TAUT `(T <=> F) <=> F` in
+    ref ["bool",pth];;
 let injectivity_store = ref [];;
 
 let extend_rectype_net (tyname,(_,_,rth)) =
-  let ths1 = try [prove_constructors_distinct rth] with Failure _ -> []
-  and ths2 = try [prove_constructors_injective rth] with Failure _ -> [] in
+  let ths1 = try [let pth = prove_constructors_distinct rth in
+                  pth] with Failure _ -> []
+  and ths2 = try [let pth = prove_constructors_injective rth in
+                  pth] with Failure _ -> [] in
   let canon_thl = itlist (mk_rewrites false) (ths1 @ ths2) [] in
   distinctness_store := map (fun th -> tyname,th) ths1 @ (!distinctness_store);
   injectivity_store := map (fun th -> tyname,th) ths2 @ (!injectivity_store);
@@ -1038,11 +1090,28 @@ let cases ty =
   let _,ith,_ = assoc ty (!inductive_type_store) in prove_cases_thm ith;;
 
 (* ------------------------------------------------------------------------- *)
+(* Standard tactic for case splitting.                                       *)
+(* ------------------------------------------------------------------------- *)
+
+let CASES_TAC =
+  let pth = TAUT `!x y z. (x ==> z) /\ (y ==> z) ==> (x \/ y ==> z)` in
+  let rec split_tac goal =
+      TRY (MATCH_MP_TAC pth THEN CONJ_TAC THENL [ALL_TAC; split_tac]) goal in
+  fun th tm ->
+  MP_TAC (ISPEC tm th) THEN
+  split_tac;;
+
+let PAIR_CASES_TAC = CASES_TAC PAIR_SURJECTIVE;;
+
+let NUM_CASES_TAC = CASES_TAC num_CASES;;
+
+(* ------------------------------------------------------------------------- *)
 (* Convenient definitions for type isomorphism.                              *)
 (* ------------------------------------------------------------------------- *)
 
 let ISO = new_definition
-  `ISO (f:A->B) (g:B->A) <=> (!x. f(g x) = x) /\ (!y. g(f y) = y)`;;
+  `!(f : A -> B) (g : B -> A).
+     ISO f g <=> (!x. f (g x) = x) /\ (!y. g (f y) = y)`;;
 
 let ISO_REFL = prove
  (`ISO (\x:A. x) (\x. x)`,
@@ -1054,7 +1123,7 @@ let ISO_FUN = prove
   REWRITE_TAC[ISO; FUN_EQ_THM] THEN MESON_TAC[]);;
 
 let ISO_USAGE = prove
- (`ISO f g
+ (`ISO (f:A->B) g
    ==> (!P. (!x. P x) <=> (!x. P(g x))) /\
        (!P. (?x. P x) <=> (?x. P(g x))) /\
        (!a b. (a = g b) <=> (f a = b))`,
@@ -1112,7 +1181,7 @@ let define_type_raw =
 
   let DE_EXISTENTIALIZE_RULE =
     let pth = prove
-     (`(?) P ==> (c = (@)P) ==> P c`,
+     (`(?) P ==> (c = (@)P) ==> P (c:A)`,
       GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [GSYM ETA_AX] THEN
       DISCH_TAC THEN DISCH_THEN SUBST1_TAC THEN
       MATCH_MP_TAC SELECT_AX THEN POP_ASSUM ACCEPT_TAC) in
@@ -1403,33 +1472,33 @@ let define_type s =
 
 let UNWIND_CONV,MATCH_CONV =
   let pth_0 = prove
-   (`(if ?!x. x = a /\ p then @x. x = a /\ p else @x. F) =
+   (`(if ?!x. (x:A) = a /\ p then @x. x = a /\ p else @x. F) =
      (if p then a else @x. F)`,
     BOOL_CASES_TAC `p:bool` THEN ASM_REWRITE_TAC[COND_ID] THEN
     MESON_TAC[])
   and pth_1 = prove
-   (`_MATCH x (_SEQPATTERN r s) =
+   (`_MATCH x (_SEQPATTERN (r:A->B->bool) s) =
      (if ?y. r x y then _MATCH x r else _MATCH x s) /\
     _FUNCTION (_SEQPATTERN r s) x =
      (if ?y. r x y then _FUNCTION r x else _FUNCTION s x)`,
     REWRITE_TAC[_MATCH; _SEQPATTERN; _FUNCTION] THEN
     MESON_TAC[])
   and pth_2 = prove
-   (`((?y. _UNGUARDED_PATTERN (GEQ s t) (GEQ u y)) <=> s = t) /\
+   (`((?y. _UNGUARDED_PATTERN (GEQ (s:A) t) (GEQ (u:B) y)) <=> s = t) /\
      ((?y. _GUARDED_PATTERN (GEQ s t) p (GEQ u y)) <=> s = t /\ p)`,
     REWRITE_TAC[_UNGUARDED_PATTERN; _GUARDED_PATTERN; GEQ_DEF] THEN
     MESON_TAC[])
   and pth_3 = prove
-   (`(_MATCH x (\y z. P y z) = if ?!z. P x z then @z. P x z else @x. F) /\
+   (`(_MATCH x (\y z. P (y:A) (z:B)) = if ?!z. P x z then @z. P x z else @x. F) /\
      (_FUNCTION (\y z. P y z) x = if ?!z. P x z then @z. P x z else @x. F)`,
     REWRITE_TAC[_MATCH; _FUNCTION])
   and pth_4 = prove
-   (`(_UNGUARDED_PATTERN (GEQ s t) (GEQ u y) <=> y = u /\ s = t) /\
+   (`(_UNGUARDED_PATTERN (GEQ (s:A) t) (GEQ (u:B) y) <=> y = u /\ s = t) /\
      (_GUARDED_PATTERN (GEQ s t) p (GEQ u y) <=> y = u /\ s = t /\ p)`,
     REWRITE_TAC[_UNGUARDED_PATTERN; _GUARDED_PATTERN; GEQ_DEF] THEN
     MESON_TAC[])
   and pth_5 = prove
-   (`(if ?!z. z = k then @z. z = k else @x. F) = k`,
+   (`(if ?!z. (z:A) = k then @z. z = k else @x. F) = k`,
     MESON_TAC[]) in
   let rec INSIDE_EXISTS_CONV conv tm =
     if is_exists tm then BINDER_CONV (INSIDE_EXISTS_CONV conv) tm
@@ -1510,13 +1579,13 @@ let UNWIND_CONV,MATCH_CONV =
     GEN_REWRITE_CONV TRY_CONV [pth_0; pth_5] in
   do_list extend_basic_convs
    ["MATCH_SEQPATTERN_CONV",
-    (`_MATCH x (_SEQPATTERN r s)`,MATCH_SEQPATTERN_CONV_TRIV);
+    (`_MATCH x (_SEQPATTERN (r:A->B->bool) s)`,MATCH_SEQPATTERN_CONV_TRIV);
     "FUN_SEQPATTERN_CONV",
-    (`_FUNCTION (_SEQPATTERN r s) x`,MATCH_SEQPATTERN_CONV_TRIV);
+    (`_FUNCTION (_SEQPATTERN (r:A->B->bool) s) x`,MATCH_SEQPATTERN_CONV_TRIV);
     "MATCH_ONEPATTERN_CONV",
-    (`_MATCH x (\y z. P y z)`,MATCH_ONEPATTERN_CONV_TRIV);
+    (`_MATCH x (\y z. P (y:A) (z:B))`,MATCH_ONEPATTERN_CONV_TRIV);
     "FUN_ONEPATTERN_CONV",
-    (`_FUNCTION (\y z. P y z) x`,MATCH_ONEPATTERN_CONV_TRIV)];
+    (`_FUNCTION (\y z. P (y:A) (z:A)) x`,MATCH_ONEPATTERN_CONV_TRIV)];
   (CHANGED_CONV UNWIND_CONV,
    (MATCH_SEQPATTERN_CONV_GEN ORELSEC MATCH_ONEPATTERN_CONV_GEN));;
 
@@ -1528,10 +1597,10 @@ let FORALL_UNWIND_CONV =
        with Failure _ -> bc tm in
      conv in
   let baseconv = GEN_REWRITE_CONV I
-   [MESON[] `(!x. x = a /\ p x ==> q x) <=> (p a ==> q a)`;
-    MESON[] `(!x. a = x /\ p x ==> q x) <=> (p a ==> q a)`;
-    MESON[] `(!x. x = a ==> q x) <=> q a`;
-    MESON[] `(!x. a = x ==> q x) <=> q a`] in
+   [MESON[] `(!x. (x:A) = a /\ p x ==> q x) <=> (p a ==> q a)`;
+    MESON[] `(!x. (a:A) = x /\ p x ==> q x) <=> (p a ==> q a)`;
+    MESON[] `(!x. (x:A) = a ==> q x) <=> q a`;
+    MESON[] `(!x. (a:A) = x ==> q x) <=> q a`] in
   let rec FORALL_UNWIND_CONV tm =
     try let avs,bod = strip_forall tm in
         let ant,con = dest_imp bod in
@@ -1553,3 +1622,5 @@ let FORALL_UNWIND_CONV =
         CONV_RULE (RAND_CONV FORALL_UNWIND_CONV) (TRANS th3 th4)
     with Failure _ -> REFL tm in
   FORALL_UNWIND_CONV;;
+
+logfile_end ();;

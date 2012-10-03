@@ -7,7 +7,7 @@
 (*              (c) Copyright, John Harrison 1998-2007                       *)
 (* ========================================================================= *)
 
-needs "wf.ml";;
+needs "arith.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Simple rule to get rid of NUMERAL constant.                               *)
@@ -34,6 +34,7 @@ let ARITH_SUC = prove
    (!n. SUC (BIT1 n) = BIT0 (SUC n))`,
   REWRITE_TAC[NUMERAL; BIT0; BIT1; DENUMERAL ADD_CLAUSES]);;
 
+(***
 let ARITH_PRE = prove
  (`(!n. PRE(NUMERAL n) = NUMERAL(PRE n)) /\
    (PRE _0 = _0) /\
@@ -42,6 +43,7 @@ let ARITH_PRE = prove
   REWRITE_TAC[NUMERAL; BIT1; BIT0; DENUMERAL PRE] THEN INDUCT_TAC THEN
   REWRITE_TAC[NUMERAL; DENUMERAL PRE; DENUMERAL ADD_CLAUSES; DENUMERAL NOT_SUC;
               ARITH_ZERO]);;
+***)
 
 let ARITH_ADD = prove
  (`(!m n. NUMERAL(m) + NUMERAL(n) = NUMERAL(m + n)) /\
@@ -163,6 +165,7 @@ let ARITH_EQ = prove
   REWRITE_TAC[NUMERAL; GSYM LE_ANTISYM; ARITH_LE] THEN
   REWRITE_TAC[LET_ANTISYM; LTE_ANTISYM; DENUMERAL LE_0]);;
 
+(***
 let ARITH_SUB = prove
  (`(!m n. NUMERAL m - NUMERAL n = NUMERAL(m - n)) /\
    (_0 - _0 = _0) /\
@@ -183,13 +186,14 @@ let ARITH_SUB = prove
   POP_ASSUM(CHOOSE_THEN SUBST1_TAC o REWRITE_RULE[LE_EXISTS]) THEN
   REWRITE_TAC[ADD1; LEFT_ADD_DISTRIB] THEN
   REWRITE_TAC[ADD_SUB2; GSYM ADD_ASSOC]);;
+***)
 
 let ARITH = end_itlist CONJ
-  [ARITH_ZERO; ARITH_SUC; ARITH_PRE;
+  [ARITH_ZERO; ARITH_SUC; (***ARITH_PRE;***)
    ARITH_ADD; ARITH_MULT; ARITH_EXP;
    ARITH_EVEN; ARITH_ODD;
-   ARITH_EQ; ARITH_LE; ARITH_LT; ARITH_GE; ARITH_GT;
-   ARITH_SUB];;
+   ARITH_EQ; ARITH_LE; ARITH_LT; ARITH_GE; ARITH_GT
+   (***ARITH_SUB***)];;
 
 (* ------------------------------------------------------------------------- *)
 (* Now more delicate conversions for situations where efficiency matters.    *)
@@ -382,7 +386,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV =
       ONCE_REWRITE_TAC[AC ADD_AC
        `a + (b + c) + d + e = (a + c + d) + (b + e)`] THEN
       SIMP_TAC[EQ_ADD_RCANCEL] THEN REWRITE_TAC[ADD_AC]) in
-    let dest_mul = dest_binop `(* )` in
+    let dest_mul = dest_binop `( * )` in
     let mk_raw_numeral =
       let Z = mk_const("_0",[])
       and BIT0 = mk_const("BIT0",[])
@@ -410,7 +414,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV =
          (BIT1 _0 * x = x) /\
          (x * BIT1 _0 = x)`,
         REWRITE_TAC[BIT1; DENUMERAL MULT_CLAUSES]) in
-      let mk_mul = mk_binop `(* )` in
+      let mk_mul = mk_binop `( * )` in
       let odds = map (fun x -> 2 * x + 1) (0--7) in
       let nums = map (fun n -> mk_raw_numeral(Int n)) odds in
       let pairs = allpairs mk_mul nums nums in
@@ -552,7 +556,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV =
     and n = `n:num` and w = `w:num` and x = `x:num`
     and y = `y:num` and z = `z:num`
     and Z = `_0` and BIT0 = `BIT0`
-    and mul = `(*)` in
+    and mul = `( * )` in
     let tconv = GEN_REWRITE_CONV I [tth] in
     let rec NUM_EXP_CONV l r =
       if r = Z then INST [l,x] pth else
@@ -581,9 +585,6 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV =
   NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV;;
 
 let NUM_PRE_CONV =
-  let tth = prove
-   (`PRE 0 = 0`,
-    REWRITE_TAC[PRE]) in
   let pth = prove
    (`(SUC m = n) ==> (PRE n = m)`,
     DISCH_THEN(SUBST1_TAC o SYM) THEN REWRITE_TAC[PRE])
@@ -593,37 +594,27 @@ let NUM_PRE_CONV =
   fun tm -> try let l,r = dest_comb tm in
                 if not (l = pre) then fail() else
                 let x = dest_numeral r in
-                if x =/ Int 0 then tth else
                 let tm' = mk_numeral (x -/ Int 1) in
                 let th1 = NUM_SUC_CONV (mk_comb(suc,tm')) in
                 MP (INST [tm',m; r,n] pth) th1
             with Failure _ -> failwith "NUM_PRE_CONV";;
 
 let NUM_SUB_CONV =
-  let pth0 = prove
-   (`p <= n ==> (p - n = 0)`,
-    REWRITE_TAC[SUB_EQ_0])
-  and pth1 = prove
+  let pth1 = prove
    (`(m + n = p) ==> (p - n = m)`,
     DISCH_THEN(SUBST1_TAC o SYM) THEN
     REWRITE_TAC[ADD_SUB])
   and m = `m:num` and n = `n:num` and p = `p:num`
   and minus = `(-)`
-  and plus = `(+)`
-  and le = `(<=)` in
+  and plus = `(+)` in
   fun tm -> try let l,r = dest_binop minus tm in
                 let ln = dest_numeral l
                 and rn = dest_numeral r in
-                if  ln <=/ rn then
-                  let pth = INST [l,p; r,n] pth0
-                  and th0 = EQT_ELIM(NUM_LE_CONV (mk_binop le l r)) in
-                  MP pth th0
-                else
-                  let kn = ln -/ rn in
-                  let k = mk_numeral kn in
-                  let pth = INST [k,m; l,p; r,n] pth1
-                  and th0 = NUM_ADD_CONV (mk_binop plus k r) in
-                  MP pth th0
+                let kn = ln -/ rn in
+                let k = mk_numeral kn in
+                let pth = INST [k,m; l,p; r,n] pth1
+                and th0 = NUM_ADD_CONV (mk_binop plus k r) in
+                MP pth th0
             with Failure _ -> failwith "NUM_SUB_CONV";;
 
 let NUM_DIV_CONV,NUM_MOD_CONV =
@@ -651,7 +642,7 @@ let NUM_DIV_CONV,NUM_MOD_CONV =
 
 let NUM_FACT_CONV =
   let suc = `SUC`
-  and mul = `(*)` in
+  and mul = `( * )` in
   let pth_0 = prove
    (`FACT 0 = 1`,
     REWRITE_TAC[FACT])
@@ -744,6 +735,8 @@ let num_CONV =
     let tm' = mk_numeral n in
     SYM(NUM_SUC_CONV (mk_comb(SUC_tm,tm')));;
 
+let THREE = num_CONV `3`;;
+
 (* ------------------------------------------------------------------------- *)
 (* Expands "!n. n < numeral-constant ==> P(n)" into all the cases.           *)
 (* ------------------------------------------------------------------------- *)
@@ -762,3 +755,5 @@ let EXPAND_CASES_CONV =
   let rec conv tm =
     (base_CONV ORELSEC (step_CONV THENC LAND_CONV conv)) tm in
   conv THENC (REWRITE_CONV[GSYM CONJ_ASSOC]);;
+
+logfile_end ();;

@@ -1,0 +1,16 @@
+###############################################################################
+# INTERPRETATIONS FOR PROBABILITY
+# Joe Leslie-Hurd
+###############################################################################
+
+# Probability
+
+# Probability.Random
+
+type "HOLLight.random" as "Probability.Random.random"
+
+const "HOLLight.rbit" as "Probability.Random.bit"
+const "HOLLight.rbits" as "Probability.Random.bits"
+const "HOLLight.mk_random" as "Probability.Random.fromStream"
+const "HOLLight.rsplit" as "Probability.Random.split"
+const "HOLLight.dest_random" as "Probability.Random.toStream"

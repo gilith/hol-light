@@ -1,0 +1,593 @@
+###############################################################################
+# INTERPRETING THE HOL LIGHT EXAMPLE THEORIES
+# Joe Lerd
+###############################################################################
+
+# Bit
+
+const "HOLLight.bit_add" as "Bit.+"
+const "HOLLight.bit_mult" as "Bit.*"
+
+# Bit3
+
+const "HOLLight.bit3_dot" as "Bit3.dot"
+
+# Bit3x3
+
+const "HOLLight.bit3x3_mult" as "Bit3x3.*"
+const "HOLLight.bit3x3_identity" as "Bit3x3.identity"
+const "HOLLight.bit3x3_product" as "Bit3x3.product"
+
+# Data
+
+# Data.Byte
+
+type "HOLLight.byte" as "Data.Byte.byte"
+
+const "HOLLight.byte_le" as "Data.Byte.<="
+const "HOLLight.byte_lt" as "Data.Byte.<"
+const "HOLLight.byte_neg" as "Data.Byte.~"
+const "HOLLight.byte_exp" as "Data.Byte.^"
+const "HOLLight.byte_mult" as "Data.Byte.*"
+const "HOLLight.byte_add" as "Data.Byte.+"
+const "HOLLight.byte_sub" as "Data.Byte.-"
+const "HOLLight.byte_and" as "Data.Byte.and"
+const "HOLLight.byte_bit" as "Data.Byte.bit"
+const "HOLLight.num_to_byte" as "Data.Byte.fromNatural"
+const "HOLLight.rdecode_byte" as "Data.Byte.fromRandom"
+const "HOLLight.byte_size" as "Data.Byte.modulus"
+const "HOLLight.byte_not" as "Data.Byte.not"
+const "HOLLight.byte_or" as "Data.Byte.or"
+const "HOLLight.byte_shl" as "Data.Byte.shiftLeft"
+const "HOLLight.byte_shr" as "Data.Byte.shiftRight"
+const "HOLLight.byte_to_num" as "Data.Byte.toNatural"
+const "HOLLight.byte_width" as "Data.Byte.width"
+
+# Data.Byte.Bits
+
+const "HOLLight.byte_bits_lte" as "Data.Byte.Bits.compare"
+const "HOLLight.byte_to_list" as "Data.Byte.Bits.fromByte"
+const "HOLLight.is_byte_list" as "Data.Byte.Bits.normal"
+const "HOLLight.list_to_byte" as "Data.Byte.Bits.toByte"
+
+# Data.Char
+
+type "HOLLight.unicode" as "Data.Char.char"
+type "HOLLight.plane" as "Data.Char.plane"
+type "HOLLight.position" as "Data.Char.position"
+
+const "HOLLight.dest_plane" as "Data.Char.destPlane"
+const "HOLLight.dest_position" as "Data.Char.destPosition"
+const "HOLLight.dest_unicode" as "Data.Char.destChar"
+const "HOLLight.rdecode_unicode" as "Data.Char.fromRandom"
+const "HOLLight.is_plane" as "Data.Char.isPlane"
+const "HOLLight.is_position" as "Data.Char.isPosition"
+const "HOLLight.is_unicode" as "Data.Char.isChar"
+const "HOLLight.mk_plane" as "Data.Char.mkPlane"
+const "HOLLight.mk_position" as "Data.Char.mkPosition"
+const "HOLLight.mk_unicode" as "Data.Char.mkChar"
+const "HOLLight.rdecode_plane" as "Data.Char.planeFromRandom"
+const "HOLLight.rdecode_position" as "Data.Char.positionFromRandom"
+
+# Data.Char.UTF8
+
+const "HOLLight.decode" as "Data.Char.UTF8.decode"
+const "HOLLight.decode_pstream" as "Data.Char.UTF8.decodeStream"
+const "HOLLight.decoder" as "Data.Char.UTF8.decoder"
+const "HOLLight.decode_cont1" as "Data.Char.UTF8.decoder.decode1"
+const "HOLLight.decode_cont2" as "Data.Char.UTF8.decoder.decode2"
+const "HOLLight.decode_cont3" as "Data.Char.UTF8.decoder.decode3"
+const "HOLLight.decoder_parse" as "Data.Char.UTF8.decoder.parse"
+const "HOLLight.encode" as "Data.Char.UTF8.encode"
+const "HOLLight.encoder" as "Data.Char.UTF8.encoder"
+const "HOLLight.encode_cont1" as "Data.Char.UTF8.encoder.encode1"
+const "HOLLight.encode_cont2" as "Data.Char.UTF8.encoder.encode2"
+const "HOLLight.encode_cont3" as "Data.Char.UTF8.encoder.encode3"
+const "HOLLight.is_cont" as "Data.Char.UTF8.isContinuationByte"
+const "HOLLight.parse_cont" as "Data.Char.UTF8.parseContinuationByte"
+const "HOLLight.parse_cont2" as "Data.Char.UTF8.parseTwoContinuationBytes"
+const "HOLLight.parse_cont3" as "Data.Char.UTF8.parseThreeContinuationBytes"
+
+# Data.List
+
+const "HOLLight.rdecode_vector" as "Data.List.fromRandom"
+
+# Data.List.Geometric
+
+const "HOLLight.rdecode_list" as "Data.List.Geometric.fromRandom"
+
+# Data.Word
+
+type "HOLLight.word" as "Data.Word.word"
+
+const "HOLLight.word_le" as "Data.Word.<="
+const "HOLLight.word_lt" as "Data.Word.<"
+const "HOLLight.word_neg" as "Data.Word.~"
+const "HOLLight.word_exp" as "Data.Word.^"
+const "HOLLight.word_mult" as "Data.Word.*"
+const "HOLLight.word_add" as "Data.Word.+"
+const "HOLLight.word_sub" as "Data.Word.-"
+const "HOLLight.word_and" as "Data.Word.and"
+const "HOLLight.word_bit" as "Data.Word.bit"
+const "HOLLight.num_to_word" as "Data.Word.fromNatural"
+const "HOLLight.rdecode_word" as "Data.Word.fromRandom"
+const "HOLLight.word_size" as "Data.Word.modulus"
+const "HOLLight.word_not" as "Data.Word.not"
+const "HOLLight.word_or" as "Data.Word.or"
+const "HOLLight.word_shl" as "Data.Word.shiftLeft"
+const "HOLLight.word_shr" as "Data.Word.shiftRight"
+const "HOLLight.word_to_num" as "Data.Word.toNatural"
+const "HOLLight.word_width" as "Data.Word.width"
+
+# Data.Word.Bits
+
+const "HOLLight.word_bits_lte" as "Data.Word.Bits.compare"
+const "HOLLight.word_to_list" as "Data.Word.Bits.fromWord"
+const "HOLLight.is_word_list" as "Data.Word.Bits.normal"
+const "HOLLight.list_to_word" as "Data.Word.Bits.toWord"
+
+# Data.Word10
+
+type "HOLLight.word10" as "Data.Word10.word10"
+
+const "HOLLight.word10_le" as "Data.Word10.<="
+const "HOLLight.word10_lt" as "Data.Word10.<"
+const "HOLLight.word10_neg" as "Data.Word10.~"
+const "HOLLight.word10_exp" as "Data.Word10.^"
+const "HOLLight.word10_mult" as "Data.Word10.*"
+const "HOLLight.word10_add" as "Data.Word10.+"
+const "HOLLight.word10_sub" as "Data.Word10.-"
+const "HOLLight.word10_and" as "Data.Word10.and"
+const "HOLLight.word10_bit" as "Data.Word10.bit"
+const "HOLLight.num_to_word10" as "Data.Word10.fromNatural"
+const "HOLLight.rdecode_word10" as "Data.Word10.fromRandom"
+const "HOLLight.word10_size" as "Data.Word10.modulus"
+const "HOLLight.word10_not" as "Data.Word10.not"
+const "HOLLight.word10_or" as "Data.Word10.or"
+const "HOLLight.word10_shl" as "Data.Word10.shiftLeft"
+const "HOLLight.word10_shr" as "Data.Word10.shiftRight"
+const "HOLLight.word10_to_num" as "Data.Word10.toNatural"
+const "HOLLight.word10_width" as "Data.Word10.width"
+
+# Data.Word10.Bits
+
+const "HOLLight.word10_bits_lte" as "Data.Word10.Bits.compare"
+const "HOLLight.word10_to_list" as "Data.Word10.Bits.fromWord"
+const "HOLLight.is_word10_list" as "Data.Word10.Bits.normal"
+const "HOLLight.list_to_word10" as "Data.Word10.Bits.toWord"
+
+# Data.Word12
+
+type "HOLLight.word12" as "Data.Word12.word12"
+
+const "HOLLight.word12_le" as "Data.Word12.<="
+const "HOLLight.word12_lt" as "Data.Word12.<"
+const "HOLLight.word12_neg" as "Data.Word12.~"
+const "HOLLight.word12_exp" as "Data.Word12.^"
+const "HOLLight.word12_mult" as "Data.Word12.*"
+const "HOLLight.word12_add" as "Data.Word12.+"
+const "HOLLight.word12_sub" as "Data.Word12.-"
+const "HOLLight.word12_and" as "Data.Word12.and"
+const "HOLLight.word12_bit" as "Data.Word12.bit"
+const "HOLLight.num_to_word12" as "Data.Word12.fromNatural"
+const "HOLLight.rdecode_word12" as "Data.Word12.fromRandom"
+const "HOLLight.word12_size" as "Data.Word12.modulus"
+const "HOLLight.word12_not" as "Data.Word12.not"
+const "HOLLight.word12_or" as "Data.Word12.or"
+const "HOLLight.word12_shl" as "Data.Word12.shiftLeft"
+const "HOLLight.word12_shr" as "Data.Word12.shiftRight"
+const "HOLLight.word12_to_num" as "Data.Word12.toNatural"
+const "HOLLight.word12_width" as "Data.Word12.width"
+
+# Data.Word12.Bits
+
+const "HOLLight.word12_bits_lte" as "Data.Word12.Bits.compare"
+const "HOLLight.word12_to_list" as "Data.Word12.Bits.fromWord"
+const "HOLLight.is_word12_list" as "Data.Word12.Bits.normal"
+const "HOLLight.list_to_word12" as "Data.Word12.Bits.toWord"
+
+# Data.Word16
+
+type "HOLLight.word16" as "Data.Word16.word16"
+
+const "HOLLight.word16_le" as "Data.Word16.<="
+const "HOLLight.word16_lt" as "Data.Word16.<"
+const "HOLLight.word16_neg" as "Data.Word16.~"
+const "HOLLight.word16_exp" as "Data.Word16.^"
+const "HOLLight.word16_mult" as "Data.Word16.*"
+const "HOLLight.word16_add" as "Data.Word16.+"
+const "HOLLight.word16_sub" as "Data.Word16.-"
+const "HOLLight.word16_and" as "Data.Word16.and"
+const "HOLLight.word16_bit" as "Data.Word16.bit"
+const "HOLLight.bytes_to_word16" as "Data.Word16.fromBytes"
+const "HOLLight.num_to_word16" as "Data.Word16.fromNatural"
+const "HOLLight.rdecode_word16" as "Data.Word16.fromRandom"
+const "HOLLight.word16_size" as "Data.Word16.modulus"
+const "HOLLight.word16_not" as "Data.Word16.not"
+const "HOLLight.word16_or" as "Data.Word16.or"
+const "HOLLight.word16_shl" as "Data.Word16.shiftLeft"
+const "HOLLight.word16_shr" as "Data.Word16.shiftRight"
+const "HOLLight.word16_to_bytes" as "Data.Word16.toBytes"
+const "HOLLight.word16_to_num" as "Data.Word16.toNatural"
+const "HOLLight.word16_width" as "Data.Word16.width"
+
+# Data.Word16.Bits
+
+const "HOLLight.word16_bits_lte" as "Data.Word16.Bits.compare"
+const "HOLLight.word16_to_list" as "Data.Word16.Bits.fromWord"
+const "HOLLight.is_word16_list" as "Data.Word16.Bits.normal"
+const "HOLLight.list_to_word16" as "Data.Word16.Bits.toWord"
+
+# Number
+
+# Number.GF(p)
+
+type "HOLLight.gfp" as "Number.GF(p).gfp"
+
+const "HOLLight.gfp_le" as "Number.GF(p).<="
+const "HOLLight.gfp_lt" as "Number.GF(p).<"
+const "HOLLight.gfp_neg" as "Number.GF(p).~"
+const "HOLLight.gfp_exp" as "Number.GF(p).^"
+const "HOLLight.gfp_mult" as "Number.GF(p).*"
+const "HOLLight.gfp_div" as "Number.GF(p)./"
+const "HOLLight.gfp_add" as "Number.GF(p).+"
+const "HOLLight.gfp_sub" as "Number.GF(p).-"
+const "HOLLight.gfp_div_gcd" as "Number.GF(p).divGcd"
+const "HOLLight.gfp_equiv" as "Number.GF(p).equivalent"
+const "HOLLight.gfp_exp_div" as "Number.GF(p).expDiv"
+const "HOLLight.num_to_gfp" as "Number.GF(p).fromNatural"
+const "HOLLight.gfp_inv" as "Number.GF(p).inv"
+const "HOLLight.oddprime" as "Number.GF(p).oddprime"
+const "HOLLight.gfp_to_num" as "Number.GF(p).toNatural"
+
+# Number.Modular
+
+type "HOLLight.modular" as "Number.Modular.modular"
+
+const "HOLLight.modular_le" as "Number.Modular.<="
+const "HOLLight.modular_lt" as "Number.Modular.<"
+const "HOLLight.modular_neg" as "Number.Modular.~"
+const "HOLLight.modular_exp" as "Number.Modular.^"
+const "HOLLight.modular_mult" as "Number.Modular.*"
+const "HOLLight.modular_add" as "Number.Modular.+"
+const "HOLLight.modular_sub" as "Number.Modular.-"
+const "HOLLight.modular_equiv" as "Number.Modular.equivalent"
+const "HOLLight.num_to_modular" as "Number.Modular.fromNatural"
+const "HOLLight.rdecode_modular" as "Number.Modular.fromRandom"
+const "HOLLight.modulus" as "Number.Modular.modulus"
+const "HOLLight.modular_to_num" as "Number.Modular.toNatural"
+
+# Number.Natural
+
+# Number.Natural.Geometric
+
+const "HOLLight.rdecode_geometric" as "Number.Natural.Geometric.fromRandom"
+const "HOLLight.rdecode_geometric_loop" as "Number.Natural.Geometric.fromRandom.loop"
+
+# Number.Natural.Uniform
+
+const "HOLLight.rdecode_uniform" as "Number.Natural.Uniform.fromRandom"
+const "HOLLight.rdecode_uniform_loop" as "Number.Natural.Uniform.fromRandom.loop"
+
+# Parser
+
+type "HOLLight.parser" as "Parser.parser"
+
+const "HOLLight.dest_parser" as "Parser.destParser"
+const "HOLLight.parse_inverse" as "Parser.inverse"
+const "HOLLight.is_parser" as "Parser.isParser"
+const "HOLLight.parse_map" as "Parser.map"
+const "HOLLight.parse_map_token" as "Parser.mapToken"
+const "HOLLight.parser_map_token" as "Parser.mapToken.pf"
+const "HOLLight.mk_parser" as "Parser.mkParser"
+const "HOLLight.parse" as "Parser.parse"
+const "HOLLight.parse_all" as "Parser.parseAll"
+const "HOLLight.parser_all" as "Parser.parseAll.pa"
+const "HOLLight.parse_none" as "Parser.parseNone"
+const "HOLLight.parser_none" as "Parser.parseNone.pn"
+const "HOLLight.parse_option" as "Parser.parseOption"
+const "HOLLight.parse_pair" as "Parser.parsePair"
+const "HOLLight.parser_pair" as "Parser.parsePair.pbc"
+const "HOLLight.parse_some" as "Parser.parseSome"
+const "HOLLight.parse_pstream" as "Parser.parseStream"
+const "HOLLight.parse_partial_map" as "Parser.partialMap"
+const "HOLLight.parser_partial_map" as "Parser.partialMap.pf"
+const "HOLLight.parse_strong_inverse" as "Parser.strongInverse"
+
+# Parser.Stream
+
+type "HOLLight.pstream" as "Parser.Stream.stream"
+
+const "HOLLight.append_pstream" as "Parser.Stream.append"
+const "HOLLight.case_pstream" as "Parser.Stream.case.error.eof.cons"
+const "HOLLight.ConsPstream" as "Parser.Stream.cons"
+const "HOLLight.EofPstream" as "Parser.Stream.eof"
+const "HOLLight.ErrorPstream" as "Parser.Stream.error"
+const "HOLLight.list_to_pstream" as "Parser.Stream.fromList"
+const "HOLLight.rdecode_pstream" as "Parser.Stream.fromRandom"
+const "HOLLight.is_proper_suffix_pstream" as "Parser.Stream.isProperSuffix"
+const "HOLLight.is_suffix_pstream" as "Parser.Stream.isSuffix"
+const "HOLLight.length_pstream" as "Parser.Stream.length"
+const "HOLLight.map_pstream" as "Parser.Stream.map"
+const "HOLLight.pstream_to_list" as "Parser.Stream.toList"
+
+# System
+
+# System.H
+
+type "HOLLight.action" as "System.H.action"
+type "HOLLight.domain" as "System.H.domain"
+type "HOLLight.page" as "System.H.page"
+type "HOLLight.output" as "System.H.output"
+type "HOLLight.state" as "System.H.state"
+type "HOLLight.view" as "System.H.view"
+type "HOLLight.region_length" as "System.H.regionLength"
+
+const "HOLLight.action" as "System.H.action"
+const "HOLLight.domain" as "System.H.domain"
+const "HOLLight.interferes" as "System.H.interferes"
+const "HOLLight.output" as "System.H.output"
+const "HOLLight.view" as "System.H.view"
+const "HOLLight.State" as "System.H.State"
+
+# System.H.Action
+
+const "HOLLight.AddKernelMappingH" as "System.H.Action.AddKernelMappingH"
+const "HOLLight.AddMappingH" as "System.H.Action.AddMappingH"
+const "HOLLight.AllocatePageDirectoryH" as "System.H.Action.AllocatePageDirectoryH"
+const "HOLLight.DeriveRegionH" as "System.H.Action.DeriveRegionH"
+const "HOLLight.ExecuteH" as "System.H.Action.ExecuteH"
+const "HOLLight.FreePageDirectoryH" as "System.H.Action.FreePageDirectoryH"
+const "HOLLight.RemoveMappingH" as "System.H.Action.RemoveMappingH"
+const "HOLLight.WriteE" as "System.H.Action.WriteEnvironment"
+const "HOLLight.WriteK" as "System.H.Action.WriteKernel"
+const "HOLLight.WriteU" as "System.H.Action.WriteUser"
+const "HOLLight.action_spec" as "System.H.Action.specification"
+const "HOLLight.add_kernel_mapping_h" as "System.H.Action.specificationAddKernelMappingH"
+const "HOLLight.add_mapping" as "System.H.Action.specificationAddMapping"
+const "HOLLight.add_mapping_h" as "System.H.Action.specificationAddMappingH"
+const "HOLLight.allocate_page_directory_h" as "System.H.Action.specificationAllocatePageDirectoryH"
+const "HOLLight.derive_region_h" as "System.H.Action.specificationDeriveRegionH"
+const "HOLLight.execute_h" as "System.H.Action.specificationExecuteH"
+const "HOLLight.free_page_directory_h" as "System.H.Action.specificationFreePageDirectoryH"
+const "HOLLight.remove_mapping_h" as "System.H.Action.specificationRemoveMappingH"
+const "HOLLight.write_e" as "System.H.Action.specificationWriteEnvironment"
+const "HOLLight.write_k" as "System.H.Action.specificationWriteKernel"
+const "HOLLight.write_u" as "System.H.Action.specificationWriteUser"
+
+# System.H.Domain
+
+const "HOLLight.EDomain" as "System.H.Domain.Environment"
+const "HOLLight.HDomain" as "System.H.Domain.H"
+const "HOLLight.KDomain" as "System.H.Domain.Kernel"
+const "HOLLight.UDomain" as "System.H.Domain.User"
+
+# System.H.Output
+
+const "HOLLight.dest_output" as "System.H.Output.dest"
+const "HOLLight.mk_output" as "System.H.Output.mk"
+
+# System.H.Page
+
+type "HOLLight.page_data" as "System.H.Page.data"
+type "HOLLight.page_offset" as "System.H.Page.offset"
+
+const "HOLLight.PageDirectory" as "System.H.Page.Directory"
+const "HOLLight.Environment" as "System.H.Page.Environment"
+const "HOLLight.Normal" as "System.H.Page.Normal"
+const "HOLLight.NotInstalled" as "System.H.Page.NotInstalled"
+const "HOLLight.PageTable" as "System.H.Page.Table"
+const "HOLLight.dest_page_directory" as "System.H.Page.destDirectory"
+const "HOLLight.dest_environment" as "System.H.Page.destEnvironment"
+const "HOLLight.dest_environment_or_normal" as "System.H.Page.destEnvironmentOrNormal"
+const "HOLLight.dest_normal" as "System.H.Page.destNormal"
+const "HOLLight.dest_page_table" as "System.H.Page.destTable"
+const "HOLLight.is_page_directory" as "System.H.Page.isDirectory"
+const "HOLLight.is_page_directory_or_table" as "System.H.Page.isDirectoryOrTable"
+const "HOLLight.is_environment" as "System.H.Page.isEnvironment"
+const "HOLLight.is_installed" as "System.H.Page.isInstalled"
+const "HOLLight.is_normal" as "System.H.Page.isNormal"
+const "HOLLight.is_not_installed" as "System.H.Page.isNotInstalled"
+const "HOLLight.is_page_table" as "System.H.Page.isTable"
+
+# System.H.Page.Data
+
+const "HOLLight.dest_page_data" as "System.H.Page.Data.dest"
+const "HOLLight.mk_page_data" as "System.H.Page.Data.mk"
+const "HOLLight.update_page_data" as "System.H.Page.Data.update"
+const "HOLLight.zero_page_data" as "System.H.Page.Data.zero"
+
+# System.H.Page.Directory
+
+type "HOLLight.page_directory_data" as "System.H.Page.Directory.data"
+type "HOLLight.page_directory_entry" as "System.H.Page.Directory.entry"
+
+# System.H.Page.Directory.Data
+
+const "HOLLight.dest_page_directory_data" as "System.H.Page.Directory.Data.dest"
+const "HOLLight.mk_page_directory_data" as "System.H.Page.Directory.Data.mk"
+
+# System.H.Page.Directory.Entry
+
+const "HOLLight.case_page_directory_entry" as "System.H.Page.Directory.Entry.case.Superpage.Table"
+const "HOLLight.Superpage" as "System.H.Page.Directory.Entry.Superpage"
+const "HOLLight.Table" as "System.H.Page.Directory.Entry.Table"
+
+# System.H.Page.Offset
+
+const "HOLLight.dest_page_offset" as "System.H.Page.Offset.dest"
+const "HOLLight.mk_page_offset" as "System.H.Page.Offset.mk"
+
+# System.H.Page.Table
+
+type "HOLLight.page_table_data" as "System.H.Page.Table.data"
+
+# System.H.Page.Table.Data
+
+const "HOLLight.dest_page_table_data" as "System.H.Page.Table.Data.dest"
+const "HOLLight.mk_page_table_data" as "System.H.Page.Table.Data.mk"
+
+# System.H.Physical
+
+type "HOLLight.physical_address" as "System.H.Physical.address"
+type "HOLLight.physical_page_address" as "System.H.Physical.page"
+type "HOLLight.physical_region" as "System.H.Physical.region"
+type "HOLLight.physical_superpage_address" as "System.H.Physical.superpage"
+
+# System.H.Physical.Address
+
+const "HOLLight.dest_physical_address" as "System.H.Physical.Address.dest"
+const "HOLLight.mk_physical_address" as "System.H.Physical.Address.mk"
+
+# System.H.Physical.Page
+
+const "HOLLight.physical_page_address_add" as "System.H.Physical.Page.add"
+const "HOLLight.dest_physical_page_address" as "System.H.Physical.Page.dest"
+const "HOLLight.mk_physical_page_address" as "System.H.Physical.Page.mk"
+const "HOLLight.physical_page_address_suc" as "System.H.Physical.Page.suc"
+
+# System.H.Physical.Region
+
+const "HOLLight.exists_physical_region" as "System.H.Physical.Region.exists"
+const "HOLLight.forall_physical_region" as "System.H.Physical.Region.forall"
+const "HOLLight.is_physical_subregion" as "System.H.Physical.Region.isSubregion"
+const "HOLLight.physical_region_length" as "System.H.Physical.Region.length"
+const "HOLLight.member_physical_region" as "System.H.Physical.Region.member"
+const "HOLLight.PhysicalRegion" as "System.H.Physical.Region.mk"
+const "HOLLight.physical_region_to_list" as "System.H.Physical.Region.pageList"
+const "HOLLight.physical_region_start" as "System.H.Physical.Region.start"
+
+# System.H.Physical.Superpage
+
+const "HOLLight.physical_superpage_address_add" as "System.H.Physical.Superpage.add"
+const "HOLLight.dest_physical_superpage_address" as "System.H.Physical.Superpage.dest"
+const "HOLLight.num_to_physical_superpage_address" as "System.H.Physical.Superpage.fromNatural"
+const "HOLLight.mk_physical_superpage_address" as "System.H.Physical.Superpage.mk"
+
+# System.H.RegionLength
+
+const "HOLLight.mk_region_length" as "System.H.RegionLength.fromNatural"
+const "HOLLight.dest_region_length" as "System.H.RegionLength.toNatural"
+
+# System.H.State
+
+type "HOLLight.region_state" as "System.H.State.regions"
+
+const "HOLLight.cr3" as "System.H.State.cr3"
+const "HOLLight.cr3_is_page_directory" as "System.H.State.cr3IsPageDirectory"
+const "HOLLight.environment_only_in_reference" as "System.H.State.environmentOnlyInReference"
+const "HOLLight.initial_regions_are_regions" as "System.H.State.initialRegionsAreRegions"
+const "HOLLight.is_environment_page" as "System.H.State.isEnvironmentPage"
+const "HOLLight.is_normal_page" as "System.H.State.isNormalPage"
+const "HOLLight.mapped_page" as "System.H.State.mappedPage"
+const "HOLLight.mapped_pages_are_available" as "System.H.State.mappedPagesAreAvailable"
+const "HOLLight.no_shared_page_tables" as "System.H.State.noSharedPageTables"
+const "HOLLight.status" as "System.H.State.page"
+const "HOLLight.page_directories_contain_reference" as "System.H.State.pageDirectoriesContainReference"
+const "HOLLight.reference" as "System.H.State.reference"
+const "HOLLight.reference_contains_environment" as "System.H.State.referenceContainsEnvironment"
+const "HOLLight.reference_is_page_directory" as "System.H.State.referenceIsPageDirectory"
+const "HOLLight.reference_maps_kernel_addresses" as "System.H.State.referenceMapsKernelAddresses"
+const "HOLLight.regions" as "System.H.State.regions"
+const "HOLLight.regions_are_not_environment" as "System.H.State.regionsAreNotEnvironment"
+const "HOLLight.table_mapped_in_directory" as "System.H.State.tableMappedInDirectory"
+const "HOLLight.table_pointers_are_page_tables" as "System.H.State.tablePointersArePageTables"
+const "HOLLight.translate_page" as "System.H.State.translatePage"
+const "HOLLight.translation" as "System.H.State.translation"
+const "HOLLight.unmapped_normal_page" as "System.H.State.unmappedNormalPage"
+const "HOLLight.unmapped_page" as "System.H.State.unmappedPage"
+const "HOLLight.wellformed" as "System.H.State.wellformed"
+const "HOLLight.RegionState" as "System.H.State.Regions"
+
+# System.H.State.Regions
+
+const "HOLLight.all_regions" as "System.H.State.Regions.all"
+const "HOLLight.initial_regions" as "System.H.State.Regions.initial"
+
+# System.H.Superpage
+
+type "HOLLight.superpage_offset" as "System.H.Superpage.offset"
+
+# System.H.Superpage.Offset
+
+const "HOLLight.superpage_offset_add" as "System.H.Superpage.Offset.add"
+const "HOLLight.dest_superpage_offset" as "System.H.Superpage.Offset.dest"
+const "HOLLight.num_to_superpage_offset" as "System.H.Superpage.Offset.fromNatural"
+const "HOLLight.mk_superpage_offset" as "System.H.Superpage.Offset.mk"
+
+# System.H.View
+
+type "HOLLight.observable_pages" as "System.H.View.observablePages"
+
+const "HOLLight.current_page_directory_h" as "System.H.View.currentPageDirectoryH"
+const "HOLLight.view_equiv" as "System.H.View.equivalent"
+const "HOLLight.mk_current_page_directory_h" as "System.H.View.mkCurrentPageDirectoryH"
+const "HOLLight.mk_observable_pages_e" as "System.H.View.mkObservablePagesEnvironment"
+const "HOLLight.mk_observable_pages_k" as "System.H.View.mkObservablePagesKernel"
+const "HOLLight.mk_observable_pages_u" as "System.H.View.mkObservablePagesUser"
+const "HOLLight.mk_pages_h" as "System.H.View.mkPagesH"
+const "HOLLight.mk_reference_page_directory_h" as "System.H.View.mkReferencePageDirectoryH"
+const "HOLLight.mk_region_handles_h" as "System.H.View.mkRegionHandlesH"
+const "HOLLight.mk_region_handles_k" as "System.H.View.mkRegionHandlesKernel"
+const "HOLLight.observable_pages_e" as "System.H.View.observablePagesEnvironment"
+const "HOLLight.observable_pages_k" as "System.H.View.observablePagesKernel"
+const "HOLLight.observable_pages_u" as "System.H.View.observablePagesUser"
+const "HOLLight.pages_h" as "System.H.View.pagesH"
+const "HOLLight.reference_page_directory_h" as "System.H.View.referencePageDirectoryH"
+const "HOLLight.region_handles_h" as "System.H.View.regionHandlesH"
+const "HOLLight.region_handles_k" as "System.H.View.regionHandlesKernel"
+const "HOLLight.EView" as "System.H.View.Environment"
+const "HOLLight.HView" as "System.H.View.H"
+const "HOLLight.KView" as "System.H.View.Kernel"
+const "HOLLight.UView" as "System.H.View.User"
+
+# System.H.View.ObservablePages
+
+const "HOLLight.dest_observable_pages" as "System.H.View.ObservablePages.dest"
+const "HOLLight.translate_to_observable_pages" as "System.H.View.ObservablePages.fromTranslate"
+const "HOLLight.mk_observable_pages" as "System.H.View.ObservablePages.mk"
+
+# System.H.Virtual
+
+type "HOLLight.virtual_address" as "System.H.Virtual.address"
+type "HOLLight.virtual_page_address" as "System.H.Virtual.page"
+type "HOLLight.virtual_region" as "System.H.Virtual.region"
+type "HOLLight.virtual_superpage_address" as "System.H.Virtual.superpage"
+
+# System.H.Virtual.Address
+
+const "HOLLight.dest_virtual_address" as "System.H.Virtual.Address.dest"
+const "HOLLight.is_kernel_address" as "System.H.Virtual.Address.isKernel"
+const "HOLLight.is_user_address" as "System.H.Virtual.Address.isUser"
+const "HOLLight.mk_virtual_address" as "System.H.Virtual.Address.mk"
+
+# System.H.Virtual.Page
+
+const "HOLLight.virtual_page_address_add" as "System.H.Virtual.Page.add"
+const "HOLLight.dest_virtual_page_address" as "System.H.Virtual.Page.dest"
+const "HOLLight.is_kernel_page_address" as "System.H.Virtual.Page.isKernel"
+const "HOLLight.is_user_page_address" as "System.H.Virtual.Page.isUser"
+const "HOLLight.mk_virtual_page_address" as "System.H.Virtual.Page.mk"
+const "HOLLight.virtual_page_address_suc" as "System.H.Virtual.Page.suc"
+
+# System.H.Virtual.Region
+
+const "HOLLight.exists_virtual_region" as "System.H.Virtual.Region.exists"
+const "HOLLight.forall_virtual_region" as "System.H.Virtual.Region.forall"
+const "HOLLight.is_kernel_region" as "System.H.Virtual.Region.isKernel"
+const "HOLLight.is_virtual_subregion" as "System.H.Virtual.Region.isSubregion"
+const "HOLLight.is_user_region" as "System.H.Virtual.Region.isUser"
+const "HOLLight.virtual_region_length" as "System.H.Virtual.Region.length"
+const "HOLLight.member_virtual_region" as "System.H.Virtual.Region.member"
+const "HOLLight.VirtualRegion" as "System.H.Virtual.Region.mk"
+const "HOLLight.virtual_region_to_list" as "System.H.Virtual.Region.pageList"
+const "HOLLight.virtual_region_start" as "System.H.Virtual.Region.start"
+
+# System.H.Virtual.Superpage
+
+const "HOLLight.virtual_superpage_address_add" as "System.H.Virtual.Superpage.add"
+const "HOLLight.dest_virtual_superpage_address" as "System.H.Virtual.Superpage.dest"
+const "HOLLight.num_to_virtual_superpage_address" as "System.H.Virtual.Superpage.fromNatural"
+const "HOLLight.is_kernel_superpage_address" as "System.H.Virtual.Superpage.isKernel"
+const "HOLLight.is_user_superpage_address" as "System.H.Virtual.Superpage.isUser"
+const "HOLLight.mk_virtual_superpage_address" as "System.H.Virtual.Superpage.mk"

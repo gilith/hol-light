@@ -4,7 +4,7 @@
 (*              (c) Copyright, John Harrison 1998-2007                       *)
 (* ========================================================================= *)
 
-needs "calc_num.ml";;
+needs "wf.ml";;
 
 let SEMIRING_NORMALIZERS_CONV =
   let SEMIRING_PTHS = prove
@@ -563,3 +563,5 @@ let NUM_NORMALIZE_CONV =
       SEMIRING_ADD_CONV,SEMIRING_MUL_CONV,SEMIRING_POW_CONV)
      (<) in
   NUM_NORMALIZE_CONV;;
+
+logfile_end ();;

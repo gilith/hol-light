@@ -73,10 +73,18 @@ let PROVE_HYP ath bth =
 (* Rules for T                                                               *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "bool-def";;
+
 let T_DEF = new_basic_definition
  `T = ((\p:bool. p) = (\p:bool. p))`;;
 
+export_thm T_DEF;;
+
+logfile "bool-int";;
+
 let TRUTH = EQ_MP (SYM T_DEF) (REFL `\p:bool. p`);;
+
+export_thm TRUTH;;
 
 let EQT_ELIM th =
   try EQ_MP (SYM th) TRUTH
@@ -94,8 +102,12 @@ let EQT_INTRO =
 (* Rules for /\                                                              *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "bool-def";;
+
 let AND_DEF = new_basic_definition
  `(/\) = \p q. (\f:bool->bool->bool. f p q) = (\f. f T T)`;;
+
+export_thm AND_DEF;;
 
 let mk_conj = mk_binary "/\\";;
 let list_mk_conj = end_itlist (curry mk_conj);;
@@ -143,14 +155,23 @@ let CONJ_PAIR th =
   try CONJUNCT1 th,CONJUNCT2 th
   with Failure _ -> failwith "CONJ_PAIR: Not a conjunction";;
 
+let CONJ_TRIPLE th =
+  let (c1,c23) = CONJ_PAIR th in
+  let (c2,c3) = CONJ_PAIR c23 in
+  (c1,c2,c3);;
+
 let CONJUNCTS = striplist CONJ_PAIR;;
 
 (* ------------------------------------------------------------------------- *)
 (* Rules for ==>                                                             *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "bool-def";;
+
 let IMP_DEF = new_basic_definition
   `(==>) = \p q. p /\ q <=> p`;;
+
+export_thm IMP_DEF;;
 
 let mk_imp = mk_binary "==>";;
 
@@ -219,8 +240,12 @@ let IMP_TRANS =
 (* Rules for !                                                               *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "bool-def";;
+
 let FORALL_DEF = new_basic_definition
- `(!) = \P:A->bool. P = \x. T`;;
+ `(!) = \p. (p : A -> bool) = \x. T`;;
+
+export_thm FORALL_DEF;;
 
 let mk_forall = mk_binder "!";;
 let list_mk_forall(vs,bod) = itlist (curry mk_forall) vs bod;;
@@ -289,8 +314,12 @@ let GEN_ALL th =
 (* Rules for ?                                                               *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "bool-def";;
+
 let EXISTS_DEF = new_basic_definition
- `(?) = \P:A->bool. !q. (!x. P x ==> q) ==> q`;;
+ `(?) = \p:A->bool. !q. (!x. p x ==> q) ==> q`;;
+
+export_thm EXISTS_DEF;;
 
 let mk_exists =  mk_binder "?";;
 let list_mk_exists(vs,bod) =  itlist (curry mk_exists) vs bod;;
@@ -336,8 +365,12 @@ let SIMPLE_CHOOSE v th =
 (* Rules for \/                                                              *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "bool-def";;
+
 let OR_DEF = new_basic_definition
  `(\/) = \p q. !r. (p ==> r) ==> (q ==> r) ==> r`;;
+
+export_thm OR_DEF;;
 
 let mk_disj = mk_binary "\\/";;
 let list_mk_disj = end_itlist (curry mk_disj);;
@@ -388,11 +421,19 @@ let SIMPLE_DISJ_CASES th1 th2 =
 (* Rules for negation and falsity.                                           *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "bool-def";;
+
 let F_DEF = new_basic_definition
  `F = !p:bool. p`;;
 
+export_thm F_DEF;;
+
+logfile "bool-def";;
+
 let NOT_DEF = new_basic_definition
  `(~) = \p. p ==> F`;;
+
+export_thm NOT_DEF;;
 
 let mk_neg =
   let neg_tm = `(~)` in
@@ -444,8 +485,12 @@ let CONTR =
 (* Rules for unique existence.                                               *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "bool-def";;
+
 let EXISTS_UNIQUE_DEF = new_basic_definition
- `(?!) = \P:A->bool. ((?) P) /\ (!x y. P x /\ P y ==> x = y)`;;
+ `(?!) = \p:A->bool. ((?) p) /\ (!x y. p x /\ p y ==> x = y)`;;
+
+export_thm EXISTS_UNIQUE_DEF;;
 
 let mk_uexists = mk_binder "?!";;
 
@@ -460,3 +505,5 @@ let EXISTENCE =
         let ty = snd(dest_var(bndvar abs)) in
         MP (PINST [ty,aty] [abs,P] pth) th
     with Failure _ -> failwith "EXISTENCE";;
+
+logfile_end ();;

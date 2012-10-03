@@ -888,3 +888,5 @@ let top_thm() =
 
 #install_printer print_goal;;
 #install_printer print_goalstack;;
+
+logfile_end ();;

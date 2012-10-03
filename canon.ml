@@ -555,7 +555,7 @@ let SELECT_ELIM_TAC =
 let LAMBDA_ELIM_CONV =
   let HALF_MK_ABS_CONV =
     let pth = prove
-     (`(s = \x. t x) <=> (!x. s x = t x)`,
+     (`((s:A->B) = \x. t x) <=> (!x. s x = t x)`,
       REWRITE_TAC[FUN_EQ_THM]) in
     let rec conv vs tm =
       if vs = [] then REFL tm else
@@ -578,7 +578,7 @@ let LAMBDA_ELIM_CONV =
     else COMB_CONV (ELIM_LAMBDA conv) tm in
   let APPLY_PTH =
     let pth = prove
-     (`(!a. (a = c) ==> (P = Q a)) ==> (P <=> !a. (a = c) ==> Q a)`,
+     (`(!(a:A). (a = c) ==> (P = Q a)) ==> (P <=> !a. (a = c) ==> Q a)`,
       SIMP_TAC[LEFT_FORALL_IMP_THM; EXISTS_REFL]) in
     MATCH_MP pth in
   let LAMB1_CONV tm =
@@ -731,3 +731,5 @@ let rec PROP_ATOM_CONV conv tm =
         -> BINOP_CONV (PROP_ATOM_CONV conv) tm
   | Comb(Const("~",_),_) -> RAND_CONV (PROP_ATOM_CONV conv) tm
   | _ -> TRY_CONV conv tm;;
+
+logfile_end ();;

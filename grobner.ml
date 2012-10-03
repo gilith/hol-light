@@ -599,9 +599,11 @@ let NUM_SIMPLIFY_CONV =
   and contains_quantifier =
     can (find_term (fun t -> is_forall t or is_exists t or is_uexists t))
   and BETA2_CONV = RATOR_CONV BETA_CONV THENC BETA_CONV
+(***
   and PRE_ELIM_THM'' = CONV_RULE (RAND_CONV NNF_CONV) PRE_ELIM_THM
   and SUB_ELIM_THM'' = CONV_RULE (RAND_CONV NNF_CONV) SUB_ELIM_THM
   and DIVMOD_ELIM_THM'' = CONV_RULE (RAND_CONV NNF_CONV) DIVMOD_ELIM_THM
+***)
   and pth_evenodd = prove
    (`(EVEN(x) <=> (!y. ~(x = SUC(2 * y)))) /\
      (ODD(x) <=> (!y. ~(x = 2 * y))) /\
@@ -621,6 +623,7 @@ let NUM_SIMPLIFY_CONV =
     else if is_neg tm & not pos & contains_quantifier tm then
        RAND_CONV (NUM_MULTIPLY_CONV (not pos)) tm
     else
+(***
        try let t = find_term (fun t -> is_pre t & free_in t tm) tm in
            let ty = type_of t in
            let v = genvar ty in
@@ -653,7 +656,8 @@ let NUM_SIMPLIFY_CONV =
            let th2 = CONV_RULE(COMB2_CONV(RAND_CONV BETA2_CONV)
                 (funpow 2 BINDER_CONV(RAND_CONV BETA2_CONV))) th1 in
            CONV_RULE(RAND_CONV (NUM_MULTIPLY_CONV pos)) th2
-       with Failure _ -> REFL tm in
+       with Failure _ ->
+***)     REFL tm in
   NUM_REDUCE_CONV THENC
   CONDS_CELIM_CONV THENC
   NNF_CONV THENC
@@ -688,7 +692,7 @@ let NUM_RING =
   let rawring =
     RING(dest_numeral,mk_numeral,NUM_EQ_CONV,
          genvar bool_ty,`(+):num->num->num`,genvar bool_ty,
-         genvar bool_ty,`(*):num->num->num`,genvar bool_ty,
+         genvar bool_ty,`( * ):num->num->num`,genvar bool_ty,
          `(EXP):num->num->num`,
          NUM_INTEGRAL,TRUTH,NUM_NORMALIZE_CONV) in
   let initconv = NUM_SIMPLIFY_CONV THENC GEN_REWRITE_CONV DEPTH_CONV [ADD1]
@@ -696,3 +700,5 @@ let NUM_RING =
   fun tm -> let th = initconv tm in
             if rand(concl th) = t_tm then th
             else EQ_MP (SYM th) (rawring(rand(concl th)));;
+
+logfile_end ();;

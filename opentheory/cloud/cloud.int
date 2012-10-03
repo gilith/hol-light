@@ -1,0 +1,10 @@
+###############################################################################
+# INTERPRETING THE HOL LIGHT CLOUD TACTIC INTERFACE
+# Joe Lerd
+###############################################################################
+
+# Number
+
+# Number.Natural
+
+const "HOLLight.BIT2" as "Number.Natural.bit2"

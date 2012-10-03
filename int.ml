@@ -562,7 +562,7 @@ let INT_ABS_MUL_1 = prove
 let INT_WOP = prove
  (`(?x. &0 <= x /\ P x) <=>
    (?x. &0 <= x /\ P x /\ !y. &0 <= y /\ P y ==> x <= y)`,
-  ONCE_REWRITE_TAC[MESON[] `(?x. P x /\ Q x) <=> ~(!x. P x ==> ~Q x)`] THEN
+  ONCE_REWRITE_TAC[MESON[] `(?(x:A). P x /\ Q x) <=> ~(!x. P x ==> ~Q x)`] THEN
   REWRITE_TAC[IMP_CONJ; GSYM INT_FORALL_POS; INT_OF_NUM_LE] THEN
   REWRITE_TAC[NOT_FORALL_THM] THEN GEN_REWRITE_TAC LAND_CONV [num_WOP] THEN
   REWRITE_TAC[GSYM NOT_LE; CONTRAPOS_THM]);;
@@ -965,7 +965,7 @@ let INT_RING,int_ideal_cofactors =
   RING_AND_IDEAL_CONV
       (dest_intconst,mk_intconst,INT_EQ_CONV,
        `(--):int->int`,`(+):int->int->int`,`(-):int->int->int`,
-       genvar bool_ty,`(*):int->int->int`,genvar bool_ty,
+       genvar bool_ty,`( * ):int->int->int`,genvar bool_ty,
        `(pow):int->num->int`,
        INT_INTEGRAL,TRUTH,INT_POLY_CONV) in
   pure,
@@ -1194,7 +1194,7 @@ let INTEGER_TAC =
     (MAP_EVERY EXISTS_TAC(map (fun v -> rev_assocd v cfs zero_tm) evs) THEN
      REPEAT(POP_ASSUM MP_TAC) THEN CONV_TAC INT_RING) gl in
   let SCRUB_NEQ_TAC = MATCH_MP_TAC o MATCH_MP (MESON[]
-    `~(x = y) ==> x = y \/ p ==> p`) in
+    `~((x:A) = y) ==> x = y \/ p ==> p`) in
   REWRITE_TAC[int_coprime; int_congruent; int_divides] THEN
   REPEAT(STRIP_TAC ORELSE EQ_TAC) THEN
   REWRITE_TAC[LEFT_AND_EXISTS_THM; RIGHT_AND_EXISTS_THM;
@@ -1225,7 +1225,7 @@ let FORALL_UNCURRY = prove
 
 let EXISTS_UNCURRY = prove
  (`!P. (?f:A->B->C. P f) <=> (?f. P (\a b. f(a,b)))`,
-  ONCE_REWRITE_TAC[MESON[] `(?x. P x) <=> ~(!x. ~P x)`] THEN
+  ONCE_REWRITE_TAC[MESON[] `(?(x:A). P x) <=> ~(!x. ~P x)`] THEN
   REWRITE_TAC[FORALL_UNCURRY]);;
 
 let WF_INT_MEASURE = prove
