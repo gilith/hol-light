@@ -22,8 +22,8 @@ THEORY_INTERPRETATIONS = \
   theories/field-star-group.ml \
   theories/gfp/gfp-modular.ml \
   theories/word/word-modular.ml \
-  theories/word10-word.ml \
-  theories/word12-word.ml \
+  theories/word10/word10-word.ml \
+  theories/word12/word12-word.ml \
   theories/word16-word.ml
 
 theories/byte/byte-word.ml: theories/word/word.ml theories/word/word-modular.ml
@@ -41,10 +41,10 @@ theories/gfp/gfp-modular.ml: theories/modular/modular.ml
 theories/word/word-modular.ml: theories/modular/modular.ml
 	scripts/instantiate -r "modulus/word_size:modular/word" $< > $@
 
-theories/word10-word.ml: theories/word/word.ml theories/word/word-modular.ml
+theories/word10/word10-word.ml: theories/word/word.ml theories/word/word-modular.ml
 	scripts/instantiate -r "word/word10" $< > $@
 
-theories/word12-word.ml: theories/word/word.ml theories/word/word-modular.ml
+theories/word12/word12-word.ml: theories/word/word.ml theories/word/word-modular.ml
 	scripts/instantiate -r "word/word12" $< > $@
 
 theories/word16-word.ml: theories/word/word.ml theories/word/word-modular.ml

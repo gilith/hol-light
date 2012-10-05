@@ -66,66 +66,6 @@ const "HOLLight.rdecode_vector" as "Data.List.fromRandom"
 
 const "HOLLight.rdecode_list" as "Data.List.Geometric.fromRandom"
 
-# Data.Word10
-
-type "HOLLight.word10" as "Data.Word10.word10"
-
-const "HOLLight.word10_le" as "Data.Word10.<="
-const "HOLLight.word10_lt" as "Data.Word10.<"
-const "HOLLight.word10_neg" as "Data.Word10.~"
-const "HOLLight.word10_exp" as "Data.Word10.^"
-const "HOLLight.word10_mult" as "Data.Word10.*"
-const "HOLLight.word10_add" as "Data.Word10.+"
-const "HOLLight.word10_sub" as "Data.Word10.-"
-const "HOLLight.word10_and" as "Data.Word10.and"
-const "HOLLight.word10_bit" as "Data.Word10.bit"
-const "HOLLight.num_to_word10" as "Data.Word10.fromNatural"
-const "HOLLight.rdecode_word10" as "Data.Word10.fromRandom"
-const "HOLLight.word10_size" as "Data.Word10.modulus"
-const "HOLLight.word10_not" as "Data.Word10.not"
-const "HOLLight.word10_or" as "Data.Word10.or"
-const "HOLLight.word10_shl" as "Data.Word10.shiftLeft"
-const "HOLLight.word10_shr" as "Data.Word10.shiftRight"
-const "HOLLight.word10_to_num" as "Data.Word10.toNatural"
-const "HOLLight.word10_width" as "Data.Word10.width"
-
-# Data.Word10.Bits
-
-const "HOLLight.word10_bits_lte" as "Data.Word10.Bits.compare"
-const "HOLLight.word10_to_list" as "Data.Word10.Bits.fromWord"
-const "HOLLight.is_word10_list" as "Data.Word10.Bits.normal"
-const "HOLLight.list_to_word10" as "Data.Word10.Bits.toWord"
-
-# Data.Word12
-
-type "HOLLight.word12" as "Data.Word12.word12"
-
-const "HOLLight.word12_le" as "Data.Word12.<="
-const "HOLLight.word12_lt" as "Data.Word12.<"
-const "HOLLight.word12_neg" as "Data.Word12.~"
-const "HOLLight.word12_exp" as "Data.Word12.^"
-const "HOLLight.word12_mult" as "Data.Word12.*"
-const "HOLLight.word12_add" as "Data.Word12.+"
-const "HOLLight.word12_sub" as "Data.Word12.-"
-const "HOLLight.word12_and" as "Data.Word12.and"
-const "HOLLight.word12_bit" as "Data.Word12.bit"
-const "HOLLight.num_to_word12" as "Data.Word12.fromNatural"
-const "HOLLight.rdecode_word12" as "Data.Word12.fromRandom"
-const "HOLLight.word12_size" as "Data.Word12.modulus"
-const "HOLLight.word12_not" as "Data.Word12.not"
-const "HOLLight.word12_or" as "Data.Word12.or"
-const "HOLLight.word12_shl" as "Data.Word12.shiftLeft"
-const "HOLLight.word12_shr" as "Data.Word12.shiftRight"
-const "HOLLight.word12_to_num" as "Data.Word12.toNatural"
-const "HOLLight.word12_width" as "Data.Word12.width"
-
-# Data.Word12.Bits
-
-const "HOLLight.word12_bits_lte" as "Data.Word12.Bits.compare"
-const "HOLLight.word12_to_list" as "Data.Word12.Bits.fromWord"
-const "HOLLight.is_word12_list" as "Data.Word12.Bits.normal"
-const "HOLLight.list_to_word12" as "Data.Word12.Bits.toWord"
-
 # Data.Word16
 
 type "HOLLight.word16" as "Data.Word16.word16"

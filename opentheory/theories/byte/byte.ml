@@ -20,8 +20,6 @@ let byte_width_def = new_definition
 
 export_thm byte_width_def;;
 
-logfile_end ();;
-
 (* Parametric theory instantiation: word *)
 
 loads "opentheory/theories/byte/byte-word.ml";;
