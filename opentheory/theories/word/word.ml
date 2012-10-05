@@ -53,7 +53,7 @@ let word_size_nonzero = new_axiom
 
 (* Parametric theory instantiation: modular *)
 
-loads "opentheory/theories/word-modular.ml";;
+loads "opentheory/theories/word/word-modular.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of word to bit-list conversions.                               *)

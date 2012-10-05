@@ -1,9 +1,4 @@
 (*BEGIN-PARAMETRIC*)
-
-(* byte *)
-
-(* byte-def *)
-
 new_constant ("byte_size", `:num`);;
 
 let byte_size_def = new_axiom
@@ -11,7 +6,6 @@ let byte_size_def = new_axiom
 
 let byte_size_nonzero = new_axiom
   `~(byte_size = 0)`;;
-
 
 let mod_refl_byte_size = new_axiom
   `byte_size MOD byte_size = 0`;;
@@ -266,9 +260,6 @@ let byte_let_trans = new_axiom
 let byte_lt_trans = new_axiom
   `!x1 x2 x3. byte_lt x1 x2 /\ byte_lt x2 x3 ==> byte_lt x1 x3`;;
 
-
-(* byte-bits-def *)
-
 new_constant ("byte_shl", `:byte -> num -> byte`);;
 
 let byte_shl_def = new_axiom
@@ -335,8 +326,6 @@ and byte_bits_lte_cons = new_axiom
       byte_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2`;;
 
 let byte_bits_lte_def = CONJ byte_bits_lte_nil byte_bits_lte_cons;;
-
-(* byte-bits-thm *)
 
 let length_byte_to_list = new_axiom
   `!w. LENGTH (byte_to_list w) = byte_width`;;
@@ -671,5 +660,4 @@ let prove_byte_list_cases n =
            GEN_TAC) THEN
         REWRITE_TAC [LENGTH_EQ_NIL] in
     prove (goal,tac);;
-
 (*END-PARAMETRIC*)

@@ -1,9 +1,4 @@
 (*BEGIN-PARAMETRIC*)
-
-(* word12 *)
-
-(* word12-def *)
-
 new_constant ("word12_size", `:num`);;
 
 let word12_size_def = new_axiom
@@ -11,7 +6,6 @@ let word12_size_def = new_axiom
 
 let word12_size_nonzero = new_axiom
   `~(word12_size = 0)`;;
-
 
 let mod_refl_word12_size = new_axiom
   `word12_size MOD word12_size = 0`;;
@@ -266,9 +260,6 @@ let word12_let_trans = new_axiom
 let word12_lt_trans = new_axiom
   `!x1 x2 x3. word12_lt x1 x2 /\ word12_lt x2 x3 ==> word12_lt x1 x3`;;
 
-
-(* word12-bits-def *)
-
 new_constant ("word12_shl", `:word12 -> num -> word12`);;
 
 let word12_shl_def = new_axiom
@@ -335,8 +326,6 @@ and word12_bits_lte_cons = new_axiom
       word12_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2`;;
 
 let word12_bits_lte_def = CONJ word12_bits_lte_nil word12_bits_lte_cons;;
-
-(* word12-bits-thm *)
 
 let length_word12_to_list = new_axiom
   `!w. LENGTH (word12_to_list w) = word12_width`;;
@@ -671,5 +660,4 @@ let prove_word12_list_cases n =
            GEN_TAC) THEN
         REWRITE_TAC [LENGTH_EQ_NIL] in
     prove (goal,tac);;
-
 (*END-PARAMETRIC*)

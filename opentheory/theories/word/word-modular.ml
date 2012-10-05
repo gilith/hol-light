@@ -1,5 +1,4 @@
 (*BEGIN-PARAMETRIC*)
-
 let mod_refl_word_size = new_axiom
   `word_size MOD word_size = 0`;;
 
@@ -252,5 +251,4 @@ let word_let_trans = new_axiom
 
 let word_lt_trans = new_axiom
   `!x1 x2 x3. word_lt x1 x2 /\ word_lt x2 x3 ==> word_lt x1 x3`;;
-
 (*END-PARAMETRIC*)

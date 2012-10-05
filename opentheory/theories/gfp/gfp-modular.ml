@@ -1,5 +1,4 @@
 (*BEGIN-PARAMETRIC*)
-
 let mod_refl_oddprime = new_axiom
   `oddprime MOD oddprime = 0`;;
 
@@ -252,5 +251,4 @@ let gfp_let_trans = new_axiom
 
 let gfp_lt_trans = new_axiom
   `!x1 x2 x3. gfp_lt x1 x2 /\ gfp_lt x2 x3 ==> gfp_lt x1 x3`;;
-
 (*END-PARAMETRIC*)

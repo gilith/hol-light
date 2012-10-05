@@ -21,12 +21,12 @@ THEORY_INTERPRETATIONS = \
   theories/field-group.ml \
   theories/field-star-group.ml \
   theories/gfp/gfp-modular.ml \
-  theories/word-modular.ml \
+  theories/word/word-modular.ml \
   theories/word10-word.ml \
   theories/word12-word.ml \
   theories/word16-word.ml
 
-theories/byte-word.ml: theories/word.ml theories/word-modular.ml
+theories/byte-word.ml: theories/word/word.ml theories/word/word-modular.ml
 	scripts/instantiate -r "word/byte" $< > $@
 
 theories/field-group.ml: theories/group/group.ml
@@ -38,16 +38,16 @@ theories/field-star-group.ml: theories/group/group.ml
 theories/gfp/gfp-modular.ml: theories/modular/modular.ml
 	scripts/instantiate -r "modulus/oddprime:modular/gfp" $< > $@
 
-theories/word-modular.ml: theories/modular/modular.ml
+theories/word/word-modular.ml: theories/modular/modular.ml
 	scripts/instantiate -r "modulus/word_size:modular/word" $< > $@
 
-theories/word10-word.ml: theories/word.ml theories/word-modular.ml
+theories/word10-word.ml: theories/word/word.ml theories/word/word-modular.ml
 	scripts/instantiate -r "word/word10" $< > $@
 
-theories/word12-word.ml: theories/word.ml theories/word-modular.ml
+theories/word12-word.ml: theories/word/word.ml theories/word/word-modular.ml
 	scripts/instantiate -r "word/word12" $< > $@
 
-theories/word16-word.ml: theories/word.ml theories/word-modular.ml
+theories/word16-word.ml: theories/word/word.ml theories/word/word-modular.ml
 	scripts/instantiate -r "word/word16" $< > $@
 
 .PHONY: theory-interpretations

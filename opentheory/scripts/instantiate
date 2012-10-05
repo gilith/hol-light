@@ -158,9 +158,6 @@ sub process_file {
       elsif ($state eq "normal") {
         if ($line =~ /^loads ["]([^"]+)["];;$/) {
           my $use_filename = $1;
-          if ($use_filename =~ m{([^/]+)[.]}) {
-            print_normal "(* $1 *)\n\n";
-          }
           if ($use_filename !~ /^\//) {
             $use_filename = '../' . $use_filename;
           }
@@ -271,9 +268,9 @@ while (0 < scalar @ARGV) {
 }
 
 my $output = replace_revealed ();
-print STDOUT "(*BEGIN-PARAMETRIC*)\n\n";
+print STDOUT "(*BEGIN-PARAMETRIC*)\n";
 print STDOUT $output;
-print STDOUT "\n(*END-PARAMETRIC*)\n";
+print STDOUT "(*END-PARAMETRIC*)\n";
 
 __END__
 
