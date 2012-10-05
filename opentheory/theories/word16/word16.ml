@@ -1,5 +1,16 @@
+(* ========================================================================= *)
+(* 16-BIT WORDS                                                              *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* A type of 16-bit words.                                                   *)
+(* Interpretations for 16-bit words.                                         *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation "opentheory/theories/word16/word16.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of 16-bit words.                                               *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "word16-def";;
@@ -9,17 +20,23 @@ let word16_width_def = new_definition
 
 export_thm word16_width_def;;
 
-logfile_end ();;
-
 (* Parametric theory instantiation: word *)
 
-loads "opentheory/theories/word16-word.ml";;
+loads "opentheory/theories/word16/word16-word.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* 16-bit word to bit-list conversions.                                      *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "word16-bits";;
 
 let word16_list_cases = prove_word16_list_cases 16;;
 
 export_thm word16_list_cases;;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of 16-bit word to byte pair conversions.                       *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "word16-bytes-def";;
 
@@ -39,6 +56,10 @@ let bytes_to_word16_def = new_definition
        (word16_shl (num_to_word16 (byte_to_num b1)) 8)`;;
 
 export_thm bytes_to_word16_def;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of 16-bit word to byte pair conversions.                       *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "word16-bytes-thm";;
 
@@ -151,7 +172,9 @@ let bytes_to_word16_cases = prove
 
 export_thm bytes_to_word16_cases;;
 
-(* Extending the bit-blasting tactic *)
+(* ------------------------------------------------------------------------- *)
+(* 16-bit word proof tools.                                                  *)
+(* ------------------------------------------------------------------------- *)
 
 let bytes_to_word16_list_conv =
     let th = SYM (SPECL [`list_to_byte l0`; `list_to_byte l1`]

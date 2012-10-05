@@ -24,7 +24,7 @@ THEORY_INTERPRETATIONS = \
   theories/word/word-modular.ml \
   theories/word10/word10-word.ml \
   theories/word12/word12-word.ml \
-  theories/word16-word.ml
+  theories/word16/word16-word.ml
 
 theories/byte/byte-word.ml: theories/word/word.ml theories/word/word-modular.ml
 	scripts/instantiate -r "word/byte" $< > $@
@@ -47,7 +47,7 @@ theories/word10/word10-word.ml: theories/word/word.ml theories/word/word-modular
 theories/word12/word12-word.ml: theories/word/word.ml theories/word/word-modular.ml
 	scripts/instantiate -r "word/word12" $< > $@
 
-theories/word16-word.ml: theories/word/word.ml theories/word/word-modular.ml
+theories/word16/word16-word.ml: theories/word/word.ml theories/word/word-modular.ml
 	scripts/instantiate -r "word/word16" $< > $@
 
 .PHONY: theory-interpretations

@@ -112,7 +112,7 @@ loads "opentheory/theories/word10/word10.ml";;
 
 loads "opentheory/theories/word12/word12.ml";;
 
-loads "opentheory/theories/word16.ml";;
+loads "opentheory/theories/word16/word16.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Simple stream parsers.                                                    *)
