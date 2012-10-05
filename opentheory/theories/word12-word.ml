@@ -1,3 +1,5 @@
+(*BEGIN-PARAMETRIC*)
+
 (* word12 *)
 
 (* word12-def *)
@@ -10,9 +12,6 @@ let word12_size_def = new_axiom
 let word12_size_nonzero = new_axiom
   `~(word12_size = 0)`;;
 
-(* word12 *)
-
-(* word12-def *)
 
 let mod_refl_word12_size = new_axiom
   `word12_size MOD word12_size = 0`;;
@@ -112,8 +111,6 @@ let rdecode_word12_def = new_axiom
      rdecode_word12 r =
      let (n,r') = rdecode_uniform word12_size r in
      (num_to_word12 n, r')`;;
-
-(* word12-thm *)
 
 let word12_to_num_inj = new_axiom
   `!x y. word12_to_num x = word12_to_num y ==> x = y`;;
@@ -268,6 +265,7 @@ let word12_let_trans = new_axiom
 
 let word12_lt_trans = new_axiom
   `!x1 x2 x3. word12_lt x1 x2 /\ word12_lt x2 x3 ==> word12_lt x1 x3`;;
+
 
 (* word12-bits-def *)
 
@@ -673,3 +671,5 @@ let prove_word12_list_cases n =
            GEN_TAC) THEN
         REWRITE_TAC [LENGTH_EQ_NIL] in
     prove (goal,tac);;
+
+(*END-PARAMETRIC*)

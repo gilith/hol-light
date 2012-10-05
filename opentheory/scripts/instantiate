@@ -156,8 +156,11 @@ sub process_file {
         }
       }
       elsif ($state eq "normal") {
-        if ($line =~ /^loads \"([^"]+)\";;$/) {
+        if ($line =~ /^loads ["]([^"]+)["];;$/) {
           my $use_filename = $1;
+          if ($use_filename =~ m{([^/]+)[.]}) {
+            print_normal "(* $1 *)\n\n";
+          }
           if ($use_filename !~ /^\//) {
             $use_filename = '../' . $use_filename;
           }

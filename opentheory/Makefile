@@ -20,7 +20,7 @@ THEORY_INTERPRETATIONS = \
   theories/byte-word.ml \
   theories/field-group.ml \
   theories/field-star-group.ml \
-  theories/gfp-modular.ml \
+  theories/gfp/gfp-modular.ml \
   theories/word-modular.ml \
   theories/word10-word.ml \
   theories/word12-word.ml \
@@ -35,10 +35,10 @@ theories/field-group.ml: theories/group/group.ml
 theories/field-star-group.ml: theories/group/group.ml
 	scripts/instantiate -r "group/field_star" $< > $@
 
-theories/gfp-modular.ml: theories/modular.ml
+theories/gfp/gfp-modular.ml: theories/modular/modular.ml
 	scripts/instantiate -r "modulus/oddprime:modular/gfp" $< > $@
 
-theories/word-modular.ml: theories/modular.ml
+theories/word-modular.ml: theories/modular/modular.ml
 	scripts/instantiate -r "modulus/word_size:modular/word" $< > $@
 
 theories/word10-word.ml: theories/word.ml theories/word-modular.ml

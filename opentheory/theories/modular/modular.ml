@@ -1,12 +1,17 @@
+(* ========================================================================= *)
+(* PARAMETRIC THEORY OF MODULAR ARITHMETIC                                   *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* A parametric theory of modular arithmetic.                                *)
+(* Interpretations for a parametric theory of modular arithmetic.            *)
 (* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* modular *)
-*)
+extend_the_interpretation "opentheory/theories/modular/modular.int";;
 
-(* The theory parameters *)
+(* ------------------------------------------------------------------------- *)
+(* Parametric theory witness for modular arithmetic.                         *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "modular-witness";;
 
@@ -18,11 +23,11 @@ let modulus_nonzero =
 
 export_thm modulus_nonzero;;
 
-logfile "modular-def";;
+(* ------------------------------------------------------------------------- *)
+(* Definition of modular arithmetic.                                         *)
+(* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* modular-def *)
-*)
+logfile "modular-def";;
 
 let mod_refl_modulus = prove
   (`modulus MOD modulus = 0`,
@@ -377,11 +382,9 @@ let modular_exp_suc = new_axiom
   `!x n. modular_exp x (SUC n) = modular_mult x (modular_exp x n)`;;
 *)
 
+(*BEGIN-PARAMETRIC*)
 let modular_exp_def = CONJ modular_exp_zero modular_exp_suc;;
-
-(*PARAMETRIC
-let modular_exp_def = CONJ modular_exp_zero modular_exp_suc;;
-*)
+(*END-PARAMETRIC*)
 
 let modular_neg_def = new_definition
   `!x. modular_neg x = num_to_modular (modulus - modular_to_num x)`;;
@@ -459,11 +462,11 @@ let rdecode_modular_def = new_axiom
      (num_to_modular n, r')`;;
 *)
 
-logfile "modular-thm";;
+(* ------------------------------------------------------------------------- *)
+(* Properties of modular arithmetic.                                         *)
+(* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* modular-thm *)
-*)
+logfile "modular-thm";;
 
 let modular_to_num_inj = prove
   (`!x y. modular_to_num x = modular_to_num y ==> x = y`,

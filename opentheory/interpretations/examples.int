@@ -96,36 +96,6 @@ const "HOLLight.rdecode_vector" as "Data.List.fromRandom"
 
 const "HOLLight.rdecode_list" as "Data.List.Geometric.fromRandom"
 
-# Data.Word
-
-type "HOLLight.word" as "Data.Word.word"
-
-const "HOLLight.word_le" as "Data.Word.<="
-const "HOLLight.word_lt" as "Data.Word.<"
-const "HOLLight.word_neg" as "Data.Word.~"
-const "HOLLight.word_exp" as "Data.Word.^"
-const "HOLLight.word_mult" as "Data.Word.*"
-const "HOLLight.word_add" as "Data.Word.+"
-const "HOLLight.word_sub" as "Data.Word.-"
-const "HOLLight.word_and" as "Data.Word.and"
-const "HOLLight.word_bit" as "Data.Word.bit"
-const "HOLLight.num_to_word" as "Data.Word.fromNatural"
-const "HOLLight.rdecode_word" as "Data.Word.fromRandom"
-const "HOLLight.word_size" as "Data.Word.modulus"
-const "HOLLight.word_not" as "Data.Word.not"
-const "HOLLight.word_or" as "Data.Word.or"
-const "HOLLight.word_shl" as "Data.Word.shiftLeft"
-const "HOLLight.word_shr" as "Data.Word.shiftRight"
-const "HOLLight.word_to_num" as "Data.Word.toNatural"
-const "HOLLight.word_width" as "Data.Word.width"
-
-# Data.Word.Bits
-
-const "HOLLight.word_bits_lte" as "Data.Word.Bits.compare"
-const "HOLLight.word_to_list" as "Data.Word.Bits.fromWord"
-const "HOLLight.is_word_list" as "Data.Word.Bits.normal"
-const "HOLLight.list_to_word" as "Data.Word.Bits.toWord"
-
 # Data.Word10
 
 type "HOLLight.word10" as "Data.Word10.word10"
@@ -219,43 +189,6 @@ const "HOLLight.is_word16_list" as "Data.Word16.Bits.normal"
 const "HOLLight.list_to_word16" as "Data.Word16.Bits.toWord"
 
 # Number
-
-# Number.GF(p)
-
-type "HOLLight.gfp" as "Number.GF(p).gfp"
-
-const "HOLLight.gfp_le" as "Number.GF(p).<="
-const "HOLLight.gfp_lt" as "Number.GF(p).<"
-const "HOLLight.gfp_neg" as "Number.GF(p).~"
-const "HOLLight.gfp_exp" as "Number.GF(p).^"
-const "HOLLight.gfp_mult" as "Number.GF(p).*"
-const "HOLLight.gfp_div" as "Number.GF(p)./"
-const "HOLLight.gfp_add" as "Number.GF(p).+"
-const "HOLLight.gfp_sub" as "Number.GF(p).-"
-const "HOLLight.gfp_div_gcd" as "Number.GF(p).divGcd"
-const "HOLLight.gfp_equiv" as "Number.GF(p).equivalent"
-const "HOLLight.gfp_exp_div" as "Number.GF(p).expDiv"
-const "HOLLight.num_to_gfp" as "Number.GF(p).fromNatural"
-const "HOLLight.gfp_inv" as "Number.GF(p).inv"
-const "HOLLight.oddprime" as "Number.GF(p).oddprime"
-const "HOLLight.gfp_to_num" as "Number.GF(p).toNatural"
-
-# Number.Modular
-
-type "HOLLight.modular" as "Number.Modular.modular"
-
-const "HOLLight.modular_le" as "Number.Modular.<="
-const "HOLLight.modular_lt" as "Number.Modular.<"
-const "HOLLight.modular_neg" as "Number.Modular.~"
-const "HOLLight.modular_exp" as "Number.Modular.^"
-const "HOLLight.modular_mult" as "Number.Modular.*"
-const "HOLLight.modular_add" as "Number.Modular.+"
-const "HOLLight.modular_sub" as "Number.Modular.-"
-const "HOLLight.modular_equiv" as "Number.Modular.equivalent"
-const "HOLLight.num_to_modular" as "Number.Modular.fromNatural"
-const "HOLLight.rdecode_modular" as "Number.Modular.fromRandom"
-const "HOLLight.modulus" as "Number.Modular.modulus"
-const "HOLLight.modular_to_num" as "Number.Modular.toNatural"
 
 # Number.Natural
 

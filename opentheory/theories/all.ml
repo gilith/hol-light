@@ -92,19 +92,19 @@ loads "opentheory/theories/field.ml";;
 (* Modular arithmetic.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/modular.ml";;
+loads "opentheory/theories/modular/modular.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Finite fields GF(p).                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/gfp.ml";;
+loads "opentheory/theories/gfp/gfp.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Bit-vectors.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/word.ml";;
+loads "opentheory/theories/word/word.ml";;
 
 loads "opentheory/theories/byte.ml";;
 

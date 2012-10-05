@@ -1,12 +1,17 @@
+(* ========================================================================= *)
+(* PARAMETRIC THEORY OF WORDS                                                *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* A parametric theory of words.                                             *)
+(* Interpretations for a parametric theory of words.                         *)
 (* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* word *)
-*)
+extend_the_interpretation "opentheory/theories/word/word.int";;
 
-(* The theory parameters *)
+(* ------------------------------------------------------------------------- *)
+(* Parametric theory witness for words.                                      *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "word-witness";;
 
@@ -14,11 +19,11 @@ let () =
   let _ = new_definition `word_width = 0` in
   export_thm (REFL `word_width`);;
 
-logfile "word-def";;
+(* ------------------------------------------------------------------------- *)
+(* Definition of word operations.                                            *)
+(* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* word-def *)
-*)
+logfile "word-def";;
 
 let word_size_def = new_definition
   `word_size = 2 EXP word_width`;;
@@ -50,11 +55,11 @@ let word_size_nonzero = new_axiom
 
 loads "opentheory/theories/word-modular.ml";;
 
-logfile "word-bits-def";;
+(* ------------------------------------------------------------------------- *)
+(* Definition of word to bit-list conversions.                               *)
+(* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* word-bits-def *)
-*)
+logfile "word-bits-def";;
 
 (* Helper theorems (not exported) *)
 
@@ -198,11 +203,9 @@ and list_to_word_cons = new_axiom
      else word_shl (list_to_word t) 1`;;
 *)
 
+(*BEGIN-PARAMETRIC*)
 let list_to_word_def = CONJ list_to_word_nil list_to_word_cons;;
-
-(*PARAMETRIC
-let list_to_word_def = CONJ list_to_word_nil list_to_word_cons;;
-*)
+(*END-PARAMETRIC*)
 
 let is_word_list_def = new_definition
   `!l. is_word_list (l : bool list) <=> LENGTH l = word_width`;;
@@ -300,17 +303,15 @@ and word_bits_lte_cons = new_axiom
       word_bits_lte ((~h1 /\ h2) \/ (~(h1 /\ ~h2) /\ q)) t1 t2`;;
 *)
 
+(*BEGIN-PARAMETRIC*)
 let word_bits_lte_def = CONJ word_bits_lte_nil word_bits_lte_cons;;
+(*END-PARAMETRIC*)
 
-(*PARAMETRIC
-let word_bits_lte_def = CONJ word_bits_lte_nil word_bits_lte_cons;;
-*)
+(* ------------------------------------------------------------------------- *)
+(* Properties of word to bit-list conversions.                               *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "word-bits-thm";;
-
-(*PARAMETRIC
-(* word-bits-thm *)
-*)
 
 let length_word_to_list = prove
   (`!w. LENGTH (word_to_list w) = word_width`,
@@ -343,6 +344,8 @@ let bits_to_num_to_word = prove
        word_shl_def; EXP_1; word_to_num_to_word] THEN
     BOOL_CASES_TAC `h : bool` THEN
     REWRITE_TAC [word_add_right_zero]]);;
+
+export_thm bits_to_num_to_word;;
 
 (*PARAMETRIC
 let bits_to_num_to_word = new_axiom
@@ -1306,9 +1309,11 @@ let rdecode_word = new_axiom
       (list_to_word l, r2)`;;
 *)
 
-(* Word tactics *)
+(* ------------------------------------------------------------------------- *)
+(* Word proof tools.                                                         *)
+(* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
+(*BEGIN-PARAMETRIC*)
 let word_reduce_conv =
     REWRITE_CONV
       [word_to_num_to_word;
@@ -1318,9 +1323,7 @@ let word_reduce_conv =
     REWRITE_CONV
       [word_width_def; word_size_def; num_to_word_eq] THENC
     NUM_REDUCE_CONV;;
-*)
 
-(*PARAMETRIC
 let word_width_conv = REWR_CONV word_width_def;;
 
 let list_to_word_to_list_conv =
@@ -1513,6 +1516,6 @@ let prove_word_list_cases n =
            GEN_TAC) THEN
         REWRITE_TAC [LENGTH_EQ_NIL] in
     prove (goal,tac);;
-*)
+(*END-PARAMETRIC*)
 
 logfile_end ();;
