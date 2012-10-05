@@ -106,7 +106,7 @@ loads "opentheory/theories/gfp/gfp.ml";;
 
 loads "opentheory/theories/word/word.ml";;
 
-loads "opentheory/theories/byte.ml";;
+loads "opentheory/theories/byte/byte.ml";;
 
 loads "opentheory/theories/word10.ml";;
 

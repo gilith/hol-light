@@ -17,7 +17,7 @@ default: theories
 ###############################################################################
 
 THEORY_INTERPRETATIONS = \
-  theories/byte-word.ml \
+  theories/byte/byte-word.ml \
   theories/field-group.ml \
   theories/field-star-group.ml \
   theories/gfp/gfp-modular.ml \
@@ -26,7 +26,7 @@ THEORY_INTERPRETATIONS = \
   theories/word12-word.ml \
   theories/word16-word.ml
 
-theories/byte-word.ml: theories/word/word.ml theories/word/word-modular.ml
+theories/byte/byte-word.ml: theories/word/word.ml theories/word/word-modular.ml
 	scripts/instantiate -r "word/byte" $< > $@
 
 theories/field-group.ml: theories/group/group.ml

@@ -61,7 +61,9 @@ loads "opentheory/theories/word/word-modular.ml";;
 
 logfile "word-bits-def";;
 
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 (* Helper theorems (not exported) *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let mod_exp_two_lt = prove
   (`!m n. m MOD (2 EXP n) < 2 EXP n`,
@@ -119,7 +121,9 @@ let mod_div_exp_two = prove
    MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
    ASM_REWRITE_TAC []);;
 
+(* ~~~~~~~~~~~~~~~~~ *)
 (* Exported theorems *)
+(* ~~~~~~~~~~~~~~~~~ *)
 
 let word_shl_def = new_definition
   `!w n. word_shl w n = num_to_word ((2 EXP n) * word_to_num w)`;;
