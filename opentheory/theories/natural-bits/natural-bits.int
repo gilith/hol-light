@@ -14,3 +14,8 @@ const "HOLLight.num_to_bits" as "Number.Natural.Bits.fromNatural"
 const "HOLLight.is_bits" as "Number.Natural.Bits.normal"
 const "HOLLight.bits_to_num" as "Number.Natural.Bits.toNatural"
 const "HOLLight.bitwidth" as "Number.Natural.Bits.width"
+
+# Number.Natural.Uniform
+
+const "HOLLight.rdecode_uniform" as "Number.Natural.Uniform.fromRandom"
+const "HOLLight.rdecode_uniform_loop" as "Number.Natural.Uniform.fromRandom.loop"

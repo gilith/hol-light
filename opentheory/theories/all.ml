@@ -146,7 +146,7 @@ loads "opentheory/theories/char/char.ml";;
 (* Memory safety for the H interface.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/h.ml";;
+loads "opentheory/theories/h/h.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Map reduce example using Minisat.                                         *)

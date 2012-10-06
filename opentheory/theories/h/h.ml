@@ -1,6 +1,5 @@
 (* ========================================================================= *)
 (* MEMORY SAFETY FOR THE H INTERFACE                                         *)
-(*                                                                           *)
 (* Joe Leslie-Hurd and Rebekah Leslie-Hurd                                   *)
 (*                                                                           *)
 (* A formalization of Rebekah Leslie's PhD thesis:                           *)
@@ -36,21 +35,29 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Definition of the H interface.                                            *)
+(* Interpretations for memory safety for the H interface.                    *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation "opentheory/theories/h/h.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of memory safety for the H interface.                          *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "h-def";;
 
+(* ~~~~~~~~~~~~~~ *)
 (* Region lengths *)
+(* ~~~~~~~~~~~~~~ *)
 
 let region_length_tybij =
   define_newtype ("l","region_length") ("n",`:num`);;
 
 export_thm region_length_tybij;;
 
-(* ------------------------------------------------------------------------- *)
-(* Address offsets.                                                          *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~ *)
+(* Address offsets *)
+(* ~~~~~~~~~~~~~~~ *)
 
 (* Superpage offsets *)
 
@@ -81,9 +88,9 @@ let page_offset_tybij =
 
 export_thm page_offset_tybij;;
 
-(* ------------------------------------------------------------------------- *)
-(* Physical addresses.                                                       *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~ *)
+(* Physical addresses *)
+(* ~~~~~~~~~~~~~~~~~~ *)
 
 (* Physical superpage addresses *)
 
@@ -145,9 +152,9 @@ let physical_address_tybij =
 
 export_thm physical_address_tybij;;
 
-(* ------------------------------------------------------------------------- *)
-(* Regions of physical memory.                                               *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Regions of physical memory *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let (physical_region_induct,physical_region_recursion) =
   let (induct,recursion) = define_type
@@ -218,9 +225,9 @@ let is_physical_subregion_def = new_definition
 
 export_thm is_physical_subregion_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* Virtual addresses.                                                        *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~ *)
+(* Virtual addresses *)
+(* ~~~~~~~~~~~~~~~~~ *)
 
 (* Virtual superpage addresses *)
 
@@ -282,9 +289,9 @@ let virtual_address_tybij =
 
 export_thm virtual_address_tybij;;
 
-(* ------------------------------------------------------------------------- *)
-(* Regions of virtual memory.                                                *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Regions of virtual memory *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let (virtual_region_induct,virtual_region_recursion) =
   let (induct,recursion) = define_type
@@ -355,9 +362,9 @@ let is_virtual_subregion_def = new_definition
 
 export_thm is_virtual_subregion_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* User and kernel virtual addresses.                                        *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* User and kernel virtual addresses *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let is_kernel_superpage_address_def = new_definition
   `!vsa.
@@ -418,9 +425,9 @@ let is_kernel_region_def = new_definition
 
 export_thm is_kernel_region_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* Page data.                                                                *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~ *)
+(* Page data *)
+(* ~~~~~~~~~ *)
 
 let page_data_tybij =
   define_newtype ("d","page_data")
@@ -440,11 +447,11 @@ let update_page_data_def = new_definition
 
 export_thm update_page_data_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* Page tables.                                                              *)
-(* ------------------------------------------------------------------------- *)
-
+(* ~~~~~~~~~~~ *)
 (* Page tables *)
+(* ~~~~~~~~~~~ *)
+
+(* Page table addresses *)
 
 new_type_abbrev("page_table",`:physical_page_address`);;
 
@@ -458,11 +465,11 @@ let page_table_data_tybij =
 
 export_thm page_table_data_tybij;;
 
-(* ------------------------------------------------------------------------- *)
-(* Page directories.                                                         *)
-(* ------------------------------------------------------------------------- *)
-
+(* ~~~~~~~~~~~~~~~~ *)
 (* Page directories *)
+(* ~~~~~~~~~~~~~~~~ *)
+
+(* Page directory addresses *)
 
 new_type_abbrev("page_directory",`:physical_page_address`);;
 
@@ -494,9 +501,9 @@ let page_directory_data_tybij =
 
 export_thm page_directory_data_tybij;;
 
-(* ------------------------------------------------------------------------- *)
-(* Page types.                                                               *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~ *)
+(* Page types *)
+(* ~~~~~~~~~~ *)
 
 let (page_induct,page_recursion) = define_type
     "page =
@@ -595,9 +602,9 @@ let is_installed_def = new_definition
 
 export_thm is_installed_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* The state of the system.                                                  *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* The state of the system *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 (* Derived physical regions state *)
 
@@ -620,7 +627,7 @@ let all_regions_def = new_recursive_definition region_state_recursion
 
 export_thm all_regions_def;;
 
-(* System state *)
+(* A type of system states *)
 
 let (state_induct,state_recursion) = define_type
     "state =
@@ -663,9 +670,9 @@ let is_normal_page_def = new_definition
 
 export_thm is_normal_page_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* Virtual to physical mappings.                                             *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Virtual to physical mappings *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let translate_page_def = new_definition
   `!s pd vpa.
@@ -734,9 +741,9 @@ let unmapped_normal_page_def = new_definition
 
 export_thm unmapped_normal_page_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* Well-formed machine states.                                               *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Well-formed machine states *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let cr3_is_page_directory_def = new_definition
   `!s.
@@ -873,9 +880,9 @@ let wellformed_def = new_definition
 
 export_thm wellformed_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* Observable pages.                                                         *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~ *)
+(* Observable pages *)
+(* ~~~~~~~~~~~~~~~~ *)
 
 let observable_pages_tybij =
   define_newtype ("v","observable_pages")
@@ -900,9 +907,11 @@ let translate_to_observable_pages_def = new_definition
 
 export_thm translate_to_observable_pages_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* Protection domains and their view of the system state.                    *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Protection domains and their view of the system state *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+
+(* A type of protection domains *)
 
 let (domain_induct,domain_recursion) =
   let (induct,recursion) = define_type
@@ -1128,9 +1137,11 @@ let view_equiv_def = new_definition
 
 export_thm view_equiv_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* Actions.                                                                  *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~ *)
+(* Actions *)
+(* ~~~~~~~ *)
+
+(* A type of actions *)
 
 let (action_induct,action_recursion) =
   let (induct,recursion) = define_type
@@ -1437,9 +1448,9 @@ let action_def = new_definition
 
 export_thm action_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* Output.                                                                   *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~ *)
+(* Output *)
+(* ~~~~~~ *)
 
 let output_tybij =
   define_newtype ("x","output")
@@ -1452,9 +1463,9 @@ let output_def = new_definition
 
 export_thm output_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* System security policy.                                                   *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~ *)
+(* System security policy *)
+(* ~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let interferes_def = new_definition
   `interferes x y <=>
@@ -1472,22 +1483,26 @@ let interferes_def = new_definition
 export_thm interferes_def;;
 
 (* ------------------------------------------------------------------------- *)
-(* Properties of the H interface.                                            *)
+(* Proof of memory safety for the H interface.                               *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "h-thm";;
 
-(* ------------------------------------------------------------------------- *)
-(* Address offsets.                                                          *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~ *)
+(* Region lengths *)
+(* ~~~~~~~~~~~~~~ *)
 
-(* ------------------------------------------------------------------------- *)
-(* Physical addresses.                                                       *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~ *)
+(* Address offsets *)
+(* ~~~~~~~~~~~~~~~ *)
 
-(* ------------------------------------------------------------------------- *)
-(* Regions of physical memory.                                               *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~ *)
+(* Physical addresses *)
+(* ~~~~~~~~~~~~~~~~~~ *)
+
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Regions of physical memory *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let physical_region_cases = prove_cases_thm physical_region_induct;;
 
@@ -1511,9 +1526,9 @@ let length_physical_region_to_list = prove
 
 export_thm length_physical_region_to_list;;
 
-(* ------------------------------------------------------------------------- *)
-(* Virtual addresses.                                                        *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~ *)
+(* Virtual addresses *)
+(* ~~~~~~~~~~~~~~~~~ *)
 
 let virtual_superpage_address_cases = prove
   (`!vsa. ?w. vsa = mk_virtual_superpage_address w`,
@@ -1554,9 +1569,9 @@ let mk_virtual_address_inj = prove
     DISCH_THEN SUBST1_TAC THEN
     REFL_TAC]);;
 
-(* ------------------------------------------------------------------------- *)
-(* Regions of virtual memory.                                                *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Regions of virtual memory *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let virtual_region_cases = prove_cases_thm virtual_region_induct;;
 
@@ -1580,9 +1595,9 @@ let length_virtual_region_to_list = prove
 
 export_thm length_virtual_region_to_list;;
 
-(* ------------------------------------------------------------------------- *)
-(* User and kernel virtual addresses.                                        *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* User and kernel virtual addresses *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let kernel_page_address_not_user = prove
   (`!vpa. is_kernel_page_address vpa <=> ~is_user_page_address vpa`,
@@ -1656,17 +1671,17 @@ let is_user_region = prove
 
 export_thm is_user_region;;
 
-(* ------------------------------------------------------------------------- *)
-(* Page data.                                                                *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~ *)
+(* Page data *)
+(* ~~~~~~~~~ *)
 
-(* ------------------------------------------------------------------------- *)
-(* Page tables.                                                              *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~ *)
+(* Page tables *)
+(* ~~~~~~~~~~~ *)
 
-(* ------------------------------------------------------------------------- *)
-(* Page directories.                                                         *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~ *)
+(* Page directories *)
+(* ~~~~~~~~~~~~~~~~ *)
 
 let page_directory_entry_cases = prove
   (`!pde. (?psa. pde = Superpage psa) \/ (?pt. pde = Table pt)`,
@@ -1692,9 +1707,9 @@ export_thm page_directory_data_cases;;
 
 let page_directory_data_cases_tac = CASES_TAC page_directory_data_cases;;
 
-(* ------------------------------------------------------------------------- *)
-(* Page types.                                                               *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~ *)
+(* Page types *)
+(* ~~~~~~~~~~ *)
 
 let page_cases = prove
   (`!p.
@@ -1726,9 +1741,9 @@ let dest_environment_or_normal_environment = prove
 
 export_thm dest_environment_or_normal_environment;;
 
-(* ------------------------------------------------------------------------- *)
-(* The state of the system.                                                  *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* The state of the system *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let region_state_cases = prove_cases_thm region_state_induct;;
 
@@ -1743,9 +1758,9 @@ export_thm state_cases;;
 
 let state_inj = prove_constructors_injective state_recursion;;
 
-(* ------------------------------------------------------------------------- *)
-(* Virtual to physical mappings.                                             *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Virtual to physical mappings *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let translate_page_eq = prove
   (`!s s'.
@@ -1866,9 +1881,9 @@ let unmapped_normal_page_normal = prove
 
 export_thm unmapped_normal_page_normal;;
 
-(* ------------------------------------------------------------------------- *)
-(* Well-formed machine states.                                               *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Well-formed machine states *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let cr3_is_page_directory = prove
   (`!s. wellformed s ==> is_page_directory (status s (cr3 s))`,
@@ -2076,9 +2091,9 @@ let reference_maps_kernel_addresses = prove
 
 export_thm reference_maps_kernel_addresses;;
 
-(* ------------------------------------------------------------------------- *)
-(* Observable pages.                                                         *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~ *)
+(* Observable pages *)
+(* ~~~~~~~~~~~~~~~~ *)
 
 let mk_observable_pages_inj = prove
   (`!f1 f2.
@@ -2095,9 +2110,9 @@ let mk_observable_pages_inj = prove
 
 export_thm mk_observable_pages_inj;;
 
-(* ------------------------------------------------------------------------- *)
-(* Protection domains and their view of the system state.                    *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Protection domains and their view of the system state *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
 let domain_cases = prove_cases_thm domain_induct;;
 
@@ -2207,9 +2222,9 @@ let view_equiv_trans = prove
 
 export_thm view_equiv_trans;;
 
-(* ------------------------------------------------------------------------- *)
-(* Actions.                                                                  *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~ *)
+(* Actions *)
+(* ~~~~~~~ *)
 
 (* write_e *)
 
@@ -5255,13 +5270,13 @@ let write_u_is_environment = prove
 
 export_thm write_u_is_environment;;
 
-(* ------------------------------------------------------------------------- *)
-(* Output.                                                                   *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~ *)
+(* Output *)
+(* ~~~~~~ *)
 
-(* ------------------------------------------------------------------------- *)
-(* System security policy.                                                   *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~~ *)
+(* System security policy *)
+(* ~~~~~~~~~~~~~~~~~~~~~~ *)
 
 (* Local respect *)
 
