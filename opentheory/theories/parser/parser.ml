@@ -1,10 +1,16 @@
 (* ========================================================================= *)
-(* SIMPLE STREAM PARSERS                                                     *)
+(* STREAM PARSERS                                                            *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Definition of streams.                                                    *)
+(* Interpretations for stream parsers.                                       *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation "opentheory/theories/parser/parser.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of parse streams.                                              *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "parser-stream-def";;
@@ -133,7 +139,7 @@ let rdecode_pstream_def = new_definition
 export_thm rdecode_pstream_def;;
 
 (* ------------------------------------------------------------------------- *)
-(* Properties of streams.                                                    *)
+(* Properties of parse streams.                                              *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "parser-stream-thm";;
@@ -348,6 +354,10 @@ let pstream_to_list_map = prove
 
 export_thm pstream_to_list_map;;
 
+(* ------------------------------------------------------------------------- *)
+(* Definition of stream parser combinators.                                  *)
+(* ------------------------------------------------------------------------- *)
+
 logfile "parser-comb-def";;
 
 let is_parser_def = new_definition
@@ -501,6 +511,10 @@ let parse_some_def = new_definition
      parse_option (\a. if p a then SOME a else NONE)`;;
 
 export_thm parse_some_def;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of stream parser combinators.                                  *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "parser-comb-thm";;
 
@@ -996,6 +1010,10 @@ let parse_parse_some = prove
 
 export_thm parse_parse_some;;
 
+(* ------------------------------------------------------------------------- *)
+(* Definition of the whole stream parser.                                    *)
+(* ------------------------------------------------------------------------- *)
+
 logfile "parser-all-def";;
 
 let parse_pstream_exists = prove
@@ -1066,6 +1084,10 @@ export_thm parse_pstream_cons;;
 let parse_pstream_def =
   REWRITE_RULE [GSYM FORALL_AND_THM]
     (CONJ parse_pstream_error (CONJ parse_pstream_eof parse_pstream_cons));;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of the whole stream parser.                                    *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "parser-all-thm";;
 

@@ -4,12 +4,20 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* A type of Unicode characters.                                             *)
+(* Interpretations for Unicode characters.                                   *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation "opentheory/theories/char/char.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of Unicode characters.                                         *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "char-def";;
 
+(* ~~~~~~ *)
 (* Planes *)
+(* ~~~~~~ *)
 
 let is_plane_def = new_definition
   `!p. is_plane p = byte_lt p (num_to_byte 17)`;;
@@ -40,7 +48,9 @@ let rdecode_plane_def = new_definition
 
 export_thm rdecode_plane_def;;
 
+(* ~~~~~~~~~ *)
 (* Positions *)
+(* ~~~~~~~~~ *)
 
 let is_position_def =
   let def = new_definition
@@ -73,7 +83,9 @@ let rdecode_position_def = new_definition
 
 export_thm rdecode_position_def;;
 
+(* ~~~~~~~~~~~~~~~~~~ *)
 (* Unicode characters *)
+(* ~~~~~~~~~~~~~~~~~~ *)
 
 let is_unicode_def = new_definition
   `!pl pos.
@@ -122,6 +134,10 @@ let rdecode_unicode_def = new_definition
      (mk_unicode (pl,pos), r'')`;;
 
 export_thm rdecode_unicode_def;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of Unicode characters.                                         *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "char-thm";;
 
@@ -222,7 +238,7 @@ let dest_unicode_inj = prove
 export_thm dest_unicode_inj;;
 
 (* ------------------------------------------------------------------------- *)
-(* UTF-8 encodings of unicode characters.                                    *)
+(* Definition of the UTF-8 encoding of Unicode characters.                   *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "char-utf8-def";;
@@ -411,6 +427,10 @@ let encode_def = new_definition
   `!chs. encode chs = concat (MAP encoder chs)`;;
 
 export_thm encode_def;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of the UTF-8 encoding of Unicode characters.                   *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "char-utf8-thm";;
 

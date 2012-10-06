@@ -173,7 +173,7 @@ let bytes_to_word16_cases = prove
 export_thm bytes_to_word16_cases;;
 
 (* ------------------------------------------------------------------------- *)
-(* 16-bit word proof tools.                                                  *)
+(* Proof tools for 16-bit words.                                             *)
 (* ------------------------------------------------------------------------- *)
 
 let bytes_to_word16_list_conv =

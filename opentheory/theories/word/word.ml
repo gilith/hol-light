@@ -1314,10 +1314,10 @@ let rdecode_word = new_axiom
 *)
 
 (* ------------------------------------------------------------------------- *)
-(* Word proof tools.                                                         *)
+(* Proof tools for words after width parameter is instantiated to a numeral. *)
 (* ------------------------------------------------------------------------- *)
 
-(*BEGIN-PARAMETRIC*)
+(*PARAMETRIC
 let word_reduce_conv =
     REWRITE_CONV
       [word_to_num_to_word;
@@ -1520,6 +1520,6 @@ let prove_word_list_cases n =
            GEN_TAC) THEN
         REWRITE_TAC [LENGTH_EQ_NIL] in
     prove (goal,tac);;
-(*END-PARAMETRIC*)
+*)
 
 logfile_end ();;

@@ -20,44 +20,6 @@ const "HOLLight.bit3x3_product" as "Bit3x3.product"
 
 # Data
 
-# Data.Char
-
-type "HOLLight.unicode" as "Data.Char.char"
-type "HOLLight.plane" as "Data.Char.plane"
-type "HOLLight.position" as "Data.Char.position"
-
-const "HOLLight.dest_plane" as "Data.Char.destPlane"
-const "HOLLight.dest_position" as "Data.Char.destPosition"
-const "HOLLight.dest_unicode" as "Data.Char.destChar"
-const "HOLLight.rdecode_unicode" as "Data.Char.fromRandom"
-const "HOLLight.is_plane" as "Data.Char.isPlane"
-const "HOLLight.is_position" as "Data.Char.isPosition"
-const "HOLLight.is_unicode" as "Data.Char.isChar"
-const "HOLLight.mk_plane" as "Data.Char.mkPlane"
-const "HOLLight.mk_position" as "Data.Char.mkPosition"
-const "HOLLight.mk_unicode" as "Data.Char.mkChar"
-const "HOLLight.rdecode_plane" as "Data.Char.planeFromRandom"
-const "HOLLight.rdecode_position" as "Data.Char.positionFromRandom"
-
-# Data.Char.UTF8
-
-const "HOLLight.decode" as "Data.Char.UTF8.decode"
-const "HOLLight.decode_pstream" as "Data.Char.UTF8.decodeStream"
-const "HOLLight.decoder" as "Data.Char.UTF8.decoder"
-const "HOLLight.decode_cont1" as "Data.Char.UTF8.decoder.decode1"
-const "HOLLight.decode_cont2" as "Data.Char.UTF8.decoder.decode2"
-const "HOLLight.decode_cont3" as "Data.Char.UTF8.decoder.decode3"
-const "HOLLight.decoder_parse" as "Data.Char.UTF8.decoder.parse"
-const "HOLLight.encode" as "Data.Char.UTF8.encode"
-const "HOLLight.encoder" as "Data.Char.UTF8.encoder"
-const "HOLLight.encode_cont1" as "Data.Char.UTF8.encoder.encode1"
-const "HOLLight.encode_cont2" as "Data.Char.UTF8.encoder.encode2"
-const "HOLLight.encode_cont3" as "Data.Char.UTF8.encoder.encode3"
-const "HOLLight.is_cont" as "Data.Char.UTF8.isContinuationByte"
-const "HOLLight.parse_cont" as "Data.Char.UTF8.parseContinuationByte"
-const "HOLLight.parse_cont2" as "Data.Char.UTF8.parseTwoContinuationBytes"
-const "HOLLight.parse_cont3" as "Data.Char.UTF8.parseThreeContinuationBytes"
-
 # Data.List
 
 const "HOLLight.rdecode_vector" as "Data.List.fromRandom"
@@ -79,48 +41,6 @@ const "HOLLight.rdecode_geometric_loop" as "Number.Natural.Geometric.fromRandom.
 
 const "HOLLight.rdecode_uniform" as "Number.Natural.Uniform.fromRandom"
 const "HOLLight.rdecode_uniform_loop" as "Number.Natural.Uniform.fromRandom.loop"
-
-# Parser
-
-type "HOLLight.parser" as "Parser.parser"
-
-const "HOLLight.dest_parser" as "Parser.destParser"
-const "HOLLight.parse_inverse" as "Parser.inverse"
-const "HOLLight.is_parser" as "Parser.isParser"
-const "HOLLight.parse_map" as "Parser.map"
-const "HOLLight.parse_map_token" as "Parser.mapToken"
-const "HOLLight.parser_map_token" as "Parser.mapToken.pf"
-const "HOLLight.mk_parser" as "Parser.mkParser"
-const "HOLLight.parse" as "Parser.parse"
-const "HOLLight.parse_all" as "Parser.parseAll"
-const "HOLLight.parser_all" as "Parser.parseAll.pa"
-const "HOLLight.parse_none" as "Parser.parseNone"
-const "HOLLight.parser_none" as "Parser.parseNone.pn"
-const "HOLLight.parse_option" as "Parser.parseOption"
-const "HOLLight.parse_pair" as "Parser.parsePair"
-const "HOLLight.parser_pair" as "Parser.parsePair.pbc"
-const "HOLLight.parse_some" as "Parser.parseSome"
-const "HOLLight.parse_pstream" as "Parser.parseStream"
-const "HOLLight.parse_partial_map" as "Parser.partialMap"
-const "HOLLight.parser_partial_map" as "Parser.partialMap.pf"
-const "HOLLight.parse_strong_inverse" as "Parser.strongInverse"
-
-# Parser.Stream
-
-type "HOLLight.pstream" as "Parser.Stream.stream"
-
-const "HOLLight.append_pstream" as "Parser.Stream.append"
-const "HOLLight.case_pstream" as "Parser.Stream.case.error.eof.cons"
-const "HOLLight.ConsPstream" as "Parser.Stream.cons"
-const "HOLLight.EofPstream" as "Parser.Stream.eof"
-const "HOLLight.ErrorPstream" as "Parser.Stream.error"
-const "HOLLight.list_to_pstream" as "Parser.Stream.fromList"
-const "HOLLight.rdecode_pstream" as "Parser.Stream.fromRandom"
-const "HOLLight.is_proper_suffix_pstream" as "Parser.Stream.isProperSuffix"
-const "HOLLight.is_suffix_pstream" as "Parser.Stream.isSuffix"
-const "HOLLight.length_pstream" as "Parser.Stream.length"
-const "HOLLight.map_pstream" as "Parser.Stream.map"
-const "HOLLight.pstream_to_list" as "Parser.Stream.toList"
 
 # System
 
