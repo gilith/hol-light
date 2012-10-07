@@ -148,11 +148,11 @@ loads "opentheory/theories/char/char.ml";;
 loads "opentheory/theories/h/h.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Map reduce example using Minisat.                                         *)
+(* The map reduce 3x3 bit matrix example.                                    *)
 (* ------------------------------------------------------------------------- *)
 
 (*
-loads "opentheory/theories/map-reduce.ml";;
+loads "opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.ml";;
 *)
 
 (* ------------------------------------------------------------------------- *)

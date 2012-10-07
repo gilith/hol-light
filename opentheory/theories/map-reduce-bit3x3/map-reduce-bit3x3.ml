@@ -11,7 +11,7 @@ extend_the_interpretation
   "opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.int";;
 
 (* ------------------------------------------------------------------------- *)
-(* Proof tools for the map reduce 3x3 bit matrix example.                    *)
+(* Proof tools for the map reduce bit matrix examples.                       *)
 (* ------------------------------------------------------------------------- *)
 
 (* Custom tactic for splitting deeply nested pairs *)
@@ -36,41 +36,10 @@ let SAT_TAC =
     W sat;;
 
 (* ------------------------------------------------------------------------- *)
-(* The map reduce example for natural number addition.                       *)
+(* SAT proof for the map reduce 3x3 bit matrix example.                      *)
 (* ------------------------------------------------------------------------- *)
 
-let natural_sum_def = new_definition
-  `natural_sum = foldl (+) 0`;;
-
-let natural_sum_parallel = prove
-  (`!l1 l2.
-      natural_sum (APPEND l1 l2) = natural_sum l1 + natural_sum l2`,
-   REPEAT GEN_TAC THEN
-   REWRITE_TAC [natural_sum_def] THEN
-   MATCH_MP_TAC foldl_append_assoc THEN
-   REWRITE_TAC [ADD_ASSOC; ADD_CLAUSES]);;
-
-(* ------------------------------------------------------------------------- *)
-(* The map reduce example for byte addition.                                 *)
-(* ------------------------------------------------------------------------- *)
-
-let byte_sum_def = new_definition
-  `byte_sum = foldl byte_add (num_to_byte 0)`;;
-
-let byte_sum_parallel = prove
-  (`!l1 l2.
-      byte_sum (APPEND l1 l2) = byte_add (byte_sum l1) (byte_sum l2)`,
-   REPEAT GEN_TAC THEN
-   REWRITE_TAC [byte_sum_def] THEN
-   MATCH_MP_TAC foldl_append_assoc THEN
-   REWRITE_TAC [byte_add_assoc; byte_add_right_zero]);;
-
-(* ------------------------------------------------------------------------- *)
-(* The map reduce example for byte addition.                                 *)
-(* ------------------------------------------------------------------------- *)
-
-(* Multiplying 3x3 bit matrices: the SAT problem *)
-
+logfile "map-reduce-bit3x3-sat";;
 
 let bit3x3_sat_goal =
 `((~(a11 /\ ~(a11' /\ a11'' <=> ~(a12' /\ a21'' <=> a13' /\ a31'')) <=>
@@ -128,13 +97,13 @@ let bit3x3_sat_goal =
     ~(~(a31 /\ a12' <=> ~(a32 /\ a22' <=> a33 /\ a32')) /\ a23'' <=>
       ~(a31 /\ a13' <=> ~(a32 /\ a23' <=> a33 /\ a33')) /\ a33'')))`;;
 
-logfile "map-reduce-bit3x3-sat";;
-
 let bit3x3_sat_thm = prove (bit3x3_sat_goal, SAT_TAC);;
 
 export_thm bit3x3_sat_thm;;
 
-(* Multiplying 3x3 bit matrices: correctness *)
+(* ------------------------------------------------------------------------- *)
+(* Correctness of the map reduce 3x3 bit matrix example.                     *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "map-reduce-bit3x3-product";;
 
@@ -243,11 +212,45 @@ let bit3x3_product_parallel = prove
 
 export_thm bit3x3_product_parallel;;
 
-(*** TOO BIG FOR PROOF LOGGING :-(
+(* ------------------------------------------------------------------------- *)
+(* Other map reduce examples.                                                *)
+(* ------------------------------------------------------------------------- *)
 
-(* Multiplying 4x4 bit matrices: the SAT problem *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* The map reduce example for natural number addition *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
-logfile "map-reduce-bit4x4-sat";;
+let natural_sum_def = new_definition
+  `natural_sum = foldl (+) 0`;;
+
+let natural_sum_parallel = prove
+  (`!l1 l2.
+      natural_sum (APPEND l1 l2) = natural_sum l1 + natural_sum l2`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [natural_sum_def] THEN
+   MATCH_MP_TAC foldl_append_assoc THEN
+   REWRITE_TAC [ADD_ASSOC; ADD_CLAUSES]);;
+
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* The map reduce example for byte addition *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+
+let byte_sum_def = new_definition
+  `byte_sum = foldl byte_add (num_to_byte 0)`;;
+
+let byte_sum_parallel = prove
+  (`!l1 l2.
+      byte_sum (APPEND l1 l2) = byte_add (byte_sum l1) (byte_sum l2)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [byte_sum_def] THEN
+   MATCH_MP_TAC foldl_append_assoc THEN
+   REWRITE_TAC [byte_add_assoc; byte_add_right_zero]);;
+
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* The map reduce 4x4 bit matrix example *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+
+(* SAT proof for the map reduce 4x4 bit matrix example *)
 
 let bit4x4_sat_goal =
 `((~(a11 /\
@@ -445,40 +448,11 @@ let bit4x4_sat_goal =
 
 let bit4x4_sat_thm = prove (bit4x4_sat_goal, SAT_TAC);;
 
-export_thm bit4x4_sat_thm;;
-
-(* Multiplying 4x4 bit matrices: correctness *)
-
-logfile "map-reduce-bit4x4-product";;
+(* Correctness of the map reduce 4x4 bit matrix example *)
 
 new_type_abbrev("bit4",`:bool # bool # bool # bool`);;
 
 new_type_abbrev("bit4x4",`:bit4 # bit4 # bit4 # bit4`);;
-
-(***
-let word16_to_bit4x4_def = new_definition
-  `!w.
-     word16_to_bit4x4 w =
-     ((word16_bit w  0, word16_bit w  1, word16_bit w  2, word16_bit w  3),
-      (word16_bit w  4, word16_bit w  5, word16_bit w  6, word16_bit w  7),
-      (word16_bit w  8, word16_bit w  9, word16_bit w 10, word16_bit w 11),
-      (word16_bit w 12, word16_bit w 13, word16_bit w 14, word16_bit w 15))`;;
-
-let bit4x4_to_word16_def = new_definition
-  `!a11 a12 a13 a14
-    a21 a22 a23 a24
-    a31 a32 a33 a34
-    a41 a42 a43 a44.
-      bit4x4_to_word16
-        ((a11,a12,a13,a14),
-         (a21,a22,a23,a24),
-         (a31,a32,a33,a34),
-         (a41,a42,a43,a44)) = list_to_word16
-                                [a11; a12; a13; a14;
-                                 a21; a22; a23; a24;
-                                 a31; a32; a33; a34;
-                                 a41; a42; a43; a44]`;;
-***)
 
 let bit4x4_identity_def = new_definition
   `bit4x4_identity =
@@ -487,15 +461,11 @@ let bit4x4_identity_def = new_definition
       (F,F,T,F),
       (F,F,F,T))`;;
 
-export_thm bit4x4_identity_def;;
-
 let bit4_dot_def = new_definition
   `!a1 a2 a3 a4.
    !b1 b2 b3 b4.
       bit4_dot (a1,a2,a3,a4) (b1,b2,b3,b4) <=>
         ~((a1 /\ b1) <=> (a2 /\ b2) <=> (a3 /\ b3) <=> (a4 /\ b4))`;;
-
-export_thm bit4_dot_def;;
 
 let bit4x4_mult_def = new_definition
   `!a11 a12 a13 a14
@@ -532,24 +502,8 @@ let bit4x4_mult_def = new_definition
           bit4_dot (a41,a42,a43,a44) (b13,b23,b33,b43),
           bit4_dot (a41,a42,a43,a44) (b14,b24,b34,b44)))`;;
 
-export_thm bit4x4_mult_def;;
-
 let bit4x4_product_def = new_definition
   `bit4x4_product = foldl bit4x4_mult bit4x4_identity`;;
-
-export_thm bit4x4_product_def;;
-
-(***
-let word16_as_bit4x4_mult_def = new_definition
-  `!a b.
-     word16_as_bit4x4_mult a b =
-     bit4x4_to_word16
-       (bit4x4_mult (word16_to_bit4x4 a) (word16_to_bit4x4 b))`;;
-
-let product_word16_as_bit4x4_def = new_definition
-  `product_word16_as_bit4x4 =
-   foldl word16_as_bit4x4_mult (bit4x4_to_word16 bit4x4_identity)`;;
-***)
 
 let bit4x4_cases = prove
   (`!a : bit4x4. ?a11 a12 a13 a14
@@ -564,19 +518,6 @@ let bit4x4_cases = prove
    REWRITE_TAC
      [PAIR_EQ; CONJ_ASSOC; ONCE_REWRITE_RULE [CONJ_SYM] UNWIND_THM1;
       ONCE_REWRITE_RULE [EQ_SYM_EQ] EXISTS_REFL]);;
-
-export_thm bit4x4_cases;;
-
-(***
-let bit4x4_to_word16_to_bit4x4 = prove
-  (`!a. word16_to_bit4x4 (bit4x4_to_word16 a) = a`,
-   GEN_TAC THEN
-   MP_TAC (SPEC `a : bit4x4` bit4x4_cases) THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [bit4x4_to_word16_def; word16_to_bit4x4_def] THEN
-   bit_blast_tac THEN
-   REFL_TAC);;
-***)
 
 let bit4x4_product_parallel = prove
   (`!l1 l2.
@@ -604,8 +545,5 @@ let bit4x4_product_parallel = prove
     FIRST_X_ASSUM SUBST_VAR_TAC THEN
     REWRITE_TAC [bit4x4_mult_def; bit4_dot_def; PAIR_EQ] THEN
     ACCEPT_TAC bit4x4_sat_thm]);;
-
-export_thm bit4x4_product_parallel;;
-***)
 
 logfile_end ();;
