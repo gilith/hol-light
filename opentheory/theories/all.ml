@@ -151,7 +151,7 @@ loads "opentheory/theories/h/h.ml";;
 (* The map reduce 3x3 bit matrix example.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-(*
+(* Requires MiniSat to be hooked up to HOL Light
 loads "opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.ml";;
 *)
 

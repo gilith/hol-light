@@ -446,7 +446,9 @@ let bit4x4_sat_goal =
     ~(a41 /\ a13' <=> a42 /\ a23' <=> a43 /\ a33' <=> a44 /\ a43') /\ a34'' <=>
     ~(a41 /\ a14' <=> a42 /\ a24' <=> a43 /\ a34' <=> a44 /\ a44') /\ a44''))`;;
 
+(* Too large for MiniSat-p v1.14 on telperion
 let bit4x4_sat_thm = prove (bit4x4_sat_goal, SAT_TAC);;
+*)
 
 (* Correctness of the map reduce 4x4 bit matrix example *)
 
@@ -519,6 +521,7 @@ let bit4x4_cases = prove
      [PAIR_EQ; CONJ_ASSOC; ONCE_REWRITE_RULE [CONJ_SYM] UNWIND_THM1;
       ONCE_REWRITE_RULE [EQ_SYM_EQ] EXISTS_REFL]);;
 
+(* Requires the large SAT proof above
 let bit4x4_product_parallel = prove
   (`!l1 l2.
       bit4x4_product (APPEND l1 l2) =
@@ -545,5 +548,6 @@ let bit4x4_product_parallel = prove
     FIRST_X_ASSUM SUBST_VAR_TAC THEN
     REWRITE_TAC [bit4x4_mult_def; bit4_dot_def; PAIR_EQ] THEN
     ACCEPT_TAC bit4x4_sat_thm]);;
+*)
 
 logfile_end ();;
