@@ -1,10 +1,17 @@
 (* ========================================================================= *)
-(* SIMPLE STREAM PARSERS IN HASKELL                                          *)
+(* STREAM PARSERS                                                            *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Definition.                                                               *)
+(* Interpretations for stream parsers.                                       *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation
+  "opentheory/theories/haskell-parser/haskell-parser.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of stream parsers.                                             *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-parser-def";;
@@ -151,7 +158,7 @@ let parse_pstreamH_def = define_haskell_const
 export_thm parse_pstreamH_def;;
 
 (* ------------------------------------------------------------------------- *)
-(* Source.                                                                   *)
+(* Haskell source for stream parsers.                                        *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-parser-src";;
@@ -351,7 +358,7 @@ let () = (export_haskell_thm o prove)
   HASKELL_TAC []);;
 
 (* ------------------------------------------------------------------------- *)
-(* Testing.                                                                  *)
+(* QuickCheck tests for stream parsers.                                      *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-parser-test";;

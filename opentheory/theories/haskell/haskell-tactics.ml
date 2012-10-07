@@ -1,5 +1,5 @@
 (* ========================================================================= *)
-(* EXPORTING HOL LIGHT THEOREMS TO HASKELL                                   *)
+(* PROOF TOOLS FOR THE HASKELL BASE                                          *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
@@ -350,6 +350,10 @@ let haskellize_thm =
 let export_haskell_thm th = export_thm (haskellize_thm th);;
 
 end
+
+(* ------------------------------------------------------------------------- *)
+(* The Haskell proof tool interface.                                         *)
+(* ------------------------------------------------------------------------- *)
 
 let add_haskell_thm = Haskell.add_haskell_thm
 and add_haskell_thms = Haskell.add_haskell_thms

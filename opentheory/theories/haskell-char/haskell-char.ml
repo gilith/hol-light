@@ -1,10 +1,17 @@
 (* ========================================================================= *)
-(* UNICODE CHARACTERS IN HASKELL                                             *)
+(* UNICODE CHARACTERS                                                        *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Definition.                                                               *)
+(* Interpretations for stream parsers.                                       *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation
+  "opentheory/theories/haskell-char/haskell-char.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of Unicode characters.                                         *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-char-def";;
@@ -176,7 +183,7 @@ let encodeH_def = define_haskell_const
 export_thm encodeH_def;;
 
 (* ------------------------------------------------------------------------- *)
-(* Source.                                                                   *)
+(* Haskell source for Unicode characters.                                    *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-char-src";;
@@ -562,7 +569,7 @@ let () = (export_haskell_thm o prove)
    HASKELL_TAC [encode_def]);;
 
 (* ------------------------------------------------------------------------- *)
-(* Testing.                                                                  *)
+(* QuickCheck tests for Unicode characters.                                  *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-char-test";;

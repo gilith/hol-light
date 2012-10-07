@@ -1,0 +1,52 @@
+###############################################################################
+# INTERPRETATIONS FOR UNICODE CHARACTERS
+# Joe Leslie-Hurd
+###############################################################################
+
+# Haskell
+
+# Haskell.Data
+
+# Haskell.Data.Unicode
+
+type "HOLLight.unicodeH" as "Haskell.Data.Unicode.Unicode"
+type "HOLLight.planeH" as "Haskell.Data.Unicode.Plane"
+type "HOLLight.positionH" as "Haskell.Data.Unicode.Position"
+
+const "HOLLight.mk_unicodeH" as "Haskell.Data.Unicode.Unicode"
+const "HOLLight.mk_planeH" as "Haskell.Data.Unicode.Plane"
+const "HOLLight.mk_positionH" as "Haskell.Data.Unicode.Position"
+const "HOLLight.equal_unicodeH" as "Haskell.Data.Unicode.equal"
+const "HOLLight.equal_planeH" as "Haskell.Data.Unicode.equalPlane"
+const "HOLLight.equal_positionH" as "Haskell.Data.Unicode.equalPosition"
+const "HOLLight.mkH_unicodeH" as "Haskell.Data.Unicode.fromHol"
+const "HOLLight.rdecode_unicodeH" as "Haskell.Data.Unicode.fromRandom"
+const "HOLLight.mkH_planeH" as "Haskell.Data.Unicode.planeFromHol"
+const "HOLLight.rdecode_planeH" as "Haskell.Data.Unicode.planeFromRandom"
+const "HOLLight.destH_planeH" as "Haskell.Data.Unicode.planeToHol"
+const "HOLLight.mkH_positionH" as "Haskell.Data.Unicode.positionFromHol"
+const "HOLLight.rdecode_positionH" as "Haskell.Data.Unicode.positionFromRandom"
+const "HOLLight.destH_positionH" as "Haskell.Data.Unicode.positionToHol"
+const "HOLLight.destH_unicodeH" as "Haskell.Data.Unicode.toHol"
+const "HOLLight.dest_unicodeH" as "Haskell.Data.Unicode.unUnicode"
+const "HOLLight.dest_planeH" as "Haskell.Data.Unicode.unPlane"
+const "HOLLight.dest_positionH" as "Haskell.Data.Unicode.unPosition"
+
+# Haskell.Data.Unicode.UTF8
+
+const "HOLLight.decodeH" as "Haskell.Data.Unicode.UTF8.decode"
+const "HOLLight.decode_pstreamH" as "Haskell.Data.Unicode.UTF8.decodeStream"
+const "HOLLight.decoderH" as "Haskell.Data.Unicode.UTF8.decoder"
+const "HOLLight.decode_cont1H" as "Haskell.Data.Unicode.UTF8.decoder.decode1"
+const "HOLLight.decode_cont2H" as "Haskell.Data.Unicode.UTF8.decoder.decode2"
+const "HOLLight.decode_cont3H" as "Haskell.Data.Unicode.UTF8.decoder.decode3"
+const "HOLLight.decoder_parseH" as "Haskell.Data.Unicode.UTF8.decoder.parse"
+const "HOLLight.encodeH" as "Haskell.Data.Unicode.UTF8.encode"
+const "HOLLight.encoderH" as "Haskell.Data.Unicode.UTF8.encoder"
+const "HOLLight.encode_cont1H" as "Haskell.Data.Unicode.UTF8.encoder.encode1"
+const "HOLLight.encode_cont2H" as "Haskell.Data.Unicode.UTF8.encoder.encode2"
+const "HOLLight.encode_cont3H" as "Haskell.Data.Unicode.UTF8.encoder.encode3"
+const "HOLLight.is_contH" as "Haskell.Data.Unicode.UTF8.isContinuationByte"
+const "HOLLight.parse_contH" as "Haskell.Data.Unicode.UTF8.parseContinuationByte"
+const "HOLLight.parse_cont2H" as "Haskell.Data.Unicode.UTF8.parseTwoContinuationBytes"
+const "HOLLight.parse_cont3H" as "Haskell.Data.Unicode.UTF8.parseThreeContinuationBytes"

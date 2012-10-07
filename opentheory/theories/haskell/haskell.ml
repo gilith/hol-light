@@ -1,10 +1,22 @@
 (* ========================================================================= *)
-(* OPENTHEORY HASKELL BASE                                                   *)
+(* THE HASKELL BASE                                                          *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Definition.                                                               *)
+(* Interpretations for the Haskell base.                                     *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation "opentheory/theories/haskell/haskell.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Proof tools for the Haskell base.                                         *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/haskell/haskell-tactics.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of the Haskell base.                                           *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-def";;
@@ -215,7 +227,7 @@ let rdecode_word16H_def = define_haskell_const
 export_thm rdecode_word16H_def;;
 
 (* ------------------------------------------------------------------------- *)
-(* Properties.                                                               *)
+(* Properties of the Haskell base.                                           *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-thm";;
@@ -390,7 +402,7 @@ add_haskell_thm equal_listH;;
 export_thm equal_listH;;
 
 (* ------------------------------------------------------------------------- *)
-(* Source.                                                                   *)
+(* Source of the Haskell base.                                               *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-src";;
@@ -583,7 +595,7 @@ let () = (export_haskell_thm o prove)
   HASKELL_TAC [rdecode_word16; word16_width_def]);;
 
 (* ------------------------------------------------------------------------- *)
-(* Testing.                                                                  *)
+(* Testing the Haskell base.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-test";;

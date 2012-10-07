@@ -156,39 +156,25 @@ loads "opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.ml";;
 *)
 
 (* ------------------------------------------------------------------------- *)
-(* The Haskell export infrastructure.                                        *)
+(* The Haskell base.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-#use "opentheory/haskell.ml";;
+#use "opentheory/theories/haskell/haskell.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* OpenTheory Haskell base.                                                  *)
+(* Stream parsers.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/haskell.ml";;
+loads "opentheory/theories/haskell-parser/haskell-parser.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Simple stream parsers.                                                    *)
+(* Unicode characters.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/haskell-parser.ml";;
-
-(* ------------------------------------------------------------------------- *)
-(* Unicode.                                                                  *)
-(* ------------------------------------------------------------------------- *)
-
-loads "opentheory/theories/haskell-char.ml";;
+loads "opentheory/theories/haskell-char/haskell-char.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Prime numbers.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/haskell-prime.ml";;
-
-(* ------------------------------------------------------------------------- *)
-(* Test theory.                                                              *)
-(* ------------------------------------------------------------------------- *)
-
-(*
-#use "opentheory/test.ml";;
-*)
+loads "opentheory/theories/haskell-prime/haskell-prime.ml";;

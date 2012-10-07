@@ -1,14 +1,17 @@
 (* ========================================================================= *)
-(* PRIMES IN HASKELL                                                         *)
+(* PRIME NUMBERS                                                             *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-(***
-type_invention_error := false;;
-***)
+(* ------------------------------------------------------------------------- *)
+(* Interpretations for prime numbers.                                        *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation
+  "opentheory/theories/haskell-prime/haskell-prime.int";;
 
 (* ------------------------------------------------------------------------- *)
-(* Definition.                                                               *)
+(* Definition of prime numbers.                                              *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-prime-def";;
@@ -61,7 +64,7 @@ let primesH_def = define_haskell_const
 export_thm primesH_def;;
 
 (* ------------------------------------------------------------------------- *)
-(* Source.                                                                   *)
+(* Haskell source for prime numbers.                                         *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-prime-src";;
@@ -149,7 +152,7 @@ let () = (export_haskell_thm o prove)
    ASM_HASKELL_TAC [LET_DEF; LET_END_DEF; snth_scons_suc]]);;
 
 (* ------------------------------------------------------------------------- *)
-(* Testing.                                                                  *)
+(* QuickCheck tests for prime numbers.                                       *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-prime-test";;

@@ -1,0 +1,44 @@
+###############################################################################
+# INTERPRETATIONS FOR STREAM PARSERS
+# Joe Leslie-Hurd
+###############################################################################
+
+# Haskell
+
+# Haskell.Parser
+
+type "HOLLight.parserH" as "Haskell.Parser.Parser"
+
+const "HOLLight.mk_parserH" as "Haskell.Parser.Parser"
+const "HOLLight.mkH_parserH" as "Haskell.Parser.fromHol"
+const "HOLLight.parse_mapH" as "Haskell.Parser.map"
+const "HOLLight.parseH" as "Haskell.Parser.parse"
+const "HOLLight.parse_allH" as "Haskell.Parser.parseAll"
+const "HOLLight.parser_allH" as "Haskell.Parser.parseAll.pa"
+const "HOLLight.parse_noneH" as "Haskell.Parser.parseNone"
+const "HOLLight.parser_noneH" as "Haskell.Parser.parseNone.pn"
+const "HOLLight.parse_optionH" as "Haskell.Parser.parseOption"
+const "HOLLight.parse_pairH" as "Haskell.Parser.parsePair"
+const "HOLLight.parser_pairH" as "Haskell.Parser.parsePair.pbc"
+const "HOLLight.parse_someH" as "Haskell.Parser.parseSome"
+const "HOLLight.parse_pstreamH" as "Haskell.Parser.parseStream"
+const "HOLLight.parse_partial_mapH" as "Haskell.Parser.partialMap"
+const "HOLLight.parser_partial_mapH" as "Haskell.Parser.partialMap.pf"
+const "HOLLight.destH_parserH" as "Haskell.Parser.toHol"
+const "HOLLight.dest_parserH" as "Haskell.Parser.unParser"
+
+# Haskell.Parser.Stream
+
+type "HOLLight.pstreamH" as "Haskell.Parser.Stream.Stream"
+
+const "HOLLight.append_pstreamH" as "Haskell.Parser.Stream.append"
+const "HOLLight.case_pstreamH" as "Haskell.Parser.Stream.case.Error.Eof.Cons"
+const "HOLLight.ConsPstreamH" as "Haskell.Parser.Stream.Cons"
+const "HOLLight.EofPstreamH" as "Haskell.Parser.Stream.Eof"
+const "HOLLight.ErrorPstreamH" as "Haskell.Parser.Stream.Error"
+const "HOLLight.mkH_pstreamH" as "Haskell.Parser.Stream.fromHol"
+const "HOLLight.list_to_pstreamH" as "Haskell.Parser.Stream.fromList"
+const "HOLLight.rdecode_pstreamH" as "Haskell.Parser.Stream.fromRandom"
+const "HOLLight.length_pstreamH" as "Haskell.Parser.Stream.size"
+const "HOLLight.destH_pstreamH" as "Haskell.Parser.Stream.toHol"
+const "HOLLight.pstream_to_listH" as "Haskell.Parser.Stream.toList"

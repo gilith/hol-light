@@ -1,0 +1,28 @@
+###############################################################################
+# INTERPRETATIONS FOR PRIME NUMBERS
+# Joe Leslie-Hurd
+###############################################################################
+
+# Haskell
+
+# Haskell.Number
+
+# Haskell.Number.Natural
+
+# Haskell.Number.Natural.Prime
+
+const "HOLLight.primesH" as "Haskell.Number.Natural.Prime.all"
+
+# Haskell.Number.Natural.Prime.Sieve
+
+type "HOLLight.sieveH" as "Haskell.Number.Natural.Prime.Sieve.Sieve"
+
+const "HOLLight.mk_sieveH" as "Haskell.Number.Natural.Prime.Sieve.Sieve"
+const "HOLLight.mkH_sieveH" as "Haskell.Number.Natural.Prime.Sieve.fromHol"
+const "HOLLight.inc_sieveH" as "Haskell.Number.Natural.Prime.Sieve.increment"
+const "HOLLight.inc_counters_sieveH" as "Haskell.Number.Natural.Prime.Sieve.increment.inc"
+const "HOLLight.init_sieveH" as "Haskell.Number.Natural.Prime.Sieve.initial"
+const "HOLLight.max_sieveH" as "Haskell.Number.Natural.Prime.Sieve.perimeter"
+const "HOLLight.next_sieveH" as "Haskell.Number.Natural.Prime.Sieve.next"
+const "HOLLight.destH_sieveH" as "Haskell.Number.Natural.Prime.Sieve.toHol"
+const "HOLLight.dest_sieveH" as "Haskell.Number.Natural.Prime.Sieve.unSieve"
