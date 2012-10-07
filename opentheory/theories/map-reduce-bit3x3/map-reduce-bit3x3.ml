@@ -1,5 +1,17 @@
+(* ========================================================================= *)
+(* THE MAP REDUCE 3x3 BIT MATRIX EXAMPLE                                     *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* Map reduce.                                                               *)
+(* Interpretations for the map reduce 3x3 bit matrix example.                *)
+(* ------------------------------------------------------------------------- *)
+
+extend_the_interpretation
+  "opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.int";;
+
+(* ------------------------------------------------------------------------- *)
+(* Proof tools for the map reduce 3x3 bit matrix example.                    *)
 (* ------------------------------------------------------------------------- *)
 
 (* Custom tactic for splitting deeply nested pairs *)
@@ -23,7 +35,9 @@ let SAT_TAC =
     REPEAT (CONJ_TAC ORELSE EQ_TAC) THEN
     W sat;;
 
-(* Natural number addition *)
+(* ------------------------------------------------------------------------- *)
+(* The map reduce example for natural number addition.                       *)
+(* ------------------------------------------------------------------------- *)
 
 let natural_sum_def = new_definition
   `natural_sum = foldl (+) 0`;;
@@ -36,7 +50,9 @@ let natural_sum_parallel = prove
    MATCH_MP_TAC foldl_append_assoc THEN
    REWRITE_TAC [ADD_ASSOC; ADD_CLAUSES]);;
 
-(* Byte addition *)
+(* ------------------------------------------------------------------------- *)
+(* The map reduce example for byte addition.                                 *)
+(* ------------------------------------------------------------------------- *)
 
 let byte_sum_def = new_definition
   `byte_sum = foldl byte_add (num_to_byte 0)`;;
@@ -49,7 +65,12 @@ let byte_sum_parallel = prove
    MATCH_MP_TAC foldl_append_assoc THEN
    REWRITE_TAC [byte_add_assoc; byte_add_right_zero]);;
 
+(* ------------------------------------------------------------------------- *)
+(* The map reduce example for byte addition.                                 *)
+(* ------------------------------------------------------------------------- *)
+
 (* Multiplying 3x3 bit matrices: the SAT problem *)
+
 
 let bit3x3_sat_goal =
 `((~(a11 /\ ~(a11' /\ a11'' <=> ~(a12' /\ a21'' <=> a13' /\ a31'')) <=>

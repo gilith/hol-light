@@ -18,8 +18,8 @@ default: theories
 
 THEORY_INTERPRETATIONS = \
   theories/byte/byte-word.ml \
-  theories/field-group.ml \
-  theories/field-star-group.ml \
+  theories/field/field-group.ml \
+  theories/field/field-star-group.ml \
   theories/gfp/gfp-modular.ml \
   theories/word/word-modular.ml \
   theories/word10/word10-word.ml \
@@ -29,10 +29,10 @@ THEORY_INTERPRETATIONS = \
 theories/byte/byte-word.ml: theories/word/word.ml theories/word/word-modular.ml
 	scripts/instantiate -r "word/byte" $< > $@
 
-theories/field-group.ml: theories/group/group.ml
+theories/field/field-group.ml: theories/group/group.ml
 	scripts/instantiate -r "group/field" $< > $@
 
-theories/field-star-group.ml: theories/group/group.ml
+theories/field/field-star-group.ml: theories/group/group.ml
 	scripts/instantiate -r "group/field_star" $< > $@
 
 theories/gfp/gfp-modular.ml: theories/modular/modular.ml

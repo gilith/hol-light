@@ -3,7 +3,6 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-extend_the_interpretation "opentheory/interpretations/examples.int";;
 extend_the_interpretation "opentheory/interpretations/haskell.int";;
 
 (* ------------------------------------------------------------------------- *)
