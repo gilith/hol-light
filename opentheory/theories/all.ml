@@ -3,10 +3,8 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-extend_the_interpretation "opentheory/interpretations/haskell.int";;
-
 (* ------------------------------------------------------------------------- *)
-(* Useful tactics.                                                           *)
+(* Proof tools.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/tactics.ml";;

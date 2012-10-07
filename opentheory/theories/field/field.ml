@@ -1,14 +1,17 @@
+(* ========================================================================= *)
+(* PARAMETRIC THEORY OF FIELDS                                               *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* A parametric theory of fields.                                            *)
+(* Interpretations for a parametric theory of fields.                        *)
 (* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* field *)
-*)
+extend_the_interpretation "opentheory/theories/field/field.int";;
 
-(*PARAMETRIC
-(* field-witness: the theory parameters *)
-*)
+(* ------------------------------------------------------------------------- *)
+(* Parametric theory witness for fields.                                     *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "field-witness";;
 
@@ -100,9 +103,9 @@ export_thm field_add_left_distrib;;
 export_thm field_one_nonzero;;
 export_thm field_finite;;
 
-(*PARAMETRIC
-(* field-def: field characteristic *)
-*)
+(* ------------------------------------------------------------------------- *)
+(* Definition of field characteristic.                                       *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "field-def";;
 
@@ -127,11 +130,9 @@ let num_to_field_suc = new_axiom
   `!n. num_to_field (SUC n) = field_add field_one (num_to_field n)`;;
 *)
 
+(*BEGIN-PARAMETRIC*)
 let num_to_field_def = CONJ num_to_field_zero num_to_field_suc;;
-
-(*PARAMETRIC
-let num_to_field_def = CONJ num_to_field_zero num_to_field_suc;;
-*)
+(*END-PARAMETRIC*)
 
 let field_char_def = new_definition
   `field_char =
@@ -143,11 +144,11 @@ export_thm field_char_def;;
 
 (* Parametric theory instantiation: additive group *)
 
-loads "opentheory/theories/field-group.ml";;
+loads "opentheory/theories/field/field-group.ml";;
 
-(*PARAMETRIC
-(* field-thm: consequences of the field axioms and the additive group *)
-*)
+(* ------------------------------------------------------------------------- *)
+(* Consequences of the field axioms and the additive group.                  *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "field-thm";;
 
@@ -241,11 +242,11 @@ let field_mult_nonzero = prove
 
 export_thm field_mult_nonzero;;
 
-logfile "field-star-def";;
+(* ------------------------------------------------------------------------- *)
+(* Definition of the multiplicative group of the field.                      *)
+(* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* field-star-def *)
-*)
+logfile "field-star-def";;
 
 let (mk_dest_field_star,dest_mk_field_star) =
   let exists = prove
@@ -279,11 +280,11 @@ let field_star_add_def = new_definition
 
 export_thm field_star_add_def;;
 
-logfile "field-star-thm";;
+(* ------------------------------------------------------------------------- *)
+(* Properties of the multiplicative group of the field.                      *)
+(* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* field-star-thm *)
-*)
+logfile "field-star-thm";;
 
 let dest_field_star_nonzero = prove
   (`!x. ~(dest_field_star x = field_zero)`,
@@ -385,13 +386,13 @@ export_thm field_star_add_comm;;
 
 (* Parametric theory instantiation: multiplicative group *)
 
-loads "opentheory/theories/field-star-group.ml";;
+loads "opentheory/theories/field/field-star-group.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition of field division and exponentiation.                          *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "field-mult-def";;
-
-(*PARAMETRIC
-(* field-mult-def *)
-*)
 
 let field_div_def =
   let def = new_definition
@@ -417,11 +418,11 @@ let field_exp_def = new_definition
 
 export_thm field_exp_def;;
 
-logfile "field-mult-thm";;
+(* ------------------------------------------------------------------------- *)
+(* Properties of field division and exponentiation.                          *)
+(* ------------------------------------------------------------------------- *)
 
-(*PARAMETRIC
-(* field-mult-thm *)
-*)
+logfile "field-mult-thm";;
 
 let field_div_left_zero = prove
   (`!x.
