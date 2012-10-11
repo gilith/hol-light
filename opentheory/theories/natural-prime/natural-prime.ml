@@ -359,6 +359,16 @@ let snth_primes_zero = prove
 
 export_thm snth_primes_zero;;
 
+let primes_below_prime = prove
+  (`!i. primes_below (snth primes i) = stake primes i`,
+   GEN_TAC THEN
+   REWRITE_TAC [primes_below_def; primes_mono_le] THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC MINIMAL_EQ THEN
+   REWRITE_TAC [LE_REFL; NOT_LE]);;
+
+export_thm primes_below_prime;;
+
 let primes_below_zero = prove
   (`primes_below 0 = []`,
    REWRITE_TAC [primes_below_def; LE_0; MINIMAL_T; stake_zero]);;
@@ -495,6 +505,208 @@ let primes_divides_inj = prove
     MATCH_ACCEPT_TAC divides_refl]);;
 
 export_thm primes_divides_inj;;
+
+let primes_equiv = prove
+  (`!ps.
+      ps = primes <=>
+      (!i j. snth ps i <= snth ps j <=> i <= j) /\
+      (!p. prime p <=> ?i. snth ps i = p)`,
+   GEN_TAC THEN
+   EQ_TAC THENL
+   [DISCH_THEN SUBST1_TAC THEN
+    CONJ_TAC THENL
+    [ACCEPT_TAC primes_mono_le;
+     ACCEPT_TAC snth_primes];
+    ALL_TAC] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC snth_eq_imp THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [snth_primes_zero; GSYM LE_ANTISYM] THEN
+    CONJ_TAC THENL
+    [POP_ASSUM
+       ((CHOOSE_THEN
+          (SUBST1_TAC o SYM)) o
+        (REWRITE_RULE [prime_two] o SPEC `2`)) THEN
+     ASM_REWRITE_TAC [LE_0];
+     MP_TAC (SPEC `snth ps 0 : num` num_CASES) THEN
+     STRIP_TAC THENL
+     [SUBGOAL_THEN `F` CONTR_TAC THEN
+      FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
+      REWRITE_TAC [prime_zero] THEN
+      EXISTS_TAC `0` THEN
+      FIRST_ASSUM ACCEPT_TAC;
+      ALL_TAC] THEN
+     MP_TAC (SPEC `n : num` num_CASES) THEN
+     STRIP_TAC THENL
+     [SUBGOAL_THEN `F` CONTR_TAC THEN
+      FIRST_X_ASSUM (MP_TAC o SPEC `1`) THEN
+      REWRITE_TAC [prime_one] THEN
+      EXISTS_TAC `0` THEN
+      ASM_REWRITE_TAC [ONE];
+      ALL_TAC] THEN
+     ASM_REWRITE_TAC [TWO; ONE; LE_SUC; LE_0]];
+    ALL_TAC] THEN
+   ONCE_REWRITE_TAC [GSYM LE_ANTISYM] THEN
+   CONJ_TAC THENL
+   [MP_TAC (SPEC `SUC n` prime_primes) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (CHOOSE_THEN (STRIP_ASSUME_TAC o SYM)) THEN
+    ASM_REWRITE_TAC [LE_SUC_LT] THEN
+    REWRITE_TAC [GSYM NOT_LE] THEN
+    FIRST_X_ASSUM (SUBST1_TAC o SYM o SPECL [`i : num`; `n : num`]) THEN
+    POP_ASSUM (SUBST1_TAC o SYM) THEN
+    ASM_REWRITE_TAC [primes_mono_le] THEN
+    REWRITE_TAC [NOT_LE; SUC_LT];
+    SUBGOAL_THEN `prime (snth ps (SUC n))`
+      (CHOOSE_THEN (STRIP_ASSUME_TAC o SYM) o REWRITE_RULE [snth_primes]) THENL
+    [ASM_REWRITE_TAC [] THEN
+     EXISTS_TAC `SUC n` THEN
+     REFL_TAC;
+     ALL_TAC] THEN
+    ASM_REWRITE_TAC [] THEN
+    ASM_REWRITE_TAC [LE_SUC_LT; primes_mono_le] THEN
+    REWRITE_TAC [GSYM NOT_LE] THEN
+    ONCE_REWRITE_TAC [GSYM primes_mono_le] THEN
+    POP_ASSUM (SUBST1_TAC o SYM) THEN
+    POP_ASSUM (SUBST1_TAC o SYM) THEN
+    ASM_REWRITE_TAC [] THEN
+    REWRITE_TAC [NOT_LE; SUC_LT]]);;
+
+export_thm primes_equiv;;
+
+let primes_equiv_test = prove
+  (`!ps.
+      ps = primes <=>
+      ~(snth ps 0 = 0) /\
+      (!i j. snth ps i <= snth ps j <=> i <= j) /\
+      (!i j. ~divides (snth ps i) (snth ps (i + j + 1))) /\
+      (!n i. EX (\p. divides p (n + 2)) (stake ps i) \/ snth ps i <= n + 2)`,
+   GEN_TAC THEN
+   EQ_TAC THENL
+   [DISCH_THEN SUBST1_TAC THEN
+    REPEAT CONJ_TAC THENL
+    [REWRITE_TAC [snth_primes_zero; TWO; NOT_SUC];
+     ACCEPT_TAC primes_mono_le;
+     REPEAT GEN_TAC THEN
+     REWRITE_TAC [primes_divides_inj] THEN
+     ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+     REWRITE_TAC [EQ_ADD_LCANCEL_0; ADD_EQ_0; ONE; NOT_SUC];
+     REPEAT GEN_TAC THEN
+     ASM_REWRITE_TAC
+       [GSYM primes_below_prime; GSYM EX_MEM; mem_primes_below] THEN
+     ASM_CASES_TAC `snth primes i <= n + 2` THENL
+     [ASM_REWRITE_TAC [];
+      ALL_TAC] THEN
+     ASM_REWRITE_TAC [] THEN
+     MP_TAC (SPEC `n + 2` prime_divisor) THEN
+     ANTS_TAC THENL
+     [REWRITE_TAC [TWO; ONE; ADD_SUC; SUC_INJ; NOT_SUC];
+      ALL_TAC] THEN
+     STRIP_TAC THEN
+     EXISTS_TAC `p : num` THEN
+     ASM_REWRITE_TAC [] THEN
+     MATCH_MP_TAC LET_TRANS THEN
+     EXISTS_TAC `n + 2` THEN
+     CONJ_TAC THENL
+     [MATCH_MP_TAC divides_le THEN
+      ASM_REWRITE_TAC [ADD_EQ_0] THEN
+      REWRITE_TAC [TWO; NOT_SUC];
+      ASM_REWRITE_TAC [GSYM NOT_LE]]];
+    ALL_TAC] THEN
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [primes_equiv] THEN
+   CONJ_TAC THENL
+   [FIRST_ASSUM ACCEPT_TAC;
+    ALL_TAC] THEN
+   GEN_TAC THEN
+   WF_INDUCT_TAC `p : num` THEN
+   ASM_CASES_TAC `p = 0` THENL
+   [ASM_REWRITE_TAC [prime_zero; NOT_EXISTS_THM] THEN
+    REPEAT STRIP_TAC THEN
+    UNDISCH_THEN `!i j. (snth ps i : num) <= snth ps j <=> i <= j`
+      (MP_TAC o SPECL [`0`; `i : num`]) THEN
+    ASM_REWRITE_TAC [LE_0; LE];
+    ALL_TAC] THEN
+   ASM_CASES_TAC `p = 1` THENL
+   [ASM_REWRITE_TAC [prime_one; NOT_EXISTS_THM] THEN
+    REPEAT STRIP_TAC THEN
+    UNDISCH_THEN `!i j. ~divides (snth ps i) (snth ps (i + j + 1))`
+      (MP_TAC o SPECL [`i : num`; `0`]) THEN
+    ASM_REWRITE_TAC [one_divides];
+    ALL_TAC] THEN
+   ONCE_REWRITE_TAC [prime_divisor_lt] THEN
+   ASM_REWRITE_TAC [] THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    SUBGOAL_THEN `?i. p <= (snth ps i : num)`
+      (MP_TAC o REWRITE_RULE [MINIMAL]) THENL
+    [EXISTS_TAC `p : num` THEN
+     SPEC_TAC (`p : num`, `p : num`) THEN
+     UNDISCH_THEN `!i j. (snth ps i : num) <= snth ps j <=> i <= j`
+       (fun th -> POP_ASSUM_LIST (K ALL_TAC) THEN ASSUME_TAC th) THEN
+     INDUCT_TAC THENL
+     [REWRITE_TAC [LE_0];
+      MATCH_MP_TAC LE_TRANS THEN
+      EXISTS_TAC `SUC (snth ps p)` THEN
+      ASM_REWRITE_TAC [LE_SUC] THEN
+      ASM_REWRITE_TAC [LE_SUC_LT; GSYM NOT_LE; LE_REFL]];
+     ALL_TAC] THEN
+    SPEC_TAC (`minimal i. p <= (snth ps i : num)`, `i : num`) THEN
+    REWRITE_TAC [NOT_LE] THEN
+    REPEAT STRIP_TAC THEN
+    EXISTS_TAC `i : num` THEN
+    ASM_REWRITE_TAC [GSYM LE_ANTISYM] THEN
+    SUBGOAL_THEN `?n. p = n + 2` (CHOOSE_THEN SUBST_VAR_TAC) THENL
+    [EXISTS_TAC `p - 2` THEN
+     MATCH_MP_TAC EQ_SYM THEN
+     MATCH_MP_TAC SUB_ADD THEN
+     MP_TAC (SPEC `p : num` num_CASES) THEN
+     ASM_REWRITE_TAC [] THEN
+     STRIP_TAC THEN
+     ASM_REWRITE_TAC [TWO; LE_SUC] THEN
+     REWRITE_TAC [ONE; LE_SUC_LT; LT_NZ] THEN
+     STRIP_TAC THEN
+     UNDISCH_TAC `p = SUC n` THEN
+     ASM_REWRITE_TAC [GSYM ONE];
+     ALL_TAC] THEN
+    FIRST_X_ASSUM (MP_TAC o SPECL [`n : num`; `i : num`]) THEN
+    BOOL_CASES_TAC `snth ps i <= n + 2` THENL
+    [ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    ASM_REWRITE_TAC [NOT_EX; GSYM ALL_MEM; mem_stake] THEN
+    X_GEN_TAC `q : num` THEN
+    DISCH_THEN (X_CHOOSE_THEN `j : num` STRIP_ASSUME_TAC) THEN
+    POP_ASSUM SUBST1_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    MATCH_MP_TAC (TAUT `!x y. y /\ (y ==> x) ==> x /\ y`) THEN
+    CONJ_TAC THENL
+    [FIRST_X_ASSUM MATCH_MP_TAC THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     ALL_TAC] THEN
+    STRIP_TAC THEN
+    UNDISCH_THEN `!p'. p' < n + 2 ==> (prime p' <=> (?i. snth ps i = p'))`
+      (MP_TAC o SPEC `snth ps j : num`) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    EXISTS_TAC `j : num` THEN
+    REFL_TAC;
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+   X_GEN_TAC `q : num` THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `q : num`) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (X_CHOOSE_THEN `j : num` SUBST_VAR_TAC) THEN
+   UNDISCH_THEN `!i j. (snth ps i : num) <= snth ps j <=> i <= j`
+     (MP_TAC o SPECL [`i : num`; `j : num`]) THEN
+   ASM_REWRITE_TAC [GSYM NOT_LT] THEN
+   REWRITE_TAC [LT_EXISTS; ADD1] THEN
+   DISCH_THEN (CHOOSE_THEN SUBST1_TAC) THEN
+   FIRST_X_ASSUM MATCH_ACCEPT_TAC);;
+
+export_thm primes_equiv_test;;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of the sieve of Eratosthenes.                                  *)

@@ -173,6 +173,11 @@ let bits_to_numH_def = define_haskell_const
 
 export_thm bits_to_numH_def;;
 
+let dividesH_def = define_haskell_const
+  `divides : num -> num -> bool`;;
+
+export_thm dividesH_def;;
+
 let rdecode_uniform_loopH_def = define_haskell_const
   `rdecode_uniform_loop : num -> num -> random -> num`;;
 
@@ -511,6 +516,16 @@ let () = (export_haskell_thm o prove)
    (!h t.
       bits_to_numH (CONS h t) = 2 * bits_to_numH t + (if h then 1 else 0))`,
   HASKELL_TAC [bits_to_num_def]);;
+
+(***
+let () = (export_haskell_thm o prove)
+ (`!m n. dividesH m n = if m = 0 then n = 0 else n MOD m = 0`,
+
+ bits_to_numH [] = 0 /\
+   (!h t.
+      bits_to_numH (CONS h t) = 2 * bits_to_numH t + (if h then 1 else 0))`,
+  HASKELL_TAC [bits_to_num_def]);;
+***)
 
 let () = (export_haskell_thm o prove)
  (`!n w r.

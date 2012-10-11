@@ -341,6 +341,46 @@ let stake_suc' = prove
 
 export_thm stake_suc';;
 
+let mem_stake = prove
+  (`!(s : A stream) n x. MEM x (stake s n) = ?i. i < n /\ x = snth s i`,
+   REPEAT GEN_TAC THEN
+   SPEC_TAC (`s : A stream`, `s : A stream`) THEN
+   SPEC_TAC (`n : num`, `n : num`) THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [MEM_NIL; stake_zero; LT];
+    GEN_TAC THEN
+    ASM_REWRITE_TAC [MEM_CONS; stake_suc; GSYM snth_suc; shd_def] THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    EQ_TAC THENL
+    [STRIP_TAC THENL
+     [EXISTS_TAC `0` THEN
+      ASM_REWRITE_TAC [LT_0];
+      EXISTS_TAC `SUC i` THEN
+      ASM_REWRITE_TAC [LT_SUC]];
+     DISCH_THEN (CHOOSE_THEN MP_TAC) THEN
+     MP_TAC (SPEC `i : num` num_CASES) THEN
+     DISCH_THEN
+       (DISJ_CASES_THEN2
+          SUBST1_TAC
+          (X_CHOOSE_THEN `m : num` SUBST1_TAC)) THENL
+     [STRIP_TAC THEN
+      DISJ1_TAC THEN
+      FIRST_ASSUM ACCEPT_TAC;
+      REWRITE_TAC [LT_SUC] THEN
+      STRIP_TAC THEN
+      DISJ2_TAC THEN
+      EXISTS_TAC `m : num` THEN
+      ASM_REWRITE_TAC []]]]);;
+
+export_thm mem_stake;;
+
+let set_of_list_stake = prove
+  (`!(s : A stream) n.
+      set_of_list (stake s n) = { x | ?i. i < n /\ x = snth s i }`,
+   REWRITE_TAC [EXTENSION; IN_ELIM; GSYM MEM_SET_OF_LIST; mem_stake]);;
+
+export_thm set_of_list_stake;;
+
 let ssplit_sinterleave = prove
   (`!s1 s2 : A stream. ssplit (sinterleave s1 s2) = (s1,s2)`,
    REPEAT STRIP_TAC THEN
