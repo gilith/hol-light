@@ -58,6 +58,7 @@ const "HOLLight.list_to_word16H" as "Haskell.Data.Word16.Bits.toWord16"
 
 # Haskell.Number.Natural
 
+const "HOLLight.dividesH" as "Haskell.Number.Natural.divides"
 const "HOLLight.rdecode_fibH" as "Haskell.Number.Natural.fromRandom"
 const "HOLLight.rdecode_fib_destH" as "Haskell.Number.Natural.fromRandom.dest"
 
