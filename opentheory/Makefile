@@ -64,9 +64,9 @@ TEMP = \
 .PHONY: clean
 clean:
 	@echo
-	@echo '********************'
-	@echo '* Clean everything *'
-	@echo '********************'
+	@echo '+------------------+'
+	@echo '| Clean everything |'
+	@echo '+------------------+'
 	@echo
 	rm -f $(TEMP)
 

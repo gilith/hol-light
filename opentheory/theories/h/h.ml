@@ -6433,7 +6433,7 @@ let weak_step_consistency_write_e_view_e = prove
     DISCH_THEN SUBST1_TAC THEN
     REFL_TAC);;
 
-(***
+(* Unfinished (see comment at top of file)
 let weak_step_consistency = prove
   (`!s s' t t' a u.
       view_equiv u s t /\
@@ -6518,6 +6518,6 @@ let output_consistency = prove
    ASM_REWRITE_TAC []);;
 
 export_thm output_consistency;;
-***)
+*)
 
 logfile_end ();;

@@ -157,12 +157,10 @@ let () = (export_haskell_thm o prove)
 
 logfile "haskell-prime-test";;
 
-(***
 let () = (export_haskell_thm o prove)
  (`~(snthH primesH 0 = 0)`,
   HASKELL_TAC [] THEN
   STRIP_ASSUME_TAC (REWRITE_RULE [] (SPEC `primes` primes_equiv_test)));;
-***)
 
 let () = (export_haskell_thm o prove)
  (`!r.
@@ -182,12 +180,11 @@ let () = (export_haskell_thm o prove)
   HASKELL_TAC [] THEN
   MATCH_ACCEPT_TAC primes_mono_le);;
 
-(***
 let () = (export_haskell_thm o prove)
  (`!r.
      let (i,r') = rdecode_geometricH r in
      let (j,r'') = rdecode_geometricH r' in
-     0 < snthH primesH ((i + j) + 1) MOD snthH primesH i`,
+     ~divides (snthH primesH i) (snthH primesH ((i + j) + 1))`,
   GEN_TAC THEN
   PAIR_CASES_TAC `rdecode_geometricH r` THEN
   DISCH_THEN
@@ -198,42 +195,30 @@ let () = (export_haskell_thm o prove)
     (X_CHOOSE_THEN `j : num`
       (X_CHOOSE_THEN `r'' : random` STRIP_ASSUME_TAC)) THEN
   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-  HASKELL_TAC [] THEN
-  STRIP_ASSUME_TAC (REWRITE_RULE [] (SPEC `primes` primes_equiv_test))
-
-);;
-
-  REWRITE_TAC [LT_NZ] THEN
-  MP_TAC (SPECL [`snth primes i`; `snth primes ((i + j) + 1)`] divides_mod) THEN
-  REWRITE_TAC [primes_nonzero; primes_divides_inj] THEN
-  DISCH_THEN (SUBST1_TAC o SYM) THEN
-  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
-  REWRITE_TAC [EQ_ADD_LCANCEL_0; ADD_EQ_0; ONE; NOT_SUC; GSYM ADD_ASSOC]);;
-***)
+  HASKELL_TAC [GSYM ADD_ASSOC] THEN
+  STRIP_ASSUME_TAC (REWRITE_RULE [] (SPEC `primes` primes_equiv_test)) THEN
+  FIRST_ASSUM MATCH_ACCEPT_TAC);;
 
 (***
 let () = (export_haskell_thm o prove)
  (`!r.
-     let (i,r') = rdecode_geometricH r in
-     let (j,r'') = rdecode_geometricH r' in
-     0 < snthH primesH ((i + j) + 1) MOD snthH primesH i`,
+     let (n,r') = rdecode_fibH r in
+     let (i,r'') = rdecode_geometricH r' in
+     EX (\p. dividesH p (n + 2)) (stakeH primesH i) \/
+     snthH primesH i <= n + 2`,
   GEN_TAC THEN
-  PAIR_CASES_TAC `rdecode_geometricH r` THEN
+  PAIR_CASES_TAC `rdecode_fibH r` THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `i : num`
+    (X_CHOOSE_THEN `n : num`
       (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
   PAIR_CASES_TAC `rdecode_geometricH r'` THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `j : num`
+    (X_CHOOSE_THEN `i : num`
       (X_CHOOSE_THEN `r'' : random` STRIP_ASSUME_TAC)) THEN
   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
   HASKELL_TAC [] THEN
-  REWRITE_TAC [LT_NZ] THEN
-  MP_TAC (SPECL [`snth primes i`; `snth primes ((i + j) + 1)`] divides_mod) THEN
-  REWRITE_TAC [primes_nonzero; primes_divides_inj] THEN
-  DISCH_THEN (SUBST1_TAC o SYM) THEN
-  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
-  REWRITE_TAC [EQ_ADD_LCANCEL_0; ADD_EQ_0; ONE; NOT_SUC; GSYM ADD_ASSOC]);;
+  STRIP_ASSUME_TAC (REWRITE_RULE [] (SPEC `primes` primes_equiv_test)) THEN
+  FIRST_ASSUM MATCH_ACCEPT_TAC);;
 ***)
 
 logfile_end ();;

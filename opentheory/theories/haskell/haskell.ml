@@ -517,15 +517,14 @@ let () = (export_haskell_thm o prove)
       bits_to_numH (CONS h t) = 2 * bits_to_numH t + (if h then 1 else 0))`,
   HASKELL_TAC [bits_to_num_def]);;
 
-(***
 let () = (export_haskell_thm o prove)
  (`!m n. dividesH m n = if m = 0 then n = 0 else n MOD m = 0`,
-
- bits_to_numH [] = 0 /\
-   (!h t.
-      bits_to_numH (CONS h t) = 2 * bits_to_numH t + (if h then 1 else 0))`,
-  HASKELL_TAC [bits_to_num_def]);;
-***)
+  REPEAT GEN_TAC THEN
+  HASKELL_TAC [] THEN
+  COND_CASES_TAC THENL
+  [ASM_REWRITE_TAC [zero_divides];
+   MATCH_MP_TAC divides_mod THEN
+   FIRST_ASSUM ACCEPT_TAC]);;
 
 let () = (export_haskell_thm o prove)
  (`!n w r.
