@@ -5,6 +5,8 @@
 (* ------------------------------------------------------------------------- *)
 (* HOL types. Just do the primitive ones for now.                            *)
 (* ------------------------------------------------------------------------- *)
+new_type_abbrev("char",`:num`);; (* TODO: use OpenTheory chars? *)
+new_type_abbrev("string",`:char list`);;
 
 let type_INDUCT,type_RECURSION = define_type
   "type = Tyvar string
@@ -16,11 +18,11 @@ let type_DISTINCT = distinctness "type";;
 
 let type_INJ = injectivity "type";;
 
-let domain = define
-  `domain (Fun s t) = s`;;
+let domain = new_recursive_definition type_RECURSION
+`(!s t. domain (Fun s t) = s)`;;
 
-let codomain = define
-  `codomain (Fun s t) = t`;;
+let codomain = new_recursive_definition type_RECURSION
+`(!s t. codomain (Fun s t) = t)`;;
 
 (* ------------------------------------------------------------------------- *)
 (* HOL terms. To avoid messing round with specification of the language,     *)
@@ -52,14 +54,14 @@ let has_type_RULES,has_type_INDUCT,has_type_CASES = new_inductive_definition
    (!n dty t rty. t has_type rty ==> (Abs n dty t) has_type (Fun dty rty))`;;
 
 let welltyped = new_definition
-  `welltyped tm <=> ?ty. tm has_type ty`;;
+  `!tm. welltyped tm <=> ?ty. tm has_type ty`;;
 
-let typeof = define
- `(typeof (Var n ty) = ty) /\
-  (typeof (Equal ty) = Fun ty (Fun ty Bool)) /\
-  (typeof (Select ty) = Fun (Fun ty Bool) ty) /\
-  (typeof (Comb s t) = codomain (typeof s)) /\
-  (typeof (Abs n ty t) = Fun ty (typeof t))`;;
+let typeof = new_recursive_definition term_RECURSION
+ `(!n ty. typeof (Var n ty) = ty) /\
+  (!ty. typeof (Equal ty) = Fun ty (Fun ty Bool)) /\
+  (!ty. typeof (Select ty) = Fun (Fun ty Bool) ty) /\
+  (!s t. typeof (Comb s t) = codomain (typeof s)) /\
+  (!n ty t. typeof (Abs n ty t) = Fun ty (typeof t))`;;
 
 let WELLTYPED_LEMMA = prove
  (`!tm ty. tm has_type ty ==> (typeof tm = ty)`,
@@ -91,7 +93,7 @@ let WELLTYPED_CLAUSES = prove
 parse_as_infix("===",(18,"right"));;
 
 let equation = new_definition
- `(s === t) = Comb (Comb (Equal(typeof s)) s) t`;;
+ `!s t. (s === t) = Comb (Comb (Equal(typeof s)) s) t`;;
 
 let EQUATION_HAS_TYPE_BOOL = prove
  (`!s t. (s === t) has_type Bool
@@ -114,9 +116,9 @@ let EQUATION_HAS_TYPE_BOOL = prove
 (* Alpha-conversion.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-let ALPHAVARS = define
-  `(ALPHAVARS [] tmp <=> (FST tmp = SND tmp)) /\
-   (ALPHAVARS (CONS tp oenv) tmp <=>
+let ALPHAVARS = new_recursive_definition list_RECURSION
+  `(!(tmp:term#term). ALPHAVARS [] tmp <=> (FST tmp = SND tmp)) /\
+   (!tp oenv tmp. ALPHAVARS (CONS tp oenv) tmp <=>
         (tmp = tp) \/
         ~(FST tp = FST tmp) /\ ~(SND tp = SND tmp) /\ ALPHAVARS oenv tmp)`;;
 
@@ -167,7 +169,7 @@ let RACONV = prove
   REWRITE_TAC[term_INJ; term_DISTINCT; PAIR_EQ] THEN MESON_TAC[]);;
 
 let ACONV = new_definition
- `ACONV t1 t2 <=> RACONV [] (t1,t2)`;;
+ `!t1 t2. ACONV t1 t2 <=> RACONV [] (t1,t2)`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Reflexivity.                                                              *)
@@ -235,7 +237,7 @@ let ACONV_TYPE = prove
 (* HOL version of "term_union".                                              *)
 (* ------------------------------------------------------------------------- *)
 
-let TERM_UNION = define
+let TERM_UNION = new_recursive_definition list_RECURSION
  `(TERM_UNION [] l2 = l2) /\
   (TERM_UNION (CONS h t) l2 =
         let subun = TERM_UNION t l2 in
@@ -268,12 +270,12 @@ let ALL_BOOL_TERM_UNION = prove
 (* Whether a variable/constant is free in a term.                            *)
 (* ------------------------------------------------------------------------- *)
 
-let VFREE_IN = define
-  `(VFREE_IN v (Var x ty) <=> (Var x ty = v)) /\
-   (VFREE_IN v (Equal ty) <=> (Equal ty = v)) /\
-   (VFREE_IN v (Select ty) <=> (Select ty = v)) /\
-   (VFREE_IN v (Comb s t) <=> VFREE_IN v s \/ VFREE_IN v t) /\
-   (VFREE_IN v (Abs x ty t) <=> ~(Var x ty = v) /\ VFREE_IN v t)`;;
+let VFREE_IN = new_recursive_definition term_RECURSION
+  `(!v x ty. VFREE_IN v (Var x ty) <=> (Var x ty = v)) /\
+   (!v ty. VFREE_IN v (Equal ty) <=> (Equal ty = v)) /\
+   (!v ty. VFREE_IN v (Select ty) <=> (Select ty = v)) /\
+   (!v s t. VFREE_IN v (Comb s t) <=> VFREE_IN v s \/ VFREE_IN v t) /\
+   (!v x ty t. VFREE_IN v (Abs x ty t) <=> ~(Var x ty = v) /\ VFREE_IN v t)`;;
 
 let VFREE_IN_RACONV = prove
  (`!env p. RACONV env p
@@ -300,16 +302,22 @@ let VFREE_IN_ACONV = prove
 (* Auxiliary association list function.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-let REV_ASSOCD = define
-  `(REV_ASSOCD a [] d = d) /\
-   (REV_ASSOCD a (CONS (x,y) t) d =
-        if y = a then x else REV_ASSOCD a t d)`;;
+let REV_ASSOCD_DEF = new_recursive_definition list_RECURSION
+  `(!(a:A) (d:B). REV_ASSOCD a [] d = d) /\
+   (!a p t d. REV_ASSOCD a (CONS p t) d =
+        if SND p = a then FST p else REV_ASSOCD a t d)`;;
+
+let REV_ASSOCD = prove(
+  `(!(a:A) (d:B). REV_ASSOCD a [] d = d) /\
+   (!a x y (t:(A#B)list) d. REV_ASSOCD a (CONS (x,y) t) d =
+        if y = a then x else REV_ASSOCD a t d)`,
+  REWRITE_TAC[REV_ASSOCD_DEF]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Substition of types in types.                                             *)
 (* ------------------------------------------------------------------------- *)
 
-let TYPE_SUBST = define
+let TYPE_SUBST = new_recursive_definition type_RECURSION
  `(TYPE_SUBST i (Tyvar v) = REV_ASSOCD (Tyvar v) i (Tyvar v)) /\
   (TYPE_SUBST i Bool = Bool) /\
   (TYPE_SUBST i Ind = Ind) /\
@@ -320,12 +328,18 @@ let TYPE_SUBST = define
 (* expunge use of sets, just pick it distinct from what's free in a term.    *)
 (* ------------------------------------------------------------------------- *)
 
+let rec SET_RULE g =
+  prove(g,REWRITE_TAC[
+    EXTENSION;IN_ELIM_THM;IN_INSERT;NOT_IN_EMPTY;
+    IN_UNION;IN_INTER]
+        THEN MESON_TAC[]);;
+
 let VFREE_IN_FINITE = prove
  (`!t. FINITE {x | VFREE_IN x t}`,
   MATCH_MP_TAC term_INDUCT THEN REWRITE_TAC[VFREE_IN] THEN
-  REWRITE_TAC[SET_RULE `{x | a = x} = {a}`;
-              SET_RULE `{x | P x \/ Q x} = {x | P x} UNION {x | Q x}`;
-              SET_RULE `{x | P x /\ Q x} = {x | P x} INTER {x | Q x}`] THEN
+  REWRITE_TAC[SET_RULE `{(x:A) | a = x} = {a}`;
+              SET_RULE `{(x:A) | P x \/ Q x} = {x | P x} UNION {x | Q x}`;
+              SET_RULE `{(x:A) | P x /\ Q x} = {x | P x} INTER {x | Q x}`] THEN
   SIMP_TAC[FINITE_INSERT; FINITE_RULES; FINITE_UNION; FINITE_INTER]);;
 
 let VFREE_IN_FINITE_ALT = prove
@@ -334,9 +348,20 @@ let VFREE_IN_FINITE_ALT = prove
   EXISTS_TAC `IMAGE (\(Var x ty). x) {x | VFREE_IN x t}` THEN
   SIMP_TAC[VFREE_IN_FINITE; FINITE_IMAGE] THEN
   REWRITE_TAC[SUBSET; IN_IMAGE; IN_ELIM_THM] THEN
-  X_GEN_TAC `x:string` THEN DISCH_TAC THEN
+  X_GEN_TAC `x:string` THEN STRIP_TAC THEN
   EXISTS_TAC `Var x ty` THEN CONV_TAC(ONCE_DEPTH_CONV GEN_BETA_CONV) THEN
-  ASM_REWRITE_TAC[]);;
+  ASM_REWRITE_TAC[] THEN
+  ASM_MESON_TAC[]);;
+
+let list_INFINITE = prove
+  (`INFINITE (UNIV:(A list) set)`,
+   MP_TAC num_INFINITE THEN REWRITE_TAC[INFINITE;CONTRAPOS_THM] THEN
+   DISCH_THEN(MP_TAC o ISPEC `LENGTH:A list->num` o MATCH_MP FINITE_IMAGE) THEN
+   MATCH_MP_TAC EQ_IMP THEN AP_TERM_TAC THEN
+   REWRITE_TAC[EXTENSION; IN_UNIV; IN_IMAGE] THEN
+   MESON_TAC[LENGTH_REPLICATE]);;
+
+let string_INFINITE = INST_TYPE[`:char`,`:A`]list_INFINITE;;
 
 let VARIANT_EXISTS = prove
  (`!t x:string ty. ?x'. ~(VFREE_IN (Var x' ty) t)`,
@@ -345,7 +370,8 @@ let VARIANT_EXISTS = prove
   DISCH_THEN(MP_TAC o CONJ string_INFINITE) THEN
   DISCH_THEN(MP_TAC o MATCH_MP INFINITE_DIFF_FINITE) THEN
   DISCH_THEN(MP_TAC o MATCH_MP INFINITE_NONEMPTY) THEN
-  REWRITE_TAC[GSYM MEMBER_NOT_EMPTY; IN_DIFF; IN_ELIM_THM; IN_UNIV]);;
+  REWRITE_TAC[GSYM MEMBER_NOT_EMPTY; IN_DIFF; IN_ELIM_THM; IN_UNIV] THEN
+  MESON_TAC[]);;
 
 let VARIANT = new_specification ["VARIANT"]
  (PURE_REWRITE_RULE[SKOLEM_THM] VARIANT_EXISTS);;
@@ -354,12 +380,12 @@ let VARIANT = new_specification ["VARIANT"]
 (* Term substitution.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
-let VSUBST = define
-  `(VSUBST ilist (Var x ty) = REV_ASSOCD (Var x ty) ilist (Var x ty)) /\
-   (VSUBST ilist (Equal ty) = Equal ty) /\
-   (VSUBST ilist (Select ty) = Select ty) /\
-   (VSUBST ilist (Comb s t) = Comb (VSUBST ilist s) (VSUBST ilist t)) /\
-   (VSUBST ilist (Abs x ty t) =
+let VSUBST = new_recursive_definition term_RECURSION
+  `(!ilist x ty. VSUBST ilist (Var x ty) = REV_ASSOCD (Var x ty) ilist (Var x ty)) /\
+   (!ilist ty. VSUBST ilist (Equal ty) = Equal ty) /\
+   (!ilist ty. VSUBST ilist (Select ty) = Select ty) /\
+   (!ilist s t. VSUBST ilist (Comb s t) = Comb (VSUBST ilist s) (VSUBST ilist t)) /\
+   (!ilist x ty t. VSUBST ilist (Abs x ty t) =
         let ilist' = FILTER (\(s',s). ~(s = Var x ty)) ilist in
         let t' = VSUBST ilist' t in
         if EX (\(s',s). VFREE_IN (Var x ty) s' /\ VFREE_IN s t) ilist'
@@ -423,7 +449,7 @@ let VSUBST_HAS_TYPE = prove
   REWRITE_TAC[PAIR_EQ] THEN ASM_MESON_TAC[has_type_RULES]);;
 
 let VSUBST_WELLTYPED = prove
- (`!tm ty ilist.
+ (`!tm ilist.
         welltyped tm /\
         (!s s'. MEM (s',s) ilist ==> ?x ty. (s = Var x ty) /\ s' has_type ty)
         ==> welltyped (VSUBST ilist tm)`,
@@ -434,7 +460,7 @@ let VSUBST_WELLTYPED = prove
 (* ------------------------------------------------------------------------- *)
 
 let REV_ASSOCD_FILTER = prove
- (`!l:(B#A)list a b d.
+ (`!l:(B#A)list a b.
         REV_ASSOCD a (FILTER (\(y,x). P x) l) b =
             if P a then REV_ASSOCD a l b else b`,
   MATCH_MP_TAC list_INDUCT THEN REWRITE_TAC[REV_ASSOCD; FILTER; COND_ID] THEN
@@ -500,25 +526,25 @@ let result_DISTINCT = distinctness "result";;
 (* Discriminators and extractors. (Nicer to pattern-match...)                *)
 (* ------------------------------------------------------------------------- *)
 
-let IS_RESULT = define
+let IS_RESULT = new_recursive_definition result_RECURSION
  `(IS_RESULT(Clash t) = F) /\
   (IS_RESULT(Result t) = T)`;;
 
-let IS_CLASH = define
+let IS_CLASH = new_recursive_definition result_RECURSION
  `(IS_CLASH(Clash t) = T) /\
   (IS_CLASH(Result t) = F)`;;
 
-let RESULT = define
+let RESULT = new_recursive_definition result_RECURSION
  `RESULT(Result t) = t`;;
 
-let CLASH = define
+let CLASH = new_recursive_definition result_RECURSION
  `CLASH(Clash t) = t`;;
 
 (* ------------------------------------------------------------------------- *)
 (* We want induction/recursion on term size next.                            *)
 (* ------------------------------------------------------------------------- *)
 
-let rec sizeof = define
+let sizeof = new_recursive_definition term_RECURSION
  `(sizeof (Var x ty) = 1) /\
   (sizeof (Equal ty) = 1) /\
   (sizeof (Select ty) = 1) /\
@@ -612,7 +638,7 @@ let NOT_IS_RESULT = prove
   MATCH_MP_TAC result_INDUCT THEN REWRITE_TAC[IS_RESULT; IS_CLASH]);;
 
 let letlemma = prove
- (`(let x = t in P x) = P t`,
+ (`(let x = t in (P:A->B) x) = P t`,
   REWRITE_TAC[LET_DEF; LET_END_DEF]);;
 
 (* ------------------------------------------------------------------------- *)
