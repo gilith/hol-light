@@ -573,6 +573,13 @@ let SIZEOF_VSUBST = prove
   EXPAND_TAC "ilist''" THEN REWRITE_TAC[MEM; PAIR_EQ] THEN
   ASM_MESON_TAC[MEM_FILTER]);;
 
+let sizeof_positive = prove(
+  `!t. 0 < sizeof t`,
+  MATCH_MP_TAC term_INDUCT THEN
+  REWRITE_TAC[sizeof;ARITH] THEN
+  REWRITE_TAC[LT_NZ] THEN
+  REWRITE_TAC[ONE;TWO;ADD;NOT_SUC]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Prove existence of INST_CORE.                                             *)
 (* ------------------------------------------------------------------------- *)
@@ -611,10 +618,24 @@ let INST_CORE_EXISTS = prove
   EXISTS_TAC `MEASURE(\(env:(term#term)list,tyin:(type#type)list,t).
                         sizeof t)` THEN
   REWRITE_TAC[WF_MEASURE; MEASURE_LE; MEASURE] THEN
-  CONV_TAC(ONCE_DEPTH_CONV GEN_BETA_CONV) THEN
   SIMP_TAC[MEM; PAIR_EQ; term_INJ; RIGHT_EXISTS_AND_THM; LEFT_EXISTS_AND_THM;
-           GSYM EXISTS_REFL; SIZEOF_VSUBST; LE_REFL; sizeof] THEN
-  REPEAT STRIP_TAC THEN ARITH_TAC);;
+             GSYM EXISTS_REFL; SIZEOF_VSUBST; LE_REFL; sizeof;
+                        LE_ADD; LE_ADDR; LT_ADD; LT_ADDR] THEN
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC[TWO;LT_NZ;NOT_SUC] THENL
+  [MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `1 + sizeof s`
+  ;MATCH_MP_TAC LT_TRANS THEN EXISTS_TAC `1 + sizeof t`
+  ;MATCH_MP_TAC LE_TRANS THEN EXISTS_TAC `1 + sizeof t`
+  ;MATCH_MP_TAC LT_TRANS THEN EXISTS_TAC `1 + sizeof t`
+  ;MATCH_MP_TAC LT_TRANS THEN EXISTS_TAC `1 + sizeof s`
+  ;MATCH_MP_TAC LT_TRANS THEN EXISTS_TAC `1 + sizeof s`
+  ] THEN
+  REWRITE_TAC[ADD_ASSOC;LT_ADD;LE_ADD;sizeof_positive] THEN
+  REWRITE_TAC[LE_ADDR;LT_ADDR] THEN
+  REWRITE_TAC[ONE;LT_NZ;NOT_SUC] THEN
+  REWRITE_TAC[GSYM ADD_ASSOC] THEN
+  CONV_TAC(RAND_CONV(RAND_CONV(fun tm -> SPECL [rand(rator tm);rand tm] ADD_SYM))) THEN
+    REWRITE_TAC[ADD_ASSOC;LT_ADD;LE_ADD;sizeof_positive]);;
 
 (* ------------------------------------------------------------------------- *)
 (* So define it.                                                             *)
