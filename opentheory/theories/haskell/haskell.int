@@ -31,7 +31,7 @@ const "HOLLight.list_to_byteH" as "Haskell.Data.Byte.Bits.toByte"
 
 const "HOLLight.equal_listH" as "Haskell.Data.List.equal"
 const "HOLLight.rdecode_vectorH" as "Haskell.Data.List.fromRandom"
-const "HOLLight.lengthH" as "Haskell.Data.List.size"
+const "HOLLight.lengthH" as "Haskell.Data.List.length'"
 
 # Haskell.Data.List.Geometric
 
@@ -44,7 +44,7 @@ const "HOLLight.equal_optionH" as "Haskell.Data.Option.equal"
 # Haskell.Data.Stream
 
 const "HOLLight.snthH" as "Haskell.Data.Stream.nth"
-const "HOLLight.stakeH" as "Haskell.Data.Stream.take"
+const "HOLLight.stakeH" as "Haskell.Data.Stream.take'"
 const "HOLLight.sunfoldH" as "Haskell.Data.Stream.unfold"
 
 # Haskell.Data.Word16
