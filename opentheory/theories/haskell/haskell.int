@@ -44,6 +44,7 @@ const "HOLLight.equal_optionH" as "Haskell.Data.Option.equal"
 # Haskell.Data.Stream
 
 const "HOLLight.snthH" as "Haskell.Data.Stream.nth"
+const "HOLLight.stakeH" as "Haskell.Data.Stream.take"
 const "HOLLight.sunfoldH" as "Haskell.Data.Stream.unfold"
 
 # Haskell.Data.Word16

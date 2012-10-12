@@ -184,7 +184,7 @@ let () = (export_haskell_thm o prove)
  (`!r.
      let (i,r') = rdecode_geometricH r in
      let (j,r'') = rdecode_geometricH r' in
-     ~divides (snthH primesH i) (snthH primesH ((i + j) + 1))`,
+     ~dividesH (snthH primesH i) (snthH primesH ((i + j) + 1))`,
   GEN_TAC THEN
   PAIR_CASES_TAC `rdecode_geometricH r` THEN
   DISCH_THEN
@@ -199,7 +199,6 @@ let () = (export_haskell_thm o prove)
   STRIP_ASSUME_TAC (REWRITE_RULE [] (SPEC `primes` primes_equiv_test)) THEN
   FIRST_ASSUM MATCH_ACCEPT_TAC);;
 
-(***
 let () = (export_haskell_thm o prove)
  (`!r.
      let (n,r') = rdecode_fibH r in
@@ -219,6 +218,5 @@ let () = (export_haskell_thm o prove)
   HASKELL_TAC [] THEN
   STRIP_ASSUME_TAC (REWRITE_RULE [] (SPEC `primes` primes_equiv_test)) THEN
   FIRST_ASSUM MATCH_ACCEPT_TAC);;
-***)
 
 logfile_end ();;

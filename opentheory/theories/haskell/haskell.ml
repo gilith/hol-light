@@ -195,6 +195,11 @@ let snthH_def = define_haskell_const
 
 export_thm snthH_def;;
 
+let stakeH_def = define_haskell_const
+  `stake : A stream -> num -> A list`;;
+
+export_thm stakeH_def;;
+
 let sunfoldH_def = define_haskell_const
   `sunfold : (A -> B # A) -> A -> B stream`;;
 
@@ -558,6 +563,15 @@ let () = (export_haskell_thm o prove)
    REWRITE_TAC [NOT_SUC; SUC_SUB1; snth_suc]]);;
 
 let () = (export_haskell_thm o prove)
+ (`!(s : A stream) n.
+     stakeH s n = if n = 0 then [] else CONS (shd s) (stakeH (stl s) (n - 1))`,
+  GEN_TAC THEN
+  HASKELL_TAC [] THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [stake_zero];
+   REWRITE_TAC [NOT_SUC; SUC_SUB1; stake_suc]]);;
+
+let () = (export_haskell_thm o prove)
  (`!(f : B -> A # B) b.
      sunfoldH f b =
      let (a,b') = f b in
@@ -613,6 +627,10 @@ let () = (export_haskell_thm o prove)
 (* ------------------------------------------------------------------------- *)
 
 logfile "haskell-test";;
+
+let () = (export_haskell_thm o prove)
+ (`2 + 2 = 4`,
+  NUM_REDUCE_TAC);;
 
 let () = (export_haskell_thm o prove)
  (`!r.
