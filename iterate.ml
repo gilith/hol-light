@@ -22,7 +22,7 @@ let FINITE_NUMSEG = prove
  (`!m n. FINITE(m..n)`,
   REPEAT GEN_TAC THEN MATCH_MP_TAC FINITE_SUBSET THEN
   EXISTS_TAC `{x:num | x <= n}` THEN REWRITE_TAC[FINITE_NUMSEG_LE] THEN
-  SIMP_TAC[SUBSET; IN_ELIM_THM; numseg]);;
+  SIMP_TAC[SUBSET; IN_ELIM; numseg]);;
 
 let NUMSEG_COMBINE_R = prove
  (`!m p n. m <= p + 1 /\ p <= n ==> ((m..p) UNION ((p+1)..n) = m..n)`,

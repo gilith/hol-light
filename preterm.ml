@@ -53,7 +53,7 @@ let ignore_constant_varstruct = ref true;;
 
 let type_invention_warning = ref true;;
 
-let type_invention_error = ref true;;
+let type_invention_error = ref false;;
 
 (* ------------------------------------------------------------------------- *)
 (* Implicit types or type schemes for non-constants.                         *)

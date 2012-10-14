@@ -157,6 +157,7 @@ loads "calc_rat.ml";;   (* Calculation with rational-valued reals            *)
 loads "int.ml";;        (* Definition of integers                            *)
 loads "iterate.ml";;    (* Iterated operations                               *)
 loads "cart.ml";;       (* Finite Cartesian products                         *)
+*)
 loads "define.ml";;     (* Support for general recursive definitions         *)
 
 (* ------------------------------------------------------------------------- *)
@@ -164,5 +165,6 @@ loads "define.ml";;     (* Support for general recursive definitions         *)
 (* ------------------------------------------------------------------------- *)
 
 loads "help.ml";;       (* Online help using the entries in Help directory   *)
+(* Not yet ported to OpenTheory
 loads "database.ml";;   (* List of name-theorem pairs for search system      *)
 *)

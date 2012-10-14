@@ -4,21 +4,66 @@
 (*              (c) Copyright, John Harrison 1998-2007                       *)
 (* ========================================================================= *)
 
-needs "cart.ml";;
+needs "realax.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Pairwise property over sets and lists.                                    *)
+(* ------------------------------------------------------------------------- *)
+
+let pairwise = new_definition
+  `!r (s : A set).
+     pairwise r s <=> !x y. x IN s /\ y IN s /\ ~(x = y) ==> r x y`;;
+
+let PAIRWISE = new_recursive_definition list_RECURSION
+  `(!r. PAIRWISE (r:A->A->bool) [] <=> T) /\
+   (!r h t.
+      PAIRWISE (r:A->A->bool) (CONS h t) <=>
+      ALL (r h) t /\ PAIRWISE r t)`;;
+
+let PAIRWISE_EMPTY = prove
+ (`!(r : A -> A -> bool). pairwise r {} <=> T`,
+  REWRITE_TAC[pairwise; NOT_IN_EMPTY] THEN MESON_TAC[]);;
+
+let PAIRWISE_SING = prove
+ (`!r (x : A). pairwise r {x} <=> T`,
+  REWRITE_TAC[pairwise; IN_SING] THEN MESON_TAC[]);;
+
+let PAIRWISE_MONO = prove
+ (`!r (s : A set) t. pairwise r s /\ t SUBSET s ==> pairwise r t`,
+  REWRITE_TAC [pairwise; SUBSET] THEN
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  CONJ_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  FIRST_X_ASSUM ACCEPT_TAC);;
+
+let PAIRWISE_INSERT = prove
+ (`!r (x : A) s.
+        pairwise r (x INSERT s) <=>
+        (!y. y IN s /\ ~(y = x) ==> r x y /\ r y x) /\
+        pairwise r s`,
+  REWRITE_TAC[pairwise; IN_INSERT] THEN MESON_TAC[]);;
+
+let PAIRWISE_IMAGE = prove
+ (`!r (f : A -> B) s. pairwise r (IMAGE f s) <=>
+         pairwise (\x y. ~(f x = f y) ==> r (f x) (f y)) s`,
+  REWRITE_TAC[pairwise; IN_IMAGE] THEN MESON_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Constant supporting casewise definitions.                                 *)
 (* ------------------------------------------------------------------------- *)
 
 let CASEWISE_DEF = new_recursive_definition list_RECURSION
- `(CASEWISE [] f x = @y. T) /\
-  (CASEWISE (CONS h t) f x =
+ `(!f x. CASEWISE [] f x = @y. T) /\
+  (!(h : (P -> A) # (C -> P -> B)) t (f : C) (x : A).
+     CASEWISE (CONS h t) f x =
         if ?y. FST h y = x then SND h f (@y. FST h y = x)
         else CASEWISE t f x)`;;
 
 let CASEWISE = prove
- (`(CASEWISE [] f x = @y. T) /\
-   (CASEWISE (CONS (s,t) clauses) f x =
+ (`(CASEWISE ([] : ((P -> A) # (C -> P -> B)) list) f x = @y. T) /\
+   (CASEWISE (CONS ((s,t) : (P -> A) # (C -> P -> B)) clauses) f x =
         if ?y. s y = x then t f (@y. s y = x) else CASEWISE clauses f x)`,
   REWRITE_TAC[CASEWISE_DEF]);;
 
@@ -27,7 +72,7 @@ let CASEWISE = prove
 (* ------------------------------------------------------------------------- *)
 
 let CASEWISE_CASES = prove
- (`!clauses c x.
+ (`!(clauses : ((P -> A) # (C -> P -> B)) list) c x.
     (?s t a. MEM (s,t) clauses /\ (s a = x) /\
              (CASEWISE clauses c x = t c a)) \/
     ~(?s t a. MEM (s,t) clauses /\ (s a = x)) /\
@@ -48,13 +93,17 @@ let CASEWISE_WORKS = prove
 (* Various notions of admissibility, with tail recursion and preconditions.  *)
 (* ------------------------------------------------------------------------- *)
 
+parse_as_infix("<<",(12,"right"));;
+
 let admissible = new_definition
- `admissible(<<) p s t <=>
+ `!((<<):A->A->bool) p (s : P -> A) (t : (A -> B) -> P -> C).
+     admissible (<<) p s t <=>
         !f g a. p f a /\ p g a /\ (!z. z << s(a) ==> (f z = g z))
                 ==> (t f a = t g a)`;;
 
 let tailadmissible = new_definition
- `tailadmissible(<<) p s t <=>
+ `!((<<):A->A->bool) p (s : P -> A) (t : (A -> B) -> P -> B).
+    tailadmissible(<<) p s t <=>
         ?P G H. (!f a y. P f a /\ y << G f a ==> y << s a) /\
                 (!f g a. (!z. z << s(a) ==> (f z = g z))
                          ==> (P f a = P g a) /\
@@ -63,15 +112,16 @@ let tailadmissible = new_definition
                                     if P f a then f(G f a) else H f a))`;;
 
 let superadmissible = new_definition
- `superadmissible(<<) p s t <=>
-        admissible(<<) (\f a. T) s p ==> tailadmissible(<<) p s t`;;
+ `!((<<):A->A->bool) p (s : P -> A) (t : (A -> B) -> P -> B).
+    superadmissible (<<) p s t <=>
+        admissible (<<) (\f a. T) s p ==> tailadmissible (<<) p s t`;;
 
 (* ------------------------------------------------------------------------- *)
 (* A lemma.                                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 let MATCH_SEQPATTERN = prove
- (`_MATCH x (_SEQPATTERN r s) =
+ (`(_MATCH : A -> (A -> B -> bool) -> B) x (_SEQPATTERN r s) =
    if ?y. r x y then _MATCH x r else _MATCH x s`,
   REWRITE_TAC[_MATCH; _SEQPATTERN] THEN MESON_TAC[]);;
 
@@ -80,8 +130,9 @@ let MATCH_SEQPATTERN = prove
 (* ------------------------------------------------------------------------- *)
 
 let ADMISSIBLE_CONST = prove
- (`!p s c. admissible(<<) p s (\f. c)`,
-  REWRITE_TAC[admissible]);;
+ (`!((<<): A -> A -> bool) p (s : P -> A) (c : P -> C).
+     admissible (<<) p s (\f : A -> B. c)`,
+  REWRITE_TAC [admissible]);;
 
 let ADMISSIBLE_BASE = prove
  (`!(<<) p s t.
@@ -115,11 +166,11 @@ let ADMISSIBLE_NEST = prove
   REWRITE_TAC[admissible] THEN MESON_TAC[]);;
 
 let ADMISSIBLE_COND = prove
- (`!(<<) p P s h k.
-        admissible(<<) p s P /\
-        admissible(<<) (\f x. p f x /\ P f x) s h /\
-        admissible(<<) (\f x. p f x /\ ~P f x) s k
-        ==> admissible(<<) p s (\f x:P. if P f x then h f x else k f x)`,
+ (`!((<<) : A -> A -> bool) p P (s : P -> A) (h : (A -> B) -> P -> C) k.
+        admissible (<<) p s P /\
+        admissible (<<) (\f x. p f x /\ P f x) s h /\
+        admissible (<<) (\f x. p f x /\ ~P f x) s k
+        ==> admissible (<<) p s (\f x:P. if P f x then h f x else k f x)`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC[admissible; AND_FORALL_THM] THEN
   REPEAT(MATCH_MP_TAC MONO_FORALL THEN GEN_TAC) THEN
@@ -127,14 +178,14 @@ let ADMISSIBLE_COND = prove
   ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
 let ADMISSIBLE_MATCH = prove
- (`!(<<) p s e c.
-        admissible(<<) p s e /\ admissible(<<) p s (\f x. c f x (e f x))
-        ==> admissible(<<) p s (\f x:P. _MATCH (e f x) (c f x))`,
+ (`!((<<) : A -> A -> bool) p s e (c : (A -> B) -> P -> C -> D -> bool).
+        admissible (<<) p s e /\ admissible (<<) p s (\f x. c f x (e f x))
+        ==> admissible (<<) p s (\f x:P. _MATCH (e f x) (c f x))`,
   REWRITE_TAC[admissible; _MATCH] THEN
   REPEAT STRIP_TAC THEN REPEAT COND_CASES_TAC THEN ASM_MESON_TAC[]);;
 
 let ADMISSIBLE_SEQPATTERN = prove
- (`!(<<) p s c1 c2 e.
+ (`!((<<) : A -> A -> bool) p s (c1 : (A -> B) -> P -> C -> D -> bool) c2 e.
         admissible(<<) p s (\f x:P. ?y. c1 f x (e f x) y) /\
         admissible(<<) (\f x. p f x /\ ?y. c1 f x (e f x) y) s
                        (\f x. c1 f x (e f x)) /\
@@ -144,7 +195,8 @@ let ADMISSIBLE_SEQPATTERN = prove
   REWRITE_TAC[_SEQPATTERN; admissible] THEN MESON_TAC[]);;
 
 let ADMISSIBLE_UNGUARDED_PATTERN = prove
- (`!(<<) p s pat e t y.
+ (`!((<<) : A -> A -> bool) p s (pat : (A -> B) -> P -> C) e
+        (t : (A -> B) -> P -> D) y.
       admissible (<<) p s pat /\
       admissible (<<) p s e /\
       admissible (<<) (\f x. p f x /\ pat f x = e f x) s t /\
@@ -160,7 +212,8 @@ let ADMISSIBLE_UNGUARDED_PATTERN = prove
   ASM_MESON_TAC[]);;
 
 let ADMISSIBLE_GUARDED_PATTERN = prove
- (`!(<<) p s pat q e t y.
+ (`!((<<) : A -> A -> bool) p s (pat : (A -> B) -> P -> C) q e
+        (t : (A -> B) -> P -> D) y.
       admissible (<<) p s pat /\
       admissible (<<) p s e /\
       admissible (<<) (\f x. p f x /\ pat f x = e f x /\ q f x) s t /\
@@ -176,9 +229,10 @@ let ADMISSIBLE_GUARDED_PATTERN = prove
   REPEAT(MATCH_MP_TAC(TAUT `(a <=> a') /\ (a /\ a' ==> (b <=> b'))
                             ==> (a /\ b <=> a' /\ b')`) THEN
          REPEAT STRIP_TAC) THEN
-  TRY(MATCH_MP_TAC(MESON[] `x = x' /\ y = y' ==> (x = y <=> x' = y')`)) THEN
+  TRY(MATCH_MP_TAC(MESON[] `(x:C) = x' /\ y = y' ==> (x = y <=> x' = y')`)) THEN
   ASM_MESON_TAC[]);;
 
+(***
 let ADMISSIBLE_NSUM = prove
  (`!(<<) p:(B->C)->P->bool s:P->A h a b.
         admissible(<<) (\f (k,x). a(x) <= k /\ k <= b(x) /\ p f x)
@@ -194,22 +248,25 @@ let ADMISSIBLE_SUM = prove
    ==> admissible(<<) p s (\f x. sum(a(x)..b(x)) (h f x))`,
   REWRITE_TAC[admissible; FORALL_PAIR_THM] THEN REPEAT STRIP_TAC THEN
   MATCH_MP_TAC SUM_EQ_NUMSEG THEN ASM_MESON_TAC[]);;
+***)
 
 let ADMISSIBLE_MAP = prove
- (`!(<<) p s h l.
+ (`!((<<) : A -> A -> bool) p s (h : (A -> B) -> P -> C -> D) l.
         admissible(<<) p s l /\
         admissible (<<) (\f (y,x). p f x /\ MEM y (l f x))
                         (\(y,x). s x) (\f (y,x). h f x y)
    ==> admissible (<<) p s (\f:A->B x:P. MAP (h f x) (l f x))`,
   REWRITE_TAC[admissible; FORALL_PAIR_THM] THEN REPEAT STRIP_TAC THEN
-  MATCH_MP_TAC(MESON[] `x = y /\ MAP f x = MAP g x ==> MAP f x = MAP g y`) THEN
+  MATCH_MP_TAC
+    (MESON []
+       `x = y /\ MAP (f : A -> B) x = MAP g x ==> MAP f x = MAP g y`) THEN
   CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
   MATCH_MP_TAC MAP_EQ THEN REWRITE_TAC[GSYM ALL_MEM] THEN
   REPEAT STRIP_TAC THEN FIRST_X_ASSUM MATCH_MP_TAC THEN
   ASM_REWRITE_TAC[FORALL_PAIR_THM] THEN ASM_MESON_TAC[]);;
 
 let ADMISSIBLE_MATCH_SEQPATTERN = prove
- (`!(<<) p s c1 c2 e.
+ (`!((<<) : A -> A -> bool) p s (c1 : (A -> B) -> P -> C -> D -> bool) c2 e.
         admissible(<<) p s (\f x. ?y. c1 f x (e f x) y) /\
         admissible(<<) (\f x. p f x /\ ?y. c1 f x (e f x) y) s
                        (\f x. _MATCH (e f x) (c1 f x)) /\
@@ -232,7 +289,7 @@ let ADMISSIBLE_MATCH_SEQPATTERN = prove
 
 let ADMISSIBLE_IMP_SUPERADMISSIBLE = prove
  (`!(<<) p s t:(A->B)->P->B.
-      admissible(<<) p s t ==> superadmissible(<<) p s t`,
+      admissible (<<) p s t ==> superadmissible (<<) p s t`,
   REWRITE_TAC[admissible; superadmissible; tailadmissible] THEN
   REPEAT STRIP_TAC THEN
   MAP_EVERY EXISTS_TAC
@@ -242,7 +299,8 @@ let ADMISSIBLE_IMP_SUPERADMISSIBLE = prove
   ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
 let SUPERADMISSIBLE_CONST = prove
- (`!p s c. superadmissible(<<) p s (\f. c)`,
+ (`!((<<) : A -> A -> bool) p s (c : C -> B).
+     superadmissible (<<) p s (\f. c)`,
   REPEAT GEN_TAC THEN
   MATCH_MP_TAC ADMISSIBLE_IMP_SUPERADMISSIBLE THEN
   REWRITE_TAC[ADMISSIBLE_CONST]);;
@@ -293,7 +351,7 @@ let SUPERADMISSIBLE_COND = prove
   ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
 let SUPERADMISSIBLE_MATCH_SEQPATTERN = prove
- (`!(<<) p s c1 c2 e.
+ (`!((<<) : A -> A -> bool) p s (c1 : (A -> B) -> P -> C -> B -> bool) c2 e.
         admissible(<<) p s (\f x. ?y. c1 f x (e f x) y) /\
         superadmissible(<<) (\f x. p f x /\ ?y. c1 f x (e f x) y) s
                             (\f x. _MATCH (e f x) (c1 f x)) /\
@@ -358,7 +416,7 @@ let SUPERADMISSIBLE_MATCH_GUARDED_PATTERN = prove
 (* ------------------------------------------------------------------------- *)
 
 let WF_REC_TAIL_GENERAL' = prove
- (`!P G H H'.
+ (`!(P : (A -> B) -> A -> bool) G H H'.
          WF((<<):A->A->bool) /\
          (!f g x. (!z. z << x ==> (f z = g z))
                   ==> (P f x <=> P g x) /\
@@ -412,7 +470,7 @@ let WF_REC_CASES = prove
   ASM_MESON_TAC[]);;
 
 let WF_REC_CASES' = prove
- (`!(<<) clauses.
+ (`!(<<) (clauses : ((P -> A) # ((A -> B) -> P -> B)) list).
         WF((<<):A->A->bool) /\
         ALL (\(s,t). tailadmissible(<<) (\f a. T) s t) clauses
         ==> ?f:A->B. !x. f x = CASEWISE clauses f x`,
@@ -432,7 +490,7 @@ let RECURSION_CASEWISE = prove
   ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[CASEWISE_WORKS]);;
 
 let RECURSION_CASEWISE_PAIRWISE = prove
- (`!clauses.
+ (`!(clauses : ((P -> A) # ((A -> B) -> P -> B)) list).
         (?(<<). WF (<<) /\
                 ALL (\(s,t). tailadmissible(<<) (\f a. T) s t) clauses) /\
         ALL (\(s,t). !f x y. (s x = s y) ==> (t f x = t f y)) clauses /\
@@ -440,23 +498,27 @@ let RECURSION_CASEWISE_PAIRWISE = prove
                  clauses
         ==> (?f. ALL (\(s,t). !x. f (s x) = t f x) clauses)`,
   let lemma = prove
-   (`!P. (!x y. P x y ==> P y x)
+   (`!(P : A -> A -> bool).
+         (!x y. P x y ==> P y x)
          ==> !l. (!x y. MEM x l /\ MEM y l ==> P x y) <=>
                  ALL (\x. P x x) l /\ PAIRWISE P l`,
     REWRITE_TAC[IMP_CONJ; RIGHT_FORALL_IMP_THM; GSYM ALL_MEM] THEN
     REPEAT GEN_TAC THEN DISCH_TAC THEN LIST_INDUCT_TAC THEN
     REWRITE_TAC[PAIRWISE; MEM; GSYM ALL_MEM] THEN ASM_MESON_TAC[])
   and paired_lambda = prove
-   (`(\x. P x) = (\(a,b). P (a,b))`,
+   (`(\x. (P : A # B -> bool) x) = (\(a,b). P (a,b))`,
     REWRITE_TAC[FUN_EQ_THM; FORALL_PAIR_THM]) in
   let pth = REWRITE_RULE[FORALL_PAIR_THM; paired_lambda] (ISPEC
-    `\(s,t) (s',t'). !c x:A y:A. (s x = s' y) ==> (t c x = t' c y)` lemma) in
+    `\ ((s : A -> B), (t : P -> A -> C)) (s',t').
+       !c x:A y:A. (s x = s' y) ==> (t c x = t' c y)` lemma) in
   let cth = prove(lhand(concl pth),MESON_TAC[]) in
   REWRITE_TAC[GSYM(MATCH_MP pth cth); RIGHT_IMP_FORALL_THM] THEN
   REWRITE_TAC[RECURSION_CASEWISE]);;
 
 let SUPERADMISSIBLE_T = prove
- (`superadmissible(<<) (\f x. T) s t <=> tailadmissible(<<) (\f x. T) s t`,
+ (`!((<<) : A -> A -> bool) s (t : (A -> B) -> C -> B).
+      superadmissible (<<) (\f x. T) s t <=>
+      tailadmissible (<<) (\f x. T) s t`,
   REWRITE_TAC[superadmissible; admissible]);;
 
 let RECURSION_SUPERADMISSIBLE = REWRITE_RULE[GSYM SUPERADMISSIBLE_T]
@@ -496,8 +558,10 @@ let instantiate_casewise_recursion,
       ADD_EQ_0; LSYM ADD_EQ_0;
       MULT_EQ_0; LSYM MULT_EQ_0;
       MULT_EQ_1; LSYM MULT_EQ_1;
+(***
       ARITH_RULE `(m + n = 1) <=> (m = 1) /\ (n = 0) \/ (m = 0) /\ (n = 1)`;
       ARITH_RULE `(1 = m + n) <=> (m = 1) /\ (n = 0) \/ (m = 0) /\ (n = 1)`;
+***)
       evensimps; ARITH_EQ] []
     and [simp1; simp2; simp3] = map MATCH_MP (CONJUNCTS
       (TAUT
@@ -532,7 +596,7 @@ let instantiate_casewise_recursion,
 
   let EXISTS_PAT_CONV =
     let pth = prove
-     (`((?y. _UNGUARDED_PATTERN (GEQ s t) (GEQ z y)) <=> s = t) /\
+     (`((?y. _UNGUARDED_PATTERN (GEQ (s : A) t) (GEQ (z : B) y)) <=> s = t) /\
        ((?y. _GUARDED_PATTERN (GEQ s t) g (GEQ z y)) <=> g /\ s = t)`,
       REWRITE_TAC[_UNGUARDED_PATTERN; _GUARDED_PATTERN; GEQ_DEF] THEN
       MESON_TAC[]) in
@@ -550,8 +614,10 @@ let instantiate_casewise_recursion,
 
   let HACK_PROFORMA,EACK_PROFORMA =
     let elemma0 = prove
-     (`((!z. GEQ (f z) (g z)) <=> (!x y. GEQ (f(x,y)) (g(x,y)))) /\
-       ((\p. P p) = (\(x,y). P(x,y)))`,
+     (`((!z.
+           GEQ ((f : A # B -> C) z) (g z)) <=>
+           (!x y. GEQ (f(x,y)) (g(x,y)))) /\
+       ((\p. (P : D # E -> F) p) = (\(x,y). P(x,y)))`,
       REWRITE_TAC[FUN_EQ_THM; FORALL_PAIR_THM])
     and elemma1 = prove
      (`(!P. (!t:A->B->C#D->E. P t) <=> (!t. P (\a b (c,d). t a b d c))) /\
@@ -613,9 +679,9 @@ let instantiate_casewise_recursion,
 
   let SIMPLIFY_MATCH_WELLDEFINED_TAC =
     let pth0 = MESON[]
-     `(a /\ x = k ==> x = y ==> d) ==> (a /\ x = k /\ y = k ==> d)`
+     `(a /\ (x : A) = k ==> x = y ==> d) ==> (a /\ x = k /\ y = k ==> d)`
     and pth1 = MESON[]
-     `(a /\ b /\ c /\ x = k ==> x = y ==> d)
+     `(a /\ b /\ c /\ (x : A) = k ==> x = y ==> d)
       ==> (a /\ x = k /\ b /\ y = k /\ c ==> d)` in
     REPEAT GEN_TAC THEN
     (MATCH_MP_TAC pth1 ORELSE MATCH_MP_TAC pth0) THEN
@@ -656,10 +722,12 @@ let instantiate_casewise_recursion,
                [SIMPLIFY_MATCH_WELLDEFINED_TAC; ALL_TAC]) gl
     | "superadmissible",_ when is_comb bod & rator bod = f
           -> APPLY_PROFORMA_TAC SUPERADMISSIBLE_TAIL gl
+(***
     | "admissible","sum"
           -> APPLY_PROFORMA_TAC ADMISSIBLE_SUM gl
     | "admissible","nsum"
           -> APPLY_PROFORMA_TAC ADMISSIBLE_NSUM gl
+***)
     | "admissible","MAP"
           -> APPLY_PROFORMA_TAC ADMISSIBLE_MAP gl
     | "admissible","_MATCH" when
@@ -700,7 +768,7 @@ let instantiate_casewise_recursion,
   let instantiate_casewise_recursion =
     let EXPAND_PAIRED_ALL_CONV =
       let pth0,pth1 = (CONJ_PAIR o prove)
-       (`(ALL (\(s,t). P s t) [a,b] <=> P a b) /\
+       (`(ALL (\(s,t). (P : A -> B -> bool) s t) [a,b] <=> P a b) /\
          (ALL (\(s,t). P s t) (CONS (a,b) l) <=>
           P a b /\ ALL (\(s,t). P s t) l)`,
         REWRITE_TAC[ALL]) in
@@ -940,7 +1008,7 @@ let instantiate_casewise_recursion,
             EXISTS_TAC(inst [ty,aty] false_tm) THEN
             REWRITE_TAC[WF_FALSE] THEN NO_TAC) ORELSE
       GUESS_WF_THEN
-       (REWRITE_TAC[FORALL_PAIR_THM] THEN ARITH_TAC) in
+       (REWRITE_TAC[FORALL_PAIR_THM] THEN (***ARITH_TAC***)NO_TAC) in
     fun etm ->
       let th = pure_prove_recursive_function_exists etm in
       try let wtm = find is_exists (hyp th) in

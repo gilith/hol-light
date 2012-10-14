@@ -10,7 +10,7 @@
 needs "relations.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Definition of wellfoundedness for arbitrary (infix) relation <<           *)
+(* Definition of wellfoundedness for arbitrary (infix) relation              *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "relation-well-founded-def";;
