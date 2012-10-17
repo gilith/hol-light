@@ -229,7 +229,7 @@ let ADMISSIBLE_GUARDED_PATTERN = prove
   REPEAT(MATCH_MP_TAC(TAUT `(a <=> a') /\ (a /\ a' ==> (b <=> b'))
                             ==> (a /\ b <=> a' /\ b')`) THEN
          REPEAT STRIP_TAC) THEN
-  TRY(MATCH_MP_TAC(MESON[] `(x:C) = x' /\ y = y' ==> (x = y <=> x' = y')`)) THEN
+  TRY(MATCH_MP_TAC(MESON[] `(x:A) = x' /\ y = y' ==> (x = y <=> x' = y')`)) THEN
   ASM_MESON_TAC[]);;
 
 (***
@@ -416,8 +416,8 @@ let SUPERADMISSIBLE_MATCH_GUARDED_PATTERN = prove
 (* ------------------------------------------------------------------------- *)
 
 let WF_REC_TAIL_GENERAL' = prove
- (`!(P : (A -> B) -> A -> bool) G H H'.
-         WF((<<):A->A->bool) /\
+ (`!((<<):A->A->bool) (P : (A -> B) -> A -> bool) G H H'.
+         WF (<<) /\
          (!f g x. (!z. z << x ==> (f z = g z))
                   ==> (P f x <=> P g x) /\
                       (G f x = G g x) /\ (H' f x = H' g x)) /\
@@ -430,8 +430,8 @@ let WF_REC_TAIL_GENERAL' = prove
   ASM_MESON_TAC[]);;
 
 let WF_REC_CASES = prove
- (`!(<<) clauses.
-        WF((<<):A->A->bool) /\
+ (`!((<<):A->A->bool) clauses.
+        WF (<<) /\
         ALL (\(s,t). ?P G H.
                      (!f a y. P f a /\ y << G f a ==> y << s a) /\
                      (!f g a. (!z. z << s(a) ==> (f z = g z))
@@ -441,6 +441,7 @@ let WF_REC_CASES = prove
             clauses
         ==> ?f:A->B. !x. f x = CASEWISE clauses f x`,
   REPEAT STRIP_TAC THEN MATCH_MP_TAC WF_REC_TAIL_GENERAL' THEN
+  EXISTS_TAC `(<<):A->A->bool` THEN
   FIRST_X_ASSUM(MP_TAC o check(is_binary "ALL" o concl)) THEN
   SPEC_TAC(`clauses:((P->A)#((A->B)->P->B))list`,
            `clauses:((P->A)#((A->B)->P->B))list`) THEN
@@ -614,9 +615,8 @@ let instantiate_casewise_recursion,
 
   let HACK_PROFORMA,EACK_PROFORMA =
     let elemma0 = prove
-     (`((!z.
-           GEQ ((f : A # B -> C) z) (g z)) <=>
-           (!x y. GEQ (f(x,y)) (g(x,y)))) /\
+     (`((!z. GEQ ((f : A # B -> C) z) (g z)) <=>
+        (!x y. GEQ (f(x,y)) (g(x,y)))) /\
        ((\p. (P : D # E -> F) p) = (\(x,y). P(x,y)))`,
       REWRITE_TAC[FUN_EQ_THM; FORALL_PAIR_THM])
     and elemma1 = prove
@@ -630,21 +630,43 @@ let instantiate_casewise_recursion,
         FIRST_X_ASSUM(MP_TAC o SPEC `\d c. (t:C#D->E) (c,d)`)] THEN
       MATCH_MP_TAC EQ_IMP THEN AP_TERM_TAC THEN
       REWRITE_TAC[FUN_EQ_THM; FORALL_PAIR_THM]) in
-    let HACK_PROFORMA n th =
+    let splitpair tm =
+      let (xs,x) = splitlist dest_pair tm in
+      xs @ [x] in
+    let HACK_PROFORMA gabs th =
+      let pvs = splitpair (fst (dest_gabs gabs)) in
+      let n = List.length pvs in
       if n <= 1 then th else
-      let mkname i = "_P"^string_of_int i in
+      let (svs,_) = strip_forall (body (rand gabs)) in
+      let pis = map (fun v -> index v svs + 1) pvs in
+      let mk_tyname i = "_P" ^ string_of_int i in
+      let mk_vname i = "_x" ^ string_of_int i in
+      let dest_vname s =
+          let l = String.length s in
+          if l < 3 then failwith "dest_vname.short" else
+          if String.sub s 0 2 <> "_x" then failwith "dest_vname.bad" else
+          int_of_string (String.sub s 2 (l - 2)) in
       let ty = end_itlist (fun s t -> mk_type("prod",[s;t]))
-                          (map (mk_vartype o mkname) (1--n)) in
+                          (map (mk_vartype o mk_tyname) pis) in
       let conv i =
-        let name = "x"^string_of_int i in
-        let cnv = ALPHA_CONV (mk_var(name,mk_vartype(mkname i))) in
-        fun tm -> if is_abs tm & name_of(bndvar tm) <> name
+        let vname = mk_vname i in
+        let tyname = mk_tyname i in
+        let cnv = ALPHA_CONV (mk_var(vname, mk_vartype tyname)) in
+        fun tm -> if is_abs tm & name_of(bndvar tm) <> vname
                   then cnv tm else failwith "conv" in
       let convs = FIRST_CONV (map conv (1--n)) in
+      let sortconv tm =
+        let (v1,t) = dest_forall tm in
+        let v1 = dest_vname (fst (dest_var v1)) in
+        let (v2,_) = dest_forall t in
+        let v2 = dest_vname (fst (dest_var v2)) in
+        if v1 <= v2 then failwith "sortconv: ok" else
+        REWR_CONV SWAP_FORALL_THM tm in
       let th1 = INST_TYPE [ty,`:P`] th in
       let th2 = REWRITE_RULE[FORALL_PAIR_THM] th1 in
       let th3 = REWRITE_RULE[elemma0; elemma1] th2 in
-      CONV_RULE(REDEPTH_CONV convs) th3
+      let th4 = CONV_RULE (REDEPTH_CONV convs) th3 in
+      CONV_RULE (REDEPTH_CONV sortconv) th4
     and EACK_PROFORMA n th =
       if n <= 1 then th else
       let mkname i = "_Q"^string_of_int i in
@@ -668,9 +690,8 @@ let instantiate_casewise_recursion,
 (* ------------------------------------------------------------------------- *)
 
   let APPLY_PROFORMA_TAC th (asl,w as gl) =
-    let vs = fst(dest_gabs(body(rand w))) in
-    let n = 1 + length(fst(splitlist dest_pair vs)) in
-    (MATCH_MP_TAC(HACK_PROFORMA n th) THEN BETA_TAC) gl in
+    let th' = HACK_PROFORMA (body (rand w)) th in
+    (MATCH_MP_TAC th' THEN BETA_TAC) gl in
 
   let is_pattern p n tm =
     try let f,args = strip_comb(snd(strip_exists (body(body tm)))) in
@@ -916,7 +937,7 @@ let instantiate_casewise_recursion,
       let th5 = SIMPLE_CHOOSE ord (itlist PROVE_HYP (CONJUNCTS th4) th3) in
       PROVE_HYP th5 th1 in
     fun dtm ->
-      let th =  break_down_admissibility(instantiate_casewise_recursion dtm) in
+      let th = break_down_admissibility(instantiate_casewise_recursion dtm) in
       if concl th = dtm then th
       else failwith "prove_general_recursive_function_exists: sanity" in
 

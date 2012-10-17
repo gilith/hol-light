@@ -135,6 +135,12 @@ let rdecode_unicode_def = new_definition
 
 export_thm rdecode_unicode_def;;
 
+(* ~~~~~~~ *)
+(* Strings *)
+(* ~~~~~~~ *)
+
+new_type_abbrev("string",`:char list`);;
+
 (* ------------------------------------------------------------------------- *)
 (* Properties of Unicode characters.                                         *)
 (* ------------------------------------------------------------------------- *)
