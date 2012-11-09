@@ -11,7 +11,7 @@ extend_the_interpretation
   "opentheory/theories/montgomery/montgomery.int";;
 
 (* ------------------------------------------------------------------------- *)
-(* Montgomery multiplication.
+(* Montgomery multiplication.                                                *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "montgomery";;
