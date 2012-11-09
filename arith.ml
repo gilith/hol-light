@@ -1527,19 +1527,19 @@ let MOD_MOD = prove
 
 export_thm MOD_MOD;;
 
-let MOD_MOD_REFL = prove
- (`!m n. ~(n = 0) ==> ((m MOD n) MOD n = m MOD n)`,
+let MOD_MOD_REFL' = prove
+ (`!n m. ~(n = 0) ==> ((m MOD n) MOD n = m MOD n)`,
   REPEAT GEN_TAC THEN DISCH_TAC THEN
   MP_TAC(SPECL [`m:num`; `n:num`; `1`] MOD_MOD) THEN
   ASM_REWRITE_TAC[MULT_CLAUSES; MULT_EQ_0] THEN
   REWRITE_TAC[ONE; NOT_SUC]);;
 
-export_thm MOD_MOD_REFL;;
+export_thm MOD_MOD_REFL';;
 
-let MOD_MOD_REFL' = prove
- (`!n m. ~(n = 0) ==> ((m MOD n) MOD n = m MOD n)`,
+let MOD_MOD_REFL = prove
+ (`!m n. ~(n = 0) ==> ((m MOD n) MOD n = m MOD n)`,
   REPEAT GEN_TAC THEN
-  MATCH_ACCEPT_TAC MOD_MOD_REFL);;
+  MATCH_ACCEPT_TAC MOD_MOD_REFL');;
 
 let DIV_MULT2 = prove
  (`!m n p. ~(m * p = 0) ==> ((m * n) DIV (m * p) = n DIV p)`,
@@ -1657,27 +1657,42 @@ let ODD_MOD = prove
 
 export_thm ODD_MOD;;
 
-let MOD_MULT_RMOD = prove
- (`!m n p. ~(n = 0) ==> ((m * (p MOD n)) MOD n = (m * p) MOD n)`,
+let MOD_MULT_RMOD' = prove
+ (`!n m p. ~(n = 0) ==> ((m * (p MOD n)) MOD n = (m * p) MOD n)`,
   REPEAT STRIP_TAC THEN CONV_TAC SYM_CONV THEN MATCH_MP_TAC MOD_EQ THEN
   EXISTS_TAC `m * p DIV n` THEN
   REWRITE_TAC[GSYM MULT_ASSOC; GSYM LEFT_ADD_DISTRIB] THEN
   REWRITE_TAC[EQ_MULT_LCANCEL] THEN DISJ2_TAC THEN
   ONCE_REWRITE_TAC[ADD_SYM] THEN ASM_SIMP_TAC[DIVISION]);;
 
-export_thm MOD_MULT_RMOD;;
+export_thm MOD_MULT_RMOD';;
+
+let MOD_MULT_RMOD = prove
+ (`!m n p. ~(n = 0) ==> ((m * (p MOD n)) MOD n = (m * p) MOD n)`,
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC MOD_MULT_RMOD');;
+
+let MOD_MULT_LMOD' = prove
+ (`!n m p. ~(n = 0) ==> (((m MOD n) * p) MOD n = (m * p) MOD n)`,
+  ONCE_REWRITE_TAC [MULT_SYM] THEN SIMP_TAC [MOD_MULT_RMOD']);;
+
+export_thm MOD_MULT_LMOD';;
 
 let MOD_MULT_LMOD = prove
  (`!m n p. ~(n = 0) ==> (((m MOD n) * p) MOD n = (m * p) MOD n)`,
-  ONCE_REWRITE_TAC[MULT_SYM] THEN SIMP_TAC[MOD_MULT_RMOD]);;
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC MOD_MULT_LMOD');;
 
-export_thm MOD_MULT_LMOD;;
+let MOD_MULT_MOD2' = prove
+ (`!n m p. ~(n = 0) ==> (((m MOD n) * (p MOD n)) MOD n = (m * p) MOD n)`,
+  SIMP_TAC [MOD_MULT_RMOD'; MOD_MULT_LMOD']);;
+
+export_thm MOD_MULT_MOD2';;
 
 let MOD_MULT_MOD2 = prove
  (`!m n p. ~(n = 0) ==> (((m MOD n) * (p MOD n)) MOD n = (m * p) MOD n)`,
-  SIMP_TAC[MOD_MULT_RMOD; MOD_MULT_LMOD]);;
-
-export_thm MOD_MULT_MOD2;;
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC MOD_MULT_MOD2');;
 
 let MOD_MULT_ADD = prove
  (`!m n p. (m * n + p) MOD n = p MOD n`,
@@ -1697,19 +1712,20 @@ let DIV_MULT_ADD = prove
 
 export_thm DIV_MULT_ADD;;
 
-let MOD_ADD_MOD = prove
- (`!a b n. ~(n = 0) ==> ((a MOD n + b MOD n) MOD n = (a + b) MOD n)`,
-  REPEAT STRIP_TAC THEN CONV_TAC SYM_CONV THEN MATCH_MP_TAC MOD_EQ THEN
-  EXISTS_TAC `a DIV n + b DIV n` THEN REWRITE_TAC[RIGHT_ADD_DISTRIB] THEN
-  ONCE_REWRITE_TAC[AC ADD_AC `(a + b) + (c + d) = (c + a) + (d + b)`] THEN
-  BINOP_TAC THEN ASM_SIMP_TAC[DIVISION]);;
-
-export_thm MOD_ADD_MOD;;
-
 let MOD_ADD_MOD' = prove
  (`!n a b. ~(n = 0) ==> ((a MOD n + b MOD n) MOD n = (a + b) MOD n)`,
+  REPEAT STRIP_TAC THEN CONV_TAC SYM_CONV THEN MATCH_MP_TAC MOD_EQ THEN
+  EXISTS_TAC `a DIV n + b DIV n` THEN REWRITE_TAC[RIGHT_ADD_DISTRIB] THEN
+  ONCE_REWRITE_TAC
+    [AC ADD_AC `((a : num) + b) + (c + d) = (c + a) + (d + b)`] THEN
+  BINOP_TAC THEN ASM_SIMP_TAC[DIVISION]);;
+
+export_thm MOD_ADD_MOD';;
+
+let MOD_ADD_MOD = prove
+ (`!a b n. ~(n = 0) ==> ((a MOD n + b MOD n) MOD n = (a + b) MOD n)`,
   REPEAT GEN_TAC THEN
-  MATCH_ACCEPT_TAC MOD_ADD_MOD);;
+  MATCH_ACCEPT_TAC MOD_ADD_MOD');;
 
 let DIV_ADD_MOD = prove
  (`!a b n. ~(n = 0)

@@ -1172,18 +1172,4 @@ let gcd_right_distrib = prove
 
 export_thm gcd_right_distrib;;
 
-(* ------------------------------------------------------------------------- *)
-(* Montgomery multiplication.
-(* ------------------------------------------------------------------------- *)
-
-(***
-let montgomery_correctness = prove
-  (`!n r s k a m b.
-      r * s = k * n + 1 /\
-      m = (a * k) MOD r /\
-      b = (a + m * n) DIV r ==>
-      (a * s) MOD n = b MOD n`,
-   REPEAT STRIP_TAC THEN
-***)
-
 logfile_end ();;
