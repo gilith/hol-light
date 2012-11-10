@@ -2,3 +2,11 @@
 # INTERPRETATIONS FOR MONTGOMERY MULTIPLICATION
 # Joe Leslie-Hurd
 ###############################################################################
+
+# Number
+
+# Number.Natural
+
+# Number.Natural.Montgomery
+
+const "HOLLight.montgomery_reduce" as "Number.Natural.Montgomery.reduce"

@@ -1603,6 +1603,28 @@ let LE_LDIV = prove
 
 export_thm LE_LDIV;;
 
+let LT_LDIV_EQ = prove
+ (`!a b n. ~(a = 0) ==> (b DIV a < n <=> b < a * n)`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [GSYM NOT_LE] THEN
+  AP_TERM_TAC THEN
+  MATCH_MP_TAC LE_RDIV_EQ THEN
+  FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm LT_LDIV_EQ;;
+
+let LT_LDIV = prove
+ (`!a b n. b < a * n ==> b DIV a < n`,
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN `~(a = 0)` ASSUME_TAC THENL
+  [DISCH_THEN SUBST_VAR_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [ZERO_MULT; LT];
+   MP_TAC (SPECL [`a : num`; `b : num`; `n : num`] LT_LDIV_EQ) THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm LT_LDIV;;
+
 let DIV_MONO = prove
  (`!m n p. ~(p = 0) /\ m <= n ==> m DIV p <= n DIV p`,
   REPEAT STRIP_TAC THEN
