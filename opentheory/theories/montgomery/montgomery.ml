@@ -149,4 +149,73 @@ let montgomery_reduce_unnormalized_bound = prove
 
 export_thm montgomery_reduce_unnormalized_bound;;
 
+(* ------------------------------------------------------------------------- *)
+(* A Montgomery multiplication circuit to calculate double exponentials.     *)
+(* ------------------------------------------------------------------------- *)
+
+(***
+let bits_and_def = new_definition
+  `!m n.
+     bits_and m n =
+     if LENGTH l1 <= LENGTH l2 then
+       zipwith ( /\ ) l1 (take (LENGTH l1) l2)
+     else
+       zipwith ( /\ ) (take (LENGTH l2) l1) l2`;;
+
+let bits_or_def = new_definition
+  `!l1 l2.
+     bits_or l1 l2 =
+     if LENGTH l1 <= LENGTH l2 then
+       APPEND
+         (zipwith ( \/ ) l1 (take (LENGTH l1) l2))
+         (drop (LENGTH l1) l2)
+     else
+       zipwith ( \/ ) (take (LENGTH l2) l1) l2`;;
+
+let bits_add_def = new_definition
+  `!a b. bits_add a b = num_to_bits (bits_to_num a + bits_to_num b)`;;
+
+let bits_multiply_def = new_definition
+  `!a b. bits_multiply a b = num_to_bits (bits_to_num a * bits_to_num b)`;;
+
+let bits_montgomery_reduce_def = new_definition
+  `!n r k a.
+     bits_montgomery_reduce n r k a =
+     num_to_bits
+       (montgomery_reduce (bits_to_num n) (2 EXP r) (bits_to_num k)
+         (bits_to_num a))`;;
+
+
+
+let bits_montgomery_reduce = prove
+  (`!n r k a.
+      bits_to_num (bits_montgomery_reduce n r k a) =
+      let ak = bits_multiply a k in
+      let m = bits_and ak (replicate T r) in
+      let mn = bits_multiply m n in
+      let amn = bits_add a mn in
+      let t = bits_shr amn r in
+      let z = if bits_bit t r then bits_sub t n else t in
+      bits_to_num (bits_and z (replicate T r))`,
+   NO_TAC);;
+
+let montgomery_double_exp_def = new_definition
+  `!n r k a m.
+     montgomery_double_exp n r k a m =
+       let b = m = 0 in
+       let a2 = (if b then 1 else a) * a in
+       let
+
+     montgomery_reduce n r k a =
+     (a + ((a * k) MOD r) * n) DIV r`;;
+
+     ~(r = 0) /\
+     2 EXP r * s = k * n + 1 ==>
+
+export_thm montgomery_reduce_def;;
+
+     ~(r = 0) /\
+     2 EXP r * s = k * n + 1 ==>
+***)
+
 logfile_end ();;
