@@ -2170,8 +2170,8 @@ let EVEN_ODD_DECOMPOSITION = prove
 
 export_thm EVEN_ODD_DECOMPOSITION;;
 
-let MOD_EXP_MOD = prove
- (`!m n p. ~(n = 0) ==> (((m MOD n) EXP p) MOD n = (m EXP p) MOD n)`,
+let MOD_EXP_MOD' = prove
+ (`!n m p. ~(n = 0) ==> (((m MOD n) EXP p) MOD n = (m EXP p) MOD n)`,
   REPEAT STRIP_TAC THEN SPEC_TAC(`p:num`,`p:num`) THEN
   INDUCT_TAC THEN ASM_REWRITE_TAC[EXP] THEN ASM_SIMP_TAC[MOD_MULT_LMOD] THEN
   MATCH_MP_TAC EQ_TRANS THEN
@@ -2179,7 +2179,12 @@ let MOD_EXP_MOD = prove
    [ALL_TAC; ASM_REWRITE_TAC[]] THEN
   ASM_SIMP_TAC[MOD_MULT_RMOD]);;
 
-export_thm MOD_EXP_MOD;;
+export_thm MOD_EXP_MOD';;
+
+let MOD_EXP_MOD = prove
+ (`!m n p. ~(n = 0) ==> (((m MOD n) EXP p) MOD n = (m EXP p) MOD n)`,
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC MOD_EXP_MOD');;
 
 let MOD_MOD_EXP_MIN = prove
  (`!x p m n. ~(p = 0)

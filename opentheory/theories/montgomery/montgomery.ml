@@ -30,12 +30,13 @@ let (montgomery_double_exp_zero,montgomery_double_exp_suc) =
     `(!n r k a. montgomery_double_exp n r k a 0 = a) /\
      (!n r k a m.
         montgomery_double_exp n r k a (SUC m) =
-        montgomery_double_exp n r k
-          (montgomery_reduce n r k (a * a)) m)` in
+        let b = montgomery_reduce n r k (a * a) in
+        let c = if r <= b then b - n else b in
+        montgomery_double_exp n r k c m)` in
   CONJ_PAIR def;;
 
-export_thm montgomery_reduce_zero;;
-export_thm montgomery_reduce_suc;;
+export_thm montgomery_double_exp_zero;;
+export_thm montgomery_double_exp_suc;;
 
 let montgomery_double_exp_def =
     CONJ montgomery_double_exp_zero montgomery_double_exp_suc;;
@@ -164,17 +165,64 @@ let montgomery_reduce_unnormalized_bound = prove
 
 export_thm montgomery_reduce_unnormalized_bound;;
 
-(* ------------------------------------------------------------------------- *)
-(* A Montgomery multiplication circuit to calculate double exponentials.     *)
-(* ------------------------------------------------------------------------- *)
-
 (***
-let montgomery_reduce_correct = prove
+let montgomery_double_exp_correct = prove
   (`!n r s k a m.
       ~(n = 0) /\
       r * s = k * n + 1 ==>
-      (montgomery_double_exp n r k a m * s) MOD n =
-      ((a * s) EXP (2 EXP m)) MOD n`,
+      montgomery_double_exp n r k a m MOD n =
+      ((a * s) EXP (2 EXP m) * r) MOD n`,
+   REPEAT STRIP_TAC THEN
+   SPEC_TAC (`a : num`, `a : num`) THEN
+   SPEC_TAC (`m : num`, `m : num`) THEN
+   INDUCT_TAC THENL
+   [GEN_TAC THEN
+    REWRITE_TAC [montgomery_double_exp_zero; EXP_0; EXP_1] THEN
+    REWRITE_TAC [GSYM MULT_ASSOC] THEN
+    MP_TAC (SPEC `n : num` MOD_MULT_RMOD') THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th] THEN ASSUME_TAC th) THEN
+    SUBGOAL_THEN `(s * r) MOD n = 1 MOD n` SUBST1_TAC THENL
+    [MATCH_MP_TAC MOD_EQ THEN
+     EXISTS_TAC `k : num` THEN
+     ONCE_REWRITE_TAC [MULT_SYM; ADD_SYM] THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     ASM_REWRITE_TAC [MULT_1]];
+    ALL_TAC] THEN
+   GEN_TAC THEN
+   ASM_REWRITE_TAC
+     [montgomery_double_exp_suc; EXP_SUC; LET_DEF; LET_END_DEF; EXP_MULT;
+      EXP_2] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   MP_TAC (SPEC `n : num` MOD_EXP_MOD') THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+   MP_TAC (SPEC `n : num` MOD_MULT_LMOD') THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   MP_TAC (SPEC `n : num` MOD_EXP_MOD') THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+
+
+let montgomery_double_exp_bound = prove
+  (`!n r s k a m.
+      ~(n = 0) /\
+      n <= r /\
+      a < r ==>
+      montgomery_double_exp n r k a m < r`,
 ***)
+
+(* ------------------------------------------------------------------------- *)
+(* A Montgomery multiplication circuit to calculate double exponentials.     *)
+(* ------------------------------------------------------------------------- *)
 
 logfile_end ();;
