@@ -143,9 +143,7 @@ loads "opentheory/theories/char/char.ml";;
 (* Montgomery multiplication.                                                *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 loads "opentheory/theories/montgomery/montgomery.ml";;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Memory safety for the H interface.                                        *)
