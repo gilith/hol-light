@@ -165,10 +165,10 @@ let montgomery_reduce_unnormalized_bound = prove
 
 export_thm montgomery_reduce_unnormalized_bound;;
 
-(***
 let montgomery_double_exp_correct = prove
   (`!n r s k a m.
       ~(n = 0) /\
+      n <= r /\
       r * s = k * n + 1 ==>
       montgomery_double_exp n r k a m MOD n =
       ((a * s) EXP (2 EXP m) * r) MOD n`,
@@ -211,18 +211,116 @@ let montgomery_double_exp_correct = prove
    AP_TERM_TAC THEN
    AP_THM_TAC THEN
    AP_TERM_TAC THEN
+   REWRITE_TAC [MULT_ASSOC] THEN
+   MP_TAC (SPEC `n : num` MOD_MULT_LMOD') THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   ONCE_REWRITE_TAC [MULT_SYM] THEN
+   REWRITE_TAC [MULT_ASSOC] THEN
+   COND_CASES_TAC THENL
+   [MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `((montgomery_reduce n r k (a * a) - n) + n) MOD n` THEN
+    CONJ_TAC THENL
+    [MATCH_MP_TAC EQ_SYM THEN
+     MP_TAC (SPEC `n : num` MOD_ADD_MOD') THEN
+     ASM_REWRITE_TAC [] THEN
+     DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+     MP_TAC (SPEC `n : num` MOD_REFL) THEN
+     ASM_REWRITE_TAC [] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     REWRITE_TAC [ADD_0] THEN
+     MATCH_MP_TAC MOD_MOD_REFL THEN
+     FIRST_ASSUM ACCEPT_TAC;
+     MATCH_MP_TAC EQ_TRANS THEN
+     EXISTS_TAC `montgomery_reduce n r k (a * a) MOD n` THEN
+     CONJ_TAC THENL
+     [AP_THM_TAC THEN
+      AP_TERM_TAC THEN
+      MATCH_MP_TAC SUB_ADD THEN
+      MATCH_MP_TAC LE_TRANS THEN
+      EXISTS_TAC `r : num` THEN
+      ASM_REWRITE_TAC [];
+      MATCH_MP_TAC montgomery_reduce_correct THEN
+      ASM_REWRITE_TAC []]];
+    MATCH_MP_TAC montgomery_reduce_correct THEN
+    ASM_REWRITE_TAC []]);;
 
+export_thm montgomery_double_exp_correct;;
 
 let montgomery_double_exp_bound = prove
-  (`!n r s k a m.
+  (`!n r k a m.
       ~(n = 0) /\
       n <= r /\
       a < r ==>
       montgomery_double_exp n r k a m < r`,
-***)
+   REPEAT STRIP_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   SPEC_TAC (`a : num`, `a : num`) THEN
+   SPEC_TAC (`m : num`, `m : num`) THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [montgomery_double_exp_zero];
+    ALL_TAC] THEN
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [montgomery_double_exp_suc; LET_DEF; LET_END_DEF] THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   REWRITE_TAC [GSYM NOT_LT] THEN
+   ASM_CASES_TAC `montgomery_reduce n r k (a * a) < r` THENL
+   [ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   ONCE_REWRITE_TAC [GSYM (SPEC `n : num` LT_ADD_RCANCEL)] THEN
+   SUBGOAL_THEN
+     `montgomery_reduce n r k (a * a) - n + n =
+      montgomery_reduce n r k (a * a)` SUBST1_TAC THENL
+   [MATCH_MP_TAC SUB_ADD THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `r : num` THEN
+    ASM_REWRITE_TAC [] THEN
+    ASM_REWRITE_TAC [GSYM NOT_LT];
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   MATCH_MP_TAC montgomery_reduce_unnormalized_bound THEN
+   ASM_REWRITE_TAC [] THEN
+   CONJ_TAC THENL
+   [DISCH_THEN SUBST_VAR_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [NOT_LT; LE_0];
+    POP_ASSUM (STRIP_ASSUME_TAC o REWRITE_RULE [LT_LE]) THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `a * r : num` THEN
+    ASM_REWRITE_TAC [LE_MULT_LCANCEL; LE_MULT_RCANCEL]]);;
+
+export_thm montgomery_double_exp_bound;;
 
 (* ------------------------------------------------------------------------- *)
 (* A Montgomery multiplication circuit to calculate double exponentials.     *)
 (* ------------------------------------------------------------------------- *)
+
+(* ------------------------------------------------------------------------- *)
+(* LCS35 Time Capsule Crypto-Puzzle [1].                                     *)
+(*                                                                           *)
+(* 1. http://people.csail.mit.edu/rivest/lcs35-puzzle-description.txt        *)
+(* ------------------------------------------------------------------------- *)
+
+let time_capsule_n_def = new_definition
+  `time_capsule_n =
+   6314466083072888893799357126131292332363298818330841375588990772701957128924885547308446055753206513618346628848948088663500368480396588171361987660521897267810162280557475393838308261759713218926668611776954526391570120690939973680089721274464666423319187806830552067951253070082020241246233982410737753705127344494169501180975241890667963858754856319805507273709904397119733614666701543905360152543373982524579313575317653646331989064651402133985265800341991903982192844710212464887459388853582070318084289023209710907032396934919962778995323320184064522476463966355937367009369212758092086293198727008292431243681`;;
+
+export_thm time_capsule_n_def;;
+
+let time_capsule_t_def = new_definition
+  `time_capsule_t = 79685186856218`;;
+
+export_thm time_capsule_t_def;;
+
+let time_capsule_z_def = new_definition
+  `time_capsule_z =
+   4273385266812394147070994861525419078076239304748427595531276995752128020213613672254516516003537339494956807602382848752586901990223796385882918398855224985458519974818490745795238804226283637519132355620865854807750610249277739682050363696697850022630763190035330004501577720670871722527280166278354004638073890333421755189887803390706693131249675969620871735333181071167574435841870740398493890811235683625826527602500294010908702312885095784549814408886297505226010693375643169403606313753753943664426620220505295457067077583219793772829893613745614142047193712972117251792879310395477535810302267611143659071382`;;
+
+export_thm time_capsule_z_def;;
 
 logfile_end ();;
