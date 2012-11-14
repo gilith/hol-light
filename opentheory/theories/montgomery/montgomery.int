@@ -9,4 +9,5 @@
 
 # Number.Natural.Montgomery
 
+const "HOLLight.montgomery_double_exp" as "Number.Natural.Montgomery.doubleExp"
 const "HOLLight.montgomery_reduce" as "Number.Natural.Montgomery.reduce"
