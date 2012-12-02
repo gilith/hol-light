@@ -126,33 +126,11 @@ let montgomery_reduce_correct = prove
 export_thm montgomery_reduce_correct;;
 
 let montgomery_reduce_bound = prove
-  (`!n r k a.
+  (`!n r k m a.
       ~(n = 0) /\
       ~(r = 0) /\
-      a <= n * r ==>
-      montgomery_reduce n r k a < 2 * n`,
-   REPEAT STRIP_TAC THEN
-   REWRITE_TAC [montgomery_reduce_def] THEN
-   MATCH_MP_TAC LT_LDIV THEN
-   CONV_TAC (RAND_CONV (REWR_CONV MULT_SYM)) THEN
-   REWRITE_TAC [GSYM MULT_ASSOC] THEN
-   REWRITE_TAC [MULT_2] THEN
-   MATCH_MP_TAC LTE_TRANS THEN
-   EXISTS_TAC `a + n * r : num` THEN
-   ASM_REWRITE_TAC [LT_ADD_LCANCEL; LE_ADD_RCANCEL] THEN
-   CONV_TAC (RAND_CONV (REWR_CONV MULT_SYM)) THEN
-   ASM_REWRITE_TAC [LT_MULT_RCANCEL] THEN
-   MATCH_MP_TAC DIVISION_DEF_MOD THEN
-   FIRST_ASSUM ACCEPT_TAC);;
-
-export_thm montgomery_reduce_bound;;
-
-let montgomery_reduce_unnormalized_bound = prove
-  (`!n r k a.
-      ~(n = 0) /\
-      ~(r = 0) /\
-      a <= r * r ==>
-      montgomery_reduce n r k a < r + n`,
+      a <= r * m ==>
+      montgomery_reduce n r k a < m + n`,
    REPEAT STRIP_TAC THEN
    REWRITE_TAC [montgomery_reduce_def] THEN
    MATCH_MP_TAC LT_LDIV THEN
@@ -162,6 +140,31 @@ let montgomery_reduce_unnormalized_bound = prove
    ASM_REWRITE_TAC [LT_ADD_LCANCEL; LE_ADD_RCANCEL; LT_MULT_RCANCEL] THEN
    MATCH_MP_TAC DIVISION_DEF_MOD THEN
    FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm montgomery_reduce_bound;;
+
+let montgomery_reduce_normalized_bound = prove
+  (`!n r k a.
+      ~(n = 0) /\
+      ~(r = 0) /\
+      a <= r * n ==>
+      montgomery_reduce n r k a < 2 * n`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [MULT_2] THEN
+   MATCH_MP_TAC montgomery_reduce_bound THEN
+   ASM_REWRITE_TAC []);;
+
+export_thm montgomery_reduce_normalized_bound;;
+
+let montgomery_reduce_unnormalized_bound = prove
+  (`!n r k a.
+      ~(n = 0) /\
+      ~(r = 0) /\
+      a <= r * r ==>
+      montgomery_reduce n r k a < r + n`,
+   REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC montgomery_reduce_bound THEN
+   ASM_REWRITE_TAC []);;
 
 export_thm montgomery_reduce_unnormalized_bound;;
 
