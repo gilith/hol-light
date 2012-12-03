@@ -1,5 +1,4 @@
 (*BEGIN-PARAMETRIC*)
-
 (* field_star-def *)
 
 new_constant ("field_star_sub", `:field_star -> field_star -> field_star`);;
@@ -257,5 +256,4 @@ let field_star_elgamal_correct = new_axiom
 
 let field_star_add_comm' = new_axiom
    `!x y z. field_star_add x (field_star_add y z) = field_star_add y (field_star_add x z)`;;
-
 (*END-PARAMETRIC*)

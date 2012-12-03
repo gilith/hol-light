@@ -229,7 +229,7 @@ let byte_mult_right_neg = new_axiom
 let num_to_byte_exp = new_axiom
    `!m n. num_to_byte (m EXP n) = byte_exp (num_to_byte m) n`;;
 
-let byte_exp_zero = new_axiom
+let byte_zero_exp = new_axiom
    `!n.
       byte_exp (num_to_byte 0) n =
       if n = 0 then num_to_byte 1 else num_to_byte 0`;;

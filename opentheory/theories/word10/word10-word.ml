@@ -229,7 +229,7 @@ let word10_mult_right_neg = new_axiom
 let num_to_word10_exp = new_axiom
    `!m n. num_to_word10 (m EXP n) = word10_exp (num_to_word10 m) n`;;
 
-let word10_exp_zero = new_axiom
+let word10_zero_exp = new_axiom
    `!n.
       word10_exp (num_to_word10 0) n =
       if n = 0 then num_to_word10 1 else num_to_word10 0`;;

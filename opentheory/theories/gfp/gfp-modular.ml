@@ -221,7 +221,7 @@ let gfp_mult_right_neg = new_axiom
 let num_to_gfp_exp = new_axiom
    `!m n. num_to_gfp (m EXP n) = gfp_exp (num_to_gfp m) n`;;
 
-let gfp_exp_zero = new_axiom
+let gfp_zero_exp = new_axiom
    `!n.
       gfp_exp (num_to_gfp 0) n =
       if n = 0 then num_to_gfp 1 else num_to_gfp 0`;;

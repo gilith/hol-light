@@ -13,6 +13,27 @@
 default: theories
 
 ###############################################################################
+# Cleaning temporary files.
+###############################################################################
+
+TEMP = \
+  articles/*.art \
+  articles/*.thy
+
+.PHONY: clean
+clean:
+	rm -f $(TEMP)
+
+.PHONY: info-clean
+info-clean:
+	@echo
+	@echo '+------------------+'
+	@echo '| Clean everything |'
+	@echo '+------------------+'
+	@echo
+	@$(MAKE) clean
+
+###############################################################################
 # Parametric theory interpretations.
 ###############################################################################
 
@@ -53,22 +74,29 @@ theories/word16/word16-word.ml: theories/word/word.ml theories/word/word-modular
 .PHONY: theory-interpretations
 theory-interpretations: $(THEORY_INTERPRETATIONS)
 
+.PHONY: info-theory-interpretations
+info-theory-interpretations:
+	@echo
+	@echo '+-------------------------------+'
+	@echo '| Interpret parametric theories |'
+	@echo '+-------------------------------+'
+	@echo
+	@$(MAKE) theory-interpretations
+
 ###############################################################################
-# Cleaning temporary files.
+# Extract the theories.
 ###############################################################################
 
-TEMP = \
-  articles/*.art \
-  articles/*.thy
+extract-theories:
+	cd .. && OPENTHEORY_LOGGING=1 opentheory/scripts/capture
 
-.PHONY: clean
-clean:
+info-extract-theories:
 	@echo
 	@echo '+------------------+'
-	@echo '| Clean everything |'
+	@echo '| Extract theories |'
 	@echo '+------------------+'
 	@echo
-	rm -f $(TEMP)
+	@$(MAKE) extract-theories
 
 ###############################################################################
 # Check the theory sources.
@@ -118,13 +146,16 @@ THEORY_SOURCES = \
   opentheory/theories/haskell-prime/haskell-prime.ml
 
 check-theories:
-	@echo
-	@echo '+--------------------------+'
-	@echo '| Check the theory sources |'
-	@echo '+--------------------------+'
-	@echo
 	@echo Looking for duplicate let bindings:
 	@cd .. && cat $(THEORY_SOURCES) | grep '^let ' | sort | uniq -d
+
+info-check-theories:
+	@echo
+	@echo '+----------------------+'
+	@echo '| Check theory sources |'
+	@echo '+----------------------+'
+	@echo
+	@$(MAKE) check-theories
 
 ###############################################################################
 # Export the theories.
@@ -132,7 +163,7 @@ check-theories:
 
 .PHONY: theories
 theories:
-	$(MAKE) clean
-	$(MAKE) theory-interpretations
-	cd .. && OPENTHEORY_LOGGING=1 opentheory/scripts/capture
-	$(MAKE) check-theories
+	@$(MAKE) info-clean
+	@$(MAKE) info-theory-interpretations
+	@$(MAKE) info-extract-theories
+	@$(MAKE) info-check-theories

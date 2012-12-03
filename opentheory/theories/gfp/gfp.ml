@@ -343,7 +343,7 @@ let gfp_mult_right_inv = prove
 export_thm gfp_mult_right_inv;;
 
 (*PARAMETRIC
-let gfp_mult_right_inv = prove
+let gfp_mult_right_inv = new_axiom
    `!x. ~(x = num_to_gfp 0) ==> gfp_mult x (gfp_inv x) = num_to_gfp 1`;;
 *)
 
@@ -564,29 +564,6 @@ let gfp_inv_mult = new_axiom
       ~(x = num_to_gfp 0) /\ ~(y = num_to_gfp 0) ==>
       gfp_mult (gfp_inv x) (gfp_inv y) =
       gfp_inv (gfp_mult x y)`;;
-*)
-
-let gfp_mult_eq_zero = prove
-  (`!x y.
-      gfp_mult x y = num_to_gfp 0 <=> x = num_to_gfp 0 \/ y = num_to_gfp 0`,
-   REPEAT STRIP_TAC THEN
-   EQ_TAC THENL
-   [STRIP_TAC THEN
-    ASM_CASES_TAC `x = num_to_gfp 0` THEN
-    ASM_REWRITE_TAC [] THEN
-    MP_TAC (SPEC `x : gfp` gfp_mult_left_cancel) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
-    ASM_REWRITE_TAC [gfp_mult_right_zero];
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [gfp_mult_left_zero; gfp_mult_right_zero]]);;
-
-export_thm gfp_mult_eq_zero;;
-
-(*PARAMETRIC
-let gfp_mult_eq_zero = new_axiom
-   `!x y.
-      gfp_mult x y = num_to_gfp 0 <=> x = num_to_gfp 0 \/ y = num_to_gfp 0`;;
 *)
 
 let gfp_div_inv = prove

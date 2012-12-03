@@ -609,11 +609,9 @@ let group_scale_suc = new_axiom
   `!x n. group_scale x (SUC n) = group_add x (group_scale x n)`;;
 *)
 
+(*BEGIN-PARAMETRIC*)
 let group_scale_def = CONJ group_scale_zero group_scale_suc;;
-
-(*PARAMETRIC
-let group_scale_def = CONJ group_scale_zero group_scale_suc;;
-*)
+(*END-PARAMETRIC*)
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of group multiplication.                                       *)
@@ -882,11 +880,9 @@ let group_scale_sub_cons = new_axiom
         group_scale_sub (~b) d (if h then group_sub n s else n) s f t)`;;
 *)
 
+(*BEGIN-PARAMETRIC*)
 let group_scale_sub_def = CONJ group_scale_sub_nil group_scale_sub_cons;;
-
-(*PARAMETRIC
-let group_scale_sub_def = CONJ group_scale_sub_nil group_scale_sub_cons;;
-*)
+(*END-PARAMETRIC*)
 
 (* ------------------------------------------------------------------------- *)
 (* Correctness of group multiplication by repeated subtraction.              *)

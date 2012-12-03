@@ -1034,17 +1034,17 @@ let num_to_modular_exp = new_axiom
    `!m n. num_to_modular (m EXP n) = modular_exp (num_to_modular m) n`;;
 *)
 
-let modular_exp_zero = prove
+let modular_zero_exp = prove
   (`!n.
       modular_exp (num_to_modular 0) n =
       if n = 0 then num_to_modular 1 else num_to_modular 0`,
    REWRITE_TAC [GSYM num_to_modular_exp; EXP_ZERO] THEN
    REWRITE_TAC [GSYM COND_RAND]);;
 
-export_thm modular_exp_zero;;
+export_thm modular_zero_exp;;
 
 (*PARAMETRIC
-let modular_exp_zero = new_axiom
+let modular_zero_exp = new_axiom
    `!n.
       modular_exp (num_to_modular 0) n =
       if n = 0 then num_to_modular 1 else num_to_modular 0`;;
