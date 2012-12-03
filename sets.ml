@@ -1676,7 +1676,7 @@ let UNIV_INTERS = prove
 
 export_thm UNIV_INTERS;;
 
-let INTERS_UNION = prove
+let RIGHT_UNION_INTERS = prove
  (`!s (t : A set). INTERS s UNION t = INTERS {x UNION t | x IN s}`,
   ONCE_REWRITE_TAC[EXTENSION] THEN
   REWRITE_TAC[IN_INTERS; IN_ELIM_THM; IN_UNION] THEN
@@ -1700,15 +1700,15 @@ let INTERS_UNION = prove
    EXISTS_TAC `t' : A set` THEN
    ASM_REWRITE_TAC []]);;
 
-export_thm INTERS_UNION;;
+export_thm RIGHT_UNION_INTERS;;
 
-let UNION_INTERS = prove
+let LEFT_UNION_INTERS = prove
  (`!s (t : A set). t UNION INTERS s = INTERS {t UNION x | x IN s}`,
   REPEAT GEN_TAC THEN
   ONCE_REWRITE_TAC [UNION_COMM] THEN
-  MATCH_ACCEPT_TAC INTERS_UNION);;
+  MATCH_ACCEPT_TAC RIGHT_UNION_INTERS);;
 
-export_thm UNION_INTERS;;
+export_thm LEFT_UNION_INTERS;;
 
 let SUBSET_INTERS = prove
  (`!(t : A set) f. t SUBSET (INTERS f) <=> !s. s IN f ==> t SUBSET s`,
@@ -2091,6 +2091,12 @@ let EMPTY_GSPEC = prove
 
 export_thm EMPTY_GSPEC;;
 
+let UNIV_GSPEC = prove
+ (`GSPEC (\ (x:A). T) = UNIV`,
+  REWRITE_TAC [EXTENSION; IN_UNIV; IN_ELIM_THM]);;
+
+export_thm UNIV_GSPEC;;
+
 let SING_GSPEC1 = prove
  (`!(a:A). {x | x = a} = {a}`,
   REWRITE_TAC [EXTENSION; IN_ELIM; IN_SING]);;
@@ -2101,8 +2107,6 @@ let SING_GSPEC2 = prove
  (`!(a:A). {x | a = x} = {a}`,
   REWRITE_TAC [EXTENSION; IN_ELIM; IN_SING] THEN
   ACCEPT_TAC EQ_SYM_EQ);;
-
-export_thm SING_GSPEC2;;
 
 let SING_GSPEC = CONJ SING_GSPEC1 SING_GSPEC2;;
 
@@ -2953,6 +2957,17 @@ let EXISTS_FINITE_SUBSET_IMAGE = prove
    ASM_REWRITE_TAC []]);;
 
 export_thm EXISTS_FINITE_SUBSET_IMAGE;;
+
+let FORALL_FINITE_SUBSET_IMAGE = prove
+ (`!p (f:A->B) s.
+    (!t. FINITE t /\ t SUBSET IMAGE f s ==> p t) <=>
+    (!t. FINITE t /\ t SUBSET s ==> p (IMAGE f t))`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC (TAUT `!x y. (~x <=> ~y) ==> (x <=> y)`) THEN
+  REWRITE_TAC
+    [NOT_FORALL_THM; NOT_IMP; GSYM CONJ_ASSOC; EXISTS_FINITE_SUBSET_IMAGE]);;
+
+export_thm FORALL_FINITE_SUBSET_IMAGE;;
 
 let FINITE_SUBSET_IMAGE_IMP = prove
  (`!(f:A->B) s t.
@@ -4176,6 +4191,48 @@ let CHOOSE_SUBSET = prove
 
 export_thm CHOOSE_SUBSET;;
 
+let CHOOSE_SUBSET_BETWEEN = prove
+ (`!n s (u : A set).
+        s SUBSET u /\ FINITE s /\ CARD s <= n /\ (FINITE u ==> n <= CARD u)
+        ==> ?t. s SUBSET t /\ t SUBSET u /\ t HAS_SIZE n`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (ISPECL [`u DIFF (s : A set)`; `n - CARD (s : A set)`]
+          CHOOSE_SUBSET_STRONG) THEN
+  ANTS_TAC THENL
+  [ASM_CASES_TAC `FINITE (u : A set)` THENL
+   [STRIP_TAC THEN
+    ASM_SIMP_TAC [CARD_DIFF] THEN
+    UNDISCH_TAC `FINITE u ==> n <= CARD (u : A set)` THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN
+      (X_CHOOSE_THEN `d : num` SUBST1_TAC o REWRITE_RULE [LE_EXISTS]) THEN
+    ONCE_REWRITE_TAC [ADD_SYM] THEN
+    UNDISCH_THEN `CARD (s : A set) <= n`
+      (X_CHOOSE_THEN `e : num` SUBST1_TAC o
+       ONCE_REWRITE_RULE [ADD_SYM] o
+       REWRITE_RULE [LE_EXISTS]) THEN
+    REWRITE_TAC [ADD_SUB; ADD_ASSOC; LE_ADDR];
+    STRIP_TAC THEN
+    SUBGOAL_THEN `F` CONTR_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [GSYM INFINITE] THEN
+    MATCH_MP_TAC INFINITE_DIFF_FINITE THEN
+    ASM_REWRITE_TAC [INFINITE]];
+   DISCH_THEN (X_CHOOSE_THEN `t : A set` STRIP_ASSUME_TAC) THEN
+   EXISTS_TAC `s UNION (t : A set)` THEN
+   UNDISCH_THEN `t SUBSET u DIFF (s : A set)`
+     (STRIP_ASSUME_TAC o REWRITE_RULE [SUBSET_DIFF]) THEN
+   ASM_REWRITE_TAC [SUBSET_UNION; UNION_SUBSET; SUBSET_REFL] THEN
+   ONCE_REWRITE_TAC [UNION_COMM] THEN
+   SUBGOAL_THEN `(n - CARD (s : A set)) + CARD s = n` (SUBST1_TAC o SYM) THENL
+   [MATCH_MP_TAC SUB_ADD THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    MATCH_MP_TAC HAS_SIZE_UNION THEN
+    ASM_REWRITE_TAC [] THEN
+    ASM_REWRITE_TAC [HAS_SIZE]]]);;
+
+export_thm CHOOSE_SUBSET_BETWEEN;;
+
 (* ------------------------------------------------------------------------- *)
 (* Cardinality of product.                                                   *)
 (* ------------------------------------------------------------------------- *)
@@ -4607,6 +4664,32 @@ let CARD_FUNSPACE = prove
   DISCH_THEN (ACCEPT_TAC o CONJUNCT2));;
 
 export_thm CARD_FUNSPACE;;
+
+let FINITE_FUNSPACE_UNIV = prove
+ (`FINITE (UNIV : A set) /\ FINITE (UNIV : B set) ==>
+   FINITE (UNIV : (A -> B) set)`,
+  DISCH_THEN (MP_TAC o MATCH_MP FINITE_FUNSPACE) THEN
+  REWRITE_TAC [IN_UNIV; UNIV]);;
+
+export_thm FINITE_FUNSPACE_UNIV;;
+
+let HAS_SIZE_FUNSPACE_UNIV = prove
+ (`!m n.
+     (UNIV : A set) HAS_SIZE m /\ (UNIV : B set) HAS_SIZE n ==>
+     (UNIV : (A -> B) set) HAS_SIZE (n EXP m)`,
+  REPEAT GEN_TAC THEN
+  DISCH_THEN (MP_TAC o MATCH_MP HAS_SIZE_FUNSPACE) THEN
+  REWRITE_TAC [IN_UNIV; UNIV]);;
+
+export_thm HAS_SIZE_FUNSPACE_UNIV;;
+
+let CARD_FUNSPACE_UNIV = prove
+ (`FINITE (UNIV : A set) /\ FINITE (UNIV : B set) ==>
+   CARD (UNIV : (A -> B) set) = CARD (UNIV : B set) EXP CARD (UNIV : A set)`,
+  DISCH_THEN (MP_TAC o MATCH_MP CARD_FUNSPACE) THEN
+  REWRITE_TAC [IN_UNIV; UNIV]);;
+
+export_thm CARD_FUNSPACE_UNIV;;
 
 (* ------------------------------------------------------------------------- *)
 (* Hence cardinality of powerset.                                            *)
