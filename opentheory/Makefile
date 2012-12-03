@@ -71,6 +71,62 @@ clean:
 	rm -f $(TEMP)
 
 ###############################################################################
+# Check the theory sources.
+###############################################################################
+
+THEORY_SOURCES = \
+  pair.ml \
+  nums.ml \
+  recursion.ml \
+  arith.ml \
+  calc_num.ml \
+  sets.ml \
+  relations.ml \
+  wf.ml \
+  normalizer.ml \
+  grobner.ml \
+  ind_types.ml \
+  lists.ml \
+  realax.ml \
+  opentheory/theories/tactics.ml \
+  opentheory/theories/option/option.ml \
+  opentheory/theories/list/list.ml \
+  opentheory/theories/stream/stream.ml \
+  opentheory/theories/probability/probability.ml \
+  opentheory/theories/natural-bits/natural-bits.ml \
+  opentheory/theories/natural-divides/natural-divides.ml \
+  opentheory/theories/natural-gcd/natural-gcd.ml \
+  opentheory/theories/natural-prime/natural-prime.ml \
+  opentheory/theories/natural-fibonacci/natural-fibonacci.ml \
+  opentheory/theories/group/group.ml \
+  opentheory/theories/ring.ml \
+  opentheory/theories/field.ml \
+  opentheory/theories/modular/modular.ml \
+  opentheory/theories/gfp/gfp.ml \
+  opentheory/theories/word/word.ml \
+  opentheory/theories/byte/byte.ml \
+  opentheory/theories/word10/word10.ml \
+  opentheory/theories/word12/word12.ml \
+  opentheory/theories/word16/word16.ml \
+  opentheory/theories/parser/parser.ml \
+  opentheory/theories/char/char.ml \
+  opentheory/theories/montgomery/montgomery.ml \
+  opentheory/theories/h/h.ml \
+  opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.ml \
+  opentheory/theories/haskell-parser/haskell-parser.ml \
+  opentheory/theories/haskell-char/haskell-char.ml \
+  opentheory/theories/haskell-prime/haskell-prime.ml
+
+check-theories:
+	@echo
+	@echo '+--------------------------+'
+	@echo '| Check the theory sources |'
+	@echo '+--------------------------+'
+	@echo
+	@echo Looking for duplicate let bindings:
+	@cd .. && cat $(THEORY_SOURCES) | grep '^let ' | sort | uniq -d
+
+###############################################################################
 # Export the theories.
 ###############################################################################
 
@@ -79,3 +135,4 @@ theories:
 	$(MAKE) clean
 	$(MAKE) theory-interpretations
 	cd .. && OPENTHEORY_LOGGING=1 opentheory/scripts/capture
+	$(MAKE) check-theories
