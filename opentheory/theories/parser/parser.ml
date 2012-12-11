@@ -542,8 +542,8 @@ let is_parser_cases = prove
    ASM_REWRITE_TAC [] THEN
    STRIP_TAC THEN
    DISJ2_TAC THEN
-   EXISTS_TAC `x:B` THEN
-   EXISTS_TAC `y:A pstream` THEN
+   EXISTS_TAC `a'':B` THEN
+   EXISTS_TAC `b:A pstream` THEN
    ASM_REWRITE_TAC []);;
 
 export_thm is_parser_cases;;
@@ -894,21 +894,21 @@ let parse_pair_strong_inverse = prove
     STRIP_TAC THEN
     ASM_REWRITE_TAC [case_option_def; option_distinct] THEN
     POP_ASSUM MP_TAC THEN
-    MP_TAC (ISPEC `a : B # A pstream` PAIR_SURJECTIVE) THEN
+    MP_TAC (ISPEC `a' : B # A pstream` PAIR_SURJECTIVE) THEN
     STRIP_TAC THEN
     ASM_REWRITE_TAC [] THEN
     STRIP_TAC THEN
-    MP_TAC (ISPEC `parse (pc : (A,C) parser) y'` option_cases) THEN
+    MP_TAC (ISPEC `parse (pc : (A,C) parser) b'` option_cases) THEN
     STRIP_TAC THEN
     ASM_REWRITE_TAC [case_option_def; option_distinct] THEN
     POP_ASSUM MP_TAC THEN
-    MP_TAC (ISPEC `a' : C # A pstream` PAIR_SURJECTIVE) THEN
+    MP_TAC (ISPEC `a''' : C # A pstream` PAIR_SURJECTIVE) THEN
     STRIP_TAC THEN
     ASM_REWRITE_TAC [] THEN
     REWRITE_TAC [option_inj; PAIR_EQ] THEN
     REPEAT STRIP_TAC THEN
-    UNDISCH_TAC `parse (pc : (A,C) parser) y' = SOME (x''',y'')` THEN
-    UNDISCH_TAC `parse (pb : (A,B) parser) s = SOME (x'',y')` THEN
+    UNDISCH_TAC `parse (pc : (A,C) parser) b' = SOME (a'''',b'')` THEN
+    UNDISCH_TAC `parse (pb : (A,B) parser) s = SOME (a'',b')` THEN
     ASM_REWRITE_TAC [] THEN
     REPEAT STRIP_TAC THEN
     FIRST_X_ASSUM MATCH_MP_TAC THEN
@@ -1059,7 +1059,7 @@ let parse_pstream_exists = prove
       REWRITE_TAC [GSYM is_suffix_pstream_def] THEN
       MATCH_MP_TAC
         (ISPECL [`p : (A,B) parser`; `a0 : A`; `a1 : A pstream`;
-                 `x : B`; `y : A pstream`] dest_parser_suffix_pstream) THEN
+                 `a' : B`; `b : A pstream`] dest_parser_suffix_pstream) THEN
       ASM_REWRITE_TAC []) in
    GEN_TAC THEN
    MP_TAC (SPEC `p : (A,B) parser` exists0) THEN

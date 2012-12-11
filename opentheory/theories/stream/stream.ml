@@ -98,6 +98,11 @@ let sunfold_def = new_definition
 
 export_thm sunfold_def;;
 
+let siterate_def = new_definition
+  `!(f : A -> A). siterate f = sunfold (\a. (a, f a))`;;
+
+export_thm siterate_def;;
+
 (* ------------------------------------------------------------------------- *)
 (* Properties of stream types.                                               *)
 (* ------------------------------------------------------------------------- *)
@@ -528,5 +533,15 @@ let num_stream_exists = prove
         (MATCH_ACCEPT_TAC o REWRITE_RULE [LET_DEF; LET_END_DEF])]]]);;
 
 export_thm num_stream_exists;;
+
+let siterate = prove
+ (`!(f : A -> A) a. siterate f a = scons a (siterate f (f a))`,
+  GEN_TAC THEN
+  GEN_TAC THEN
+  REWRITE_TAC [siterate_def] THEN
+  CONV_TAC (LAND_CONV (REWR_CONV sunfold)) THEN
+  REWRITE_TAC [LET_DEF; LET_END_DEF]);;
+
+export_thm siterate;;
 
 logfile_end ();;

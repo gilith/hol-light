@@ -1058,7 +1058,7 @@ let inc_sieve = prove
          `0`;
          `ps : (num # (num # num)) list`;
          `b : bool`;
-         `y : (num # (num # num)) list`]
+         `b' : (num # (num # num)) list`]
       invariant_inc_counters_sieve) THEN
    ASM_REWRITE_TAC [GSYM ONE] THEN
    STRIP_TAC THEN
@@ -1089,9 +1089,10 @@ let inc_sieve = prove
      REWRITE_TAC [ADD1] THEN
      FIRST_ASSUM ACCEPT_TAC];
     ALL_TAC] THEN
-   DISCH_THEN (ASSUME_TAC o REWRITE_RULE [GSYM ADD1; GSYM primes_below_suc]) THEN
+   DISCH_THEN
+     (ASSUME_TAC o REWRITE_RULE [GSYM ADD1; GSYM primes_below_suc]) THEN
    SUBGOAL_THEN `SUC n = n'` (fun th -> REWRITE_TAC [th]) THEN
-   SUBGOAL_THEN `(SUC n, y) = (n', (ps' : (num # (num # num)) list))`
+   SUBGOAL_THEN `(SUC n, b') = (n', (ps' : (num # (num # num)) list))`
      MP_TAC THENL
    [MATCH_MP_TAC mk_sieve_inj THEN
     ASM_REWRITE_TAC [] THEN

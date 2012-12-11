@@ -786,6 +786,10 @@ let divides_gcd_mult = prove
 
 export_thm divides_gcd_mult;;
 
+(* ------------------------------------------------------------------------- *)
+(* Definition of natural number least common multiple.                       *)
+(* ------------------------------------------------------------------------- *)
+
 logfile "natural-gcd-lcm-def";;
 
 let (zero_lcm,lcm_gcd) =
@@ -816,6 +820,10 @@ let (zero_lcm,lcm_gcd) =
 
 export_thm zero_lcm;;
 export_thm lcm_gcd;;
+
+(* ------------------------------------------------------------------------- *)
+(* Properties of natural number least common multiple.                       *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "natural-gcd-lcm-thm";;
 
@@ -1171,5 +1179,31 @@ let gcd_right_distrib = prove
    ACCEPT_TAC gcd_left_distrib);;
 
 export_thm gcd_right_distrib;;
+
+(* ------------------------------------------------------------------------- *)
+(* A simple proof tool to calculate the gcd of two numerals.                 *)
+(* ------------------------------------------------------------------------- *)
+
+(* Given a and b such that ~(a = 0), returns (s,t,g) satisfying *)
+(* s * a = t * b + g /\ g = gcd a b *)
+let egcd_num =
+    let rec egcd a b =
+        if eq_num b num_0 then (num_1,num_0,a)
+        else if le_num a b then
+          let (s,t,g) = egcd a (b -/ a) in
+          (s +/ t, t, g)
+        else
+          let (s,t,g) = egcd (a -/ b) b in
+          (s, s +/ t, g) in
+    egcd;;
+
+let prove_egcd a b =
+    let (s,t,g) = egcd_num (dest_numeral a) (dest_numeral b) in
+    let mk_mult = mk_binop `( * ) : num -> num -> num` in
+    let mk_add = mk_binop `( + ) : num -> num -> num` in
+    let tm =
+        mk_eq (mk_mult (mk_numeral s) a,
+               mk_add (mk_mult (mk_numeral t) b) (mk_numeral g)) in
+    EQT_ELIM (NUM_REDUCE_CONV tm);;
 
 logfile_end ();;

@@ -15,7 +15,9 @@ extend_the_interpretation "opentheory/theories/option/option.int";;
 
 logfile "option-thm";;
 
-let option_distinct = prove_constructors_distinct option_RECURSION;;
+let option_distinct = prove
+  (`!(a : A). ~(SOME a = NONE)`,
+   MATCH_ACCEPT_TAC (GSYM (prove_constructors_distinct option_RECURSION)));;
 
 export_thm option_distinct;;
 

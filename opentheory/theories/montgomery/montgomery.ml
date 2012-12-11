@@ -303,6 +303,21 @@ export_thm montgomery_double_exp_bound;;
 (* A Montgomery multiplication circuit to calculate double exponentials.     *)
 (* ------------------------------------------------------------------------- *)
 
+let rec bitwidth_num n =
+    if eq_num n num_0 then num_0 else
+    succ_num (bitwidth_num (quo_num n num_2));;
+
+let mk_montgomery n =
+    let r = mk_numeral (add_num (bitwidth_num (dest_numeral n)) num_2) in
+    let egcd =
+        let rth = NUM_REDUCE_CONV (mk_comb (`(EXP) 2`, r)) in
+        let eth = prove_egcd (rhs (concl rth)) n in
+        CONV_RULE (LAND_CONV (REWR_CONV MULT_SYM THENC
+                              LAND_CONV (REWR_CONV (SYM rth)))) eth in
+    let s = rand (lhs (concl egcd)) in
+    let k = lhand (lhand (rhs (concl egcd))) in
+    (egcd,s,k);;
+
 (* ------------------------------------------------------------------------- *)
 (* LCS35 Time Capsule Crypto-Puzzle [1].                                     *)
 (*                                                                           *)
