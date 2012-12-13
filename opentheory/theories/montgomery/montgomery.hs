@@ -103,15 +103,24 @@ randomLength = Geometric.fromRandom
 
 {- A 3:2 compressor -}
 
-threeToTwo :: Bits -> Bits -> Bits -> (Bits,Bits)
-threeToTwo =
-   \x y z -> let (s,c) = unzip (loop x y z) in (Bits s, Bits c)
+twoToTwo :: Bits -> Bits -> (Bits,Bits)
+twoToTwo (Bits []) ys = (ys,zeroBits)
+twoToTwo xs (Bits []) = (xs,zeroBits)
+twoToTwo (Bits (x : xs)) (Bits (y : ys)) =
+    (consBits s ss, consBits c cs)
   where
-    loop :: Bits -> Bits -> Bits -> [(Bool,Bool)]
-    loop (Bits []) (Bits []) (Bits []) = []
-    loop x y z =
-      adder (headBits x) (headBits y) (headBits z) :
-      loop (tailBits x) (tailBits y) (tailBits z)
+    (s,c) = adder x y False
+    (ss,cs) = twoToTwo (Bits xs) (Bits ys)
+
+threeToTwo :: Bits -> Bits -> Bits -> (Bits,Bits)
+threeToTwo (Bits []) ys zs = twoToTwo ys zs
+threeToTwo xs (Bits []) zs = twoToTwo xs zs
+threeToTwo xs ys (Bits []) = twoToTwo xs ys
+threeToTwo (Bits (x : xs)) (Bits (y : ys)) (Bits (z : zs)) =
+    (consBits s ss, consBits c cs)
+  where
+    (s,c) = adder x y z
+    (ss,cs) = threeToTwo (Bits xs) (Bits ys) (Bits zs)
 
 threeToTwoProp :: Bits -> Bits -> Bits -> Bool
 threeToTwoProp x y z =
@@ -130,9 +139,6 @@ threeToTwoCorrect =
       (x,r1) = randomBits r0
       (y,r2) = randomBits r1
       (z,_) = randomBits r2
-
-twoToTwo :: Bits -> Bits -> (Bits,Bits)
-twoToTwo = threeToTwo zeroBits
 
 fourToTwo :: Bits -> Bits -> Bits -> Bits -> (Bits,Bits)
 fourToTwo w x y z =
@@ -382,3 +388,60 @@ main =
     do adderCorrect
        threeToTwoCorrect
        montgomerySquareCorrect 35 8 16 117
+
+{- Testing
+
+n :: Natural
+n = 35
+
+r :: Int
+r = 8
+
+s :: Natural
+s = 16
+
+k :: Natural
+k = 117
+
+xs = numToBits (pow2 (r - 2) - 1)
+xc = numToBits (pow2 (r - 2) - 1)
+
+ckt = montgomerySquare n r k xs xc
+
+xas = bitsToNum (Bits (take r (map (headBits . xsM) ckt)))
+xasCorrect = xas == bitsToNum xs + 2 * bitsToNum xc
+
+sas = bitsToNum (Bits (take (2 * r) (map saM (drop 2 ckt))))
+sasCorrect = sas == xas * xas
+
+kss = bitsToNum (Bits (take r (map (headBits . ksM) (drop 3 ckt))))
+kssCorrect = kss == (sas * k) `mod` pow2 r
+
+nssCorrect = (kss * n + sas) `mod` pow2 r == 0
+
+nssL = bitsToNum (Bits (take r (map (headBits . nsM) (drop 4 ckt))))
+nssLCorrect = nssL == (kss * n) `mod` pow2 r
+
+cktR = head (drop (r + 3) ckt)
+
+nssH = bitsToNum (tailBits (nsM cktR)) + bitsToNum (ncM cktR)
+nssHCorrect = nssH == (kss * n) `div` pow2 r
+
+sasH = boolToNum (szM cktR) + 2 * (boolToNum (saM cktR) + 2 * (bitsToNum (s2M cktR) + boolToNum (sbM cktR) + 2 * bitsToNum (c2M cktR)))
+sasHCorrect = sasH == sas `div` pow2 r
+
+so = boolToNum (soM cktR)
+soCorrect = (sasH + nssH + so) `mod` n == (sas * s) `mod` n
+
+cktR' = head (drop (r + 4) ckt)
+
+red = bitsToNum (rsM cktR') + 2 * bitsToNum (rcM cktR')
+redCorrect = red `mod` n == (sas * s) `mod` n
+redBound = red < pow2 r
+
+cktR'' = head (drop (r + 5) ckt)
+
+res = bitsToNum (zsM cktR'') + 2 * bitsToNum (zcM cktR'')
+resCorrect = res `mod` n == (sas * s) `mod` n
+resBound = res <= pow2 r - 2
+-}
