@@ -300,8 +300,31 @@ let montgomery_double_exp_bound = prove
 export_thm montgomery_double_exp_bound;;
 
 (* ------------------------------------------------------------------------- *)
-(* A Montgomery multiplication circuit to calculate double exponentials.     *)
+(* A Montgomery multiplication circuit.                                      *)
 (* ------------------------------------------------------------------------- *)
+
+(***
+let (physical_region_induct,physical_region_recursion) =
+  let (induct,recursion) = define_type
+    "physical_region =
+       PhysicalRegion
+         physical_page_address
+         region_length" in
+  let induct' = prove
+    (`!p.
+        (!s l. p (PhysicalRegion s l)) ==>
+        !pr. p pr`,
+     ACCEPT_TAC induct)
+  and recursion' = prove
+    (`!f.
+        ?(fn : physical_region -> A).
+          (!s l. fn (PhysicalRegion s l) = f s l)`,
+     MATCH_ACCEPT_TAC recursion) in
+  (induct',recursion');;
+
+export_thm physical_region_induct;;
+export_thm physical_region_recursion;;
+***)
 
 let rec bitwidth_num n =
     if eq_num n num_0 then num_0 else
