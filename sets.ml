@@ -5421,6 +5421,19 @@ export_thm BIJECTIVE_LEFT_RIGHT_INVERSE;;
 
 logfile "function-thm";;
 
+let INJECTIVE_ON_ALT = prove
+ (`!p (f : A -> B).
+     (!x y. p x /\ p y /\ f x = f y ==> x = y) <=>
+     (!x y. p x /\ p y ==> (f x = f y <=> x = y))`,
+  MESON_TAC[]);;
+
+let INJECTIVE_ALT = prove
+ (`!(f : A -> B).
+      (!x y. f x = f y ==> x = y) <=>
+      (!x y. f x = f y <=> x = y)`,
+  MP_TAC (SPEC `\ (x : A). T` INJECTIVE_ON_ALT) THEN
+  REWRITE_TAC []);;
+
 let FUNCTION_FACTORS_LEFT_GEN = prove
  (`!p (f : A -> C) (g : A -> B).
      (!x y. p x /\ p y /\ g x = g y ==> f x = f y) <=>
