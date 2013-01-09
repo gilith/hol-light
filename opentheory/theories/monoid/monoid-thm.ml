@@ -5,10 +5,6 @@
 
 logfile "monoid-thm";;
 
-(*PARAMETRIC
-(* monoid-thm *)
-*)
-
 let monoid_comm_left_zero = prove
   (`!x. monoid_add monoid_zero x = monoid_add x monoid_zero`,
    REWRITE_TAC [monoid_add_left_zero; monoid_add_right_zero]);;

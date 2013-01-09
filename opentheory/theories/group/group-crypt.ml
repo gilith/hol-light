@@ -9,10 +9,6 @@
 
 logfile "group-crypt-def";;
 
-(*PARAMETRIC
-(* group-crypt-def *)
-*)
-
 let group_elgamal_encrypt_def = new_definition
   `!g h m k.
      group_elgamal_encrypt g h m k =
@@ -58,10 +54,6 @@ let group_elgamal_decrypt_def = new_axiom
 (* ------------------------------------------------------------------------- *)
 
 logfile "group-crypt-thm";;
-
-(*PARAMETRIC
-(* group-crypt-thm *)
-*)
 
 let group_elgamal_correct = prove
   (`!g h m k x.

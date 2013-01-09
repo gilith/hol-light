@@ -9,10 +9,6 @@
 
 logfile "monoid-mult-def";;
 
-(*PARAMETRIC
-(* monoid-mult-def *)
-*)
-
 let (monoid_mult_right_zero,monoid_mult_right_suc) =
     let def = new_recursive_definition num_RECURSION
           `(!(x : monoid). monoid_mult x 0 = monoid_zero) /\
@@ -44,10 +40,6 @@ let monoid_mult_def = CONJ monoid_mult_right_zero monoid_mult_right_suc;;
 (* ------------------------------------------------------------------------- *)
 
 logfile "monoid-mult-thm";;
-
-(*PARAMETRIC
-(* monoid-mult-thm *)
-*)
 
 let monoid_mult_left_zero = prove
   (`!n. monoid_mult monoid_zero n = monoid_zero`,
@@ -171,10 +163,6 @@ let monoid_comm_right_mult = new_axiom
 
 logfile "monoid-mult-add-def";;
 
-(*PARAMETRIC
-(* monoid-mult-add-def *)
-*)
-
 let (monoid_mult_add_nil,monoid_mult_add_cons) =
   let def = new_recursive_definition list_RECURSION
     `(!z x. monoid_mult_add z x [] = z) /\
@@ -211,10 +199,6 @@ let monoid_mult_add_def = CONJ monoid_mult_add_nil monoid_mult_add_cons;;
 (* ------------------------------------------------------------------------- *)
 
 logfile "monoid-mult-add-thm";;
-
-(*PARAMETRIC
-(* monoid-mult-add-thm *)
-*)
 
 let monoid_mult_add_invariant = prove
   (`!z x l.

@@ -5,10 +5,6 @@
 
 logfile "group-thm";;
 
-(*PARAMETRIC
-(* group-thm *)
-*)
-
 let group_add_left_neg' = prove
   (`!x y. group_add (group_neg x) (group_add x y) = y`,
    REWRITE_TAC

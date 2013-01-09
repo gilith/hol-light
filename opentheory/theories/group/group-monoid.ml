@@ -1,6 +1,4 @@
 (*BEGIN-PARAMETRIC*)
-(* group-thm *)
-
 let group_comm_left_zero = new_axiom
    `!x. group_add group_zero x = group_add x group_zero`;;
 

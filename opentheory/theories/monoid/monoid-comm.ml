@@ -1,13 +1,9 @@
 (* ========================================================================= *)
-(* PARAMETRIC THEORY OF COMMUTATIVE MONOIDS                                  *)
+(* COMMUTATIVE MONOIDS                                                       *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
 logfile "monoid-comm";;
-
-(*PARAMETRIC
-(* monoid-comm *)
-*)
 
 let monoid_add_comm' = prove
   (`!x y z. monoid_add x (monoid_add y z) = monoid_add y (monoid_add x z)`,

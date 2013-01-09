@@ -1,6 +1,4 @@
 (*BEGIN-PARAMETRIC*)
-(* group-mult-def *)
-
 new_constant ("group_mult", `:group -> num -> group`);;
 
 let group_mult_right_zero = new_axiom
@@ -10,8 +8,6 @@ let group_mult_right_suc = new_axiom
   `!x n. group_mult x (SUC n) = group_add x (group_mult x n)`;;
 
 let group_mult_def = CONJ group_mult_right_zero group_mult_right_suc;;
-
-(* group-mult-thm *)
 
 let group_mult_left_zero = new_axiom
    `!n. group_mult group_zero n = group_zero`;;
@@ -42,8 +38,6 @@ let group_comm_right_mult = new_axiom
       group_add y x = group_add x y ==>
       group_add y (group_mult x n) = group_add (group_mult x n) y`;;
 
-(* group-mult-add-def *)
-
 new_constant ("group_mult_add", `:group -> group -> bool list -> group`);;
 
 let group_mult_add_nil = new_axiom
@@ -56,8 +50,6 @@ let group_mult_add_cons = new_axiom
           (group_add x x) t`;;
 
 let group_mult_add_def = CONJ group_mult_add_nil group_mult_add_cons;;
-
-(* group-mult-add-thm *)
 
 let group_mult_add_invariant = new_axiom
    `!z x l.

@@ -16,10 +16,6 @@ loads "opentheory/theories/group/group-mult-monoid.ml";;
 
 logfile "group-mult-thm";;
 
-(*PARAMETRIC
-(* group-mult-thm *)
-*)
-
 let group_neg_mult = prove
   (`!x n. group_neg (group_mult x n) = group_mult (group_neg x) n`,
    GEN_TAC THEN
@@ -39,10 +35,6 @@ let group_neg_mult = new_axiom
 (* ------------------------------------------------------------------------- *)
 
 logfile "group-mult-sub-def";;
-
-(*PARAMETRIC
-(* group-mult-sub-def *)
-*)
 
 let (group_mult_sub_nil,group_mult_sub_cons) =
   let def = new_recursive_definition list_RECURSION
@@ -86,10 +78,6 @@ let group_mult_sub_def = CONJ group_mult_sub_nil group_mult_sub_cons;;
 (* ------------------------------------------------------------------------- *)
 
 logfile "group-mult-sub-thm";;
-
-(*PARAMETRIC
-(* group-mult-sub-thm *)
-*)
 
 let group_mult_sub_invariant = prove
   (`!x n d f p l.

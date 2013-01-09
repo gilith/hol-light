@@ -45,6 +45,8 @@ THEORY_INTERPRETATIONS = \
   theories/group/group-abelian-monoid.ml \
   theories/group/group-mult-monoid.ml \
   theories/group/group-monoid.ml \
+  theories/ring/ring-add.ml \
+  theories/ring/ring-unit-group.ml \
   theories/word/word-modular.ml \
   theories/word10/word10-word.ml \
   theories/word12/word12-word.ml \
@@ -70,6 +72,12 @@ theories/group/group-mult-monoid.ml: theories/monoid/monoid-mult.ml
 
 theories/group/group-monoid.ml: theories/monoid/monoid-thm.ml
 	scripts/instantiate -r "monoid/group" $< > $@
+
+theories/ring/ring-add.ml: theories/group/group-thm.ml theories/group/group-monoid.ml theories/group/group-sub.ml theories/group/group-abelian.ml $(wildcard theories/group/group-abelian-*.ml)
+	scripts/instantiate -r "group/ring" theories/group/group-thm.ml theories/group/group-monoid.ml theories/group/group-sub.ml theories/group/group-abelian.ml > $@
+
+theories/ring/ring-unit-group.ml: theories/group/group.ml $(wildcard theories/group/group-*.ml)
+	scripts/instantiate -r "group/ring_unit" $< > $@
 
 theories/word/word-modular.ml: theories/modular/modular.ml
 	scripts/instantiate -r "modulus/word_size:modular/word" $< > $@

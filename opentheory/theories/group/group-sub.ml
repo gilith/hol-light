@@ -9,10 +9,6 @@
 
 logfile "group-sub-def";;
 
-(*PARAMETRIC
-(* group-def *)
-*)
-
 let group_sub_def = new_definition
   `!(x : group) (y : group). group_sub x y = group_add x (group_neg y)`;;
 
@@ -32,10 +28,6 @@ let group_sub_def = new_axiom
 (* ------------------------------------------------------------------------- *)
 
 logfile "group-sub-thm";;
-
-(*PARAMETRIC
-(* group-sub-thm *)
-*)
 
 let group_sub_left_zero = prove
   (`!x. group_sub group_zero x = group_neg x`,
