@@ -42,33 +42,45 @@ THEORY_INTERPRETATIONS = \
   theories/field/field-group.ml \
   theories/field/field-star-group.ml \
   theories/gfp/gfp-modular.ml \
+  theories/group/group-abelian-monoid.ml \
+  theories/group/group-mult-monoid.ml \
+  theories/group/group-monoid.ml \
   theories/word/word-modular.ml \
   theories/word10/word10-word.ml \
   theories/word12/word12-word.ml \
   theories/word16/word16-word.ml
 
-theories/byte/byte-word.ml: theories/word/word.ml theories/word/word-modular.ml
+theories/byte/byte-word.ml: theories/word/word.ml $(wildcard theories/word/word-*.ml)
 	scripts/instantiate -r "word/byte" $< > $@
 
-theories/field/field-group.ml: theories/group/group.ml
+theories/field/field-group.ml: theories/group/group.ml $(wildcard theories/group/group-*.ml)
 	scripts/instantiate -r "group/field" $< > $@
 
-theories/field/field-star-group.ml: theories/group/group.ml
+theories/field/field-star-group.ml: theories/group/group.ml $(wildcard theories/group/group-*.ml)
 	scripts/instantiate -r "group/field_star" $< > $@
 
 theories/gfp/gfp-modular.ml: theories/modular/modular.ml
 	scripts/instantiate -r "modulus/oddprime:modular/gfp" $< > $@
 
+theories/group/group-abelian-monoid.ml: theories/monoid/monoid-comm.ml
+	scripts/instantiate -r "monoid/group" $< > $@
+
+theories/group/group-mult-monoid.ml: theories/monoid/monoid-mult.ml
+	scripts/instantiate -r "monoid/group" $< > $@
+
+theories/group/group-monoid.ml: theories/monoid/monoid-thm.ml
+	scripts/instantiate -r "monoid/group" $< > $@
+
 theories/word/word-modular.ml: theories/modular/modular.ml
 	scripts/instantiate -r "modulus/word_size:modular/word" $< > $@
 
-theories/word10/word10-word.ml: theories/word/word.ml theories/word/word-modular.ml
+theories/word10/word10-word.ml: theories/word/word.ml $(wildcard theories/word/word-*.ml)
 	scripts/instantiate -r "word/word10" $< > $@
 
-theories/word12/word12-word.ml: theories/word/word.ml theories/word/word-modular.ml
+theories/word12/word12-word.ml: theories/word/word.ml $(wildcard theories/word/word-*.ml)
 	scripts/instantiate -r "word/word12" $< > $@
 
-theories/word16/word16-word.ml: theories/word/word.ml theories/word/word-modular.ml
+theories/word16/word16-word.ml: theories/word/word.ml $(wildcard theories/word/word-*.ml)
 	scripts/instantiate -r "word/word16" $< > $@
 
 .PHONY: theory-interpretations
@@ -126,6 +138,7 @@ THEORY_SOURCES = \
   opentheory/theories/natural-gcd/natural-gcd.ml \
   opentheory/theories/natural-prime/natural-prime.ml \
   opentheory/theories/natural-fibonacci/natural-fibonacci.ml \
+  opentheory/theories/monoid/monoid.ml \
   opentheory/theories/group/group.ml \
   opentheory/theories/ring.ml \
   opentheory/theories/field.ml \

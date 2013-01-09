@@ -64,6 +64,12 @@ loads "opentheory/theories/natural-prime/natural-prime.ml";;
 loads "opentheory/theories/natural-fibonacci/natural-fibonacci.ml";;
 
 (* ------------------------------------------------------------------------- *)
+(* Parametric theory of monoids.                                             *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/monoid/monoid.ml";;
+
+(* ------------------------------------------------------------------------- *)
 (* Parametric theory of groups.                                              *)
 (* ------------------------------------------------------------------------- *)
 

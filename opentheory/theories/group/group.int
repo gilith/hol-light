@@ -11,11 +11,11 @@ type "HOLLight.group" as "Algebra.Group.group"
 
 const "HOLLight.group_add" as "Algebra.Group.+"
 const "HOLLight.group_neg" as "Algebra.Group.~"
-const "HOLLight.group_scale" as "Algebra.Group.*"
+const "HOLLight.group_mult" as "Algebra.Group.*"
 const "HOLLight.group_sub" as "Algebra.Group.-"
 const "HOLLight.group_zero" as "Algebra.Group.0"
-const "HOLLight.group_scale_add" as "Algebra.Group.multAdd"
-const "HOLLight.group_scale_sub" as "Algebra.Group.multSub"
+const "HOLLight.group_mult_add" as "Algebra.Group.multAdd"
+const "HOLLight.group_mult_sub" as "Algebra.Group.multSub"
 
 # Algebra.Group.ElGamal
 
