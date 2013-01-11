@@ -45,7 +45,9 @@ THEORY_INTERPRETATIONS = \
   theories/group/group-abelian-monoid.ml \
   theories/group/group-mult-monoid.ml \
   theories/group/group-monoid.ml \
-  theories/ring/ring-add.ml \
+  theories/ring/ring-add-comm.ml \
+  theories/ring/ring-add-group.ml \
+  theories/ring/ring-mult.ml \
   theories/ring/ring-unit-group.ml \
   theories/word/word-modular.ml \
   theories/word10/word10-word.ml \
@@ -73,8 +75,14 @@ theories/group/group-mult-monoid.ml: theories/monoid/monoid-mult.ml
 theories/group/group-monoid.ml: theories/monoid/monoid-thm.ml
 	scripts/instantiate -r "monoid/group" $< > $@
 
-theories/ring/ring-add.ml: theories/group/group-thm.ml theories/group/group-monoid.ml theories/group/group-sub.ml theories/group/group-abelian.ml $(wildcard theories/group/group-abelian-*.ml)
-	scripts/instantiate -r "group/ring" theories/group/group-thm.ml theories/group/group-monoid.ml theories/group/group-sub.ml theories/group/group-abelian.ml > $@
+theories/ring/ring-add-group.ml: theories/group/group-thm.ml theories/group/group-monoid.ml theories/group/group-sub.ml
+	scripts/instantiate -r "group/ring" theories/group/group-thm.ml theories/group/group-monoid.ml theories/group/group-sub.ml > $@
+
+theories/ring/ring-add-comm.ml: theories/group/group-abelian.ml $(wildcard theories/group/group-abelian-*.ml)
+	scripts/instantiate -r "group/ring" theories/group/group-abelian.ml > $@
+
+theories/ring/ring-mult.ml: theories/monoid/monoid-thm.ml theories/monoid/monoid-mult.ml
+	scripts/instantiate -r "monoid_mult_right_zero/monoid_mult_right_ZERO:monoid_mult_right_add/monoid_mult_right_ADD:monoid_mult_right_mult/monoid_mult_right_MULT:monoid/ring:mult/exp:add/mult:zero/one:ZERO/zero:ADD/add:MULT/mult" theories/monoid/monoid-thm.ml theories/monoid/monoid-mult.ml > $@
 
 theories/ring/ring-unit-group.ml: theories/group/group.ml $(wildcard theories/group/group-*.ml)
 	scripts/instantiate -r "group/ring_unit" $< > $@
