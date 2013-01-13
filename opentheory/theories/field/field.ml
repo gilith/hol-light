@@ -142,7 +142,9 @@ let field_char_def = new_definition
 
 export_thm field_char_def;;
 
-(* Parametric theory instantiation: additive group *)
+(* ------------------------------------------------------------------------- *)
+(* Parametric theory instantiation: additive group.                          *)
+(* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/field/field-group.ml";;
 
@@ -384,7 +386,9 @@ let field_star_add_comm = prove
 
 export_thm field_star_add_comm;;
 
-(* Parametric theory instantiation: multiplicative group *)
+(* ------------------------------------------------------------------------- *)
+(* Parametric theory instantiation: multiplicative group.                    *)
+(* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/field/field-star-group.ml";;
 
@@ -404,7 +408,7 @@ let field_div_def =
   (`!x y.
       ~(y = field_zero) ==>
       field_div x y =
-       if x = field_zero then field_zero else
+      if x = field_zero then field_zero else
       dest_field_star (field_star_sub (mk_field_star x) (mk_field_star y))`,
    REWRITE_TAC [def]);;
 
@@ -413,6 +417,17 @@ export_thm field_div_def;;
 let field_exp_def = new_definition
   `!x n.
      field_exp x n =
+     if n = 0 then field_one else
+     if x = field_zero then field_zero else
+     dest_field_star (field_star_scale (mk_field_star x) n)`;;
+
+export_thm field_exp_def;;
+
+let field_mult_add_def = new_definition
+  `!z x l.
+     field_mult_add z x l =
+     
+     if n = 0 then field_one else
      if x = field_zero then field_zero else
      dest_field_star (field_star_scale (mk_field_star x) n)`;;
 
@@ -458,53 +473,39 @@ let dest_field_star_sub = prove
 
 export_thm dest_field_star_sub;;
 
-(***
 let field_exp_left_zero = prove
-  (`!n.
-      ~(x = field_zero) ==>
-      field_div field_zero x = field_zero`,
-   REPEAT STRIP_TAC THEN
-   MP_TAC (SPECL [`field_zero`; `x : field`] field_div_def) THEN
-   ANTS_TAC THENL
-   [FIRST_ASSUM ACCEPT_TAC;
-    DISCH_THEN SUBST1_TAC THEN
-    REWRITE_TAC []]);;
-
-export_thm field_div_left_zero;;
-
-let field_div_left_zero' = prove
-  (`!x. field_div field_zero (dest_field_star x) = field_zero`,
+  (`!n. field_exp field_zero n = if n = 0 then field_one else field_zero`,
    GEN_TAC THEN
-   MATCH_MP_TAC field_div_left_zero THEN
-   MATCH_ACCEPT_TAC dest_field_star_nonzero);;
+   REWRITE_TAC [field_exp_def]);;
 
-export_thm field_div_left_zero';;
+export_thm field_exp_left_zero;;
 
-let dest_field_star_sub = prove
-  (`!x y.
-      dest_field_star (field_star_sub x y) =
-      field_div (dest_field_star x) (dest_field_star y)`,
+let dest_field_star_exp = prove
+  (`!x n.
+      dest_field_star (field_star_scale x n) =
+      field_exp (dest_field_star x) n`,
    REPEAT GEN_TAC THEN
-   MP_TAC (SPECL [`dest_field_star x`; `dest_field_star y`] field_div_def) THEN
-   ANTS_TAC THENL
-   [MATCH_ACCEPT_TAC dest_field_star_nonzero;
-    DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [field_exp_def] THEN
+   COND_CASES_TAC THENL
+   [ASM_REWRITE_TAC [field_star_scale_right_zero; dest_field_star_zero];
     REWRITE_TAC [dest_field_star_nonzero; mk_dest_field_star]]);;
 
-export_thm dest_field_star_sub;;
-***)
+export_thm dest_field_star_exp;;
 
 let field_star_tactic =
     let basic =
-        [dest_field_star_nonzero;
+        [mk_dest_field_star;
+         dest_field_star_inj;
+         dest_field_star_nonzero;
          GSYM dest_field_star_zero;
          GSYM dest_field_star_neg;
          GSYM dest_field_star_add;
          GSYM dest_field_star_sub;
-         field_div_left_zero';
-         dest_field_star_inj;
+         GSYM dest_field_star_exp;
          field_mult_left_zero;
-         field_mult_right_zero] in
+         field_mult_right_zero;
+         field_div_left_zero';
+         field_exp_left_zero] in
     fun custom ->
       let ths = custom @ basic in
       let rewr = REWRITE_TAC ths in
@@ -696,49 +697,76 @@ let field_inv_div = prove
 
 export_thm field_inv_div;;
 
-(***
-let field_exp_one = prove
+let field_exp_right_zero = prove
   (`!x. field_exp x 0 = field_one`,
    field_star_tactic [] THEN
-   MATCH_ACCEPT_TAC field_star_neg_sub);;
+   MATCH_ACCEPT_TAC field_star_scale_right_zero);;
 
-export_thm field_inv_div;;
+export_thm field_exp_right_zero;;
 
-let field_exp_suc = new_axiom
-  `!x n. field_exp x (SUC n) = field_mult x (field_exp x n)`;;
+let field_exp_right_suc = prove
+  (`!x n. field_exp x (SUC n) = field_mult x (field_exp x n)`,
+   field_star_tactic [NOT_SUC] THEN
+   MATCH_ACCEPT_TAC field_star_scale_right_suc);;
 
-let field_exp_def = CONJ field_exp_one field_exp_suc;;
+export_thm field_exp_right_suc;;
 
-(* field_star-mult-thm *)
+let field_exp_left_one = prove
+  (`!n. field_exp field_one n = field_one`,
+   field_star_tactic [] THEN
+   MATCH_ACCEPT_TAC field_star_scale_left_zero);;
 
-let field_one_exp = new_axiom
-   `!n. field_exp field_one n = field_one`;;
+export_thm field_exp_left_one;;
 
-let field_exp_one = new_axiom
-   `!x. field_exp x 1 = x`;;
+let field_exp_right_one = prove
+  (`!x. field_exp x 1 = x`,
+   field_star_tactic [] THEN
+   NUM_REDUCE_TAC THEN
+   MATCH_ACCEPT_TAC field_star_scale_right_one);;
 
-let field_exp_two = new_axiom
-   `!x. field_exp x 2 = field_mult x x`;;
+export_thm field_exp_right_one;;
 
-let field_exp_mult = new_axiom
-   `!x m n.
-      field_exp x (m + n) = field_mult (field_exp x m) (field_exp x n)`;;
+let field_exp_right_two = prove
+  (`!x. field_exp x 2 = field_mult x x`,
+   field_star_tactic [] THEN
+   NUM_REDUCE_TAC THEN
+   MATCH_ACCEPT_TAC field_star_scale_right_two);;
 
-let field_exp_suc' = new_axiom
-   `!x n. field_exp x (SUC n) = field_mult (field_exp x n) x`;;
+export_thm field_exp_right_two;;
 
-let field_exp_exp = new_axiom
-   `!x m n. field_exp x (m * n) = field_exp (field_exp x m) n`;;
+let field_exp_right_add = prove
+  (`!x m n.
+      field_exp x (m + n) = field_mult (field_exp x m) (field_exp x n)`,
+   field_star_tactic [] THENL
+   [REPEAT GEN_TAC THEN
+    REWRITE_TAC [ADD_EQ_0] THEN
+    BOOL_CASES_TAC `m = 0` THEN
+    BOOL_CASES_TAC `n = 0` THEN
+    field_star_tactic [field_star_add_left_zero];
+    MATCH_ACCEPT_TAC field_star_scale_right_add]);;
 
-let field_star_comm_left_exp = new_axiom
-   `!x n y.
-      field_mult x y = field_mult y x ==>
-      field_mult (field_exp x n) y = field_mult y (field_exp x n)`;;
+export_thm field_exp_right_add;;
 
-let field_star_comm_right_exp = new_axiom
-   `!x n y.
-      field_mult y x = field_mult x y ==>
-      field_mult y (field_exp x n) = field_mult (field_exp x n) y`;;
+let field_exp_right_suc' = prove
+  (`!x n. field_exp x (SUC n) = field_mult (field_exp x n) x`,
+   field_star_tactic [NOT_SUC] THEN
+   MATCH_ACCEPT_TAC field_star_scale_right_suc');;
+
+export_thm field_exp_right_suc';;
+
+let field_exp_right_mult = prove
+  (`!x m n. field_exp x (m * n) = field_exp (field_exp x m) n`,
+   field_star_tactic [] THENL
+   [REPEAT GEN_TAC THEN
+    REWRITE_TAC [MULT_EQ_0; field_exp_def] THEN
+    BOOL_CASES_TAC `m = 0` THEN
+    BOOL_CASES_TAC `n = 0` THEN
+    field_star_tactic [field_star_scale_left_zero];
+    MATCH_ACCEPT_TAC field_star_scale_right_mult]);;
+
+export_thm field_exp_right_mult;;
+
+(***
 
 (* field_star-mult-mult-def *)
 

@@ -73,7 +73,9 @@ loads "opentheory/theories/monoid/monoid.ml";;
 (* Parametric theory of groups.                                              *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 loads "opentheory/theories/group/group.ml";;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory of rings.                                               *)
