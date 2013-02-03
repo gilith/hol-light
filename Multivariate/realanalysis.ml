@@ -5248,6 +5248,11 @@ let SEGMENT_REAL_SEGMENT = prove
   REWRITE_TAC[REAL_SEGMENT_SEGMENT; GSYM IMAGE_o] THEN
   REWRITE_TAC[o_DEF; IMAGE_ID; LIFT_DROP]);;
 
+let IMAGE_LIFT_REAL_SEGMENT = prove
+ (`(!a b. IMAGE lift (real_segment[a,b]) = segment[lift a,lift b]) /\
+   (!a b. IMAGE lift (real_segment(a,b)) = segment(lift a,lift b))`,
+  REWRITE_TAC[SEGMENT_REAL_SEGMENT; LIFT_DROP]);;
+
 let REAL_SEGMENT_INTERVAL = prove
  (`(!a b. real_segment[a,b] =
           if a <= b then real_interval[a,b] else real_interval[b,a]) /\
@@ -7466,6 +7471,19 @@ let REAL_DOMINATED_CONVERGENCE = prove
   CONV_TAC SYM_CONV THEN REWRITE_TAC[GSYM o_DEF] THEN
   MATCH_MP_TAC REAL_INTEGRAL THEN ASM_REWRITE_TAC[REAL_INTEGRABLE_ON; o_DEF]);;
 
+let HAS_REAL_MEASURE_HAS_MEASURE = prove
+ (`!s m. s has_real_measure m <=> (IMAGE lift s) has_measure m`,
+  REWRITE_TAC[has_real_measure; has_measure; has_real_integral] THEN
+  REWRITE_TAC[o_DEF; LIFT_NUM]);;
+
+let REAL_MEASURABLE_MEASURABLE = prove
+ (`!s. real_measurable s <=> measurable(IMAGE lift s)`,
+  REWRITE_TAC[real_measurable; measurable; HAS_REAL_MEASURE_HAS_MEASURE]);;
+
+let REAL_MEASURE_MEASURE = prove
+ (`!s. real_measure s = measure (IMAGE lift s)`,
+  REWRITE_TAC[real_measure; measure; HAS_REAL_MEASURE_HAS_MEASURE]);;
+
 let HAS_REAL_MEASURE_MEASURE = prove
  (`!s. real_measurable s <=> s has_real_measure (real_measure s)`,
   REWRITE_TAC[real_measure; real_measurable] THEN MESON_TAC[]);;
@@ -7525,19 +7543,6 @@ let REAL_INTEGRAL_REAL_MEASURE_UNIV = prove
        ==> real_integral UNIV (\x. if x IN s then &1 else &0) =
            real_measure s`,
   SIMP_TAC[REAL_MEASURE_REAL_INTEGRAL_UNIV]);;
-
-let HAS_REAL_MEASURE_HAS_MEASURE = prove
- (`!s m. s has_real_measure m <=> (IMAGE lift s) has_measure m`,
-  REWRITE_TAC[has_real_measure; has_measure; has_real_integral] THEN
-  REWRITE_TAC[o_DEF; LIFT_NUM]);;
-
-let REAL_MEASURABLE_MEASURABLE = prove
- (`!s. real_measurable s <=> measurable(IMAGE lift s)`,
-  REWRITE_TAC[real_measurable; measurable; HAS_REAL_MEASURE_HAS_MEASURE]);;
-
-let REAL_MEASURE_MEASURE = prove
- (`!s. real_measurable s ==> real_measure s = measure(IMAGE lift s)`,
-  REWRITE_TAC[real_measure; measure; HAS_REAL_MEASURE_HAS_MEASURE]);;
 
 let HAS_REAL_MEASURE_REAL_INTERVAL = prove
  (`(!a b. real_interval[a,b] has_real_measure (max (b - a) (&0))) /\
@@ -7974,6 +7979,22 @@ let REAL_MEASURE_UNIONS_LE_IMAGE = prove
   GEN_REWRITE_TAC (RAND_CONV o RAND_CONV) [GSYM o_DEF] THEN
   REWRITE_TAC[ETA_AX] THEN MATCH_MP_TAC SUM_IMAGE_LE THEN
   ASM_SIMP_TAC[REAL_MEASURE_POS_LE]);;
+
+let REAL_NEGLIGIBLE_OUTER = prove
+ (`!s. real_negligible s <=>
+       !e. &0 < e
+           ==> ?t. s SUBSET t /\ real_measurable t /\ real_measure t < e`,
+  REWRITE_TAC[real_negligible; REAL_MEASURABLE_MEASURABLE;
+              REAL_MEASURE_MEASURE; SUBSET_LIFT_IMAGE;
+              NEGLIGIBLE_OUTER; EXISTS_LIFT_IMAGE]);;
+
+let REAL_NEGLIGIBLE_OUTER_LE = prove
+ (`!s. real_negligible s <=>
+       !e. &0 < e
+           ==> ?t. s SUBSET t /\ real_measurable t /\ real_measure t <= e`,
+  REWRITE_TAC[real_negligible; REAL_MEASURABLE_MEASURABLE;
+              REAL_MEASURE_MEASURE; SUBSET_LIFT_IMAGE;
+              NEGLIGIBLE_OUTER_LE; EXISTS_LIFT_IMAGE]);;
 
 let REAL_MEASURABLE_INNER_OUTER = prove
  (`!s. real_measurable s <=>
@@ -12389,21 +12410,19 @@ let REAL_VARIATION_POS_LE = prove
 
 let REAL_VARIATION_GE_ABS_FUNCTION = prove
  (`!f s a b.
-        f has_bounded_real_variation_on s /\
-        real_interval[a,b] SUBSET s /\ ~(real_interval [a,b] = {})
+        f has_bounded_real_variation_on s /\ real_segment[a,b] SUBSET s
         ==> abs(f b - f a) <= real_variation s f`,
   REWRITE_TAC[has_bounded_real_variation_on] THEN REPEAT STRIP_TAC THEN
   MP_TAC(ISPECL
    [`lift o f o drop`; `IMAGE lift s`; `lift a`; `lift b`]
    VECTOR_VARIATION_GE_NORM_FUNCTION) THEN
-  ASM_SIMP_TAC[GSYM IMAGE_LIFT_REAL_INTERVAL;
+  ASM_SIMP_TAC[GSYM IMAGE_LIFT_REAL_SEGMENT;
                IMAGE_EQ_EMPTY; IMAGE_SUBSET] THEN
   REWRITE_TAC[real_variation; o_THM; LIFT_DROP; GSYM LIFT_SUB; NORM_LIFT]);;
 
 let REAL_VARIATION_GE_FUNCTION = prove
  (`!f s a b.
-        f has_bounded_real_variation_on s /\
-        real_interval[a,b] SUBSET s /\ ~(real_interval [a,b] = {})
+        f has_bounded_real_variation_on s /\ real_segment[a,b] SUBSET s
         ==> f b - f a <= real_variation s f`,
   REPEAT STRIP_TAC THEN
   MATCH_MP_TAC(REAL_ARITH `abs x <= a ==> x <= a`) THEN
@@ -13319,17 +13338,19 @@ let INVARIANCE_OF_DOMAIN = prove
      [ASM_MESON_TAC[CONTINUOUS_ON_SUBSET; SUBSET_UNIV]; ALL_TAC] THEN
     DISCH_THEN(X_CHOOSE_THEN `p:real^N->real^N` STRIP_ASSUME_TAC) THEN
     SUBGOAL_THEN `negligible (IMAGE (p:real^N->real^N) s2)` ASSUME_TAC THENL
-     [MATCH_MP_TAC NEGLIGIBLE_LIPSCHITZ_IMAGE_BOUNDED THEN
-      MP_TAC(ISPEC `s2:real^N->bool`
-        BOUNDED_SUBSET_CLOSED_INTERVAL_SYMMETRIC) THEN
-      ASM_SIMP_TAC[COMPACT_IMP_BOUNDED; LEFT_IMP_EXISTS_THM] THEN
-      X_GEN_TAC `a:real^N` THEN DISCH_TAC THEN
-      MAP_EVERY EXISTS_TAC [`--a:real^N`; `a:real^N`] THEN
-      ASM_REWRITE_TAC[RIGHT_EXISTS_AND_THM] THEN CONJ_TAC THENL
+     [MATCH_MP_TAC NEGLIGIBLE_LOCALLY_LIPSCHITZ_IMAGE THEN
+      REWRITE_TAC[LE_REFL] THEN CONJ_TAC THENL
        [EXPAND_TAC "s2" THEN
         REWRITE_TAC[NORM_ARITH `norm(x:real^N) = dist(vec 0,x)`] THEN
         REWRITE_TAC[NEGLIGIBLE_SPHERE];
-        ASM_MESON_TAC[LIPSCHITZ_VECTOR_POLYNOMIAL_FUNCTION; BOUNDED_INTERVAL]];
+        ALL_TAC] THEN
+      X_GEN_TAC `x:real^N` THEN DISCH_TAC THEN
+      EXISTS_TAC `ball(x:real^N,&1)` THEN
+      ASM_REWRITE_TAC[CENTRE_IN_BALL; REAL_LT_01; OPEN_BALL; IN_INTER] THEN
+      FIRST_X_ASSUM(MP_TAC o SPEC `s2:real^N->bool` o MATCH_MP
+        (REWRITE_RULE[IMP_CONJ] LIPSCHITZ_VECTOR_POLYNOMIAL_FUNCTION)) THEN
+      ANTS_TAC THENL [EXPAND_TAC "s2"; ASM_MESON_TAC[]] THEN
+      REWRITE_TAC[bounded; FORALL_IN_GSPEC] THEN MESON_TAC[REAL_LE_REFL];
       SUBGOAL_THEN
        `~(ball(vec 0,d / &2) SUBSET IMAGE (p:real^N->real^N) s2)`
       MP_TAC THENL

@@ -529,11 +529,11 @@ let APPEND_ASSOC = prove
 
 export_thm APPEND_ASSOC;;
 
-let SING_APPEND = prove
+let APPEND_SING = prove
  (`!(h : A) t. APPEND [h] t = CONS h t`,
   REWRITE_TAC [APPEND]);;
 
-export_thm SING_APPEND;;
+export_thm APPEND_SING;;
 
 let LENGTH_APPEND = prove
  (`!(l1 : A list) l2. LENGTH (APPEND l1 l2) = LENGTH l1 + LENGTH l2`,
@@ -586,6 +586,32 @@ let MEM_APPEND = prove
   REWRITE_TAC [MEM_SET_OF_LIST; SET_OF_LIST_APPEND; IN_UNION]);;
 
 export_thm MEM_APPEND;;
+
+let MEM_APPEND_DECOMPOSE_LEFT = prove
+ (`!(x:A) l. MEM x l <=> ?l1 l2. ~(MEM x l1) /\ l = APPEND l1 (CONS x l2)`,
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [SPEC_TAC (`l : A list`,`l : A list`) THEN
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [MEM];
+    ASM_CASES_TAC `x:A = h` THENL
+    [ASM_REWRITE_TAC [MEM] THEN
+     EXISTS_TAC `[] : A list` THEN
+     EXISTS_TAC `t : A list` THEN
+     REWRITE_TAC [MEM; APPEND];
+     ASM_REWRITE_TAC [MEM] THEN
+     STRIP_TAC THEN
+     PAT_ASSUM `X ==> Y` THEN
+     ASM_REWRITE_TAC [] THEN
+     STRIP_TAC THEN
+     POP_ASSUM SUBST_VAR_TAC THEN
+     EXISTS_TAC `CONS (h:A) l1` THEN
+     EXISTS_TAC `l2 : A list` THEN
+     ASM_REWRITE_TAC [MEM; APPEND]]];
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [MEM_APPEND; MEM]]);;
+
+export_thm MEM_APPEND_DECOMPOSE_LEFT;;
 
 let null_concat = prove
   (`!l. NULL (concat l) <=> ALL NULL (l : (A list) list)`,

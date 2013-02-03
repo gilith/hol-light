@@ -1474,7 +1474,7 @@ let DISJOINT_DELETE_SYM = prove
 export_thm DISJOINT_DELETE_SYM;;
 
 (* ------------------------------------------------------------------------- *)
-(* Multiple union.                                                           *)
+(* Big union.                                                                *)
 (* ------------------------------------------------------------------------- *)
 
 let UNIONS_0 = prove
@@ -1628,8 +1628,26 @@ let UNIONS_UNION = prove
 
 export_thm UNIONS_UNION;;
 
+let UNIONS_MONO = prove
+ (`!s t.
+     (!(x : A set). x IN s ==> ?y. y IN t /\ x SUBSET y) ==>
+     UNIONS s SUBSET UNIONS t`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [SUBSET; IN_UNIONS] THEN
+  GEN_TAC THEN
+  DISCH_THEN (X_CHOOSE_THEN `u : A set` STRIP_ASSUME_TAC) THEN
+  FIRST_X_ASSUM (MP_TAC o SPEC `u : A set`) THEN
+  ASM_REWRITE_TAC [SUBSET] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `y : A set` THEN
+  ASM_REWRITE_TAC [] THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm UNIONS_MONO;;
+
 (* ------------------------------------------------------------------------- *)
-(* Multiple intersection.                                                    *)
+(* Big intersection.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
 let INTERS_0 = prove
@@ -1711,7 +1729,7 @@ let LEFT_UNION_INTERS = prove
 export_thm LEFT_UNION_INTERS;;
 
 let SUBSET_INTERS = prove
- (`!(t : A set) f. t SUBSET (INTERS f) <=> !s. s IN f ==> t SUBSET s`,
+ (`!(t : A set) u. t SUBSET (INTERS u) <=> !s. s IN u ==> t SUBSET s`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [SUBSET; IN_INTERS] THEN
   EQ_TAC THENL
@@ -1729,7 +1747,7 @@ let SUBSET_INTERS = prove
 export_thm SUBSET_INTERS;;
 
 let INTERS_SUBSET = prove
- (`!(f : (A set) set) g. f SUBSET g ==> (INTERS g) SUBSET (INTERS f)`,
+ (`!(s : (A set) set) t. s SUBSET t ==> (INTERS t) SUBSET (INTERS s)`,
   REWRITE_TAC [SUBSET; IN_INTERS] THEN
   REPEAT STRIP_TAC THEN
   FIRST_X_ASSUM MATCH_MP_TAC THEN
@@ -2461,13 +2479,30 @@ let UNIONS_INTERS = prove
 
 export_thm UNIONS_INTERS;;
 
-let DIFF_UNIONS = prove
+let UNIONS_DIFF = prove
  (`!s (t : A set). UNIONS s DIFF t = UNIONS {x DIFF t | x IN s}`,
   REPEAT GEN_TAC THEN
   GEN_REWRITE_TAC I [EXTENSION] THEN
   GEN_TAC THEN
   REWRITE_TAC [UNIONS_GSPEC; IN_ELIM] THEN
   REWRITE_TAC [IN_UNIONS; IN_DIFF] THEN
+  BOOL_CASES_TAC `(x : A) IN t` THEN
+  REWRITE_TAC []);;
+
+export_thm UNIONS_DIFF;;
+
+let DIFF_UNIONS = prove
+ (`!(u : A set) s. u DIFF UNIONS s = u INTER INTERS {u DIFF t | t IN s}`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [EXTENSION] THEN
+  GEN_TAC THEN
+  REWRITE_TAC [INTERS_GSPEC] THEN
+  REWRITE_TAC
+    [IN_DIFF; IN_INTER; IN_UNIONS; IN_ELIM; NOT_EXISTS_THM] THEN
+  BOOL_CASES_TAC `(x : A) IN u` THEN
+  REWRITE_TAC [] THEN
+  AP_TERM_TAC THEN
+  ABS_TAC THEN
   BOOL_CASES_TAC `(x : A) IN t` THEN
   REWRITE_TAC []);;
 

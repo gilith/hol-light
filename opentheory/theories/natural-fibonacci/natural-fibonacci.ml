@@ -853,7 +853,7 @@ let zeckendorf_decode_fib_dominate = prove
      zeckendorf (APPEND l2 (CONS T t)) ==>
      decode_fib (APPEND l1 (CONS F t)) < decode_fib (APPEND l2 (CONS T t))`,
   REPEAT STRIP_TAC THEN
-  ONCE_REWRITE_TAC [GSYM SING_APPEND] THEN
+  ONCE_REWRITE_TAC [GSYM APPEND_SING] THEN
   REWRITE_TAC [APPEND_ASSOC] THEN
   ONCE_REWRITE_TAC [decode_fib_append] THEN
   ASM_REWRITE_TAC [LT_ADD_RCANCEL; LENGTH_APPEND; LENGTH] THEN
