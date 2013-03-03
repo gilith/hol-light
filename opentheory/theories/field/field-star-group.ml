@@ -50,6 +50,12 @@ let field_star_neg_neg = new_axiom
 let field_star_neg_add = new_axiom
    `!x y. field_star_neg (field_star_add x y) = field_star_add (field_star_neg y) (field_star_neg x)`;;
 
+let field_star_neg_left_eq = new_axiom
+   `!x y. field_star_add y x = field_star_zero ==> field_star_neg x = y`;;
+
+let field_star_neg_right_eq = new_axiom
+   `!x y. field_star_add x y = field_star_zero ==> field_star_neg x = y`;;
+
 let field_star_comm_left_neg_imp = new_axiom
    `!x y.
       field_star_add x y = field_star_add y x ==>

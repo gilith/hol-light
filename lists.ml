@@ -601,9 +601,12 @@ let MEM_APPEND_DECOMPOSE_LEFT = prove
      REWRITE_TAC [MEM; APPEND];
      ASM_REWRITE_TAC [MEM] THEN
      STRIP_TAC THEN
-     PAT_ASSUM `X ==> Y` THEN
-     ASM_REWRITE_TAC [] THEN
-     STRIP_TAC THEN
+     FIRST_X_ASSUM
+       (fun th ->
+          MP_TAC th THEN
+          ANTS_TAC THENL
+          [FIRST_ASSUM ACCEPT_TAC;
+           STRIP_TAC]) THEN
      POP_ASSUM SUBST_VAR_TAC THEN
      EXISTS_TAC `CONS (h:A) l1` THEN
      EXISTS_TAC `l2 : A list` THEN

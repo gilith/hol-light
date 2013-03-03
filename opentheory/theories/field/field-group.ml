@@ -50,6 +50,12 @@ let field_neg_neg = new_axiom
 let field_neg_add = new_axiom
    `!x y. field_neg (field_add x y) = field_add (field_neg y) (field_neg x)`;;
 
+let field_neg_left_eq = new_axiom
+   `!x y. field_add y x = field_zero ==> field_neg x = y`;;
+
+let field_neg_right_eq = new_axiom
+   `!x y. field_add x y = field_zero ==> field_neg x = y`;;
+
 let field_comm_left_neg_imp = new_axiom
    `!x y.
       field_add x y = field_add y x ==>

@@ -50,6 +50,12 @@ let ring_unit_neg_neg = new_axiom
 let ring_unit_neg_add = new_axiom
    `!x y. ring_unit_neg (ring_unit_add x y) = ring_unit_add (ring_unit_neg y) (ring_unit_neg x)`;;
 
+let ring_unit_neg_left_eq = new_axiom
+   `!x y. ring_unit_add y x = ring_unit_zero ==> ring_unit_neg x = y`;;
+
+let ring_unit_neg_right_eq = new_axiom
+   `!x y. ring_unit_add x y = ring_unit_zero ==> ring_unit_neg x = y`;;
+
 let ring_unit_comm_left_neg_imp = new_axiom
    `!x y.
       ring_unit_add x y = ring_unit_add y x ==>
