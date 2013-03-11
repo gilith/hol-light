@@ -103,6 +103,11 @@ let siterate_def = new_definition
 
 export_thm siterate_def;;
 
+let sconstant_def = new_definition
+  `sconstant = siterate (I : A -> A)`;;
+
+export_thm sconstant_def;;
+
 (* ------------------------------------------------------------------------- *)
 (* Properties of stream types.                                               *)
 (* ------------------------------------------------------------------------- *)
@@ -543,5 +548,25 @@ let siterate = prove
   REWRITE_TAC [LET_DEF; LET_END_DEF]);;
 
 export_thm siterate;;
+
+let sconstant = prove
+ (`!(a : A). sconstant a = scons a (sconstant a)`,
+  GEN_TAC THEN
+  REWRITE_TAC [sconstant_def] THEN
+  CONV_TAC (LAND_CONV (REWR_CONV siterate)) THEN
+  REWRITE_TAC [I_THM]);;
+
+export_thm sconstant;;
+
+let snth_sconstant = prove
+ (`!(a : A) n. snth (sconstant a) n = a`,
+  GEN_TAC THEN
+  INDUCT_TAC THENL
+  [ONCE_REWRITE_TAC [sconstant] THEN
+   REWRITE_TAC [GSYM shd_def; shd_scons];
+   ONCE_REWRITE_TAC [sconstant] THEN
+   ASM_REWRITE_TAC [snth_suc; stl_scons]]);;
+
+export_thm snth_sconstant;;
 
 logfile_end ();;
