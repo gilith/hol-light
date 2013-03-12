@@ -253,6 +253,12 @@ let adder3 = prove
 export_thm adder3;;
 
 (* ------------------------------------------------------------------------- *)
+(* Definition of bus devices.                                                *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "hardware-bus-def";;
+
+(* ------------------------------------------------------------------------- *)
 (* Buses.                                                                    *)
 (* ------------------------------------------------------------------------- *)
 
@@ -280,7 +286,7 @@ let bsignal_def = new_definition
 export_thm bsignal_def;;
 
 (* ------------------------------------------------------------------------- *)
-(* Definition of bus devices.                                                *)
+(* Bus devices.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
 let compressor32_def = new_definition
@@ -299,7 +305,85 @@ export_thm compressor32_def;;
 (* Properties of bus devices.                                                *)
 (* ------------------------------------------------------------------------- *)
 
-(***
+logfile "hardware-bus-thm";;
+
+let dest_bus_inj_imp = prove
+ (`!x y. dest_bus x = dest_bus y ==> x = y`,
+  REPEAT STRIP_TAC THEN
+  ONCE_REWRITE_TAC [GSYM bus_tybij] THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm dest_bus_inj_imp;;
+
+let dest_bus_inj = prove
+ (`!x y. dest_bus x = dest_bus y <=> x = y`,
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [MATCH_ACCEPT_TAC dest_bus_inj_imp;
+   DISCH_THEN SUBST1_TAC THEN
+   REFL_TAC]);;
+
+export_thm dest_bus_inj;;
+
+let width_zero = prove
+ (`!x. width x = 0 <=> x = mk_bus []`,
+  GEN_TAC THEN
+  REWRITE_TAC [width_def; LENGTH_EQ_NIL] THEN
+  ONCE_REWRITE_TAC [GSYM dest_bus_inj] THEN
+  REWRITE_TAC [bus_tybij]);;
+
+export_thm width_zero;;
+
+let width_suc = prove
+ (`!n x.
+     width x = SUC n <=>
+     ?w y. x = mk_bus (CONS w (dest_bus y)) /\ width y = n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [width_def; LENGTH_EQ_CONS] THEN
+  AP_TERM_TAC THEN
+  ABS_TAC THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   EXISTS_TAC `mk_bus t` THEN
+   ASM_REWRITE_TAC [bus_tybij] THEN
+   MATCH_MP_TAC dest_bus_inj_imp THEN
+   ASM_REWRITE_TAC [bus_tybij];
+   STRIP_TAC THEN
+   EXISTS_TAC `dest_bus y` THEN
+   ASM_REWRITE_TAC [bus_tybij]]);;
+
+export_thm width_suc;;
+
+let wire_zero = prove
+ (`!w ws. wire (mk_bus (CONS w ws)) 0 = w`,
+  REWRITE_TAC [wire_def; bus_tybij; nth_zero]);;
+
+export_thm wire_zero;;
+
+let wire_suc = prove
+ (`!w x i.
+     i < width x ==>
+     wire (mk_bus (CONS w (dest_bus x))) (SUC i) = wire x i`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [wire_def; bus_tybij; width_def] THEN
+  MATCH_ACCEPT_TAC nth_suc);;
+
+export_thm wire_suc;;
+
+let bsignal_nil = prove
+ (`!t. bsignal (mk_bus []) t = []`,
+  REWRITE_TAC [bsignal_def; bus_tybij; MAP]);;
+
+export_thm bsignal_nil;;
+
+let bsignal_cons = prove
+ (`!w ws t.
+     bsignal (mk_bus (CONS w ws)) t =
+     CONS (signal w t) (bsignal (mk_bus ws) t)`,
+  REWRITE_TAC [bsignal_def; bus_tybij; MAP]);;
+
+export_thm bsignal_cons;;
+
 let compressor32 = prove
  (`!x y z s c.
      compressor32 x y z s c ==>
@@ -308,8 +392,117 @@ let compressor32 = prove
        bits_to_num (bsignal z t) =
        bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t)`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [compressor32_def] THEN
-  STRIP_TAC THEN
-***)
+  REWRITE_TAC [compressor32_def; GSYM LEFT_FORALL_IMP_THM] THEN
+  GEN_TAC THEN
+  SPEC_TAC (`c : bus`, `c : bus`) THEN
+  SPEC_TAC (`s : bus`, `s : bus`) THEN
+  SPEC_TAC (`z : bus`, `z : bus`) THEN
+  SPEC_TAC (`y : bus`, `y : bus`) THEN
+  SPEC_TAC (`x : bus`, `x : bus`) THEN
+  SPEC_TAC (`n : num`, `n : num`) THEN
+  INDUCT_TAC THENL
+  [REPEAT GEN_TAC THEN
+   REWRITE_TAC [width_zero] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [bsignal_nil; bits_to_num_nil] THEN
+   NUM_REDUCE_TAC;
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [width_suc; GSYM IMP_IMP] THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `xh : wire`
+      (X_CHOOSE_THEN `xt : bus`
+        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `yh : wire`
+      (X_CHOOSE_THEN `yt : bus`
+        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `zh : wire`
+      (X_CHOOSE_THEN `zt : bus`
+        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `sh : wire`
+      (X_CHOOSE_THEN `st : bus`
+        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `ch : wire`
+      (X_CHOOSE_THEN `ct : bus`
+        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [bsignal_cons; bits_to_num_cons; bus_tybij] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `((2 * bits_to_num (bsignal xt t)) +
+      (2 * bits_to_num (bsignal yt t)) +
+      (2 * bits_to_num (bsignal zt t))) +
+     ((if signal xh t then 1 else 0) +
+      (if signal yh t then 1 else 0) +
+      (if signal zh t then 1 else 0))` THEN
+  CONJ_TAC THENL
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+   CONV_TAC (LAND_CONV (LAND_CONV (LAND_CONV (REWR_CONV ADD_SYM)))) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
+   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `((2 * bits_to_num (bsignal st t)) +
+      (2 * (2 * bits_to_num (bsignal ct t)))) +
+     ((if signal sh t then 1 else 0) +
+      2 * (if signal ch t then 1 else 0))` THEN
+  CONJ_TAC THENL
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL; LEFT_ADD_DISTRIB] THEN
+   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `((2 * bits_to_num (bsignal st t)) +
+      (2 * (2 * bits_to_num (bsignal ct t)))) +
+     ((if signal xh t then 1 else 0) +
+      (if signal yh t then 1 else 0) +
+      (if signal zh t then 1 else 0))` THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [EQ_ADD_RCANCEL; GSYM LEFT_ADD_DISTRIB] THEN
+   AP_TERM_TAC THEN
+   SPEC_TAC (`t : num`, `t : num`) THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `SUC i`) THEN
+   ASM_REWRITE_TAC [LT_SUC] THEN
+   MP_TAC (SPECL [`xh : wire`; `xt : bus`; `i : num`] wire_suc) THEN
+   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
+   MP_TAC (SPECL [`yh : wire`; `yt : bus`; `i : num`] wire_suc) THEN
+   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
+   MP_TAC (SPECL [`zh : wire`; `zt : bus`; `i : num`] wire_suc) THEN
+   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
+   MP_TAC (SPECL [`sh : wire`; `st : bus`; `i : num`] wire_suc) THEN
+   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
+   MP_TAC (SPECL [`ch : wire`; `ct : bus`; `i : num`] wire_suc) THEN
+   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
+   DISCH_THEN ACCEPT_TAC;
+   REWRITE_TAC [EQ_ADD_LCANCEL] THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
+   POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [LT_0; wire_zero] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`xh : wire`; `yh : wire`; `zh : wire`;
+         `sh : wire`; `ch : wire`] adder3) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (MP_TAC o SPEC `t : num`) THEN
+   REWRITE_TAC [bits_to_num_def; MULT_0; ZERO_ADD]]);;
+
+export_thm compressor32;;
 
 logfile_end ();;
