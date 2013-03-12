@@ -1,9 +1,11 @@
 (* ========================================================================= *)
-(* COMMUTATIVE MONOIDS                                                       *)
+(* CONSEQUENCES OF THE COMMUTATIVE MONOID AXIOMS                             *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "monoid-comm";;
+logfile "monoid-comm-thm";;
+
+export_thm monoid_add_right_zero;;
 
 let monoid_add_comm' = prove
   (`!x y z. monoid_add x (monoid_add y z) = monoid_add y (monoid_add x z)`,

@@ -1,30 +1,30 @@
 (* ========================================================================= *)
-(* PARAMETRIC THEORY OF MONOIDS                                              *)
+(* PARAMETRIC THEORY OF COMMUTATIVE MONOIDS                                  *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for a parametric theory of monoids.                       *)
+(* Interpretations for a parametric theory of commutative monoids.           *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/theories/monoid/monoid.int";;
+extend_the_interpretation "opentheory/theories/monoid-comm/monoid-comm.int";;
 
 (* ------------------------------------------------------------------------- *)
-(* Parametric theory witness for monoids.                                    *)
+(* Parametric theory witness for commutative monoids.                        *)
 (* ------------------------------------------------------------------------- *)
 
+(* This is defined before the general monoid theory
 loads "opentheory/theories/monoid-comm/monoid-comm-witness.ml";;
-
-loads "opentheory/theories/monoid/monoid-witness.ml";;
-
-(* ------------------------------------------------------------------------- *)
-(* Consequences of the monoid axioms.                                        *)
-(* ------------------------------------------------------------------------- *)
-
-loads "opentheory/theories/monoid/monoid-thm.ml";;
+*)
 
 (* ------------------------------------------------------------------------- *)
-(* Monoid multiplication.                                                    *)
+(* Consequences of the commutative monoid axioms.                            *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/monoid/monoid-mult.ml";;
+loads "opentheory/theories/monoid-comm/monoid-comm-thm.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Commutative monoid multiplication.                                        *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/monoid-comm/monoid-comm-mult.ml";;

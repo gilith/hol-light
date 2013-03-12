@@ -69,6 +69,8 @@ loads "opentheory/theories/natural-fibonacci/natural-fibonacci.ml";;
 
 loads "opentheory/theories/monoid/monoid.ml";;
 
+loads "opentheory/theories/monoid-comm/monoid-comm.ml";;
+
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory of groups.                                              *)
 (* ------------------------------------------------------------------------- *)
@@ -151,9 +153,7 @@ loads "opentheory/theories/char/char.ml";;
 (* Hardware verification.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 loads "opentheory/theories/hardware/hardware.ml";;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Montgomery multiplication.                                                *)

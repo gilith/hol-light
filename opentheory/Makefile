@@ -39,20 +39,20 @@ info-clean:
 
 THEORY_INTERPRETATIONS = \
   theories/byte/byte-word.ml \
-  theories/field/field-group.ml \
-  theories/field/field-star-group.ml \
   theories/gfp/gfp-modular.ml \
-  theories/group/group-abelian-monoid.ml \
-  theories/group/group-mult-monoid.ml \
-  theories/group/group-monoid.ml \
-  theories/ring/ring-add-comm.ml \
-  theories/ring/ring-add-group.ml \
-  theories/ring/ring-mult.ml \
-  theories/ring/ring-unit-group.ml \
   theories/word/word-modular.ml \
   theories/word10/word10-word.ml \
   theories/word12/word12-word.ml \
   theories/word16/word16-word.ml
+#  theories/field/field-group.ml \
+#  theories/field/field-star-group.ml \
+#  theories/group/group-abelian-monoid.ml \
+#  theories/group/group-mult-monoid.ml \
+#  theories/group/group-monoid.ml \
+#  theories/ring/ring-add-comm.ml \
+#  theories/ring/ring-add-group.ml \
+#  theories/ring/ring-mult.ml \
+#  theories/ring/ring-unit-group.ml \
 
 theories/byte/byte-word.ml: theories/word/word.ml $(wildcard theories/word/word-*.ml)
 	scripts/instantiate -r "word/byte" $< > $@
