@@ -37,18 +37,18 @@ let mk_wire_signal =
 export_thm mk_wire_signal;;
 
 let power_signal =
-  let def = new_definition `power = mk_wire (sconstant T)` in
+  let def = new_definition `power = mk_wire (sreplicate T)` in
   prove
     (`!t. signal power t = T`,
-     REWRITE_TAC [mk_wire_signal; def; snth_sconstant]);;
+     REWRITE_TAC [mk_wire_signal; def; snth_sreplicate]);;
 
 export_thm power_signal;;
 
 let ground_signal =
-  let def = new_definition `ground = mk_wire (sconstant F)` in
+  let def = new_definition `ground = mk_wire (sreplicate F)` in
   prove
     (`!t. signal ground t = F`,
-     REWRITE_TAC [mk_wire_signal; def; snth_sconstant]);;
+     REWRITE_TAC [mk_wire_signal; def; snth_sreplicate]);;
 
 export_thm ground_signal;;
 
@@ -56,18 +56,18 @@ export_thm ground_signal;;
 (* Primitive wire devices.                                                   *)
 (* ------------------------------------------------------------------------- *)
 
-let flipflop_signal =
+let delay_signal =
   let def = new_definition
     `!x y.
-       flipflop x y <=>
+       delay x y <=>
        !t. signal y (t + 1) = signal x t` in
   prove
   (`!x y.
-      flipflop x y ==>
+      delay x y ==>
       !t. signal y (t + 1) = signal x t`,
    REWRITE_TAC [def]);;
 
-export_thm flipflop_signal;;
+export_thm delay_signal;;
 
 let not_signal =
   let def = new_definition
@@ -289,9 +289,9 @@ export_thm bsignal_def;;
 (* Bus devices.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-let compressor32_def = new_definition
+let compressor3_def = new_definition
   `!x y z s c.
-     compressor32 x y z s c <=>
+     compressor3 x y z s c <=>
      ?n.
        width x = n /\ width y = n /\ width z = n /\
        width s = n /\ width c = n /\
@@ -299,7 +299,7 @@ let compressor32_def = new_definition
          i < n ==>
          adder3 (wire x i) (wire y i) (wire z i) (wire s i) (wire c i)`;;
 
-export_thm compressor32_def;;
+export_thm compressor3_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of bus devices.                                                *)
@@ -384,15 +384,15 @@ let bsignal_cons = prove
 
 export_thm bsignal_cons;;
 
-let compressor32 = prove
+let compressor3 = prove
  (`!x y z s c.
-     compressor32 x y z s c ==>
+     compressor3 x y z s c ==>
      !t.
        bits_to_num (bsignal x t) + bits_to_num (bsignal y t) +
        bits_to_num (bsignal z t) =
        bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t)`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [compressor32_def; GSYM LEFT_FORALL_IMP_THM] THEN
+  REWRITE_TAC [compressor3_def; GSYM LEFT_FORALL_IMP_THM] THEN
   GEN_TAC THEN
   SPEC_TAC (`c : bus`, `c : bus`) THEN
   SPEC_TAC (`s : bus`, `s : bus`) THEN
@@ -503,6 +503,6 @@ let compressor32 = prove
    DISCH_THEN (MP_TAC o SPEC `t : num`) THEN
    REWRITE_TAC [bits_to_num_def; MULT_0; ZERO_ADD]]);;
 
-export_thm compressor32;;
+export_thm compressor3;;
 
 logfile_end ();;

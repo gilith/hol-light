@@ -103,10 +103,10 @@ let siterate_def = new_definition
 
 export_thm siterate_def;;
 
-let sconstant_def = new_definition
-  `sconstant = siterate (I : A -> A)`;;
+let sreplicate_def = new_definition
+  `sreplicate = siterate (I : A -> A)`;;
 
-export_thm sconstant_def;;
+export_thm sreplicate_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of stream types.                                               *)
@@ -549,24 +549,24 @@ let siterate = prove
 
 export_thm siterate;;
 
-let sconstant = prove
- (`!(a : A). sconstant a = scons a (sconstant a)`,
+let sreplicate = prove
+ (`!(a : A). sreplicate a = scons a (sreplicate a)`,
   GEN_TAC THEN
-  REWRITE_TAC [sconstant_def] THEN
+  REWRITE_TAC [sreplicate_def] THEN
   CONV_TAC (LAND_CONV (REWR_CONV siterate)) THEN
   REWRITE_TAC [I_THM]);;
 
-export_thm sconstant;;
+export_thm sreplicate;;
 
-let snth_sconstant = prove
- (`!(a : A) n. snth (sconstant a) n = a`,
+let snth_sreplicate = prove
+ (`!(a : A) n. snth (sreplicate a) n = a`,
   GEN_TAC THEN
   INDUCT_TAC THENL
-  [ONCE_REWRITE_TAC [sconstant] THEN
+  [ONCE_REWRITE_TAC [sreplicate] THEN
    REWRITE_TAC [GSYM shd_def; shd_scons];
-   ONCE_REWRITE_TAC [sconstant] THEN
+   ONCE_REWRITE_TAC [sreplicate] THEN
    ASM_REWRITE_TAC [snth_suc; stl_scons]]);;
 
-export_thm snth_sconstant;;
+export_thm snth_sreplicate;;
 
 logfile_end ();;

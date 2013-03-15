@@ -2,3 +2,31 @@
 # INTERPRETATIONS FOR HARDWARE VERIFICATION
 # Joe Leslie-Hurd
 ###############################################################################
+
+# Hardware
+
+type "HOLLight.bus" as "Hardware.bus"
+type "HOLLight.wire" as "Hardware.wire"
+
+const "HOLLight.adder3" as "Hardware.adder3"
+const "HOLLight.and2" as "Hardware.and2"
+const "HOLLight.mk_bus" as "Hardware.bus"
+const "HOLLight.delay" as "Hardware.delay"
+const "HOLLight.ground" as "Hardware.ground"
+const "HOLLight.majority3" as "Hardware.majority3"
+const "HOLLight.not" as "Hardware.not"
+const "HOLLight.or2" as "Hardware.or2"
+const "HOLLight.or3" as "Hardware.or3"
+const "HOLLight.power" as "Hardware.power"
+const "HOLLight.signal" as "Hardware.signal"
+const "HOLLight.mk_wire" as "Hardware.wire"
+const "HOLLight.xor2" as "Hardware.xor2"
+const "HOLLight.xor3" as "Hardware.xor3"
+
+# Hardware.Bus
+
+const "HOLLight.compressor3" as "Hardware.Bus.compressor3"
+const "HOLLight.bsignal" as "Hardware.Bus.signal"
+const "HOLLight.width" as "Hardware.Bus.width"
+const "HOLLight.wire" as "Hardware.Bus.wire"
+const "HOLLight.dest_bus" as "Hardware.Bus.wires"

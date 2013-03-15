@@ -238,8 +238,8 @@ let monoid_mult_add_invariant = new_axiom
 
 let monoid_mult_add_correct = prove
   (`!x n.
-      monoid_mult x n =
-      monoid_mult_add monoid_zero x (num_to_bits n)`,
+      monoid_mult_add monoid_zero x (num_to_bits n) =
+      monoid_mult x n`,
    REWRITE_TAC
      [monoid_mult_add_invariant; monoid_add_left_zero; num_to_bits_to_num]);;
 
@@ -248,8 +248,8 @@ export_thm monoid_mult_add_correct;;
 (*PARAMETRIC
 let monoid_mult_add_correct = new_axiom
    `!x n.
-      monoid_mult x n =
-      monoid_mult_add monoid_zero x (num_to_bits n)`;;
+      monoid_mult_add monoid_zero x (num_to_bits n) =
+      monoid_mult x n`;;
 *)
 
 logfile_end ();;
