@@ -8,6 +8,7 @@
 type "HOLLight.bus" as "Hardware.bus"
 type "HOLLight.wire" as "Hardware.wire"
 
+const "HOLLight.adder2" as "Hardware.adder2"
 const "HOLLight.adder3" as "Hardware.adder3"
 const "HOLLight.and2" as "Hardware.and2"
 const "HOLLight.mk_bus" as "Hardware.bus"
@@ -25,6 +26,7 @@ const "HOLLight.xor3" as "Hardware.xor3"
 
 # Hardware.Bus
 
+const "HOLLight.compressor2" as "Hardware.Bus.compressor2"
 const "HOLLight.compressor3" as "Hardware.Bus.compressor3"
 const "HOLLight.bsignal" as "Hardware.Bus.signal"
 const "HOLLight.width" as "Hardware.Bus.width"
