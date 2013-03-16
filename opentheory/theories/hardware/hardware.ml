@@ -309,8 +309,21 @@ let width_def = new_definition
 
 export_thm width_def;;
 
+let bappend_def = new_definition
+  `!x y. bappend x y = mk_bus (APPEND (dest_bus x) (dest_bus y))`;;
+
+export_thm bappend_def;;
+
+let bsub_def = new_definition
+  `!k n x y.
+     bsub k n x y <=>
+     k + n <= width x /\
+     y = mk_bus (take n (drop k (dest_bus x)))`;;
+
+export_thm bsub_def;;
+
 let wire_def = new_definition
-  `!b i. wire b i = nth (dest_bus b) i`;;
+  `!i b w. wire i b w <=> bsub i 1 b (mk_bus [w])`;;
 
 export_thm wire_def;;
 
@@ -329,12 +342,14 @@ let compressor2_def = new_definition
      ?n.
        width x = n /\ width y = n /\
        width s = n /\ width c = n /\
-       !i.
-         i < n ==>
-         adder2 (wire x i) (wire y i) (wire s i) (wire c i)`;;
+       !i xi yi si ci.
+         wire i x xi /\ wire i y yi /\
+         wire i s si /\ wire i c ci ==>
+         adder2 xi yi si ci`;;
 
 export_thm compressor2_def;;
 
+(***
 let compressor3_def = new_definition
   `!x y z s c.
      compressor3 x y z s c <=>
@@ -346,6 +361,27 @@ let compressor3_def = new_definition
          adder3 (wire x i) (wire y i) (wire z i) (wire s i) (wire c i)`;;
 
 export_thm compressor3_def;;
+
+let compressor4_def = new_definition
+  `!w x y z s c.
+     compressor4 w x y z s c <=>
+     ?n p q p0 p1 q1 z0 z1 s0 s1 s2 c0 c1.
+       width w = n + 1 /\ width x = n + 1 /\ width y = n + 1 /\
+       width z = n + 1 /\ width s = n + 2 /\ width c = n + 1 /\
+       compressor3 w x y p q /\
+       wire 0 p p0 /\
+       wire 0 z z0 /\
+       compressor2 p0 z0 s0 c0 /\
+       bsub 1 n p p1 /\
+       bsub 0 n q q1 /\
+       bsub 1 n z z1 /\
+       compressor3 p1 q1 z1 s1 c1 /\
+       bsub n 1 q s2 /\
+       s = bappend s0 (bappend s1 s2) /\
+       c = bappend c0 c1`;;
+
+export_thm compressor4_def;;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of bus devices.                                                *)
@@ -370,6 +406,24 @@ let dest_bus_inj = prove
    REFL_TAC]);;
 
 export_thm dest_bus_inj;;
+
+let mk_bus_inj_imp = prove
+ (`!x y. mk_bus x = mk_bus y ==> x = y`,
+  REPEAT STRIP_TAC THEN
+  ONCE_REWRITE_TAC [GSYM bus_tybij] THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm mk_bus_inj_imp;;
+
+let mk_bus_inj = prove
+ (`!x y. mk_bus x = mk_bus y <=> x = y`,
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [MATCH_ACCEPT_TAC mk_bus_inj_imp;
+   DISCH_THEN SUBST1_TAC THEN
+   REFL_TAC]);;
+
+export_thm mk_bus_inj;;
 
 let width_zero = prove
  (`!x. width x = 0 <=> x = mk_bus []`,
@@ -400,9 +454,53 @@ let width_suc = prove
 
 export_thm width_suc;;
 
+let width_bsub = prove
+  (`!x y k n. bsub k n x y ==> width y = n`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [bsub_def; width_def] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [bus_tybij] THEN
+   MATCH_MP_TAC length_take THEN
+   SUBGOAL_THEN `k + n <= k + LENGTH (drop k (dest_bus x))`
+     (fun th -> MP_TAC th THEN REWRITE_TAC [LE_ADD_LCANCEL]) THEN
+   MP_TAC (ISPECL [`k : num`; `dest_bus x`] length_drop_add) THEN
+   ANTS_TAC THENL
+   [MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `k + n : num` THEN
+    ASM_REWRITE_TAC [LE_ADD];
+    DISCH_THEN SUBST1_TAC THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm width_bsub;;
+    
+let bsub_width = prove
+  (`!x y. bsub 0 (width x) x y <=> y = x`,
+   REWRITE_TAC
+     [bsub_def; width_def; ZERO_ADD; LE_REFL; drop_zero; take_length;
+      bus_tybij]);;
+   
+export_thm bsub_width;;
+
+(***
+let bsub_adjacent = prove
+  (`!x y z k m n.
+      bsub k m x y /\ bsub (k + m) n x z ==>
+      bsub k (m + n) x (bappend y z)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [bsub_def; GSYM ADD_ASSOC] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [bappend_def; bus_tybij; mk_bus_inj] THEN
+   
+   
+
+***)
+
+(***
 let wire_zero = prove
- (`!w ws. wire (mk_bus (CONS w ws)) 0 = w`,
-  REWRITE_TAC [wire_def; bus_tybij; nth_zero]);;
+ (`!x xs y. wire 0 (mk_bus (CONS x xs)) y <=> y = x`,
+  REWRITE_TAC [wire_def; bsub_def]
+; bus_tybij; nth_zero]);;
 
 export_thm wire_zero;;
 
@@ -415,6 +513,7 @@ let wire_suc = prove
   MATCH_ACCEPT_TAC nth_suc);;
 
 export_thm wire_suc;;
+***)
 
 let bsignal_nil = prove
  (`!t. bsignal (mk_bus []) t = []`,
@@ -430,6 +529,7 @@ let bsignal_cons = prove
 
 export_thm bsignal_cons;;
 
+(***
 let compressor2 = prove
  (`!x y s c.
      compressor2 x y s c ==>
@@ -656,5 +756,29 @@ let compressor3 = prove
    REWRITE_TAC [bits_to_num_def; MULT_0; ZERO_ADD]]);;
 
 export_thm compressor3;;
+***)
+
+(***
+let compressor4 = prove
+ (`!w x y z s c.
+     compressor4 w x y z s c ==>
+     !t.
+       bits_to_num (bsignal w t) + bits_to_num (bsignal x t) +
+       bits_to_num (bsignal y t) + bits_to_num (bsignal z t) =
+       bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [compressor4_def] THEN
+  STRIP_TAC THEN
+  GEN_TAC THEN
+  REPEAT (FIRST_X_ASSUM SUBST_VAR_TAC) THEN
+  MP_TAC
+    (SPECL
+       [`w : bus`; `x : bus`; `y : bus`;
+        `p : bus`; `q : bus`] compressor3) THEN
+  ASM_REWRITE_TAC [ADD_ASSOC] THEN
+  DISCH_THEN (SUBST1_TAC o SPEC `t : num`) THEN
+
+export_thm compressor4;;
+***)
 
 logfile_end ();;
