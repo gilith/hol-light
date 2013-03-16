@@ -584,7 +584,8 @@ let APPEND_RCANCEL_IMP = prove
       `LENGTH (APPEND (CONS h t) l : A list) = LENGTH (APPEND [] l : A list)`
       MP_TAC THENL
     [ASM_REWRITE_TAC [];
-     REWRITE_TAC [LENGTH_APPEND; ZERO_ADD; EQ_ADD_RCANCEL_0; LENGTH; NOT_SUC]]];
+     REWRITE_TAC
+       [LENGTH_APPEND; ZERO_ADD; EQ_ADD_RCANCEL_0; LENGTH; NOT_SUC]]];
    LIST_INDUCT_TAC THENL
    [POP_ASSUM_LIST (K ALL_TAC) THEN
     STRIP_TAC THEN
@@ -592,7 +593,8 @@ let APPEND_RCANCEL_IMP = prove
       `LENGTH (APPEND (CONS h t) l : A list) = LENGTH (APPEND [] l : A list)`
       MP_TAC THENL
     [ASM_REWRITE_TAC [];
-     REWRITE_TAC [LENGTH_APPEND; ZERO_ADD; EQ_ADD_RCANCEL_0; LENGTH; NOT_SUC]];
+     REWRITE_TAC
+       [LENGTH_APPEND; ZERO_ADD; EQ_ADD_RCANCEL_0; LENGTH; NOT_SUC]];
     POP_ASSUM (K ALL_TAC) THEN
     REWRITE_TAC [CONS_APPEND; CONS_11] THEN
     STRIP_TAC THEN
@@ -1590,8 +1592,10 @@ let nth_take_drop = prove
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN
      (fun th ->
-        (CONV_TAC o LAND_CONV o RAND_CONV o RAND_CONV o REWR_CONV o SYM) th THEN
-        (CONV_TAC o RAND_CONV o LAND_CONV o LAND_CONV o REWR_CONV o SYM) th) THEN
+       (CONV_TAC o LAND_CONV o RAND_CONV o
+        RAND_CONV o REWR_CONV o SYM) th THEN
+       (CONV_TAC o RAND_CONV o LAND_CONV o
+        LAND_CONV o REWR_CONV o SYM) th) THEN
    REWRITE_TAC [LENGTH_APPEND] THEN
    STRIP_TAC THEN
    MP_TAC
@@ -1680,10 +1684,9 @@ let drop_add = prove
       DISCH_THEN SUBST1_TAC THEN
       FIRST_X_ASSUM MATCH_MP_TAC THEN
       ASM_REWRITE_TAC []]]]);;
-      
+
 export_thm drop_add;;
 
-(***
 let take_add = prove
   (`!m n (l : A list).
        m + n <= LENGTH l ==>
@@ -1703,53 +1706,23 @@ let take_add = prove
     REWRITE_TAC [GSYM APPEND_ASSOC] THEN
     MP_TAC (SPECL [`n : num`; `drop m l : A list`] take_drop) THEN
     ANTS_TAC THENL
-    [SUBGOAL_THEN `m + n <= m + LENGTH (drop m (l : A list))` MP_TAC THENL
-     [
-    MATCH_MP_TAC LE_TRANS THEN
+    [SUBGOAL_THEN `m + n <= m + LENGTH (drop m l : A list)` MP_TAC THENL
+     [SUBGOAL_THEN `m + LENGTH (drop m l : A list) = LENGTH (l : A list)`
+        SUBST1_TAC THENL
+      [MATCH_MP_TAC length_drop_add THEN
+       MATCH_MP_TAC LE_TRANS THEN
+       EXISTS_TAC `m + n : num` THEN
+       ASM_REWRITE_TAC [LE_ADD];
+       FIRST_X_ASSUM ACCEPT_TAC];
+      REWRITE_TAC [LE_ADD_LCANCEL]];
+     DISCH_THEN SUBST1_TAC THEN
+     MATCH_MP_TAC EQ_SYM THEN
+     MATCH_MP_TAC take_drop THEN
+     MATCH_MP_TAC LE_TRANS THEN
      EXISTS_TAC `m + n : num` THEN
-     ASM_REWRITE_TAC [LE_ADD]
-     FIRST_X_ASSUM ACCEPT_TAC;
+     ASM_REWRITE_TAC [LE_ADD]]]);;
 
-length_drop_add
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN SUBST1_TAC THEN
-    
-
-(CONV_TAC o LAND_CONV o RAND_CONV o REWR_CONV o SYM)
-   
-
-   GEN_TAC THEN
-   INDUCT_TAC THENL
-   [REWRITE_TAC [ADD_0; take_zero; APPEND_NIL];
-    LIST_INDUCT_TAC THENL
-    [REWRITE_TAC [ADD_SUC; LENGTH_NIL; LE_ZERO; NOT_SUC];
-     POP_ASSUM (K ALL_TAC) THEN
-     REWRITE_TAC [ADD_SUC; LENGTH_CONS; LE_SUC] THEN
-     STRIP_TAC THEN
-     MP_TAC (SPECL [`m + n : num`; `h : A`; `t : A list`] take_suc) THEN
-     ASM_REWRITE_TAC [] THEN
-     DISCH_THEN SUBST1_TAC THEN
-
-   [REWRITE_TAC [ZERO_ADD; take_zero; drop_zero; NIL_APPEND];
-    GEN_TAC THEN
-    LIST_INDUCT_TAC THENL
-    [REWRITE_TAC [SUC_ADD; LENGTH_NIL; LE_ZERO; NOT_SUC];
-     POP_ASSUM (K ALL_TAC) THEN
-     REWRITE_TAC [SUC_ADD; LENGTH_CONS; LE_SUC] THEN
-     STRIP_TAC THEN
-     MP_TAC (SPECL [`m + n : num`; `h : A`; `t : A list`] take_suc) THEN
-     ASM_REWRITE_TAC [] THEN
-     DISCH_THEN SUBST1_TAC THEN
-     
-    
-   GEN_TAC THEN
-   MP_TAC (SPECL [`LENGTH (l : A list)`; `l : A list`] take_drop) THEN
-   REWRITE_TAC [LE_REFL] THEN
-   DISCH_THEN (fun th -> CONV_TAC (RAND_CONV (REWR_CONV (SYM th)))) THEN
-   REWRITE_TAC [drop_length; APPEND_NIL]);;
-
-export_thm take_length;;
-***)
+export_thm take_add;;
 
 (* ------------------------------------------------------------------------- *)
 (* Interval.                                                                 *)

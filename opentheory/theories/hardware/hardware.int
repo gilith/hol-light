@@ -26,12 +26,12 @@ const "HOLLight.xor3" as "Hardware.xor3"
 
 # Hardware.Bus
 
+const "HOLLight.bappend" as "Hardware.Bus.append"
 const "HOLLight.compressor2" as "Hardware.Bus.compressor2"
 const "HOLLight.compressor3" as "Hardware.Bus.compressor3"
 const "HOLLight.compressor4" as "Hardware.Bus.compressor4"
-const "HOLLight.bdrop" as "Hardware.Bus.drop"
 const "HOLLight.bsignal" as "Hardware.Bus.signal"
-const "HOLLight.btake" as "Hardware.Bus.take"
+const "HOLLight.bsub" as "Hardware.Bus.sub"
 const "HOLLight.width" as "Hardware.Bus.width"
 const "HOLLight.wire" as "Hardware.Bus.wire"
 const "HOLLight.dest_bus" as "Hardware.Bus.wires"

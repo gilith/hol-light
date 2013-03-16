@@ -315,15 +315,15 @@ let bappend_def = new_definition
 export_thm bappend_def;;
 
 let bsub_def = new_definition
-  `!k n x y.
-     bsub k n x y <=>
+  `!x k n y.
+     bsub x k n y <=>
      k + n <= width x /\
      y = mk_bus (take n (drop k (dest_bus x)))`;;
 
 export_thm bsub_def;;
 
 let wire_def = new_definition
-  `!i b w. wire i b w <=> bsub i 1 b (mk_bus [w])`;;
+  `!b i w. wire b i w <=> bsub b i 1 (mk_bus [w])`;;
 
 export_thm wire_def;;
 
@@ -343,8 +343,8 @@ let compressor2_def = new_definition
        width x = n /\ width y = n /\
        width s = n /\ width c = n /\
        !i xi yi si ci.
-         wire i x xi /\ wire i y yi /\
-         wire i s si /\ wire i c ci ==>
+         wire x i xi /\ wire y i yi /\
+         wire s i si /\ wire c i ci ==>
          adder2 xi yi si ci`;;
 
 export_thm compressor2_def;;
@@ -455,7 +455,7 @@ let width_suc = prove
 export_thm width_suc;;
 
 let width_bsub = prove
-  (`!x y k n. bsub k n x y ==> width y = n`,
+  (`!x k n y. bsub x k n y ==> width y = n`,
    REPEAT GEN_TAC THEN
    REWRITE_TAC [bsub_def; width_def] THEN
    STRIP_TAC THEN
@@ -473,47 +473,81 @@ let width_bsub = prove
     ASM_REWRITE_TAC []]);;
 
 export_thm width_bsub;;
-    
+
 let bsub_width = prove
-  (`!x y. bsub 0 (width x) x y <=> y = x`,
+  (`!x y. bsub x 0 (width x) y <=> y = x`,
    REWRITE_TAC
      [bsub_def; width_def; ZERO_ADD; LE_REFL; drop_zero; take_length;
       bus_tybij]);;
-   
+
 export_thm bsub_width;;
 
-(***
-let bsub_adjacent = prove
+let bsub_add = prove
   (`!x y z k m n.
-      bsub k m x y /\ bsub (k + m) n x z ==>
-      bsub k (m + n) x (bappend y z)`,
+      bsub x k m y /\ bsub x (k + m) n z ==>
+      bsub x k (m + n) (bappend y z)`,
    REPEAT GEN_TAC THEN
-   REWRITE_TAC [bsub_def; GSYM ADD_ASSOC] THEN
+   REWRITE_TAC [bsub_def; GSYM ADD_ASSOC; width_def] THEN
+   SPEC_TAC (`dest_bus x`, `l : wire list`) THEN
+   GEN_TAC THEN
    STRIP_TAC THEN
+   REPEAT (FIRST_X_ASSUM SUBST_VAR_TAC) THEN
    ASM_REWRITE_TAC [bappend_def; bus_tybij; mk_bus_inj] THEN
-   
-   
+   MP_TAC
+     (ISPECL [`m : num`; `n : num`; `drop k l : wire list`] take_add) THEN
+   ANTS_TAC THENL
+   [SUBGOAL_THEN `k + m + n <= k + LENGTH (drop k l : wire list)`
+      (fun th ->
+        MP_TAC th THEN
+        REWRITE_TAC [GSYM ADD_ASSOC; LE_ADD_LCANCEL]) THEN
+    MP_TAC (ISPECL [`k : num`; `l : wire list`] length_drop_add) THEN
+    ANTS_TAC THENL
+    [MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `k + m : num` THEN
+     ASM_REWRITE_TAC [LE_ADD];
+     DISCH_THEN SUBST1_TAC THEN
+     ASM_REWRITE_TAC []];
+    DISCH_THEN SUBST1_TAC THEN
+    AP_TERM_TAC THEN
+    AP_TERM_TAC THEN
+    ONCE_REWRITE_TAC [ADD_SYM] THEN
+    MATCH_MP_TAC drop_add THEN
+    ONCE_REWRITE_TAC [ADD_SYM] THEN
+    ASM_REWRITE_TAC []]);;
 
-***)
+export_thm bsub_add;;
 
-(***
 let wire_zero = prove
- (`!x xs y. wire 0 (mk_bus (CONS x xs)) y <=> y = x`,
-  REWRITE_TAC [wire_def; bsub_def]
-; bus_tybij; nth_zero]);;
+ (`!v b w. wire (mk_bus (CONS v (dest_bus b))) 0 w <=> w = v`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [wire_def; bsub_def; bus_tybij; width_def] THEN
+  REWRITE_TAC [ONE; ADD; LENGTH_CONS; LE_SUC; mk_bus_inj; drop_zero] THEN
+  MP_TAC (ISPECL [`0`; `v : wire`; `dest_bus b`] take_suc) THEN
+  ASM_REWRITE_TAC [LE_0] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [take_zero; CONS_11]);;
 
 export_thm wire_zero;;
 
 let wire_suc = prove
- (`!w x i.
-     i < width x ==>
-     wire (mk_bus (CONS w (dest_bus x))) (SUC i) = wire x i`,
+ (`!v b i w. wire (mk_bus (CONS v (dest_bus b))) (SUC i) w <=> wire b i w`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [wire_def; bus_tybij; width_def] THEN
-  MATCH_ACCEPT_TAC nth_suc);;
+  REWRITE_TAC [wire_def; bsub_def; bus_tybij; width_def] THEN
+  REWRITE_TAC [SUC_ADD; LENGTH_CONS; LE_SUC] THEN
+  REWRITE_TAC [GSYM ADD1; LE_SUC_LT] THEN
+  SPEC_TAC (`dest_bus b`, `l : wire list`) THEN
+  GEN_TAC THEN
+  ASM_CASES_TAC `i < LENGTH (l : wire list)` THENL
+  [AP_TERM_TAC THEN
+   AP_TERM_TAC THEN
+   AP_TERM_TAC THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC drop_suc THEN
+   MATCH_MP_TAC LT_IMP_LE THEN
+   FIRST_X_ASSUM ACCEPT_TAC;
+   ASM_REWRITE_TAC []]);;
 
 export_thm wire_suc;;
-***)
 
 let bsignal_nil = prove
  (`!t. bsignal (mk_bus []) t = []`,
@@ -529,7 +563,6 @@ let bsignal_cons = prove
 
 export_thm bsignal_cons;;
 
-(***
 let compressor2 = prove
  (`!x y s c.
      compressor2 x y s c ==>
@@ -610,22 +643,19 @@ let compressor2 = prove
    FIRST_X_ASSUM MATCH_MP_TAC THEN
    ASM_REWRITE_TAC [] THEN
    REPEAT STRIP_TAC THEN
-   FIRST_X_ASSUM (MP_TAC o SPEC `SUC i`) THEN
-   ASM_REWRITE_TAC [LT_SUC] THEN
-   MP_TAC (SPECL [`xh : wire`; `xt : bus`; `i : num`] wire_suc) THEN
-   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
-   MP_TAC (SPECL [`yh : wire`; `yt : bus`; `i : num`] wire_suc) THEN
-   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
-   MP_TAC (SPECL [`sh : wire`; `st : bus`; `i : num`] wire_suc) THEN
-   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
-   MP_TAC (SPECL [`ch : wire`; `ct : bus`; `i : num`] wire_suc) THEN
-   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
-   DISCH_THEN ACCEPT_TAC;
+   FIRST_X_ASSUM (MATCH_MP_TAC o REWRITE_RULE [IMP_IMP]) THEN
+   EXISTS_TAC `SUC i` THEN
+   ASM_REWRITE_TAC [wire_suc];
    REWRITE_TAC [EQ_ADD_LCANCEL] THEN
    FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
    POP_ASSUM_LIST (K ALL_TAC) THEN
-   REWRITE_TAC [LT_0; wire_zero] THEN
-   STRIP_TAC THEN
+   REWRITE_TAC [wire_zero] THEN
+   DISCH_THEN
+     (ASSUME_TAC o
+      REWRITE_RULE [] o
+      SPECL
+        [`xh : wire`; `yh : wire`;
+         `sh : wire`; `ch : wire`]) THEN
    MP_TAC
      (SPECL
         [`xh : wire`; `yh : wire`;
@@ -636,6 +666,7 @@ let compressor2 = prove
 
 export_thm compressor2;;
 
+(***
 let compressor3 = prove
  (`!x y z s c.
      compressor3 x y z s c ==>
