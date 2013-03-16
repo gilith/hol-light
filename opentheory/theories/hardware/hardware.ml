@@ -349,16 +349,16 @@ let compressor2_def = new_definition
 
 export_thm compressor2_def;;
 
-(***
 let compressor3_def = new_definition
   `!x y z s c.
      compressor3 x y z s c <=>
      ?n.
        width x = n /\ width y = n /\ width z = n /\
        width s = n /\ width c = n /\
-       !i.
-         i < n ==>
-         adder3 (wire x i) (wire y i) (wire z i) (wire s i) (wire c i)`;;
+       !i xi yi zi si ci.
+         wire x i xi /\ wire y i yi /\ wire z i zi /\
+         wire s i si /\ wire c i ci ==>
+         adder3 xi yi zi si ci`;;
 
 export_thm compressor3_def;;
 
@@ -369,19 +369,18 @@ let compressor4_def = new_definition
        width w = n + 1 /\ width x = n + 1 /\ width y = n + 1 /\
        width z = n + 1 /\ width s = n + 2 /\ width c = n + 1 /\
        compressor3 w x y p q /\
-       wire 0 p p0 /\
-       wire 0 z z0 /\
+       bsub p 0 1 p0 /\
+       bsub z 0 1 z0 /\
        compressor2 p0 z0 s0 c0 /\
-       bsub 1 n p p1 /\
-       bsub 0 n q q1 /\
-       bsub 1 n z z1 /\
+       bsub p 1 n p1 /\
+       bsub q 0 n q1 /\
+       bsub z 1 n z1 /\
        compressor3 p1 q1 z1 s1 c1 /\
-       bsub n 1 q s2 /\
+       bsub q n 1 s2 /\
        s = bappend s0 (bappend s1 s2) /\
        c = bappend c0 c1`;;
 
 export_thm compressor4_def;;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of bus devices.                                                *)
@@ -666,7 +665,6 @@ let compressor2 = prove
 
 export_thm compressor2;;
 
-(***
 let compressor3 = prove
  (`!x y z s c.
      compressor3 x y z s c ==>
@@ -760,24 +758,19 @@ let compressor3 = prove
    FIRST_X_ASSUM MATCH_MP_TAC THEN
    ASM_REWRITE_TAC [] THEN
    REPEAT STRIP_TAC THEN
-   FIRST_X_ASSUM (MP_TAC o SPEC `SUC i`) THEN
-   ASM_REWRITE_TAC [LT_SUC] THEN
-   MP_TAC (SPECL [`xh : wire`; `xt : bus`; `i : num`] wire_suc) THEN
-   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
-   MP_TAC (SPECL [`yh : wire`; `yt : bus`; `i : num`] wire_suc) THEN
-   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
-   MP_TAC (SPECL [`zh : wire`; `zt : bus`; `i : num`] wire_suc) THEN
-   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
-   MP_TAC (SPECL [`sh : wire`; `st : bus`; `i : num`] wire_suc) THEN
-   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
-   MP_TAC (SPECL [`ch : wire`; `ct : bus`; `i : num`] wire_suc) THEN
-   ANTS_TAC THENL [ASM_REWRITE_TAC []; DISCH_THEN SUBST1_TAC] THEN
-   DISCH_THEN ACCEPT_TAC;
+   FIRST_X_ASSUM (MATCH_MP_TAC o REWRITE_RULE [IMP_IMP]) THEN
+   EXISTS_TAC `SUC i` THEN
+   ASM_REWRITE_TAC [wire_suc];
    REWRITE_TAC [EQ_ADD_LCANCEL] THEN
    FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
    POP_ASSUM_LIST (K ALL_TAC) THEN
-   REWRITE_TAC [LT_0; wire_zero] THEN
-   STRIP_TAC THEN
+   REWRITE_TAC [wire_zero] THEN
+   DISCH_THEN
+     (ASSUME_TAC o
+      REWRITE_RULE [] o
+      SPECL
+        [`xh : wire`; `yh : wire`; `zh : wire`;
+         `sh : wire`; `ch : wire`]) THEN
    MP_TAC
      (SPECL
         [`xh : wire`; `yh : wire`; `zh : wire`;
@@ -787,7 +780,6 @@ let compressor3 = prove
    REWRITE_TAC [bits_to_num_def; MULT_0; ZERO_ADD]]);;
 
 export_thm compressor3;;
-***)
 
 (***
 let compressor4 = prove
