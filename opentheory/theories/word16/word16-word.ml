@@ -282,15 +282,8 @@ let word16_to_list_def = new_axiom
 
 new_constant ("list_to_word16", `:bool list -> word16`);;
 
-let list_to_word16_nil = new_axiom
-  `list_to_word16 [] = num_to_word16 0`
-and list_to_word16_cons = new_axiom
-  `!h t.
-     list_to_word16 (CONS h t) =
-     if h then word16_add (word16_shl (list_to_word16 t) 1) (num_to_word16 1)
-     else word16_shl (list_to_word16 t) 1`;;
-
-let list_to_word16_def = CONJ list_to_word16_nil list_to_word16_cons;;
+let list_to_word16_def = new_axiom
+  `!l. list_to_word16 l = num_to_word16 (bits_to_num l)`;;
 
 new_constant ("is_word16_list", `:bool list -> bool`);;
 
@@ -333,8 +326,14 @@ let length_word16_to_list = new_axiom
 let is_word16_to_list = new_axiom
   `!w. is_word16_list (word16_to_list w)`;;
 
-let bits_to_num_to_word16 = new_axiom
-   `!l. num_to_word16 (bits_to_num l) = list_to_word16 l`;;
+let list_to_word16_nil = new_axiom
+   `list_to_word16 [] = num_to_word16 0`;;
+
+let list_to_word16_cons = new_axiom
+   `!h t.
+      list_to_word16 (CONS h t) =
+      if h then word16_add (num_to_word16 1) (word16_shl (list_to_word16 t) 1)
+      else word16_shl (list_to_word16 t) 1`;;
 
 let word16_bit_div = new_axiom
   `!w n. word16_bit w n = ODD (word16_to_num w DIV (2 EXP n))`;;
@@ -345,13 +344,14 @@ let nil_to_word16_to_num = new_axiom
 let cons_to_word16_to_num = new_axiom
    `!h t.
       word16_to_num (list_to_word16 (CONS h t)) =
-      (2 * word16_to_num (list_to_word16 t) + (if h then 1 else 0)) MOD word16_size`;;
+      ((if h then 1 else 0) + 2 * word16_to_num (list_to_word16 t)) MOD
+      word16_size`;;
 
 let list_to_word16_to_num_bound = new_axiom
   `!l. word16_to_num (list_to_word16 l) < 2 EXP (LENGTH l)`;;
 
 let list_to_word16_to_num_bound_suc = new_axiom
-  `!l. 2 * word16_to_num (list_to_word16 l) + 1 < 2 EXP (SUC (LENGTH l))`;;
+  `!l. 1 + 2 * word16_to_num (list_to_word16 l) < 2 EXP (SUC (LENGTH l))`;;
 
 let cons_to_word16_to_num_bound = new_axiom
    `!h t.
@@ -424,7 +424,8 @@ let word16_shr_list = new_axiom
          else list_to_word16 (drop n (take word16_width l)))`;;
 
 let word16_eq_bits = new_axiom
-  `!w1 w2. (!i. i < word16_width ==> word16_bit w1 i = word16_bit w2 i) ==> w1 = w2`;;
+  `!w1 w2.
+     (!i. i < word16_width ==> word16_bit w1 i = word16_bit w2 i) ==> w1 = w2`;;
 
 let num_to_word16_cons = new_axiom
   `!n.
@@ -487,7 +488,7 @@ let list_to_word16_to_list_conv =
        take_conv);;
 
 let numeral_to_word16_list_conv =
-    let zero_conv = REWR_CONV (SYM (CONJUNCT1 list_to_word16_def)) in
+    let zero_conv = REWR_CONV (SYM list_to_word16_nil) in
     let numeral_conv = REWR_CONV (SYM (SPEC `NUMERAL n` num_to_word16_cons)) in
     let rec rewr_conv tm =
         (zero_conv ORELSEC

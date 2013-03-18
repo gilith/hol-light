@@ -519,7 +519,7 @@ let () = (export_haskell_thm o prove)
 let () = (export_haskell_thm o prove)
  (`bits_to_numH [] = 0 /\
    (!h t.
-      bits_to_numH (CONS h t) = 2 * bits_to_numH t + (if h then 1 else 0))`,
+      bits_to_numH (CONS h t) = (if h then 1 else 0) + 2 * bits_to_numH t)`,
   HASKELL_TAC [bits_to_num_def]);;
 
 let () = (export_haskell_thm o prove)
@@ -592,9 +592,9 @@ let () = (export_haskell_thm o prove)
  (`(list_to_byteH [] = num_to_byte 0) /\
    (!h t.
       list_to_byteH (CONS h t) =
-      if h then byte_add (byte_shl (list_to_byteH t) 1) (num_to_byte 1)
+      if h then byte_add (num_to_byte 1) (byte_shl (list_to_byteH t) 1)
       else byte_shl (list_to_byteH t) 1)`,
-  HASKELL_TAC [list_to_byte_def]);;
+  HASKELL_TAC [list_to_byte_nil; list_to_byte_cons]);;
 
 let () = (export_haskell_thm o prove)
  (`!r.
@@ -610,9 +610,9 @@ let () = (export_haskell_thm o prove)
  (`(list_to_word16H [] = num_to_word16 0) /\
    (!h t.
       list_to_word16H (CONS h t) =
-      if h then word16_add (word16_shl (list_to_word16H t) 1) (num_to_word16 1)
+      if h then word16_add (num_to_word16 1) (word16_shl (list_to_word16H t) 1)
       else word16_shl (list_to_word16H t) 1)`,
-  HASKELL_TAC [list_to_word16_def]);;
+  HASKELL_TAC [list_to_word16_nil; list_to_word16_cons]);;
 
 let () = (export_haskell_thm o prove)
  (`!r.

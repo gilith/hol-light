@@ -69,6 +69,10 @@ loads "opentheory/theories/natural-fibonacci/natural-fibonacci.ml";;
 
 loads "opentheory/theories/monoid/monoid.ml";;
 
+(* ------------------------------------------------------------------------- *)
+(* Parametric theory of commutative monoids.                                 *)
+(* ------------------------------------------------------------------------- *)
+
 loads "opentheory/theories/monoid-comm/monoid-comm.ml";;
 
 (* ------------------------------------------------------------------------- *)
@@ -179,7 +183,7 @@ loads "opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.ml";;
 (* The Haskell base.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-#use "opentheory/theories/haskell/haskell.ml";;
+loads "opentheory/theories/haskell/haskell.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Stream parsers.                                                           *)

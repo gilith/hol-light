@@ -282,15 +282,8 @@ let byte_to_list_def = new_axiom
 
 new_constant ("list_to_byte", `:bool list -> byte`);;
 
-let list_to_byte_nil = new_axiom
-  `list_to_byte [] = num_to_byte 0`
-and list_to_byte_cons = new_axiom
-  `!h t.
-     list_to_byte (CONS h t) =
-     if h then byte_add (byte_shl (list_to_byte t) 1) (num_to_byte 1)
-     else byte_shl (list_to_byte t) 1`;;
-
-let list_to_byte_def = CONJ list_to_byte_nil list_to_byte_cons;;
+let list_to_byte_def = new_axiom
+  `!l. list_to_byte l = num_to_byte (bits_to_num l)`;;
 
 new_constant ("is_byte_list", `:bool list -> bool`);;
 
@@ -333,8 +326,14 @@ let length_byte_to_list = new_axiom
 let is_byte_to_list = new_axiom
   `!w. is_byte_list (byte_to_list w)`;;
 
-let bits_to_num_to_byte = new_axiom
-   `!l. num_to_byte (bits_to_num l) = list_to_byte l`;;
+let list_to_byte_nil = new_axiom
+   `list_to_byte [] = num_to_byte 0`;;
+
+let list_to_byte_cons = new_axiom
+   `!h t.
+      list_to_byte (CONS h t) =
+      if h then byte_add (num_to_byte 1) (byte_shl (list_to_byte t) 1)
+      else byte_shl (list_to_byte t) 1`;;
 
 let byte_bit_div = new_axiom
   `!w n. byte_bit w n = ODD (byte_to_num w DIV (2 EXP n))`;;
@@ -345,13 +344,14 @@ let nil_to_byte_to_num = new_axiom
 let cons_to_byte_to_num = new_axiom
    `!h t.
       byte_to_num (list_to_byte (CONS h t)) =
-      (2 * byte_to_num (list_to_byte t) + (if h then 1 else 0)) MOD byte_size`;;
+      ((if h then 1 else 0) + 2 * byte_to_num (list_to_byte t)) MOD
+      byte_size`;;
 
 let list_to_byte_to_num_bound = new_axiom
   `!l. byte_to_num (list_to_byte l) < 2 EXP (LENGTH l)`;;
 
 let list_to_byte_to_num_bound_suc = new_axiom
-  `!l. 2 * byte_to_num (list_to_byte l) + 1 < 2 EXP (SUC (LENGTH l))`;;
+  `!l. 1 + 2 * byte_to_num (list_to_byte l) < 2 EXP (SUC (LENGTH l))`;;
 
 let cons_to_byte_to_num_bound = new_axiom
    `!h t.
@@ -424,7 +424,8 @@ let byte_shr_list = new_axiom
          else list_to_byte (drop n (take byte_width l)))`;;
 
 let byte_eq_bits = new_axiom
-  `!w1 w2. (!i. i < byte_width ==> byte_bit w1 i = byte_bit w2 i) ==> w1 = w2`;;
+  `!w1 w2.
+     (!i. i < byte_width ==> byte_bit w1 i = byte_bit w2 i) ==> w1 = w2`;;
 
 let num_to_byte_cons = new_axiom
   `!n.
@@ -487,7 +488,7 @@ let list_to_byte_to_list_conv =
        take_conv);;
 
 let numeral_to_byte_list_conv =
-    let zero_conv = REWR_CONV (SYM (CONJUNCT1 list_to_byte_def)) in
+    let zero_conv = REWR_CONV (SYM list_to_byte_nil) in
     let numeral_conv = REWR_CONV (SYM (SPEC `NUMERAL n` num_to_byte_cons)) in
     let rec rewr_conv tm =
         (zero_conv ORELSEC

@@ -217,7 +217,6 @@ let monoid_mult_add_invariant = prove
    REPEAT GEN_TAC THEN
    REWRITE_TAC [monoid_mult_add_def; bits_to_num_def] THEN
    FIRST_X_ASSUM (CONV_TAC o LAND_CONV o REWR_CONV) THEN
-   ONCE_REWRITE_TAC [ADD_SYM] THEN
    REWRITE_TAC
      [monoid_mult_right_add; monoid_mult_right_mult; monoid_mult_right_two;
       GSYM monoid_add_assoc] THEN

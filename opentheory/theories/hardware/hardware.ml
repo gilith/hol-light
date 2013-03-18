@@ -562,6 +562,23 @@ let bsignal_cons = prove
 
 export_thm bsignal_cons;;
 
+let bsignal_append = prove
+ (`!b1 b2 t.
+     bsignal (bappend b1 b2) t =
+     APPEND (bsignal b1 t) (bsignal b2 t)`,
+  REWRITE_TAC [bsignal_def; bus_tybij; bappend_def; APPEND; MAP_APPEND]);;
+
+export_thm bsignal_append;;
+
+let bits_to_num_bsignal_append = prove
+ (`!b1 b2 t.
+     bits_to_num (bsignal (bappend b1 b2) t) =
+     bits_to_num (bsignal b1 t) + 2 EXP width b1 * bits_to_num (bsignal b2 t)`,
+  REWRITE_TAC
+    [bsignal_append; bits_to_num_append; width_def; bsignal_def; LENGTH_MAP]);;
+
+export_thm bits_to_num_bsignal_append;;
+
 let compressor2 = prove
  (`!x y s c.
      compressor2 x y s c ==>
@@ -605,10 +622,10 @@ let compressor2 = prove
   REWRITE_TAC [bsignal_cons; bits_to_num_cons; bus_tybij] THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `((2 * bits_to_num (bsignal xt t)) +
-      (2 * bits_to_num (bsignal yt t))) +
-     ((if signal xh t then 1 else 0) +
-      (if signal yh t then 1 else 0))` THEN
+    `((if signal xh t then 1 else 0) +
+      (if signal yh t then 1 else 0)) +
+     ((2 * bits_to_num (bsignal xt t)) +
+      (2 * bits_to_num (bsignal yt t)))` THEN
   CONJ_TAC THENL
   [POP_ASSUM_LIST (K ALL_TAC) THEN
    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
@@ -618,10 +635,10 @@ let compressor2 = prove
   MATCH_MP_TAC EQ_SYM THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `((2 * bits_to_num (bsignal st t)) +
-      (2 * (2 * bits_to_num (bsignal ct t)))) +
-     ((if signal sh t then 1 else 0) +
-      2 * (if signal ch t then 1 else 0))` THEN
+    `((if signal sh t then 1 else 0) +
+      2 * (if signal ch t then 1 else 0)) +
+     ((2 * bits_to_num (bsignal st t)) +
+      (2 * (2 * bits_to_num (bsignal ct t))))` THEN
   CONJ_TAC THENL
   [POP_ASSUM_LIST (K ALL_TAC) THEN
    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL; LEFT_ADD_DISTRIB] THEN
@@ -631,12 +648,12 @@ let compressor2 = prove
   MATCH_MP_TAC EQ_SYM THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `((2 * bits_to_num (bsignal st t)) +
-      (2 * (2 * bits_to_num (bsignal ct t)))) +
-     ((if signal xh t then 1 else 0) +
-      (if signal yh t then 1 else 0))` THEN
+    `((if signal xh t then 1 else 0) +
+      (if signal yh t then 1 else 0)) +
+     ((2 * bits_to_num (bsignal st t)) +
+      (2 * (2 * bits_to_num (bsignal ct t))))` THEN
   CONJ_TAC THENL
-  [REWRITE_TAC [EQ_ADD_RCANCEL; GSYM LEFT_ADD_DISTRIB] THEN
+  [REWRITE_TAC [EQ_ADD_LCANCEL; GSYM LEFT_ADD_DISTRIB] THEN
    AP_TERM_TAC THEN
    SPEC_TAC (`t : num`, `t : num`) THEN
    FIRST_X_ASSUM MATCH_MP_TAC THEN
@@ -645,7 +662,7 @@ let compressor2 = prove
    FIRST_X_ASSUM (MATCH_MP_TAC o REWRITE_RULE [IMP_IMP]) THEN
    EXISTS_TAC `SUC i` THEN
    ASM_REWRITE_TAC [wire_suc];
-   REWRITE_TAC [EQ_ADD_LCANCEL] THEN
+   REWRITE_TAC [EQ_ADD_RCANCEL] THEN
    FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
    POP_ASSUM_LIST (K ALL_TAC) THEN
    REWRITE_TAC [wire_zero] THEN
@@ -661,9 +678,22 @@ let compressor2 = prove
          `sh : wire`; `ch : wire`] adder2) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN (MP_TAC o SPEC `t : num`) THEN
-   REWRITE_TAC [bits_to_num_def; MULT_0; ZERO_ADD]]);;
+   REWRITE_TAC [bits_to_num_def; MULT_0; ADD_0]]);;
 
 export_thm compressor2;;
+
+let compressor2_width = prove
+ (`!x y s c.
+     compressor2 x y s c ==>
+     width s = width x /\
+     width c = width x`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [compressor2_def; GSYM LEFT_FORALL_IMP_THM] THEN
+  GEN_TAC THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm compressor2_width;;
 
 let compressor3 = prove
  (`!x y z s c.
@@ -714,12 +744,12 @@ let compressor3 = prove
   REWRITE_TAC [bsignal_cons; bits_to_num_cons; bus_tybij] THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `((2 * bits_to_num (bsignal xt t)) +
-      (2 * bits_to_num (bsignal yt t)) +
-      (2 * bits_to_num (bsignal zt t))) +
-     ((if signal xh t then 1 else 0) +
+    `((if signal xh t then 1 else 0) +
       (if signal yh t then 1 else 0) +
-      (if signal zh t then 1 else 0))` THEN
+      (if signal zh t then 1 else 0)) +
+     ((2 * bits_to_num (bsignal xt t)) +
+      (2 * bits_to_num (bsignal yt t)) +
+      (2 * bits_to_num (bsignal zt t)))` THEN
   CONJ_TAC THENL
   [POP_ASSUM_LIST (K ALL_TAC) THEN
    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
@@ -733,10 +763,10 @@ let compressor3 = prove
   MATCH_MP_TAC EQ_SYM THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `((2 * bits_to_num (bsignal st t)) +
-      (2 * (2 * bits_to_num (bsignal ct t)))) +
-     ((if signal sh t then 1 else 0) +
-      2 * (if signal ch t then 1 else 0))` THEN
+    `((if signal sh t then 1 else 0) +
+      2 * (if signal ch t then 1 else 0)) +
+     ((2 * bits_to_num (bsignal st t)) +
+      (2 * (2 * bits_to_num (bsignal ct t))))` THEN
   CONJ_TAC THENL
   [POP_ASSUM_LIST (K ALL_TAC) THEN
    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL; LEFT_ADD_DISTRIB] THEN
@@ -746,13 +776,13 @@ let compressor3 = prove
   MATCH_MP_TAC EQ_SYM THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `((2 * bits_to_num (bsignal st t)) +
-      (2 * (2 * bits_to_num (bsignal ct t)))) +
-     ((if signal xh t then 1 else 0) +
+    `((if signal xh t then 1 else 0) +
       (if signal yh t then 1 else 0) +
-      (if signal zh t then 1 else 0))` THEN
+      (if signal zh t then 1 else 0)) +
+     ((2 * bits_to_num (bsignal st t)) +
+      (2 * (2 * bits_to_num (bsignal ct t))))` THEN
   CONJ_TAC THENL
-  [REWRITE_TAC [EQ_ADD_RCANCEL; GSYM LEFT_ADD_DISTRIB] THEN
+  [REWRITE_TAC [EQ_ADD_LCANCEL; GSYM LEFT_ADD_DISTRIB] THEN
    AP_TERM_TAC THEN
    SPEC_TAC (`t : num`, `t : num`) THEN
    FIRST_X_ASSUM MATCH_MP_TAC THEN
@@ -761,7 +791,7 @@ let compressor3 = prove
    FIRST_X_ASSUM (MATCH_MP_TAC o REWRITE_RULE [IMP_IMP]) THEN
    EXISTS_TAC `SUC i` THEN
    ASM_REWRITE_TAC [wire_suc];
-   REWRITE_TAC [EQ_ADD_LCANCEL] THEN
+   REWRITE_TAC [EQ_ADD_RCANCEL] THEN
    FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
    POP_ASSUM_LIST (K ALL_TAC) THEN
    REWRITE_TAC [wire_zero] THEN
@@ -777,11 +807,23 @@ let compressor3 = prove
          `sh : wire`; `ch : wire`] adder3) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN (MP_TAC o SPEC `t : num`) THEN
-   REWRITE_TAC [bits_to_num_def; MULT_0; ZERO_ADD]]);;
+   REWRITE_TAC [bits_to_num_def; MULT_0; ADD_0]]);;
 
 export_thm compressor3;;
 
-(***
+let compressor3_width = prove
+ (`!x y z s c.
+     compressor3 x y z s c ==>
+     width s = width x /\
+     width c = width x`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [compressor3_def; GSYM LEFT_FORALL_IMP_THM] THEN
+  GEN_TAC THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm compressor3_width;;
+
 let compressor4 = prove
  (`!w x y z s c.
      compressor4 w x y z s c ==>
@@ -800,8 +842,154 @@ let compressor4 = prove
         `p : bus`; `q : bus`] compressor3) THEN
   ASM_REWRITE_TAC [ADD_ASSOC] THEN
   DISCH_THEN (SUBST1_TAC o SPEC `t : num`) THEN
+  MP_TAC
+    (SPECL
+       [`w : bus`; `x : bus`; `y : bus`;
+        `p : bus`; `q : bus`] compressor3_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  SUBGOAL_THEN `bappend p0 p1 = p` (SUBST1_TAC o SYM) THENL
+  [ASM_REWRITE_TAC [GSYM bsub_width] THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [ZERO_ADD];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `bappend z0 z1 = z` (SUBST1_TAC o SYM) THENL
+  [ASM_REWRITE_TAC [GSYM bsub_width] THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [ZERO_ADD];
+   ALL_TAC] THEN
+  ONCE_REWRITE_TAC [bits_to_num_bsignal_append] THEN
+  SUBGOAL_THEN `width p0 = 1` ASSUME_TAC THENL
+  [MATCH_MP_TAC width_bsub THEN
+   EXISTS_TAC `p : bus` THEN
+   EXISTS_TAC `0` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width z0 = 1` ASSUME_TAC THENL
+  [MATCH_MP_TAC width_bsub THEN
+   EXISTS_TAC `z : bus` THEN
+   EXISTS_TAC `0` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  MP_TAC
+    (SPECL
+       [`p0 : bus`; `z0 : bus`; `s0 : bus`; `c0 : bus`]
+       compressor2_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [EXP_1] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bits_to_num (bsignal p0 t) +
+      bits_to_num (bsignal z0 t)) +
+     (2 * bits_to_num (bsignal p1 t) +
+      2 * bits_to_num (bsignal q t) +
+      2 * bits_to_num (bsignal z1 t))` THEN
+  CONJ_TAC THENL
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+   CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+   REWRITE_TAC [ADD_ASSOC];
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bits_to_num (bsignal s0 t) +
+      2 * bits_to_num (bsignal c0 t)) +
+     (2 * bits_to_num (bsignal (bappend s1 s2) t) +
+      2 * (2 * bits_to_num (bsignal c1 t)))` THEN
+  CONJ_TAC THENL
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL; LEFT_ADD_DISTRIB] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bits_to_num (bsignal s0 t) +
+      2 * bits_to_num (bsignal c0 t)) +
+     (2 * bits_to_num (bsignal p1 t) +
+      2 * bits_to_num (bsignal q t) +
+      2 * bits_to_num (bsignal z1 t))` THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [EQ_ADD_RCANCEL] THEN
+   SPEC_TAC (`t : num`, `t : num`) THEN
+   MATCH_MP_TAC compressor2 THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  REWRITE_TAC [EQ_ADD_LCANCEL] THEN
+  REWRITE_TAC [GSYM LEFT_ADD_DISTRIB] THEN
+  AP_TERM_TAC THEN
+  SUBGOAL_THEN `bappend q1 s2 = q` (SUBST1_TAC o SYM) THENL
+  [ASM_REWRITE_TAC [GSYM bsub_width] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [ZERO_ADD];
+   ALL_TAC] THEN
+  ONCE_REWRITE_TAC [bits_to_num_bsignal_append] THEN
+  SUBGOAL_THEN `width q1 = n` ASSUME_TAC THENL
+  [MATCH_MP_TAC width_bsub THEN
+   EXISTS_TAC `q : bus` THEN
+   EXISTS_TAC `0` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width p1 = n` ASSUME_TAC THENL
+  [MATCH_MP_TAC width_bsub THEN
+   EXISTS_TAC `p : bus` THEN
+   EXISTS_TAC `1` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  MP_TAC
+    (SPECL
+       [`p1 : bus`; `q1 : bus`; `z1 : bus`; `s1 : bus`; `c1 : bus`]
+       compressor3_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bits_to_num (bsignal p1 t) +
+      bits_to_num (bsignal q1 t) +
+      bits_to_num (bsignal z1 t)) +
+     2 EXP n * bits_to_num (bsignal s2 t)` THEN
+  CONJ_TAC THENL
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bits_to_num (bsignal s1 t) + 2 * bits_to_num (bsignal c1 t)) +
+     2 EXP n * bits_to_num (bsignal s2 t)` THEN
+  CONJ_TAC THENL
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  AP_THM_TAC THEN
+  AP_TERM_TAC THEN
+  SPEC_TAC (`t : num`, `t : num`) THEN
+  MATCH_MP_TAC compressor3 THEN
+  FIRST_ASSUM ACCEPT_TAC);;
 
 export_thm compressor4;;
-***)
+
+let compressor4_width = prove
+ (`!w x y z s c.
+     compressor4 w x y z s c ==>
+     width s = width w + 1 /\
+     width c = width w`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [compressor4_def; GSYM LEFT_FORALL_IMP_THM] THEN
+  REPEAT GEN_TAC THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [TWO; ONE; ADD_SUC; ADD_0]);;
+
+export_thm compressor4_width;;
 
 logfile_end ();;
