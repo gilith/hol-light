@@ -304,26 +304,29 @@ export_thm montgomery_double_exp_bound;;
 (* ------------------------------------------------------------------------- *)
 
 (***
-let (physical_region_induct,physical_region_recursion) =
-  let (induct,recursion) = define_type
-    "physical_region =
-       PhysicalRegion
-         physical_page_address
-         region_length" in
-  let induct' = prove
-    (`!p.
-        (!s l. p (PhysicalRegion s l)) ==>
-        !pr. p pr`,
-     ACCEPT_TAC induct)
-  and recursion' = prove
-    (`!f.
-        ?(fn : physical_region -> A).
-          (!s l. fn (PhysicalRegion s l) = f s l)`,
-     MATCH_ACCEPT_TAC recursion) in
-  (induct',recursion');;
+let montgomery_core_def = new_definition
+  `!n k n1 n2 n3 xs xc
+    ys yc s1 s2 sb sa sz so c1 c2 ks kc ns nc rs rc
+    ys' yc' s1' s2' sb' sa' sz' so' c1' c2' ks' kc' ns' nc' rs' rc'
+    zs' zc'.
+      montgomery_core
+        n k n1 n2 n3 xs xc
+        ys yc s1 s2 sb sa sz so c1 c2 ks kc ns nc rs rc
+        ys' yc' s1' s2' sb' sa' sz' so' c1' c2' ks' kc' ns' nc' rs' rc'
+        zs' zc' <=>
+      ?r.
+        width n = r /\ width k = r /\ width n1 = r /\ width n2 = r /\
+        width n3 = r /\ width xs = r /\ width xc = r /\
+        width ys = r /\ width yc = r /\ width s1 = r /\ width s2 = r /\
+        width c1 = r /\ width c2 = r /\ width ks = r /\ width kc = r /\
+        width ns = r /\ width nc = r /\ width rs = r /\ width rc = r /\
+        width ys' = r /\ width yc' = r /\ width s1' = r /\ width s2' = r /\
+        width c1' = r /\ width c2' = r /\ width ks' = r /\ width kc' = r /\
+        width ns' = r /\ width nc' = r /\ width rs' = r /\ width rc' = r /\
+        width zs' = r /\ width zc' = r /\
+        F`;;
 
-export_thm physical_region_induct;;
-export_thm physical_region_recursion;;
+export_thm montgomery_core_def;;
 ***)
 
 let rec bitwidth_num n =
