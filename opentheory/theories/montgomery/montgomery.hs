@@ -308,7 +308,7 @@ nextM n r k rx ry rz xs xc
 
     so' = so || sz -- [1]
 
-    (ks',kc') = -- [k]
+    (ks',kc') = -- [r]
         threeToTwo (if sy then k else zeroBits) (tailBits ks) kc
 
     (ns',nc') = -- [r-2,r-2]

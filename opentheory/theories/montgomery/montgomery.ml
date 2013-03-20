@@ -317,9 +317,13 @@ let montgomery_core_def = new_definition
       ?r
        ys0 ys1 yc0 yc1
        ys0' ys1' yc0' yc1'.
-         width n = r /\ width k = r /\
-         width rx = r /\ width ry = r /\ width rz = r /\
-         width xs = r /\ width xc = r
+         width n = r /\
+         width k = r /\
+         width rx = r /\
+         width ry = r /\
+         width rz = r /\
+         width xs = r /\
+         width xc = r
          /\
          (width ys = r /\
           bsub ys 0 1 ys0 /\
@@ -339,9 +343,11 @@ let montgomery_core_def = new_definition
          width rc = r
          /\
          (width ys' = r /\
-          bsub ys' 0 (r-1) ys0' /\ bsub ys' (r-1) 1 ys1') /\
+          bsub ys' 0 (r-1) ys0' /\
+          bsub ys' (r-1) 1 ys1') /\
          (width yc' = r /\
-          bsub yc' 0 (r-1) yc0' /\ bsub yc' (r-1) 1 yc1') /\
+          bsub yc' 0 (r-1) yc0' /\
+          bsub yc' (r-1) 1 yc1') /\
          width sa' = r /\
          width sb' = r /\
          width ca' = r /\
@@ -353,8 +359,10 @@ let montgomery_core_def = new_definition
          width rs' = r /\
          width rc' = r
          /\
-         width zs' = r /\ width zc' = r
+         width zs' = r /\
+         width zc' = r
          /\
+         compressor2
          F`;;
 
 export_thm montgomery_core_def;;
