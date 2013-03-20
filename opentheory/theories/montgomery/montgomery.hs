@@ -165,30 +165,45 @@ y = ys:[r-2] + 2 * yc:[r-2]
 x,y < 3/4 * 2^r
 x*y < 9/16 * 2^{2r}
 
-montgomeryReduce n r k x*y < 9/16 * 2^r + n < 2^r
+let (rs,rc) = montgomeryReduce n r k x*y < 9/16 * 2^r + n < 2^r
 
       | r-1 | r-2 | r-3
 ------+-----+-----+-----
- 1*rs |  ?  |  ?  |  X
- 2*rc |  ?  |  ?  |  X
+ 1*rs |  A  |  B  |  X
+ 2*rc |  C  |  D  |  X
 
-Let n1 = 2^{r-2} mod n, n2 = 2^{r-1} mod n and n3 = (n1 + n2) mod n.
+Let rx = 2^{r-2} mod n, ry = (2 * nz) mod n and rz = (3 * nz) mod n.
+
+rs + 2*rc is the correct result modulo n. To make the result fit into
+r-2 bits, we will subtract
+
+A * 2^{r-1} + B * 2^{r-2}
+
+from rs, and
+
+C * 2^{r-1} + D * 2^{r-2}
+
+from 2*rc. To preserve the result modulo n, we need to add
+
+case 2 * (A + B) + (C + D) of
+  0 => 0
+| 1 => rx
+| 2 => ry
+| 3 => rz
 -}
 
 data StateM =
    StateM
-     { xsM :: Bits,
-       xcM :: Bits,
-       ysM :: Bits,
+     { ysM :: Bits,
        ycM :: Bits,
-       s1M :: Bits,
-       s2M :: Bits,
-       sbM :: Bool,
-       saM :: Bool,
+       saM :: Bits,
+       sbM :: Bits,
+       sxM :: Bool,
+       syM :: Bool,
        szM :: Bool,
        soM :: Bool,
-       c1M :: Bits,
-       c2M :: Bits,
+       caM :: Bits,
+       cbM :: Bits,
        ksM :: Bits,
        kcM :: Bits,
        nsM :: Bits,
@@ -202,18 +217,16 @@ data StateM =
 nullM :: StateM
 nullM =
     StateM
-      { xsM = zeroBits,
-        xcM = zeroBits,
-        ysM = zeroBits,
+      { ysM = zeroBits,
         ycM = zeroBits,
-        s1M = zeroBits,
-        s2M = zeroBits,
-        sbM = False,
-        saM = False,
+        saM = zeroBits,
+        sbM = zeroBits,
+        sxM = False,
+        syM = False,
         szM = False,
         soM = False,
-        c1M = zeroBits,
-        c2M = zeroBits,
+        caM = zeroBits,
+        cbM = zeroBits,
         ksM = zeroBits,
         kcM = zeroBits,
         nsM = zeroBits,
@@ -223,29 +236,26 @@ nullM =
         zsM = zeroBits,
         zcM = zeroBits }
 
-initialM :: Bits -> Bits -> Bits -> Bits -> StateM
-initialM xs xc ys yc =
+initialM :: Bits -> Bits -> StateM
+initialM ys yc =
     nullM
-      { xsM = xs,
-        xcM = xc,
-        ysM = ys,
+      { ysM = ys,
         ycM = yc }
 
-nextM :: Bits -> Int -> Bits -> Bits -> Bits -> Bits -> StateM -> StateM
-nextM n r k n1 n2 n3
+nextM :: Bits -> Int -> Bits -> Bits -> Bits -> Bits -> Bits -> Bits ->
+         StateM -> StateM
+nextM n r k rx ry rz xs xc
       (StateM
-        { xsM = xs,
-          xcM = xc,
-          ysM = ys,
+        { ysM = ys,
           ycM = yc,
-          s1M = s1,
-          s2M = s2,
-          sbM = sb,
           saM = sa,
+          sbM = sb,
+          sxM = sx,
+          syM = sy,
           szM = sz,
           soM = so,
-          c1M = c1,
-          c2M = c2,
+          caM = ca,
+          cbM = cb,
           ksM = ks,
           kcM = kc,
           nsM = ns,
@@ -255,18 +265,16 @@ nextM n r k n1 n2 n3
           zsM = _,
           zcM = _ }) =
     StateM
-      { xsM = xs',
-        xcM = xc',
-        ysM = ys',
+      { ysM = ys',
         ycM = yc',
-        s1M = s1',
-        s2M = s2',
-        sbM = sb',
         saM = sa',
+        sbM = sb',
+        sxM = sx',
+        syM = sy',
         szM = sz',
         soM = so',
-        c1M = c1',
-        c2M = c2',
+        caM = ca',
+        cbM = cb',
         ksM = ks',
         kcM = kc',
         nsM = ns',
@@ -276,32 +284,30 @@ nextM n r k n1 n2 n3
         zsM = zs',
         zcM = zc' }
   where
-    (xs',xc') = twoToTwo (tailBits xs) xc
-    ys' = ys
-    yc' = yc
-    (s1',c1') = threeToTwo (if headBits xs then ys else zeroBits)
-                  (if headBits xs then (consBits False yc) else zeroBits) c1
-    (s2',c2') = threeToTwo (tailBits s1) (tailBits s2) c2
-    (sa',sb') = adder (headBits s1) (headBits s2) sb
-    sz' = sa
+    (ys',yc') = twoToTwo (tailBits ys) yc
+    (sa',ca') = threeToTwo (if headBits ys then xs else zeroBits)
+                  (if headBits ys then (consBits False xc) else zeroBits) ca
+    (sb',cb') = threeToTwo (tailBits sa) (tailBits sb) cb
+    (sy',sx') = adder (headBits sa) (headBits sb) sx
+    sz' = sy
     so' = so || sz
-    (ks',kc') = threeToTwo (if sa then k else zeroBits) (tailBits ks) kc
+    (ks',kc') = threeToTwo (if sy then k else zeroBits) (tailBits ks) kc
     (ns',nc') = threeToTwo (if (headBits ks) then n else zeroBits)
                   (tailBits ns) nc
     (rs',rc') = fourToTwo
                   (tailBits ns)
                   nc
-                  (consBits sz (consBits sa s2))
-                  (consBits so (consBits False (consBits sb c2)))
+                  (consBits sz (consBits sy sb))
+                  (consBits so (consBits False (consBits sx cb)))
     (zs',zc') =
         threeToTwo
           (if nthBits (r - 1) rs || nthBits (r - 2) rc
              then if nthBits (r - 2) rs || nthBits (r - 3) rc
-                    then n3
-                    else n2
+                    then rz
+                    else ry
              else if nthBits (r - 2) rs
-                    then if nthBits (r - 3) rc then n2 else n1
-                    else if nthBits (r - 3) rc then n1 else zeroBits)
+                    then if nthBits (r - 3) rc then ry else rx
+                    else if nthBits (r - 3) rc then rx else zeroBits)
           (prefixBits (r - 2) rs)
           (consBits False (prefixBits (r - 3) rc))
 
@@ -309,25 +315,26 @@ montgomerySquare :: Natural -> Int -> Natural -> Bits -> Bits -> [StateM]
 montgomerySquare n r k xs xc =
     mkCircuit next initial
   where
-    initial = initialM xs xc xs xc
+    initial = initialM xs xc
 
     next = nextM (numToBits n) r (numToBits k)
-             (numToBits n1) (numToBits n2) (numToBits n3)
+             (numToBits rx) (numToBits ry) (numToBits rz)
+             xs xc
 
-    n1 = pow2 (r - 2) `mod` n
-    n2 = (2 * n1) `mod` n
-    n3 = (3 * n1) `mod` n
+    rx = pow2 (r - 2) `mod` n
+    ry = (2 * rx) `mod` n
+    rz = (3 * rx) `mod` n
 
 montgomerySquareProp ::
     Natural -> Int -> Natural -> Natural -> Bits -> Bits -> Bool
 montgomerySquareProp n r s k xs xc =
     and [xasCorrect,
-         sasCorrect,
+         sysCorrect,
          kssCorrect,
          nssCorrect,
          nssLCorrect,
          nssHCorrect,
-         sasHCorrect,
+         sysHCorrect,
          soCorrect,
          redCorrect,
          redBound,
@@ -336,16 +343,16 @@ montgomerySquareProp n r s k xs xc =
   where
     ckt = montgomerySquare n r k xs xc
 
-    xas = bitsToNum (Bits (take r (map (headBits . xsM) ckt)))
+    xas = bitsToNum (Bits (take r (map (headBits . ysM) ckt)))
     xasCorrect = xas == bitsToNum xs + 2 * bitsToNum xc
 
-    sas = bitsToNum (Bits (take (2 * r) (map saM (drop 2 ckt))))
-    sasCorrect = sas == xas * xas
+    sys = bitsToNum (Bits (take (2 * r) (map syM (drop 2 ckt))))
+    sysCorrect = sys == xas * xas
 
     kss = bitsToNum (Bits (take r (map (headBits . ksM) (drop 3 ckt))))
-    kssCorrect = kss == (sas * k) `mod` pow2 r
+    kssCorrect = kss == (sys * k) `mod` pow2 r
 
-    nssCorrect = (kss * n + sas) `mod` pow2 r == 0
+    nssCorrect = (kss * n + sys) `mod` pow2 r == 0
 
     nssL = bitsToNum (Bits (take r (map (headBits . nsM) (drop 4 ckt))))
     nssLCorrect = nssL == (kss * n) `mod` pow2 r
@@ -355,22 +362,22 @@ montgomerySquareProp n r s k xs xc =
     nssH = bitsToNum (tailBits (nsM cktR)) + bitsToNum (ncM cktR)
     nssHCorrect = nssH == (kss * n) `div` pow2 r
 
-    sasH = boolToNum (szM cktR) + 2 * (boolToNum (saM cktR) + 2 * (bitsToNum (s2M cktR) + boolToNum (sbM cktR) + 2 * bitsToNum (c2M cktR)))
-    sasHCorrect = sasH == sas `div` pow2 r
+    sysH = boolToNum (szM cktR) + 2 * (boolToNum (syM cktR) + 2 * (bitsToNum (sbM cktR) + boolToNum (sxM cktR) + 2 * bitsToNum (cbM cktR)))
+    sysHCorrect = sysH == sys `div` pow2 r
 
     so = boolToNum (soM cktR)
-    soCorrect = (sasH + nssH + so) `mod` n == (sas * s) `mod` n
+    soCorrect = (sysH + nssH + so) `mod` n == (sys * s) `mod` n
 
     cktR' = head (drop (r + 4) ckt)
 
     red = bitsToNum (rsM cktR') + 2 * bitsToNum (rcM cktR')
-    redCorrect = red `mod` n == (sas * s) `mod` n
+    redCorrect = red `mod` n == (sys * s) `mod` n
     redBound = red < pow2 r
 
     cktR'' = head (drop (r + 5) ckt)
 
     res = bitsToNum (zsM cktR'') + 2 * bitsToNum (zcM cktR'')
-    resCorrect = res `mod` n == (sas * s) `mod` n
+    resCorrect = res `mod` n == (sys * s) `mod` n
     resBound = res <= pow2 r - 2
 
 montgomerySquareCorrect :: Natural -> Int -> Natural -> Natural -> IO ()
@@ -411,13 +418,13 @@ ckt = montgomerySquare n r k xs xc
 xas = bitsToNum (Bits (take r (map (headBits . xsM) ckt)))
 xasCorrect = xas == bitsToNum xs + 2 * bitsToNum xc
 
-sas = bitsToNum (Bits (take (2 * r) (map saM (drop 2 ckt))))
-sasCorrect = sas == xas * xas
+sys = bitsToNum (Bits (take (2 * r) (map syM (drop 2 ckt))))
+sysCorrect = sys == xas * xas
 
 kss = bitsToNum (Bits (take r (map (headBits . ksM) (drop 3 ckt))))
-kssCorrect = kss == (sas * k) `mod` pow2 r
+kssCorrect = kss == (sys * k) `mod` pow2 r
 
-nssCorrect = (kss * n + sas) `mod` pow2 r == 0
+nssCorrect = (kss * n + sys) `mod` pow2 r == 0
 
 nssL = bitsToNum (Bits (take r (map (headBits . nsM) (drop 4 ckt))))
 nssLCorrect = nssL == (kss * n) `mod` pow2 r
@@ -427,21 +434,21 @@ cktR = head (drop (r + 3) ckt)
 nssH = bitsToNum (tailBits (nsM cktR)) + bitsToNum (ncM cktR)
 nssHCorrect = nssH == (kss * n) `div` pow2 r
 
-sasH = boolToNum (szM cktR) + 2 * (boolToNum (saM cktR) + 2 * (bitsToNum (s2M cktR) + boolToNum (sbM cktR) + 2 * bitsToNum (c2M cktR)))
-sasHCorrect = sasH == sas `div` pow2 r
+sysH = boolToNum (szM cktR) + 2 * (boolToNum (syM cktR) + 2 * (bitsToNum (sbM cktR) + boolToNum (sxM cktR) + 2 * bitsToNum (cbM cktR)))
+sysHCorrect = sysH == sys `div` pow2 r
 
 so = boolToNum (soM cktR)
-soCorrect = (sasH + nssH + so) `mod` n == (sas * s) `mod` n
+soCorrect = (sysH + nssH + so) `mod` n == (sys * s) `mod` n
 
 cktR' = head (drop (r + 4) ckt)
 
 red = bitsToNum (rsM cktR') + 2 * bitsToNum (rcM cktR')
-redCorrect = red `mod` n == (sas * s) `mod` n
+redCorrect = red `mod` n == (sys * s) `mod` n
 redBound = red < pow2 r
 
 cktR'' = head (drop (r + 5) ckt)
 
 res = bitsToNum (zsM cktR'') + 2 * bitsToNum (zcM cktR'')
-resCorrect = res `mod` n == (sas * s) `mod` n
+resCorrect = res `mod` n == (sys * s) `mod` n
 resBound = res <= pow2 r - 2
 -}

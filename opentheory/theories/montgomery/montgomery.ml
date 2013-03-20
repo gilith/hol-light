@@ -305,26 +305,57 @@ export_thm montgomery_double_exp_bound;;
 
 (***
 let montgomery_core_def = new_definition
-  `!n k n1 n2 n3 xs xc
-    ys yc s1 s2 sb sa sz so c1 c2 ks kc ns nc rs rc
-    ys' yc' s1' s2' sb' sa' sz' so' c1' c2' ks' kc' ns' nc' rs' rc'
+  `!n k rx ry rz xs xc
+    ys yc sa sb sx sy sz so ca cb ks kc ns nc rs rc
+    ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc' rs' rc'
     zs' zc'.
       montgomery_core
-        n k n1 n2 n3 xs xc
-        ys yc s1 s2 sb sa sz so c1 c2 ks kc ns nc rs rc
-        ys' yc' s1' s2' sb' sa' sz' so' c1' c2' ks' kc' ns' nc' rs' rc'
+        n k rx ry rz xs xc
+        ys yc sa sb sx sy sz so ca cb ks kc ns nc rs rc
+        ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc' rs' rc'
         zs' zc' <=>
-      ?r.
-        width n = r /\ width k = r /\ width n1 = r /\ width n2 = r /\
-        width n3 = r /\ width xs = r /\ width xc = r /\
-        width ys = r /\ width yc = r /\ width s1 = r /\ width s2 = r /\
-        width c1 = r /\ width c2 = r /\ width ks = r /\ width kc = r /\
-        width ns = r /\ width nc = r /\ width rs = r /\ width rc = r /\
-        width ys' = r /\ width yc' = r /\ width s1' = r /\ width s2' = r /\
-        width c1' = r /\ width c2' = r /\ width ks' = r /\ width kc' = r /\
-        width ns' = r /\ width nc' = r /\ width rs' = r /\ width rc' = r /\
-        width zs' = r /\ width zc' = r /\
-        F`;;
+      ?r
+       ys0 ys1 yc0 yc1
+       ys0' ys1' yc0' yc1'.
+         width n = r /\ width k = r /\
+         width rx = r /\ width ry = r /\ width rz = r /\
+         width xs = r /\ width xc = r
+         /\
+         (width ys = r /\
+          bsub ys 0 1 ys0 /\
+          bsub ys 1 (r-1) ys1) /\
+         (width yc = r /\
+          bsub yc 0 (r-1) yc0 /\
+          bsub yc (r-1) 1 yc1) /\
+         width sa = r /\
+         width sb = r /\
+         width ca = r /\
+         width cb = r /\
+         width ks = r /\
+         width kc = r /\
+         width ns = r /\
+         width nc = r /\
+         width rs = r /\
+         width rc = r
+         /\
+         (width ys' = r /\
+          bsub ys' 0 (r-1) ys0' /\ bsub ys' (r-1) 1 ys1') /\
+         (width yc' = r /\
+          bsub yc' 0 (r-1) yc0' /\ bsub yc' (r-1) 1 yc1') /\
+         width sa' = r /\
+         width sb' = r /\
+         width ca' = r /\
+         width cb' = r /\
+         width ks' = r /\
+         width kc' = r /\
+         width ns' = r /\
+         width nc' = r /\
+         width rs' = r /\
+         width rc' = r
+         /\
+         width zs' = r /\ width zc' = r
+         /\
+         F`;;
 
 export_thm montgomery_core_def;;
 ***)
