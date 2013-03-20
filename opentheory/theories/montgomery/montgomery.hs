@@ -169,8 +169,8 @@ montgomeryReduce n r k x*y < 9/16 * 2^r + n < 2^r
 
       | r-1 | r-2 | r-3
 ------+-----+-----+-----
- 1*rs |  X  |  X  |  X
- 2*rc |  X  |  X  |  X
+ 1*rs |  ?  |  ?  |  X
+ 2*rc |  ?  |  ?  |  X
 
 Let n1 = 2^{r-2} mod n, n2 = 2^{r-1} mod n and n3 = (n1 + n2) mod n.
 -}
