@@ -162,20 +162,27 @@ Let n < 2^{r-2}, and represent inputs as
 x = xs:[r-2] + 2 * xc:[r-2]
 y = ys:[r-2] + 2 * yc:[r-2]
 
-x,y < 3/4 * 2^r
+x,y <= 2^{r-2} - 1 + 2 * (2^{r-2} - 1)
+     < 1/4 * 2^r + 1/2 * 2^r
+     = 3/4 * 2^r
+
 x*y < 9/16 * 2^{2r}
 
-let (rs,rc) = montgomeryReduce n r k x*y < 9/16 * 2^r + n < 2^r
+Represent montgomeryReduce n (2^r) k (x*y) as
+
+rs:[r] + 2 * rc:[r-1]
+
+rs+2*rc < 9/16 * 2^r + n < 2^r
 
       | r-1 | r-2 | r-3
 ------+-----+-----+-----
- 1*rs |  A  |  B  |  X
+   rs |  A  |  B  |  X
  2*rc |  C  |  D  |  X
 
-Let rx = 2^{r-2} mod n, ry = (2 * nz) mod n and rz = (3 * nz) mod n.
+Let rx = 2^{r-2} mod n, ry = (2 * rx) mod n and rz = (3 * rx) mod n.
 
-rs + 2*rc is the correct result modulo n. To make the result fit into
-r-2 bits, we will subtract
+rs+2*rc is the correct result modulo n. To construct a result that
+fits into r-2 bits, we will subtract
 
 A * 2^{r-1} + B * 2^{r-2}
 
@@ -183,7 +190,7 @@ from rs, and
 
 C * 2^{r-1} + D * 2^{r-2}
 
-from 2*rc. To preserve the result modulo n, we need to add
+from 2*rc. To preserve the result modulo n, we therefore need to add
 
 case 2 * (A + B) + (C + D) of
   0 => 0
@@ -284,22 +291,38 @@ nextM n r k rx ry rz xs xc
         zsM = zs',
         zcM = zc' }
   where
-    (ys',yc') = twoToTwo (tailBits ys) yc
-    (sa',ca') = threeToTwo (if headBits ys then xs else zeroBits)
-                  (if headBits ys then (consBits False xc) else zeroBits) ca
-    (sb',cb') = threeToTwo (tailBits sa) (tailBits sb) cb
-    (sy',sx') = adder (headBits sa) (headBits sb) sx
-    sz' = sy
-    so' = so || sz
-    (ks',kc') = threeToTwo (if sy then k else zeroBits) (tailBits ks) kc
-    (ns',nc') = threeToTwo (if (headBits ks) then n else zeroBits)
-                  (tailBits ns) nc
-    (rs',rc') = fourToTwo
-                  (tailBits ns)
-                  nc
-                  (consBits sz (consBits sy sb))
-                  (consBits so (consBits False (consBits sx cb)))
-    (zs',zc') =
+    (ys',yc') = -- [r-2,r-2]
+        twoToTwo (tailBits ys) yc
+
+    (sa',ca') = -- [r-1,r-2]
+        threeToTwo (if headBits ys then xs else zeroBits)
+          (if headBits ys then (consBits False xc) else zeroBits) ca
+
+    (sb',cb') = -- [r-2,r-2]
+        threeToTwo (tailBits sa) (tailBits sb) cb
+
+    (sy',sx') = -- [1,1]
+        adder (headBits sa) (headBits sb) sx
+
+    sz' = sy -- [1]
+
+    so' = so || sz -- [1]
+
+    (ks',kc') = -- [k]
+        threeToTwo (if sy then k else zeroBits) (tailBits ks) kc
+
+    (ns',nc') = -- [r-2,r-2]
+        threeToTwo (if (headBits ks) then n else zeroBits)
+          (tailBits ns) nc
+
+    (rs',rc') = -- [r,r]  (by the bounds theorem)
+        fourToTwo
+          (tailBits ns)
+          nc
+          (consBits sz (consBits sy sb))
+          (consBits so (consBits False (consBits sx cb)))
+
+    (zs',zc') = -- [r-2,r-2]
         threeToTwo
           (if nthBits (r - 1) rs || nthBits (r - 2) rc
              then if nthBits (r - 2) rs || nthBits (r - 3) rc
@@ -397,7 +420,6 @@ main =
        montgomerySquareCorrect 35 8 16 117
 
 {- Testing
-
 n :: Natural
 n = 35
 
@@ -415,7 +437,7 @@ xc = numToBits (pow2 (r - 2) - 1)
 
 ckt = montgomerySquare n r k xs xc
 
-xas = bitsToNum (Bits (take r (map (headBits . xsM) ckt)))
+xas = bitsToNum (Bits (take r (map (headBits . ysM) ckt)))
 xasCorrect = xas == bitsToNum xs + 2 * bitsToNum xc
 
 sys = bitsToNum (Bits (take (2 * r) (map syM (drop 2 ckt))))
