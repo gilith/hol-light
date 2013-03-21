@@ -157,13 +157,17 @@ loads "opentheory/theories/char/char.ml";;
 (* Hardware verification.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 loads "opentheory/theories/hardware/hardware.ml";;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Montgomery multiplication.                                                *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 loads "opentheory/theories/montgomery/montgomery.ml";;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Memory safety for the H interface.                                        *)

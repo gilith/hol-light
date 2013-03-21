@@ -58,66 +58,71 @@ export_thm ground_signal;;
 
 let delay_signal =
   let def = new_definition
-    `!x y.
-       delay x y <=>
-       !t. signal y (t + 1) = signal x t` in
+    `!x y'.
+       delay x y' <=>
+       !t. signal y' (t + 1) = signal x t` in
   prove
-  (`!x y.
-      delay x y ==>
-      !t. signal y (t + 1) = signal x t`,
-   REWRITE_TAC [def]);;
+  (`!x y' t.
+      delay x y' ==>
+      signal y' (t + 1) = signal x t`,
+   REPEAT GEN_TAC THEN
+   DISCH_THEN (MATCH_ACCEPT_TAC o REWRITE_RULE [def]));;
 
 export_thm delay_signal;;
 
 let not_signal =
   let def = new_definition
-    `!x y.
-       not x y <=>
-       !t. signal y t = ~signal x t` in
+    `!x y'.
+       not x y' <=>
+       !t. signal y' t = ~signal x t` in
   prove
-  (`!x y.
-      not x y ==>
-      !t. signal y t = ~signal x t`,
-   REWRITE_TAC [def]);;
+  (`!x y' t.
+      not x y' ==>
+      signal y' t = ~signal x t`,
+   REPEAT GEN_TAC THEN
+   DISCH_THEN (MATCH_ACCEPT_TAC o REWRITE_RULE [def]));;
 
 export_thm not_signal;;
 
 let and2_signal =
   let def = new_definition
-    `!x1 x2 y.
-       and2 x1 x2 y <=>
-       !t. signal y t = (signal x1 t /\ signal x2 t)` in
+    `!x1 x2 y'.
+       and2 x1 x2 y' <=>
+       !t. signal y' t = (signal x1 t /\ signal x2 t)` in
   prove
-  (`!x1 x2 y.
-      and2 x1 x2 y ==>
-      !t. signal y t = (signal x1 t /\ signal x2 t)`,
-   REWRITE_TAC [def]);;
+  (`!x1 x2 y' t.
+      and2 x1 x2 y' ==>
+      signal y' t = (signal x1 t /\ signal x2 t)`,
+   REPEAT GEN_TAC THEN
+   DISCH_THEN (MATCH_ACCEPT_TAC o REWRITE_RULE [def]));;
 
 export_thm and2_signal;;
 
 let or2_signal =
   let def = new_definition
-    `!x1 x2 y.
-       or2 x1 x2 y <=>
-       !t. signal y t = (signal x1 t \/ signal x2 t)` in
+    `!x1 x2 y'.
+       or2 x1 x2 y' <=>
+       !t. signal y' t = (signal x1 t \/ signal x2 t)` in
   prove
-  (`!x1 x2 y.
-      or2 x1 x2 y ==>
-      !t. signal y t = (signal x1 t \/ signal x2 t)`,
-   REWRITE_TAC [def]);;
+  (`!x1 x2 y' t.
+      or2 x1 x2 y' ==>
+      signal y' t = (signal x1 t \/ signal x2 t)`,
+   REPEAT GEN_TAC THEN
+   DISCH_THEN (MATCH_ACCEPT_TAC o REWRITE_RULE [def]));;
 
 export_thm or2_signal;;
 
 let xor2_signal =
   let def = new_definition
-    `!x1 x2 y.
-       xor2 x1 x2 y <=>
-       !t. signal y t = ~(signal x1 t = signal x2 t)` in
+    `!x1 x2 y'.
+       xor2 x1 x2 y' <=>
+       !t. signal y' t = ~(signal x1 t = signal x2 t)` in
   prove
-  (`!x1 x2 y.
-      xor2 x1 x2 y ==>
-      !t. signal y t = ~(signal x1 t = signal x2 t)`,
-   REWRITE_TAC [def]);;
+  (`!x1 x2 y' t.
+      xor2 x1 x2 y' ==>
+      signal y' t = ~(signal x1 t = signal x2 t)`,
+   REPEAT GEN_TAC THEN
+   DISCH_THEN (MATCH_ACCEPT_TAC o REWRITE_RULE [def]));;
 
 export_thm xor2_signal;;
 
@@ -126,39 +131,39 @@ export_thm xor2_signal;;
 (* ------------------------------------------------------------------------- *)
 
 let or3_def = new_definition
-  `!x1 x2 x3 y.
-     or3 x1 x2 x3 y <=>
-     ?w. or2 x1 x2 w /\ or2 w x3 y`;;
+  `!x1 x2 x3 y'.
+     or3 x1 x2 x3 y' <=>
+     ?w. or2 x1 x2 w /\ or2 w x3 y'`;;
 
 export_thm or3_def;;
 
 let xor3_def = new_definition
-  `!x1 x2 x3 y.
-     xor3 x1 x2 x3 y <=>
-     ?w. xor2 x1 x2 w /\ xor2 w x3 y`;;
+  `!x1 x2 x3 y'.
+     xor3 x1 x2 x3 y' <=>
+     ?w. xor2 x1 x2 w /\ xor2 w x3 y'`;;
 
 export_thm xor3_def;;
 
 let majority3_def = new_definition
-  `!x1 x2 x3 y.
-     majority3 x1 x2 x3 y <=>
+  `!x1 x2 x3 y'.
+     majority3 x1 x2 x3 y' <=>
      ?w12 w13 w23.
        and2 x1 x2 w12 /\ and2 x1 x3 w13 /\ and2 x2 x3 w23 /\
-       or3 w12 w13 w23 y`;;
+       or3 w12 w13 w23 y'`;;
 
 export_thm majority3_def;;
 
 let adder2_def = new_definition
-  `!x y s c.
-     adder2 x y s c <=>
-     xor2 x y s /\ and2 x y c`;;
+  `!x y s' c'.
+     adder2 x y s' c' <=>
+     xor2 x y s' /\ and2 x y c'`;;
 
 export_thm adder2_def;;
 
 let adder3_def = new_definition
-  `!x y z s c.
-     adder3 x y z s c <=>
-     xor3 x y z s /\ majority3 x y z c`;;
+  `!x y z s' c'.
+     adder3 x y z s' c' <=>
+     xor3 x y z s' /\ majority3 x y z c'`;;
 
 export_thm adder3_def;;
 
@@ -169,32 +174,42 @@ export_thm adder3_def;;
 logfile "hardware-thm";;
 
 let or3_signal = prove
- (`!x1 x2 x3 y.
-     or3 x1 x2 x3 y ==>
-     !t. signal y t = (signal x1 t \/ signal x2 t \/ signal x3 t)`,
+ (`!x1 x2 x3 y' t.
+     or3 x1 x2 x3 y' ==>
+     signal y' t = (signal x1 t \/ signal x2 t \/ signal x3 t)`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [or3_def] THEN
   STRIP_TAC THEN
-  GEN_TAC THEN
-  MP_TAC (SPECL [`w : wire`; `x3 : wire`; `y : wire`] or2_signal) THEN
+  MP_TAC
+    (SPECL
+       [`w : wire`; `x3 : wire`; `y' : wire`; `t : num`]
+       or2_signal) THEN
   FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
-  MP_TAC (SPECL [`x1 : wire`; `x2 : wire`; `w : wire`] or2_signal) THEN
+  MP_TAC
+    (SPECL
+       [`x1 : wire`; `x2 : wire`; `w : wire`; `t : num`]
+       or2_signal) THEN
   FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
   ASM_REWRITE_TAC [DISJ_ASSOC]);;
 
 export_thm or3_signal;;
 
 let xor3_signal = prove
- (`!x1 x2 x3 y.
-     xor3 x1 x2 x3 y ==>
-     !t. signal y t = (signal x1 t = (signal x2 t = signal x3 t))`,
+ (`!x1 x2 x3 y' t.
+     xor3 x1 x2 x3 y' ==>
+     signal y' t = (signal x1 t = (signal x2 t = signal x3 t))`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [xor3_def] THEN
   STRIP_TAC THEN
-  GEN_TAC THEN
-  MP_TAC (SPECL [`w : wire`; `x3 : wire`; `y : wire`] xor2_signal) THEN
+  MP_TAC
+    (SPECL
+       [`w : wire`; `x3 : wire`; `y' : wire`; `t : num`]
+       xor2_signal) THEN
   FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
-  MP_TAC (SPECL [`x1 : wire`; `x2 : wire`; `w : wire`] xor2_signal) THEN
+  MP_TAC
+    (SPECL
+       [`x1 : wire`; `x2 : wire`; `w : wire`; `t : num`]
+       xor2_signal) THEN
   FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
   ASM_REWRITE_TAC [] THEN
   BOOL_CASES_TAC `signal x1 t` THEN
@@ -204,26 +219,33 @@ let xor3_signal = prove
 export_thm xor3_signal;;
 
 let majority3_signal = prove
- (`!x1 x2 x3 y.
-     majority3 x1 x2 x3 y ==>
-     !t.
-       signal y t =
-       ((signal x1 t /\ signal x2 t) \/
-        (signal x1 t /\ signal x3 t) \/
-        (signal x2 t /\ signal x3 t))`,
+ (`!x1 x2 x3 y' t.
+     majority3 x1 x2 x3 y' ==>
+     signal y' t =
+     ((signal x1 t /\ signal x2 t) \/
+      (signal x1 t /\ signal x3 t) \/
+      (signal x2 t /\ signal x3 t))`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [majority3_def] THEN
   STRIP_TAC THEN
-  GEN_TAC THEN
-  MP_TAC (SPECL [`x1 : wire`; `x2 : wire`; `w12 : wire`] and2_signal) THEN
-  FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
-  MP_TAC (SPECL [`x1 : wire`; `x3 : wire`; `w13 : wire`] and2_signal) THEN
-  FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
-  MP_TAC (SPECL [`x2 : wire`; `x3 : wire`; `w23 : wire`] and2_signal) THEN
+  MP_TAC
+    (SPECL
+       [`x1 : wire`; `x2 : wire`; `w12 : wire`; `t : num`]
+       and2_signal) THEN
   FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
   MP_TAC
     (SPECL
-       [`w12 : wire`; `w13 : wire`; `w23 : wire`; `y : wire`]
+       [`x1 : wire`; `x3 : wire`; `w13 : wire`; `t : num`]
+       and2_signal) THEN
+  FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
+  MP_TAC
+    (SPECL
+       [`x2 : wire`; `x3 : wire`; `w23 : wire`; `t : num`]
+       and2_signal) THEN
+  FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
+  MP_TAC
+    (SPECL
+       [`w12 : wire`; `w13 : wire`; `w23 : wire`; `y' : wire`; `t : num`]
        or3_signal) THEN
   FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
   ASM_REWRITE_TAC []);;
@@ -231,23 +253,21 @@ let majority3_signal = prove
 export_thm majority3_signal;;
 
 let adder2 = prove
- (`!x y s c.
-     adder2 x y s c ==>
-     !t.
-       bits_to_num [signal x t] + bits_to_num [signal y t] =
-       bits_to_num [signal s t] + 2 * bits_to_num [signal c t]`,
+ (`!x y s' c' t.
+     adder2 x y s' c' ==>
+     bits_to_num [signal x t] + bits_to_num [signal y t] =
+     bits_to_num [signal s' t] + 2 * bits_to_num [signal c' t]`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [adder2_def; bits_to_num_def; MULT_0; ZERO_ADD] THEN
   STRIP_TAC THEN
-  GEN_TAC THEN
   MP_TAC
     (SPECL
-       [`x : wire`; `y : wire`; `s : wire`]
+       [`x : wire`; `y : wire`; `s' : wire`; `t : num`]
        xor2_signal) THEN
   FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
   MP_TAC
     (SPECL
-       [`x : wire`; `y : wire`; `c : wire`]
+       [`x : wire`; `y : wire`; `c' : wire`; `t : num`]
        and2_signal) THEN
   FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
   ASM_REWRITE_TAC [] THEN
@@ -258,24 +278,22 @@ let adder2 = prove
 export_thm adder2;;
 
 let adder3 = prove
- (`!x y z s c.
-     adder3 x y z s c ==>
-     !t.
-       bits_to_num [signal x t] + bits_to_num [signal y t] +
-       bits_to_num [signal z t] =
-       bits_to_num [signal s t] + 2 * bits_to_num [signal c t]`,
+ (`!x y z s' c' t.
+     adder3 x y z s' c' ==>
+     bits_to_num [signal x t] + bits_to_num [signal y t] +
+     bits_to_num [signal z t] =
+     bits_to_num [signal s' t] + 2 * bits_to_num [signal c' t]`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [adder3_def; bits_to_num_def; MULT_0; ZERO_ADD] THEN
   STRIP_TAC THEN
-  GEN_TAC THEN
   MP_TAC
     (SPECL
-       [`x : wire`; `y : wire`; `z : wire`; `s : wire`]
+       [`x : wire`; `y : wire`; `z : wire`; `s' : wire`; `t : num`]
        xor3_signal) THEN
   FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
   MP_TAC
     (SPECL
-       [`x : wire`; `y : wire`; `z : wire`; `c : wire`]
+       [`x : wire`; `y : wire`; `z : wire`; `c' : wire`; `t : num`]
        majority3_signal) THEN
   FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
   ASM_REWRITE_TAC [] THEN
@@ -332,53 +350,67 @@ let bsignal_def = new_definition
 
 export_thm bsignal_def;;
 
+let bground_def = new_definition
+  `!n. bground n = mk_bus (REPLICATE ground n)`;;
+
+export_thm bground_def;;
+
+let bpower_def = new_definition
+  `!n. bpower n = mk_bus (REPLICATE power n)`;;
+
+export_thm bpower_def;;
+
 (* ------------------------------------------------------------------------- *)
 (* Bus devices.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
 let compressor2_def = new_definition
-  `!x y s c.
-     compressor2 x y s c <=>
+  `!x y s' c'.
+     compressor2 x y s' c' <=>
      ?n.
        width x = n /\ width y = n /\
-       width s = n /\ width c = n /\
-       !i xi yi si ci.
+       width s' = n /\ width c' = n /\
+       !i xi yi si' ci'.
          wire x i xi /\ wire y i yi /\
-         wire s i si /\ wire c i ci ==>
-         adder2 xi yi si ci`;;
+         wire s' i si' /\ wire c' i ci' ==>
+         adder2 xi yi si' ci'`;;
 
 export_thm compressor2_def;;
 
 let compressor3_def = new_definition
-  `!x y z s c.
-     compressor3 x y z s c <=>
+  `!x y z s' c'.
+     compressor3 x y z s' c' <=>
      ?n.
        width x = n /\ width y = n /\ width z = n /\
-       width s = n /\ width c = n /\
-       !i xi yi zi si ci.
+       width s' = n /\ width c' = n /\
+       !i xi yi zi si' ci'.
          wire x i xi /\ wire y i yi /\ wire z i zi /\
-         wire s i si /\ wire c i ci ==>
-         adder3 xi yi zi si ci`;;
+         wire s' i si' /\ wire c' i ci' ==>
+         adder3 xi yi zi si' ci'`;;
 
 export_thm compressor3_def;;
 
 let compressor4_def = new_definition
-  `!w x y z s c.
-     compressor4 w x y z s c <=>
-     ?n p q p0 p1 q1 z0 z1 s0 s1 s2 c0 c1.
-       width w = n + 1 /\ width x = n + 1 /\ width y = n + 1 /\
-       width z = n + 1 /\ width s = n + 2 /\ width c = n + 1 /\
+  `!w x y z s' c'.
+     compressor4 w x y z s' c' <=>
+     ?n p q p0 p1 q1 z0 z1 s0' s1' s2' c0' c1'.
+       width w = n + 1 /\
+       width x = n + 1 /\
+       width y = n + 1 /\
+       width z = n + 1 /\
+       width s' = n + 2 /\
+       width c' = n + 1 /\
        compressor3 w x y p q /\
        bsub p 0 1 p0 /\
        bsub z 0 1 z0 /\
-       compressor2 p0 z0 s0 c0 /\
+       compressor2 p0 z0 s0' c0' /\
        bsub p 1 n p1 /\
        bsub q 0 n q1 /\
        bsub z 1 n z1 /\
-       compressor3 p1 q1 z1 s1 c1 /\
-       bsub q n 1 s2 /\
-       s = bappend s0 (bappend s1 s2) /\
-       c = bappend c0 c1`;;
+       compressor3 p1 q1 z1 s1' c1' /\
+       bsub q n 1 s2' /\
+       s' = bappend s0' (bappend s1' s2') /\
+       c' = bappend c0' c1'`;;
 
 export_thm compressor4_def;;
 
@@ -580,16 +612,15 @@ let bits_to_num_bsignal_append = prove
 export_thm bits_to_num_bsignal_append;;
 
 let compressor2 = prove
- (`!x y s c.
-     compressor2 x y s c ==>
-     !t.
-       bits_to_num (bsignal x t) + bits_to_num (bsignal y t) =
-       bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t)`,
+ (`!x y s' c' t.
+     compressor2 x y s' c' ==>
+     bits_to_num (bsignal x t) + bits_to_num (bsignal y t) =
+     bits_to_num (bsignal s' t) + 2 * bits_to_num (bsignal c' t)`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [compressor2_def; GSYM LEFT_FORALL_IMP_THM] THEN
   GEN_TAC THEN
-  SPEC_TAC (`c : bus`, `c : bus`) THEN
-  SPEC_TAC (`s : bus`, `s : bus`) THEN
+  SPEC_TAC (`c' : bus`, `c' : bus`) THEN
+  SPEC_TAC (`s' : bus`, `s' : bus`) THEN
   SPEC_TAC (`y : bus`, `y : bus`) THEN
   SPEC_TAC (`x : bus`, `x : bus`) THEN
   SPEC_TAC (`n : num`, `n : num`) THEN
@@ -611,12 +642,12 @@ let compressor2 = prove
       (X_CHOOSE_THEN `yt : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `sh : wire`
-      (X_CHOOSE_THEN `st : bus`
+    (X_CHOOSE_THEN `sh' : wire`
+      (X_CHOOSE_THEN `st' : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `ch : wire`
-      (X_CHOOSE_THEN `ct : bus`
+    (X_CHOOSE_THEN `ch' : wire`
+      (X_CHOOSE_THEN `ct' : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
   REPEAT STRIP_TAC THEN
   REWRITE_TAC [bsignal_cons; bits_to_num_cons; bus_tybij] THEN
@@ -635,10 +666,10 @@ let compressor2 = prove
   MATCH_MP_TAC EQ_SYM THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `((if signal sh t then 1 else 0) +
-      2 * (if signal ch t then 1 else 0)) +
-     ((2 * bits_to_num (bsignal st t)) +
-      (2 * (2 * bits_to_num (bsignal ct t))))` THEN
+    `((if signal sh' t then 1 else 0) +
+      2 * (if signal ch' t then 1 else 0)) +
+     ((2 * bits_to_num (bsignal st' t)) +
+      (2 * (2 * bits_to_num (bsignal ct' t))))` THEN
   CONJ_TAC THENL
   [POP_ASSUM_LIST (K ALL_TAC) THEN
    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL; LEFT_ADD_DISTRIB] THEN
@@ -650,12 +681,11 @@ let compressor2 = prove
   EXISTS_TAC
     `((if signal xh t then 1 else 0) +
       (if signal yh t then 1 else 0)) +
-     ((2 * bits_to_num (bsignal st t)) +
-      (2 * (2 * bits_to_num (bsignal ct t))))` THEN
+     ((2 * bits_to_num (bsignal st' t)) +
+      (2 * (2 * bits_to_num (bsignal ct' t))))` THEN
   CONJ_TAC THENL
   [REWRITE_TAC [EQ_ADD_LCANCEL; GSYM LEFT_ADD_DISTRIB] THEN
    AP_TERM_TAC THEN
-   SPEC_TAC (`t : num`, `t : num`) THEN
    FIRST_X_ASSUM MATCH_MP_TAC THEN
    ASM_REWRITE_TAC [] THEN
    REPEAT STRIP_TAC THEN
@@ -671,22 +701,20 @@ let compressor2 = prove
       REWRITE_RULE [] o
       SPECL
         [`xh : wire`; `yh : wire`;
-         `sh : wire`; `ch : wire`]) THEN
+         `sh' : wire`; `ch' : wire`]) THEN
    MP_TAC
      (SPECL
         [`xh : wire`; `yh : wire`;
-         `sh : wire`; `ch : wire`] adder2) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN (MP_TAC o SPEC `t : num`) THEN
-   REWRITE_TAC [bits_to_num_def; MULT_0; ADD_0]]);;
+         `sh' : wire`; `ch' : wire`; `t : num`] adder2) THEN
+   ASM_REWRITE_TAC [bits_to_num_def; MULT_0; ADD_0]]);;
 
 export_thm compressor2;;
 
 let compressor2_width = prove
- (`!x y s c.
-     compressor2 x y s c ==>
-     width s = width x /\
-     width c = width x`,
+ (`!x y s' c'.
+     compressor2 x y s' c' ==>
+     width s' = width x /\
+     width c' = width x`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [compressor2_def; GSYM LEFT_FORALL_IMP_THM] THEN
   GEN_TAC THEN
@@ -695,18 +723,18 @@ let compressor2_width = prove
 
 export_thm compressor2_width;;
 
+***
 let compressor3 = prove
- (`!x y z s c.
-     compressor3 x y z s c ==>
-     !t.
-       bits_to_num (bsignal x t) + bits_to_num (bsignal y t) +
-       bits_to_num (bsignal z t) =
-       bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t)`,
+ (`!x y z s' c' t.
+     compressor3 x y z s' c' ==>
+     bits_to_num (bsignal x t) + bits_to_num (bsignal y t) +
+     bits_to_num (bsignal z t) =
+     bits_to_num (bsignal s' t) + 2 * bits_to_num (bsignal c' t)`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [compressor3_def; GSYM LEFT_FORALL_IMP_THM] THEN
   GEN_TAC THEN
-  SPEC_TAC (`c : bus`, `c : bus`) THEN
-  SPEC_TAC (`s : bus`, `s : bus`) THEN
+  SPEC_TAC (`c' : bus`, `c' : bus`) THEN
+  SPEC_TAC (`s' : bus`, `s' : bus`) THEN
   SPEC_TAC (`z : bus`, `z : bus`) THEN
   SPEC_TAC (`y : bus`, `y : bus`) THEN
   SPEC_TAC (`x : bus`, `x : bus`) THEN
@@ -733,12 +761,12 @@ let compressor3 = prove
       (X_CHOOSE_THEN `zt : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `sh : wire`
-      (X_CHOOSE_THEN `st : bus`
+    (X_CHOOSE_THEN `sh' : wire`
+      (X_CHOOSE_THEN `st' : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `ch : wire`
-      (X_CHOOSE_THEN `ct : bus`
+    (X_CHOOSE_THEN `ch' : wire`
+      (X_CHOOSE_THEN `ct' : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
   REPEAT STRIP_TAC THEN
   REWRITE_TAC [bsignal_cons; bits_to_num_cons; bus_tybij] THEN

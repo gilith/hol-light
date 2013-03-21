@@ -324,13 +324,14 @@ nextM n r k rx ry rz xs xc
 
     (zs',zc') = -- [r-2,r-2]
         threeToTwo
-          (if nthBits (r - 1) rs || nthBits (r - 2) rc
-             then if nthBits (r - 2) rs || nthBits (r - 3) rc
-                    then rz
-                    else ry
-             else if nthBits (r - 2) rs
-                    then if nthBits (r - 3) rc then ry else rx
-                    else if nthBits (r - 3) rc then rx else zeroBits)
+          (let c = nthBits (r - 1) rs || nthBits (r - 2) rc ||
+                   (nthBits (r - 2) rs && nthBits (r - 3) rc) in
+           let s = nthBits (r - 2) rs /= nthBits (r - 3) rc in
+           case (c,s) of
+             (False,False) -> zeroBits
+             (False,True) -> rx
+             (True,False) -> ry
+             (True,True) -> rz)
           (prefixBits (r - 2) rs)
           (consBits False (prefixBits (r - 3) rc))
 

@@ -300,7 +300,7 @@ let montgomery_double_exp_bound = prove
 export_thm montgomery_double_exp_bound;;
 
 (* ------------------------------------------------------------------------- *)
-(* A Montgomery multiplication circuit.                                      *)
+(* Definition of a Montgomery multiplication circuit.                        *)
 (* ------------------------------------------------------------------------- *)
 
 (***
@@ -326,11 +326,11 @@ let montgomery_core_def = new_definition
          width xc = r
          /\
          (width ys = r /\
-          bsub ys 0 1 ys0 /\
+          wire ys 0 ys0 /\
           bsub ys 1 (r-1) ys1) /\
          (width yc = r /\
           bsub yc 0 (r-1) yc0 /\
-          bsub yc (r-1) 1 yc1) /\
+          wire yc (r-1) yc1) /\
          width sa = r /\
          width sb = r /\
          width ca = r /\
@@ -344,10 +344,10 @@ let montgomery_core_def = new_definition
          /\
          (width ys' = r /\
           bsub ys' 0 (r-1) ys0' /\
-          bsub ys' (r-1) 1 ys1') /\
+          wire ys' (r-1) ys1') /\
          (width yc' = r /\
           bsub yc' 0 (r-1) yc0' /\
-          bsub yc' (r-1) 1 yc1') /\
+          wire yc' (r-1) yc1') /\
          width sa' = r /\
          width sb' = r /\
          width ca' = r /\
@@ -362,11 +362,40 @@ let montgomery_core_def = new_definition
          width zs' = r /\
          width zc' = r
          /\
-         compressor2
-         F`;;
+         compressor2 ys1 yc0 ys0' yc0' /\
+         ys1' = yc1 /\
+         yc1' = ground`;;
 
 export_thm montgomery_core_def;;
 ***)
+
+(* ------------------------------------------------------------------------- *)
+(* Correctness of a Montgomery multiplication circuit.                       *)
+(* ------------------------------------------------------------------------- *)
+
+let montgomery_core_ysc = prove
+ (`!n k rx ry rz xs xc
+    ys yc sa sb sx sy sz so ca cb ks kc ns nc rs rc
+    ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc' rs' rc'
+    zs' zc' t.
+      montgomery_core
+        n k rx ry rz xs xc
+        ys yc sa sb sx sy sz so ca cb ks kc ns nc rs rc
+        ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc' rs' rc'
+        zs' zc' ==>
+      bits_to_num (bsignal ys' t) + 2 * bits_to_num (bsignal yc' t) =
+      (bits_to_num (bsignal ys t) + 2 * bits_to_num (bsignal yc t)) DIV 2`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [montgomery_core_def] THEN
+  STRIP_TAC THEN
+
+  REPEAT (FIRST_X_ASSUM SUBST_VAR_TAC) THEN
+
+ (`!x y. dest_bus x = dest_bus y ==> x = y`,
+
+(* ------------------------------------------------------------------------- *)
+(* Automatically generating verified Montgomery multiplication circuits.     *)
+(* ------------------------------------------------------------------------- *)
 
 let rec bitwidth_num n =
     if eq_num n num_0 then num_0 else
