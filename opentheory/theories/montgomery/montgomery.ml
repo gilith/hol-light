@@ -304,12 +304,12 @@ export_thm montgomery_double_exp_bound;;
 (* ------------------------------------------------------------------------- *)
 
 (***
-let montgomery_core_def = new_definition
+let montgomery_comb_def = new_definition
   `!n k rx ry rz xs xc
     ys yc sa sb sx sy sz so ca cb ks kc ns nc rs rc
     ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc' rs' rc'
     zs' zc'.
-      montgomery_core
+      montgomery_comb
         n k rx ry rz xs xc
         ys yc sa sb sx sy sz so ca cb ks kc ns nc rs rc
         ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc' rs' rc'
@@ -366,19 +366,18 @@ let montgomery_core_def = new_definition
          ys1' = yc1 /\
          yc1' = ground`;;
 
-export_thm montgomery_core_def;;
-***)
+export_thm montgomery_comb_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Correctness of a Montgomery multiplication circuit.                       *)
 (* ------------------------------------------------------------------------- *)
 
-let montgomery_core_ysc = prove
+let montgomery_comb_ysc = prove
  (`!n k rx ry rz xs xc
     ys yc sa sb sx sy sz so ca cb ks kc ns nc rs rc
     ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc' rs' rc'
     zs' zc' t.
-      montgomery_core
+      montgomery_comb
         n k rx ry rz xs xc
         ys yc sa sb sx sy sz so ca cb ks kc ns nc rs rc
         ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc' rs' rc'
@@ -386,12 +385,10 @@ let montgomery_core_ysc = prove
       bits_to_num (bsignal ys' t) + 2 * bits_to_num (bsignal yc' t) =
       (bits_to_num (bsignal ys t) + 2 * bits_to_num (bsignal yc t)) DIV 2`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [montgomery_core_def] THEN
+  REWRITE_TAC [montgomery_comb_def] THEN
   STRIP_TAC THEN
 
-  REPEAT (FIRST_X_ASSUM SUBST_VAR_TAC) THEN
-
- (`!x y. dest_bus x = dest_bus y ==> x = y`,
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically generating verified Montgomery multiplication circuits.     *)

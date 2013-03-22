@@ -157,9 +157,7 @@ loads "opentheory/theories/char/char.ml";;
 (* Hardware verification.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 loads "opentheory/theories/hardware/hardware.ml";;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Montgomery multiplication.                                                *)
