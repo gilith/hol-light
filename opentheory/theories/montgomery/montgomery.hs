@@ -315,12 +315,12 @@ nextM n r k rx ry rz xs xc
         threeToTwo (if (headBits ks) then n else zeroBits)
           (tailBits ns) nc
 
-    (rs',rc') = -- [r,r]  (by the bounds theorem)
+    (rs',rc') = -- [r,r-1]  (by the bounds theorem)
         fourToTwo
-          (tailBits ns)
-          nc
-          (consBits sz (consBits sy sb))
-          (consBits so (consBits False (consBits sx cb)))
+          (tailBits ns)                                     -- [r-3]
+          nc                                                -- [r-2]
+          (consBits sz (consBits sy sb))                    -- [r]
+          (consBits so (consBits False (consBits sx cb)))   -- [r+1]
 
     (zs',zc') = -- [r-2,r-2]
         threeToTwo

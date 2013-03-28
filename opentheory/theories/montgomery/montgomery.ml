@@ -316,7 +316,9 @@ let montgomery_comb_def = new_definition
         zs' zc' <=>
       ?r
        ys0 ys1 yc0 yc1
-       ys0' ys1' yc0' yc1'.
+       ca0 ca1
+       ys0' ys1' yc0' yc1'
+       xsz xcz xsz0 xsz1 xcz0 xcz1.
          width nb = r /\
          width kb = r /\
          width xs = r /\
@@ -327,10 +329,19 @@ let montgomery_comb_def = new_definition
          (width yc = r /\
           bsub yc 0 (r-1) yc0 /\
           wire yc (r-1) yc1) /\
-         width sa = r /\
-         width sb = r /\
-         width ca = r /\
-         width cb = r /\
+         (width sa = r+1 /\
+          wire sa 0 sa0 /\
+          bsub sa 1 (r-1) sa1 /\
+          wire sa r sa2) /\
+         (width sb = r /\
+          wire sb 0 sb0 /\
+          bsub sb 1 (r-1) sb1) /\
+         (width ca = r /\
+          wire ca 0 ca0 /\
+          bsub ca 1 (r-1) ca1) /\
+         (width cb = r /\
+          bsub cb 0 (r-1) cb0 /\
+          wire cb (r-1) cb1) /\
          width ks = r /\
          width kc = r /\
          width ns = r /\
@@ -342,10 +353,19 @@ let montgomery_comb_def = new_definition
          (width yc' = r /\
           bsub yc' 0 (r-1) yc0' /\
           wire yc' (r-1) yc1') /\
-         width sa' = r /\
-         width sb' = r /\
-         width ca' = r /\
-         width cb' = r /\
+         (width sa' = r+1 /\
+          wire sa' 0 sa0' /\
+          bsub sa' 1 (r-1) sa1' /\
+          wire sa' r sa2') /\
+         (width sb' = r /\
+          bsub sb' 0 (r-1) sb0' /\
+          wire sb' (r-1) sb1') /\
+         (width ca' = r /\
+          wire ca' 0 ca0' /\
+          bsub ca' 1 (r-1) ca1') /\
+         (width cb' = r /\
+          bsub cb' 0 (r-1) cb0' /\
+          wire cb' (r-1) cb1') /\
          width ks' = r /\
          width kc' = r /\
          width ns' = r /\
@@ -353,9 +373,25 @@ let montgomery_comb_def = new_definition
          width zs' = r /\
          width zc' = r
          /\
+         (width xsz = r /\
+          wire xsz 0 xsz0 /\
+          bsub xsz 1 (r-1) xsz1) /\
+         (width xcz = r /\
+          bsub xcz 0 (r-1) xcz0 /\
+          wire xcz (r-1) xcz1)
+         /\
          compressor2 ys1 yc0 ys0' yc0' /\
          ys1' = yc1 /\
-         yc1' = ground`;;
+         yc1' = ground /\
+         bcase1 ys0 xs (ground r) xsz /\
+         bcase1 ys0 xc (ground r) xcz /\
+         adder2 xsz0 ca0 sa0' ca0' /\
+         compressor3 xsz1 xcz0 ca1 sa1' ca1' /\
+         sa2' = xcz1 /\
+         compressor3 sa1 sb1 cb0 sb0' cb0' /\
+         adder2 sa2 cb1 sb1' cb1'
+         
+`;;
 
 export_thm montgomery_comb_def;;
 
