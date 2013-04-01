@@ -389,9 +389,7 @@ let montgomery_comb_def = new_definition
          compressor3 xsz1 xcz0 ca1 sa1' ca1' /\
          sa2' = xcz1 /\
          compressor3 sa1 sb1 cb0 sb0' cb0' /\
-         adder2 sa2 cb1 sb1' cb1'
-         
-`;;
+         adder2 sa2 cb1 sb1' cb1'`;;
 
 export_thm montgomery_comb_def;;
 

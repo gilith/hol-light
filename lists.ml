@@ -1426,6 +1426,51 @@ let LENGTH_REPLICATE = prove
 
 export_thm LENGTH_REPLICATE;;
 
+let APPEND_EQ_REPLICATE = prove
+ (`!(x : A) n l1 l2.
+     APPEND l1 l2 = REPLICATE x n <=>
+     REPLICATE x (LENGTH l1) = l1 /\
+     REPLICATE x (LENGTH l2) = l2 /\
+     LENGTH l1 + LENGTH l2 = n`,
+  GEN_TAC THEN
+  INDUCT_TAC THENL
+  [REPEAT GEN_TAC THEN
+   REWRITE_TAC [REPLICATE_0; ADD_EQ_0; LENGTH_EQ_NIL; APPEND_EQ_NIL] THEN
+   EQ_TAC THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [LENGTH_NIL; REPLICATE_0];
+   LIST_INDUCT_TAC THENL
+   [POP_ASSUM_LIST (K ALL_TAC) THEN
+    GEN_TAC THEN
+    REWRITE_TAC [NIL_APPEND; LENGTH_NIL; REPLICATE_0; ZERO_ADD] THEN
+    EQ_TAC THENL
+    [STRIP_TAC THEN
+     SUBGOAL_THEN `LENGTH (l2 : A list) = SUC n` SUBST1_TAC THENL
+     [ASM_REWRITE_TAC [LENGTH_REPLICATE];
+      ASM_REWRITE_TAC []];
+     DISCH_THEN (CONJUNCTS_THEN2 ASSUME_TAC (SUBST1_TAC o SYM)) THEN
+     FIRST_ASSUM (ACCEPT_TAC o SYM)];
+    POP_ASSUM (K ALL_TAC) THEN
+    GEN_TAC THEN
+    ASM_REWRITE_TAC
+      [CONS_APPEND; REPLICATE_SUC; CONS_11; LENGTH_CONS; SUC_ADD; SUC_INJ;
+       GSYM CONJ_ASSOC] THEN
+    AP_THM_TAC THEN
+    AP_TERM_TAC THEN
+    MATCH_ACCEPT_TAC EQ_SYM_EQ]]);;
+
+export_thm APPEND_EQ_REPLICATE;;
+
+let MAP_REPLICATE = prove
+ (`!(f : A -> B) x n. MAP f (REPLICATE x n) = REPLICATE (f x) n`,
+  GEN_TAC THEN
+  GEN_TAC THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [REPLICATE_0; MAP_NIL];
+   ASM_REWRITE_TAC [REPLICATE_SUC; MAP_CONS]]);;
+
+export_thm MAP_REPLICATE;;
+
 let nth_replicate = prove
   (`!(x : A) n i. i < n ==> nth (REPLICATE x n) i = x`,
    GEN_TAC THEN
@@ -1723,6 +1768,40 @@ let take_add = prove
      ASM_REWRITE_TAC [LE_ADD]]]);;
 
 export_thm take_add;;
+
+let take_replicate = prove
+  (`!m n (x : A).
+       m <= n ==>
+       take m (REPLICATE x n) = REPLICATE x m`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC (ISPECL [`m : num`; `REPLICATE (x : A) n`] take_drop) THEN
+   ASM_REWRITE_TAC [LENGTH_REPLICATE; APPEND_EQ_REPLICATE] THEN
+   STRIP_TAC THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM (SUBST1_TAC o SYM) THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC length_take THEN
+   ASM_REWRITE_TAC [LENGTH_REPLICATE]);;
+
+export_thm take_replicate;;
+
+let drop_replicate = prove
+  (`!m n (x : A).
+       m <= n ==>
+       drop m (REPLICATE x n) = REPLICATE x (n - m)`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC (ISPECL [`m : num`; `REPLICATE (x : A) n`] take_drop) THEN
+   ASM_REWRITE_TAC [LENGTH_REPLICATE; APPEND_EQ_REPLICATE] THEN
+   STRIP_TAC THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM (SUBST1_TAC o SYM) THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   AP_TERM_TAC THEN
+   MP_TAC (ISPECL [`m : num`; `REPLICATE (x : A) n`] length_drop) THEN
+   ASM_REWRITE_TAC [LENGTH_REPLICATE]);;
+
+export_thm drop_replicate;;
 
 (* ------------------------------------------------------------------------- *)
 (* Interval.                                                                 *)

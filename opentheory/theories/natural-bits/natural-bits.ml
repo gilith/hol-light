@@ -506,4 +506,12 @@ let bits_to_num_append = prove
 
 export_thm bits_to_num_append;;
 
+let bits_to_num_replicate_false = prove
+  (`!n. bits_to_num (REPLICATE F n) = 0`,
+   INDUCT_TAC THENL
+   [REWRITE_TAC [REPLICATE_0; bits_to_num_nil];
+    ASM_REWRITE_TAC [REPLICATE_SUC; bits_to_num_cons; MULT_0; ZERO_ADD]]);;
+
+export_thm bits_to_num_replicate_false;;
+
 logfile_end ();;
