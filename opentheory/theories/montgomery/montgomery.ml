@@ -303,9 +303,9 @@ export_thm montgomery_double_exp_bound;;
 (* Definition of a Montgomery multiplication circuit.                        *)
 (* ------------------------------------------------------------------------- *)
 
-let montgomery_ysc_def = new_definition
+let montgomery_y_def = new_definition
   `!ys yc ys' yc'.
-     montgomery_ysc ys yc ys' yc' <=>
+     montgomery_y ys yc ys' yc' <=>
      ?r ys0 yc0 yc1 ys0' ys1' yc0' yc1'.
        width ys = r + 1 /\
        width yc = r + 1 /\
@@ -324,103 +324,81 @@ let montgomery_ysc_def = new_definition
        ys1' = yc1 /\
        yc1' = ground`;;
 
-export_thm montgomery_ysc_def;;
+export_thm montgomery_y_def;;
 
-(***
+let montgomery_sc_def = new_definition
+  `!xs xc ys sa sb ca cb sa' sb' ca' cb'.
+     montgomery_sc xs xc ys sa sb ca cb sa' sb' ca' cb' <=>
+     ?r
+      ys0 sa0 sa1 sa2 sb0 sb1 ca0 ca1 cb0 cb1
+      sa0' sa1' sa2' sb0' sb1' ca0' ca1' cb0' cb1'
+      xsz xcz xsz0 xsz1 xcz0 xcz1.
+        width xs = r + 1 /\
+        width xc = r + 1 /\
+        width ys = r + 1 /\
+        width sa = r + 2 /\
+        width sb = r + 1 /\
+        width ca = r + 1 /\
+        width cb = r + 1 /\
+        width sa' = r + 2 /\
+        width sb' = r + 1 /\
+        width ca' = r + 1 /\
+        width cb' = r + 1 /\
+        width xsz = r + 1 /\
+        width xcz = r + 1
+        /\
+        wire ys 0 ys0 /\
+        wire sa 0 sa0 /\
+        bsub sa 1 r sa1 /\
+        wire sa (r + 1) sa2 /\
+        wire sb 0 sb0 /\
+        bsub sb 1 r sb1 /\
+        wire ca 0 ca0 /\
+        bsub ca 1 r ca1 /\
+        bsub cb 0 r cb0 /\
+        wire cb r cb1 /\
+        wire sa' 0 sa0' /\
+        bsub sa' 1 r sa1' /\
+        wire sa' (r + 1) sa2' /\
+        bsub sb' 0 r sb0' /\
+        wire sb' r sb1' /\
+        wire ca' 0 ca0' /\
+        bsub ca' 1 r ca1' /\
+        bsub cb' 0 r cb0' /\
+        wire cb' r cb1' /\
+        wire xsz 0 xsz0 /\
+        bsub xsz 1 r xsz1 /\
+        bsub xcz 0 r xcz0 /\
+        wire xcz r xcz1
+        /\
+        bcase1 ys0 xs (bground (r + 1)) xsz /\
+        bcase1 ys0 xc (bground (r + 1)) xcz /\
+        adder2 xsz0 ca0 sa0' ca0' /\
+        compressor3 xsz1 xcz0 ca1 sa1' ca1' /\
+        sa2' = xcz1 /\
+        compressor3 sa1 sb1 cb0 sb0' cb0' /\
+        adder2 sa2 cb1 sb1' cb1'`;;
+
+export_thm montgomery_sc_def;;
+
 let montgomery_comb_def = new_definition
-  `!nb kb xs xc
-    ys yc sa sb sx sy sz so ca cb ks kc ns nc
-    ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc'
-    zs' zc'.
+  `!(nb : bus) (kb : bus) (xs : bus) (xc : bus)
+    (ys : bus) (yc : bus) (sa : bus) (sb : bus) (sx : wire) (sy : wire) (sz : wire) (so : wire) (ca : bus) (cb : bus) (ks : bus) (kc : bus) (ns : bus) (nc : bus)
+    (ys' : bus) (yc' : bus) (sa' : bus) (sb' : bus) (sx' : wire) (sy' : wire) (sz' : wire) (so' : wire) (ca' : bus) (cb' : bus) (ks' : bus) (kc' : bus) (ns' : bus) (nc' : bus)
+    (zs' : bus) (zc' : bus).
       montgomery_comb
         nb kb xs xc
         ys yc sa sb sx sy sz so ca cb ks kc ns nc
         ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc'
         zs' zc' <=>
-      ?r
-       ys0 ys1 yc0 yc1
-       ca0 ca1
-       ys0' ys1' yc0' yc1'
-       xsz xcz xsz0 xsz1 xcz0 xcz1.
-         width nb = r /\
-         width kb = r /\
-         width xs = r /\
-         width xc = r /\
-         (width ys = r /\
-          wire ys 0 ys0 /\
-          bsub ys 1 (r-1) ys1) /\
-         (width yc = r /\
-          bsub yc 0 (r-1) yc0 /\
-          wire yc (r-1) yc1) /\
-         (width sa = r+1 /\
-          wire sa 0 sa0 /\
-          bsub sa 1 (r-1) sa1 /\
-          wire sa r sa2) /\
-         (width sb = r /\
-          wire sb 0 sb0 /\
-          bsub sb 1 (r-1) sb1) /\
-         (width ca = r /\
-          wire ca 0 ca0 /\
-          bsub ca 1 (r-1) ca1) /\
-         (width cb = r /\
-          bsub cb 0 (r-1) cb0 /\
-          wire cb (r-1) cb1) /\
-         width ks = r /\
-         width kc = r /\
-         width ns = r /\
-         width nc = r
-         /\
-         (width ys' = r /\
-          bsub ys' 0 (r-1) ys0' /\
-          wire ys' (r-1) ys1') /\
-         (width yc' = r /\
-          bsub yc' 0 (r-1) yc0' /\
-          wire yc' (r-1) yc1') /\
-         (width sa' = r+1 /\
-          wire sa' 0 sa0' /\
-          bsub sa' 1 (r-1) sa1' /\
-          wire sa' r sa2') /\
-         (width sb' = r /\
-          bsub sb' 0 (r-1) sb0' /\
-          wire sb' (r-1) sb1') /\
-         (width ca' = r /\
-          wire ca' 0 ca0' /\
-          bsub ca' 1 (r-1) ca1') /\
-         (width cb' = r /\
-          bsub cb' 0 (r-1) cb0' /\
-          wire cb' (r-1) cb1') /\
-         width ks' = r /\
-         width kc' = r /\
-         width ns' = r /\
-         width nc' = r /\
-         width zs' = r /\
-         width zc' = r
-         /\
-         (width xsz = r /\
-          wire xsz 0 xsz0 /\
-          bsub xsz 1 (r-1) xsz1) /\
-         (width xcz = r /\
-          bsub xcz 0 (r-1) xcz0 /\
-          wire xcz (r-1) xcz1)
-         /\
-         compressor2 ys1 yc0 ys0' yc0' /\
-         ys1' = yc1 /\
-         yc1' = ground /\
-         bcase1 ys0 xs (ground r) xsz /\
-         bcase1 ys0 xc (ground r) xcz /\
-         adder2 xsz0 ca0 sa0' ca0' /\
-         compressor3 xsz1 xcz0 ca1 sa1' ca1' /\
-         sa2' = xcz1 /\
-         compressor3 sa1 sb1 cb0 sb0' cb0' /\
-         adder2 sa2 cb1 sb1' cb1'`;;
+      montgomery_y ys yc ys' yc' /\
+      montgomery_sc xs xc ys sa sb ca cb sa' sb' ca' cb'`;;
 
 export_thm montgomery_comb_def;;
 
 let montgomery_loop_def = new_definition
   `!ld nb kb xs xc ys yc zs' zc'.
-      montgomery_loop
-        ld nb kb rx ry rz xs xc ys yc
-        zs' zc' <=>
+      montgomery_loop ld nb kb xs xc ys yc zs' zc' <=>
       ?r
        ysp ycp sap sbp sxp syp szp sop cap cbp ksp kcp nsp ncp
        ysq ycq saq sbq sxq syq szq soq caq cbq ksq kcq nsq ncq
@@ -442,18 +420,18 @@ let montgomery_loop_def = new_definition
          /\
          bcase1 ld ys ysq ysr /\
          bcase1 ld yc ycq ycr /\
-         bcase1 ld (ground r) saq sar /\
-         bcase1 ld (ground r) sbq sbr /\
+         bcase1 ld (bground r) saq sar /\
+         bcase1 ld (bground r) sbq sbr /\
          case1 ld ground sxq sxr /\
          case1 ld ground syq syr /\
          case1 ld ground szq szr /\
          case1 ld ground soq sor /\
-         bcase1 ld (ground r) caq car /\
-         bcase1 ld (ground r) cbq cbr /\
-         bcase1 ld (ground r) ksq ksr /\
-         bcase1 ld (ground r) kcq kcr /\
-         bcase1 ld (ground r) nsq nsr /\
-         bcase1 ld (ground r) nsq nsr /\
+         bcase1 ld (bground r) caq car /\
+         bcase1 ld (bground r) cbq cbr /\
+         bcase1 ld (bground r) ksq ksr /\
+         bcase1 ld (bground r) kcq kcr /\
+         bcase1 ld (bground r) nsq nsr /\
+         bcase1 ld (bground r) nsq nsr
          /\
          bdelay ysr ysp /\
          bdelay ycr ycp /\
@@ -472,6 +450,7 @@ let montgomery_loop_def = new_definition
 
 export_thm montgomery_loop_def;;
 
+(***
 let montgomery_compress_def = new_definition
   `!rx ry rz xs xc ys' yc'.
       montgomery_compress rx ry rz xs xc ys' yc' <=>
@@ -520,7 +499,37 @@ export_thm montgomery_circuit_def;;
 (* ------------------------------------------------------------------------- *)
 
 (***
-let montgomery_ysc = prove
+let montgomery_loop = prove
+ (`!n r s k x y ld nb kb xs xc ys yc zs' zc'.
+     ~(n = 0) /\
+     (2 EXP (r + 2)) * s = k * n + 1 /\
+     width nb = r /\
+     (!i. i < r ==> (signal ld (t + i) <=> i = 0)) /\
+     (!i.
+        0 < i /\ i < r ==>
+        bits_to_num (bsignal nb (t + i)) = n) /\
+     (!i.
+        0 < i /\ i < r ==>
+        bits_to_num (bsignal kb (t + i)) = k MOD (2 EXP r)) /\
+     (!i.
+       i < r ==>
+       bits_to_num (bsignal xs (t + i)) +
+       2 * bits_to_num (bsignal xc (t + i)) = x) /\
+     bits_to_num (bsignal ys t) +
+     2 * bits_to_num (bsignal yc t) = y /\
+     montgomery_loop ld nb kb xs xc ys yc zs' zc' ==>
+     (bits_to_num (bsignal zs' (t + (r + 8))) +
+      2 * bits_to_num (bsignal zc' (t + (r + 8)))) MOD n =
+     ((x * y) * s) MOD n`,
+
+      montgomery_ysc ys yc ys' yc' ==>
+      bits_to_num (bsignal ys' t) + 2 * bits_to_num (bsignal yc' t) =
+      (bits_to_num (bsignal ys t) + 2 * bits_to_num (bsignal yc t)) DIV 2`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [montgomery_comb_def] THEN
+  STRIP_TAC THEN
+
+let montgomery_y = prove
  (`!ys yc ys' yc'.
       montgomery_ysc ys yc ys' yc' ==>
       bits_to_num (bsignal ys' t) + 2 * bits_to_num (bsignal yc' t) =
