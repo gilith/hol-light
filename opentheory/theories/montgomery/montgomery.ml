@@ -303,6 +303,29 @@ export_thm montgomery_double_exp_bound;;
 (* Definition of a Montgomery multiplication circuit.                        *)
 (* ------------------------------------------------------------------------- *)
 
+let montgomery_ysc_def = new_definition
+  `!ys yc ys' yc'.
+     montgomery_ysc ys yc ys' yc' <=>
+     ?r ys0 yc0 yc1 ys0' ys1' yc0' yc1'.
+       width ys = r + 1 /\
+       width yc = r + 1 /\
+       width ys' = r + 1 /\
+       width yc' = r + 1
+       /\
+       bsub ys 1 r ys0 /\
+       bsub yc 0 r yc0 /\
+       wire yc r yc1 /\
+       bsub ys' 0 r ys0' /\
+       wire ys' r ys1' /\
+       bsub yc' 0 r yc0' /\
+       wire yc' r yc1'
+       /\
+       compressor2 ys0 yc0 ys0' yc0' /\
+       ys1' = yc1 /\
+       yc1' = ground`;;
+
+export_thm montgomery_ysc_def;;
+
 (***
 let montgomery_comb_def = new_definition
   `!nb kb xs xc
@@ -490,10 +513,21 @@ let montgomery_circuit_def = new_definition
          montgomery_compress rx ry rz qs qc zs' zc'`;;
 
 export_thm montgomery_circuit_def;;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Correctness of a Montgomery multiplication circuit.                       *)
 (* ------------------------------------------------------------------------- *)
+
+(***
+let montgomery_ysc = prove
+ (`!ys yc ys' yc'.
+      montgomery_ysc ys yc ys' yc' ==>
+      bits_to_num (bsignal ys' t) + 2 * bits_to_num (bsignal yc' t) =
+      (bits_to_num (bsignal ys t) + 2 * bits_to_num (bsignal yc t)) DIV 2`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [montgomery_comb_def] THEN
+  STRIP_TAC THEN
 
 let montgomery_comb_ysc = prove
  (`!nb kb rx ry rz xs xc
