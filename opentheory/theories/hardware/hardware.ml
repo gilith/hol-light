@@ -796,6 +796,65 @@ let bits_to_num_bsignal_bground = prove
 
 export_thm bits_to_num_bsignal_bground;;
 
+(***
+let bcase1_bsignal = prove
+ (`!s x y z' t.
+      bcase1 s x y z' ==>
+      bsignal z' t = (if signal s t then bsignal x t else bsignal y t)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bcase1_def; GSYM LEFT_FORALL_IMP_THM] THEN
+  GEN_TAC THEN
+  SPEC_TAC (`z' : bus`, `z' : bus`) THEN
+  SPEC_TAC (`y : bus`, `y : bus`) THEN
+  SPEC_TAC (`x : bus`, `x : bus`) THEN
+  SPEC_TAC (`n : num`, `n : num`) THEN
+  INDUCT_TAC THENL
+  [REPEAT GEN_TAC THEN
+   REWRITE_TAC [width_zero] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [COND_ID];
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  ASM_CASES_TAC `signal s t` THEN
+  REWRITE_TAC [width_suc; GSYM IMP_IMP] THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `xh : wire`
+      (X_CHOOSE_THEN `xt : bus`
+        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `yh : wire`
+      (X_CHOOSE_THEN `yt : bus`
+        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `zh' : wire`
+      (X_CHOOSE_THEN `zt' : bus`
+        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [bsignal_cons; bus_tybij] THEN
+  
+  CONV_TAC (RAND_CONV (REWR_CONV (GSYM COND_RATOR)))
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `((if signal xh t then 1 else 0) +
+      (if signal yh t then 1 else 0) +
+      (if signal zh t then 1 else 0)) +
+     ((2 * bits_to_num (bsignal xt t)) +
+      (2 * bits_to_num (bsignal yt t)) +
+      (2 * bits_to_num (bsignal zt t)))` THEN
+  CONJ_TAC THENL
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+   CONV_TAC (LAND_CONV (LAND_CONV (LAND_CONV (REWR_CONV ADD_SYM)))) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
+   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+
+export_thm bcase1_bsignal;;
+***)
+
 let compressor3_width = prove
  (`!x y z s' c'.
      compressor3 x y z s' c' ==>

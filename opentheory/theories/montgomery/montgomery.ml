@@ -499,8 +499,36 @@ export_thm montgomery_circuit_def;;
 (* ------------------------------------------------------------------------- *)
 
 (***
+let montgomery_y = prove
+ (`!y ld ys yc ysq ycq ysr ycr ysr0 t k.
+      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
+      bits_to_num (bsignal ys t) +
+      2 * bits_to_num (bsignal yc t) = y /\
+      montgomery_y ysp ycp ysq ycq /\
+      bcase1 ld ys ysq ysr /\
+      bcase1 ld yc ycq ycr /\
+      bdelay ysr ysp /\
+      bdelay ycr ycp /\
+      wire ysr 0 ysr0 ==>
+      signal ysr0 (t + k) = num_bit y k`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [montgomery_y_def] THEN
+  STRIP_TAC THEN
+  REWRITE_TAC [num_bit_def] THEN
+  SUBGOAL_THEN
+    `bits_to_num (bsignal ysr (t + k)) +
+     2 * bits_to_num (bsignal ycr (t + k)) = y DIV (2 EXP k)`
+    (SUBST1_TAC o SYM) THENL
+  [UNDISCH_TAC `!i. i <= k ==> (signal ld (t + i) <=> i = 0)` THEN
+   SPEC_TAC (`k : num`, `k : num`) THEN
+   INDUCT_TAC THENL
+   [DISCH_THEN (MP_TAC o SPEC `0`) THEN
+    REWRITE_TAC [ADD_0; LE_REFL; EXP_0; DIV_1] THEN
+    STRIP_TAC
+    
+
 let montgomery_loop = prove
- (`!n r s k x y ld nb kb xs xc ys yc zs' zc'.
+ (`!n r s k x y ld nb kb xs xc ys yc zs' zc' t.
      ~(n = 0) /\
      (2 EXP (r + 2)) * s = k * n + 1 /\
      width nb = r /\
@@ -521,21 +549,8 @@ let montgomery_loop = prove
      (bits_to_num (bsignal zs' (t + (r + 8))) +
       2 * bits_to_num (bsignal zc' (t + (r + 8)))) MOD n =
      ((x * y) * s) MOD n`,
-
-      montgomery_ysc ys yc ys' yc' ==>
-      bits_to_num (bsignal ys' t) + 2 * bits_to_num (bsignal yc' t) =
-      (bits_to_num (bsignal ys t) + 2 * bits_to_num (bsignal yc t)) DIV 2`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [montgomery_comb_def] THEN
-  STRIP_TAC THEN
-
-let montgomery_y = prove
- (`!ys yc ys' yc'.
-      montgomery_ysc ys yc ys' yc' ==>
-      bits_to_num (bsignal ys' t) + 2 * bits_to_num (bsignal yc' t) =
-      (bits_to_num (bsignal ys t) + 2 * bits_to_num (bsignal yc t)) DIV 2`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [montgomery_comb_def] THEN
+  REWRITE_TAC [montgomery_loop_def; montgomery_comb_def] THEN
   STRIP_TAC THEN
 
 let montgomery_comb_ysc = prove
