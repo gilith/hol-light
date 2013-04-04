@@ -502,8 +502,8 @@ export_thm montgomery_circuit_def;;
 let montgomery_y = prove
  (`!y ld ys yc ysq ycq ysr ycr ysr0 t k.
       (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
-      bits_to_num (bsignal ys t) +
-      2 * bits_to_num (bsignal yc t) = y /\
+      (bits_to_num (bsignal ys t) +
+       2 * bits_to_num (bsignal yc t) = y) /\
       montgomery_y ysp ycp ysq ycq /\
       bcase1 ld ys ysq ysr /\
       bcase1 ld yc ycq ycr /\
@@ -525,7 +525,6 @@ let montgomery_y = prove
    [DISCH_THEN (MP_TAC o SPEC `0`) THEN
     REWRITE_TAC [ADD_0; LE_REFL; EXP_0; DIV_1] THEN
     STRIP_TAC
-    
 
 let montgomery_loop = prove
  (`!n r s k x y ld nb kb xs xc ys yc zs' zc' t.
