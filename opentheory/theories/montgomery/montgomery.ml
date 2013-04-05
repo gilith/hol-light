@@ -524,7 +524,22 @@ let montgomery_y = prove
    INDUCT_TAC THENL
    [DISCH_THEN (MP_TAC o SPEC `0`) THEN
     REWRITE_TAC [ADD_0; LE_REFL; EXP_0; DIV_1] THEN
-    STRIP_TAC
+    STRIP_TAC THEN
+    MP_TAC
+      (SPECL
+         [`ld : wire`; `ys : bus`; `ysq : bus`;
+          `ysr : bus`; `t : num`] bcase1_bsignal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    MP_TAC
+      (SPECL
+         [`ld : wire`; `yc : bus`; `ycq : bus`;
+          `ycr : bus`; `t : num`] bcase1_bsignal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+    
 
 let montgomery_loop = prove
  (`!n r s k x y ld nb kb xs xc ys yc zs' zc' t.
