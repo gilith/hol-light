@@ -10,6 +10,160 @@
 extend_the_interpretation "opentheory/theories/natural-bits/natural-bits.int";;
 
 (* ------------------------------------------------------------------------- *)
+(* Helper theorems (not exported).                                           *)
+(* ------------------------------------------------------------------------- *)
+
+let two_nonzero = prove
+  (`~(2 = 0)`,
+   REWRITE_TAC [TWO; NOT_SUC]);;
+
+let zero_div_two = prove
+  (`0 DIV 2 = 0`,
+   MATCH_MP_TAC DIV_0 THEN
+   ACCEPT_TAC two_nonzero);;
+
+let even_zero = prove
+  (`!n. n = 0 ==> EVEN n`,
+   GEN_TAC THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   REWRITE_TAC [EVEN]);;
+
+let cond_mod_two = prove
+  (`!n. (if ODD n then 1 else 0) = n MOD 2`,
+   GEN_TAC THEN
+   MP_TAC (SPEC `n:num` EVEN_OR_ODD) THEN
+   STRIP_TAC THENL
+   [MP_TAC (SPEC `n:num` EVEN_MOD) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+    MP_TAC (SPEC `n:num` NOT_ODD) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]);
+    MP_TAC (SPEC `n:num` ODD_MOD) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
+
+let cons_div_two = prove
+  (`!n h. ((if h then 1 else 0) + 2 * n) DIV 2 = n`,
+   REPEAT GEN_TAC THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `(2 * n) DIV 2 + (if h then 1 else 0) DIV 2` THEN
+   CONJ_TAC THENL
+   [MP_TAC (SPECL [`2 * n`; `if h then 1 else 0`; `2`] DIV_ADD_MOD) THEN
+    COND_TAC THENL
+    [NUM_REDUCE_TAC;
+     ALL_TAC] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
+    MP_TAC (SPECL [`2`; `n : num`] MOD_MULT) THEN
+    COND_TAC THENL
+    [NUM_REDUCE_TAC;
+     ALL_TAC] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th; ADD]) THEN
+    BOOL_CASES_TAC `h:bool` THENL
+    [REWRITE_TAC [] THEN
+     NUM_REDUCE_TAC THEN
+     REWRITE_TAC [GSYM ODD_MOD; GSYM ADD1; ODD_DOUBLE];
+     REWRITE_TAC [] THEN
+     NUM_REDUCE_TAC THEN
+     REWRITE_TAC [GSYM EVEN_MOD; ADD_0; EVEN_DOUBLE]];
+    ALL_TAC] THEN
+   MP_TAC (SPECL [`2`; `n : num`] DIV_MULT) THEN
+   COND_TAC THENL
+   [NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th; EQ_ADD_LCANCEL_0]) THEN
+   MATCH_MP_TAC DIV_LT THEN
+   BOOL_CASES_TAC `h : bool` THEN
+   REWRITE_TAC [] THEN
+   NUM_REDUCE_TAC);;
+
+let exp_two_nz = prove
+  (`!n. ~(2 EXP n = 0)`,
+   REWRITE_TAC [EXP_EQ_0] THEN
+   NUM_REDUCE_TAC);;
+
+let le_exp_two = prove
+  (`!m n. 2 EXP m <= 2 EXP n <=> m <= n`,
+   REWRITE_TAC [LE_EXP] THEN
+   NUM_REDUCE_TAC);;
+
+let lt_exp_two = prove
+  (`!m n. 2 EXP m < 2 EXP n <=> m < n`,
+   REWRITE_TAC [LT_EXP] THEN
+   NUM_REDUCE_TAC);;
+
+let lt_exp_two_suc = prove
+  (`!m n. m < 2 EXP n ==> 1 + 2 * m < 2 EXP SUC n`,
+   REPEAT STRIP_TAC THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `2 * (m + 1)` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [LEFT_ADD_DISTRIB; LT_ADD_LCANCEL] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   REWRITE_TAC [EXP; LE_MULT_LCANCEL] THEN
+   DISJ2_TAC THEN
+   ASM_REWRITE_TAC [GSYM ADD1; LE_SUC_LT]);;
+
+let mod_exp_two_lt = prove
+  (`!m n. m MOD (2 EXP n) < 2 EXP n`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPECL [`m : num`; `2 EXP n`] DIVISION) THEN
+   COND_TAC THENL
+   [REWRITE_TAC [exp_two_nz];
+    DISCH_THEN (fun th -> ACCEPT_TAC (CONJUNCT2 th))]);;
+
+let div_exp_two_lt = prove
+  (`!m n. m DIV (2 EXP n) = 0 <=> m < 2 EXP n`,
+   REPEAT GEN_TAC THEN
+   MATCH_MP_TAC DIV_EQ_0 THEN
+   MATCH_ACCEPT_TAC exp_two_nz);;
+
+let odd_mod_exp_two = prove
+  (`!m n. ODD (m MOD (2 EXP n)) <=> ODD m /\ ~(n = 0)`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPEC `n:num` num_CASES) THEN
+   STRIP_TAC THENL
+   [ASM_REWRITE_TAC [EXP; MULT_CLAUSES; MOD_1; ODD];
+    ALL_TAC] THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [NOT_SUC; EXP; ODD_MOD] THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC MOD_MOD THEN
+   REWRITE_TAC [GSYM EXP; exp_two_nz]);;
+
+let mod_div_exp_two = prove
+  (`!x m n.
+      (x MOD (2 EXP m)) DIV (2 EXP n) =
+      (if m <= n then 0 else (x DIV (2 EXP n)) MOD (2 EXP (m - n)))`,
+   REPEAT GEN_TAC THEN
+   bool_cases_tac `m <= (n : num)` THENL
+   [ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC DIV_LT THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `2 EXP m` THEN
+    ASM_REWRITE_TAC [le_exp_two; mod_exp_two_lt];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   MP_TAC (SPECL [`x : num`; `2 EXP n`; `2 EXP (m - n)`] DIV_MOD) THEN
+   COND_TAC THENL
+   [REWRITE_TAC [MULT_EQ_0; exp_two_nz];
+    ALL_TAC] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   AP_THM_TAC THEN
+   AP_TERM_TAC THEN
+   AP_TERM_TAC THEN
+   REWRITE_TAC [GSYM EXP_ADD] THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC SUB_ADD2 THEN
+   MP_TAC (SPECL [`m:num`; `n:num`] LE_CASES) THEN
+   ASM_REWRITE_TAC []);;
+
+(* ------------------------------------------------------------------------- *)
 (* Definition of natural number to bit-list conversions.                     *)
 (* ------------------------------------------------------------------------- *)
 
@@ -20,8 +174,18 @@ let bitwidth_def = new_definition
 
 export_thm bitwidth_def;;
 
+let num_shl_def = new_definition
+  `!n k. num_shl n k = funpow (\m. 2 * m) k n`;;
+
+export_thm num_shl_def;;
+
+let num_shr_def = new_definition
+  `!n k. num_shr n k = funpow (\m. m DIV 2) k n`;;
+
+export_thm num_shr_def;;
+
 let num_bit_def = new_definition
-  `!n i. num_bit n i = ODD (n DIV (2 EXP i))`;;
+  `!n i. num_bit n i = ODD (num_shr n i)`;;
 
 export_thm num_bit_def;;
 
@@ -109,95 +273,6 @@ export_thm rdecode_uniform_def;;
 
 logfile "natural-bits-thm";;
 
-(* Helper theorems (not exported) *)
-
-let even_zero = prove
-  (`!n. n = 0 ==> EVEN n`,
-   GEN_TAC THEN
-   DISCH_THEN SUBST_VAR_TAC THEN
-   REWRITE_TAC [EVEN]);;
-
-let cond_mod_two = prove
-  (`!n. (if ODD n then 1 else 0) = n MOD 2`,
-   GEN_TAC THEN
-   MP_TAC (SPEC `n:num` EVEN_OR_ODD) THEN
-   STRIP_TAC THENL
-   [MP_TAC (SPEC `n:num` EVEN_MOD) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-    MP_TAC (SPEC `n:num` NOT_ODD) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (fun th -> REWRITE_TAC [th]);
-    MP_TAC (SPEC `n:num` ODD_MOD) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
-
-let cons_div_two = prove
-  (`!n h. ((if h then 1 else 0) + 2 * n) DIV 2 = n`,
-   REPEAT GEN_TAC THEN
-   ONCE_REWRITE_TAC [ADD_SYM] THEN
-   MATCH_MP_TAC EQ_TRANS THEN
-   EXISTS_TAC `(2 * n) DIV 2 + (if h then 1 else 0) DIV 2` THEN
-   CONJ_TAC THENL
-   [MP_TAC (SPECL [`2 * n`; `if h then 1 else 0`; `2`] DIV_ADD_MOD) THEN
-    COND_TAC THENL
-    [NUM_REDUCE_TAC;
-     ALL_TAC] THEN
-    DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
-    MP_TAC (SPECL [`2`; `n : num`] MOD_MULT) THEN
-    COND_TAC THENL
-    [NUM_REDUCE_TAC;
-     ALL_TAC] THEN
-    DISCH_THEN (fun th -> REWRITE_TAC [th; ADD]) THEN
-    BOOL_CASES_TAC `h:bool` THENL
-    [REWRITE_TAC [] THEN
-     NUM_REDUCE_TAC THEN
-     REWRITE_TAC [GSYM ODD_MOD; GSYM ADD1; ODD_DOUBLE];
-     REWRITE_TAC [] THEN
-     NUM_REDUCE_TAC THEN
-     REWRITE_TAC [GSYM EVEN_MOD; ADD_0; EVEN_DOUBLE]];
-    ALL_TAC] THEN
-   MP_TAC (SPECL [`2`; `n : num`] DIV_MULT) THEN
-   COND_TAC THENL
-   [NUM_REDUCE_TAC;
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th; EQ_ADD_LCANCEL_0]) THEN
-   MATCH_MP_TAC DIV_LT THEN
-   BOOL_CASES_TAC `h : bool` THEN
-   REWRITE_TAC [] THEN
-   NUM_REDUCE_TAC);;
-
-let exp_two_nz = prove
-  (`!n. ~(2 EXP n = 0)`,
-   REWRITE_TAC [EXP_EQ_0] THEN
-   NUM_REDUCE_TAC);;
-
-let le_exp_two = prove
-  (`!m n. 2 EXP m <= 2 EXP n <=> m <= n`,
-   REWRITE_TAC [LE_EXP] THEN
-   NUM_REDUCE_TAC);;
-
-let lt_exp_two = prove
-  (`!m n. 2 EXP m < 2 EXP n <=> m < n`,
-   REWRITE_TAC [LT_EXP] THEN
-   NUM_REDUCE_TAC);;
-
-let lt_exp_two_suc = prove
-  (`!m n. m < 2 EXP n ==> 1 + 2 * m < 2 EXP SUC n`,
-   REPEAT STRIP_TAC THEN
-   ONCE_REWRITE_TAC [ADD_SYM] THEN
-   MATCH_MP_TAC LTE_TRANS THEN
-   EXISTS_TAC `2 * (m + 1)` THEN
-   CONJ_TAC THENL
-   [REWRITE_TAC [LEFT_ADD_DISTRIB; LT_ADD_LCANCEL] THEN
-    NUM_REDUCE_TAC;
-    ALL_TAC] THEN
-   REWRITE_TAC [EXP; LE_MULT_LCANCEL] THEN
-   DISJ2_TAC THEN
-   ASM_REWRITE_TAC [GSYM ADD1; LE_SUC_LT]);;
-
-(* Exported theorems *)
-
 let length_num_to_bits = prove
   (`!n. LENGTH (num_to_bits n) = bitwidth n`,
    REWRITE_TAC [num_to_bits_def; LENGTH_MAP; length_interval]);;
@@ -230,21 +305,33 @@ let bitwidth_recursion = prove
 
 export_thm bitwidth_recursion;;
 
+let num_shr_zero = prove
+  (`!n. num_shr n 0 = n`,
+   REWRITE_TAC [num_shr_def; funpow_zero; I_THM]);;
+
+export_thm num_shr_zero;;
+
+let num_shr_suc = prove
+  (`!n k. num_shr n (SUC k) = num_shr n k DIV 2`,
+   REWRITE_TAC [num_shr_def; funpow_suc; o_THM]);;
+
+export_thm num_shr_suc;;
+
+let num_shr_suc' = prove
+  (`!n k. num_shr n (SUC k) = num_shr (n DIV 2) k`,
+   REWRITE_TAC [num_shr_def; funpow_suc'; o_THM]);;
+
+export_thm num_shr_suc';;
+
 let num_bit_zero = prove
   (`!n. num_bit n 0 = ODD n`,
-   GEN_TAC THEN
-   REWRITE_TAC [num_bit_def; EXP_0; DIV_1]);;
+   REWRITE_TAC [num_bit_def; num_shr_zero]);;
 
 export_thm num_bit_zero;;
 
 let num_bit_suc = prove
   (`!n i. num_bit n (SUC i) = num_bit (n DIV 2) i`,
-   REPEAT GEN_TAC THEN
-   REWRITE_TAC [num_bit_def; EXP] THEN
-   AP_TERM_TAC THEN
-   MATCH_MP_TAC EQ_SYM THEN
-   MATCH_MP_TAC DIV_DIV THEN
-   REWRITE_TAC [GSYM EXP_SUC; exp_two_nz]);;
+   REWRITE_TAC [num_bit_def; num_shr_suc']);;
 
 export_thm num_bit_suc;;
 
@@ -256,12 +343,9 @@ export_thm num_bit_div2;;
 
 let zero_num_bit = prove
   (`!i. ~num_bit 0 i`,
-   GEN_TAC THEN
-   REWRITE_TAC [num_bit_def] THEN
-   MP_TAC (SPEC `2 EXP i` DIV_0) THEN
-   REWRITE_TAC [exp_two_nz] THEN
-   DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [ODD]);;
+   INDUCT_TAC THENL
+   [REWRITE_TAC [num_bit_zero; ODD_ZERO];
+    ASM_REWRITE_TAC [num_bit_suc; zero_div_two]]);;
 
 export_thm zero_num_bit;;
 
@@ -513,5 +597,16 @@ let bits_to_num_replicate_false = prove
     ASM_REWRITE_TAC [REPLICATE_SUC; bits_to_num_cons; MULT_0; ZERO_ADD]]);;
 
 export_thm bits_to_num_replicate_false;;
+
+(***
+let bits_to_num_replicate_true = prove
+  (`!n. 1 + bits_to_num (REPLICATE T n) = 2 EXP n`,
+   INDUCT_TAC THENL
+   [REWRITE_TAC [REPLICATE_0; bits_to_num_nil; ZERO_ADD; EXP_0];
+    ASM_REWRITE_TAC [REPLICATE_SUC; bits_to_num_cons]
+; MULT_0; ZERO_ADD]]);;
+
+export_thm bits_to_num_replicate_true;;
+***)
 
 logfile_end ();;
