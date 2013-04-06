@@ -728,6 +728,12 @@ let bsignal_cons = prove
 
 export_thm bsignal_cons;;
 
+let bsignal_wire = prove
+ (`!w t. bsignal (mk_bus [w]) t = [signal w t]`,
+  REWRITE_TAC [bsignal_cons; bsignal_nil; bus_tybij]);;
+
+export_thm bsignal_wire;;
+
 let bsignal_append = prove
  (`!b1 b2 t.
      bsignal (bappend b1 b2) t =
