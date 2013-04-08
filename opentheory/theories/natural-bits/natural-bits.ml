@@ -174,20 +174,60 @@ let bitwidth_def = new_definition
 
 export_thm bitwidth_def;;
 
+let bit_to_num_def = new_definition
+  `!b. bit_to_num b = if b then 1 else 0`;;
+
+export_thm bit_to_num_def;;
+
+let bit_cons_def = new_definition
+  `!b n. bit_cons b n = bit_to_num b + 2 * n`;;
+
+export_thm bit_cons_def;;
+
+let bit_hd_def = new_definition
+  `!n. bit_hd = ODD n`;;
+
+export_thm bit_hd_def;;
+
+let bit_tl_def = new_definition
+  `!n. bit_tl n = n DIV 2`;;
+
+export_thm bit_tl_def;;
+
+let bit_append_def = new_definition
+  `!l n. bit_append l n = foldr bit_cons n l`;;
+
+export_thm bit_append_def;;
+
+let bit_shl_def = new_definition
+  `!n k. bit_shl n k = funpow (bit_cons F) k n`;;
+
+export_thm bit_shl_def;;
+
+let bit_drop_def = new_definition
+  `!n k. bit_drop n k = funpow bit_tl k n`;;
+
+export_thm bit_drop_def;;
+
+let bit_take_def = new_definition
+  `!n k. bit_take n k = n - bit_append (funpow bit_tl k n`;;
+
+export_thm bit_drop_def;;
+
+let bit_nth_def = new_definition
+  `!n i. bit_nth n i = bit_hd (bit_drop n i)`;;
+
+export_thm bit_nth_def;;
+
+let bits_to_num_def = new_definition
+  `!l. bits_to_num l = bit_append l 0`;;
+
+export_thm bits_to_num_def;;
+
 let num_shl_def = new_definition
   `!n k. num_shl n k = funpow (\m. 2 * m) k n`;;
 
 export_thm num_shl_def;;
-
-let num_shr_def = new_definition
-  `!n k. num_shr n k = funpow (\m. m DIV 2) k n`;;
-
-export_thm num_shr_def;;
-
-let num_bit_def = new_definition
-  `!n i. num_bit n i = ODD (num_shr n i)`;;
-
-export_thm num_bit_def;;
 
 let num_to_bits_def = new_definition
   `!n. num_to_bits n = MAP (num_bit n) (interval 0 (bitwidth n))`;;
@@ -198,11 +238,6 @@ let is_bits_def = new_definition
   `!l. is_bits l <=> NULL l \/ LAST l`;;
 
 export_thm is_bits_def;;
-
-let bit_to_num_def = new_definition
-  `!b. bit_to_num b = if b then 1 else 0`;;
-
-export_thm bit_to_num_def;;
 
 let (bits_to_num_nil,bits_to_num_cons) =
   let def = new_recursive_definition list_RECURSION
