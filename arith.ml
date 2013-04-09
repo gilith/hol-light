@@ -1922,17 +1922,6 @@ let div_induction = prove
 
 export_thm div_induction;;
 
-let div2_induction = prove
- (`!p. p 0 /\ (!n. ~(n = 0) /\ p (n DIV 2) ==> p n) ==> !n. p n`,
-  REPEAT GEN_TAC THEN
-  STRIP_TAC THEN
-  MATCH_MP_TAC div_induction THEN
-  EXISTS_TAC `2` THEN
-  ASM_REWRITE_TAC [] THEN
-  REWRITE_TAC [TWO; LT_SUC_LE; LE_REFL]);;
-
-export_thm div2_induction;;
-
 (* ------------------------------------------------------------------------- *)
 (* Exponentiation.                                                           *)
 (* ------------------------------------------------------------------------- *)
