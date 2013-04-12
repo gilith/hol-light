@@ -1426,6 +1426,12 @@ let LENGTH_REPLICATE = prove
 
 export_thm LENGTH_REPLICATE;;
 
+let NULL_REPLICATE = prove
+ (`!(x : A) n. NULL (REPLICATE x n) <=> n = 0`,
+  REWRITE_TAC [GSYM NULL_LENGTH; LENGTH_REPLICATE]);;
+
+export_thm NULL_REPLICATE;;
+
 let APPEND_EQ_REPLICATE = prove
  (`!(x : A) n l1 l2.
      APPEND l1 l2 = REPLICATE x n <=>
