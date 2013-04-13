@@ -163,6 +163,21 @@ let rdecode_geometricH_def = define_haskell_const
 
 export_thm rdecode_geometricH_def;;
 
+let bit_to_numH_def = define_haskell_const
+  `bit_to_num : bool -> num`;;
+
+export_thm bit_to_numH_def;;
+
+let bit_tlH_def = define_haskell_const
+  `bit_tl : num -> num`;;
+
+export_thm bit_tlH_def;;
+
+let bit_consH_def = define_haskell_const
+  `bit_cons : bool -> num -> num`;;
+
+export_thm bit_consH_def;;
+
 let bitwidthH_def = define_haskell_const
   `bitwidth : num -> num`;;
 
@@ -510,17 +525,31 @@ let () = (export_haskell_thm o prove)
   ACCEPT_TAC rdecode_geometric_def);;
 
 let () = (export_haskell_thm o prove)
+ (`!b. bit_to_numH b = (if b then 1 else 0)`,
+  HASKELL_TAC [] THEN
+  ACCEPT_TAC bit_to_num_def);;
+
+let () = (export_haskell_thm o prove)
+ (`!n. bit_tlH n = n DIV 2`,
+  HASKELL_TAC [] THEN
+  ACCEPT_TAC bit_tl_def);;
+
+let () = (export_haskell_thm o prove)
+ (`!h t. bit_consH h t = bit_to_numH h + 2 * t`,
+  HASKELL_TAC [] THEN
+  ACCEPT_TAC bit_cons_def);;
+
+let () = (export_haskell_thm o prove)
  (`!n.
      bitwidthH n =
-     if n = 0 then 0 else bitwidthH (n DIV 2) + 1`,
+     if n = 0 then 0 else bitwidthH (bit_tlH n) + 1`,
   HASKELL_TAC [] THEN
   ACCEPT_TAC bitwidth_recursion);;
 
 let () = (export_haskell_thm o prove)
  (`bits_to_numH [] = 0 /\
-   (!h t.
-      bits_to_numH (CONS h t) = (if h then 1 else 0) + 2 * bits_to_numH t)`,
-  HASKELL_TAC [bits_to_num_def]);;
+   (!h t. bits_to_numH (CONS h t) = bit_consH h (bits_to_numH t))`,
+  HASKELL_TAC [bits_to_num_nil; bits_to_num_cons]);;
 
 let () = (export_haskell_thm o prove)
  (`!m n. dividesH m n = if m = 0 then n = 0 else n MOD m = 0`,

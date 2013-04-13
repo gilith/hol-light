@@ -275,9 +275,10 @@ let list_to_word_cons = prove
       list_to_word (CONS h t) =
       if h then word_add (num_to_word 1) (word_shl (list_to_word t) 1)
       else word_shl (list_to_word t) 1`,
-   REPEAT STRIP_TAC THEN
-   ASM_REWRITE_TAC
-     [bits_to_num_cons; list_to_word_def; num_to_word_add; num_to_word_mult;
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC
+     [bits_to_num_cons; bit_cons_def; bit_to_num_def;
+      list_to_word_def; num_to_word_add; num_to_word_mult;
       word_shl_def; EXP_1; word_to_num_to_word] THEN
    BOOL_CASES_TAC `h : bool` THEN
    REWRITE_TAC [word_add_left_zero]);;
@@ -291,24 +292,6 @@ let list_to_word_cons = new_axiom
       if h then word_add (num_to_word 1) (word_shl (list_to_word t) 1)
       else word_shl (list_to_word t) 1`;;
 *)
-
-(***
-(*BEGIN-PARAMETRIC*)
-let list_to_word_def = CONJ list_to_word_nil list_to_word_cons;;
-(*END-PARAMETRIC*)
-
-let bits_to_num_to_word = prove
-  (`!l. num_to_word (bits_to_num l) = list_to_word l`,
-   LIST_INDUCT_TAC THENL
-   [REWRITE_TAC [bits_to_num_def; list_to_word_def];
-    ASM_REWRITE_TAC
-      [bits_to_num_def; list_to_word_def; num_to_word_add; num_to_word_mult;
-       word_shl_def; EXP_1; word_to_num_to_word] THEN
-    BOOL_CASES_TAC `h : bool` THEN
-    REWRITE_TAC [word_add_right_zero]]);;
-
-export_thm bits_to_num_to_word;;
-***)
 
 let word_bit_div = prove
   (`!w n. word_bit w n = ODD (word_to_num w DIV (2 EXP n))`,
@@ -349,7 +332,10 @@ let cons_to_word_to_num = prove
       word_to_num (list_to_word (CONS h t)) =
       ((if h then 1 else 0) + 2 * word_to_num (list_to_word t)) MOD
       word_size`,
-   REWRITE_TAC [list_to_word_def; num_to_word_to_num; bits_to_num_cons] THEN
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC
+     [list_to_word_def; num_to_word_to_num;
+      bits_to_num_cons; bit_cons_def; bit_to_num_def] THEN
    ONCE_REWRITE_TAC [GSYM mod_add_mod_word_size] THEN
    ONCE_REWRITE_TAC [GSYM mod_mult_mod_word_size] THEN
    REWRITE_TAC [mod_mod_refl_word_size]);;

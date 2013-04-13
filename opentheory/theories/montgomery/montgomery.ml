@@ -510,7 +510,7 @@ let montgomery_y = prove
       bdelay ysr ysp /\
       bdelay ycr ycp ==>
       bits_to_num (bsignal ysr (t + k)) +
-      2 * bits_to_num (bsignal ycr (t + k)) = num_shr y k`,
+      2 * bits_to_num (bsignal ycr (t + k)) = bit_shr y k`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [montgomery_y_def] THEN
   STRIP_TAC THEN
@@ -518,7 +518,7 @@ let montgomery_y = prove
   SPEC_TAC (`k : num`, `k : num`) THEN
   INDUCT_TAC THENL
   [DISCH_THEN (MP_TAC o SPEC `0`) THEN
-   REWRITE_TAC [ADD_0; LE_REFL; num_shr_zero] THEN
+   REWRITE_TAC [ADD_0; LE_REFL; bit_shr_zero] THEN
    STRIP_TAC THEN
    MP_TAC
      (SPECL
@@ -589,7 +589,8 @@ let montgomery_y = prove
    FIRST_ASSUM ACCEPT_TAC;
    ALL_TAC] THEN
   ONCE_REWRITE_TAC [bits_to_num_bsignal_append] THEN
-  ASM_REWRITE_TAC [bsignal_wire; ground_signal] THEN
+  ASM_REWRITE_TAC [bsignal_wire; ground_signal; bits_to_num_sing] THEN
+  ***
   SUBGOAL_THEN `bits_to_num [F] = 0` SUBST1_TAC THENL
   [REWRITE_TAC [bits_to_num_def; MULT_0; ZERO_ADD];
    ALL_TAC] THEN

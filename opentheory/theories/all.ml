@@ -37,7 +37,6 @@ loads "opentheory/theories/probability/probability.ml";;
 (* Natural number to bit-list conversions.                                   *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 loads "opentheory/theories/natural-bits/natural-bits.ml";;
 
 (* ------------------------------------------------------------------------- *)
@@ -164,7 +163,9 @@ loads "opentheory/theories/hardware/hardware.ml";;
 (* Montgomery multiplication.                                                *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 loads "opentheory/theories/montgomery/montgomery.ml";;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Memory safety for the H interface.                                        *)
@@ -203,4 +204,3 @@ loads "opentheory/theories/haskell-char/haskell-char.ml";;
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/haskell-prime/haskell-prime.ml";;
-***)

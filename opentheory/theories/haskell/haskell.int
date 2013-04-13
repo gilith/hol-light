@@ -60,11 +60,14 @@ const "HOLLight.list_to_word16H" as "Haskell.Data.Word16.Bits.toWord16"
 # Haskell.Number.Natural
 
 const "HOLLight.dividesH" as "Haskell.Number.Natural.divides"
+const "HOLLight.bit_to_numH" as "Haskell.Number.Natural.fromBool"
 const "HOLLight.rdecode_fibH" as "Haskell.Number.Natural.fromRandom"
 const "HOLLight.rdecode_fib_destH" as "Haskell.Number.Natural.fromRandom.dest"
 
 # Haskell.Number.Natural.Bits
 
+const "HOLLight.bit_consH" as "Haskell.Number.Natural.Bits.cons"
+const "HOLLight.bit_tlH" as "Haskell.Number.Natural.Bits.tail"
 const "HOLLight.bits_to_numH" as "Haskell.Number.Natural.Bits.toNatural"
 const "HOLLight.bitwidthH" as "Haskell.Number.Natural.Bits.width"
 

@@ -211,20 +211,21 @@ let monoid_mult_add_invariant = prove
    LIST_INDUCT_TAC THENL
    [REPEAT STRIP_TAC THEN
     REWRITE_TAC
-      [bits_to_num_def; monoid_mult_add_def; monoid_mult_def;
+      [bits_to_num_nil; monoid_mult_add_def; monoid_mult_def;
        monoid_add_right_zero];
     ALL_TAC] THEN
    REPEAT GEN_TAC THEN
-   REWRITE_TAC [monoid_mult_add_def; bits_to_num_def] THEN
+   REWRITE_TAC [monoid_mult_add_def; bits_to_num_cons] THEN
    FIRST_X_ASSUM (CONV_TAC o LAND_CONV o REWR_CONV) THEN
    REWRITE_TAC
-     [monoid_mult_right_add; monoid_mult_right_mult; monoid_mult_right_two;
-      GSYM monoid_add_assoc] THEN
+     [bit_cons_def; monoid_mult_right_add; monoid_mult_right_mult;
+      monoid_mult_right_two; GSYM monoid_add_assoc] THEN
    AP_THM_TAC THEN
    AP_TERM_TAC THEN
    BOOL_CASES_TAC `h : bool` THEN
    REWRITE_TAC
-     [monoid_mult_right_one; monoid_mult_right_zero; monoid_add_right_zero]);;
+     [bit_to_num_def; monoid_mult_right_one; monoid_mult_right_zero;
+      monoid_add_right_zero]);;
 
 export_thm monoid_mult_add_invariant;;
 

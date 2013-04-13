@@ -145,11 +145,17 @@ export_thm adder3_def;;
 
 logfile "hardware-thm";;
 
-let bits_to_num_ground = prove
-  (`!t. bits_to_num [signal ground t] = 0`,
-   REWRITE_TAC [bits_to_num_def; ground_signal; MULT_0; ADD_0]);;
+let bit_to_num_power = prove
+  (`!t. bit_to_num (signal power t) = 1`,
+   REWRITE_TAC [power_signal; bit_to_num_true]);;
 
-export_thm bits_to_num_ground;;
+export_thm bit_to_num_power;;
+
+let bit_to_num_ground = prove
+  (`!t. bit_to_num (signal ground t) = 0`,
+   REWRITE_TAC [ground_signal; bit_to_num_false]);;
+
+export_thm bit_to_num_ground;;
 
 let delay_signal = prove
   (`!x y' t.
@@ -368,11 +374,11 @@ export_thm adder3_right_ground;;
 let adder3 = prove
  (`!x y z s' c' t.
      adder3 x y z s' c' ==>
-     bits_to_num [signal x t] + bits_to_num [signal y t] +
-     bits_to_num [signal z t] =
-     bits_to_num [signal s' t] + 2 * bits_to_num [signal c' t]`,
+     bit_to_num (signal x t) + bit_to_num (signal y t) +
+     bit_to_num (signal z t) =
+     bit_to_num (signal s' t) + 2 * bit_to_num (signal c' t)`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [adder3_def; bits_to_num_def; MULT_0; ZERO_ADD] THEN
+  REWRITE_TAC [adder3_def] THEN
   STRIP_TAC THEN
   MP_TAC
     (SPECL
@@ -388,6 +394,7 @@ let adder3 = prove
   BOOL_CASES_TAC `signal x t` THEN
   BOOL_CASES_TAC `signal y t` THEN
   BOOL_CASES_TAC `signal z t` THEN
+  REWRITE_TAC [bit_to_num_def] THEN
   NUM_REDUCE_TAC);;
 
 export_thm adder3;;
@@ -395,8 +402,8 @@ export_thm adder3;;
 let adder2 = prove
  (`!x y s' c' t.
      adder2 x y s' c' ==>
-     bits_to_num [signal x t] + bits_to_num [signal y t] =
-     bits_to_num [signal s' t] + 2 * bits_to_num [signal c' t]`,
+     bit_to_num (signal x t) + bit_to_num (signal y t) =
+     bit_to_num (signal s' t) + 2 * bit_to_num (signal c' t)`,
   REPEAT STRIP_TAC THEN
   MP_TAC (SPECL [`x : wire`; `y : wire`; `s' : wire`; `c' : wire`]
             adder3_right_ground) THEN
@@ -406,7 +413,7 @@ let adder2 = prove
     (SPECL [`x : wire`; `y : wire`; `ground`;
             `s' : wire`; `c' : wire`; `t : num`]
        adder3) THEN
-  ASM_REWRITE_TAC [bits_to_num_ground; ADD_0]);;
+  ASM_REWRITE_TAC [bit_to_num_ground; ADD_0]);;
 
 export_thm adder2;;
 
@@ -745,7 +752,8 @@ export_thm bsignal_append;;
 let bits_to_num_bsignal_append = prove
  (`!b1 b2 t.
      bits_to_num (bsignal (bappend b1 b2) t) =
-     bits_to_num (bsignal b1 t) + 2 EXP width b1 * bits_to_num (bsignal b2 t)`,
+     bits_to_num (bsignal b1 t) +
+     bit_shl (bits_to_num (bsignal b2 t)) (width b1)`,
   REWRITE_TAC
     [bsignal_append; bits_to_num_append; width_def; bsignal_def; LENGTH_MAP]);;
 
@@ -934,12 +942,12 @@ let compressor3 = prove
       (X_CHOOSE_THEN `ct' : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
   REPEAT STRIP_TAC THEN
-  REWRITE_TAC [bsignal_cons; bits_to_num_cons; bus_tybij] THEN
+  REWRITE_TAC [bsignal_cons; bits_to_num_cons; bus_tybij; bit_cons_def] THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `((if signal xh t then 1 else 0) +
-      (if signal yh t then 1 else 0) +
-      (if signal zh t then 1 else 0)) +
+    `(bit_to_num (signal xh t) +
+      bit_to_num (signal yh t) +
+      bit_to_num (signal zh t)) +
      ((2 * bits_to_num (bsignal xt t)) +
       (2 * bits_to_num (bsignal yt t)) +
       (2 * bits_to_num (bsignal zt t)))` THEN
@@ -956,8 +964,8 @@ let compressor3 = prove
   MATCH_MP_TAC EQ_SYM THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `((if signal sh' t then 1 else 0) +
-      2 * (if signal ch' t then 1 else 0)) +
+    `(bit_to_num (signal sh' t) +
+      2 * bit_to_num (signal ch' t)) +
      ((2 * bits_to_num (bsignal st' t)) +
       (2 * (2 * bits_to_num (bsignal ct' t))))` THEN
   CONJ_TAC THENL
@@ -969,9 +977,9 @@ let compressor3 = prove
   MATCH_MP_TAC EQ_SYM THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `((if signal xh t then 1 else 0) +
-      (if signal yh t then 1 else 0) +
-      (if signal zh t then 1 else 0)) +
+    `(bit_to_num (signal xh t) +
+      bit_to_num (signal yh t) +
+      bit_to_num (signal zh t)) +
      ((2 * bits_to_num (bsignal st' t)) +
       (2 * (2 * bits_to_num (bsignal ct' t))))` THEN
   CONJ_TAC THENL
@@ -993,11 +1001,8 @@ let compressor3 = prove
       SPECL
         [`xh : wire`; `yh : wire`; `zh : wire`;
          `sh' : wire`; `ch' : wire`]) THEN
-   MP_TAC
-     (SPECL
-        [`xh : wire`; `yh : wire`; `zh : wire`;
-         `sh' : wire`; `ch' : wire`; `t : num`] adder3) THEN
-   ASM_REWRITE_TAC [bits_to_num_def; MULT_0; ADD_0]]);;
+   MATCH_MP_TAC adder3 THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm compressor3;;
 
@@ -1086,7 +1091,7 @@ let compressor4 = prove
        compressor2_width) THEN
   ASM_REWRITE_TAC [] THEN
   STRIP_TAC THEN
-  ASM_REWRITE_TAC [EXP_1] THEN
+  ASM_REWRITE_TAC [bit_shl_one] THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
     `(bits_to_num (bsignal p0 t) +
@@ -1160,7 +1165,7 @@ let compressor4 = prove
     `(bits_to_num (bsignal p1 t) +
       bits_to_num (bsignal q1 t) +
       bits_to_num (bsignal z1 t)) +
-     2 EXP n * bits_to_num (bsignal s2' t)` THEN
+     bit_shl (bits_to_num (bsignal s2' t)) n` THEN
   CONJ_TAC THENL
   [POP_ASSUM_LIST (K ALL_TAC) THEN
    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
@@ -1170,7 +1175,7 @@ let compressor4 = prove
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
     `(bits_to_num (bsignal s1' t) + 2 * bits_to_num (bsignal c1' t)) +
-     2 EXP n * bits_to_num (bsignal s2' t)` THEN
+     bit_shl (bits_to_num (bsignal s2' t)) n` THEN
   CONJ_TAC THENL
   [POP_ASSUM_LIST (K ALL_TAC) THEN
    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN

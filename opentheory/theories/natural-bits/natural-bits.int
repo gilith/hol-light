@@ -7,11 +7,20 @@
 
 # Number.Natural
 
+const "HOLLight.bit_to_num" as "Number.Natural.fromBool"
+
 # Number.Natural.Bits
 
-const "HOLLight.num_bit" as "Number.Natural.Bits.bit"
+const "HOLLight.bit_append" as "Number.Natural.Bits.append"
+const "HOLLight.bit_nth" as "Number.Natural.Bits.bit"
+const "HOLLight.bit_bound" as "Number.Natural.Bits.bound"
+const "HOLLight.bit_cons" as "Number.Natural.Bits.cons"
 const "HOLLight.num_to_bits" as "Number.Natural.Bits.fromNatural"
+const "HOLLight.bit_hd" as "Number.Natural.Bits.head"
 const "HOLLight.is_bits" as "Number.Natural.Bits.normal"
+const "HOLLight.bit_shl" as "Number.Natural.Bits.shiftLeft"
+const "HOLLight.bit_shr" as "Number.Natural.Bits.shiftRight"
+const "HOLLight.bit_tl" as "Number.Natural.Bits.tail"
 const "HOLLight.bits_to_num" as "Number.Natural.Bits.toNatural"
 const "HOLLight.bitwidth" as "Number.Natural.Bits.width"
 
