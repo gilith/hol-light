@@ -664,6 +664,12 @@ let bit_shl_add = prove
 
 export_thm bit_shl_add;;
 
+let zero_bit_shl = prove
+  (`!k. bit_shl 0 k = 0`,
+   REWRITE_TAC [bit_shl_def; MULT_0]);;
+
+export_thm zero_bit_shl;;
+
 let bit_shr_zero = prove
   (`!n. bit_shr n 0 = n`,
    REWRITE_TAC [bit_shr_def; EXP_0; DIV_1]);;
@@ -701,6 +707,15 @@ let bit_shr_add = prove
    REWRITE_TAC [bit_shr_funpow; funpow_add; o_THM]);;
 
 export_thm bit_shr_add;;
+
+let zero_bit_shr = prove
+  (`!k. bit_shr 0 k = 0`,
+   GEN_TAC THEN
+   REWRITE_TAC [bit_shr_def] THEN
+   MATCH_MP_TAC DIV_0 THEN
+   REWRITE_TAC [EXP_EQ_0; two_nonzero]);;
+
+export_thm zero_bit_shr;;
 
 let bit_nth_zero = prove
   (`!n. bit_nth n 0 = bit_hd n`,

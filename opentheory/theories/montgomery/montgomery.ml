@@ -589,17 +589,14 @@ let montgomery_y = prove
    FIRST_ASSUM ACCEPT_TAC;
    ALL_TAC] THEN
   ONCE_REWRITE_TAC [bits_to_num_bsignal_append] THEN
-  ASM_REWRITE_TAC [bsignal_wire; ground_signal; bits_to_num_sing] THEN
-  ***
-  SUBGOAL_THEN `bits_to_num [F] = 0` SUBST1_TAC THENL
-  [REWRITE_TAC [bits_to_num_def; MULT_0; ZERO_ADD];
-   ALL_TAC] THEN
-  REWRITE_TAC [MULT_0; ADD_0] THEN
+  ASM_REWRITE_TAC
+    [bsignal_wire; ground_signal; bits_to_num_sing; bit_to_num_false;
+     zero_bit_shl; ADD_0] THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
     `(bits_to_num (bsignal ys0' (SUC (t + k))) +
       2 * bits_to_num (bsignal yc0' (SUC (t + k)))) +
-     2 EXP r * bits_to_num [signal yc1 (SUC (t + k))]` THEN
+     bit_shl (bit_to_num (signal yc1 (SUC (t + k)))) r` THEN
   CONJ_TAC THENL
   [REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
    MATCH_ACCEPT_TAC ADD_SYM;
@@ -608,7 +605,7 @@ let montgomery_y = prove
   EXISTS_TAC
     `(bits_to_num (bsignal ys0 (SUC (t + k))) +
       bits_to_num (bsignal yc0 (SUC (t + k)))) +
-     2 EXP r * bits_to_num [signal yc1 (SUC (t + k))]` THEN
+     bit_shl (bit_to_num (signal yc1 (SUC (t + k)))) r` THEN
   CONJ_TAC THENL
   [REWRITE_TAC [EQ_ADD_RCANCEL] THEN
    MATCH_MP_TAC EQ_SYM THEN
@@ -621,7 +618,8 @@ let montgomery_y = prove
      bits_to_num (bsignal (bappend yc0 (mk_bus [yc1])) (SUC (t + k)))` THEN
   CONJ_TAC THENL
   [REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
-   ASM_REWRITE_TAC [bits_to_num_bsignal_append; bsignal_wire];
+   ASM_REWRITE_TAC
+     [bits_to_num_bsignal_append; bsignal_wire; bits_to_num_sing];
    ALL_TAC] THEN
   SUBGOAL_THEN `bappend yc0 (mk_bus [yc1]) = ycp`
     SUBST1_TAC THENL
@@ -632,6 +630,8 @@ let montgomery_y = prove
    CONJ_TAC THEN
    FIRST_ASSUM ACCEPT_TAC;
    ALL_TAC] THEN
+  ***
+  CONV_TAC (LAND_CONV (REWR_CONV (GSYM (SPEC
   MATCH_MP_TAC EQ_SYM THEN
   MATCH_MP_TAC EQ_TRANS THEN
 
