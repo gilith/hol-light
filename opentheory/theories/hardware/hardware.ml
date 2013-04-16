@@ -836,6 +836,72 @@ let bits_to_num_bsignal_bground = prove
 
 export_thm bits_to_num_bsignal_bground;;
 
+let bdelay_width = prove
+ (`!x y'.
+     bdelay x y' ==>
+     width y' = width x`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bdelay_def; GSYM LEFT_FORALL_IMP_THM] THEN
+  GEN_TAC THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bdelay_width;;
+
+let bdelay_bsignal = prove
+ (`!x y' t. bdelay x y' ==> bsignal y' (t + 1) = bsignal x t`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bdelay_def; GSYM LEFT_FORALL_IMP_THM] THEN
+  GEN_TAC THEN
+  SPEC_TAC (`y' : bus`, `y' : bus`) THEN
+  SPEC_TAC (`x : bus`, `x : bus`) THEN
+  SPEC_TAC (`n : num`, `n : num`) THEN
+  INDUCT_TAC THENL
+  [REPEAT GEN_TAC THEN
+   REWRITE_TAC [width_zero] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [bsignal_def; MAP_NIL; bus_tybij];
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [width_suc; GSYM IMP_IMP] THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `xh : wire`
+      (X_CHOOSE_THEN `xt : bus`
+        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `yh' : wire`
+      (X_CHOOSE_THEN `yt' : bus`
+        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC [bsignal_cons; bus_tybij; CONS_11] THEN
+  CONJ_TAC THENL
+  [FIRST_X_ASSUM
+     (MP_TAC o SPECL [`0`; `xh : wire`; `yh' : wire`]) THEN
+   REWRITE_TAC [wire_zero; delay_def] THEN
+   DISCH_THEN MATCH_ACCEPT_TAC;
+   FIRST_X_ASSUM
+     (MP_TAC o SPECL [`xt : bus`; `yt' : bus`]) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN MATCH_MP_TAC THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MATCH_MP_TAC o REWRITE_RULE [IMP_IMP]) THEN
+   EXISTS_TAC `SUC i` THEN
+   ASM_REWRITE_TAC [wire_suc]]);;
+
+export_thm bdelay_bsignal;;
+
+let bcase1_width = prove
+ (`!s x y z'.
+     bcase1 s x y z' ==>
+     width z' = width x`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bcase1_def; GSYM LEFT_FORALL_IMP_THM] THEN
+  GEN_TAC THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bcase1_width;;
+
 let bcase1_bsignal = prove
  (`!s x y z' t.
       bcase1 s x y z' ==>
