@@ -626,6 +626,15 @@ let width_suc = prove
 
 export_thm width_suc;;
 
+let bsub_exists = prove
+  (`!x k n. k + n <= width x ==> ?y. bsub x k n y`,
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [bsub_def] THEN
+   EXISTS_TAC `mk_bus (take n (drop k (dest_bus x)))` THEN
+   REFL_TAC);;
+
+export_thm bsub_exists;;
+
 let width_bsub = prove
   (`!x k n y. bsub x k n y ==> width y = n`,
    REPEAT GEN_TAC THEN
@@ -688,6 +697,23 @@ let bsub_add = prove
     ASM_REWRITE_TAC []]);;
 
 export_thm bsub_add;;
+
+let wire_exists = prove
+  (`!b i. i < width b ==> ?w. wire b i w`,
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [wire_def; bsub_def; GSYM ADD1; LE_SUC_LT] THEN
+   EXISTS_TAC `HD (drop i (dest_bus b))` THEN
+   REWRITE_TAC [mk_bus_inj] THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [width_def; LT_EXISTS] THEN
+   STRIP_TAC THEN
+   MP_TAC (ISPECL [`i : num`; `dest_bus b`] length_drop) THEN
+   POP_ASSUM SUBST1_TAC THEN
+   REWRITE_TAC [LE_ADD; ADD_SUB2; LENGTH_EQ_CONS] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [take_one; HD]);;
+
+export_thm wire_exists;;
 
 let wire_zero = prove
  (`!v b w. wire (mk_bus (CONS v (dest_bus b))) 0 w <=> w = v`,

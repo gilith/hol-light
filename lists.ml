@@ -1570,6 +1570,14 @@ let drop_def = CONJ drop_zero drop_suc;;
 
 logfile "list-take-drop-thm";;
 
+let take_one = prove
+  (`!(h : A) t. take 1 (CONS h t) = [h]`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPECL [`0`; `h : A`; `t : A list`] take_suc) THEN
+   REWRITE_TAC [LE_0; ONE; take_zero]);;
+
+export_thm take_one;;
+
 let take_drop = prove
   (`!n (l : A list). n <= LENGTH l ==> APPEND (take n l) (drop n l) = l`,
    INDUCT_TAC THENL
