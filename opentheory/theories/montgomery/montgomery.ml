@@ -757,7 +757,8 @@ let montgomery_sc = prove
       (bits_to_num (bsignal sar (t + k)) +
        bits_to_num (bsignal sbr (t + k))) +
       2 * (bits_to_num (bsignal car (t + k)) +
-           bits_to_num (bsignal cbr (t + k))) = x * bit_bound y k`,
+           bits_to_num (bsignal cbr (t + k))) =
+      bit_shr (x * bit_bound y k) k`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [montgomery_y_def] THEN
   STRIP_TAC THEN

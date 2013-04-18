@@ -1,3 +1,23 @@
+-- ============================================================================
+-- HASKELL PROTOTYPE OF A HARDWARE MONTGOMERY MULTIPLIER
+-- Joe Leslie-Hurd
+-- ============================================================================
+
+{-
+To use the prototype first install the following required cabal package:
+
+  cabal install opentheory
+
+Then load the prototype:
+
+  ghci montgomery.hs
+
+Finally run some QuickCheck tests on it:
+
+  main
+-}
+
+
 module Main
 where
 
@@ -9,23 +29,27 @@ import OpenTheory.Number.Natural
 import qualified OpenTheory.Number.Natural.Bits as Bits
 import qualified OpenTheory.Number.Natural.Geometric as Geometric
 
-{- Utility functions -}
+-------------------------------------------------------------------------------
+-- Utility functions
+-------------------------------------------------------------------------------
 
 pow2 :: Int -> Natural
 pow2 n = if n <= 0 then 1 else 2 * pow2 (n - 1)
 
-{- Individual bits -}
+-------------------------------------------------------------------------------
+-- Individual bits
+-------------------------------------------------------------------------------
 
-boolToNum :: Bool -> Natural
-boolToNum x = if x then 1 else 0
+bitToNum :: Bool -> Natural
+bitToNum x = if x then 1 else 0
 
-numToBool :: Natural -> Bool
-numToBool n =
+numToBit :: Natural -> Bool
+numToBit n =
     if n < 2
       then n == 1
-      else error $ "numToBool: out of range: " ++ show n
+      else error $ "numToBit: out of range: " ++ show n
 
-{- A full adder -}
+-- A full adder
 
 adder :: Bool -> Bool -> Bool -> (Bool,Bool)
 adder x y z =
@@ -35,14 +59,16 @@ adder x y z =
 
 adderProp :: Bool -> Bool -> Bool -> Bool
 adderProp x y z =
-    boolToNum x + boolToNum y + boolToNum z == boolToNum s + 2 * boolToNum c
+    bitToNum x + bitToNum y + bitToNum z == bitToNum s + 2 * bitToNum c
   where
     (s,c) = adder x y z
 
 adderCorrect :: IO ()
 adderCorrect = check "|- adder x y z = (s,c) ==>\n   b2n x + b2n y + b2n z = b2n s + 2 * b2n c\n" adderProp
 
-{- Streams of bits -}
+-------------------------------------------------------------------------------
+-- Streams of bits
+-------------------------------------------------------------------------------
 
 data Bits = Bits [Bool]
 
@@ -81,7 +107,7 @@ numToBits n =
 
 bitsToNum :: Bits -> Natural
 bitsToNum (Bits []) = 0
-bitsToNum x = boolToNum (headBits x) + 2 * bitsToNum (tailBits x)
+bitsToNum x = bitToNum (headBits x) + 2 * bitsToNum (tailBits x)
 
 randomBits :: Random -> (Bits,Random)
 randomBits r =
@@ -101,7 +127,7 @@ instance Show Bits where
 randomLength :: Random -> (Natural,Random)
 randomLength = Geometric.fromRandom
 
-{- A 3:2 compressor -}
+-- A 3:2 compressor
 
 twoToTwo :: Bits -> Bits -> (Bits,Bits)
 twoToTwo (Bits []) ys = (ys,zeroBits)
@@ -146,7 +172,9 @@ fourToTwo w x y z =
   where
     (s,c) = threeToTwo x y z
 
-{- Circuits -}
+-------------------------------------------------------------------------------
+-- Circuits
+-------------------------------------------------------------------------------
 
 mkCircuit :: (s -> s) -> s -> [s]
 mkCircuit next =
@@ -154,35 +182,114 @@ mkCircuit next =
   where
     mk s = s : mk (next s)
 
-{- Montgomery multiplication -}
+-------------------------------------------------------------------------------
+-- Montgomery multiplication
+-------------------------------------------------------------------------------
 
 {-
-Let n < 2^{r-2}, and represent inputs as
+Suppose we are given a large odd integer n, and we would like to carry
+out an arithmetic computation modulo n. Addition modulo n is easy to
+calculate with the help of the simplemod function:
+
+simplemod n x = if x < n then x else simplemod n (x - n)
+
+Then
+
+(x + y) mod n = ((x mod n) + (y mod n)) mod n
+              = simplemod n ((x mod n) + (y mod n))
+
+Problem: It is expensive to compute multiplication modulo n, mainly
+because calculating (x * y) mod n requires a costly integer remainder
+operation.
+
+Well, here's an interesting fact discovered by Montgomery. Pick an
+integer r such that n < 2^r. Since gcd(2^r,n) = 1, we can find k and s
+satisfying 2^r * s = k * n + 1. Then the function
+
+montgomery_reduce n r k xy =
+  (xy + ((xy * k) mod 2^r) * n) div 2^r
+
+doesn't require any integer remainder operations (just shifts and
+masks) and satisfies the following two properties:
+
+1. montgomery_reduce n r k xy mod n = (xy * s) mod n
+
+2. xy <= 2^r * m ==> montgomery_reduce n r k xy < m + n
+
+How does this help? Define the Montgomery monad M(x) = (x * 2^r) mod
+n. Then Montgomery addition is just like regular modular addition:
+
+M(x + y) = ((x + y) * 2^r) mod n
+         = ((x * 2^r) mod n + (y * 2^r) mod n) mod n
+         = (M(x) + M(y)) mod n
+         = simplemod n (M(x) + M(y))
+
+and Montgomery multiplication works as follows:
+
+M(x * y) = ((x * y) * 2^r) mod n
+         = (((x * 2^r) mod n) * ((y * 2^r) mod n) * s) mod n
+         = ((M(x) * M(y)) * s) mod n
+         = montgomery_reduce n r k (M(x) * M(y)) mod n
+         = simplemod n (montgomery_reduce n r k (M(x) * M(y)))
+
+We can carry out a modular arithmetic computation f in the Montgomery
+monad M using the following procedure:
+
+1. Lift every input x to M(x) by computing M(x) = (x * 2^r) mod n.
+
+2. Use the above arithmetic procedures to compute M(f(x)) from M(x).
+
+3. Drop the result M(f(x)) to the output f(x) by computing
+
+  simplemod n (montgomery_reduce n r k (M(f(x)))
+
+Note that using the Montgomery monad to perform a modular arithmetic
+computation is only worth it if the number of multiplications it
+involves is greater than the number of inputs, because Step 1 uses a
+modular multiplication to lift every input into the monad.
+
+It is possible to Montgomery multiplication in hardware. In our
+implementation we use a slightly larger r parameter so that
+n < 2^{r-2}, and represent Montgomery values in sum-carry format:
 
 x = xs:[r-2] + 2 * xc:[r-2]
 y = ys:[r-2] + 2 * yc:[r-2]
+
+By the representation
 
 x,y <= 2^{r-2} - 1 + 2 * (2^{r-2} - 1)
      < 1/4 * 2^r + 1/2 * 2^r
      = 3/4 * 2^r
 
-x*y < 9/16 * 2^{2r}
+Therefore
 
-Represent montgomeryReduce n (2^r) k (x*y) as
+x * y < 9/16 * 2^{2r}
+
+The circuit will compute montgomery_reduce n r k (x * y) in sum-carry
+format as
 
 rs:[r] + 2 * rc:[r-1]
 
+where by Montgomery Property 2
+
 rs+2*rc < 9/16 * 2^r + n < 2^r
+
+Consider the bits of rs and 2*rc:
 
       | r-1 | r-2 | r-3
 ------+-----+-----+-----
    rs |  A  |  B  |  X
  2*rc |  C  |  D  |  X
 
-Let rx = 2^{r-2} mod n, ry = (2 * rx) mod n and rz = (3 * rx) mod n.
+Precompute
+
+  rx = 2^{r-2} mod n
+  ry = (2 * rx) mod n
+  rz = (3 * rx) mod n
 
 rs+2*rc is the correct result modulo n. To construct a result that
-fits into r-2 bits, we will subtract
+fits into r-2 bits in sum-carry format (like the inputs), we will
+subtract
 
 A * 2^{r-1} + B * 2^{r-2}
 
@@ -192,7 +299,7 @@ C * 2^{r-1} + D * 2^{r-2}
 
 from 2*rc. To preserve the result modulo n, we therefore need to add
 
-case 2 * (A + B) + (C + D) of
+case (2 * (A + B)) + (C + D) of
   0 => 0
 | 1 => rx
 | 2 => ry
@@ -386,10 +493,10 @@ montgomerySquareProp n r s k xs xc =
     nssH = bitsToNum (tailBits (nsM cktR)) + bitsToNum (ncM cktR)
     nssHCorrect = nssH == (kss * n) `div` pow2 r
 
-    sysH = boolToNum (szM cktR) + 2 * (boolToNum (syM cktR) + 2 * (bitsToNum (sbM cktR) + boolToNum (sxM cktR) + 2 * bitsToNum (cbM cktR)))
+    sysH = bitToNum (szM cktR) + 2 * (bitToNum (syM cktR) + 2 * (bitsToNum (sbM cktR) + bitToNum (sxM cktR) + 2 * bitsToNum (cbM cktR)))
     sysHCorrect = sysH == sys `div` pow2 r
 
-    so = boolToNum (soM cktR)
+    so = bitToNum (soM cktR)
     soCorrect = (sysH + nssH + so) `mod` n == (sys * s) `mod` n
 
     cktR' = head (drop (r + 4) ckt)
@@ -420,7 +527,11 @@ main =
        threeToTwoCorrect
        montgomerySquareCorrect 35 8 16 117
 
-{- Testing
+-------------------------------------------------------------------------------
+-- Testing
+-------------------------------------------------------------------------------
+
+{-
 n :: Natural
 n = 35
 
@@ -457,10 +568,10 @@ cktR = head (drop (r + 3) ckt)
 nssH = bitsToNum (tailBits (nsM cktR)) + bitsToNum (ncM cktR)
 nssHCorrect = nssH == (kss * n) `div` pow2 r
 
-sysH = boolToNum (szM cktR) + 2 * (boolToNum (syM cktR) + 2 * (bitsToNum (sbM cktR) + boolToNum (sxM cktR) + 2 * bitsToNum (cbM cktR)))
+sysH = bitToNum (szM cktR) + 2 * (bitToNum (syM cktR) + 2 * (bitsToNum (sbM cktR) + bitToNum (sxM cktR) + 2 * bitsToNum (cbM cktR)))
 sysHCorrect = sysH == sys `div` pow2 r
 
-so = boolToNum (soM cktR)
+so = bitToNum (soM cktR)
 soCorrect = (sysH + nssH + so) `mod` n == (sys * s) `mod` n
 
 cktR' = head (drop (r + 4) ckt)
