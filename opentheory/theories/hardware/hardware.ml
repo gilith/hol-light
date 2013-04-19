@@ -500,11 +500,11 @@ let counter_def = new_definition
          /\
          bcase1 ld nb sq sr /\
          bcase1 ld (bground r) cq cr /\
-         case1 ld ground dq dn' /\
+         case1 ld ground dq dn'
          /\
          bdelay sr sp /\
          bdelay cr cp /\
-         delay dr dp`;;
+         delay dn' dp`;;
 ***)
 
 (* ------------------------------------------------------------------------- *)
