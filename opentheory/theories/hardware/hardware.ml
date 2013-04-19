@@ -473,6 +473,40 @@ let bpower_def = new_definition
 
 export_thm bpower_def;;
 
+(***
+let counter_def = new_definition
+  `!nb ld dn'.
+      counter nb ld dn' <=>
+      ?r sp cp sq cq sr cr dp dq.
+         width nb = r + 1 /\
+         width sp = r + 1 /\
+         width cp = r /\
+         width sq = r + 1 /\
+         width cq = r /\
+         width sr = r + 1 /\
+         width cr = r
+         /\
+         wire sp 0 sp0 /\
+         bsub sp 1 r sp1 /\
+         wire sq 0 sq0 /\
+         bsub sq 1 r sq1
+         /\
+         
+         montgomery_comb
+           nb kb xs xc
+           ysp ycp sap sbp sxp syp szp sop cap cbp ksp kcp nsp ncp
+           ysq ycq saq sbq sxq syq szq soq caq cbq ksq kcq nsq ncq
+           zs' zc'
+         /\
+         bcase1 ld nb sq sr /\
+         bcase1 ld (bground r) cq cr /\
+         case1 ld ground dq dn' /\
+         /\
+         bdelay sr sp /\
+         bdelay cr cp /\
+         delay dr dp`;;
+***)
+
 (* ------------------------------------------------------------------------- *)
 (* Bus devices.                                                              *)
 (* ------------------------------------------------------------------------- *)
