@@ -772,6 +772,102 @@ let FACE_OF_CONIC = prove
     ASM_REWRITE_TAC[VECTOR_MUL_EQ_0] THEN
     UNDISCH_TAC `d:real < e` THEN CONV_TAC REAL_FIELD]);;
 
+let FACE_OF_PCROSS = prove
+ (`!f s:real^M->bool f' s':real^N->bool.
+        f face_of s /\ f' face_of s' ==> (f PCROSS f') face_of (s PCROSS s')`,
+  REPEAT GEN_TAC THEN SIMP_TAC[face_of; CONVEX_PCROSS; PCROSS_MONO] THEN
+  REWRITE_TAC[IMP_CONJ; RIGHT_FORALL_IMP_THM] THEN
+  REWRITE_TAC[IN_SEGMENT; FORALL_IN_PCROSS] THEN
+  REWRITE_TAC[RIGHT_IMP_FORALL_THM; IMP_IMP; GSYM CONJ_ASSOC] THEN
+  REWRITE_TAC[GSYM PASTECART_CMUL; PASTECART_ADD; PASTECART_INJ] THEN
+  REWRITE_TAC[PASTECART_IN_PCROSS] THEN
+  MAP_EVERY X_GEN_TAC
+   [`a:real^M`; `a':real^N`; `b:real^M`; `b':real^N`] THEN
+  MAP_EVERY ASM_CASES_TAC [`b:real^M = a`; `b':real^N = a'`] THEN
+  ASM_REWRITE_TAC[VECTOR_ARITH `(&1 - u) % a + u % a:real^N = a`] THEN
+  ASM_MESON_TAC[]);;
+
+let FACE_OF_PCROSS_DECOMP = prove
+ (`!s:real^M->bool s':real^N->bool c.
+        c face_of (s PCROSS s') <=>
+        ?f f'. f face_of s /\ f' face_of s' /\ c = f PCROSS f'`,
+  REPEAT GEN_TAC THEN EQ_TAC THENL
+   [ALL_TAC; STRIP_TAC THEN ASM_SIMP_TAC[FACE_OF_PCROSS]] THEN
+  ASM_CASES_TAC `c:real^(M,N)finite_sum->bool = {}` THENL
+   [ASM_MESON_TAC[EMPTY_FACE_OF; PCROSS_EMPTY]; DISCH_TAC] THEN
+  FIRST_ASSUM(ASSUME_TAC o MATCH_MP FACE_OF_IMP_CONVEX) THEN
+  MAP_EVERY EXISTS_TAC
+   [`IMAGE fstcart (c:real^(M,N)finite_sum->bool)`;
+    `IMAGE sndcart (c:real^(M,N)finite_sum->bool)`] THEN
+  MATCH_MP_TAC(TAUT `(p /\ q ==> r) /\ p /\ q ==> p /\ q /\ r`) THEN
+  CONJ_TAC THENL
+   [STRIP_TAC THEN MATCH_MP_TAC FACE_OF_EQ THEN
+    EXISTS_TAC `(s:real^M->bool) PCROSS (s':real^N->bool)` THEN
+    ASM_SIMP_TAC[FACE_OF_PCROSS; RELATIVE_INTERIOR_PCROSS] THEN
+    ASM_SIMP_TAC[RELATIVE_INTERIOR_LINEAR_IMAGE_CONVEX;
+                 LINEAR_FSTCART; LINEAR_SNDCART] THEN
+    MATCH_MP_TAC(SET_RULE `~(s = {}) /\ s SUBSET t ==> ~DISJOINT s t`) THEN
+    ASM_SIMP_TAC[RELATIVE_INTERIOR_EQ_EMPTY] THEN
+    REWRITE_TAC[SUBSET; FORALL_PASTECART; PASTECART_IN_PCROSS; IN_IMAGE] THEN
+    REWRITE_TAC[EXISTS_PASTECART; FSTCART_PASTECART; SNDCART_PASTECART] THEN
+    MESON_TAC[];
+    ALL_TAC] THEN
+  FIRST_X_ASSUM(STRIP_ASSUME_TAC o GEN_REWRITE_RULE I [face_of]) THEN
+  REWRITE_TAC[face_of] THEN
+  ASM_SIMP_TAC[CONVEX_LINEAR_IMAGE; LINEAR_FSTCART; LINEAR_SNDCART] THEN
+  FIRST_ASSUM(MP_TAC o ISPEC `fstcart:real^(M,N)finite_sum->real^M` o
+        MATCH_MP IMAGE_SUBSET) THEN
+  FIRST_ASSUM(MP_TAC o ISPEC `sndcart:real^(M,N)finite_sum->real^N` o
+        MATCH_MP IMAGE_SUBSET) THEN
+  REWRITE_TAC[IMAGE_FSTCART_PCROSS; IMAGE_SNDCART_PCROSS] THEN
+  REPEAT(DISCH_THEN(ASSUME_TAC o MATCH_MP (SET_RULE
+   `s SUBSET (if p then {} else t) ==> s SUBSET t`))) THEN
+  ASM_REWRITE_TAC[] THEN CONJ_TAC THENL
+   [MAP_EVERY X_GEN_TAC [`a:real^M`; `b:real^M`; `x:real^M`] THEN
+    STRIP_TAC THEN FIRST_X_ASSUM(MP_TAC o GEN_REWRITE_RULE I [IN_IMAGE]) THEN
+    REWRITE_TAC[EXISTS_PASTECART; FSTCART_PASTECART] THEN
+    REWRITE_TAC[RIGHT_EXISTS_AND_THM; UNWIND_THM1] THEN
+    DISCH_THEN(X_CHOOSE_TAC `y:real^N`) THEN FIRST_X_ASSUM(MP_TAC o SPECL
+     [`pastecart (a:real^M) (y:real^N)`;
+      `pastecart (b:real^M) (y:real^N)`;
+      `pastecart (x:real^M) (y:real^N)`]) THEN
+    ASM_REWRITE_TAC[PASTECART_IN_PCROSS; IN_IMAGE; EXISTS_PASTECART] THEN
+    REWRITE_TAC[FSTCART_PASTECART; RIGHT_EXISTS_AND_THM; UNWIND_THM1] THEN
+    ANTS_TAC THENL [ALL_TAC; MESON_TAC[]] THEN
+    UNDISCH_TAC `(c:real^(M,N)finite_sum->bool) SUBSET s PCROSS s'` THEN
+    REWRITE_TAC[SUBSET] THEN
+    DISCH_THEN(MP_TAC o SPEC `pastecart (x:real^M) (y:real^N)`);
+    MAP_EVERY X_GEN_TAC [`a:real^N`; `b:real^N`; `x:real^N`] THEN
+    STRIP_TAC THEN FIRST_X_ASSUM(MP_TAC o GEN_REWRITE_RULE I [IN_IMAGE]) THEN
+    REWRITE_TAC[EXISTS_PASTECART; SNDCART_PASTECART] THEN
+    REWRITE_TAC[RIGHT_EXISTS_AND_THM; UNWIND_THM1] THEN
+    DISCH_THEN(X_CHOOSE_TAC `y:real^M`) THEN FIRST_X_ASSUM(MP_TAC o SPECL
+     [`pastecart (y:real^M) (a:real^N)`;
+      `pastecart (y:real^M) (b:real^N)`;
+      `pastecart (y:real^M) (x:real^N)`]) THEN
+    ASM_REWRITE_TAC[PASTECART_IN_PCROSS; IN_IMAGE; EXISTS_PASTECART] THEN
+    REWRITE_TAC[SNDCART_PASTECART; RIGHT_EXISTS_AND_THM; UNWIND_THM1] THEN
+    ANTS_TAC THENL [ALL_TAC; MESON_TAC[]] THEN
+    UNDISCH_TAC `(c:real^(M,N)finite_sum->bool) SUBSET s PCROSS s'` THEN
+    REWRITE_TAC[SUBSET] THEN
+    DISCH_THEN(MP_TAC o SPEC `pastecart (y:real^M) (x:real^N)`)] THEN
+  ASM_REWRITE_TAC[PASTECART_IN_PCROSS] THEN STRIP_TAC THEN
+  ASM_REWRITE_TAC[] THEN
+  FIRST_X_ASSUM(MP_TAC o GEN_REWRITE_RULE I [IN_SEGMENT]) THEN
+  REWRITE_TAC[IN_SEGMENT; PASTECART_INJ] THEN
+  REWRITE_TAC[PASTECART_ADD; GSYM PASTECART_CMUL;
+              VECTOR_ARITH `(&1 - u) % a + u % a:real^N = a`] THEN
+  MESON_TAC[]);;
+
+let FACE_OF_PCROSS_EQ = prove
+ (`!f s:real^M->bool f' s':real^N->bool.
+        (f PCROSS f') face_of (s PCROSS s') <=>
+        f = {} \/ f' = {} \/ f face_of s /\ f' face_of s'`,
+  REPEAT GEN_TAC THEN MAP_EVERY ASM_CASES_TAC
+   [`f:real^M->bool = {}`; `f':real^N->bool = {}`] THEN
+  ASM_REWRITE_TAC[PCROSS_EMPTY; EMPTY_FACE_OF] THEN
+  ASM_REWRITE_TAC[FACE_OF_PCROSS_DECOMP; PCROSS_EQ] THEN MESON_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Exposed faces (faces that are intersection with supporting hyperplane).   *)
 (* ------------------------------------------------------------------------- *)
@@ -931,22 +1027,6 @@ let EXPOSED_FACE_OF_INTERS = prove
     REWRITE_TAC[INTERS_INSERT] THEN
     ASM_CASES_TAC `P:(real^N->bool)->bool = {}` THEN
     ASM_SIMP_TAC[INTERS_0; INTER_UNIV; EXPOSED_FACE_OF_INTER]]);;
-
-let EXPOSED_FACE_OF_INTER_SUPPORTING_HYPERPLANE_LE = prove
- (`!s a:real^N b.
-        convex s /\ (!x. x IN s ==> a dot x <= b)
-        ==> (s INTER {x | a dot x = b}) exposed_face_of s`,
-  SIMP_TAC[exposed_face_of; FACE_OF_INTER_SUPPORTING_HYPERPLANE_LE] THEN
-  SET_TAC[]);;
-
-let EXPOSED_FACE_OF_INTER_SUPPORTING_HYPERPLANE_GE = prove
- (`!s a:real^N b.
-        convex s /\ (!x. x IN s ==> a dot x >= b)
-        ==> (s INTER {x | a dot x = b}) exposed_face_of s`,
-  REWRITE_TAC[real_ge] THEN REPEAT STRIP_TAC THEN
-  MP_TAC(ISPECL [`s:real^N->bool`; `--a:real^N`; `--b:real`]
-    EXPOSED_FACE_OF_INTER_SUPPORTING_HYPERPLANE_LE) THEN
-  ASM_REWRITE_TAC[DOT_LNEG; REAL_EQ_NEG2; REAL_LE_NEG2]);;
 
 let EXPOSED_FACE_OF_SUMS = prove
  (`!s t f:real^N->bool.
@@ -2036,7 +2116,7 @@ let POLYTOPE_TRANSLATION_EQ = prove
 add_translation_invariants [POLYTOPE_TRANSLATION_EQ];;
 
 let POLYTOPE_LINEAR_IMAGE = prove
- (`!f:real^M->real^N.
+ (`!f:real^M->real^N p.
         linear f /\ polytope p ==> polytope(IMAGE f p)`,
   REPEAT GEN_TAC THEN DISCH_THEN(CONJUNCTS_THEN2 ASSUME_TAC MP_TAC) THEN
   REWRITE_TAC[polytope] THEN
@@ -2056,6 +2136,10 @@ let POLYTOPE_LINEAR_IMAGE_EQ = prove
    (mapfilter (ISPEC `f:real^M->real^N`) (!invariant_under_linear))) THEN
   ASM_REWRITE_TAC[] THEN DISCH_TAC THEN ASM_REWRITE_TAC[]);;
 
+let POLYTOPE_EMPTY = prove
+ (`polytope {}`,
+  REWRITE_TAC[polytope] THEN MESON_TAC[FINITE_EMPTY; CONVEX_HULL_EMPTY]);;
+
 let POLYTOPE_NEGATIONS = prove
  (`!s:real^N->bool. polytope s ==> polytope(IMAGE (--) s)`,
   SIMP_TAC[POLYTOPE_LINEAR_IMAGE; LINEAR_NEGATION]);;
@@ -2063,6 +2147,35 @@ let POLYTOPE_NEGATIONS = prove
 let POLYTOPE_CONVEX_HULL = prove
  (`!s. FINITE s ==> polytope(convex hull s)`,
   REWRITE_TAC[polytope] THEN MESON_TAC[]);;
+
+let POLYTOPE_PCROSS = prove
+ (`!s:real^M->bool t:real^N->bool.
+        polytope s /\ polytope t ==> polytope(s PCROSS t)`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[polytope] THEN
+  MESON_TAC[CONVEX_HULL_PCROSS; FINITE_PCROSS]);;
+
+let POLYTOPE_PCROSS_EQ = prove
+ (`!s:real^M->bool t:real^N->bool.
+        polytope(s PCROSS t) <=>
+        s = {} \/ t = {} \/ polytope s /\ polytope t`,
+  REPEAT GEN_TAC THEN
+  ASM_CASES_TAC `s:real^M->bool = {}` THEN
+  ASM_REWRITE_TAC[PCROSS_EMPTY; POLYTOPE_EMPTY] THEN
+  ASM_CASES_TAC `t:real^N->bool = {}` THEN
+  ASM_REWRITE_TAC[PCROSS_EMPTY; POLYTOPE_EMPTY] THEN
+  EQ_TAC THEN REWRITE_TAC[POLYTOPE_PCROSS] THEN REPEAT STRIP_TAC THENL
+   [MP_TAC(ISPECL [`fstcart:real^(M,N)finite_sum->real^M`;
+                    `(s:real^M->bool) PCROSS (t:real^N->bool)`]
+       POLYTOPE_LINEAR_IMAGE) THEN
+    ASM_REWRITE_TAC[LINEAR_FSTCART];
+    MP_TAC(ISPECL [`sndcart:real^(M,N)finite_sum->real^N`;
+                   `(s:real^M->bool) PCROSS (t:real^N->bool)`]
+       POLYTOPE_LINEAR_IMAGE) THEN
+    ASM_REWRITE_TAC[LINEAR_SNDCART]] THEN
+  MATCH_MP_TAC EQ_IMP THEN AP_TERM_TAC THEN
+  REWRITE_TAC[EXTENSION; IN_IMAGE; EXISTS_PASTECART; PASTECART_IN_PCROSS;
+              FSTCART_PASTECART; SNDCART_PASTECART] THEN
+  ASM SET_TAC[]);;
 
 let FACE_OF_POLYTOPE_POLYTOPE = prove
  (`!f s:real^N->bool. polytope s /\ f face_of s ==> polytope f`,
@@ -4920,14 +5033,6 @@ let COMPACT_SIMPLEX = prove
  (`!n s. n simplex s ==> compact s`,
   REWRITE_TAC[SIMPLEX] THEN
   MESON_TAC[FINITE_IMP_COMPACT; COMPACT_CONVEX_HULL]);;
-
-let AFF_DIM_SIMPLEX = prove
- (`!n s. n simplex s ==> aff_dim s = n`,
-  REWRITE_TAC[simplex] THEN REPEAT STRIP_TAC THEN
-  ASM_REWRITE_TAC[AFF_DIM_CONVEX_HULL] THEN
-  FIRST_X_ASSUM(SUBST1_TAC o MATCH_MP (INT_ARITH
-   `c:int = n + &1 ==> n = c - &1`)) THEN
-  MATCH_MP_TAC AFF_DIM_UNIQUE THEN ASM_REWRITE_TAC[]);;
 
 let SIMPLEX_IMP_POLYTOPE = prove
  (`!n s. n simplex s ==> polytope s`,

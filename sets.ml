@@ -817,6 +817,47 @@ let RIGHT_INTER_DISTRIB = prove
 
 export_thm RIGHT_INTER_DISTRIB;;
 
+let FORALL_SUBSET_UNION = prove
+ (`!p t (u : A set).
+     (!s. s SUBSET (t UNION u) ==> p s) <=>
+     (!t' u'. t' SUBSET t /\ u' SUBSET u ==> p (t' UNION u'))`,
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   REWRITE_TAC [UNION_SUBSET] THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC SUBSET_TRANS THEN
+    EXISTS_TAC `t : A set` THEN
+    ASM_REWRITE_TAC [SUBSET_LEFT_UNION];
+    MATCH_MP_TAC SUBSET_TRANS THEN
+    EXISTS_TAC `u : A set` THEN
+    ASM_REWRITE_TAC [SUBSET_RIGHT_UNION]];
+   DISCH_TAC THEN
+   X_GEN_TAC `s : A set` THEN
+   DISCH_TAC THEN
+   FIRST_X_ASSUM
+     (MP_TAC o SPECL [`s INTER t : A set`; `s INTER u : A set`]) THEN
+   REWRITE_TAC [LEFT_INTER_SUBSET; RIGHT_INTER_SUBSET] THEN
+   MATCH_MP_TAC EQ_IMP THEN
+   AP_TERM_TAC THEN
+   ASM_REWRITE_TAC [GSYM LEFT_UNION_DISTRIB; GSYM SUBSET_INTER_ABSORPTION]]);;
+
+export_thm FORALL_SUBSET_UNION;;
+
+let EXISTS_SUBSET_UNION = prove
+ (`!p t (u : A set).
+     (?s. s SUBSET t UNION u /\ p s) <=>
+     (?t' u'. t' SUBSET t /\ u' SUBSET u /\ p (t' UNION u'))`,
+  REPEAT GEN_TAC THEN
+  SUBGOAL_THEN `!p q. (?(x : A set). p x /\ q x) <=> ~(!x. p x ==> ~q x)`
+    (fun th -> REWRITE_TAC [th]) THENL
+  [REWRITE_TAC [NOT_FORALL_THM; NOT_IMP];
+   REWRITE_TAC [FORALL_SUBSET_UNION] THEN
+   REWRITE_TAC [NOT_FORALL_THM; NOT_IMP; CONJ_ASSOC]]);;
+
+export_thm EXISTS_SUBSET_UNION;;
+
 (* ------------------------------------------------------------------------- *)
 (* Disjoint sets.                                                            *)
 (* ------------------------------------------------------------------------- *)

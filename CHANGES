@@ -1,3 +1,222 @@
+Fri 31st May 2013       cart.ml
+
+Added:
+
+  PCROSS_INTER =
+   |- (!s t u. s PCROSS (t INTER u) = (s PCROSS t) INTER (s PCROSS u)) /\
+      (!s t u. (s INTER t) PCROSS u = (s PCROSS u) INTER (t PCROSS u))
+
+  PCROSS_UNION =
+   |- (!s t u. s PCROSS (t UNION u) = (s PCROSS t) UNION (s PCROSS u)) /\
+      (!s t u. (s UNION t) PCROSS u = (s PCROSS u) UNION (t PCROSS u))
+
+  PCROSS_UNIONS_UNIONS =
+   |- !f g. (UNIONS f) PCROSS (UNIONS g) =
+            UNIONS {s PCROSS t | s IN f /\ t IN g}
+
+  PCROSS_UNIONS =
+   |- (!s f. s PCROSS (UNIONS f) = UNIONS {s PCROSS t | t IN f}) /\
+      (!f t. (UNIONS f) PCROSS t = UNIONS {s PCROSS t | s IN f})
+
+Thu 30th May 2013       Library/card.ml
+
+Added some analogs of theorems already there for FINITE
+
+  COUNTABLE_SUBSET_IMAGE =
+    |- !f s t.
+         COUNTABLE t /\ t SUBSET IMAGE f s <=>
+         (?s'. COUNTABLE s' /\ s' SUBSET s /\ t = IMAGE f s')
+
+  EXISTS_COUNTABLE_SUBSET_IMAGE =
+    |- !P f s.
+         (?t. COUNTABLE t /\ t SUBSET IMAGE f s /\ P t) <=>
+         (?t. COUNTABLE t /\ t SUBSET s /\ P (IMAGE f t))
+
+  FORALL_COUNTABLE_SUBSET_IMAGE =
+    |- !P f s.
+         (!t. COUNTABLE t /\ t SUBSET IMAGE f s ==> P t) <=>
+         (!t. COUNTABLE t /\ t SUBSET s ==> P (IMAGE f t))
+
+Thu 30th May 2013       sets.ml
+
+Added the following
+
+  FORALL_SUBSET_UNION =
+   |- !t u:A->bool.
+        (!s. s SUBSET t UNION u ==> P s) <=>
+        (!t' u'. t' SUBSET t /\ u' SUBSET u ==> P(t' UNION u'))
+
+  EXISTS_SUBSET_UNION =
+   |- !t u:A->bool.
+        (?s. s SUBSET t UNION u /\ P s) <=>
+        (?t' u'. t' SUBSET t /\ u' SUBSET u /\ P(t' UNION u'))
+
+Sun 26th May 2013       hol.ml
+
+Added an extra line from Hendrik Tews to make things work more smoothly
+with OCaml 4.xx:
+
+#directory "+compiler-libs";;
+
+
+Fri 24th May 2013       Library/iter.ml
+
+Addded
+
+  ITER_1 = |- !f x. ITER 1 f x = f x
+
+Mon 20th May 2013       Library/card.ml
+
+Added
+
+  COUNTABLE_IMP_CARD_LT_REAL =
+    |- !s. COUNTABLE s ==> s <_c (:real)
+
+Thu  2nd May 2013       sets.ml
+
+Added CARD_SING = |- !a. CARD {a} = 1
+
+Wed  1st May 2013       cart.ml
+
+Added:
+
+  PCROSS_EQ =
+   |- !s s' t t'.
+        s PCROSS t = s' PCROSS t' <=>
+        (s = {} \/ t = {}) /\ (s' = {} \/ t' = {}) \/ s = s' /\ t = t'
+
+Tue 30th Apr 2013       cart.ml
+
+Added:
+
+  IMAGE_FSTCART_PCROSS =
+    |- !s t. IMAGE fstcart (s PCROSS t) = if t = {} then {} else s
+
+  IMAGE_SNDCART_PCROSS =
+    |- !s t. IMAGE sndcart (s PCROSS t) = if s = {} then {} else t
+
+Fri  5th Apr 2013       Examples/inverse_bug_puzzle_tac.ml
+
+Updated this file to a new version from Bill Richter using some slightly
+different constructs.
+
+Fri  5th Apr 2013       Examples/prover9.ml
+
+Fixed a bug in the prover9 interface pointed out by Keiichi Tsujimoto, where
+the initial preprocessing could cause the initial goal to collapse to `T` or
+`F`, which is then not handled properly by the main prover9 step. The fix is
+to treat this specially in the preprocessing phase.
+
+Sun 31st Mar 2013       Examples/inverse_bug_puzzle_miz3.ml
+
+Made an update to Bill Richter's miz3 version of the inverse bug puzzle.
+
+Sat 23rd Mar 2013       Examples/inverse_bug_puzzle_tac.ml, Examples/inverse_bug_puzzle_miz3.ml
+
+Added a tactic version Examples/inverse_bug_puzzle_tac.ml of Bill Richter's
+inverse bug puzzle solution, and renamed the earlier one as
+Examples/inverse_bug_puzzle_miz3.ml.
+
+Sat 23rd Mar 2013       Makefile
+
+Incorporated a change from Jack Pappas to ensure that the Makefile handles
+non-standard locations for camlp4, using "`camlp[45] -where`" instead of
+"+camlp[45]".
+
+Fri 22nd Mar 2013       cart.ml, Library/card.ml
+
+Added
+
+EXISTS_IN_PCROSS =
+  |- (?z. z IN s PCROSS t /\ P z) <=>
+     (?x y. x IN s /\ y IN t /\ P (pastecart x y))
+
+PCROSS_MONO =
+  |- !s t s' t'.
+         s SUBSET s' /\ t SUBSET t' ==> s PCROSS t SUBSET s' PCROSS t'
+
+SUBSET_PCROSS;;
+  |- !s t s' t'.
+         s PCROSS t SUBSET s' PCROSS t' <=>
+         s = {} \/ t = {} \/ s SUBSET s' /\ t SUBSET t'
+
+UNIV_PCROSS_UNIV =
+  |- (:A^M) PCROSS (:A^N) = (:A^(M,N)finite_sum)
+
+FINITE_PCROSS_EQ =
+  |- !s t. FINITE (s PCROSS t) <=> s = {} \/ t = {} \/ FINITE s /\ FINITE t
+
+COUNTABLE_CARD_MUL =
+ |- !s t. COUNTABLE s /\ COUNTABLE t ==> COUNTABLE (s *_c t);
+
+COUNTABLE_CARD_MUL_EQ =
+  |- !s t.
+         COUNTABLE (s *_c t) <=>
+         s = {} \/ t = {} \/ COUNTABLE s /\ COUNTABLE t
+
+CARD_EQ_PCROSS =
+  |- !s t. s PCROSS t =_c s *_c t
+
+COUNTABLE_PCROSS_EQ =
+  |- !s t.
+         COUNTABLE (s PCROSS t) <=>
+         s = {} \/ t = {} \/ COUNTABLE s /\ COUNTABLE t
+
+COUNTABLE_PCROSS =
+  |- !s t. COUNTABLE s /\ COUNTABLE t ==> COUNTABLE (s PCROSS t)
+
+Thu 21st Mar 2013       cart.ml
+
+Added more theorems about PCROSS:
+
+PCROSS_EQ_EMPTY =
+  |- !s t. s PCROSS t = {} <=> s = {} \/ t = {}
+
+HAS_SIZE_PCROSS =
+  |- !s t m n. s HAS_SIZE m /\ t HAS_SIZE n ==> s PCROSS t HAS_SIZE m * n
+
+FINITE_PCROSS =
+  |- !s t. FINITE s /\ FINITE t ==> FINITE (s PCROSS t)
+
+PCROSS_EMPTY =
+  |- (!s. s PCROSS {} = {}) /\ (!t. {} PCROSS t = {})
+
+Wed 20th Mar 2013       cart.ml
+
+Added a definition of a variant notion of product using pasting of vectors,
+called PCROSS, plus two elementary theorems:
+
+PCROSS =
+ |- s PCROSS t = {pastecart (x:A^M) (y:A^N) | x IN s /\ y IN t}
+
+FORALL_IN_PCROSS =
+ |- (!z. z IN s PCROSS t ==> P z) <=>
+    (!x y. x IN s /\ y IN t ==> P(pastecart x y))
+
+PASTECART_IN_PCROSS =
+ |- !s t x y. (pastecart x y) IN (s PCROSS t) <=> x IN s /\ y IN t
+
+Mon 18th Mar 2013       preterm.ml
+
+Added a slight update from Vincent Aravantinos to the typechecking error
+messages, to handle additional cases.
+
+Fri 15th Mar 2013       iterate.ml
+
+Added a couple of strict positivity theorems for sums:
+
+NSUM_POS_LT =
+  |- !f s.
+        FINITE s /\ (?x. x IN s /\ 0 < f x)
+        ==> 0 < nsum s f
+
+SUM_POS_LT =
+  |- !f s.
+        FINITE s /\
+        (!x. x IN s ==> &0 <= f x) /\
+        (?x. x IN s /\ &0 < f x)
+        ==> &0 < sum s f
+
 Fri 15th Feb 2013       Examples/inverse_bug_puzzle.ml [new file]
 
 Added a new file due to Bill Richter giving a solution to the inverse
