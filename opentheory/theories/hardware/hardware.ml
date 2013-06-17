@@ -557,8 +557,8 @@ export_thm compressor4_def;;
 
 (***
 let counter_def = new_definition
-  `!nb ld dn'.
-      counter nb ld dn' <=>
+  `!ld nb dn'.
+      counter ld nb dn' <=>
       ?r sp cp cp0 cp1 cp2 sq cq cq0 cq1 cq2 sr cr dp dq.
          width nb = r /\
          width sp = r /\
