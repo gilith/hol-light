@@ -560,7 +560,7 @@ let counter_def = new_definition
   `!ld nb dn'.
       counter ld nb dn' <=>
       ?r sp cp cp0 cp1 cp2 sq cq cq0 cq1 cq2 sr cr dp dq.
-         width nb = r /\
+         width nb = r + 1 /\
          width sp = r /\
          width cp = r + 1 /\
          width sq = r /\

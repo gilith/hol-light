@@ -89,6 +89,12 @@ tailBits :: Bits -> Bits
 tailBits (Bits []) = zeroBits
 tailBits (Bits (_ : t)) = Bits t
 
+dropBits :: Int -> Bits -> Bits
+dropBits n b =
+    if n == 0
+      then b
+      else dropBits (n - 1) (tailBits b)
+
 prefixBits :: Int -> Bits -> Bits
 prefixBits _ (Bits []) = zeroBits
 prefixBits n (Bits (h : t)) =
@@ -188,218 +194,101 @@ mkCircuit next =
 
 data StateC =
    StateC
-     { ysM :: Bits,
-       ycM :: Bits,
-       saM :: Bits,
-       sbM :: Bits,
-       sxM :: Bool,
-       syM :: Bool,
-       szM :: Bool,
-       soM :: Bool,
-       caM :: Bits,
-       cbM :: Bits,
-       ksM :: Bits,
-       kcM :: Bits,
-       nsM :: Bits,
-       ncM :: Bits,
-       rsM :: Bits,
-       rcM :: Bits,
-       zsM :: Bits,
-       zcM :: Bits }
+     { srC :: Bits,
+       crC :: Bits,
+       dnC :: Bool }
   deriving Show
 
-nullM :: StateM
-nullM =
-    StateM
-      { ysM = zeroBits,
-        ycM = zeroBits,
-        saM = zeroBits,
-        sbM = zeroBits,
-        sxM = False,
-        syM = False,
-        szM = False,
-        soM = False,
-        caM = zeroBits,
-        cbM = zeroBits,
-        ksM = zeroBits,
-        kcM = zeroBits,
-        nsM = zeroBits,
-        ncM = zeroBits,
-        rsM = zeroBits,
-        rcM = zeroBits,
-        zsM = zeroBits,
-        zcM = zeroBits }
+nullC :: StateC
+nullC =
+    StateC
+      { srC = zeroBits,
+        crC = zeroBits,
+        dnC = False }
 
-initialM :: Bits -> Bits -> StateM
-initialM ys yc =
-    nullM
-      { ysM = ys,
-        ycM = yc }
+initialC :: Bits -> StateC
+initialC nb =
+    nullC
+      { srC = tailBits nb,
+        crC = prefixBits 1 nb }
 
-nextM :: Bits -> Int -> Bits -> Bits -> Bits -> Bits -> Bits -> Bits ->
-         StateM -> StateM
-nextM n r k rx ry rz xs xc
-      (StateM
-        { ysM = ys,
-          ycM = yc,
-          saM = sa,
-          sbM = sb,
-          sxM = sx,
-          syM = sy,
-          szM = sz,
-          soM = so,
-          caM = ca,
-          cbM = cb,
-          ksM = ks,
-          kcM = kc,
-          nsM = ns,
-          ncM = nc,
-          rsM = rs,
-          rcM = rc,
-          zsM = _,
-          zcM = _ }) =
-    StateM
-      { ysM = ys',
-        ycM = yc',
-        saM = sa',
-        sbM = sb',
-        sxM = sx',
-        syM = sy',
-        szM = sz',
-        soM = so',
-        caM = ca',
-        cbM = cb',
-        ksM = ks',
-        kcM = kc',
-        nsM = ns',
-        ncM = nc',
-        rsM = rs',
-        rcM = rc',
-        zsM = zs',
-        zcM = zc' }
+nextC :: Int -> StateC -> StateC
+nextC r
+      (StateC
+        { srC = sr,
+          crC = cr,
+          dnC = dn }) =
+    StateC
+      { srC = sr',
+        crC = cr',
+        dnC = dn' }
   where
-    (ys',yc') = -- [r-2,r-2]
-        twoToTwo (tailBits ys) yc
+    (sr',cr1') = -- [r-1,r-1]
+        twoToTwo sr (prefixBits (r - 1) cr)
 
-    (sa',ca') = -- [r-1,r-2]
-        threeToTwo (if headBits ys then xs else zeroBits)
-          (if headBits ys then (consBits False xc) else zeroBits) ca
+    cr0' = -- [1]
+        not (headBits cr)
 
-    (sb',cb') = -- [r-2,r-2]
-        threeToTwo (tailBits sa) (tailBits sb) cb
+    cr' = -- [r]
+        consBits cr0' cr1'
 
-    (sy',sx') = -- [1,1]
-        adder (headBits sa) (headBits sb) sx
+    dn' = -- [1]
+        dn || nthBits (r - 1) cr
 
-    sz' = sy -- [1]
-
-    so' = so || sz -- [1]
-
-    (ks',kc') = -- [r]
-        threeToTwo (if sy then k else zeroBits) (tailBits ks) kc
-
-    (ns',nc') = -- [r-2,r-2]
-        threeToTwo (if (headBits ks) then n else zeroBits)
-          (tailBits ns) nc
-
-    (rs',rc') = -- [r,r-1]  (by the bounds theorem)
-        fourToTwo
-          (tailBits ns)                                     -- [r-3]
-          nc                                                -- [r-2]
-          (consBits sz (consBits sy sb))                    -- [r]
-          (consBits so (consBits False (consBits sx cb)))   -- [r+1]
-
-    (zs',zc') = -- [r-2,r-2]
-        threeToTwo
-          (let c = nthBits (r - 1) rs || nthBits (r - 2) rc ||
-                   (nthBits (r - 2) rs && nthBits (r - 3) rc) in
-           let s = nthBits (r - 2) rs /= nthBits (r - 3) rc in
-           case (c,s) of
-             (False,False) -> zeroBits
-             (False,True) -> rx
-             (True,False) -> ry
-             (True,True) -> rz)
-          (prefixBits (r - 2) rs)
-          (consBits False (prefixBits (r - 3) rc))
-
-montgomerySquare :: Natural -> Int -> Natural -> Bits -> Bits -> [StateM]
-montgomerySquare n r k xs xc =
+counter :: Natural -> [StateC]
+counter n =
     mkCircuit next initial
   where
-    initial = initialM xs xc
+    initial = initialC nb
 
-    next = nextM (numToBits n) r (numToBits k)
-             (numToBits rx) (numToBits ry) (numToBits rz)
-             xs xc
+    next = nextC r
 
-    rx = pow2 (r - 2) `mod` n
-    ry = (2 * rx) `mod` n
-    rz = (3 * rx) `mod` n
+    r = widthBits (numToBits n)
 
-montgomerySquareProp ::
-    Natural -> Int -> Natural -> Natural -> Bits -> Bits -> Bool
-montgomerySquareProp n r s k xs xc =
-    and [xasCorrect,
-         sysCorrect,
-         kssCorrect,
-         nssCorrect,
-         nssLCorrect,
-         nssHCorrect,
-         sysHCorrect,
-         soCorrect,
-         redCorrect,
-         redBound,
-         resCorrect,
-         resBound]
+    nb = numToBits (pow2 r + fromIntegral r - (n + 1))
+
+counterProp :: Natural -> Natural -> Bool
+counterProp n t =
+    and [dnCorrect,
+         sumCorrect,
+         carryCorrect]
   where
-    ckt = montgomerySquare n r k xs xc
+    r = widthBits (numToBits n)
+    nb = numToBits (pow2 r + fromIntegral r - (n + 1))
 
-    xas = bitsToNum (Bits (take r (map (headBits . ysM) ckt)))
-    xasCorrect = xas == bitsToNum xs + 2 * bitsToNum xc
+    ckt = counter n !! (fromIntegral t)
 
-    sys = bitsToNum (Bits (take (2 * r) (map syM (drop 2 ckt))))
-    sysCorrect = sys == xas * xas
+    sr = srC ckt
+    cr = crC ckt
+    dn = dnC ckt
 
-    kss = bitsToNum (Bits (take r (map (headBits . ksM) (drop 3 ckt))))
-    kssCorrect = kss == (sys * k) `mod` pow2 r
+    dnCorrect = dn == (n <= t)
 
-    nssCorrect = (kss * n + sys) `mod` pow2 r == 0
+    -- At time t = n - r, we expect sr + cr to be 2^{r-1}
+    sumCorrect =
+      not (t < n) ||
+      (2 * (bitsToNum sr + bitsToNum cr) + (if headBits cr then 0 else 1) + n
+       ==
+       pow2 r + fromIntegral r + t)
 
-    nssL = bitsToNum (Bits (take r (map (headBits . nsM) (drop 4 ckt))))
-    nssLCorrect = nssL == (kss * n) `mod` pow2 r
+    carryCorrect =
+      not (n - fromIntegral r <= t && t < n) ||
+      (let k = r - fromIntegral (n - t) in
+       (bitsToNum (dropBits k sr) + bitsToNum (dropBits k cr)
+        ==
+        pow2 (r - (k + 1)))
+       &&
+       nthBits k cr)
 
-    cktR = head (drop (r + 3) ckt)
-
-    nssH = bitsToNum (tailBits (nsM cktR)) + bitsToNum (ncM cktR)
-    nssHCorrect = nssH == (kss * n) `div` pow2 r
-
-    sysH = bitToNum (szM cktR) + 2 * (bitToNum (syM cktR) + 2 * (bitsToNum (sbM cktR) + bitToNum (sxM cktR) + 2 * bitsToNum (cbM cktR)))
-    sysHCorrect = sysH == sys `div` pow2 r
-
-    so = bitToNum (soM cktR)
-    soCorrect = (sysH + nssH + so) `mod` n == (sys * s) `mod` n
-
-    cktR' = head (drop (r + 4) ckt)
-
-    red = bitsToNum (rsM cktR') + 2 * bitsToNum (rcM cktR')
-    redCorrect = red `mod` n == (sys * s) `mod` n
-    redBound = red < pow2 r
-
-    cktR'' = head (drop (r + 5) ckt)
-
-    res = bitsToNum (zsM cktR'') + 2 * bitsToNum (zcM cktR'')
-    resCorrect = res `mod` n == (sys * s) `mod` n
-    resBound = res <= pow2 r - 2
-
-montgomerySquareCorrect :: Natural -> Int -> Natural -> Natural -> IO ()
-montgomerySquareCorrect n r s k =
-    check "montgomerySquare is correct\n" prop
+counterCorrect :: IO ()
+counterCorrect =
+    check "Testing properties of the low fan-in counter\n" prop
   where
     prop r0 =
-      montgomerySquareProp n r s k xs xc
+      counterProp (n + 1) t
         where
-      (xs,r1) = randomPrefixBits (r - 2) r0
-      (xc,_) = randomPrefixBits (r - 2) r1
+      (n,r1) = fromRandom r0
+      (t,_) = fromRandom r1
 
 -------------------------------------------------------------------------------
 -- Montgomery multiplication
@@ -732,7 +621,7 @@ montgomerySquareProp n r s k xs xc =
 
 montgomerySquareCorrect :: Natural -> Int -> Natural -> Natural -> IO ()
 montgomerySquareCorrect n r s k =
-    check "montgomerySquare is correct\n" prop
+    check "Testing properties of montgomerySquare\n" prop
   where
     prop r0 =
       montgomerySquareProp n r s k xs xc
@@ -740,14 +629,19 @@ montgomerySquareCorrect n r s k =
       (xs,r1) = randomPrefixBits (r - 2) r0
       (xc,_) = randomPrefixBits (r - 2) r1
 
+-------------------------------------------------------------------------------
+-- Testing
+-------------------------------------------------------------------------------
+
 main :: IO ()
 main =
     do adderCorrect
        threeToTwoCorrect
+       counterCorrect
        montgomerySquareCorrect 35 8 16 117
 
 -------------------------------------------------------------------------------
--- Testing
+-- Development
 -------------------------------------------------------------------------------
 
 {-
