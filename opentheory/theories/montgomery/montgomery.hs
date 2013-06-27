@@ -58,20 +58,28 @@ egcd a b =
 
 egcdProp :: Natural -> Natural -> Bool
 egcdProp a b =
-    s * a == t * b + g
+    and [divides1,
+         divides2,
+         smallest]
   where
+    divides1 = divides g a
+
+    divides2 = divides g b
+
+    smallest = s * a == t * b + g
+
     (s,t,g) = egcd a b
 
 egcdCorrect :: IO ()
 egcdCorrect =
-    check "|- ~(a = 0) /\\ egcd a b = (s,t,g) ==> s * a = t * b + g\n" prop
+    check "|- ~(a = 0) /\\ egcd a b = (s,t,g) ==>\n   divides g a /\\ divides g b /\\ s * a = t * b + g\n" prop
   where
     prop r0 =
       egcdProp (a + 1) b
         where
       (a,r1) = fromRandom r0
       (b,_) = fromRandom r1
-    
+
 -------------------------------------------------------------------------------
 -- Individual bits
 -------------------------------------------------------------------------------
