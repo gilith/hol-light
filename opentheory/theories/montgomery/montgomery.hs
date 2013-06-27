@@ -36,6 +36,42 @@ import qualified OpenTheory.Number.Natural.Geometric as Geometric
 pow2 :: Int -> Natural
 pow2 n = if n <= 0 then 1 else 2 * pow2 (n - 1)
 
+egcd :: Natural -> Natural -> (Natural,Natural,Natural)
+egcd a b =
+    if b == 0
+      then (1,0,a)
+      else
+        if a <= b
+          then
+            let q = b `div` a in
+            let b' = b - q * a in
+            let (s,t,g) = egcd a b' in
+            (s + q * t, t, g)
+          else
+            let q = a `div` b in
+            let a' = a - q * b in
+            if a' == 0
+              then (1, q - 1, b)
+              else
+                let (s,t,g) = egcd a' b in
+                (s, s * q + t, g)
+
+egcdProp :: Natural -> Natural -> Bool
+egcdProp a b =
+    s * a == t * b + g
+  where
+    (s,t,g) = egcd a b
+
+egcdCorrect :: IO ()
+egcdCorrect =
+    check "|- ~(a = 0) /\\ egcd a b = (s,t,g) ==> s * a = t * b + g\n" prop
+  where
+    prop r0 =
+      egcdProp (a + 1) b
+        where
+      (a,r1) = fromRandom r0
+      (b,_) = fromRandom r1
+    
 -------------------------------------------------------------------------------
 -- Individual bits
 -------------------------------------------------------------------------------
@@ -619,15 +655,25 @@ montgomerySquareProp n r s k xs xc =
     resCorrect = res `mod` n == (sys * s) `mod` n
     resBound = res <= pow2 r - 2
 
-montgomerySquareCorrect :: Natural -> Int -> Natural -> Natural -> IO ()
-montgomerySquareCorrect n r s k =
+montgomeryParameters :: Natural -> (Int,Natural,Natural)
+montgomeryParameters n =
+    (r,s,k)
+  where
+    r = widthBits (numToBits n) + 2
+    (s,k,_) = egcd (pow2 r) n
+
+montgomerySquareCorrect :: IO ()
+montgomerySquareCorrect =
     check "Testing properties of montgomerySquare\n" prop
   where
     prop r0 =
       montgomerySquareProp n r s k xs xc
         where
-      (xs,r1) = randomPrefixBits (r - 2) r0
-      (xc,_) = randomPrefixBits (r - 2) r1
+      (m,r1) = fromRandom r0
+      n = 2 * m + 1
+      (r,s,k) = montgomeryParameters n
+      (xs,r2) = randomPrefixBits (r - 2) r1
+      (xc,_) = randomPrefixBits (r - 2) r2
 
 -------------------------------------------------------------------------------
 -- Testing
@@ -635,10 +681,11 @@ montgomerySquareCorrect n r s k =
 
 main :: IO ()
 main =
-    do adderCorrect
+    do egcdCorrect
+       adderCorrect
        threeToTwoCorrect
        counterCorrect
-       montgomerySquareCorrect 35 8 16 117
+       montgomerySquareCorrect
 
 -------------------------------------------------------------------------------
 -- Development
@@ -646,19 +693,28 @@ main =
 
 {-
 n :: Natural
-n = 35
+--n = 35
+n = 23
 
 r :: Int
-r = 8
+--r = 8
+r = 7
 
 s :: Natural
-s = 16
+--s = 16
+s = 7
 
 k :: Natural
-k = 117
+--k = 117
+k = 39
 
-xs = numToBits (pow2 (r - 2) - 1)
-xc = numToBits (pow2 (r - 2) - 1)
+xs :: Bits
+--xs = numToBits (pow2 (r - 2) - 1)
+xs = numToBits 8
+
+xc :: Bits
+--xc = numToBits (pow2 (r - 2) - 1)
+xc = numToBits 2
 
 ckt = montgomerySquare n r k xs xc
 
