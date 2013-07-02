@@ -1344,11 +1344,25 @@ let counter = prove
      bits_to_num (bsignal nb t) + n + 1 = 2 EXP (width nb) + width nb /\
      counter ld nb dn' ==>
      (signal dn' (t + k) <=> n <= k)`,
-  REPEAT GEN_TAC THEN
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM MP_TAC THEN
+
+(***
+  SUBGOAL_THEN `~(n = 0)` ASSUME_TAC THENL
+  [STRIP_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REWRITE_TAC [bits_to_num_bsignal_bound
+length_bsignal
+width_def
+***)
+
   REWRITE_TAC
     [counter_def; GSYM RIGHT_EXISTS_AND_THM;
      GSYM LEFT_FORALL_IMP_THM] THEN
   REPEAT STRIP_TAC THEN
+  
   SUBGOAL_THEN
      `!i.
         i < n ==>
@@ -1356,23 +1370,23 @@ let counter = prove
            (bits_to_num (bsignal sr (t + i)) +
             bits_to_num (bsignal cr (t + i))) + n) =
         2 EXP (width nb) + width nb + i` ASSUME_TAC THENL
-  [INDUCT_TAC THENL
+  [SUBGOAL_THEN `bappend (mk_bus [cr0]) cr1 = cr`
+     (SUBST1_TAC o SYM) THENL
+   [CONV_TAC (REWR_CONV (GSYM bsub_width)) THEN
+    SUBGOAL_THEN `width cr = 1 + r` SUBST1_TAC THENL
+    [ASM_REWRITE_TAC [] THEN
+     MATCH_ACCEPT_TAC ADD_SYM;
+     MATCH_MP_TAC bsub_add THEN
+     REWRITE_TAC [ZERO_ADD; GSYM wire_def] THEN
+     ASM_REWRITE_TAC []];
+    ALL_TAC] THEN
+   REWRITE_TAC [bsignal_append; bsignal_wire; APPEND; bits_to_num_cons] THEN
+   INDUCT_TAC THENL
    [REWRITE_TAC [LT_NZ; ADD_0] THEN
     UNDISCH_THEN
       `bits_to_num (bsignal nb t) + n + 1 = 2 EXP width nb + width nb`
       (SUBST1_TAC o SYM) THEN
     STRIP_TAC THEN
-    SUBGOAL_THEN `bappend (mk_bus [cr0]) cr1 = cr`
-      (SUBST1_TAC o SYM) THENL
-    [CONV_TAC (REWR_CONV (GSYM bsub_width)) THEN
-     SUBGOAL_THEN `width cr = 1 + r` SUBST1_TAC THENL
-     [ASM_REWRITE_TAC [] THEN
-      MATCH_ACCEPT_TAC ADD_SYM;
-      MATCH_MP_TAC bsub_add THEN
-      REWRITE_TAC [ZERO_ADD; GSYM wire_def] THEN
-      ASM_REWRITE_TAC []];
-     ALL_TAC] THEN
-    REWRITE_TAC [bsignal_append; bsignal_wire; APPEND; bits_to_num_cons] THEN
     FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
     REWRITE_TAC [ADD_0; LE_0] THEN
     STRIP_TAC THEN
@@ -1414,7 +1428,71 @@ let counter = prove
           `cr0 : wire`; `t : num`] case1_signal) THEN
     ASM_REWRITE_TAC [] THEN
     DISCH_THEN SUBST1_TAC THEN
-
+    ONCE_REWRITE_TAC [ADD_SYM] THEN
+    BOOL_CASES_TAC `signal nb0 t` THEN
+    REWRITE_TAC
+      [bit_cons_def; ADD_ASSOC; LEFT_ADD_DISTRIB; EQ_ADD_RCANCEL;
+       bit_to_num_def; ZERO_ADD; MULT_1; MULT_0; ADD_0] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   STRIP_TAC THEN
+   REWRITE_TAC [ADD_SUC] THEN
+   FIRST_X_ASSUM (fun th -> MP_TAC th THEN ANTS_TAC) THENL
+   [REWRITE_TAC [GSYM LE_SUC_LT] THEN
+    MATCH_MP_TAC LT_IMP_LE THEN
+    FIRST_ASSUM ACCEPT_TAC;
+    ALL_TAC] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   CONV_TAC (RAND_CONV (REWR_CONV (GSYM SUC_ADD))) THEN
+   REWRITE_TAC [EQ_ADD_RCANCEL] THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `SUC i`) THEN
+   REWRITE_TAC [NOT_SUC]
+ADD_0; LE_0] THEN
+    STRIP_TAC THEN
+    MP_TAC
+      (SPECL
+         [`ld : wire`; `bground r`; `cq1 : bus`;
+          `cr1 : bus`; `t : num`] bcase1_bsignal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [bits_to_num_bsignal_bground; bit_cons_zero] THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    MATCH_MP_TAC EQ_TRANS THEN
+    EXISTS_TAC `(bits_to_num (bsignal nb t) + 1) + n` THEN
+    CONJ_TAC THENL
+    [REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+     MATCH_ACCEPT_TAC ADD_SYM;
+     ALL_TAC] THEN
+    REWRITE_TAC [EQ_ADD_RCANCEL] THEN
+    SUBGOAL_THEN `bappend (mk_bus [nb0]) nb1 = nb`
+      (SUBST1_TAC o SYM) THENL
+    [CONV_TAC (REWR_CONV (GSYM bsub_width)) THEN
+     SUBGOAL_THEN `width nb = 1 + r` SUBST1_TAC THENL
+     [ASM_REWRITE_TAC [] THEN
+      MATCH_ACCEPT_TAC ADD_SYM;
+      MATCH_MP_TAC bsub_add THEN
+      REWRITE_TAC [ZERO_ADD; GSYM wire_def] THEN
+      ASM_REWRITE_TAC []];
+     ALL_TAC] THEN
+    REWRITE_TAC [bsignal_append; bsignal_wire; APPEND; bits_to_num_cons] THEN
+    MP_TAC
+      (SPECL
+         [`ld : wire`; `nb1 : bus`; `sq : bus`;
+          `sr : bus`; `t : num`] bcase1_bsignal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    MP_TAC
+      (SPECL
+         [`ld : wire`; `nb0 : wire`; `cq0 : wire`;
+          `cr0 : wire`; `t : num`] case1_signal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    ONCE_REWRITE_TAC [ADD_SYM] THEN
+    BOOL_CASES_TAC `signal nb0 t` THEN
+    REWRITE_TAC
+      [bit_cons_def; ADD_ASSOC; LEFT_ADD_DISTRIB; EQ_ADD_RCANCEL;
+       bit_to_num_def; ZERO_ADD; MULT_1; MULT_0; ADD_0] THEN
+    NUM_REDUCE_TAC;
 
   GEN_TAC THEN
   SPEC_TAC (`k : num`, `k : num`) THEN
