@@ -1345,7 +1345,6 @@ let counter = prove
      counter ld nb dn' ==>
      (signal dn' (t + k) <=> n <= k)`,
   REPEAT STRIP_TAC THEN
-  POP_ASSUM MP_TAC THEN
 
 (***
   SUBGOAL_THEN `~(n = 0)` ASSUME_TAC THENL
@@ -1358,11 +1357,21 @@ length_bsignal
 width_def
 ***)
 
+  POP_ASSUM MP_TAC THEN
   REWRITE_TAC
     [counter_def; GSYM RIGHT_EXISTS_AND_THM;
      GSYM LEFT_FORALL_IMP_THM] THEN
   REPEAT STRIP_TAC THEN
-  
+  MP_TAC (SPECL [`cr : bus`; `r : num`] wire_exists) THEN
+  ANTS_TAC THENL
+  [ASM_REWRITE_TAC [GSYM ADD1; SUC_LT];
+   ALL_TAC] THEN
+  DISCH_THEN (X_CHOOSE_THEN `cr2 : wire` ASSUME_TAC) THEN
+  UNDISCH_TAC `!i. i <= k ==> (signal ld (t + i) <=> i = 0)` THEN
+  SPEC_TAC (`k : num`, `k : num`) THEN
+  STP_TAC
+    `(!i. i < n ==> ~signal cr2 i) /\ signal cr2 n`
+
   SUBGOAL_THEN
      `!i.
         i < n ==>

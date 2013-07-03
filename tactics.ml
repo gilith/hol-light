@@ -203,6 +203,12 @@ let (CHANGED_TAC: tactic -> tactic) =
 let rec REPLICATE_TAC n tac =
   if n <= 0 then ALL_TAC else tac THEN (REPLICATE_TAC (n - 1) tac);;
 
+let REVERSE_TAC (tac : tactic) : tactic =
+  fun g ->
+  let (mvis,gls,just) = tac g in
+  let rev_just i ths = just i (rev ths) in
+  (mvis, rev gls, rev_just);;
+
 (* ------------------------------------------------------------------------- *)
 (* Combinators for theorem continuations / "theorem tacticals".              *)
 (* ------------------------------------------------------------------------- *)
@@ -676,6 +682,8 @@ let SUBGOAL_TAC s tm prfs =
    p::ps -> (warn (ps <> []) "SUBGOAL_TAC: additional subproofs ignored";
              SUBGOAL_THEN tm (LABEL_TAC s) THENL [p; ALL_TAC])
   | [] -> failwith "SUBGOAL_TAC: no subproof given";;
+
+let STP_TAC tm = REVERSE_TAC (SUBGOAL_THEN tm MP_TAC);;
 
 let (FREEZE_THEN :thm_tactical) =
   fun ttac th (asl,w) ->
