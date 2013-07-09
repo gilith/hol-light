@@ -555,6 +555,43 @@ let compressor4_def = new_definition
 
 export_thm compressor4_def;;
 
+let icounter_def = new_definition
+  `!ld nb inc dn'.
+      icounter ld nb inc dn' <=>
+      ?r sp sp0 sp1 cp cp0 cp1 cp2 sq sq0 sq1 cq cq0 cq1 sr cr dp dq.
+         width nb = r + 1 /\
+         width sp = r + 1 /\
+         width cp = r + 1 /\
+         width sq = r + 1 /\
+         width cq = r + 1 /\
+         width sr = r + 1 /\
+         width cr = r + 1
+         /\
+         wire sp 0 sp0 /\
+         bsub sp 0 r sp1 /\
+         wire sq 0 sq0 /\
+         bsub sq 0 r sq1 /\
+         wire cp 0 cp0 /\
+         bsub cp 0 r cp1 /\
+         wire cp r cp2 /\
+         wire cq 0 cq0 /\
+         bsub cq 1 r cq1
+         /\
+         xor2 inc sp0 sq0 /\
+         and2 inc sp0 cq0 /\
+         compressor2 sp1 cp1 sq1 cq1 /\
+         or2 dp cp2 dq
+         /\
+         bcase1 ld nb sq sr /\
+         bcase1 ld (bground (r + 1)) cq cr /\
+         case1 ld ground dq dn'
+         /\
+         bdelay sr sp /\
+         bdelay cr cp /\
+         delay dn' dp`;;
+
+export_thm icounter_def;;
+
 let counter_def = new_definition
   `!ld nb dn'.
       counter ld nb dn' <=>
@@ -1338,13 +1375,50 @@ let compressor4_width = prove
 export_thm compressor4_width;;
 
 (***
+let icounter = prove
+ (`!n ld nb inc dn' t k.
+     (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
+     bits_to_num (bsignal nb t) + n + 1 = 2 EXP (width nb) + width nb /\
+     icounter ld nb inc dn' ==>
+     (signal dn' (t + k) <=>
+      n <= CARD { i | 0 < i /\ i + width nb < k /\ signal inc (t + i) })`,
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM MP_TAC THEN
+  REWRITE_TAC
+    [icounter_def; GSYM RIGHT_EXISTS_AND_THM;
+     GSYM LEFT_FORALL_IMP_THM] THEN
+  REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  UNDISCH_TAC `!i. i <= k ==> (signal ld (t + i) <=> i = 0)` THEN
+  SPEC_TAC (`k : num`, `k : num`) THEN
+  STP_TAC
+    `!k f s srs crs crs0.
+       (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
+       (\j. CARD { i | 0 < i /\ i <= j /\ signal inc (t + j) }) = f /\
+       (k - minimal j. f j = n) = s /\
+       bsub sr (s + 1) (r - s) srs /\
+       bsub cr s ((r + 1) - s) crs /\
+       wire cr s crs0 ==>
+       if f k < n then
+         bits_to_num (bsignal sr k) + 2 * bits_to_num (bsignal cr k) + n =
+         2 EXP (r + 1) + f k
+       else if s <= r then
+         (bits_to_num (bsignal srs k) + bits_to_num (bsignal crs k) =
+          2 EXP ((r + 1) - s) /\
+          signal crs0 k)
+       else
+         signal dn' k` THENL
+  [
+
+
 let counter = prove
- (`!n nb ld dn' t k.
+ (`!n ld nb dn' t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal nb t) + n + 1 = 2 EXP (width nb) + width nb /\
      counter ld nb dn' ==>
      (signal dn' (t + k) <=> n <= k)`,
   REPEAT STRIP_TAC THEN
+
 
 (***
   SUBGOAL_THEN `~(n = 0)` ASSUME_TAC THENL
