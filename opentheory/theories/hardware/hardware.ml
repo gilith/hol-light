@@ -1378,7 +1378,7 @@ export_thm compressor4_width;;
 let icounter = prove
  (`!n ld nb inc dn' t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
-     bits_to_num (bsignal nb t) + n + 1 = 2 EXP (width nb) + width nb /\
+     bits_to_num (bsignal nb t) + n = 2 EXP (width nb) + width nb /\
      icounter ld nb inc dn' ==>
      (signal dn' (t + k) <=>
       n <= CARD { i | 0 < i /\ i + width nb < k /\ signal inc (t + i) })`,
@@ -1400,16 +1400,21 @@ let icounter = prove
        bsub cr s ((r + 1) - s) crs /\
        wire cr s crs0 ==>
        if f k < n then
-         bits_to_num (bsignal sr k) + 2 * bits_to_num (bsignal cr k) + n =
-         2 EXP (r + 1) + f k
+         (bits_to_num (bsignal sr (t + k)) +
+          2 * bits_to_num (bsignal cr (t + k)) + n =
+          2 EXP (r + 1) + f k /\
+          ~signal dn' (t + k))
        else if s <= r then
-         (bits_to_num (bsignal srs k) + bits_to_num (bsignal crs k) =
-          2 EXP ((r + 1) - s) /\
-          signal crs0 k)
+         (bits_to_num (bsignal srs (t + k)) +
+          bits_to_num (bsignal crs (t + k)) =
+          2 EXP (r - s) /\
+          signal crs0 (t + k) /\
+          ~signal dn' (t + k))
        else
-         signal dn' k` THENL
-  [
-
+         signal dn' (t + k)` THENL
+  [REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC_ALL o SPECL [`k : num`; `f : num -> num`]) THEN
+   ASM_REWRITE_TAC []
 
 let counter = prove
  (`!n ld nb dn' t k.
