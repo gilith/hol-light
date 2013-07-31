@@ -426,7 +426,7 @@ let EXISTS_REFL = prove
 
 export_thm EXISTS_REFL;;
 
-let EXISTS_REFL' = ONCE_REWRITE_RULE [EQ_SYM_EQ] EXISTS_REFL;
+let EXISTS_REFL' = ONCE_REWRITE_RULE [EQ_SYM_EQ] EXISTS_REFL;;
 
 let EXISTS_UNIQUE_REFL = prove
  (`!a:A. ?!x. x = a`,
