@@ -688,28 +688,61 @@ let LT_ADDR = prove
 export_thm LT_ADDR;;
 
 let LE_ADD_LCANCEL = prove
- (`!m n p. (m + n) <= (m + p) <=> n <= p`,
-  REWRITE_TAC[LE_EXISTS; GSYM ADD_ASSOC; EQ_ADD_LCANCEL]);;
+ (`!m n p. m + n <= m + p <=> n <= p`,
+  REWRITE_TAC [LE_EXISTS; GSYM ADD_ASSOC; EQ_ADD_LCANCEL]);;
 
 export_thm LE_ADD_LCANCEL;;
 
+let LE_ADD_LCANCEL_0 = prove
+ (`!m n. m + n <= m <=> n = 0`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV (GSYM ADD_0)))) THEN
+  REWRITE_TAC [LE_ADD_LCANCEL; LE_ZERO]);;
+
+export_thm LE_ADD_LCANCEL_0;;
+
 let LE_ADD_RCANCEL = prove
- (`!m n p. (m + p) <= (n + p) <=> (m <= n)`,
-  ONCE_REWRITE_TAC[ADD_SYM] THEN MATCH_ACCEPT_TAC LE_ADD_LCANCEL);;
+ (`!m n p. n + m <= p + m <=> n <= p`,
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  ACCEPT_TAC LE_ADD_LCANCEL);;
 
 export_thm LE_ADD_RCANCEL;;
 
+let LE_ADD_RCANCEL_0 = prove
+ (`!m n. n + m <= m <=> n = 0`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  MATCH_ACCEPT_TAC LE_ADD_LCANCEL_0);;
+
+export_thm LE_ADD_RCANCEL_0;;
+
 let LT_ADD_LCANCEL = prove
- (`!m n p. (m + n) < (m + p) <=> n < p`,
-  REWRITE_TAC[LT_EXISTS; GSYM ADD_ASSOC; EQ_ADD_LCANCEL; SUC_INJ]);;
+ (`!m n p. m + n < m + p <=> n < p`,
+  REWRITE_TAC [LT_EXISTS; GSYM ADD_ASSOC; EQ_ADD_LCANCEL; SUC_INJ]);;
 
 export_thm LT_ADD_LCANCEL;;
 
+let LT_ADD_LCANCEL_0 = prove
+ (`!m n. ~(m + n < m)`,
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM (MP_TAC o REWRITE_RULE [GSYM NOT_LE]) THEN
+  REWRITE_TAC [LE_ADD]);;
+
+export_thm LT_ADD_LCANCEL_0;;
+
 let LT_ADD_RCANCEL = prove
- (`!m n p. (n + m) < (p + m) <=> (n < p)`,
-  ONCE_REWRITE_TAC[ADD_SYM] THEN MATCH_ACCEPT_TAC LT_ADD_LCANCEL);;
+ (`!m n p. n + m < p + m <=> n < p`,
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  ACCEPT_TAC LT_ADD_LCANCEL);;
 
 export_thm LT_ADD_RCANCEL;;
+
+let LT_ADD_RCANCEL_0 = prove
+ (`!m n. ~(n + m < m)`,
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  ACCEPT_TAC LT_ADD_LCANCEL_0);;
+
+export_thm LT_ADD_RCANCEL_0;;
 
 let LE_ADD2 = prove
  (`!m n p q. m <= p /\ n <= q ==> m + n <= p + q`,
