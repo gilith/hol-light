@@ -167,6 +167,6 @@ loads "define.ml";;     (* Support for general recursive definitions         *)
 (* ------------------------------------------------------------------------- *)
 
 loads "help.ml";;       (* Online help using the entries in Help directory   *)
-(* Not yet ported to OpenTheory
+(* Skip the standard HOL Light theorem database (we'll make our own)
 loads "database.ml";;   (* List of name-theorem pairs for search system      *)
 *)

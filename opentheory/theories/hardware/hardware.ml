@@ -976,6 +976,17 @@ let bdelay_bsignal = prove
 
 export_thm bdelay_bsignal;;
 
+let bdelay_wire = prove
+ (`!x y i xi yi. bdelay x y /\ wire x i xi /\ wire y i yi ==> delay xi yi`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bdelay_def] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  EXISTS_TAC `i : num` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bdelay_wire;;
+
 let bcase1_width = prove
  (`!s x y z'.
      bcase1 s x y z' ==>
@@ -1409,7 +1420,7 @@ let icounter = prove
   SUBGOAL_THEN
     `!j1 j2. j1 <= j2 ==> (f : num -> num) j1 <= f j2`
     STRIP_ASSUME_TAC THENL
-  [POP_ASSUM (SUBST1_TAC o SYM) THEN   
+  [POP_ASSUM (SUBST1_TAC o SYM) THEN
    REWRITE_TAC [] THEN
    REPEAT STRIP_TAC THEN
    MATCH_MP_TAC CARD_SUBSET THEN
@@ -1686,109 +1697,23 @@ let icounter = prove
         delay_signal) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
-bdelay_bsignal
-
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC delay_signal THEN
+   MATCH_MP_TAC bdelay_wire THEN
+   EXISTS_TAC `cr : bus` THEN
+   EXISTS_TAC `cp : bus` THEN
+   EXISTS_TAC `r : num` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
   COND_CASES_TAC THENL
   [STRIP_TAC THEN
-   SUBGOAL_THEN `signal dn' (t + SUC k) <=> F` SUBST1_TAC THENL
+   SUBGOAL_THEN `~signal cr2 (t + k)` ASSUME_TAC THENL
    [
 
 
    COND_CASES_TAC THENL
    [
-    
-NUMSEG_LE; SUBSET; IN_ELIM] THEN
 
-P_TERM_TAC THEN
-    REWRITE_TAC [EXTENSION; IN_UNION; IN_ELIM] THEN
-    X_GEN_TAC `i : num` THEN
-    REWRITE_TAC [CONJUNCT2 LE; LEFT_OR_DISTRIB; RIGHT_OR_DISTRIB] THEN
-    CONV_TAC (LAND_CONV (REWR_CONV DISJ_SYM)) THEN
-    AP_TERM_TAC THEN
-    ASM_CASES_TAC `i = SUC k` THENL
-    [POP_ASSUM SUBST_VAR_TAC THEN
-     REWRITE_TAC [LT_NZ; NOT_SUC] THEN
-     COND_CASES_TAC THEN
-     REWRITE_TAC [IN_INSERT; NOT_IN_EMPTY];
-     COND_CASES_TAC THEN
-     ASM_REWRITE_TAC [IN_INSERT; NOT_IN_EMPTY]];
-    ALL_TAC] THEN
-   
-     
-
-    [
-DE_MORGAN_THM]
-EXTENSION; IN_UNION; IN_ELIM] THEN
-
-LE_SUC
-LE_SIC
-
-
-   CARD_UNION
-
-  [
-  
-  COND_CASES_TAC THENL
-  [
-   
-   
-   
-
-   SUBGOAL_THEN `(f : num -> num) 0 < n <=> T` SUBST1_TAC THENL
-   [REWRITE_TAC [] THEN
-    MATCH_MP_TAC LET_TRANS THEN
-    EXISTS_TAC `0` THEN
-    ASM_REWRITE_TAC [LE_ZERO; LT_NZ] THEN
-    POP_ASSUM (K ALL_TAC) THEN
-    POP_ASSUM (K ALL_TAC) THEN
-    POP_ASSUM (SUBST1_TAC o SYM) THEN
-    REWRITE_TAC [LE_ZERO; LT_NZ] THEN
-    PURE_REWRITE_TAC [TAUT `!x y. ~x /\ x /\ y <=> F`; GSYM EMPTY] THEN
-    REWRITE_TAC [CARD_EMPTY];
-    ALL_TAC] THEN
-   
-    MATCH_MP_TAC EQ_TRANS THEN
-    EXISTS_TAC `CARD (EMPTY : num set)` THEN
-    REVERSE CONJ_TAC THENL
-    [
-    REWRITE_TAC [CARD_EMPTY] THEN
-    REPEAT (AP_TERM_TAC ORELSE AP_THM_TAC ORELSE ABS_TAC) THEN
-    
-    
-
-  STP_TAC
-    `!k f s srs crs crs0.
-       (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
-       (\j. CARD { i | 0 < i /\ i <= j /\ signal inc (t + i) }) = f /\
-       (k - minimal j. f j = n) = s /\
-       bsub sr (s + 1) (r - s) srs /\
-       bsub cr s ((r + 1) - s) crs /\
-       wire cr s crs0 ==>
-       if f k < n then
-         (bits_to_num (bsignal sr (t + k)) +
-          2 * bits_to_num (bsignal cr (t + k)) + n =
-          2 EXP (r + 1) + f k /\
-          ~signal dn' (t + k))
-       else if s <= r then
-         (bits_to_num (bsignal srs (t + k)) +
-          bits_to_num (bsignal crs (t + k)) =
-          2 EXP (r - s) /\
-          signal crs0 (t + k) /\
-          ~signal dn' (t + k))
-       else
-         signal dn' (t + k)` THENL
-  [REPEAT STRIP_TAC THEN
-   SUBGOAL_THEN
-     `?s. (k - minimal j. f j = n) = s /\
-     STRIP_ASSUME_TAC THENL
-   [MATCH_ACCEPT_TAC EXISTS_REFL';
-    ALL_TAC] THEN
-   
-
-   FIRST_X_ASSUM (MP_TAC o SPEC_ALL o SPECL [`k : num`; `f : num -> num`]) THEN
-   ASM_REWRITE_TAC [] THEN
-   STRIP_TAC THEN
-   
 
 let counter = prove
  (`!n ld nb dn' t k.
