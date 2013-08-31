@@ -1017,4 +1017,20 @@ let bitwidth_max = prove
 
 export_thm bitwidth_max;;
 
+let bit_cons_le_lcancel = prove
+  (`!h t1 t2.
+      bit_cons h t1 <= bit_cons h t2 <=>
+      t1 <= t2`,
+   REWRITE_TAC [bit_cons_def; LE_ADD_LCANCEL; LE_MULT_LCANCEL; two_nonzero]);;
+
+export_thm bit_cons_le_lcancel;;
+
+let bit_cons_le_rcancel = prove
+  (`!h1 h2 t.
+      bit_cons h1 t <= bit_cons h2 t <=>
+      bit_to_num h1 <= bit_to_num h2`,
+   REWRITE_TAC [bit_cons_def; LE_ADD_RCANCEL]);;
+
+export_thm bit_cons_le_rcancel;;
+
 logfile_end ();;

@@ -795,6 +795,14 @@ let wire_exists = prove
 
 export_thm wire_exists;;
 
+let wire_width = prove
+  (`!b i w. wire b i w ==> i < width b`,
+   REPEAT GEN_TAC THEN
+   ASM_REWRITE_TAC [wire_def; bsub_def; GSYM ADD1; LE_SUC_LT] THEN
+   STRIP_TAC);;
+
+export_thm wire_width;;
+
 let wire_zero = prove
  (`!v b w. wire (mk_bus (CONS v (dest_bus b))) 0 w <=> w = v`,
   REPEAT GEN_TAC THEN
@@ -870,6 +878,56 @@ let bits_to_num_bsignal_append = prove
     [bsignal_append; bits_to_num_append; width_def; bsignal_def; LENGTH_MAP]);;
 
 export_thm bits_to_num_bsignal_append;;
+
+let bits_to_num_bsignal_wire = prove
+ (`!b i w t.
+     wire b i w /\ signal w t ==>
+     2 EXP i <= bits_to_num (bsignal b t)`,
+  REPEAT GEN_TAC THEN
+  SPEC_TAC (`b : bus`, `b : bus`) THEN
+  SPEC_TAC (`i : num`, `i : num`) THEN
+  INDUCT_TAC THENL
+  [GEN_TAC THEN
+   MP_TAC (SPEC `width b` num_CASES) THEN
+   STRIP_TAC THENL
+   [STRIP_TAC THEN
+    MP_TAC (SPECL [`b : bus`; `0`; `w : wire`] wire_width) THEN
+    ASM_REWRITE_TAC [LT_REFL];
+    POP_ASSUM (MP_TAC o REWRITE_RULE [width_suc]) THEN
+    DISCH_THEN
+      (X_CHOOSE_THEN `h : wire`
+        (X_CHOOSE_THEN `c : bus`
+          (SUBST_VAR_TAC o CONJUNCT1))) THEN
+    REWRITE_TAC [wire_zero] THEN
+    STRIP_TAC THEN
+    FIRST_X_ASSUM (SUBST_VAR_TAC o SYM) THEN
+    ASM_REWRITE_TAC
+      [EXP_0; bsignal_cons; bits_to_num_cons; bit_cons_def;
+       bit_to_num_true; LE_ADD]];
+   ALL_TAC] THEN
+  GEN_TAC THEN
+  MP_TAC (SPEC `width b` num_CASES) THEN
+  STRIP_TAC THENL
+  [STRIP_TAC THEN
+   MP_TAC (SPECL [`b : bus`; `SUC i`; `w : wire`] wire_width) THEN
+   ASM_REWRITE_TAC [LT_ZERO];
+   POP_ASSUM (MP_TAC o REWRITE_RULE [width_suc]) THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `h : wire`
+       (X_CHOOSE_THEN `c : bus`
+         (SUBST_VAR_TAC o CONJUNCT1))) THEN
+   REWRITE_TAC [wire_suc] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [EXP_SUC; bsignal_cons; bits_to_num_cons; bus_tybij] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `bit_cons (signal h t) (2 EXP i)` THEN
+   STRIP_TAC THENL
+   [REWRITE_TAC [bit_cons_def; LE_ADDR];
+    REWRITE_TAC [bit_cons_def; bit_cons_le_lcancel] THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC []]]);;
+
+export_thm bits_to_num_bsignal_wire;;
 
 let width_bground = prove
  (`!n. width (bground n) = n`,
@@ -1708,9 +1766,22 @@ let icounter = prove
   COND_CASES_TAC THENL
   [STRIP_TAC THEN
    SUBGOAL_THEN `~signal cr2 (t + k)` ASSUME_TAC THENL
-   [
-
-
+   [STRIP_TAC THEN
+    MP_TAC
+      (SPECL [`cr : bus`; `r : num`; `cr2 : wire`; `t + k : num`]
+       bits_to_num_bsignal_wire) THEN
+    ASM_REWRITE_TAC [NOT_LE] THEN
+    MP_TAC (REWRITE_RULE [NOT_SUC] (SPEC `SUC 1` LT_MULT_LCANCEL)) THEN
+    DISCH_THEN (CONV_TAC o REWR_CONV o GSYM o REWRITE_RULE [GSYM TWO]) THEN
+    REWRITE_TAC [GSYM EXP_SUC; ADD1] THEN
+    CONV_TAC (REWR_CONV (GSYM (SPEC `(f : num -> num) k` LT_ADD_RCANCEL))) THEN
+    FIRST_X_ASSUM (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
+    REWRITE_TAC [ADD_ASSOC] THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `2 * bits_to_num (bsignal cr (t + k)) + n` THEN
+    ASM_REWRITE_TAC [LT_ADD_LCANCEL; LE_ADD_RCANCEL; LE_ADDR];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
    COND_CASES_TAC THENL
    [
 
