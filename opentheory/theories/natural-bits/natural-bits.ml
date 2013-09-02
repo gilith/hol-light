@@ -670,6 +670,12 @@ let zero_bit_shl = prove
 
 export_thm zero_bit_shl;;
 
+let bit_shl_eq_zero = prove
+  (`!n k. bit_shl n k = 0 <=> n = 0`,
+   REWRITE_TAC [bit_shl_def; MULT_EQ_0; exp_two_nz]);;
+
+export_thm bit_shl_eq_zero;;
+
 let bit_shr_zero = prove
   (`!n. bit_shr n 0 = n`,
    REWRITE_TAC [bit_shr_def; EXP_0; DIV_1]);;
