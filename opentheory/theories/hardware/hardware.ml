@@ -425,6 +425,8 @@ logfile "hardware-bus-def";;
 
 (* ------------------------------------------------------------------------- *)
 (* Buses.                                                                    *)
+(*                                                                           *)
+(* TODO: Convert all properties to use bus versions of list operators.       *)
 (* ------------------------------------------------------------------------- *)
 
 let (mk_dest_bus,dest_mk_bus) =
@@ -439,6 +441,11 @@ let width_def = new_definition
   `!b. width b = LENGTH (dest_bus b)`;;
 
 export_thm width_def;;
+
+let bcons_def = new_definition
+  `!w b. bcons w b = mk_bus (CONS w (dest_bus b))`;;
+
+export_thm bcons_def;;
 
 let bappend_def = new_definition
   `!x y. bappend x y = mk_bus (APPEND (dest_bus x) (dest_bus y))`;;
@@ -712,6 +719,12 @@ let width_suc = prove
 
 export_thm width_suc;;
 
+let bcons_bappend = prove
+ (`!w b. bcons w b = bappend (mk_bus [w]) b`,
+  REWRITE_TAC [bcons_def; bappend_def; bus_tybij; APPEND]);;
+
+export_thm bcons_bappend;;
+
 let bsub_exists = prove
   (`!x k n. k + n <= width x ==> ?y. bsub x k n y`,
    REPEAT STRIP_TAC THEN
@@ -749,6 +762,12 @@ let bsub_width = prove
 
 export_thm bsub_width;;
 
+let bsub_zero = prove
+  (`!x y k. bsub x k 0 y <=> k <= width x /\ y = mk_bus []`,
+   REWRITE_TAC [bsub_def; ADD_0; take_zero]);;
+
+export_thm bsub_zero;;
+
 let bsub_add = prove
   (`!x y z k m n.
       bsub x k m y /\ bsub x (k + m) n z ==>
@@ -783,6 +802,18 @@ let bsub_add = prove
     ASM_REWRITE_TAC []]);;
 
 export_thm bsub_add;;
+
+let bsub_suc = prove
+  (`!x w y k n.
+      wire x k w /\ bsub x (SUC k) n y ==>
+      bsub x k (SUC n) (bcons w y)`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [ADD1; bcons_bappend] THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [GSYM ADD1; GSYM wire_def]);;
+
+export_thm bsub_suc;;
 
 let bsub_inj = prove
   (`!x k n y z.
@@ -2199,7 +2230,50 @@ let icounter = prove
    ALL_TAC] THEN
   REWRITE_TAC [LE_ADD; ADD_SUB2; GSYM ADD1] THEN
   REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`cr : bus`;
+                 `SUC s`;
+                 `SUC d`]
+                bsub_exists) THEN
+  ANTS_TAC THENL
+  [ASM_REWRITE_TAC [ADD_SUC; SUC_ADD; LE_REFL];
+   ALL_TAC] THEN
+  DISCH_THEN (X_CHOOSE_THEN `crd : bus` ASSUME_TAC) THEN
+  SUBGOAL_THEN `~signal cr2 (t + k)` ASSUME_TAC THENL
+  [STRIP_TAC THEN
+   MP_TAC (SPEC `2 EXP SUC d` LT_REFL) THEN
+   REWRITE_TAC [] THEN
+   FIRST_X_ASSUM (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
+   MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `bits_to_num (bsignal crs (t + k))` THEN
+   REWRITE_TAC [LE_ADDR] THEN
+   SUBGOAL_THEN `crs = mk_bus (CONS crs0 (dest_bus crd))` SUBST1_TAC THENL
+   [MATCH_MP_TAC bsub_inj THEN
+    EXISTS_TAC `cr : bus` THEN
+    EXISTS_TAC `s : num` THEN
+    EXISTS_TAC `SUC (SUC d)` THEN
+    ASM_REWRITE_TAC []
+***
 
+  MP_TAC (SPECL [`sr : bus`;
+                 `SUC (SUC s)`;
+                 `d : num`]
+                bsub_exists) THEN
+  ANTS_TAC THENL
+  [ASM_REWRITE_TAC [ADD_SUC; SUC_ADD; LE_REFL];
+   ALL_TAC] THEN
+  DISCH_THEN (X_CHOOSE_THEN `srd : bus` ASSUME_TAC) THEN
+  MP_TAC (SPECL [`cr : bus`;
+                 `SUC s`]
+                wire_exists) THEN
+  ANTS_TAC THENL
+  [ASM_REWRITE_TAC [ADD_SUC; SUC_ADD; LT_SUC_LE] THEN
+   REWRITE_TAC [GSYM SUC_ADD; LE_ADD];
+   ALL_TAC] THEN
+  DISCH_THEN (X_CHOOSE_THEN `crd0 : wire` ASSUME_TAC) THEN
+  EXISTS_TAC `srd : bus` THEN
+  EXISTS_TAC `crd : bus` THEN
+  EXISTS_TAC `crd0 : wire` THEN
+  ASM_REWRITE_TAC []
 
 
 let counter = prove
