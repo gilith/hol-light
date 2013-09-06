@@ -1817,6 +1817,28 @@ let drop_replicate = prove
 
 export_thm drop_replicate;;
 
+let drop_append = prove
+  (`!l1 l2 : A list. drop (LENGTH l1) (APPEND l1 l2) = l2`,
+   REPEAT GEN_TAC THEN
+   SPEC_TAC (`l1 : A list`, `l1 : A list`) THEN
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [LENGTH_NIL; drop_zero; NIL_APPEND];
+    REWRITE_TAC [LENGTH_CONS; CONS_APPEND] THEN
+    POP_ASSUM (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
+    MATCH_MP_TAC drop_suc THEN
+    REWRITE_TAC [LENGTH_APPEND; LE_ADD]]);;
+
+export_thm drop_append;;
+
+let take_append = prove
+  (`!l1 l2 : A list. take (LENGTH l1) (APPEND l1 l2) = l1`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPECL [`LENGTH (l1 : A list)`;
+                  `APPEND l1 l2 : A list`] take_drop) THEN
+   REWRITE_TAC [drop_append; APPEND_RCANCEL; LENGTH_APPEND; LE_ADD]);;
+
+export_thm take_append;;
+
 (* ------------------------------------------------------------------------- *)
 (* Interval.                                                                 *)
 (* ------------------------------------------------------------------------- *)

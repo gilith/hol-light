@@ -48,7 +48,7 @@ export_thm power_def;;
 (* ------------------------------------------------------------------------- *)
 
 let (mk_dest_bus,dest_mk_bus) =
-  CONJ_PAIR (define_newtype ("b","bus") ("l",`:wire list`));;
+  CONJ_PAIR (define_newtype ("x","bus") ("l",`:wire list`));;
 
 export_thm mk_dest_bus;;
 export_thm dest_mk_bus;;
@@ -79,7 +79,7 @@ export_thm bappend_def;;
 (* ------------------------------------------------------------------------- *)
 
 let width_def = new_definition
-  `!b. width b = LENGTH (dest_bus b)`;;
+  `!x. width x = LENGTH (dest_bus x)`;;
 
 export_thm width_def;;
 
@@ -88,7 +88,7 @@ export_thm width_def;;
 (* ------------------------------------------------------------------------- *)
 
 let bsignal_def = new_definition
-  `!b t. bsignal b t = MAP (\w. signal w t) (dest_bus b)`;;
+  `!x t. bsignal x t = MAP (\w. signal w t) (dest_bus x)`;;
 
 export_thm bsignal_def;;
 
@@ -105,7 +105,7 @@ let bsub_def = new_definition
 export_thm bsub_def;;
 
 let wire_def = new_definition
-  `!b i w. wire b i w <=> bsub b i 1 (bwire w)`;;
+  `!x i w. wire x i w <=> bsub x i 1 (bwire w)`;;
 
 export_thm wire_def;;
 
