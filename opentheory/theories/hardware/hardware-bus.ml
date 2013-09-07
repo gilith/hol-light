@@ -67,7 +67,7 @@ let bdelay_width = prove
 
 export_thm bdelay_width;;
 
-let bdelay_signal = prove
+let bdelay_bsignal = prove
  (`!x y t. bdelay x y ==> bsignal y (t + 1) = bsignal x t`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [bdelay_def; GSYM LEFT_FORALL_IMP_THM] THEN
@@ -79,31 +79,31 @@ let bdelay_signal = prove
   [REPEAT GEN_TAC THEN
    REWRITE_TAC [width_zero] THEN
    STRIP_TAC THEN
-   ASM_REWRITE_TAC [bsignal_def; MAP_NIL; bus_tybij];
+   ASM_REWRITE_TAC [bnil_bsignal];
    ALL_TAC] THEN
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [width_suc; GSYM IMP_IMP] THEN
+  REWRITE_TAC [width_suc] THEN
+  ONCE_REWRITE_TAC [GSYM IMP_IMP] THEN
   DISCH_THEN
     (X_CHOOSE_THEN `xh : wire`
       (X_CHOOSE_THEN `xt : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  ONCE_REWRITE_TAC [GSYM IMP_IMP] THEN
   DISCH_THEN
     (X_CHOOSE_THEN `yh : wire`
       (X_CHOOSE_THEN `yt : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
   REPEAT STRIP_TAC THEN
-  ASM_REWRITE_TAC [bsignal_cons; bus_tybij; CONS_11] THEN
+  ASM_REWRITE_TAC [bappend_bwire_bsignal; CONS_11] THEN
   CONJ_TAC THENL
-  [FIRST_X_ASSUM
-     (MP_TAC o SPECL [`0`; `xh : wire`; `yh : wire`]) THEN
-   REWRITE_TAC [wire_zero; delay_def] THEN
-   DISCH_THEN MATCH_ACCEPT_TAC;
-   FIRST_X_ASSUM
-     (MP_TAC o SPECL [`xt : bus`; `yt : bus`]) THEN
+  [MATCH_MP_TAC delay_signal THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   EXISTS_TAC `0` THEN
+   REWRITE_TAC [wire_zero];
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
    ASM_REWRITE_TAC [] THEN
-   DISCH_THEN MATCH_MP_TAC THEN
    REPEAT STRIP_TAC THEN
-   FIRST_X_ASSUM (MATCH_MP_TAC o REWRITE_RULE [IMP_IMP]) THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
    EXISTS_TAC `SUC i` THEN
    ASM_REWRITE_TAC [wire_suc]]);;
 
@@ -132,7 +132,7 @@ let bcase1_width = prove
 
 export_thm bcase1_width;;
 
-let bcase1_signal = prove
+let bcase1_bsignal = prove
  (`!s x y z t.
       bcase1 s x y z ==>
       bsignal z t = (if signal s t then bsignal x t else bsignal y t)`,
@@ -147,39 +147,48 @@ let bcase1_signal = prove
   [REPEAT GEN_TAC THEN
    REWRITE_TAC [width_zero] THEN
    STRIP_TAC THEN
-   ASM_REWRITE_TAC [COND_ID];
+   ASM_REWRITE_TAC [bnil_bsignal; COND_ID];
    ALL_TAC] THEN
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [width_suc; GSYM IMP_IMP] THEN
+  REWRITE_TAC [width_suc] THEN
+  ONCE_REWRITE_TAC [GSYM IMP_IMP] THEN
   DISCH_THEN
     (X_CHOOSE_THEN `xh : wire`
       (X_CHOOSE_THEN `xt : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  ONCE_REWRITE_TAC [GSYM IMP_IMP] THEN
   DISCH_THEN
     (X_CHOOSE_THEN `yh : wire`
       (X_CHOOSE_THEN `yt : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+  ONCE_REWRITE_TAC [GSYM IMP_IMP] THEN
   DISCH_THEN
     (X_CHOOSE_THEN `zh : wire`
       (X_CHOOSE_THEN `zt : bus`
         (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
   REPEAT STRIP_TAC THEN
-  ASM_CASES_TAC `signal s t` THEN
-  (ASM_REWRITE_TAC [bsignal_cons; bus_tybij; CONS_11] THEN
-   CONJ_TAC THENL
-   [FIRST_X_ASSUM
-      (MP_TAC o SPECL [`0`; `xh : wire`; `yh : wire`; `zh : wire`]) THEN
-    REWRITE_TAC [wire_zero; case1_def] THEN
-    DISCH_THEN (SUBST1_TAC o SPEC `t : cycle`) THEN
-    ASM_REWRITE_TAC [];
-    FIRST_X_ASSUM
-      (MP_TAC o SPECL [`xt : bus`; `yt : bus`; `zt : bus`]) THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN MATCH_MP_TAC THEN
-    REPEAT STRIP_TAC THEN
-    FIRST_X_ASSUM (MATCH_MP_TAC o REWRITE_RULE [IMP_IMP]) THEN
-    EXISTS_TAC `SUC i` THEN
-    ASM_REWRITE_TAC [wire_suc]]));;
+  ASM_REWRITE_TAC [bappend_bwire_bsignal] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `CONS
+      (if signal s t then signal xh t else signal yh t)
+      (if signal s t then bsignal xt t else bsignal yt t)` THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [COND_CASES_TAC THEN
+   REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC [CONS_11] THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC case1_signal THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   EXISTS_TAC `0` THEN
+   REWRITE_TAC [wire_zero];
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   EXISTS_TAC `SUC i` THEN
+   ASM_REWRITE_TAC [wire_suc]]);;
 
 export_thm bcase1_bsignal;;
 

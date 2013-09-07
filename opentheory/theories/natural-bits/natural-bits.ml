@@ -670,11 +670,23 @@ let zero_bit_shl = prove
 
 export_thm zero_bit_shl;;
 
+let one_bit_shl = prove
+  (`!k. bit_shl 1 k = 2 EXP k`,
+   REWRITE_TAC [bit_shl_def; MULT_1]);;
+
+export_thm one_bit_shl;;
+
 let bit_shl_eq_zero = prove
-  (`!n k. bit_shl n k = 0 <=> n = 0`,
+  (`!k n. bit_shl n k = 0 <=> n = 0`,
    REWRITE_TAC [bit_shl_def; MULT_EQ_0; exp_two_nz]);;
 
 export_thm bit_shl_eq_zero;;
+
+let bit_shl_mono_le = prove
+  (`!k n1 n2. bit_shl n1 k <= bit_shl n2 k <=> n1 <= n2`,
+   REWRITE_TAC [bit_shl_def; LE_MULT_LCANCEL; exp_two_nz]);;
+
+export_thm bit_shl_mono_le;;
 
 let bit_shr_zero = prove
   (`!n. bit_shr n 0 = n`,

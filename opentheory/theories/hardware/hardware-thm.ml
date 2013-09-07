@@ -131,7 +131,8 @@ export_thm bnil_width;;
 
 let bwire_width = prove
  (`!w. width (bwire w) = 1`,
-  REWRITE_TAC [width_def; bwire_def; bus_tybij; LENGTH_CONS; LENGTH_NIL; ONE]);;
+  REWRITE_TAC
+    [width_def; bwire_def; bus_tybij; LENGTH_CONS; LENGTH_NIL; ONE]);;
 
 export_thm bwire_width;;
 
@@ -198,40 +199,40 @@ let length_bsignal = prove
 
 export_thm length_bsignal;;
 
-let bsignal_bnil = prove
+let bnil_bsignal = prove
  (`!t. bsignal bnil t = []`,
   REWRITE_TAC [bsignal_def; bnil_def; bus_tybij; MAP]);;
 
-export_thm bsignal_bnil;;
+export_thm bnil_bsignal;;
 
-let bsignal_bwire = prove
+let bwire_bsignal = prove
  (`!w t. bsignal (bwire w) t = [signal w t]`,
   REWRITE_TAC [bsignal_def; bwire_def; bus_tybij; MAP]);;
 
-export_thm bsignal_bwire;;
+export_thm bwire_bsignal;;
 
-let bsignal_bappend = prove
+let bappend_bsignal = prove
  (`!x y t.
      bsignal (bappend x y) t =
      APPEND (bsignal x t) (bsignal y t)`,
   REWRITE_TAC [bsignal_def; bus_tybij; bappend_def; APPEND; MAP_APPEND]);;
 
-export_thm bsignal_bappend;;
+export_thm bappend_bsignal;;
 
-let bsignal_bappend_bwire = prove
+let bappend_bwire_bsignal = prove
  (`!w x t. bsignal (bappend (bwire w) x) t = CONS (signal w t) (bsignal x t)`,
-  REWRITE_TAC [bsignal_bappend; bsignal_bwire; APPEND_SING]);;
+  REWRITE_TAC [bappend_bsignal; bwire_bsignal; APPEND_SING]);;
 
-export_thm bsignal_bappend_bwire;;
+export_thm bappend_bwire_bsignal;;
 
-let bits_to_num_bsignal_append = prove
+let bappend_bits_to_num = prove
  (`!x y t.
      bits_to_num (bsignal (bappend x y) t) =
      bits_to_num (bsignal x t) +
      bit_shl (bits_to_num (bsignal y t)) (width x)`,
-  REWRITE_TAC [bsignal_bappend; bits_to_num_append; length_bsignal]);;
+  REWRITE_TAC [bappend_bsignal; bits_to_num_append; length_bsignal]);;
 
-export_thm bits_to_num_bsignal_append;;
+export_thm bappend_bits_to_num;;
 
 (* ------------------------------------------------------------------------- *)
 (* Sub-buses.                                                                *)
@@ -393,6 +394,63 @@ let bsub_suffix = prove
 
 export_thm bsub_suffix;;
 
+let bsub_bappend_exists = prove
+ (`!x k n y.
+     bsub x k n y ==>
+     ?d p q.
+       width x = k + n + d /\
+       bsub x 0 k p /\
+       bsub x (k + n) d q /\
+       x = bappend p (bappend y q)`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`x : bus`; `k : num`; `n : num`; `y : bus`] bsub_bound) THEN
+  ASM_REWRITE_TAC [LE_EXISTS; GSYM ADD_ASSOC] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `d : num` THEN
+  MP_TAC (SPECL [`x : bus`; `0`; `k : num`] bsub_exists) THEN
+  ASM_REWRITE_TAC [ZERO_ADD; LE_ADD] THEN
+  DISCH_THEN (X_CHOOSE_THEN `p : bus` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `p : bus` THEN
+  MP_TAC (SPECL [`x : bus`; `k + n : num`; `d : num`] bsub_exists) THEN
+  ASM_REWRITE_TAC [GSYM ADD_ASSOC; LE_REFL] THEN
+  DISCH_THEN (X_CHOOSE_THEN `q : bus` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `q : bus` THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  ASM_REWRITE_TAC [GSYM bsub_all] THEN
+  MATCH_MP_TAC bsub_add THEN
+  ASM_REWRITE_TAC [ZERO_ADD] THEN
+  MATCH_MP_TAC bsub_add THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bsub_bappend_exists;;
+
+let bsub_bits_to_num = prove
+ (`!x k n y t.
+     bsub x k n y ==>
+     bit_shl (bits_to_num (bsignal y t)) k <= bits_to_num (bsignal x t)`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC
+   (SPECL
+      [`x : bus`; `k : num`; `n : num`; `y : bus`]
+      bsub_bappend_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [bappend_bits_to_num] THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC
+    `bits_to_num (bsignal p t) + bit_shl (bits_to_num (bsignal y t)) k` THEN
+  REWRITE_TAC [LE_ADDR; LE_ADD_LCANCEL] THEN
+  SUBGOAL_THEN `width p = k` SUBST1_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `x : bus` THEN
+   EXISTS_TAC `0` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC [bit_shl_mono_le; LE_ADD]);;
+
+export_thm bsub_bits_to_num;;
+
 let wire_inj = prove
   (`!x i w1 w2.
       wire x i w1 /\ wire x i w2 ==>
@@ -441,88 +499,109 @@ let wire_zero = prove
   REPEAT GEN_TAC THEN
   REWRITE_TAC [wire_def] THEN
   MP_TAC (SPECL [`bwire w`; `x : bus`; `bwire v`] bsub_prefix) THEN
-+  REWRITE_TAC [bwire_width; bwire_inj]);;
+  REWRITE_TAC [bwire_width; bwire_inj]);;
 
 export_thm wire_zero;;
 
-(***
 let wire_suc = prove
  (`!w x i v. wire (bappend (bwire w) x) (SUC i) v <=> wire x i v`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [wire_def]
-; bsub_def; bus_tybij; width_def] THEN
-  REWRITE_TAC [SUC_ADD; LENGTH_CONS; LE_SUC] THEN
-  REWRITE_TAC [GSYM ADD1; LE_SUC_LT] THEN
-  SPEC_TAC (`dest_bus b`, `l : wire list`) THEN
-  GEN_TAC THEN
-  ASM_CASES_TAC `i < LENGTH (l : wire list)` THENL
-  [AP_TERM_TAC THEN
-   AP_TERM_TAC THEN
-   AP_TERM_TAC THEN
-   AP_TERM_TAC THEN
-   MATCH_MP_TAC drop_suc THEN
-   MATCH_MP_TAC LT_IMP_LE THEN
-   FIRST_X_ASSUM ACCEPT_TAC;
-   ASM_REWRITE_TAC []]);;
+  REWRITE_TAC [wire_def; ADD1] THEN
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  MP_TAC
+    (SPECL [`bwire w`; `x : bus`; `i : num`; `1`; `bwire v`]
+     bsub_skip_prefix) THEN
+  REWRITE_TAC [bwire_width]);;
 
 export_thm wire_suc;;
-***)
 
-(***
-let bits_to_num_bsignal_wire = prove
+let wire_bits_to_num = prove
  (`!x i w t.
-     wire b i w /\ signal w t ==>
-     2 EXP i <= bits_to_num (bsignal b t)`,
+     wire x i w /\ signal w t ==>
+     2 EXP i <= bits_to_num (bsignal x t)`,
   REPEAT GEN_TAC THEN
-  SPEC_TAC (`x : bus`, `x : bus`) THEN
-  SPEC_TAC (`i : num`, `i : num`) THEN
-  INDUCT_TAC THENL
-  [GEN_TAC THEN
-   MP_TAC (SPEC `width x` num_CASES) THEN
-   STRIP_TAC THENL
-   [STRIP_TAC THEN
-    MP_TAC (SPECL [`x : bus`; `0`; `w : wire`] wire_width) THEN
-    ASM_REWRITE_TAC [LT_REFL];
-    POP_ASSUM (MP_TAC o REWRITE_RULE [width_suc]) THEN
-    DISCH_THEN
-      (X_CHOOSE_THEN `h : wire`
-        (X_CHOOSE_THEN `c : bus`
-          (SUBST_VAR_TAC o CONJUNCT1))) THEN
-    REWRITE_TAC [wire_zero] THEN
-    STRIP_TAC THEN
-    FIRST_X_ASSUM (SUBST_VAR_TAC o SYM) THEN
-    ASM_REWRITE_TAC
-      [EXP_0; bsignal_cons; bits_to_num_cons; bit_cons_def;
-       bit_to_num_true; LE_ADD]];
+  REWRITE_TAC [wire_def] THEN
+  STRIP_TAC THEN
+  STP_TAC `bit_shl (bits_to_num (bsignal (bwire w) t)) i = 2 EXP i` THENL
+  [DISCH_THEN (SUBST1_TAC o SYM) THEN
+   MATCH_MP_TAC bsub_bits_to_num THEN
+   EXISTS_TAC `1` THEN
+   ASM_REWRITE_TAC [];
    ALL_TAC] THEN
-  GEN_TAC THEN
-  MP_TAC (SPEC `width x` num_CASES) THEN
-  STRIP_TAC THENL
-  [STRIP_TAC THEN
-   MP_TAC (SPECL [`x : bus`; `SUC i`; `w : wire`] wire_width) THEN
-   ASM_REWRITE_TAC [LT_ZERO];
-   POP_ASSUM (MP_TAC o REWRITE_RULE [width_suc]) THEN
-   DISCH_THEN
-     (X_CHOOSE_THEN `h : wire`
-       (X_CHOOSE_THEN `c : bus`
-         (SUBST_VAR_TAC o CONJUNCT1))) THEN
-   REWRITE_TAC [wire_suc] THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [EXP_SUC; bsignal_cons; bits_to_num_cons; bus_tybij] THEN
-   MATCH_MP_TAC LE_TRANS THEN
-   EXISTS_TAC `bit_cons (signal h t) (2 EXP i)` THEN
-   STRIP_TAC THENL
-   [REWRITE_TAC [bit_cons_def; LE_ADDR];
-    REWRITE_TAC [bit_cons_def; bit_cons_le_lcancel] THEN
-    FIRST_X_ASSUM MATCH_MP_TAC THEN
-    ASM_REWRITE_TAC []]]);;
+  ASM_REWRITE_TAC
+    [bwire_bsignal; bits_to_num_sing; bit_to_num_true; one_bit_shl]);;
 
-export_thm bits_to_num_bsignal_wire;;
+export_thm wire_bits_to_num;;
 
 (* ------------------------------------------------------------------------- *)
 (* Power and ground buses.                                                   *)
 (* ------------------------------------------------------------------------- *)
 
-***)
+let bground_width = prove
+ (`!n. width (bground n) = n`,
+  REWRITE_TAC [bground_def; width_def; bus_tybij; LENGTH_REPLICATE]);;
+
+export_thm bground_width;;
+
+let bground_zero = prove
+ (`bground 0 = bnil`,
+  REWRITE_TAC [bground_def; REPLICATE_0; bnil_def]);;
+
+export_thm bground_zero;;
+
+let bground_one = prove
+ (`bground 1 = bwire ground`,
+  REWRITE_TAC [bground_def; ONE; REPLICATE_SUC; REPLICATE_0; bwire_def]);;
+
+export_thm bground_one;;
+
+let bground_add = prove
+ (`!m n. bground (m + n) = bappend (bground m) (bground n)`,
+  REWRITE_TAC [bground_def; REPLICATE_ADD; bappend_def; bus_tybij]);;
+
+export_thm bground_add;;
+
+let bground_bsub = prove
+ (`!n i k x. bsub (bground n) i k x <=> i + k <= n /\ x = bground k`,
+  REPEAT GEN_TAC THEN
+  REVERSE_TAC (ASM_CASES_TAC `(i : num) + k <= n`) THENL
+  [ASM_REWRITE_TAC [bsub_def; bground_width];
+   ALL_TAC] THEN
+  POP_ASSUM
+    (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+     REWRITE_RULE [LE_EXISTS]) THEN
+  REWRITE_TAC [LE_ADD] THEN
+  REWRITE_TAC [GSYM ADD_ASSOC] THEN
+  ONCE_REWRITE_TAC [bground_add] THEN
+  MP_TAC
+    (SPECL [`bground i`; `bground (k + d)`; `0`; `k : num`; `x : bus`]
+       bsub_skip_prefix) THEN
+  REWRITE_TAC [bground_width; ADD_0] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [bground_add] THEN
+  MP_TAC (SPECL [`bground k`; `bground d`; `x : bus`] bsub_prefix) THEN
+  REWRITE_TAC [bground_width]);;
+
+export_thm bground_bsub;;
+
+let bground_wire = prove
+ (`!n k w. wire (bground n) k w <=> k < n /\ w = ground`,
+  REWRITE_TAC
+    [wire_def; bground_bsub; GSYM ADD1; LE_SUC_LT; bground_one; bwire_inj]);;
+
+export_thm bground_wire;;
+
+let bground_bsignal = prove
+ (`!n t. bsignal (bground n) t = REPLICATE F n`,
+  REWRITE_TAC
+    [bsignal_def; bground_def; MAP_REPLICATE; bus_tybij; ground_signal]);;
+
+export_thm bground_bsignal;;
+
+let bground_bits_to_num = prove
+ (`!n t. bits_to_num (bsignal (bground n) t) = 0`,
+  REWRITE_TAC [bground_bsignal; bits_to_num_replicate_false]);;
+
+export_thm bground_bits_to_num;;
 
 logfile_end ();;

@@ -1467,6 +1467,15 @@ let APPEND_EQ_REPLICATE = prove
 
 export_thm APPEND_EQ_REPLICATE;;
 
+let REPLICATE_ADD = prove
+ (`!(x : A) m n.
+     REPLICATE x (m + n) = APPEND (REPLICATE x m) (REPLICATE x n)`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  REWRITE_TAC [APPEND_EQ_REPLICATE; LENGTH_REPLICATE]);;
+
+export_thm REPLICATE_ADD;;
+
 let MAP_REPLICATE = prove
  (`!(f : A -> B) x n. MAP f (REPLICATE x n) = REPLICATE (f x) n`,
   GEN_TAC THEN
