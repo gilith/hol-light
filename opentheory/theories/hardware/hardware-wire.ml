@@ -59,6 +59,13 @@ export_thm case1_def;;
 (* Simple wire devices.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
+let and3_def = new_definition
+  `!w x y z.
+     and3 w x y z <=>
+     ?wx. and2 w x wx /\ and2 wx y z`;;
+
+export_thm and3_def;;
+
 let or3_def = new_definition
   `!w x y z.
      or3 w x y z <=>
@@ -173,6 +180,27 @@ export_thm case1_signal;;
 (* ------------------------------------------------------------------------- *)
 (* Simple wire devices.                                                      *)
 (* ------------------------------------------------------------------------- *)
+
+let and3_signal = prove
+ (`!w x y z t.
+     and3 w x y z ==>
+     signal z t = (signal w t /\ signal x t /\ signal y t)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [and3_def] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`wx : wire`; `y : wire`; `z : wire`; `t : cycle`]
+       and2_signal) THEN
+  FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
+  MP_TAC
+    (SPECL
+       [`w : wire`; `x : wire`; `wx : wire`; `t : cycle`]
+       and2_signal) THEN
+  FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
+  ASM_REWRITE_TAC [CONJ_ASSOC]);;
+
+export_thm and3_signal;;
 
 let or3_signal = prove
  (`!w x y z t.

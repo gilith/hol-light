@@ -258,6 +258,16 @@ let bsub_exists = prove
 
 export_thm bsub_exists;;
 
+let bnil_bsub = prove
+ (`!k n x. bsub bnil k n x <=> k = 0 /\ n = 0 /\ x = bnil`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bsub_def; bnil_width; LE_ZERO; ADD_EQ_0] THEN
+  ASM_CASES_TAC `n = 0` THENL
+  [ASM_REWRITE_TAC [take_zero; bnil_def];
+   ASM_REWRITE_TAC []]);;
+
+export_thm bnil_bsub;;
+
 let bsub_bound = prove
   (`!x k n y. bsub x k n y ==> k + n <= width x`,
    REPEAT GEN_TAC THEN
@@ -347,6 +357,37 @@ let bsub_suc = prove
 
 export_thm bsub_suc;;
 
+let bsub_bappend_exists = prove
+ (`!x k n y.
+     bsub x k n y ==>
+     ?d p q.
+       width x = k + n + d /\
+       bsub x 0 k p /\
+       bsub x (k + n) d q /\
+       x = bappend p (bappend y q)`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`x : bus`; `k : num`; `n : num`; `y : bus`] bsub_bound) THEN
+  ASM_REWRITE_TAC [LE_EXISTS; GSYM ADD_ASSOC] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `d : num` THEN
+  MP_TAC (SPECL [`x : bus`; `0`; `k : num`] bsub_exists) THEN
+  ASM_REWRITE_TAC [ZERO_ADD; LE_ADD] THEN
+  DISCH_THEN (X_CHOOSE_THEN `p : bus` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `p : bus` THEN
+  MP_TAC (SPECL [`x : bus`; `k + n : num`; `d : num`] bsub_exists) THEN
+  ASM_REWRITE_TAC [GSYM ADD_ASSOC; LE_REFL] THEN
+  DISCH_THEN (X_CHOOSE_THEN `q : bus` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `q : bus` THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  ASM_REWRITE_TAC [GSYM bsub_all] THEN
+  MATCH_MP_TAC bsub_add THEN
+  ASM_REWRITE_TAC [ZERO_ADD] THEN
+  MATCH_MP_TAC bsub_add THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bsub_bappend_exists;;
+
 let bsub_prefix = prove
  (`!x y z. bsub (bappend x y) 0 (width x) z <=> z = x`,
   REPEAT GEN_TAC THEN
@@ -383,6 +424,39 @@ let bsub_skip_prefix = prove
 
 export_thm bsub_skip_prefix;;
 
+let bsub_within_prefix = prove
+ (`!x y k n z.
+     k + n <= width x ==>
+     (bsub (bappend x y) k n z <=> bsub x k n z)`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`x : bus`; `k : num`; `n : num`] bsub_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `b : bus` STRIP_ASSUME_TAC) THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`; `k : num`; `n : num`; `b : bus`]
+       bsub_bappend_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [bappend_assoc] THEN
+  SUBGOAL_THEN `width p + 0 = k` (SUBST1_TAC o SYM) THENL
+  [REWRITE_TAC [ADD_0] THEN
+   MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `x : bus` THEN
+   EXISTS_TAC `0` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC [bsub_skip_prefix] THEN
+  SUBGOAL_THEN `width b = n` (SUBST1_TAC o SYM) THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `x : bus` THEN
+   EXISTS_TAC `k : num` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC [bsub_prefix]);;
+
+export_thm bsub_within_prefix;;
+
 let bsub_suffix = prove
  (`!x y z. bsub (bappend x y) (width x) (width y) z <=> z = y`,
   REPEAT GEN_TAC THEN
@@ -394,36 +468,51 @@ let bsub_suffix = prove
 
 export_thm bsub_suffix;;
 
-let bsub_bappend_exists = prove
- (`!x k n y.
-     bsub x k n y ==>
-     ?d p q.
-       width x = k + n + d /\
-       bsub x 0 k p /\
-       bsub x (k + n) d q /\
-       x = bappend p (bappend y q)`,
+let bsub_bsub = prove
+ (`!x j m y k n z.
+     bsub x j m y ==>
+     (bsub y k n z <=> k + n <= m /\ bsub x (j + k) n z)`,
   REPEAT STRIP_TAC THEN
-  MP_TAC (SPECL [`x : bus`; `k : num`; `n : num`; `y : bus`] bsub_bound) THEN
-  ASM_REWRITE_TAC [LE_EXISTS; GSYM ADD_ASSOC] THEN
-  STRIP_TAC THEN
-  EXISTS_TAC `d : num` THEN
-  MP_TAC (SPECL [`x : bus`; `0`; `k : num`] bsub_exists) THEN
-  ASM_REWRITE_TAC [ZERO_ADD; LE_ADD] THEN
-  DISCH_THEN (X_CHOOSE_THEN `p : bus` STRIP_ASSUME_TAC) THEN
-  EXISTS_TAC `p : bus` THEN
-  MP_TAC (SPECL [`x : bus`; `k + n : num`; `d : num`] bsub_exists) THEN
-  ASM_REWRITE_TAC [GSYM ADD_ASSOC; LE_REFL] THEN
-  DISCH_THEN (X_CHOOSE_THEN `q : bus` STRIP_ASSUME_TAC) THEN
-  EXISTS_TAC `q : bus` THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`; `j : num`; `m : num`; `y : bus`]
+       bsub_bappend_exists) THEN
   ASM_REWRITE_TAC [] THEN
-  MATCH_MP_TAC EQ_SYM THEN
-  ASM_REWRITE_TAC [GSYM bsub_all] THEN
-  MATCH_MP_TAC bsub_add THEN
-  ASM_REWRITE_TAC [ZERO_ADD] THEN
-  MATCH_MP_TAC bsub_add THEN
-  ASM_REWRITE_TAC []);;
+  STRIP_TAC THEN
+  MP_TAC (SPECL [`x : bus`; `0`; `j : num`; `p : bus`] bsub_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  REWRITE_TAC [bsub_skip_prefix] THEN
+  SUBGOAL_THEN `width y = m` ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `x : bus` THEN
+   EXISTS_TAC `j : num` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_CASES_TAC `k + n <= (m : num)` THENL
+  [ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC bsub_within_prefix THEN
+   ASM_REWRITE_TAC [];
+   ASM_REWRITE_TAC [bsub_def]]);;
 
-export_thm bsub_bappend_exists;;
+export_thm bsub_bsub;;
+
+let bsub_bsub_imp = prove
+ (`!x j m y k n z.
+     bsub x j m y /\
+     bsub y k n z ==>
+     bsub x (j + k) n z`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`; `j : num`; `m : num`; `y : bus`;
+        `k : num`; `n : num`; `z : bus`]
+       bsub_bsub) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC);;
+
+export_thm bsub_bsub_imp;;
 
 let bsub_bits_to_num = prove
  (`!x k n y t.
@@ -452,37 +541,64 @@ let bsub_bits_to_num = prove
 export_thm bsub_bits_to_num;;
 
 let wire_inj = prove
-  (`!x i w1 w2.
-      wire x i w1 /\ wire x i w2 ==>
-      w1 = w2`,
-   REPEAT GEN_TAC THEN
-   REWRITE_TAC [wire_def] THEN
-   STRIP_TAC THEN
-   MATCH_MP_TAC bwire_inj_imp THEN
-   MATCH_MP_TAC bsub_inj THEN
-   EXISTS_TAC `x : bus` THEN
-   EXISTS_TAC `i : num` THEN
-   EXISTS_TAC `1` THEN
-   ASM_REWRITE_TAC []);;
+ (`!x i w1 w2.
+     wire x i w1 /\ wire x i w2 ==>
+     w1 = w2`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [wire_def] THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC bwire_inj_imp THEN
+  MATCH_MP_TAC bsub_inj THEN
+  EXISTS_TAC `x : bus` THEN
+  EXISTS_TAC `i : num` THEN
+  EXISTS_TAC `1` THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm wire_inj;;
 
 let wire_exists = prove
-  (`!x i. i < width x ==> ?w. wire x i w`,
-   REPEAT STRIP_TAC THEN
-   MP_TAC (SPECL [`x : bus`; `i : num`; `1`] bsub_exists) THEN
-   ASM_REWRITE_TAC [GSYM ADD1; LE_SUC_LT] THEN
-   STRIP_TAC THEN
-   MP_TAC (SPECL [`x : bus`; `i : num`; `1`; `y : bus`] bsub_width) THEN
-   ASM_REWRITE_TAC [] THEN
-   STRIP_TAC THEN
-   MP_TAC (SPECL [`y : bus`] width_one) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
-   EXISTS_TAC `w : wire` THEN
-   ASM_REWRITE_TAC [wire_def]);;
+ (`!x i. i < width x ==> ?w. wire x i w`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`x : bus`; `i : num`; `1`] bsub_exists) THEN
+  ASM_REWRITE_TAC [GSYM ADD1; LE_SUC_LT] THEN
+  STRIP_TAC THEN
+  MP_TAC (SPECL [`x : bus`; `i : num`; `1`; `y : bus`] bsub_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  MP_TAC (SPECL [`y : bus`] width_one) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+  EXISTS_TAC `w : wire` THEN
+  ASM_REWRITE_TAC [wire_def]);;
 
 export_thm wire_exists;;
+
+let bsub_wire = prove
+ (`!x k n y i w.
+     bsub x k n y ==>
+     (wire y i w <=> i < n /\ wire x (k + i) w)`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [wire_def; ADD1; GSYM LE_SUC_LT] THEN
+  MATCH_MP_TAC bsub_bsub THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bsub_wire;;
+
+let bsub_wire_imp = prove
+ (`!x k n y i w.
+     bsub x k n y /\
+     wire y i w ==>
+     wire x (k + i) w`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`; `k : num`; `n : num`; `y : bus`;
+        `i : num`; `w : wire`]
+       bsub_wire) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC);;
+
+export_thm bsub_wire_imp;;
 
 let wire_bound = prove
   (`!x i w. wire x i w ==> i < width x`,
@@ -514,6 +630,24 @@ let wire_suc = prove
   REWRITE_TAC [bwire_width]);;
 
 export_thm wire_suc;;
+
+let bnil_wire = prove
+ (`!i w. ~wire bnil i w`,
+  REWRITE_TAC [wire_def; bnil_bsub; ONE; NOT_SUC]);;
+
+export_thm bnil_wire;;
+
+let bwire_wire = prove
+ (`!w i v. wire (bwire w) i v <=> i = 0 /\ v = w`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC
+    (LAND_CONV (RATOR_CONV (LAND_CONV (REWR_CONV (GSYM bappend_bnil))))) THEN
+  MP_TAC (SPEC `i : num` num_CASES) THEN
+  STRIP_TAC THENL
+  [ASM_REWRITE_TAC [wire_zero];
+   ASM_REWRITE_TAC [wire_suc; NOT_SUC; bnil_wire]]);;
+
+export_thm bwire_wire;;
 
 let wire_bits_to_num = prove
  (`!x i w t.

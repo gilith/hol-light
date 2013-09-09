@@ -38,6 +38,8 @@ let badder2_def = new_definition
      ?n.
        width x = n /\ width y = n /\
        width s = n /\ width c = n /\
+       bxor2 x y s /\ band2 x y c`;;
+
        !i xi yi si ci.
          wire x i xi /\ wire y i yi /\
          wire s i si /\ wire c i ci ==>
@@ -94,6 +96,15 @@ logfile "hardware-adder-thm";;
 (* ------------------------------------------------------------------------- *)
 
 (***
+let badder2_wire = prove
+ (`!x y s c i xi yi si ci.
+     badder2 x y s c /\
+     wire x i xi /\ wire y i yi /\
+     wire s i si /\ wire c i ci ==>
+     adder2 xi yi si ci`,
+
+export_thm badder2_wire;;
+
 let adder3_right_ground = prove
  (`!x y s c. adder2 x y s c ==> adder3 x y ground s c`,
   REPEAT GEN_TAC THEN

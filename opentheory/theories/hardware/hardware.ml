@@ -1,6 +1,11 @@
 (* ========================================================================= *)
 (* HARDWARE VERIFICATION                                                     *)
 (* Joe Leslie-Hurd                                                           *)
+(*                                                                           *)
+(* Modelling hardware in higher order logic in the Gordon style [1].         *)
+(*                                                                           *)
+(* 1. "Why higher order logic is a good formalism for specifying and         *)
+(*    verifying hardware", http://www.cl.cam.ac.uk/~mjcg/WhyHOL.pdf          *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
@@ -9,13 +14,6 @@
 
 extend_the_interpretation
   "opentheory/theories/hardware/hardware.int";;
-
-(* ------------------------------------------------------------------------- *)
-(* Modelling hardware in higher order logic in the Gordon style [1].         *)
-(*                                                                           *)
-(* 1. "Why higher order logic is a good formalism for specifying and         *)
-(*    verifying hardware", http://www.cl.cam.ac.uk/~mjcg/WhyHOL.pdf          *)
-(* ------------------------------------------------------------------------- *)
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of the hardware model.                                         *)
