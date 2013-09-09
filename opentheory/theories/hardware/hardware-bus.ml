@@ -444,6 +444,22 @@ let band2_bsub = prove
 
 export_thm band2_bsub;;
 
+let band2_right_bground = prove
+ (`!x n y.
+     width x = n /\ y = bground n ==>
+     band2 x (bground n) y`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [band2_def] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `n : num` THEN
+  ASM_REWRITE_TAC [bground_width; bground_wire] THEN
+  REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC and2_right_ground THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm band2_right_bground;;
+
 let bor2_width = prove
  (`!x y z.
      bor2 x y z ==>
@@ -541,6 +557,25 @@ let bor2_bsub = prove
 
 export_thm bor2_bsub;;
 
+let bor2_right_bground = prove
+ (`!x n y.
+     width x = n /\ y = x ==>
+     bor2 x (bground n) y`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bor2_def] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `n : num` THEN
+  ASM_REWRITE_TAC [bground_width; bground_wire] THEN
+  REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC or2_right_ground THEN
+  MATCH_MP_TAC wire_inj THEN
+  EXISTS_TAC `x : bus` THEN
+  EXISTS_TAC `i : num` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bor2_right_bground;;
+
 let bxor2_width = prove
  (`!x y z.
      bxor2 x y z ==>
@@ -637,6 +672,25 @@ let bxor2_bsub = prove
    ASM_REWRITE_TAC []]);;
 
 export_thm bxor2_bsub;;
+
+let bxor2_right_bground = prove
+ (`!x n y.
+     width x = n /\ y = x ==>
+     bxor2 x (bground n) y`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bxor2_def] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `n : num` THEN
+  ASM_REWRITE_TAC [bground_width; bground_wire] THEN
+  REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC xor2_right_ground THEN
+  MATCH_MP_TAC wire_inj THEN
+  EXISTS_TAC `x : bus` THEN
+  EXISTS_TAC `i : num` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bxor2_right_bground;;
 
 let bcase1_width = prove
  (`!s x y z.
@@ -1010,6 +1064,24 @@ let bor3_wire = prove
 
 export_thm bor3_wire;;
 
+let bor3_right_bground = prove
+ (`!x y n z.
+     width x = n /\ bor2 x y z ==>
+     bor3 x y (bground n) z`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bor3_def] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `z : bus` THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC bor2_right_bground THEN
+  ASM_REWRITE_TAC [] THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MATCH_MP_TAC bor2_width THEN
+  EXISTS_TAC `y : bus` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bor3_right_bground;;
+
 let bxor3_width = prove
  (`!w x y z.
      bxor3 w x y z ==>
@@ -1115,6 +1187,24 @@ let bxor3_wire = prove
   ASM_REWRITE_TAC []);;
 
 export_thm bxor3_wire;;
+
+let bxor3_right_bground = prove
+ (`!x y n z.
+     width x = n /\ bxor2 x y z ==>
+     bxor3 x y (bground n) z`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bxor3_def] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `z : bus` THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC bxor2_right_bground THEN
+  ASM_REWRITE_TAC [] THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MATCH_MP_TAC bxor2_width THEN
+  EXISTS_TAC `y : bus` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bxor3_right_bground;;
 
 let bmajority3_width = prove
  (`!w x y z.
@@ -1289,5 +1379,38 @@ let bmajority3_wire = prove
   ASM_REWRITE_TAC []);;
 
 export_thm bmajority3_wire;;
+
+let bmajority3_right_bground = prove
+ (`!x y n z.
+     width x = n /\ band2 x y z ==>
+     bmajority3 x y (bground n) z`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bmajority3_def] THEN
+  STRIP_TAC THEN
+  SUBGOAL_THEN `width y = n /\ width z = n` STRIP_ASSUME_TAC THENL
+  [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [band2_def] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  EXISTS_TAC `z : bus` THEN
+  EXISTS_TAC `bground n` THEN
+  EXISTS_TAC `bground n` THEN
+  ASM_REWRITE_TAC [] THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC band2_right_bground THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC band2_right_bground THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  MATCH_MP_TAC bor3_right_bground THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC bor2_right_bground THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bmajority3_right_bground;;
 
 logfile_end ();;
