@@ -36,27 +36,16 @@ export_thm adder3_def;;
 let badder2_def = new_definition
   `!x y s c.
      badder2 x y s c <=>
-     ?n.
-       width x = n /\
-       width y = n /\
-       width s = n /\
-       width c = n /\
-       bxor2 x y s /\
-       band2 x y c`;;
+     bxor2 x y s /\
+     band2 x y c`;;
 
 export_thm badder2_def;;
 
 let badder3_def = new_definition
   `!x y z s c.
      badder3 x y z s c <=>
-     ?n.
-       width x = n /\
-       width y = n /\
-       width z = n /\
-       width s = n /\
-       width c = n /\
-       bxor3 x y z s /\
-       bmajority3 x y z c`;;
+     bxor3 x y z s /\
+     bmajority3 x y z c`;;
 
 export_thm badder3_def;;
 
@@ -159,6 +148,7 @@ export_thm adder2_bit_to_num;;
 (* Bus adder devices.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 let badder2_width1 = prove
  (`!x y s c.
      badder2 x y s c ==>
@@ -426,7 +416,6 @@ let badder3_right_bground = prove
 
 export_thm badder3_right_bground;;
 
-(***
 let badder3_bits_to_num = prove
  (`!x y z s c t.
      badder3 x y z s c ==>

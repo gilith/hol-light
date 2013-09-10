@@ -396,7 +396,7 @@ let bsub_prefix = prove
 
 export_thm bsub_prefix;;
 
-let bsub_skip_prefix = prove
+let bsub_in_suffix = prove
  (`!x y k n z. bsub (bappend x y) (width x + k) n z <=> bsub y k n z`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [bsub_def; bappend_width; LE_ADD_LCANCEL; GSYM ADD_ASSOC] THEN
@@ -422,9 +422,9 @@ let bsub_skip_prefix = prove
   DISCH_THEN SUBST1_TAC THEN
   REWRITE_TAC [drop_append]);;
 
-export_thm bsub_skip_prefix;;
+export_thm bsub_in_suffix;;
 
-let bsub_within_prefix = prove
+let bsub_in_prefix = prove
  (`!x y k n z.
      k + n <= width x ==>
      (bsub (bappend x y) k n z <=> bsub x k n z)`,
@@ -446,7 +446,7 @@ let bsub_within_prefix = prove
    EXISTS_TAC `0` THEN
    ASM_REWRITE_TAC [];
    ALL_TAC] THEN
-  REWRITE_TAC [bsub_skip_prefix] THEN
+  REWRITE_TAC [bsub_in_suffix] THEN
   SUBGOAL_THEN `width b = n` (SUBST1_TAC o SYM) THENL
   [MATCH_MP_TAC bsub_width THEN
    EXISTS_TAC `x : bus` THEN
@@ -455,13 +455,13 @@ let bsub_within_prefix = prove
    ALL_TAC] THEN
   REWRITE_TAC [bsub_prefix]);;
 
-export_thm bsub_within_prefix;;
+export_thm bsub_in_prefix;;
 
 let bsub_suffix = prove
  (`!x y z. bsub (bappend x y) (width x) (width y) z <=> z = y`,
   REPEAT GEN_TAC THEN
   MP_TAC (SPECL [`x : bus`; `y : bus`; `0`; `width y`; `z : bus`]
-                bsub_skip_prefix) THEN
+                bsub_in_suffix) THEN
   REWRITE_TAC [ADD_0] THEN
   DISCH_THEN SUBST1_TAC THEN
   REWRITE_TAC [bsub_all]);;
@@ -482,7 +482,7 @@ let bsub_bsub = prove
   MP_TAC (SPECL [`x : bus`; `0`; `j : num`; `p : bus`] bsub_width) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN (SUBST1_TAC o SYM) THEN
-  REWRITE_TAC [bsub_skip_prefix] THEN
+  REWRITE_TAC [bsub_in_suffix] THEN
   SUBGOAL_THEN `width y = m` ASSUME_TAC THENL
   [MATCH_MP_TAC bsub_width THEN
    EXISTS_TAC `x : bus` THEN
@@ -492,7 +492,7 @@ let bsub_bsub = prove
   ASM_CASES_TAC `k + n <= (m : num)` THENL
   [ASM_REWRITE_TAC [] THEN
    MATCH_MP_TAC EQ_SYM THEN
-   MATCH_MP_TAC bsub_within_prefix THEN
+   MATCH_MP_TAC bsub_in_prefix THEN
    ASM_REWRITE_TAC [];
    ASM_REWRITE_TAC [bsub_def]]);;
 
@@ -626,7 +626,7 @@ let wire_suc = prove
   ONCE_REWRITE_TAC [ADD_SYM] THEN
   MP_TAC
     (SPECL [`bwire w`; `x : bus`; `i : num`; `1`; `bwire v`]
-     bsub_skip_prefix) THEN
+     bsub_in_suffix) THEN
   REWRITE_TAC [bwire_width]);;
 
 export_thm wire_suc;;
@@ -709,7 +709,7 @@ let bground_bsub = prove
   ONCE_REWRITE_TAC [bground_add] THEN
   MP_TAC
     (SPECL [`bground i`; `bground (k + d)`; `0`; `k : num`; `x : bus`]
-       bsub_skip_prefix) THEN
+       bsub_in_suffix) THEN
   REWRITE_TAC [bground_width; ADD_0] THEN
   DISCH_THEN SUBST1_TAC THEN
   REWRITE_TAC [bground_add] THEN
