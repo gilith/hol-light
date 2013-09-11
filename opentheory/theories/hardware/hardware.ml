@@ -1,5 +1,5 @@
 (* ========================================================================= *)
-(* HARDWARE VERIFICATION                                                     *)
+(* HARDWARE DEVICES                                                          *)
 (* Joe Leslie-Hurd                                                           *)
 (*                                                                           *)
 (* Modelling hardware in higher order logic in the Gordon style [1].         *)
@@ -9,7 +9,7 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for hardware verification.                                *)
+(* Interpretations for hardware devices.                                     *)
 (* ------------------------------------------------------------------------- *)
 
 extend_the_interpretation
@@ -28,25 +28,25 @@ loads "opentheory/theories/hardware/hardware-def.ml";;
 loads "opentheory/theories/hardware/hardware-thm.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Basic wire devices.                                                       *)
+(* Hardware wire devices.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/hardware/hardware-wire.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Basic bus devices.                                                        *)
+(* Hardware bus devices.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/hardware/hardware-bus.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Adder devices.                                                            *)
+(* Hardware adder devices.                                                   *)
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/hardware/hardware-adder.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Counter devices.                                                          *)
+(* Hardware counter devices.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
 (***

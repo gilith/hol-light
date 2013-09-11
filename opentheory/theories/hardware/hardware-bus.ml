@@ -1,17 +1,17 @@
 (* ========================================================================= *)
-(* BASIC BUS DEVICES                                                         *)
+(* HARDWARE BUS DEVICES                                                      *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Definition of bus devices.                                                *)
+(* Definition of hardware bus devices.                                       *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "hardware-bus-def";;
 
-(* ------------------------------------------------------------------------- *)
-(* Primitive bus devices.                                                    *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~ *)
+(* Primitive bus devices *)
+(* ~~~~~~~~~~~~~~~~~~~~~ *)
 
 let bdelay_def = new_definition
   `!x y.
@@ -99,9 +99,9 @@ let bcase1_def = new_definition
 
 export_thm bcase1_def;;
 
-(* ------------------------------------------------------------------------- *)
-(* Simple bus devices.                                                       *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~ *)
+(* Derived bus devices *)
+(* ~~~~~~~~~~~~~~~~~~~ *)
 
 let band3_def = new_definition
   `!w x y z.
@@ -147,9 +147,9 @@ export_thm bmajority3_def;;
 
 logfile "hardware-bus-thm";;
 
-(* ------------------------------------------------------------------------- *)
-(* Primitive bus devices.                                                    *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~~~ *)
+(* Primitive bus devices *)
+(* ~~~~~~~~~~~~~~~~~~~~~ *)
 
 let bdelay_width = prove
  (`!x y.
@@ -231,11 +231,13 @@ let bdelay_wire = prove
 
 export_thm bdelay_wire;;
 
-(***
 let bdelay_bnil = prove
  (`bdelay bnil bnil`,
-  REPEAT GEN_TAC THEN
-***)
+  REWRITE_TAC [bdelay_def; bnil_width; bnil_wire] THEN
+  EXISTS_TAC `0` THEN
+  REWRITE_TAC []);;
+
+export_thm bdelay_bnil;;
 
 let bdelay_bwire = prove
  (`!x y. bdelay (bwire x) (bwire y) <=> delay x y`,
@@ -256,13 +258,50 @@ let bdelay_bwire = prove
 
 export_thm bdelay_bwire;;
 
-(***
 let bdelay_bappend = prove
  (`!x1 x2 y1 y2.
      bdelay x1 y1 /\ bdelay x2 y2 ==>
      bdelay (bappend x1 x2) (bappend y1 y2)`,
   REPEAT GEN_TAC THEN
-***)
+  REWRITE_TAC [bdelay_def] THEN
+  ONCE_REWRITE_TAC [GSYM IMP_IMP] THEN
+  DISCH_THEN (X_CHOOSE_THEN `m : num` STRIP_ASSUME_TAC) THEN
+  DISCH_THEN (X_CHOOSE_THEN `n : num` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `m + n : num` THEN
+  ASM_REWRITE_TAC [bappend_width] THEN
+  REPEAT GEN_TAC THEN
+  ASM_CASES_TAC `i < (m : num)` THENL
+  [MP_TAC
+     (SPECL
+        [`x1 : bus`; `x2 : bus`; `i : num`; `xi : wire`]
+        wire_in_prefix) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+        [`y1 : bus`; `y2 : bus`; `i : num`; `yi : wire`]
+        wire_in_prefix) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   FIRST_X_ASSUM MATCH_ACCEPT_TAC;
+   POP_ASSUM
+     (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+      REWRITE_RULE [NOT_LT; LE_EXISTS]) THEN
+   MP_TAC
+     (SPECL
+        [`x1 : bus`; `x2 : bus`; `d : num`; `xi : wire`]
+        wire_in_suffix) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+        [`y1 : bus`; `y2 : bus`; `d : num`; `yi : wire`]
+        wire_in_suffix) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   FIRST_X_ASSUM MATCH_ACCEPT_TAC]);;
+
+export_thm bdelay_bappend;;
 
 let bdelay_bsub = prove
  (`!x y k n xs ys.
@@ -988,9 +1027,9 @@ let bcase1_bsub = prove
 
 export_thm bcase1_bsub;;
 
-(* ------------------------------------------------------------------------- *)
-(* Simple bus devices.                                                       *)
-(* ------------------------------------------------------------------------- *)
+(* ~~~~~~~~~~~~~~~~~~~ *)
+(* Derived bus devices *)
+(* ~~~~~~~~~~~~~~~~~~~ *)
 
 let band3_width = prove
  (`!w x y z.
@@ -1435,8 +1474,8 @@ let bmajority3_width = prove
    POP_ASSUM SUBST_VAR_TAC THEN
    MATCH_MP_TAC EQ_SYM THEN
    MATCH_MP_TAC band2_width_out THEN
-   EXISTS_TAC `w : bus` THEN   
-   EXISTS_TAC `y : bus` THEN   
+   EXISTS_TAC `w : bus` THEN
+   EXISTS_TAC `y : bus` THEN
    ASM_REWRITE_TAC [] THEN
    EXISTS_TAC `w : bus`;
    POP_ASSUM SUBST_VAR_TAC THEN

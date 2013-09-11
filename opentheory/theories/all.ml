@@ -154,7 +154,7 @@ loads "opentheory/theories/parser/parser.ml";;
 loads "opentheory/theories/char/char.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Hardware verification.                                                    *)
+(* Hardware devices.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/hardware/hardware.ml";;

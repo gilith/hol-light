@@ -573,6 +573,22 @@ let wire_exists = prove
 
 export_thm wire_exists;;
 
+let wire_in_prefix = prove
+ (`!x y i w. i < width x ==> (wire (bappend x y) i w <=> wire x i w)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [wire_def; GSYM LE_SUC_LT; ADD1] THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC bsub_in_prefix THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm wire_in_prefix;;
+
+let wire_in_suffix = prove
+ (`!x y i w. wire (bappend x y) (width x + i) w <=> wire y i w`,
+  REWRITE_TAC [wire_def; bsub_in_suffix]);;
+
+export_thm wire_in_suffix;;
+
 let bsub_wire = prove
  (`!x k n y i w.
      bsub x k n y ==>
