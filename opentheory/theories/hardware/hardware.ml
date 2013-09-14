@@ -54,25 +54,6 @@ loads "opentheory/theories/hardware/hardware-counter.ml";;
 ***)
 
 (***
-let badder2 = prove
- (`!x y s c t.
-     badder2 x y s c ==>
-     bits_to_num (bsignal x t) + bits_to_num (bsignal y t) =
-     bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t)`,
-  REPEAT STRIP_TAC THEN
-  MP_TAC (SPECL [`x : bus`; `y : bus`; `width x`; `s : bus`; `c : bus`]
-                badder3_right_bground) THEN
-  ASM_REWRITE_TAC [] THEN
-  STRIP_TAC THEN
-  MP_TAC
-    (SPECL
-       [`x : bus`; `y : bus`; `bground (width x)`; `s : bus`; `c : bus`]
-       badder3) THEN
-  ASM_REWRITE_TAC [bits_to_num_bsignal_bground; ADD_0] THEN
-  DISCH_THEN MATCH_ACCEPT_TAC);;
-
-export_thm badder2;;
-
 let badder4 = prove
  (`!w x y z s c t.
      badder4 w x y z s c ==>

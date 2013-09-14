@@ -148,7 +148,6 @@ export_thm adder2_bit_to_num;;
 (* Bus adder devices *)
 (* ~~~~~~~~~~~~~~~~~ *)
 
-(***
 let badder2_width = prove
  (`!x y s c.
      badder2 x y s c ==>
@@ -160,500 +159,77 @@ let badder2_width = prove
   REPEAT GEN_TAC THEN
   REWRITE_TAC [badder2_def] THEN
   STRIP_TAC THEN
-  MP_TAC (SPECL [`w : bus`; `x : bus`; `wx : bus`] band2_width) THEN
+  MP_TAC (SPECL [`x : bus`; `y : bus`; `s : bus`] bxor2_width) THEN
   ASM_REWRITE_TAC [] THEN
   STRIP_TAC THEN
   EXISTS_TAC `n : num` THEN
   ASM_REWRITE_TAC [] THEN
   FIRST_X_ASSUM SUBST_VAR_TAC THEN
-  MP_TAC (SPECL [`wx : bus`; `y : bus`; `z : bus`] band2_width) THEN
+  MP_TAC (SPECL [`x : bus`; `y : bus`; `c : bus`] band2_width) THEN
   ASM_REWRITE_TAC [] THEN
   STRIP_TAC THEN
   ASM_REWRITE_TAC []);;
 
 export_thm badder2_width;;
 
-let badder2_width_out = prove
- (`!w x y z n.
-     badder2 w x y z /\ width w = n ==>
-     width z = n`,
+let badder2_width_out1 = prove
+ (`!x y s c n.
+     badder2 x y s c /\ width x = n ==>
+     width s = n`,
   REPEAT STRIP_TAC THEN
   FIRST_X_ASSUM SUBST_VAR_TAC THEN
-  MP_TAC (SPECL [`w : bus`; `x : bus`; `y : bus`; `z : bus`] badder2_width) THEN
+  MP_TAC
+    (SPECL
+      [`x : bus`; `y : bus`; `s : bus`; `c : bus`] badder2_width) THEN
   ASM_REWRITE_TAC [] THEN
   STRIP_TAC THEN
   ASM_REWRITE_TAC []);;
 
-export_thm badder2_width_out;;
+export_thm badder2_width_out1;;
+
+let badder2_width_out2 = prove
+ (`!x y s c n.
+     badder2 x y s c /\ width x = n ==>
+     width c = n`,
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MP_TAC
+    (SPECL
+      [`x : bus`; `y : bus`; `s : bus`; `c : bus`] badder2_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm badder2_width_out2;;
 
 let badder2_bnil = prove
  (`badder2 bnil bnil bnil bnil`,
-  REWRITE_TAC [badder2_def] THEN
-  EXISTS_TAC `bnil` THEN
-  REWRITE_TAC [band2_bnil]);;
+  REWRITE_TAC [badder2_def; bxor2_bnil; band2_bnil]);;
 
 export_thm badder2_bnil;;
-
-let badder2_bwire = prove
- (`!w x y z.
-     badder2 (bwire w) (bwire x) (bwire y) (bwire z) <=>
-     adder2 w x y z`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder2_def; adder2_def] THEN
-  REVERSE_TAC EQ_TAC THENL
-  [STRIP_TAC THEN
-   EXISTS_TAC `bwire wx` THEN
-   ASM_REWRITE_TAC [band2_bwire];
-   ALL_TAC] THEN
-  DISCH_THEN (X_CHOOSE_THEN `bwx : bus` STRIP_ASSUME_TAC) THEN
-  SUBGOAL_THEN `width bwx = 1`
-    (X_CHOOSE_THEN `wx : wire` SUBST_VAR_TAC o
-     REWRITE_RULE [width_one]) THENL
-  [MATCH_MP_TAC EQ_TRANS THEN
-   EXISTS_TAC `width (bwire w)` THEN
-   CONJ_TAC THENL
-   [MATCH_MP_TAC band2_width_out THEN
-    EXISTS_TAC `bwire w` THEN
-    EXISTS_TAC `bwire x` THEN
-    ASM_REWRITE_TAC [];
-    REWRITE_TAC [bwire_width]];
-   ALL_TAC] THEN
-  EXISTS_TAC `wx : wire` THEN
-  ASM_REWRITE_TAC [GSYM band2_bwire]);;
-
-export_thm badder2_bwire;;
-
-let badder2_bappend = prove
- (`!w1 w2 x1 x2 y1 y2 z1 z2.
-     badder2 w1 x1 y1 z1 /\ badder2 w2 x2 y2 z2 ==>
-     badder2 (bappend w1 w2) (bappend x1 x2) (bappend y1 y2) (bappend z1 z2)`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder2_def] THEN
-  ONCE_REWRITE_TAC [GSYM IMP_IMP] THEN
-  DISCH_THEN (X_CHOOSE_THEN `wx1 : bus` STRIP_ASSUME_TAC) THEN
-  DISCH_THEN (X_CHOOSE_THEN `wx2 : bus` STRIP_ASSUME_TAC) THEN
-  EXISTS_TAC `bappend wx1 wx2` THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC band2_bappend THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  MATCH_MP_TAC band2_bappend THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm badder2_bappend;;
-
-let badder2_bsub = prove
- (`!w x y z k n ws xs ys zs.
-     badder2 w x y z /\
-     bsub w k n ws /\
-     bsub x k n xs /\
-     bsub y k n ys /\
-     bsub z k n zs ==>
-     badder2 ws xs ys zs`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder2_def] THEN
-  STRIP_TAC THEN
-  MP_TAC (SPECL [`wx : bus`; `k : num`; `n : num`] bsub_exists) THEN
-  ANTS_TAC THENL
-  [MP_TAC
-     (SPECL
-        [`w : bus`; `x : bus`; `wx : bus`; `width w`]
-        band2_width_out) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN SUBST1_TAC THEN
-   MATCH_MP_TAC bsub_bound THEN
-   EXISTS_TAC `ws : bus` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  DISCH_THEN (X_CHOOSE_THEN `wxs : bus` STRIP_ASSUME_TAC) THEN
-  EXISTS_TAC `wxs : bus` THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC band2_bsub THEN
-   EXISTS_TAC `w : bus` THEN
-   EXISTS_TAC `x : bus` THEN
-   EXISTS_TAC `wx : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   EXISTS_TAC `n : num` THEN
-   ASM_REWRITE_TAC [];
-   MATCH_MP_TAC band2_bsub THEN
-   EXISTS_TAC `wx : bus` THEN
-   EXISTS_TAC `y : bus` THEN
-   EXISTS_TAC `z : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   EXISTS_TAC `n : num` THEN
-   ASM_REWRITE_TAC []]);;
-
-export_thm badder2_bsub;;
-
-let badder2_wire = prove
- (`!w x y z i wi xi yi zi.
-     badder2 w x y z /\
-     wire w i wi /\ wire x i xi /\ wire y i yi /\ wire z i zi ==>
-     adder2 wi xi yi zi`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [wire_def; GSYM badder2_bwire] THEN
-  STRIP_TAC THEN
-  MATCH_MP_TAC badder2_bsub THEN
-  EXISTS_TAC `w : bus` THEN
-  EXISTS_TAC `x : bus` THEN
-  EXISTS_TAC `y : bus` THEN
-  EXISTS_TAC `z : bus` THEN
-  EXISTS_TAC `i : num` THEN
-  EXISTS_TAC `1` THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm badder2_wire;;
-
-let badder2_bappend_bwire = prove
- (`!wh wt xh xt yh yt zh zt.
-     badder2
-       (bappend (bwire wh) wt)
-       (bappend (bwire xh) xt)
-       (bappend (bwire yh) yt)
-       (bappend (bwire zh) zt) <=>
-     adder2 wh xh yh zh /\ badder2 wt xt yt zt`,
-  REPEAT GEN_TAC THEN
-  REVERSE_TAC EQ_TAC THENL
-  [REWRITE_TAC [GSYM badder2_bwire] THEN
-   MATCH_ACCEPT_TAC badder2_bappend;
-   ALL_TAC] THEN
-  STRIP_TAC THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC badder2_wire THEN
-   EXISTS_TAC `bappend (bwire wh) wt` THEN
-   EXISTS_TAC `bappend (bwire xh) xt` THEN
-   EXISTS_TAC `bappend (bwire yh) yt` THEN
-   EXISTS_TAC `bappend (bwire zh) zt` THEN
-   EXISTS_TAC `0` THEN
-   ASM_REWRITE_TAC [wire_zero];
-   ALL_TAC] THEN
-  MP_TAC
-    (SPECL
-       [`bappend (bwire wh) wt`;
-        `bappend (bwire xh) xt`;
-        `bappend (bwire yh) yt`;
-        `bappend (bwire zh) zt`]
-       badder2_width) THEN
-  ASM_REWRITE_TAC [bappend_width; bwire_width; ONE; SUC_ADD; ZERO_ADD] THEN
-  DISCH_THEN (X_CHOOSE_THEN `m : num` MP_TAC) THEN
-  MP_TAC (SPEC `m : num` num_CASES) THEN
-  DISCH_THEN
-    (DISJ_CASES_THEN2
-       SUBST1_TAC
-       (X_CHOOSE_THEN `n : num` SUBST1_TAC)) THENL
-  [REWRITE_TAC [NOT_SUC];
-   ALL_TAC] THEN
-  REWRITE_TAC [SUC_INJ] THEN
-  STRIP_TAC THEN
-  MATCH_MP_TAC badder2_bsub THEN
-  EXISTS_TAC `bappend (bwire wh) wt` THEN
-  EXISTS_TAC `bappend (bwire xh) xt` THEN
-  EXISTS_TAC `bappend (bwire yh) yt` THEN
-  EXISTS_TAC `bappend (bwire zh) zt` THEN
-  EXISTS_TAC `1` THEN
-  EXISTS_TAC `n : num` THEN
-  ASM_REWRITE_TAC [CONJ_ASSOC] THEN
-  REVERSE_TAC CONJ_TAC THENL
-  [POP_ASSUM (SUBST1_TAC o SYM) THEN
-   SUBGOAL_THEN `width (bwire zh) = 1` (SUBST1_TAC o SYM) THENL
-   [REWRITE_TAC [bwire_width];
-    REWRITE_TAC [bsub_suffix]];
-   ALL_TAC] THEN
-  POP_ASSUM (K ALL_TAC) THEN
-  REVERSE_TAC CONJ_TAC THENL
-  [POP_ASSUM (SUBST1_TAC o SYM) THEN
-   SUBGOAL_THEN `width (bwire yh) = 1` (SUBST1_TAC o SYM) THENL
-   [REWRITE_TAC [bwire_width];
-    REWRITE_TAC [bsub_suffix]];
-   ALL_TAC] THEN
-  POP_ASSUM (K ALL_TAC) THEN
-  REVERSE_TAC CONJ_TAC THENL
-  [POP_ASSUM (SUBST1_TAC o SYM) THEN
-   SUBGOAL_THEN `width (bwire xh) = 1` (SUBST1_TAC o SYM) THENL
-   [REWRITE_TAC [bwire_width];
-    REWRITE_TAC [bsub_suffix]];
-   ALL_TAC] THEN
-  POP_ASSUM (K ALL_TAC) THEN
-  POP_ASSUM (SUBST1_TAC o SYM) THEN
-  SUBGOAL_THEN `width (bwire wh) = 1` (SUBST1_TAC o SYM) THENL
-  [REWRITE_TAC [bwire_width];
-   REWRITE_TAC [bsub_suffix]]);;
-
-export_thm badder2_bappend_bwire;;
-
-let badder3_width = prove
- (`!w x y z.
-     badder3 w x y z ==>
-     ?n.
-       width w = n /\
-       width x = n /\
-       width y = n /\
-       width z = n`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder3_def] THEN
-  STRIP_TAC THEN
-  MP_TAC (SPECL [`w : bus`; `x : bus`; `wx : bus`] band2_width) THEN
-  ASM_REWRITE_TAC [] THEN
-  STRIP_TAC THEN
-  EXISTS_TAC `n : num` THEN
-  ASM_REWRITE_TAC [] THEN
-  FIRST_X_ASSUM SUBST_VAR_TAC THEN
-  MP_TAC (SPECL [`wx : bus`; `y : bus`; `z : bus`] band2_width) THEN
-  ASM_REWRITE_TAC [] THEN
-  STRIP_TAC THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm badder3_width;;
-
-let badder3_width_out = prove
- (`!w x y z n.
-     badder3 w x y z /\ width w = n ==>
-     width z = n`,
-  REPEAT STRIP_TAC THEN
-  FIRST_X_ASSUM SUBST_VAR_TAC THEN
-  MP_TAC (SPECL [`w : bus`; `x : bus`; `y : bus`; `z : bus`] badder3_width) THEN
-  ASM_REWRITE_TAC [] THEN
-  STRIP_TAC THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm badder3_width_out;;
-
-let badder3_bnil = prove
- (`badder3 bnil bnil bnil bnil`,
-  REWRITE_TAC [badder3_def] THEN
-  EXISTS_TAC `bnil` THEN
-  REWRITE_TAC [band2_bnil]);;
-
-export_thm badder3_bnil;;
-
-let badder3_bwire = prove
- (`!w x y z.
-     badder3 (bwire w) (bwire x) (bwire y) (bwire z) <=>
-     adder3 w x y z`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder3_def; adder3_def] THEN
-  REVERSE_TAC EQ_TAC THENL
-  [STRIP_TAC THEN
-   EXISTS_TAC `bwire wx` THEN
-   ASM_REWRITE_TAC [band2_bwire];
-   ALL_TAC] THEN
-  DISCH_THEN (X_CHOOSE_THEN `bwx : bus` STRIP_ASSUME_TAC) THEN
-  SUBGOAL_THEN `width bwx = 1`
-    (X_CHOOSE_THEN `wx : wire` SUBST_VAR_TAC o
-     REWRITE_RULE [width_one]) THENL
-  [MATCH_MP_TAC EQ_TRANS THEN
-   EXISTS_TAC `width (bwire w)` THEN
-   CONJ_TAC THENL
-   [MATCH_MP_TAC band2_width_out THEN
-    EXISTS_TAC `bwire w` THEN
-    EXISTS_TAC `bwire x` THEN
-    ASM_REWRITE_TAC [];
-    REWRITE_TAC [bwire_width]];
-   ALL_TAC] THEN
-  EXISTS_TAC `wx : wire` THEN
-  ASM_REWRITE_TAC [GSYM band2_bwire]);;
-
-export_thm badder3_bwire;;
-
-let badder3_bappend = prove
- (`!w1 w2 x1 x2 y1 y2 z1 z2.
-     badder3 w1 x1 y1 z1 /\ badder3 w2 x2 y2 z2 ==>
-     badder3 (bappend w1 w2) (bappend x1 x2) (bappend y1 y2) (bappend z1 z2)`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder3_def] THEN
-  ONCE_REWRITE_TAC [GSYM IMP_IMP] THEN
-  DISCH_THEN (X_CHOOSE_THEN `wx1 : bus` STRIP_ASSUME_TAC) THEN
-  DISCH_THEN (X_CHOOSE_THEN `wx2 : bus` STRIP_ASSUME_TAC) THEN
-  EXISTS_TAC `bappend wx1 wx2` THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC band2_bappend THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  MATCH_MP_TAC band2_bappend THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm badder3_bappend;;
-
-let badder3_bsub = prove
- (`!w x y z k n ws xs ys zs.
-     badder3 w x y z /\
-     bsub w k n ws /\
-     bsub x k n xs /\
-     bsub y k n ys /\
-     bsub z k n zs ==>
-     badder3 ws xs ys zs`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder3_def] THEN
-  STRIP_TAC THEN
-  MP_TAC (SPECL [`wx : bus`; `k : num`; `n : num`] bsub_exists) THEN
-  ANTS_TAC THENL
-  [MP_TAC
-     (SPECL
-        [`w : bus`; `x : bus`; `wx : bus`; `width w`]
-        band2_width_out) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN SUBST1_TAC THEN
-   MATCH_MP_TAC bsub_bound THEN
-   EXISTS_TAC `ws : bus` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  DISCH_THEN (X_CHOOSE_THEN `wxs : bus` STRIP_ASSUME_TAC) THEN
-  EXISTS_TAC `wxs : bus` THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC band2_bsub THEN
-   EXISTS_TAC `w : bus` THEN
-   EXISTS_TAC `x : bus` THEN
-   EXISTS_TAC `wx : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   EXISTS_TAC `n : num` THEN
-   ASM_REWRITE_TAC [];
-   MATCH_MP_TAC band2_bsub THEN
-   EXISTS_TAC `wx : bus` THEN
-   EXISTS_TAC `y : bus` THEN
-   EXISTS_TAC `z : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   EXISTS_TAC `n : num` THEN
-   ASM_REWRITE_TAC []]);;
-
-export_thm badder3_bsub;;
-
-let badder3_wire = prove
- (`!w x y z i wi xi yi zi.
-     badder3 w x y z /\
-     wire w i wi /\ wire x i xi /\ wire y i yi /\ wire z i zi ==>
-     adder3 wi xi yi zi`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [wire_def; GSYM badder3_bwire] THEN
-  STRIP_TAC THEN
-  MATCH_MP_TAC badder3_bsub THEN
-  EXISTS_TAC `w : bus` THEN
-  EXISTS_TAC `x : bus` THEN
-  EXISTS_TAC `y : bus` THEN
-  EXISTS_TAC `z : bus` THEN
-  EXISTS_TAC `i : num` THEN
-  EXISTS_TAC `1` THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm badder3_wire;;
-
-let badder3_bappend_bwire = prove
- (`!wh wt xh xt yh yt zh zt.
-     badder3
-       (bappend (bwire wh) wt)
-       (bappend (bwire xh) xt)
-       (bappend (bwire yh) yt)
-       (bappend (bwire zh) zt) <=>
-     adder3 wh xh yh zh /\ badder3 wt xt yt zt`,
-  REPEAT GEN_TAC THEN
-  REVERSE_TAC EQ_TAC THENL
-  [REWRITE_TAC [GSYM badder3_bwire] THEN
-   MATCH_ACCEPT_TAC badder3_bappend;
-   ALL_TAC] THEN
-  STRIP_TAC THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC badder3_wire THEN
-   EXISTS_TAC `bappend (bwire wh) wt` THEN
-   EXISTS_TAC `bappend (bwire xh) xt` THEN
-   EXISTS_TAC `bappend (bwire yh) yt` THEN
-   EXISTS_TAC `bappend (bwire zh) zt` THEN
-   EXISTS_TAC `0` THEN
-   ASM_REWRITE_TAC [wire_zero];
-   ALL_TAC] THEN
-  MP_TAC
-    (SPECL
-       [`bappend (bwire wh) wt`;
-        `bappend (bwire xh) xt`;
-        `bappend (bwire yh) yt`;
-        `bappend (bwire zh) zt`]
-       badder3_width) THEN
-  ASM_REWRITE_TAC [bappend_width; bwire_width; ONE; SUC_ADD; ZERO_ADD] THEN
-  DISCH_THEN (X_CHOOSE_THEN `m : num` MP_TAC) THEN
-  MP_TAC (SPEC `m : num` num_CASES) THEN
-  DISCH_THEN
-    (DISJ_CASES_THEN2
-       SUBST1_TAC
-       (X_CHOOSE_THEN `n : num` SUBST1_TAC)) THENL
-  [REWRITE_TAC [NOT_SUC];
-   ALL_TAC] THEN
-  REWRITE_TAC [SUC_INJ] THEN
-  STRIP_TAC THEN
-  MATCH_MP_TAC badder3_bsub THEN
-  EXISTS_TAC `bappend (bwire wh) wt` THEN
-  EXISTS_TAC `bappend (bwire xh) xt` THEN
-  EXISTS_TAC `bappend (bwire yh) yt` THEN
-  EXISTS_TAC `bappend (bwire zh) zt` THEN
-  EXISTS_TAC `1` THEN
-  EXISTS_TAC `n : num` THEN
-  ASM_REWRITE_TAC [CONJ_ASSOC] THEN
-  REVERSE_TAC CONJ_TAC THENL
-  [POP_ASSUM (SUBST1_TAC o SYM) THEN
-   SUBGOAL_THEN `width (bwire zh) = 1` (SUBST1_TAC o SYM) THENL
-   [REWRITE_TAC [bwire_width];
-    REWRITE_TAC [bsub_suffix]];
-   ALL_TAC] THEN
-  POP_ASSUM (K ALL_TAC) THEN
-  REVERSE_TAC CONJ_TAC THENL
-  [POP_ASSUM (SUBST1_TAC o SYM) THEN
-   SUBGOAL_THEN `width (bwire yh) = 1` (SUBST1_TAC o SYM) THENL
-   [REWRITE_TAC [bwire_width];
-    REWRITE_TAC [bsub_suffix]];
-   ALL_TAC] THEN
-  POP_ASSUM (K ALL_TAC) THEN
-  REVERSE_TAC CONJ_TAC THENL
-  [POP_ASSUM (SUBST1_TAC o SYM) THEN
-   SUBGOAL_THEN `width (bwire xh) = 1` (SUBST1_TAC o SYM) THENL
-   [REWRITE_TAC [bwire_width];
-    REWRITE_TAC [bsub_suffix]];
-   ALL_TAC] THEN
-  POP_ASSUM (K ALL_TAC) THEN
-  POP_ASSUM (SUBST1_TAC o SYM) THEN
-  SUBGOAL_THEN `width (bwire wh) = 1` (SUBST1_TAC o SYM) THENL
-  [REWRITE_TAC [bwire_width];
-   REWRITE_TAC [bsub_suffix]]);;
-
-export_thm badder3_bappend_bwire;;
-
-let badder2_width1 = prove
- (`!x y s c.
-     badder2 x y s c ==>
-     width s = width x`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder2_def] THEN
-  STRIP_TAC THEN
-  MATCH_MP_TAC bxor2_width THEN
-  EXISTS_TAC `y : bus` THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm badder2_width1;;
-
-let badder2_width2 = prove
- (`!x y s c.
-     badder2 x y s c ==>
-     width c = width x`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder2_def] THEN
-  STRIP_TAC THEN
-  MATCH_MP_TAC band2_width THEN
-  EXISTS_TAC `y : bus` THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm badder2_width2;;
 
 let badder2_bwire = prove
  (`!x y s c.
      badder2 (bwire x) (bwire y) (bwire s) (bwire c) <=>
      adder2 x y s c`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder2_def; adder2_def] THEN
-  REVERSE_TAC EQ_TAC THENL
-  [STRIP_TAC THEN
-   EXISTS_TAC `1` THEN
-   ASM_REWRITE_TAC [bwire_width; bxor2_bwire; band2_bwire];
-   ALL_TAC] THEN
-  STRIP_TAC THEN
-  ASM_REWRITE_TAC [GSYM bxor2_bwire; GSYM band2_bwire]);;
+  REWRITE_TAC [badder2_def; adder2_def; bxor2_bwire; band2_bwire]);;
 
 export_thm badder2_bwire;;
+
+let badder2_bappend = prove
+ (`!x1 x2 y1 y2 s1 s2 c1 c2.
+     badder2 x1 y1 s1 c1 /\ badder2 x2 y2 s2 c2 ==>
+     badder2 (bappend x1 x2) (bappend y1 y2) (bappend s1 s2) (bappend c1 c2)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [badder2_def] THEN
+  STRIP_TAC THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC bxor2_bappend THEN
+   ASM_REWRITE_TAC [];
+   MATCH_MP_TAC band2_bappend THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm badder2_bappend;;
 
 let badder2_bsub = prove
  (`!x y s c k n xs ys ss cs.
@@ -665,34 +241,7 @@ let badder2_bsub = prove
      badder2 xs ys ss cs`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [badder2_def] THEN
-  ONCE_REWRITE_TAC [GSYM IMP_IMP] THEN
-  DISCH_THEN (X_CHOOSE_THEN `m : num` STRIP_ASSUME_TAC) THEN
   STRIP_TAC THEN
-  EXISTS_TAC `n : num` THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `x : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `y : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `s : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `c : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
   CONJ_TAC THENL
   [MATCH_MP_TAC bxor2_bsub THEN
    EXISTS_TAC `x : bus` THEN
@@ -714,8 +263,7 @@ export_thm badder2_bsub;;
 let badder2_wire = prove
  (`!x y s c i xi yi si ci.
      badder2 x y s c /\
-     wire x i xi /\ wire y i yi /\
-     wire s i si /\ wire c i ci ==>
+     wire x i xi /\ wire y i yi /\ wire s i si /\ wire c i ci ==>
      adder2 xi yi si ci`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [wire_def; GSYM badder2_bwire] THEN
@@ -731,49 +279,179 @@ let badder2_wire = prove
 
 export_thm badder2_wire;;
 
-let badder3_width1 = prove
+let badder2_bappend_bwire = prove
+ (`!xh xt yh yt sh st ch ct.
+     badder2
+       (bappend (bwire xh) xt)
+       (bappend (bwire yh) yt)
+       (bappend (bwire sh) st)
+       (bappend (bwire ch) ct) <=>
+     adder2 xh yh sh ch /\ badder2 xt yt st ct`,
+  REPEAT GEN_TAC THEN
+  REVERSE_TAC EQ_TAC THENL
+  [REWRITE_TAC [GSYM badder2_bwire] THEN
+   MATCH_ACCEPT_TAC badder2_bappend;
+   ALL_TAC] THEN
+  STRIP_TAC THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC badder2_wire THEN
+   EXISTS_TAC `bappend (bwire xh) xt` THEN
+   EXISTS_TAC `bappend (bwire yh) yt` THEN
+   EXISTS_TAC `bappend (bwire sh) st` THEN
+   EXISTS_TAC `bappend (bwire ch) ct` THEN
+   EXISTS_TAC `0` THEN
+   ASM_REWRITE_TAC [wire_zero];
+   ALL_TAC] THEN
+  MP_TAC
+    (SPECL
+       [`bappend (bwire xh) xt`;
+        `bappend (bwire yh) yt`;
+        `bappend (bwire sh) st`;
+        `bappend (bwire ch) ct`]
+       badder2_width) THEN
+  ASM_REWRITE_TAC [bappend_width; bwire_width; ONE; SUC_ADD; ZERO_ADD] THEN
+  DISCH_THEN (X_CHOOSE_THEN `m : num` MP_TAC) THEN
+  MP_TAC (SPEC `m : num` num_CASES) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2
+       SUBST1_TAC
+       (X_CHOOSE_THEN `n : num` SUBST1_TAC)) THENL
+  [REWRITE_TAC [NOT_SUC];
+   ALL_TAC] THEN
+  REWRITE_TAC [SUC_INJ] THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC badder2_bsub THEN
+  EXISTS_TAC `bappend (bwire xh) xt` THEN
+  EXISTS_TAC `bappend (bwire yh) yt` THEN
+  EXISTS_TAC `bappend (bwire sh) st` THEN
+  EXISTS_TAC `bappend (bwire ch) ct` THEN
+  EXISTS_TAC `1` THEN
+  EXISTS_TAC `n : num` THEN
+  ASM_REWRITE_TAC [CONJ_ASSOC] THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [POP_ASSUM (SUBST1_TAC o SYM) THEN
+   SUBGOAL_THEN `width (bwire ch) = 1` (SUBST1_TAC o SYM) THENL
+   [REWRITE_TAC [bwire_width];
+    REWRITE_TAC [bsub_suffix]];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [POP_ASSUM (SUBST1_TAC o SYM) THEN
+   SUBGOAL_THEN `width (bwire sh) = 1` (SUBST1_TAC o SYM) THENL
+   [REWRITE_TAC [bwire_width];
+    REWRITE_TAC [bsub_suffix]];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [POP_ASSUM (SUBST1_TAC o SYM) THEN
+   SUBGOAL_THEN `width (bwire yh) = 1` (SUBST1_TAC o SYM) THENL
+   [REWRITE_TAC [bwire_width];
+    REWRITE_TAC [bsub_suffix]];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (SUBST1_TAC o SYM) THEN
+  SUBGOAL_THEN `width (bwire xh) = 1` (SUBST1_TAC o SYM) THENL
+  [REWRITE_TAC [bwire_width];
+   REWRITE_TAC [bsub_suffix]]);;
+
+export_thm badder2_bappend_bwire;;
+
+let badder3_width = prove
  (`!x y z s c.
      badder3 x y z s c ==>
-     width s = width x`,
+     ?n.
+       width x = n /\
+       width y = n /\
+       width z = n /\
+       width s = n /\
+       width c = n`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [badder3_def] THEN
   STRIP_TAC THEN
-  MATCH_MP_TAC bxor3_width THEN
-  EXISTS_TAC `y : bus` THEN
-  EXISTS_TAC `z : bus` THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm badder3_width1;;
-
-let badder3_width2 = prove
- (`!x y z s c.
-     badder3 x y z s c ==>
-     width c = width x`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder3_def] THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`; `y : bus`; `z : bus`; `s : bus`]
+       bxor3_width) THEN
+  ASM_REWRITE_TAC [] THEN
   STRIP_TAC THEN
-  MATCH_MP_TAC bmajority3_width THEN
-  EXISTS_TAC `y : bus` THEN
-  EXISTS_TAC `z : bus` THEN
+  EXISTS_TAC `n : num` THEN
+  ASM_REWRITE_TAC [] THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`; `y : bus`; `z : bus`; `c : bus`]
+       bmajority3_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
   ASM_REWRITE_TAC []);;
 
-export_thm badder3_width2;;
+export_thm badder3_width;;
+
+let badder3_width_out1 = prove
+ (`!x y z s c n.
+     badder3 x y z s c /\ width x = n ==>
+     width s = n`,
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MP_TAC
+    (SPECL
+      [`x : bus`; `y : bus`; `z : bus`; `s : bus`; `c : bus`]
+      badder3_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm badder3_width_out1;;
+
+let badder3_width_out2 = prove
+ (`!x y z s c n.
+     badder3 x y z s c /\ width x = n ==>
+     width c = n`,
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MP_TAC
+    (SPECL
+      [`x : bus`; `y : bus`; `z : bus`; `s : bus`; `c : bus`]
+      badder3_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm badder3_width_out2;;
+
+let badder3_bnil = prove
+ (`badder3 bnil bnil bnil bnil bnil`,
+  REWRITE_TAC [badder3_def; bxor3_bnil; bmajority3_bnil]);;
+
+export_thm badder3_bnil;;
 
 let badder3_bwire = prove
  (`!x y z s c.
      badder3 (bwire x) (bwire y) (bwire z) (bwire s) (bwire c) <=>
      adder3 x y z s c`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder3_def; adder3_def] THEN
-  REVERSE_TAC EQ_TAC THENL
-  [STRIP_TAC THEN
-   EXISTS_TAC `1` THEN
-   ASM_REWRITE_TAC [bwire_width; bxor3_bwire; bmajority3_bwire];
-   ALL_TAC] THEN
-  STRIP_TAC THEN
-  ASM_REWRITE_TAC [GSYM bxor3_bwire; GSYM bmajority3_bwire]);;
+  REWRITE_TAC [badder3_def; adder3_def; bxor3_bwire; bmajority3_bwire]);;
 
 export_thm badder3_bwire;;
+
+let badder3_bappend = prove
+ (`!x1 x2 y1 y2 z1 z2 s1 s2 c1 c2.
+     badder3 x1 y1 z1 s1 c1 /\ badder3 x2 y2 z2 s2 c2 ==>
+     badder3
+       (bappend x1 x2)
+       (bappend y1 y2)
+       (bappend z1 z2)
+       (bappend s1 s2)
+       (bappend c1 c2)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [badder3_def] THEN
+  STRIP_TAC THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC bxor3_bappend THEN
+   ASM_REWRITE_TAC [];
+   MATCH_MP_TAC bmajority3_bappend THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm badder3_bappend;;
 
 let badder3_bsub = prove
  (`!x y z s c k n xs ys zs ss cs.
@@ -786,40 +464,7 @@ let badder3_bsub = prove
      badder3 xs ys zs ss cs`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [badder3_def] THEN
-  ONCE_REWRITE_TAC [GSYM IMP_IMP] THEN
-  DISCH_THEN (X_CHOOSE_THEN `m : num` STRIP_ASSUME_TAC) THEN
   STRIP_TAC THEN
-  EXISTS_TAC `n : num` THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `x : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `y : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `z : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `s : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `c : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
   CONJ_TAC THENL
   [MATCH_MP_TAC bxor3_bsub THEN
    EXISTS_TAC `x : bus` THEN
@@ -861,17 +506,101 @@ let badder3_wire = prove
 
 export_thm badder3_wire;;
 
+let badder3_bappend_bwire = prove
+ (`!xh xt yh yt zh zt sh st ch ct.
+     badder3
+       (bappend (bwire xh) xt)
+       (bappend (bwire yh) yt)
+       (bappend (bwire zh) zt)
+       (bappend (bwire sh) st)
+       (bappend (bwire ch) ct) <=>
+     adder3 xh yh zh sh ch /\ badder3 xt yt zt st ct`,
+  REPEAT GEN_TAC THEN
+  REVERSE_TAC EQ_TAC THENL
+  [REWRITE_TAC [GSYM badder3_bwire] THEN
+   MATCH_ACCEPT_TAC badder3_bappend;
+   ALL_TAC] THEN
+  STRIP_TAC THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC badder3_wire THEN
+   EXISTS_TAC `bappend (bwire xh) xt` THEN
+   EXISTS_TAC `bappend (bwire yh) yt` THEN
+   EXISTS_TAC `bappend (bwire zh) zt` THEN
+   EXISTS_TAC `bappend (bwire sh) st` THEN
+   EXISTS_TAC `bappend (bwire ch) ct` THEN
+   EXISTS_TAC `0` THEN
+   ASM_REWRITE_TAC [wire_zero];
+   ALL_TAC] THEN
+  MP_TAC
+    (SPECL
+       [`bappend (bwire xh) xt`;
+        `bappend (bwire yh) yt`;
+        `bappend (bwire zh) zt`;
+        `bappend (bwire sh) st`;
+        `bappend (bwire ch) ct`]
+       badder3_width) THEN
+  ASM_REWRITE_TAC [bappend_width; bwire_width; ONE; SUC_ADD; ZERO_ADD] THEN
+  DISCH_THEN (X_CHOOSE_THEN `m : num` MP_TAC) THEN
+  MP_TAC (SPEC `m : num` num_CASES) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2
+       SUBST1_TAC
+       (X_CHOOSE_THEN `n : num` SUBST1_TAC)) THENL
+  [REWRITE_TAC [NOT_SUC];
+   ALL_TAC] THEN
+  REWRITE_TAC [SUC_INJ] THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC badder3_bsub THEN
+  EXISTS_TAC `bappend (bwire xh) xt` THEN
+  EXISTS_TAC `bappend (bwire yh) yt` THEN
+  EXISTS_TAC `bappend (bwire zh) zt` THEN
+  EXISTS_TAC `bappend (bwire sh) st` THEN
+  EXISTS_TAC `bappend (bwire ch) ct` THEN
+  EXISTS_TAC `1` THEN
+  EXISTS_TAC `n : num` THEN
+  ASM_REWRITE_TAC [CONJ_ASSOC] THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [POP_ASSUM (SUBST1_TAC o SYM) THEN
+   SUBGOAL_THEN `width (bwire ch) = 1` (SUBST1_TAC o SYM) THENL
+   [REWRITE_TAC [bwire_width];
+    REWRITE_TAC [bsub_suffix]];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [POP_ASSUM (SUBST1_TAC o SYM) THEN
+   SUBGOAL_THEN `width (bwire sh) = 1` (SUBST1_TAC o SYM) THENL
+   [REWRITE_TAC [bwire_width];
+    REWRITE_TAC [bsub_suffix]];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [POP_ASSUM (SUBST1_TAC o SYM) THEN
+   SUBGOAL_THEN `width (bwire zh) = 1` (SUBST1_TAC o SYM) THENL
+   [REWRITE_TAC [bwire_width];
+    REWRITE_TAC [bsub_suffix]];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [POP_ASSUM (SUBST1_TAC o SYM) THEN
+   SUBGOAL_THEN `width (bwire yh) = 1` (SUBST1_TAC o SYM) THENL
+   [REWRITE_TAC [bwire_width];
+    REWRITE_TAC [bsub_suffix]];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (SUBST1_TAC o SYM) THEN
+  SUBGOAL_THEN `width (bwire xh) = 1` (SUBST1_TAC o SYM) THENL
+  [REWRITE_TAC [bwire_width];
+   REWRITE_TAC [bsub_suffix]]);;
+
+export_thm badder3_bappend_bwire;;
+
 let badder3_right_bground = prove
  (`!x y n s c.
      width x = n /\ badder2 x y s c ==>
      badder3 x y (bground n) s c`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [badder2_def; badder3_def] THEN
-  CONV_TAC (REWR_CONV (GSYM IMP_IMP)) THEN
-  DISCH_THEN SUBST_VAR_TAC THEN
   STRIP_TAC THEN
-  EXISTS_TAC `n : num` THEN
-  ASM_REWRITE_TAC [bground_width] THEN
   CONJ_TAC THENL
   [MATCH_MP_TAC bxor3_right_bground THEN
    ASM_REWRITE_TAC [];
@@ -883,12 +612,21 @@ export_thm badder3_right_bground;;
 let badder3_bits_to_num = prove
  (`!x y z s c t.
      badder3 x y z s c ==>
-     bits_to_num (bsignal x t) + bits_to_num (bsignal y t) +
+     bits_to_num (bsignal x t) +
+     bits_to_num (bsignal y t) +
      bits_to_num (bsignal z t) =
-     bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t)`,
+     bits_to_num (bsignal s t) +
+     2 * bits_to_num (bsignal c t)`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [badder3_def; GSYM LEFT_FORALL_IMP_THM] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+      [`x : bus`; `y : bus`; `z : bus`; `s : bus`; `c : bus`]
+      badder3_width) THEN
+  ASM_REWRITE_TAC [GSYM LEFT_FORALL_IMP_THM] THEN
   GEN_TAC THEN
+  POP_ASSUM MP_TAC THEN
+  REWRITE_TAC [IMP_IMP] THEN
   SPEC_TAC (`c : bus`, `c : bus`) THEN
   SPEC_TAC (`s : bus`, `s : bus`) THEN
   SPEC_TAC (`z : bus`, `z : bus`) THEN
@@ -903,27 +641,30 @@ let badder3_bits_to_num = prove
    ALL_TAC] THEN
   REPEAT GEN_TAC THEN
   REWRITE_TAC [width_suc; GSYM IMP_IMP] THEN
+  STRIP_TAC THEN
   DISCH_THEN
     (X_CHOOSE_THEN `xh : wire`
       (X_CHOOSE_THEN `xt : bus`
-        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+        (CONJUNCTS_THEN2 SUBST_VAR_TAC ASSUME_TAC))) THEN
   DISCH_THEN
     (X_CHOOSE_THEN `yh : wire`
       (X_CHOOSE_THEN `yt : bus`
-        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+        (CONJUNCTS_THEN2 SUBST_VAR_TAC ASSUME_TAC))) THEN
   DISCH_THEN
     (X_CHOOSE_THEN `zh : wire`
       (X_CHOOSE_THEN `zt : bus`
-        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+        (CONJUNCTS_THEN2 SUBST_VAR_TAC ASSUME_TAC))) THEN
   DISCH_THEN
     (X_CHOOSE_THEN `sh : wire`
       (X_CHOOSE_THEN `st : bus`
-        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
+        (CONJUNCTS_THEN2 SUBST_VAR_TAC ASSUME_TAC))) THEN
   DISCH_THEN
     (X_CHOOSE_THEN `ch : wire`
       (X_CHOOSE_THEN `ct : bus`
-        (CONJUNCTS_THEN2 SUBST1_TAC ASSUME_TAC))) THEN
-  REPEAT STRIP_TAC THEN
+        (CONJUNCTS_THEN2 SUBST_VAR_TAC ASSUME_TAC))) THEN
+  FIRST_X_ASSUM
+    (STRIP_ASSUME_TAC o
+     CONV_RULE (REWR_CONV badder3_bappend_bwire)) THEN
   REWRITE_TAC [bappend_bwire_bsignal; bits_to_num_cons; bit_cons_def] THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
@@ -968,25 +709,32 @@ let badder3_bits_to_num = prove
   [REWRITE_TAC [EQ_ADD_LCANCEL; GSYM LEFT_ADD_DISTRIB] THEN
    AP_TERM_TAC THEN
    FIRST_X_ASSUM MATCH_MP_TAC THEN
-   ASM_REWRITE_TAC [] THEN
-   REPEAT STRIP_TAC THEN
-   FIRST_X_ASSUM (MATCH_MP_TAC o REWRITE_RULE [IMP_IMP]) THEN
-   EXISTS_TAC `SUC i` THEN
-   ASM_REWRITE_TAC [wire_suc];
+   ASM_REWRITE_TAC [];
    REWRITE_TAC [EQ_ADD_RCANCEL] THEN
-   FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
-   POP_ASSUM_LIST (K ALL_TAC) THEN
-   REWRITE_TAC [wire_zero] THEN
-   DISCH_THEN
-     (ASSUME_TAC o
-      REWRITE_RULE [] o
-      SPECL
-        [`xh : wire`; `yh : wire`; `zh : wire`;
-         `sh : wire`; `ch : wire`]) THEN
-   MATCH_MP_TAC adder3 THEN
+   MATCH_MP_TAC adder3_bit_to_num THEN
    ASM_REWRITE_TAC []]);;
 
 export_thm badder3_bits_to_num;;
-***)
+
+let badder2_bits_to_num = prove
+ (`!x y s c t.
+     badder2 x y s c ==>
+     bits_to_num (bsignal x t) +
+     bits_to_num (bsignal y t) =
+     bits_to_num (bsignal s t) +
+     2 * bits_to_num (bsignal c t)`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`x : bus`; `y : bus`; `width x`; `s : bus`; `c : bus`]
+                badder3_right_bground) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`; `y : bus`; `bground (width x)`; `s : bus`; `c : bus`]
+       badder3_bits_to_num) THEN
+  ASM_REWRITE_TAC [bground_bits_to_num; ADD_0] THEN
+  DISCH_THEN MATCH_ACCEPT_TAC);;
+
+export_thm badder2_bits_to_num;;
 
 logfile_end ();;
