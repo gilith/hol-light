@@ -50,27 +50,43 @@ let badder3_def = new_definition
 export_thm badder3_def;;
 
 (***
+(*       n+1  n  n-1 n-2  ...  2   1   0  *)
+(*  w =   -   X   X   X   ...  X   X   X  *)
+(*  x =   -   X   X   X   ...  X   X   X  *)
+(*  y =   -   X   X   X   ...  X   X   X  *)
+(*  z =   -   X   X   X   ...  X   X   X  *)
+(*  p =   -   X   X   X   ...  X   X   X  *)
+(*  q =   X   X   X   X   ...  X   X   -  *)
+(*  s =   X   X   X   X   ...  X   X   X  *)
+(*  c =   X   X   X   X   ...  X   X   -  *)
+
 let badder4_def = new_definition
   `!w x y z s c.
      badder4 w x y z s c <=>
-     ?n p q p0 p1 q1 z0 z1 s0 s1 s2 c0 c1.
+     ?n p q z0 z1 s0 s1 s2 c0 c1 p0 p1 q1 q2.
        width w = n + 1 /\
        width x = n + 1 /\
        width y = n + 1 /\
        width z = n + 1 /\
        width s = n + 2 /\
-       width c = n + 1 /\
-       badder3 w x y p q /\
-       bsub p 0 1 p0 /\
-       bsub z 0 1 z0 /\
-       badder2 p0 z0 s0 c0 /\
+       width c = n + 1
+       /\
+       wire z 0 z0 /\
+       bsub z 1 n z1 /\
+       wire s 0 s0 /\
+       bsub s 1 n s1 /\
+       wire s n s2 /\
+       wire c 0 c0 /\
+       bsub c 1 n c1 /\
+       wire p 0 p0 /\
        bsub p 1 n p1 /\
        bsub q 0 n q1 /\
-       bsub z 1 n z1 /\
+       wire q n q2
+       /\
+       badder3 w x y p q /\
+       badder2 p0 z0 s0 c0 /\
        badder3 p1 q1 z1 s1 c1 /\
-       bsub q n 1 s2 /\
-       s = bappend s0 (bappend s1 s2) /\
-       c = bappend c0 c1`;;
+       connect q2 s2`;;
 
 export_thm badder4_def;;
 ***)

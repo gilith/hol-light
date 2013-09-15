@@ -13,6 +13,13 @@ logfile "hardware-wire-def";;
 (* Primitive wire devices *)
 (* ~~~~~~~~~~~~~~~~~~~~~~ *)
 
+let connect_def = new_definition
+  `!x y.
+     connect x y <=>
+     !t. signal y t = signal x t`;;
+
+export_thm connect_def;;
+
 let delay_def = new_definition
   `!x y.
      delay x y <=>
@@ -98,6 +105,15 @@ logfile "hardware-wire-thm";;
 (* ~~~~~~~~~~~~~~~~~~~~~~ *)
 (* Primitive wire devices *)
 (* ~~~~~~~~~~~~~~~~~~~~~~ *)
+
+let connect_signal = prove
+  (`!x y t.
+      connect x y ==>
+      signal y t = signal x t`,
+   REPEAT GEN_TAC THEN
+   DISCH_THEN (MATCH_ACCEPT_TAC o REWRITE_RULE [connect_def]));;
+
+export_thm connect_signal;;
 
 let delay_signal = prove
   (`!x y t.
