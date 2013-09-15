@@ -104,11 +104,6 @@ let bsub_def = new_definition
 
 export_thm bsub_def;;
 
-let wire_def = new_definition
-  `!x i w. wire x i w <=> bsub x i 1 (bwire w)`;;
-
-export_thm wire_def;;
-
 (* ------------------------------------------------------------------------- *)
 (* Power and ground buses.                                                   *)
 (* ------------------------------------------------------------------------- *)
