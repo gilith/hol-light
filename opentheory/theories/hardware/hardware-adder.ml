@@ -49,7 +49,6 @@ let badder3_def = new_definition
 
 export_thm badder3_def;;
 
-(***
 (*       n+1  n  n-1 n-2  ...  2   1   0  *)
 (*  w =   -   X   X   X   ...  X   X   X  *)
 (*  x =   -   X   X   X   ...  X   X   X  *)
@@ -69,7 +68,9 @@ let badder4_def = new_definition
        width y = n + 1 /\
        width z = n + 1 /\
        width s = n + 2 /\
-       width c = n + 1
+       width c = n + 1 /\
+       width p = n + 1 /\
+       width q = n + 1
        /\
        wire z 0 z0 /\
        bsub z 1 n z1 /\
@@ -84,12 +85,11 @@ let badder4_def = new_definition
        wire q n q2
        /\
        badder3 w x y p q /\
-       badder2 p0 z0 s0 c0 /\
+       adder2 p0 z0 s0 c0 /\
        badder3 p1 q1 z1 s1 c1 /\
        connect q2 s2`;;
 
 export_thm badder4_def;;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of hardware adder devices.                                     *)
@@ -752,5 +752,208 @@ let badder2_bits_to_num = prove
   DISCH_THEN MATCH_ACCEPT_TAC);;
 
 export_thm badder2_bits_to_num;;
+
+(***
+let badder4_width = prove
+ (`!w x y z s c.
+     badder4 w x y z s c ==>
+     ?n.
+       width w = n + 1 /\
+       width x = n + 1 /\
+       width y = n + 1 /\
+       width z = n + 1 /\
+       width s = n + 2 /\
+       width c = n + 1`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [badder4_def] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `n : num` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm badder4_width;;
+
+let badder4_width_out1 = prove
+ (`!w x y z s c n.
+     badder4 w x y z s c /\ width w = n + 1 ==>
+     width s = n + 2`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+      [`w : bus`; `x : bus`; `y : bus`; `z : bus`; `s : bus`; `c : bus`]
+      badder4_width) THEN
+  ASM_REWRITE_TAC [EQ_ADD_RCANCEL] THEN
+  DISCH_THEN (X_CHOOSE_THEN `m : num` STRIP_ASSUME_TAC) THEN
+  FIRST_X_ASSUM (SUBST_VAR_TAC o SYM) THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm badder4_width_out1;;
+
+let badder4_width_out2 = prove
+ (`!w x y z s c n.
+     badder4 w x y z s c /\ width w = n + 1 ==>
+     width c = n + 1`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+      [`w : bus`; `x : bus`; `y : bus`; `z : bus`; `s : bus`; `c : bus`]
+      badder4_width) THEN
+  ASM_REWRITE_TAC [EQ_ADD_RCANCEL] THEN
+  DISCH_THEN (X_CHOOSE_THEN `m : num` STRIP_ASSUME_TAC) THEN
+  FIRST_X_ASSUM (SUBST_VAR_TAC o SYM) THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm badder4_width_out2;;
+
+let badder4_bits_to_num = prove
+ (`!w x y z s c t.
+     badder4 w x y z s c ==>
+     bits_to_num (bsignal w t) + bits_to_num (bsignal x t) +
+     bits_to_num (bsignal y t) + bits_to_num (bsignal z t) =
+     bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [badder4_def] THEN
+  STRIP_TAC THEN
+  REPEAT (FIRST_X_ASSUM SUBST_VAR_TAC) THEN
+  MP_TAC
+    (SPECL
+       [`w : bus`; `x : bus`; `y : bus`;
+        `p : bus`; `q : bus`; `t : cycle`] badder3) THEN
+  ASM_REWRITE_TAC [ADD_ASSOC] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  MP_TAC
+    (SPECL
+       [`w : bus`; `x : bus`; `y : bus`;
+        `p : bus`; `q : bus`] badder3_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  SUBGOAL_THEN `bappend p0 p1 = p` (SUBST1_TAC o SYM) THENL
+  [ASM_REWRITE_TAC [GSYM bsub_all] THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [ZERO_ADD];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `bappend z0 z1 = z` (SUBST1_TAC o SYM) THENL
+  [ASM_REWRITE_TAC [GSYM bsub_all] THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [ZERO_ADD];
+   ALL_TAC] THEN
+  ONCE_REWRITE_TAC [bits_to_num_bsignal_append] THEN
+  SUBGOAL_THEN `width p0 = 1` ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `p : bus` THEN
+   EXISTS_TAC `0` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width z0 = 1` ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `z : bus` THEN
+   EXISTS_TAC `0` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  MP_TAC
+    (SPECL
+       [`p0 : bus`; `z0 : bus`; `s0 : bus`; `c0 : bus`]
+       badder2_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [bit_shl_one] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bits_to_num (bsignal p0 t) +
+      bits_to_num (bsignal z0 t)) +
+     (2 * bits_to_num (bsignal p1 t) +
+      2 * bits_to_num (bsignal q t) +
+      2 * bits_to_num (bsignal z1 t))` THEN
+  CONJ_TAC THENL
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+   CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+   REWRITE_TAC [ADD_ASSOC];
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bits_to_num (bsignal s0 t) +
+      2 * bits_to_num (bsignal c0 t)) +
+     (2 * bits_to_num (bsignal (bappend s1 s2) t) +
+      2 * (2 * bits_to_num (bsignal c1 t)))` THEN
+  CONJ_TAC THENL
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL; LEFT_ADD_DISTRIB] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bits_to_num (bsignal s0 t) +
+      2 * bits_to_num (bsignal c0 t)) +
+     (2 * bits_to_num (bsignal p1 t) +
+      2 * bits_to_num (bsignal q t) +
+      2 * bits_to_num (bsignal z1 t))` THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [EQ_ADD_RCANCEL] THEN
+   MATCH_MP_TAC badder2 THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  REWRITE_TAC [EQ_ADD_LCANCEL] THEN
+  REWRITE_TAC [GSYM LEFT_ADD_DISTRIB] THEN
+  AP_TERM_TAC THEN
+  SUBGOAL_THEN `bappend q1 s2 = q` (SUBST1_TAC o SYM) THENL
+  [ASM_REWRITE_TAC [GSYM bsub_all] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [ZERO_ADD];
+   ALL_TAC] THEN
+  ONCE_REWRITE_TAC [bits_to_num_bsignal_append] THEN
+  SUBGOAL_THEN `width q1 = n` ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `q : bus` THEN
+   EXISTS_TAC `0` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width p1 = n` ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `p : bus` THEN
+   EXISTS_TAC `1` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  MP_TAC
+    (SPECL
+       [`p1 : bus`; `q1 : bus`; `z1 : bus`; `s1 : bus`; `c1 : bus`]
+       badder3_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bits_to_num (bsignal p1 t) +
+      bits_to_num (bsignal q1 t) +
+      bits_to_num (bsignal z1 t)) +
+     bit_shl (bits_to_num (bsignal s2 t)) n` THEN
+  CONJ_TAC THENL
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bits_to_num (bsignal s1 t) + 2 * bits_to_num (bsignal c1 t)) +
+     bit_shl (bits_to_num (bsignal s2 t)) n` THEN
+  CONJ_TAC THENL
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  AP_THM_TAC THEN
+  AP_TERM_TAC THEN
+  MATCH_MP_TAC badder3 THEN
+  FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm badder4_bits_to_num;;
+***)
 
 logfile_end ();;
