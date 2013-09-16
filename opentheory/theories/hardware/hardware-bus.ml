@@ -222,6 +222,18 @@ let wire_in_suffix = prove
 
 export_thm wire_in_suffix;;
 
+let bsub_suc = prove
+  (`!x w y k n.
+      wire x k w /\ bsub x (SUC k) n y ==>
+      bsub x k (SUC n) (bappend (bwire w) y)`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [ADD1] THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [GSYM ADD1; GSYM wire_def]);;
+
+export_thm bsub_suc;;
+
 let bsub_wire = prove
  (`!x k n y i w.
      bsub x k n y ==>
