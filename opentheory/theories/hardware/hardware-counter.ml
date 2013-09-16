@@ -277,8 +277,7 @@ let icounter_signal = prove
          `dn : wire`; `t : cycle`] case1_signal) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
-   ASM_REWRITE_TAC
-     [ground_signal; bits_to_num_bsignal_bground; MULT_0; ZERO_ADD];
+   ASM_REWRITE_TAC [ground_signal; bground_bits_to_num; MULT_0; ZERO_ADD];
    ALL_TAC] THEN
   POP_ASSUM (fun th ->
     STRIP_TAC THEN
@@ -390,7 +389,7 @@ let icounter_signal = prove
    [STRIP_TAC THEN
     MP_TAC
       (SPECL [`cr : bus`; `r : num`; `cr2 : wire`; `t + k : cycle`]
-       bits_to_num_bsignal_wire) THEN
+       wire_bits_to_num) THEN
     ASM_REWRITE_TAC [NOT_LE] THEN
     MP_TAC (REWRITE_RULE [NOT_SUC] (SPEC `SUC 1` LT_MULT_LCANCEL)) THEN
     DISCH_THEN (CONV_TAC o REWR_CONV o GSYM o REWRITE_RULE [GSYM TWO]) THEN
@@ -423,7 +422,8 @@ let icounter_signal = prove
     ASM_REWRITE_TAC [] THEN
     STRIP_TAC THEN
     ASM_REWRITE_TAC [] THEN
-    SUBGOAL_THEN `bappend (mk_bus [sq0]) sq1 = sq`
+    SUBGOAL_THEN
+      `bappend (bwire sq0) sq1 = sq`
       (SUBST1_TAC o SYM) THENL
     [CONV_TAC (REWR_CONV (GSYM bsub_all)) THEN
      UNDISCH_THEN `width sq = r + 1`
@@ -433,7 +433,7 @@ let icounter_signal = prove
      CONJ_TAC THEN
      FIRST_ASSUM ACCEPT_TAC;
      ALL_TAC] THEN
-    SUBGOAL_THEN `bappend (mk_bus [cq0]) cq1 = cq`
+    SUBGOAL_THEN `bappend (bwire cq0) cq1 = cq`
       (SUBST1_TAC o SYM) THENL
     [CONV_TAC (REWR_CONV (GSYM bsub_all)) THEN
      UNDISCH_THEN `width cq = r + 1`
@@ -445,8 +445,7 @@ let icounter_signal = prove
      ALL_TAC] THEN
     ONCE_REWRITE_TAC [bits_to_num_bsignal_append] THEN
     REWRITE_TAC
-      [bsignal_wire; bits_to_num_sing; width_wire; bit_shl_one;
-       LEFT_ADD_DISTRIB] THEN
+      [bappend_bwire_bsignal; bits_to_num_cons; bit_cons_def] THEN
     MATCH_MP_TAC EQ_TRANS THEN
     EXISTS_TAC
       `(bit_to_num (signal sq0 (t + SUC k)) +
