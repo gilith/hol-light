@@ -76,7 +76,7 @@ let badder4_def = new_definition
        bsub z 1 n z1 /\
        wire s 0 s0 /\
        bsub s 1 n s1 /\
-       wire s n s2 /\
+       wire s (n + 1) s2 /\
        wire c 0 c0 /\
        bsub c 1 n c1 /\
        wire p 0 p0 /\
@@ -753,7 +753,6 @@ let badder2_bits_to_num = prove
 
 export_thm badder2_bits_to_num;;
 
-(***
 let badder4_width = prove
  (`!w x y z s c.
      badder4 w x y z s c ==>
@@ -813,57 +812,57 @@ let badder4_bits_to_num = prove
   REPEAT GEN_TAC THEN
   REWRITE_TAC [badder4_def] THEN
   STRIP_TAC THEN
-  REPEAT (FIRST_X_ASSUM SUBST_VAR_TAC) THEN
   MP_TAC
     (SPECL
        [`w : bus`; `x : bus`; `y : bus`;
-        `p : bus`; `q : bus`; `t : cycle`] badder3) THEN
+        `p : bus`; `q : bus`; `t : cycle`]
+       badder3_bits_to_num) THEN
   ASM_REWRITE_TAC [ADD_ASSOC] THEN
   DISCH_THEN SUBST1_TAC THEN
-  MP_TAC
-    (SPECL
-       [`w : bus`; `x : bus`; `y : bus`;
-        `p : bus`; `q : bus`] badder3_width) THEN
-  ASM_REWRITE_TAC [] THEN
-  STRIP_TAC THEN
-  SUBGOAL_THEN `bappend p0 p1 = p` (SUBST1_TAC o SYM) THENL
+  SUBGOAL_THEN `bappend (bwire z0) z1 = z` (SUBST1_TAC o SYM) THENL
   [ASM_REWRITE_TAC [GSYM bsub_all] THEN
    ONCE_REWRITE_TAC [ADD_SYM] THEN
    MATCH_MP_TAC bsub_add THEN
-   ASM_REWRITE_TAC [ZERO_ADD];
+   ASM_REWRITE_TAC [ZERO_ADD; GSYM wire_def];
    ALL_TAC] THEN
-  SUBGOAL_THEN `bappend z0 z1 = z` (SUBST1_TAC o SYM) THENL
+  SUBGOAL_THEN `bappend (bwire p0) p1 = p` (SUBST1_TAC o SYM) THENL
   [ASM_REWRITE_TAC [GSYM bsub_all] THEN
    ONCE_REWRITE_TAC [ADD_SYM] THEN
    MATCH_MP_TAC bsub_add THEN
-   ASM_REWRITE_TAC [ZERO_ADD];
+   ASM_REWRITE_TAC [ZERO_ADD; GSYM wire_def];
    ALL_TAC] THEN
-  ONCE_REWRITE_TAC [bits_to_num_bsignal_append] THEN
-  SUBGOAL_THEN `width p0 = 1` ASSUME_TAC THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `p : bus` THEN
-   EXISTS_TAC `0` THEN
-   FIRST_ASSUM ACCEPT_TAC;
+  SUBGOAL_THEN `bappend q1 (bwire q2) = q` (SUBST1_TAC o SYM) THENL
+  [ASM_REWRITE_TAC [GSYM bsub_all] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [ZERO_ADD; GSYM wire_def];
    ALL_TAC] THEN
-  SUBGOAL_THEN `width z0 = 1` ASSUME_TAC THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `z : bus` THEN
-   EXISTS_TAC `0` THEN
-   FIRST_ASSUM ACCEPT_TAC;
+  SUBGOAL_THEN
+    `bappend (bwire s0) (bappend s1 (bwire s2)) = s`
+    (SUBST1_TAC o SYM) THENL
+  [ASM_REWRITE_TAC [GSYM bsub_all] THEN
+   SUBGOAL_THEN `n + 2 = 1 + (n + 1)` SUBST1_TAC THENL
+   [REWRITE_TAC [TWO; ONE; ADD_SUC; SUC_ADD; ZERO_ADD; ADD_0];
+    ALL_TAC] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [ZERO_ADD; GSYM wire_def] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [GSYM wire_def] THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   ASM_REWRITE_TAC [];
    ALL_TAC] THEN
-  MP_TAC
-    (SPECL
-       [`p0 : bus`; `z0 : bus`; `s0 : bus`; `c0 : bus`]
-       badder2_width) THEN
-  ASM_REWRITE_TAC [] THEN
-  STRIP_TAC THEN
-  ASM_REWRITE_TAC [bit_shl_one] THEN
+  SUBGOAL_THEN `bappend (bwire c0) c1 = c` (SUBST1_TAC o SYM) THENL
+  [ASM_REWRITE_TAC [GSYM bsub_all] THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [ZERO_ADD; GSYM wire_def];
+   ALL_TAC] THEN
+  REWRITE_TAC [bappend_bwire_bsignal; bits_to_num_cons; bit_cons_def] THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `(bits_to_num (bsignal p0 t) +
-      bits_to_num (bsignal z0 t)) +
+    `(bit_to_num (signal p0 t) +
+      bit_to_num (signal z0 t)) +
      (2 * bits_to_num (bsignal p1 t) +
-      2 * bits_to_num (bsignal q t) +
+      2 * bits_to_num (bsignal (bappend q1 (bwire q2)) t) +
       2 * bits_to_num (bsignal z1 t))` THEN
   CONJ_TAC THENL
   [POP_ASSUM_LIST (K ALL_TAC) THEN
@@ -875,9 +874,9 @@ let badder4_bits_to_num = prove
   MATCH_MP_TAC EQ_SYM THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `(bits_to_num (bsignal s0 t) +
-      2 * bits_to_num (bsignal c0 t)) +
-     (2 * bits_to_num (bsignal (bappend s1 s2) t) +
+    `(bit_to_num (signal s0 t) +
+      2 * bit_to_num (signal c0 t)) +
+     (2 * bits_to_num (bsignal (bappend s1 (bwire s2)) t) +
       2 * (2 * bits_to_num (bsignal c1 t)))` THEN
   CONJ_TAC THENL
   [POP_ASSUM_LIST (K ALL_TAC) THEN
@@ -888,50 +887,38 @@ let badder4_bits_to_num = prove
   MATCH_MP_TAC EQ_SYM THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
-    `(bits_to_num (bsignal s0 t) +
-      2 * bits_to_num (bsignal c0 t)) +
+    `(bit_to_num (signal s0 t) +
+      2 * bit_to_num (signal c0 t)) +
      (2 * bits_to_num (bsignal p1 t) +
-      2 * bits_to_num (bsignal q t) +
+      2 * bits_to_num (bsignal (bappend q1 (bwire q2)) t) +
       2 * bits_to_num (bsignal z1 t))` THEN
   CONJ_TAC THENL
   [REWRITE_TAC [EQ_ADD_RCANCEL] THEN
-   MATCH_MP_TAC badder2 THEN
+   MATCH_MP_TAC adder2_bit_to_num THEN
    FIRST_ASSUM ACCEPT_TAC;
    ALL_TAC] THEN
   REWRITE_TAC [EQ_ADD_LCANCEL] THEN
   REWRITE_TAC [GSYM LEFT_ADD_DISTRIB] THEN
   AP_TERM_TAC THEN
-  SUBGOAL_THEN `bappend q1 s2 = q` (SUBST1_TAC o SYM) THENL
-  [ASM_REWRITE_TAC [GSYM bsub_all] THEN
-   MATCH_MP_TAC bsub_add THEN
-   ASM_REWRITE_TAC [ZERO_ADD];
-   ALL_TAC] THEN
-  ONCE_REWRITE_TAC [bits_to_num_bsignal_append] THEN
-  SUBGOAL_THEN `width q1 = n` ASSUME_TAC THENL
+  REWRITE_TAC [bappend_bits_to_num; bwire_bsignal; bits_to_num_sing] THEN
+  SUBGOAL_THEN `width q1 = n` SUBST1_TAC THENL
   [MATCH_MP_TAC bsub_width THEN
    EXISTS_TAC `q : bus` THEN
    EXISTS_TAC `0` THEN
    FIRST_ASSUM ACCEPT_TAC;
    ALL_TAC] THEN
-  SUBGOAL_THEN `width p1 = n` ASSUME_TAC THENL
+  SUBGOAL_THEN `width s1 = n` SUBST1_TAC THENL
   [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `p : bus` THEN
+   EXISTS_TAC `s : bus` THEN
    EXISTS_TAC `1` THEN
    FIRST_ASSUM ACCEPT_TAC;
    ALL_TAC] THEN
-  MP_TAC
-    (SPECL
-       [`p1 : bus`; `q1 : bus`; `z1 : bus`; `s1 : bus`; `c1 : bus`]
-       badder3_width) THEN
-  ASM_REWRITE_TAC [] THEN
-  STRIP_TAC THEN
-  ASM_REWRITE_TAC [] THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
     `(bits_to_num (bsignal p1 t) +
       bits_to_num (bsignal q1 t) +
       bits_to_num (bsignal z1 t)) +
-     bit_shl (bits_to_num (bsignal s2 t)) n` THEN
+     bit_shl (bit_to_num (signal q2 t)) n` THEN
   CONJ_TAC THENL
   [POP_ASSUM_LIST (K ALL_TAC) THEN
    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
@@ -941,19 +928,28 @@ let badder4_bits_to_num = prove
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC
     `(bits_to_num (bsignal s1 t) + 2 * bits_to_num (bsignal c1 t)) +
-     bit_shl (bits_to_num (bsignal s2 t)) n` THEN
+     bit_shl (bit_to_num (signal s2 t)) n` THEN
   CONJ_TAC THENL
   [POP_ASSUM_LIST (K ALL_TAC) THEN
    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
    MATCH_ACCEPT_TAC ADD_SYM;
    ALL_TAC] THEN
   MATCH_MP_TAC EQ_SYM THEN
-  AP_THM_TAC THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bits_to_num (bsignal s1 t) + 2 * bits_to_num (bsignal c1 t)) +
+     bit_shl (bit_to_num (signal q2 t)) n` THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [EQ_ADD_RCANCEL] THEN
+   MATCH_MP_TAC badder3_bits_to_num THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC [EQ_ADD_LCANCEL; bit_shl_inj] THEN
   AP_TERM_TAC THEN
-  MATCH_MP_TAC badder3 THEN
-  FIRST_ASSUM ACCEPT_TAC);;
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC connect_signal THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm badder4_bits_to_num;;
-***)
 
 logfile_end ();;

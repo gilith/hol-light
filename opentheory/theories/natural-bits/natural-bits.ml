@@ -688,6 +688,12 @@ let bit_shl_mono_le = prove
 
 export_thm bit_shl_mono_le;;
 
+let bit_shl_inj = prove
+  (`!k n1 n2. bit_shl n1 k = bit_shl n2 k <=> n1 = n2`,
+   REWRITE_TAC [GSYM LE_ANTISYM; bit_shl_mono_le]);;
+
+export_thm bit_shl_inj;;
+
 let bit_shr_zero = prove
   (`!n. bit_shr n 0 = n`,
    REWRITE_TAC [bit_shr_def; EXP_0; DIV_1]);;

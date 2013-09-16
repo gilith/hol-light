@@ -46,6 +46,7 @@ let icounter_def = new_definition
 
 export_thm icounter_def;;
 
+(***
 let counter_def = new_definition
   `!ld nb dn.
       counter ld nb dn <=>
@@ -82,6 +83,7 @@ let counter_def = new_definition
          delay dn dp`;;
 
 export_thm counter_def;;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of counter devices.                                            *)
@@ -90,7 +92,7 @@ export_thm counter_def;;
 logfile "hardware-counter-thm";;
 
 (***
-let icounter = prove
+let icounter_signal = prove
  (`!n ld nb inc dn t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal nb t) + n = 2 EXP (width nb) /\
@@ -836,8 +838,11 @@ let icounter = prove
   EXISTS_TAC `crd0 : wire` THEN
   ASM_REWRITE_TAC []
 
+export_thm icounter_signal;;
+***)
 
-let counter = prove
+(***
+let counter_signal = prove
  (`!n ld nb dn t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal nb t) + n + 1 = 2 EXP (width nb) + width nb /\
@@ -1103,7 +1108,7 @@ bsignal_nil; bits_to_num_nil] THEN
    MATCH_MP_TAC adder3 THEN
    ASM_REWRITE_TAC []]);;
 
-export_thm counter;;
+export_thm counter_signal;;
 ***)
 
 logfile_end ();;
