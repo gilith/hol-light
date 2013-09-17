@@ -12,7 +12,7 @@ logfile "hardware-counter-def";;
 let event_counter_def = new_definition
   `!ld nb inc dn.
       event_counter ld nb inc dn <=>
-      ?r sp sp0 sp1 cp cp0 cp1 cp2 sq sq0 sq1 cq cq0 cq1 sr cr dp dq.
+      ?r sp cp sq cq sr cr dp dq sp0 sp1 cp0 cp1 cp2 sq0 sq1 cq0 cq1.
          width nb = r + 1 /\
          width sp = r + 1 /\
          width cp = r + 1 /\
@@ -46,11 +46,10 @@ let event_counter_def = new_definition
 
 export_thm event_counter_def;;
 
-(***
 let counter_def = new_definition
   `!ld nb dn.
       counter ld nb dn <=>
-      ?r nb0 nb1 sp cp cp0 cp1 cp2 sq cq cq0 cq1 sr cr cr0 cr1 dp dq.
+      ?r sp cp sq cq sr cr dp dq nb0 nb1 cp0 cp1 cp2 cq0 cq1 cr0 cr1.
          width nb = r + 1 /\
          width sp = r /\
          width cp = r + 1 /\
@@ -83,7 +82,6 @@ let counter_def = new_definition
          delay dn dp`;;
 
 export_thm counter_def;;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of hardware counter devices.                                   *)
@@ -1373,6 +1371,21 @@ let counter_signal = prove
      counter ld nb dn ==>
      (signal dn (t + k) <=> n <= k)`,
   REPEAT STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`n + width nb : num`;
+        `ld : wire`;
+        `nb : bus`;
+        `power`;
+        `dn : wire`;
+        `t : cycle`;
+        `k : cycle`]
+       event_counter_signal) THEN
+  REVERSE_TAC ANTS_TAC THENL
+  [DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [power_signal] THEN
+   AP_TERM_TAC THEN
+   
 
 (***
   SUBGOAL_THEN `~(n = 0)` ASSUME_TAC THENL
