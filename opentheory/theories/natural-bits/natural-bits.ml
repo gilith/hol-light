@@ -503,6 +503,12 @@ let bit_tl_induction = prove
 
 export_thm bit_tl_induction;;
 
+let bit_cons_false = prove
+  (`!n. bit_cons F n = 2 * n`,
+   REWRITE_TAC [bit_cons_def; bit_to_num_false; ZERO_ADD]);;
+
+export_thm bit_cons_false;;
+
 let bit_cons_zero = prove
   (`!b. bit_cons b 0 = bit_to_num b`,
    REWRITE_TAC [bit_cons_def; ADD_0; MULT_0]);;
