@@ -205,11 +205,23 @@ let bnil_bsignal = prove
 
 export_thm bnil_bsignal;;
 
+let bnil_bits_to_num = prove
+ (`!t. bits_to_num (bsignal bnil t) = 0`,
+  REWRITE_TAC [bnil_bsignal; bits_to_num_nil]);;
+
+export_thm bnil_bits_to_num;;
+
 let bwire_bsignal = prove
  (`!w t. bsignal (bwire w) t = [signal w t]`,
   REWRITE_TAC [bsignal_def; bwire_def; bus_tybij; MAP]);;
 
 export_thm bwire_bsignal;;
+
+let bwire_bits_to_num = prove
+ (`!w t. bits_to_num (bsignal (bwire w) t) = bit_to_num (signal w t)`,
+  REWRITE_TAC [bwire_bsignal; bits_to_num_sing]);;
+
+export_thm bwire_bits_to_num;;
 
 let bappend_bsignal = prove
  (`!x y t.
