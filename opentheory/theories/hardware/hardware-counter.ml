@@ -1371,21 +1371,43 @@ let counter_signal = prove
      counter ld nb dn ==>
      (signal dn (t + k) <=> n <= k)`,
   REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN
+    `width nb <= n`
+    (X_CHOOSE_THEN `m : num` SUBST_VAR_TAC o
+     ONCE_REWRITE_RULE [ADD_SYM] o
+     REWRITE_RULE [LE_EXISTS]) THENL
+  [CONV_TAC (REWR_CONV (GSYM (SPEC `2 EXP (width nb)` LE_ADD_LCANCEL))) THEN
+   FIRST_X_ASSUM (CONV_TAC o LAND_CONV o REWR_CONV o SYM) THEN
+   REWRITE_TAC [GSYM ADD1; ADD_SUC; LE_SUC_LT; LT_ADD_RCANCEL] THEN
+   MP_TAC (SPEC `bsignal nb t` bits_to_num_bound) THEN
+   REWRITE_TAC [length_bsignal];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?f. !b w u.
+       signal (f b w) u =
+       if u <= t then signal w u
+       else if u = t + 1 then b
+       else signal w (u - 1)`
+    STRIP_ASSUME_TAC THENL
+  [EXISTS_TAC `\b w. mk_wire (stake (t + 1)`
+
+
+
   MP_TAC
     (SPECL
-       [`n + width nb : num`;
+       [`m + 1 : num`;
         `ld : wire`;
         `nb : bus`;
         `power`;
         `dn : wire`;
         `t : cycle`;
-        `k : cycle`]
+        `k + 1 : cycle`]
        event_counter_signal) THEN
   REVERSE_TAC ANTS_TAC THENL
   [DISCH_THEN SUBST1_TAC THEN
    REWRITE_TAC [power_signal] THEN
    AP_TERM_TAC THEN
-   
+
 
 (***
   SUBGOAL_THEN `~(n = 0)` ASSUME_TAC THENL
