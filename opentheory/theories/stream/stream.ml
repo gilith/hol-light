@@ -391,6 +391,38 @@ let set_of_list_stake = prove
 
 export_thm set_of_list_stake;;
 
+let nth_stake = prove
+  (`!(s : A stream) n i. i < n ==> nth (stake s n) i = snth s i`,
+   REPEAT GEN_TAC THEN
+   SPEC_TAC (`n : num`, `n : num`) THEN
+   SPEC_TAC (`s : A stream`, `s : A stream`) THEN
+   SPEC_TAC (`i : num`, `i : num`) THEN
+   INDUCT_TAC THENL
+   [GEN_TAC THEN
+    INDUCT_TAC THENL
+    [REWRITE_TAC [LT_REFL];
+     ALL_TAC] THEN
+    STRIP_TAC THEN
+    REWRITE_TAC [stake_suc; nth_zero; shd_def];
+    ALL_TAC] THEN
+   GEN_TAC THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [LT_ZERO];
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REWRITE_TAC [LT_SUC] THEN
+   STRIP_TAC THEN
+   REWRITE_TAC [stake_suc; snth_suc] THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `nth (stake (stl s) n) i : A` THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC nth_suc THEN
+    ASM_REWRITE_TAC [length_stake];
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm nth_stake;;
+
 let ssplit_sinterleave = prove
   (`!s1 s2 : A stream. ssplit (sinterleave s1 s2) = (s1,s2)`,
    REPEAT STRIP_TAC THEN

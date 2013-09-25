@@ -1382,31 +1382,118 @@ let counter_signal = prove
    MP_TAC (SPEC `bsignal nb t` bits_to_num_bound) THEN
    REWRITE_TAC [length_bsignal];
    ALL_TAC] THEN
+  UNDISCH_THEN
+    `bits_to_num (bsignal nb t) + (m + width nb) + 1 =
+     2 EXP width nb + width nb`
+    (STRIP_ASSUME_TAC o
+     REWRITE_RULE [GSYM ADD_ASSOC] o
+     REWRITE_RULE [ADD_ASSOC; EQ_ADD_RCANCEL] o
+     CONV_RULE (LAND_CONV (RAND_CONV (RAND_CONV (REWR_CONV ADD_SYM)))) o
+     REWRITE_RULE [GSYM ADD_ASSOC]) THEN
   SUBGOAL_THEN
-    `?f. !b w u.
-       signal (f b w) u =
-       if u <= t then signal w u
-       else if u = t + 1 then b
+    `?f. !j b w u.
+       signal (f j b w) u =
+       if u < t + j then signal w u
+       else if u = t + j then b
        else signal w (u - 1)`
     STRIP_ASSUME_TAC THENL
-  [EXISTS_TAC `\b w. mk_wire (stake (t + 1)`
-
-
-
+  [POP_ASSUM_LIST (K ALL_TAC) THEN
+   EXISTS_TAC
+     `\j b w.
+         mk_wire
+           (sappend
+              (stake (dest_wire w) (t + j))
+              (scons b (sdrop (dest_wire w) (t + j))))` THEN
+   REWRITE_TAC [] THEN
+   REPEAT GEN_TAC THEN
+   COND_CASES_TAC THENL
+   [ASM_REWRITE_TAC [signal_def; wire_tybij; snth_sappend; length_stake] THEN
+    MATCH_MP_TAC nth_stake THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [signal_def; wire_tybij; snth_sappend; length_stake] THEN
+   POP_ASSUM
+     (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+      REWRITE_RULE [NOT_LT; LE_EXISTS]) THEN
+   REWRITE_TAC [ADD_SUB2; EQ_ADD_LCANCEL_0] THEN
+   MP_TAC (SPEC `d : num` num_CASES) THEN
+   DISCH_THEN
+     (DISJ_CASES_THEN2
+        SUBST_VAR_TAC
+        (X_CHOOSE_THEN `k : num` SUBST_VAR_TAC)) THENL
+   [REWRITE_TAC [snth_scons_zero];
+    ALL_TAC] THEN
+   REWRITE_TAC
+     [snth_scons_suc; NOT_SUC; GSYM snth_add; ADD_SUC; SUC_SUB1] THEN
+   AP_TERM_TAC THEN
+   CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+   REFL_TAC;
+   ALL_TAC] THEN
   MP_TAC
     (SPECL
        [`m + 1 : num`;
-        `ld : wire`;
+        `(f : num -> bool -> wire -> wire) 1 F ld`;
         `nb : bus`;
         `power`;
-        `dn : wire`;
+        `(f : num -> bool -> wire -> wire) 0 F dn`;
         `t : cycle`;
         `k + 1 : cycle`]
        event_counter_signal) THEN
   REVERSE_TAC ANTS_TAC THENL
-  [DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [power_signal] THEN
+  [ASM_REWRITE_TAC [ADD_ASSOC; ADD_SUB] THEN
+   POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL; LT_ADD_LCANCEL; LT_ZERO] THEN
+   REWRITE_TAC [power_signal; GSYM ADD1; NOT_SUC] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   SUBGOAL_THEN
+     `{i | 0 < i /\ i + width nb <= SUC k} = {SUC i | i + width nb <= k}`
+     SUBST1_TAC THENL
+   [REWRITE_TAC [EXTENSION] THEN
+    X_GEN_TAC `j : num` THEN
+    REWRITE_TAC [IN_ELIM] THEN
+    REWRITE_TAC [IN_ELIM_THM] THEN
+    DISJ_CASES_THEN2
+      SUBST_VAR_TAC
+      (X_CHOOSE_THEN `m : num` SUBST_VAR_TAC)
+      (SPEC `j : num` num_CASES) THENL
+    [REWRITE_TAC [NOT_SUC; LT_ZERO];
+     REWRITE_TAC [LT_0; SUC_ADD; LE_SUC; SUC_INJ; UNWIND_THM1]];
+    ALL_TAC] THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   ASM_CASES_TAC `k < width nb` THENL
+   [POP_ASSUM
+      (X_CHOOSE_THEN `d : num` SUBST1_TAC o
+       REWRITE_RULE [LT_EXISTS]) THEN
+    REWRITE_TAC [GSYM ADD_ASSOC; LE_ADD_LCANCEL_0] THEN
+    REWRITE_TAC [SUC_ADD; NOT_SUC; EMPTY_GSPEC; CARD_EMPTY; LE_ZERO];
+    ALL_TAC] THEN
+   POP_ASSUM
+     (X_CHOOSE_THEN `d : num` SUBST1_TAC o
+      REWRITE_RULE [LE_EXISTS; NOT_LT]) THEN
+   REWRITE_TAC [LE_ADD_LCANCEL] THEN
+   CONV_TAC (RAND_CONV (REWR_CONV (GSYM LE_SUC))) THEN
    AP_TERM_TAC THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `CARD (IMAGE SUC { i | i <= d })` THEN
+   CONJ_TAC THENL
+   [AP_TERM_TAC THEN
+    REWRITE_TAC [EXTENSION] THEN
+    X_GEN_TAC `j : num` THEN
+    REWRITE_TAC [IN_IMAGE; IN_ELIM] THEN
+    REWRITE_TAC [IN_ELIM_THM];
+    ALL_TAC] THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `CARD { i : num | i <= d }` THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC CARD_IMAGE_INJ THEN
+    REWRITE_TAC [SUC_INJ; FINITE_NUMSEG_LE] THEN
+    REPEAT STRIP_TAC;
+    ALL_TAC] THEN
+   REWRITE_TAC [CARD_NUMSEG_LE; ADD1];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC []
+  
+
 
 
 (***
