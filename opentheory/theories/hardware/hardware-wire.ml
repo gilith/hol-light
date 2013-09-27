@@ -115,6 +115,12 @@ let connect_signal = prove
 
 export_thm connect_signal;;
 
+let connect_refl = prove
+  (`!x. connect x x`,
+   REWRITE_TAC [connect_def]);;
+
+export_thm connect_refl;;
+
 let delay_signal = prove
   (`!x y t.
       delay x y ==>
@@ -143,10 +149,12 @@ let and2_signal = prove
 export_thm and2_signal;;
 
 let and2_right_ground = prove
- (`!x y. y = ground ==> and2 x ground y`,
-  REPEAT GEN_TAC THEN
-  DISCH_THEN SUBST1_TAC THEN
-  REWRITE_TAC [and2_def; ground_signal]);;
+ (`!x y. connect ground y ==> and2 x ground y`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [and2_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`ground`; `y : wire`; `t : cycle`] connect_signal) THEN
+  ASM_REWRITE_TAC [ground_signal]);;
 
 export_thm and2_right_ground;;
 
@@ -160,10 +168,12 @@ let or2_signal = prove
 export_thm or2_signal;;
 
 let or2_right_ground = prove
- (`!x y. y = x ==> or2 x ground y`,
-  REPEAT GEN_TAC THEN
-  DISCH_THEN SUBST1_TAC THEN
-  REWRITE_TAC [or2_def; ground_signal]);;
+ (`!x y. connect x y ==> or2 x ground y`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [or2_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`x : wire`; `y : wire`; `t : cycle`] connect_signal) THEN
+  ASM_REWRITE_TAC [ground_signal]);;
 
 export_thm or2_right_ground;;
 
@@ -177,10 +187,12 @@ let xor2_signal = prove
 export_thm xor2_signal;;
 
 let xor2_right_ground = prove
- (`!x y. y = x ==> xor2 x ground y`,
-  REPEAT GEN_TAC THEN
-  DISCH_THEN SUBST1_TAC THEN
-  REWRITE_TAC [xor2_def; ground_signal]);;
+ (`!x y. connect x y ==> xor2 x ground y`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [xor2_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`x : wire`; `y : wire`; `t : cycle`] connect_signal) THEN
+  ASM_REWRITE_TAC [ground_signal]);;
 
 export_thm xor2_right_ground;;
 
@@ -247,7 +259,7 @@ let or3_right_ground = prove
   EXISTS_TAC `z : wire` THEN
   ASM_REWRITE_TAC [] THEN
   MATCH_MP_TAC or2_right_ground THEN
-  REFL_TAC);;
+  MATCH_ACCEPT_TAC connect_refl);;
 
 export_thm or3_right_ground;;
 
@@ -283,7 +295,7 @@ let xor3_right_ground = prove
   EXISTS_TAC `z : wire` THEN
   ASM_REWRITE_TAC [] THEN
   MATCH_MP_TAC xor2_right_ground THEN
-  REFL_TAC);;
+  MATCH_ACCEPT_TAC connect_refl);;
 
 export_thm xor3_right_ground;;
 
@@ -332,12 +344,12 @@ let majority3_right_ground = prove
   ASM_REWRITE_TAC [] THEN
   REPEAT CONJ_TAC THENL
   [MATCH_MP_TAC and2_right_ground THEN
-   REFL_TAC;
+   MATCH_ACCEPT_TAC connect_refl;
    MATCH_MP_TAC and2_right_ground THEN
-   REFL_TAC;
+   MATCH_ACCEPT_TAC connect_refl;
    MATCH_MP_TAC or3_right_ground THEN
    MATCH_MP_TAC or2_right_ground THEN
-   REFL_TAC]);;
+   MATCH_ACCEPT_TAC connect_refl]);;
 
 export_thm majority3_right_ground;;
 
