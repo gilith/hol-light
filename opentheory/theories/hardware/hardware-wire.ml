@@ -66,6 +66,13 @@ export_thm case1_def;;
 (* Derived wire devices *)
 (* ~~~~~~~~~~~~~~~~~~~~ *)
 
+let pulse_def = new_definition
+  `!x y.
+     pulse x y <=>
+     ?xd xn. delay x xd /\ not xd xn /\ and2 x xn y`;;
+
+export_thm pulse_def;;
+
 let and3_def = new_definition
   `!w x y z.
      and3 w x y z <=>
@@ -208,6 +215,39 @@ export_thm case1_signal;;
 (* ~~~~~~~~~~~~~~~~~~~~ *)
 (* Derived wire devices *)
 (* ~~~~~~~~~~~~~~~~~~~~ *)
+
+let pulse_signal = prove
+ (`!x y t.
+     pulse x y ==>
+     signal y (t + 1) = (~signal x t /\ signal x (t + 1))`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [pulse_def] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`x : wire`; `xn : wire`; `y : wire`; `t + 1 : cycle`]
+       and2_signal) THEN
+  ANTS_TAC THENL
+  [ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REVERSE_TAC (ASM_CASES_TAC `signal x (t + 1)`) THENL
+  [ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  MP_TAC
+    (SPECL
+       [`xd : wire`; `xn : wire`; `t + 1 : cycle`]
+       not_signal) THEN
+  ANTS_TAC THENL
+  [ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  AP_TERM_TAC THEN
+  MATCH_MP_TAC delay_signal THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm pulse_signal;;
 
 let and3_signal = prove
  (`!w x y z t.
