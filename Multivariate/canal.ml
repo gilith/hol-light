@@ -373,18 +373,21 @@ let SUMS_COMPLEX_0 = prove
   REWRITE_TAC[GSYM COMPLEX_VEC_0; SUMS_0]);;
 
 let LIM_NULL_COMPLEX_RMUL_BOUNDED = prove
- (`!f g. (f --> Cx(&0)) net /\ eventually (\a. norm(g a) <= B) net
+ (`!f g. (f --> Cx(&0)) net /\
+         eventually (\a. f a = Cx(&0) \/ norm(g a) <= B) net
          ==> ((\z. f(z) * g(z)) --> Cx(&0)) net`,
   REWRITE_TAC[GSYM COMPLEX_VEC_0] THEN
   ONCE_REWRITE_TAC[LIM_NULL_NORM] THEN
   REWRITE_TAC[LIFT_CMUL; COMPLEX_NORM_MUL] THEN
   REPEAT STRIP_TAC THEN MATCH_MP_TAC LIM_NULL_VMUL_BOUNDED THEN
-  EXISTS_TAC `B:real` THEN ASM_REWRITE_TAC[o_DEF; NORM_LIFT; REAL_ABS_NORM]);;
+  EXISTS_TAC `B:real` THEN
+  ASM_REWRITE_TAC[o_DEF; NORM_LIFT; REAL_ABS_NORM; NORM_EQ_0]);;
 
 let LIM_NULL_COMPLEX_LMUL_BOUNDED = prove
- (`!f g. eventually (\a. norm(f a) <= B) net /\ (g --> Cx(&0)) net
+ (`!f g. eventually (\a. norm(f a) <= B \/ g a = Cx(&0)) net /\
+         (g --> Cx(&0)) net
          ==> ((\z. f(z) * g(z)) --> Cx(&0)) net`,
-  REPEAT STRIP_TAC THEN ONCE_REWRITE_TAC[COMPLEX_MUL_SYM] THEN
+  ONCE_REWRITE_TAC[DISJ_SYM; COMPLEX_MUL_SYM] THEN REPEAT STRIP_TAC THEN
   MATCH_MP_TAC LIM_NULL_COMPLEX_RMUL_BOUNDED THEN ASM_REWRITE_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
@@ -738,6 +741,10 @@ let higher_complex_derivative = define
 let holomorphic_on = new_definition
  `f holomorphic_on s <=>
      !x. x IN s ==> ?f'. (f has_complex_derivative f') (at x within s)`;;
+
+let HOLOMORPHIC_ON_EMPTY = prove
+ (`!f. f holomorphic_on {}`,
+  REWRITE_TAC[holomorphic_on; NOT_IN_EMPTY]);;
 
 let HOLOMORPHIC_ON_DIFFERENTIABLE = prove
  (`!f s. f holomorphic_on s <=>
@@ -2876,27 +2883,35 @@ let LIM_INFINITY_SEQUENTIALLY_COMPLEX = prove
   REPEAT(POP_ASSUM MP_TAC) THEN
   REWRITE_TAC[GSYM REAL_OF_NUM_LE] THEN REAL_ARITH_TAC);;
 
+let LIM_AT_INFINITY_COMPLEX_0 = prove
+ (`!f l:real^N.
+        (f --> l) at_infinity <=> ((f o inv) --> l) (at(Cx(&0)))`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[LIM_AT_LE; LIM_AT_INFINITY_POS; o_DEF] THEN
+  REWRITE_TAC[GSYM DIST_NZ; real_ge] THEN
+  REWRITE_TAC[dist; COMPLEX_SUB_RZERO] THEN EQ_TAC THEN DISCH_TAC THEN
+  X_GEN_TAC `e:real` THEN DISCH_TAC THEN
+  FIRST_X_ASSUM(MP_TAC o SPEC `e:real`) THEN ASM_REWRITE_TAC[real_ge] THEN
+  DISCH_THEN(X_CHOOSE_THEN `b:real` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `inv(b:real)` THEN ASM_REWRITE_TAC[REAL_LT_INV_EQ] THEN
+  X_GEN_TAC `z:complex` THEN STRIP_TAC THENL
+   [ALL_TAC; SUBST1_TAC(SYM(SPEC `z:complex` COMPLEX_INV_INV))] THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THENL
+   [GEN_REWRITE_TAC LAND_CONV [GSYM REAL_INV_INV] THEN
+    REWRITE_TAC[COMPLEX_NORM_INV] THEN MATCH_MP_TAC REAL_LE_INV2 THEN
+    ASM_REWRITE_TAC[COMPLEX_NORM_NZ];
+    ASM_REWRITE_TAC[COMPLEX_INV_EQ_0] THEN CONJ_TAC THENL
+     [REWRITE_TAC[GSYM COMPLEX_NORM_NZ] THEN
+      TRANS_TAC REAL_LTE_TRANS `inv(b:real)` THEN
+      ASM_REWRITE_TAC[REAL_LT_INV_EQ];
+      GEN_REWRITE_TAC RAND_CONV [GSYM REAL_INV_INV] THEN
+      REWRITE_TAC[COMPLEX_NORM_INV] THEN MATCH_MP_TAC REAL_LE_INV2 THEN
+      ASM_REWRITE_TAC[REAL_LT_INV_EQ]]]);;
+
 let LIM_ZERO_INFINITY_COMPLEX = prove
- (`!f l. ((\x. f(Cx(&1) / x)) --> l) (at (Cx(&0))) ==> (f --> l) at_infinity`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[LIM_AT; LIM_AT_INFINITY] THEN
-  DISCH_TAC THEN X_GEN_TAC `e:real` THEN DISCH_TAC THEN
-  FIRST_X_ASSUM(MP_TAC o SPEC `e:real`) THEN ASM_REWRITE_TAC[] THEN
-  REWRITE_TAC[dist; COMPLEX_SUB_RZERO; real_ge] THEN
-  DISCH_THEN(X_CHOOSE_THEN `d:real` STRIP_ASSUME_TAC) THEN
-  EXISTS_TAC `&2 / d` THEN X_GEN_TAC `z:complex` THEN DISCH_TAC THEN
-  FIRST_X_ASSUM(MP_TAC o SPEC `inv(z):complex`) THEN
-  REWRITE_TAC[complex_div; COMPLEX_MUL_LINV; COMPLEX_INV_INV] THEN
-  REWRITE_TAC[COMPLEX_MUL_LID] THEN DISCH_THEN MATCH_MP_TAC THEN
-  ASM_REWRITE_TAC[COMPLEX_NORM_INV; REAL_LT_INV_EQ] THEN CONJ_TAC THENL
-   [UNDISCH_TAC `&2 / d <= norm(z:complex)` THEN
-    ASM_CASES_TAC `z = Cx(&0)` THEN ASM_REWRITE_TAC[COMPLEX_NORM_NZ] THEN
-    REWRITE_TAC[COMPLEX_NORM_0; REAL_NOT_LE] THEN
-    ASM_SIMP_TAC[REAL_LT_DIV; REAL_OF_NUM_LT; ARITH];
-    GEN_REWRITE_TAC RAND_CONV [GSYM REAL_INV_INV] THEN
-    MATCH_MP_TAC REAL_LT_INV2 THEN ASM_REWRITE_TAC[REAL_LT_INV_EQ] THEN
-    MATCH_MP_TAC REAL_LTE_TRANS THEN EXISTS_TAC `&2 / d` THEN
-    ASM_REWRITE_TAC[] THEN REWRITE_TAC[real_div] THEN
-    ASM_REWRITE_TAC[REAL_LT_INV_EQ; REAL_ARITH `x < &2 * x <=> &0 < x`]]);;
+ (`!f l:real^N.
+     ((\x. f(Cx(&1) / x)) --> l) (at (Cx(&0))) ==> (f --> l) at_infinity`,
+  REWRITE_TAC[LIM_AT_INFINITY_COMPLEX_0; o_DEF; complex_div] THEN
+  REWRITE_TAC[COMPLEX_MUL_LID]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Transforming complex limits to real ones.                                 *)

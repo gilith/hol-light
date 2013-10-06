@@ -476,6 +476,14 @@ export_thm SUBSET_RESTRICT;;
 (* Proper subset.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
+let PSUBSET_SUBSET = prove
+ (`!(s : A set) t. s PSUBSET t ==> s SUBSET t`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [PSUBSET] THEN
+  STRIP_TAC);;
+
+export_thm PSUBSET_SUBSET;;
+
 let PSUBSET_NOT_SUBSET = prove
  (`!(s : A set) t. s PSUBSET t <=> s SUBSET t /\ ~(t SUBSET s)`,
   REWRITE_TAC [PSUBSET; GSYM SUBSET_ANTISYM_EQ] THEN
@@ -3067,7 +3075,7 @@ let FINITE_DIFF = prove
 export_thm FINITE_DIFF;;
 
 let FINITE_RESTRICT = prove
- (`!(s:A set) P. FINITE s ==> FINITE {x | x IN s /\ P x}`,
+ (`!(s:A set) p. FINITE s ==> FINITE {x | x IN s /\ p x}`,
   REPEAT STRIP_TAC THEN
   MATCH_MP_TAC FINITE_SUBSET THEN
   EXISTS_TAC `s : A set` THEN
@@ -3103,6 +3111,105 @@ let FINITE_INDUCT_STRONG = prove
    ASM_REWRITE_TAC []]);;
 
 export_thm FINITE_INDUCT_STRONG;;
+
+let FINITE_TRANSITIVITY_CHAIN = prove
+ (`!r (s : A set).
+     FINITE s /\
+     (!x. ~(r x x)) /\
+     (!x y z. r x y /\ r y z ==> r x z) /\
+     (!x. x IN s ==> ?y. y IN s /\ r x y) ==>
+     s = {}`,
+  GEN_TAC THEN
+  ONCE_REWRITE_TAC [IMP_CONJ] THEN
+  MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
+  REWRITE_TAC
+    [NOT_IN_EMPTY; NOT_INSERT_EMPTY; IN_INSERT; OR_IMP_DISTRIB;
+     FORALL_AND_THM; FORALL_UNWIND_THM2] THEN
+  REPEAT STRIP_TAC THENL
+  [POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM MP_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [] THEN
+   FIRST_X_ASSUM MATCH_ACCEPT_TAC;
+   SUBGOAL_THEN `(s : A set) = {}` MP_TAC THENL
+   [FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    X_GEN_TAC `z : A` THEN
+    STRIP_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `z : A`) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (X_CHOOSE_THEN `w : A` STRIP_ASSUME_TAC) THENL
+    [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+     EXISTS_TAC `y : A` THEN
+     ASM_REWRITE_TAC [] THEN
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     EXISTS_TAC `x : A` THEN
+     ASM_REWRITE_TAC [];
+     EXISTS_TAC `w : A` THEN
+     ASM_REWRITE_TAC []];
+    STRIP_TAC THEN
+    UNDISCH_TAC `(y:A) IN s` THEN
+    ASM_REWRITE_TAC [NOT_IN_EMPTY]]]);;
+
+export_thm FINITE_TRANSITIVITY_CHAIN;;
+
+let UNIONS_MAXIMAL_SETS = prove
+ (`!f. FINITE f
+       ==> UNIONS {t : A set | t IN f /\ !u. u IN f ==> ~(t PSUBSET u)} =
+           UNIONS f`,
+  GEN_TAC THEN
+  STRIP_TAC THEN
+  CONV_TAC (REWR_CONV (GSYM SUBSET_ANTISYM_EQ)) THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC SUBSET_UNIONS THEN
+   MATCH_ACCEPT_TAC SUBSET_RESTRICT;
+   MATCH_MP_TAC UNIONS_MONO THEN
+   X_GEN_TAC `s:A set` THEN
+   DISCH_TAC THEN
+   REWRITE_TAC [EXISTS_IN_GSPEC] THEN
+   GEN_REWRITE_TAC I [TAUT `p <=> ~ ~ p`] THEN
+   DISCH_TAC THEN
+   MP_TAC
+     (ISPECL
+        [`\t u: A set. s SUBSET t /\ t PSUBSET u`;
+         `{t : A set | t IN f /\ s SUBSET t}`]
+        FINITE_TRANSITIVITY_CHAIN) THEN
+  REWRITE_TAC [NOT_IMP; FORALL_IN_GSPEC; EXISTS_IN_GSPEC] THEN
+  REPEAT CONJ_TAC THENL
+  [MATCH_MP_TAC FINITE_RESTRICT THEN
+   ASM_REWRITE_TAC [];
+   REWRITE_TAC [PSUBSET_IRREFL];
+   REPEAT STRIP_TAC THENL
+   [ASM_REWRITE_TAC [];
+    MATCH_MP_TAC PSUBSET_TRANS THEN
+    EXISTS_TAC `y : A set` THEN
+    ASM_REWRITE_TAC []];
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   FIRST_X_ASSUM
+     (MP_TAC o SPEC `t : A set` o CONV_RULE (REWR_CONV NOT_EXISTS_THM)) THEN
+   ASM_REWRITE_TAC [NOT_FORALL_THM; NOT_IMP] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `u : A set` THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC PSUBSET_SUBSET THEN
+   MATCH_MP_TAC SUBSET_PSUBSET_TRANS THEN
+   EXISTS_TAC `t : A set` THEN
+   ASM_REWRITE_TAC [];
+   CONV_TAC (RAND_CONV (REWR_CONV EXTENSION)) THEN
+   REWRITE_TAC [NOT_IN_EMPTY; IN_ELIM; NOT_FORALL_THM] THEN
+   POP_ASSUM
+     (MP_TAC o
+      SPEC `s : A set` o
+      CONV_RULE (REWR_CONV NOT_EXISTS_THM)) THEN
+   ASM_REWRITE_TAC [SUBSET_REFL; NOT_FORALL_THM; NOT_IMP] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `u : A set` THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC PSUBSET_SUBSET THEN
+   ASM_REWRITE_TAC []]]);;
+
+export_thm UNIONS_MAXIMAL_SETS;;
 
 (* ------------------------------------------------------------------------- *)
 (* Recursion over finite sets; based on Ching-Tsun's code (archive 713).     *)

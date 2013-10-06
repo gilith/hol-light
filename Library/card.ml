@@ -4,6 +4,9 @@
 
 needs "Library/wo.ml";;
 
+let TRANS_CHAIN_TAC th =
+  MAP_EVERY (fun t -> TRANS_TAC th t THEN ASM_REWRITE_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* We need these a few times, so give them names.                            *)
 (* ------------------------------------------------------------------------- *)
@@ -235,16 +238,25 @@ let CARD_LE_RELATIONAL = prove
   EXISTS_TAC `\y:B. @x:A. x IN s /\ R x y` THEN
   REWRITE_TAC[IN_ELIM_THM] THEN ASM_MESON_TAC[]);;
 
+let CARD_LE_RELATIONAL_FULL = prove
+ (`!R:A->B->bool s t.
+        (!y. y IN t ==> ?x. x IN s /\ R x y) /\
+        (!x y y'. x IN s /\ y IN t /\ y' IN t /\ R x y /\ R x y' ==> y = y')
+        ==> t <=_c s`,
+  REPEAT STRIP_TAC THEN REWRITE_TAC[le_c] THEN
+  EXISTS_TAC `\y:B. @x:A. x IN s /\ R x y` THEN
+  REWRITE_TAC[IN_ELIM_THM] THEN ASM_MESON_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Two trivial lemmas.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
 let CARD_LE_EMPTY = prove
- (`!s. (s <=_c EMPTY) <=> (s = EMPTY)`,
+ (`!s. s <=_c {} <=> s = {}`,
   REWRITE_TAC[le_c; EXTENSION; NOT_IN_EMPTY] THEN MESON_TAC[]);;
 
 let CARD_EQ_EMPTY = prove
- (`!s. (s =_c EMPTY) <=> (s = EMPTY)`,
+ (`!s. s =_c {} <=> s = {}`,
   REWRITE_TAC[eq_c; EXTENSION; NOT_IN_EMPTY] THEN MESON_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
@@ -257,7 +269,7 @@ let CARD_LE_ANTISYM = prove
    [ALL_TAC;
     SIMP_TAC[CARD_EQ_IMP_LE] THEN ONCE_REWRITE_TAC[CARD_EQ_SYM] THEN
     SIMP_TAC[CARD_EQ_IMP_LE]] THEN
-  ASM_CASES_TAC `s:A->bool = EMPTY` THEN ASM_CASES_TAC `t:B->bool = EMPTY` THEN
+  ASM_CASES_TAC `s:A->bool = {}` THEN ASM_CASES_TAC `t:B->bool = {}` THEN
   ASM_SIMP_TAC[CARD_LE_EMPTY; CARD_EQ_EMPTY] THEN
   RULE_ASSUM_TAC(REWRITE_RULE[EXTENSION; NOT_IN_EMPTY; NOT_FORALL_THM]) THEN
   ASM_SIMP_TAC[le_c; eq_c; INJECTIVE_LEFT_INVERSE_NONEMPTY] THEN
@@ -323,25 +335,6 @@ let CARD_LE_TOTAL = prove
     REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN; EXTENSION] THEN
     CONV_TAC(ONCE_DEPTH_CONV GEN_BETA_CONV) THEN
     RULE_ASSUM_TAC(REWRITE_RULE[IN]) THEN ASM_MESON_TAC[]]);;
-
-(* ------------------------------------------------------------------------- *)
-(* MATCH_MP_TAC th THEN EXISTS_TAC tm for polymorphic transitivity theorem.  *)
-(* ------------------------------------------------------------------------- *)
-
-let TRANS_TAC th =
-  let ctm = snd(strip_forall(concl th)) in
-  let cl,cr = dest_conj(lhand ctm) in
-  let x = lhand cl and y = rand cl and z = rand cr in
-  fun tm (asl,w as gl) ->
-    let lop,r = dest_comb w in
-    let op,l = dest_comb lop in
-    let ilist =
-      itlist2 type_match (map type_of [x;y;z])(map type_of [l;tm;r]) [] in
-    let th' = INST_TYPE ilist th in
-    (MATCH_MP_TAC th' THEN EXISTS_TAC tm) gl;;
-
-let TRANS_CHAIN_TAC th =
-  MAP_EVERY (fun t -> TRANS_TAC th t THEN ASM_REWRITE_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Other variants like "trichotomy of cardinals" now follow easily.          *)
@@ -796,7 +789,7 @@ let CARD_ADD_LE_MUL_INFINITE = prove
 (* ------------------------------------------------------------------------- *)
 
 let CARD_DISJOINT_UNION = prove
- (`!s:A->bool t. (s INTER t = EMPTY) ==> (s UNION t =_c s +_c t)`,
+ (`!s:A->bool t. (s INTER t = {}) ==> (s UNION t =_c s +_c t)`,
   REPEAT GEN_TAC THEN REWRITE_TAC[EXTENSION; IN_INTER; NOT_IN_EMPTY] THEN
   STRIP_TAC THEN REWRITE_TAC[eq_c; IN_UNION] THEN
   EXISTS_TAC `\x:A. if x IN s then INL x else INR x` THEN
@@ -891,7 +884,7 @@ let CARD_SQUARE_INFINITE = prove
    [TRANS_TAC CARD_LE_TRANS `(s:A->bool) *_c s` THEN
     ASM_SIMP_TAC[CARD_EQ_IMP_LE; CARD_ADD_LE_MUL_INFINITE];
     ALL_TAC] THEN
-  SUBGOAL_THEN `(s:A->bool) INTER (k DIFF s) = EMPTY` ASSUME_TAC THENL
+  SUBGOAL_THEN `(s:A->bool) INTER (k DIFF s) = {}` ASSUME_TAC THENL
    [REWRITE_TAC[EXTENSION; IN_INTER; IN_DIFF; NOT_IN_EMPTY] THEN MESON_TAC[];
     ALL_TAC] THEN
   DISJ_CASES_TAC(ISPECL [`k DIFF (s:A->bool)`; `s:A->bool`] CARD_LE_TOTAL)
