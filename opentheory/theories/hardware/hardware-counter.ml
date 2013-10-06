@@ -1391,6 +1391,69 @@ let counter_signal = prove
      CONV_RULE (LAND_CONV (RAND_CONV (RAND_CONV (REWR_CONV ADD_SYM)))) o
      REWRITE_RULE [GSYM ADD_ASSOC]) THEN
   SUBGOAL_THEN
+    `?f : cycle -> cycle.
+       f 0 = 0 /\
+       !u. f (SUC u) = SUC (f u) + (if signal ld u then 1 else 0)`
+    STRIP_ASSUME_TAC THENL
+  [MP_TAC
+     (ISPECL
+        [`0`;
+         `\fu u. SUC fu + (if signal ld u then 1 else 0)`]
+        num_RECURSION) THEN
+   REWRITE_TAC [];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `!u1 u2. (f : cycle -> cycle) u1 <= f u2 <=> u1 <= u2`
+    STRIP_ASSUME_TAC THENL
+  [ASM_REWRITE_TAC [MONO_SIMPLIFY; SUC_ADD; LT_SUC_LE; LE_ADD];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?g : cycle -> cycle # cycle.
+       g 0 = (0,0) /\
+       !u j k.
+         g u = (j,k) ==>
+         f t + u = f (t + j) + k /\
+         signal ld (t + j) /\
+         (!i. SUC i < k ==> ~signal ld ((t + j) + i))`
+    STRIP_ASSUME_TAC THENL
+  [EXISTS_TAC
+     `\u.
+        let k = (minimal i. ?j. f t + u = f (t + j) + i /\
+                 signal ld (t + j)) in
+        ((@j. f t + u = f (t + j) + k), k)` THEN
+   REWRITE_TAC [ADD_0] THEN
+   CONJ_TAC THENL
+   [SUBGOAL_THEN
+      `(minimal i. ?j. f t = f (t + j) + i /\ signal ld (t + j)) = 0`
+      SUBST1_TAC THENL
+    [MATCH_MP_TAC MINIMAL_EQ THEN
+     REWRITE_TAC [LT_ZERO; ADD_0] THEN
+     EXISTS_TAC `0` THEN
+     ASM_REWRITE_TAC [ADD_0] THEN
+     UNDISCH_THEN
+       `!i. i <= k ==> (signal ld (t + i) <=> i = 0)`
+       (MP_TAC o SPEC `0`) THEN
+     REWRITE_TAC [LE_0; ADD_0];
+     ALL_TAC] THEN
+    REWRITE_TAC [LET_DEF; LET_END_DEF; PAIR_EQ; ADD_0] THEN
+    MATCH_MP_TAC SELECT_UNIQUE THEN
+    REWRITE_TAC [
+
+     FIRST_X_ASSUM
+       (MP_
+
+
+MP_TAC
+     (ISPECL
+        [`0`;
+         `\fj j. SUC fj + (if signal ld (t + j) then 1 else 0)`]
+        num_RECURSION) THEN
+   REWRITE_TAC [];
+   ALL_TAC] THEN
+  
+  
+
+  SUBGOAL_THEN
     `?f. !j b w u.
        signal (f j b w) u =
        if u < t + j then signal w u
