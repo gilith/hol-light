@@ -1408,19 +1408,24 @@ let counter_signal = prove
   [ASM_REWRITE_TAC [MONO_SIMPLIFY; SUC_ADD; LT_SUC_LE; LE_ADD];
    ALL_TAC] THEN
   SUBGOAL_THEN
+    `!u1 u2. (f : cycle -> cycle) u1 = f u2 <=> u1 = u2`
+    STRIP_ASSUME_TAC THENL
+  [ASM_REWRITE_TAC [GSYM LE_ANTISYM];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
     `?g : cycle -> cycle # cycle.
        g 0 = (0,0) /\
        !u j k.
          g u = (j,k) ==>
          f t + u = f (t + j) + k /\
          signal ld (t + j) /\
-         (!i. SUC i < k ==> ~signal ld ((t + j) + i))`
+         (!i. SUC i < k ==> ~signal ld ((t + j) + SUC i))`
     STRIP_ASSUME_TAC THENL
   [EXISTS_TAC
      `\u.
-        let k = (minimal i. ?j. f t + u = f (t + j) + i /\
-                 signal ld (t + j)) in
-        ((@j. f t + u = f (t + j) + k), k)` THEN
+        let mi = (minimal i. ?j. f t + u = f (t + j) + i /\
+                  signal ld (t + j)) in
+        ((@j. f t + u = f (t + j) + mi), mi)` THEN
    REWRITE_TAC [ADD_0] THEN
    CONJ_TAC THENL
    [SUBGOAL_THEN
@@ -1435,9 +1440,89 @@ let counter_signal = prove
        (MP_TAC o SPEC `0`) THEN
      REWRITE_TAC [LE_0; ADD_0];
      ALL_TAC] THEN
-    REWRITE_TAC [LET_DEF; LET_END_DEF; PAIR_EQ; ADD_0] THEN
+    ASM_REWRITE_TAC [LET_DEF; LET_END_DEF; PAIR_EQ; ADD_0] THEN
     MATCH_MP_TAC SELECT_UNIQUE THEN
-    REWRITE_TAC [
+    X_GEN_TAC `j : cycle` THEN
+    REWRITE_TAC [] THEN
+    CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
+    MATCH_ACCEPT_TAC EQ_ADD_LCANCEL_0;
+    ALL_TAC] THEN
+   GEN_TAC THEN
+   GEN_TAC THEN
+   X_GEN_TAC `p : cycle` THEN
+   SUBGOAL_THEN
+     `?i j. (f : cycle -> cycle) t + u = f (t + j) + i /\ signal ld (t + j)`
+     (MP_TAC o CONV_RULE (REWR_CONV MINIMAL)) THENL
+   [EXISTS_TAC `u : cycle` THEN
+    EXISTS_TAC `0` THEN
+    UNDISCH_THEN
+      `!i. i <= k ==> (signal ld (t + i) <=> i = 0)`
+      (MP_TAC o SPEC `0`) THEN
+    REWRITE_TAC [ADD_0; LE_0];
+    ALL_TAC] THEN
+   SPEC_TAC
+     (`minimal i. ?j.
+         (f : cycle -> cycle) t + u = f (t + j) + i /\ signal ld (t + j)`,
+      `n : cycle`) THEN
+   REWRITE_TAC [LET_DEF; LET_END_DEF; PAIR_EQ] THEN
+   X_GEN_TAC `q : cycle` THEN
+   DISCH_THEN
+     (CONJUNCTS_THEN2
+        (X_CHOOSE_THEN `mj : cycle` STRIP_ASSUME_TAC)
+        STRIP_ASSUME_TAC) THEN
+   STRIP_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   SUBGOAL_THEN
+     `(@j. (f : cycle -> cycle) t + u = f (t + j) + p) = mj`
+     SUBST1_TAC THENL
+   [MATCH_MP_TAC SELECT_UNIQUE THEN
+    REWRITE_TAC [] THEN
+    X_GEN_TAC `j : cycle` THEN
+    ASM_REWRITE_TAC [EQ_ADD_RCANCEL; EQ_ADD_LCANCEL] THEN
+    MATCH_ACCEPT_TAC EQ_SYM_EQ;
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   GEN_TAC THEN
+   STRIP_TAC THEN
+   POP_ASSUM
+     (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+      REWRITE_RULE [LT_EXISTS]) THEN
+   POP_ASSUM
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE
+        [NOT_EXISTS_THM; GSYM RIGHT_FORALL_IMP_THM; IMP_IMP;
+         TAUT `!x y. ~(x /\ y) <=> x ==> ~y`]) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC] THEN
+   FIRST_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   UNDISCH_THEN
+     `(f : cycle -> cycle) t + u = f (t + mj) + SUC i + SUC d`
+     (K ALL_TAC) THEN
+   EXISTS_TAC `SUC d` THEN
+   MP_TAC (SPEC `i : cycle` num_CASES) THEN
+   DISCH_THEN
+     (DISJ_CASES_THEN2
+        SUBST_VAR_TAC
+        (X_CHOOSE_THEN `r : cycle` SUBST_VAR_TAC)) THENL
+   [EXISTS_TAC `SUC (SUC d)` THEN
+    REWRITE_TAC [ADD_SUC; SUC_ADD; ADD_0; ZERO_ADD]
+
+
+   REWRITE_TAC [LT_ADDR; LT_0; EQ_ADD_RCANCEL; ADD_ASSOC]
+   ***
+   STRIP_TAC THEN
+   FIRST_X_ASSUM
+     (MP_TAC o REWRITE_RULE [NOT_EXISTS_THM] o SPEC `SUC i`) THEN
+   ANTS_TAC THENL
+   [ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   DISCH_THEN (MP_TAC o SPEC `mj + i : cycle`) THEN
+   ASM_REWRITE_TAC []
+
+
+   STRIP_TAC THEN
+    
 
      FIRST_X_ASSUM
        (MP_
