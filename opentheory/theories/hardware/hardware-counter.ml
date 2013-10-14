@@ -1641,6 +1641,24 @@ let counter_signal = prove
    ALL_TAC] THEN
   ***
   SUBGOAL_THEN
+    `(g : cycle -> cycle # cycle) (k + 1) = (0,k)`
+    STRIP_ASSUME_TAC THENL
+  [ASM_REWRITE_TAC [ADD_0] THEN
+   REVERSE_TAC CONJ_TAC THENL
+   [REPEAT STRIP_TAC THENL
+    [UNDISCH_THEN
+       `!i. i <= k ==> (signal ld (t + i) <=> i = 0)`
+       (MP_TAC o SPEC `0`) THEN
+     REWRITE_TAC [LE_0; ADD_0];
+     UNDISCH_THEN
+       `!i. i <= k ==> (signal ld (t + i) <=> i = 0)`
+       (MP_TAC o SPEC `SUC i`) THEN
+     ASM_REWRITE_TAC [NOT_SUC] THEN
+     MATCH_MP_TAC LT_IMP_LE THEN
+     ASM_REWRITE_TAC []];
+    ALL_TAC] THEN
+
+  SUBGOAL_THEN
     `?ld'. (w : (num -> num -> bool) -> wire) (\j k. k = 0) = ld'`
     STRIP_ASSUME_TAC THENL
   [MATCH_ACCEPT_TAC EXISTS_REFL';
@@ -1652,10 +1670,6 @@ let counter_signal = prove
     STRIP_ASSUME_TAC THENL
   [MATCH_ACCEPT_TAC EXISTS_REFL';
    ALL_TAC] THEN
-  SUBGOAL_THEN
-    `(g : cycle -> cycle # cycle) (k + 1) = (0,k)`
-    STRIP_ASSUME_TAC THENL
-  [
   ***
 
   MP_TAC
