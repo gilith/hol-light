@@ -1369,7 +1369,7 @@ let counter_signal = prove
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal nb t) + n + 1 = 2 EXP (width nb) + width nb /\
      counter ld nb dn ==>
-     (signal dn (t + k) <=> n <= k)`,
+     (signal dn (t + k) <=> n < k)`,
   REPEAT STRIP_TAC THEN
   SUBGOAL_THEN
     `width nb <= n`
@@ -1656,19 +1656,20 @@ let counter_signal = prove
     UNDISCH_TAC `SUC i < k + 1` THEN
     REWRITE_TAC [GSYM ADD1; LT_SUC]];
    ALL_TAC] THEN
-  ***
   SUBGOAL_THEN
-    `?ld'. (w : (num -> num -> bool) -> wire) (\j k. k = 0) = ld'`
+    `?ld'. ld' = (w : (num -> num -> bool) -> wire) (\j k. k = 0)`
     STRIP_ASSUME_TAC THENL
-  [MATCH_ACCEPT_TAC EXISTS_REFL';
+  [MATCH_ACCEPT_TAC EXISTS_REFL;
    ALL_TAC] THEN
   SUBGOAL_THEN
     `?dn'.
+       dn' =
        (w : (num -> num -> bool) -> wire)
-       (\j k. 1 < k /\ signal dn (t + j + (k - 1))) = dn'`
+       (\j k. 1 < k /\ signal dn (t + j + (k - 1)))`
     STRIP_ASSUME_TAC THENL
-  [MATCH_ACCEPT_TAC EXISTS_REFL';
+  [MATCH_ACCEPT_TAC EXISTS_REFL;
    ALL_TAC] THEN
+  ***
   MP_TAC
     (SPECL
        [`m + 1 : num`;
