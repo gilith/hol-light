@@ -1692,6 +1692,29 @@ let counter_signal = prove
   [MATCH_ACCEPT_TAC EXISTS_REFL;
    ALL_TAC] THEN
   ***
+  SUBGOAL_THEN
+    `?nb'.
+       width nb' = width nb /\
+       bsignal nb' u =
+       UNCURRY (\j k. bsignal nb (t + j)) ((g : cycle -> cycle # cycle) u) /\
+       !i nbi nbi'.
+         wire nb i nbi /\
+         wire nb' i nbi' ==>
+         nbi' = (gw : (cycle -> cycle -> bool) -> wire)
+                (\j k. signal nbi (t + j))`
+    STRIP_ASSUME_TAC THENL
+  [EXISTS_TAC
+     `bmap (\w. (gw : (cycle -> cycle -> bool) -> wire)
+                (\j k. signal w (t + j))) nb` THEN
+   REWRITE_TAC [width_bmap] THEN
+   REPEAT STRIP_TAC THENL
+   [ASM_REWRITE_TAC [bsignal_def; bus_tybij; bmap_def; GSYM MAP_o; o_DEF] THEN
+    MP_TAC (ISPEC `(g : cycle -> cycle # cycle) u` PAIR_SURJECTIVE) THEN
+    DISCH_THEN
+     (X_CHOOSE_THEN `gj : cycle`
+       (X_CHOOSE_THEN `gk : cycle` SUBST1_TAC)) THEN
+    REWRITE_TAC [UNCURRY_DEF];
+
   MP_TAC
     (SPECL
        [`m + 1 : num`;
@@ -1753,8 +1776,8 @@ let counter_signal = prove
    REWRITE_TAC [CARD_NUMSEG_LE; ADD1];
    ALL_TAC] THEN
 
-
-
+   REWRITE_TAC [event_counter_def]
+bcase1_def
 
 (***
   SUBGOAL_THEN `~(n = 0)` ASSUME_TAC THENL

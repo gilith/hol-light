@@ -125,6 +125,18 @@ let snth_eq_imp = prove
 
 export_thm snth_eq_imp;;
 
+let snth_eq = prove
+  (`!(s1 : A stream) s2.
+      (!n. snth s1 n = snth s2 n) <=>
+      s1 = s2`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC snth_eq_imp;
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC []]);;
+
+export_thm snth_eq;;
+
 let snth_add = prove
   (`!(s : A stream) m n. snth s (m + n) = snth (sdrop s n) m`,
    REPEAT STRIP_TAC THEN

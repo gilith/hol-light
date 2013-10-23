@@ -21,6 +21,26 @@ let mk_wire_signal = prove
  (`!s t. signal (mk_wire s) t = snth s t`,
   REWRITE_TAC [signal_def; wire_tybij]);;
 
+let signal_eq_imp = prove
+ (`!w1 w2. (!t. signal w1 t = signal w2 t) ==> w1 = w2`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [GSYM wire_tybij] THEN
+  REWRITE_TAC [mk_wire_signal; snth_eq] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REFL_TAC);;
+
+export_thm signal_eq_imp;;
+
+let signal_eq = prove
+ (`!w1 w2. (!t. signal w1 t = signal w2 t) <=> w1 = w2`,
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [MATCH_ACCEPT_TAC signal_eq_imp;
+   DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC []]);;
+
+export_thm signal_eq;;
+
 (* ------------------------------------------------------------------------- *)
 (* Power and ground wires.                                                   *)
 (* ------------------------------------------------------------------------- *)
@@ -539,6 +559,121 @@ let bsub_bits_to_num = prove
   REWRITE_TAC [bit_shl_mono_le; LE_ADD]);;
 
 export_thm bsub_bits_to_num;;
+
+(* ------------------------------------------------------------------------- *)
+(* Mapping buses.                                                            *)
+(* ------------------------------------------------------------------------- *)
+
+let width_bmap = prove
+ (`!f x. width (bmap f x) = width x`,
+  REWRITE_TAC [bmap_def; width_def; bus_tybij; LENGTH_MAP]);;
+
+export_thm width_bmap;;
+
+let bmap_bnil = prove
+ (`!f. bmap f bnil = bnil`,
+  REWRITE_TAC [bmap_def; bnil_def; bus_tybij; MAP_NIL]);;
+
+export_thm bmap_bnil;;
+
+let bmap_bwire = prove
+ (`!f w. bmap f (bwire w) = bwire (f w)`,
+  REWRITE_TAC [bmap_def; bwire_def; bus_tybij; MAP_NIL; MAP_CONS]);;
+
+export_thm bmap_bwire;;
+
+let bmap_bappend = prove
+ (`!f x y. bmap f (bappend x y) = bappend (bmap f x) (bmap f y)`,
+  REWRITE_TAC [bmap_def; bappend_def; bus_tybij; MAP_APPEND]);;
+
+export_thm bmap_bappend;;
+
+let bmap_bsub_imp = prove
+ (`!f x k n y. bsub x k n y ==> bsub (bmap f x) k n (bmap f y)`,
+  REPEAT GEN_TAC THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`; `k : num`; `n : num`; `y : bus`]
+       bsub_bappend_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  REWRITE_TAC [bmap_bappend] THEN
+  SUBGOAL_THEN `width (bmap f p) + 0 = k` (SUBST1_TAC o SYM) THENL
+  [REWRITE_TAC [width_bmap; ADD_0] THEN
+   MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `bappend p (bappend y q)` THEN
+   EXISTS_TAC `0` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC [bsub_in_suffix] THEN
+  SUBGOAL_THEN `width (bmap f y) = n` (SUBST1_TAC o SYM) THENL
+  [REWRITE_TAC [width_bmap] THEN
+   MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `bappend p (bappend y q)` THEN
+   EXISTS_TAC `k : num` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC [bsub_prefix]);;
+
+export_thm bmap_bsub_imp;;
+
+let bmap_bsub = prove
+ (`!f x k n y. bsub (bmap f x) k n y <=> ?z. bsub x k n z /\ y = bmap f z`,
+  REPEAT GEN_TAC THEN
+  REVERSE_TAC EQ_TAC THENL
+  [STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   MATCH_MP_TAC bmap_bsub_imp THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`; `k : num`; `n : num`]
+       bsub_exists) THEN
+  MP_TAC
+    (SPECL
+       [`bmap f x`; `k : num`; `n : num`; `y : bus`]
+       bsub_bound) THEN
+  ASM_REWRITE_TAC [width_bmap] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `z : bus` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `z : bus` THEN
+  ASM_REWRITE_TAC [] THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`; `k : num`; `n : num`; `z : bus`]
+       bsub_bappend_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MATCH_MP_TAC bsub_inj THEN
+  EXISTS_TAC `bmap f (bappend p (bappend z q))` THEN
+  EXISTS_TAC `k : num` THEN
+  EXISTS_TAC `n : num` THEN
+  ASM_REWRITE_TAC [] THEN
+  REWRITE_TAC [bmap_bappend] THEN
+  SUBGOAL_THEN `width (bmap f p) + 0 = k` (SUBST1_TAC o SYM) THENL
+  [REWRITE_TAC [width_bmap; ADD_0] THEN
+   MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `bappend p (bappend z q)` THEN
+   EXISTS_TAC `0` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC [bsub_in_suffix] THEN
+  SUBGOAL_THEN `width (bmap f z) = n` (SUBST1_TAC o SYM) THENL
+  [REWRITE_TAC [width_bmap] THEN
+   MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `bappend p (bappend z q)` THEN
+   EXISTS_TAC `k : num` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC [bsub_prefix]);;
+
+export_thm bmap_bsub;;
 
 (* ------------------------------------------------------------------------- *)
 (* Power and ground buses.                                                   *)
