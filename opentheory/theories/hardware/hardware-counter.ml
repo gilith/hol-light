@@ -1662,21 +1662,29 @@ let counter_signal = prove
    REWRITE_TAC [signal_def; wire_tybij; stream_tybij];
    ALL_TAC] THEN
   SUBGOAL_THEN
-    `(g : cycle -> cycle # cycle) (k + 1) = (0, k + 1)`
+    `!i. i <= k + 1 ==> (g : cycle -> cycle # cycle) i = (0,i)`
     STRIP_ASSUME_TAC THENL
-  [ASM_REWRITE_TAC [ADD_0] THEN
+  [REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [ADD_0] THEN
    CONJ_TAC THENL
    [UNDISCH_THEN
       `!i. i <= k ==> (signal ld (t + i) <=> i = 0)`
       (MP_TAC o SPEC `0`) THEN
     REWRITE_TAC [LE_0; ADD_0];
-    REPEAT STRIP_TAC THEN
+    X_GEN_TAC `j : cycle` THEN
+    STRIP_TAC THEN
     UNDISCH_THEN
       `!i. i <= k ==> (signal ld (t + i) <=> i = 0)`
-      (MP_TAC o SPEC `SUC i`) THEN
+      (MP_TAC o SPEC `SUC j`) THEN
     ASM_REWRITE_TAC [NOT_SUC; LE_SUC_LT] THEN
-    UNDISCH_TAC `SUC i < k + 1` THEN
-    REWRITE_TAC [GSYM ADD1; LT_SUC]];
+    REVERSE_TAC ANTS_TAC THENL
+    [REWRITE_TAC [];
+     ALL_TAC] THEN
+    CONV_TAC (REWR_CONV (GSYM LT_SUC)) THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `i : cycle` THEN
+    ASM_REWRITE_TAC [] THEN
+    ASM_REWRITE_TAC [ADD1]];
    ALL_TAC] THEN
   SUBGOAL_THEN
     `?ld'. ld' = (gw : (num -> num -> bool) -> wire) (\j k. k = 0)`
@@ -1691,12 +1699,13 @@ let counter_signal = prove
     STRIP_ASSUME_TAC THENL
   [MATCH_ACCEPT_TAC EXISTS_REFL;
    ALL_TAC] THEN
-  ***
   SUBGOAL_THEN
     `?nb'.
        width nb' = width nb /\
-       bsignal nb' u =
-       UNCURRY (\j k. bsignal nb (t + j)) ((g : cycle -> cycle # cycle) u) /\
+       (!u.
+          bsignal nb' u =
+          UNCURRY (\j k. bsignal nb (t + j))
+            ((g : cycle -> cycle # cycle) u)) /\
        !i nbi nbi'.
          wire nb i nbi /\
          wire nb' i nbi' ==>
@@ -1715,18 +1724,30 @@ let counter_signal = prove
        (X_CHOOSE_THEN `gk : cycle` SUBST1_TAC)) THEN
     REWRITE_TAC [UNCURRY_DEF];
 
+    MATCH_MP_TAC wire_inj THEN
+    EXISTS_TAC
+      `bmap (\w. (gw : (cycle -> cycle -> bool) -> wire)
+                 (\j k. signal w (t + j))) nb` THEN
+    EXISTS_TAC `i : num` THEN
+    ASM_REWRITE_TAC [bmap_wire] THEN
+    EXISTS_TAC `nbi : wire` THEN
+    ASM_REWRITE_TAC []];
+   ALL_TAC] THEN
   MP_TAC
     (SPECL
        [`m + 1 : num`;
         `ld' : wire`;
-        `nb : bus`;
+        `nb' : bus`;
         `power`;
         `dn' : wire`;
         `0`;
         `k + 1 : cycle`]
        event_counter_signal) THEN
   REVERSE_TAC ANTS_TAC THENL
-  [ASM_REWRITE_TAC [ZERO_ADD; UNCURRY_DEF; LT_ADDR; ADD_SUB; LT_NZ] THEN
+  [UNDISCH_THEN
+     `!i. i <= k + 1 ==> (g : cycle -> cycle # cycle) i = (0,i)`
+     (STRIP_ASSUME_TAC o REWRITE_RULE [LE_REFL] o SPEC `k + 1`) THEN
+   ASM_REWRITE_TAC [ZERO_ADD; UNCURRY_DEF; LT_ADDR; ADD_SUB; LT_NZ] THEN
    DISCH_THEN SUBST1_TAC THEN
    REWRITE_TAC [power_signal; GSYM ADD1; NOT_SUC; GSYM LE_SUC_LT] THEN
    SUBGOAL_THEN
@@ -1775,9 +1796,29 @@ let counter_signal = prove
     ALL_TAC] THEN
    REWRITE_TAC [CARD_NUMSEG_LE; ADD1];
    ALL_TAC] THEN
+  CONJ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [ZERO_ADD] THEN
+   UNDISCH_THEN
+     `!i. i <= k + 1 ==> (g : cycle -> cycle # cycle) i = (0,i)`
+     (MP_TAC o SPEC `i : cycle`) THEN
+   ANTS_TAC THENL
+   [ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   ASM_REWRITE_TAC [UNCURRY_DEF];
+   ALL_TAC] THEN
+  CONJ_TAC THENL
+  [ASM_REWRITE_TAC [UNCURRY_DEF; ADD_0];
+   ALL_TAC] THEN
+  ***
+  POP_ASSUM_LIST
+    (EVERY o
+     map (fun th ->
+       if free_in `k : cycle` (concl th) then ALL_TAC else ASSUME_TAC th) o
+     rev)
 
    REWRITE_TAC [event_counter_def]
-bcase1_def
 
 (***
   SUBGOAL_THEN `~(n = 0)` ASSUME_TAC THENL
