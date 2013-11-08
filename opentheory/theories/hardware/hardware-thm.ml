@@ -21,6 +21,8 @@ let mk_wire_signal = prove
  (`!s t. signal (mk_wire s) t = snth s t`,
   REWRITE_TAC [signal_def; wire_tybij]);;
 
+export_thm mk_wire_signal;;
+
 let signal_eq_imp = prove
  (`!w1 w2. (!t. signal w1 t = signal w2 t) ==> w1 = w2`,
   REPEAT GEN_TAC THEN

@@ -145,6 +145,17 @@ let delay_signal = prove
 
 export_thm delay_signal;;
 
+let delay_exists = prove
+  (`!x. ?y. delay x y`,
+   GEN_TAC THEN
+   REWRITE_TAC [delay_def] THEN
+   EXISTS_TAC `mk_wire (stream (\t. t = 0 \/ signal x (t - 1)))` THEN
+   GEN_TAC THEN
+   REWRITE_TAC
+     [mk_wire_signal; stream_tybij; ADD_SUB; ADD_EQ_0; ONE; NOT_SUC]);;
+
+export_thm delay_exists;;
+
 let not_signal = prove
   (`!x y t.
       not x y ==>
@@ -154,6 +165,16 @@ let not_signal = prove
 
 export_thm not_signal;;
 
+let not_exists = prove
+  (`!x. ?y. not x y`,
+   GEN_TAC THEN
+   REWRITE_TAC [not_def] THEN
+   EXISTS_TAC `mk_wire (stream (\t. ~signal x t))` THEN
+   GEN_TAC THEN
+   REWRITE_TAC [mk_wire_signal; stream_tybij]);;
+
+export_thm not_exists;;
+
 let and2_signal = prove
   (`!x y z t.
       and2 x y z ==>
@@ -162,6 +183,16 @@ let and2_signal = prove
    DISCH_THEN (MATCH_ACCEPT_TAC o REWRITE_RULE [and2_def]));;
 
 export_thm and2_signal;;
+
+let and2_exists = prove
+  (`!x y. ?z. and2 x y z`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [and2_def] THEN
+   EXISTS_TAC `mk_wire (stream (\t. signal x t /\ signal y t))` THEN
+   GEN_TAC THEN
+   REWRITE_TAC [mk_wire_signal; stream_tybij]);;
+
+export_thm and2_exists;;
 
 let and2_right_ground = prove
  (`!x y. connect ground y ==> and2 x ground y`,
@@ -182,6 +213,16 @@ let or2_signal = prove
 
 export_thm or2_signal;;
 
+let or2_exists = prove
+  (`!x y. ?z. or2 x y z`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [or2_def] THEN
+   EXISTS_TAC `mk_wire (stream (\t. signal x t \/ signal y t))` THEN
+   GEN_TAC THEN
+   REWRITE_TAC [mk_wire_signal; stream_tybij]);;
+
+export_thm or2_exists;;
+
 let or2_right_ground = prove
  (`!x y. connect x y ==> or2 x ground y`,
   REPEAT STRIP_TAC THEN
@@ -201,6 +242,16 @@ let xor2_signal = prove
 
 export_thm xor2_signal;;
 
+let xor2_exists = prove
+  (`!x y. ?z. xor2 x y z`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [xor2_def] THEN
+   EXISTS_TAC `mk_wire (stream (\t. ~(signal x t <=> signal y t)))` THEN
+   GEN_TAC THEN
+   REWRITE_TAC [mk_wire_signal; stream_tybij]);;
+
+export_thm xor2_exists;;
+
 let xor2_right_ground = prove
  (`!x y. connect x y ==> xor2 x ground y`,
   REPEAT STRIP_TAC THEN
@@ -219,6 +270,18 @@ let case1_signal = prove
    DISCH_THEN (MATCH_ACCEPT_TAC o REWRITE_RULE [case1_def]));;
 
 export_thm case1_signal;;
+
+let case1_exists = prove
+  (`!s x y. ?z. case1 s x y z`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [case1_def] THEN
+   EXISTS_TAC
+     `mk_wire
+        (stream (\t. if signal s t then signal x t else signal y t))` THEN
+   GEN_TAC THEN
+   REWRITE_TAC [mk_wire_signal; stream_tybij]);;
+
+export_thm case1_exists;;
 
 (* ~~~~~~~~~~~~~~~~~~~~ *)
 (* Derived wire devices *)
