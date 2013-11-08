@@ -2043,6 +2043,87 @@ let nth_zip = prove
 
 export_thm nth_zip;;
 
+let zipwith_sing = prove
+ (`!(f : A -> B -> C) x y. zipwith f [x] [y] = [f x y]`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPECL [`f : A -> B -> C`;
+                 `x : A`;
+                 `y : B`;
+                 `[] : A list`;
+                 `[] : B list`] zipwith_cons) THEN
+  REWRITE_TAC [LENGTH_NIL] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [zipwith_nil]);;
+
+export_thm zipwith_sing;;
+
+let zip_sing = prove
+ (`!(x : A) (y : B). zip [x] [y] = [(x,y)]`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [zip_def] THEN
+  MATCH_ACCEPT_TAC zipwith_sing);;
+
+export_thm zip_sing;;
+
+let zipwith_append = prove
+ (`!(f : A -> B -> C) x1 x2 y1 y2.
+     LENGTH x1 = LENGTH y1 /\
+     LENGTH x2 = LENGTH y2 ==>
+     zipwith f (APPEND x1 x2) (APPEND y1 y2) =
+     APPEND (zipwith f x1 y1) (zipwith f x2 y2)`,
+  REPEAT GEN_TAC THEN
+  SPEC_TAC (`x1 : A list`, `x1 : A list`) THEN
+  SPEC_TAC (`y1 : B list`, `y1 : B list`) THEN
+  MATCH_MP_TAC list_INDUCT THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [LENGTH_NIL; LENGTH_EQ_NIL] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [zipwith_nil; NIL_APPEND];
+   ALL_TAC] THEN
+  X_GEN_TAC `h2 : B` THEN
+  X_GEN_TAC `t2 : B list` THEN
+  STRIP_TAC THEN
+  GEN_TAC THEN
+  REWRITE_TAC [LENGTH_CONS; LENGTH_EQ_CONS] THEN
+  DISCH_THEN
+    (CONJUNCTS_THEN2
+       (X_CHOOSE_THEN `h1 : A`
+          (X_CHOOSE_THEN `t1 : A list` STRIP_ASSUME_TAC))
+       STRIP_ASSUME_TAC) THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MP_TAC (SPECL [`f : A -> B -> C`;
+                 `h1 : A`;
+                 `h2 : B`;
+                 `t1 : A list`;
+                 `t2 : B list`] zipwith_cons) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [CONS_APPEND] THEN
+  MP_TAC (SPECL [`f : A -> B -> C`;
+                 `h1 : A`;
+                 `h2 : B`;
+                 `APPEND t1 x2 : A list`;
+                 `APPEND t2 y2 : B list`] zipwith_cons) THEN
+  ASM_REWRITE_TAC [LENGTH_APPEND] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  AP_TERM_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm zipwith_append;;
+
+let zip_append = prove
+ (`!(x1 : A list) x2 (y1 : B list) y2.
+     LENGTH x1 = LENGTH y1 /\
+     LENGTH x2 = LENGTH y2 ==>
+     zip (APPEND x1 x2) (APPEND y1 y2) =
+     APPEND (zip x1 y1) (zip x2 y2)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [zip_def] THEN
+  MATCH_ACCEPT_TAC zipwith_append);;
+
+export_thm zip_append;;
+
 (* ------------------------------------------------------------------------- *)
 (* Nub.                                                                      *)
 (* ------------------------------------------------------------------------- *)

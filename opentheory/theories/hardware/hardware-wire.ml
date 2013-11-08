@@ -128,6 +128,14 @@ let connect_refl = prove
 
 export_thm connect_refl;;
 
+let connect_exists = prove
+  (`!x. ?y. connect x y`,
+   GEN_TAC THEN
+   EXISTS_TAC `x : wire` THEN
+   MATCH_ACCEPT_TAC connect_refl);;
+
+export_thm connect_exists;;
+
 let delay_signal = prove
   (`!x y t.
       delay x y ==>

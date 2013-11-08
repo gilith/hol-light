@@ -18,20 +18,29 @@ let wire_def = new_definition
 
 export_thm wire_def;;
 
-(* ~~~~~~~~~~~~~~~~~~~~~ *)
-(* Primitive bus devices *)
-(* ~~~~~~~~~~~~~~~~~~~~~ *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Lifting relations between wires *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
-let bconnect_def = new_definition
-  `!x y.
-     bconnect x y <=>
+let blift2_def = new_definition
+  `!r x y.
+     blift2 r x y <=>
      ?n.
        width x = n /\
        width y = n /\
        !i xi yi.
          wire x i xi /\
          wire y i yi ==>
-         connect xi yi`;;
+         r xi yi`;;
+
+export_thm blift2_def;;
+
+(* ~~~~~~~~~~~~~~~~~~~~~ *)
+(* Primitive bus devices *)
+(* ~~~~~~~~~~~~~~~~~~~~~ *)
+
+let bconnect_def = new_definition
+  `bconnect = blift2 connect`;;
 
 export_thm bconnect_def;;
 
@@ -369,128 +378,118 @@ let bground_wire = prove
 
 export_thm bground_wire;;
 
-(* ~~~~~~~~~~~~~~~~~~~~~ *)
-(* Primitive bus devices *)
-(* ~~~~~~~~~~~~~~~~~~~~~ *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Lifting relations between wires *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
-let bconnect_width = prove
- (`!x y.
-     bconnect x y ==>
+let blift2_width = prove
+ (`!r x y.
+     blift2 r x y ==>
      ?n.
        width x = n /\
        width y = n`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [bconnect_def] THEN
+  REWRITE_TAC [blift2_def] THEN
   STRIP_TAC THEN
   EXISTS_TAC `n : num` THEN
   ASM_REWRITE_TAC []);;
 
-export_thm bconnect_width;;
+export_thm blift2_width;;
 
-let bconnect_width_out = prove
- (`!x y n.
-     bconnect x y /\ width x = n ==>
+let blift2_width_out = prove
+ (`!r x y n.
+     blift2 r x y /\ width x = n ==>
      width y = n`,
   REPEAT STRIP_TAC THEN
   FIRST_X_ASSUM SUBST_VAR_TAC THEN
-  MP_TAC (SPECL [`x : bus`; `y : bus`] bconnect_width) THEN
+  MP_TAC (SPECL [`r : wire -> wire -> bool`;
+                 `x : bus`;
+                 `y : bus`] blift2_width) THEN
   ASM_REWRITE_TAC [] THEN
   STRIP_TAC THEN
   ASM_REWRITE_TAC []);;
 
-export_thm bconnect_width_out;;
+export_thm blift2_width_out;;
 
-let bconnect_wire = prove
- (`!x y i xi yi. bconnect x y /\ wire x i xi /\ wire y i yi ==> connect xi yi`,
+let blift2_bnil = prove
+ (`!r. blift2 r bnil bnil`,
+  REWRITE_TAC [blift2_def; bnil_width; bnil_wire; EXISTS_REFL']);;
+
+export_thm blift2_bnil;;
+
+let blift2_bwire = prove
+ (`!r w x. blift2 r (bwire w) (bwire x) <=> r w x`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [bconnect_def] THEN
-  STRIP_TAC THEN
-  FIRST_X_ASSUM MATCH_MP_TAC THEN
-  EXISTS_TAC `i : num` THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm bconnect_wire;;
-
-let bconnect_bnil = prove
- (`bconnect bnil bnil`,
-  REWRITE_TAC [bconnect_def; bnil_width; bnil_wire] THEN
-  EXISTS_TAC `0` THEN
-  REWRITE_TAC []);;
-
-export_thm bconnect_bnil;;
-
-let bconnect_bwire = prove
- (`!x y. bconnect (bwire x) (bwire y) <=> connect x y`,
-  REPEAT GEN_TAC THEN
+  REWRITE_TAC [blift2_def; bwire_width; bwire_wire] THEN
   EQ_TAC THENL
   [STRIP_TAC THEN
-   MATCH_MP_TAC bconnect_wire THEN
-   EXISTS_TAC `bwire x` THEN
-   EXISTS_TAC `bwire y` THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
    EXISTS_TAC `0` THEN
-   ASM_REWRITE_TAC [bwire_wire];
+   REWRITE_TAC [];
    STRIP_TAC THEN
-   REWRITE_TAC [bconnect_def; bwire_wire] THEN
    EXISTS_TAC `1` THEN
-   REWRITE_TAC [bwire_width] THEN
+   REWRITE_TAC [] THEN
    REPEAT STRIP_TAC THEN
    ASM_REWRITE_TAC []]);;
 
-export_thm bconnect_bwire;;
+export_thm blift2_bwire;;
 
-let bconnect_bappend = prove
- (`!x1 x2 y1 y2.
-     bconnect x1 y1 /\ bconnect x2 y2 ==>
-     bconnect (bappend x1 x2) (bappend y1 y2)`,
+let blift2_bappend = prove
+ (`!r x1 x2 y1 y2.
+     blift2 r x1 y1 /\ blift2 r x2 y2 ==>
+     blift2 r (bappend x1 x2) (bappend y1 y2)`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [bconnect_def] THEN
-  ONCE_REWRITE_TAC [GSYM IMP_IMP] THEN
-  DISCH_THEN (X_CHOOSE_THEN `m : num` STRIP_ASSUME_TAC) THEN
-  DISCH_THEN (X_CHOOSE_THEN `n : num` STRIP_ASSUME_TAC) THEN
-  EXISTS_TAC `m + n : num` THEN
+  REWRITE_TAC [blift2_def] THEN
+  DISCH_THEN
+    (CONJUNCTS_THEN2
+       (X_CHOOSE_THEN `n1 : num` STRIP_ASSUME_TAC)
+       (X_CHOOSE_THEN `n2 : num` STRIP_ASSUME_TAC)) THEN
+  EXISTS_TAC `n1 + n2 : num` THEN
   ASM_REWRITE_TAC [bappend_width] THEN
   REPEAT GEN_TAC THEN
-  ASM_CASES_TAC `i < (m : num)` THENL
-  [MP_TAC
-     (SPECL
-        [`x1 : bus`; `x2 : bus`; `i : num`; `xi : wire`]
-        wire_in_prefix) THEN
+  ASM_CASES_TAC `i < (n1 : num)` THENL
+  [MP_TAC (SPECL [`x1 : bus`;
+                  `x2 : bus`;
+                  `i : num`;
+                  `xi : wire`] wire_in_prefix) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
-   MP_TAC
-     (SPECL
-        [`y1 : bus`; `y2 : bus`; `i : num`; `yi : wire`]
-        wire_in_prefix) THEN
+   MP_TAC (SPECL [`y1 : bus`;
+                  `y2 : bus`;
+                  `i : num`;
+                  `yi : wire`] wire_in_prefix) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
    FIRST_X_ASSUM MATCH_ACCEPT_TAC;
    POP_ASSUM
      (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
       REWRITE_RULE [NOT_LT; LE_EXISTS]) THEN
-   MP_TAC
-     (SPECL
-        [`x1 : bus`; `x2 : bus`; `d : num`; `xi : wire`]
-        wire_in_suffix) THEN
+   MP_TAC (SPECL [`x1 : bus`;
+                  `x2 : bus`;
+                  `d : num`;
+                  `xi : wire`] wire_in_suffix) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
-   MP_TAC
-     (SPECL
-        [`y1 : bus`; `y2 : bus`; `d : num`; `yi : wire`]
-        wire_in_suffix) THEN
+   MP_TAC (SPECL [`y1 : bus`;
+                  `y2 : bus`;
+                  `d : num`;
+                  `yi : wire`] wire_in_suffix) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
    FIRST_X_ASSUM MATCH_ACCEPT_TAC]);;
 
-export_thm bconnect_bappend;;
+export_thm blift2_bappend;;
 
-let bconnect_bsub = prove
- (`!x y k n xs ys.
-     bconnect x y /\
-     bsub x k n xs /\
-     bsub y k n ys ==>
-     bconnect xs ys`,
-  REPEAT STRIP_TAC THEN
-  REWRITE_TAC [bconnect_def] THEN
+let blift2_bsub = prove
+ (`!r x y k n xs ys.
+     blift2 r x y /\ bsub x k n xs /\ bsub y k n ys ==>
+     blift2 r xs ys`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [blift2_def] THEN
+  DISCH_THEN
+    (CONJUNCTS_THEN2
+       (X_CHOOSE_THEN `m : num` STRIP_ASSUME_TAC)
+       STRIP_ASSUME_TAC) THEN
   EXISTS_TAC `n : num` THEN
   CONJ_TAC THENL
   [MATCH_MP_TAC bsub_width THEN
@@ -505,11 +504,8 @@ let bconnect_bsub = prove
    ASM_REWRITE_TAC [];
    ALL_TAC] THEN
   REPEAT STRIP_TAC THEN
-  MATCH_MP_TAC bconnect_wire THEN
-  EXISTS_TAC `x : bus` THEN
-  EXISTS_TAC `y : bus` THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
   EXISTS_TAC `k + i : num` THEN
-  ASM_REWRITE_TAC [] THEN
   CONJ_TAC THENL
   [MATCH_MP_TAC bsub_wire_imp THEN
    EXISTS_TAC `n : num` THEN
@@ -520,20 +516,31 @@ let bconnect_bsub = prove
    EXISTS_TAC `ys : bus` THEN
    ASM_REWRITE_TAC []]);;
 
-export_thm bconnect_bsub;;
+export_thm blift2_bsub;;
 
-let bconnect_bappend_bwire = prove
- (`!xh xt yh yt.
-     bconnect (bappend (bwire xh) xt) (bappend (bwire yh) yt) <=>
-     connect xh yh /\ bconnect xt yt`,
+let blift2_wire = prove
+ (`!r x y i xi yi. blift2 r x y /\ wire x i xi /\ wire y i yi ==> r xi yi`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [blift2_def] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  EXISTS_TAC `i : num` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm blift2_wire;;
+
+let blift2_bappend_bwire = prove
+ (`!r xh xt yh yt.
+     blift2 r (bappend (bwire xh) xt) (bappend (bwire yh) yt) <=>
+     r xh yh /\ blift2 r xt yt`,
   REPEAT GEN_TAC THEN
   REVERSE_TAC EQ_TAC THENL
-  [REWRITE_TAC [GSYM bconnect_bwire] THEN
-   MATCH_ACCEPT_TAC bconnect_bappend;
+  [REWRITE_TAC [GSYM blift2_bwire] THEN
+   MATCH_ACCEPT_TAC blift2_bappend;
    ALL_TAC] THEN
   STRIP_TAC THEN
   CONJ_TAC THENL
-  [MATCH_MP_TAC bconnect_wire THEN
+  [MATCH_MP_TAC blift2_wire THEN
    EXISTS_TAC `bappend (bwire xh) xt` THEN
    EXISTS_TAC `bappend (bwire yh) yt` THEN
    EXISTS_TAC `0` THEN
@@ -541,9 +548,10 @@ let bconnect_bappend_bwire = prove
    ALL_TAC] THEN
   MP_TAC
     (SPECL
-       [`bappend (bwire xh) xt`;
+       [`r : wire -> wire -> bool`;
+        `bappend (bwire xh) xt`;
         `bappend (bwire yh) yt`]
-       bconnect_width) THEN
+       blift2_width) THEN
   ASM_REWRITE_TAC [bappend_width; bwire_width; ONE; SUC_ADD; ZERO_ADD] THEN
   DISCH_THEN (X_CHOOSE_THEN `m : num` MP_TAC) THEN
   MP_TAC (SPEC `m : num` num_CASES) THEN
@@ -555,7 +563,7 @@ let bconnect_bappend_bwire = prove
    ALL_TAC] THEN
   REWRITE_TAC [SUC_INJ] THEN
   STRIP_TAC THEN
-  MATCH_MP_TAC bconnect_bsub THEN
+  MATCH_MP_TAC blift2_bsub THEN
   EXISTS_TAC `bappend (bwire xh) xt` THEN
   EXISTS_TAC `bappend (bwire yh) yt` THEN
   EXISTS_TAC `1` THEN
@@ -573,12 +581,88 @@ let bconnect_bappend_bwire = prove
   [REWRITE_TAC [bwire_width];
    REWRITE_TAC [bsub_suffix]]);;
 
-export_thm bconnect_bappend_bwire;;
+export_thm blift2_bappend_bwire;;
 
-let bconnect_refl = prove
- (`!x. bconnect x x`,
+let blift2_induct = prove
+ (`!r p.
+     p bnil bnil /\
+     (!xh xt yh yt.
+        r xh yh /\ blift2 r xt yt /\ p xt yt ==>
+        p (bappend (bwire xh) xt) (bappend (bwire yh) yt)) ==>
+     !x y. blift2 r x y ==> p x y`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`r : wire -> wire -> bool`;
+                 `x : bus`; `y : bus`] blift2_width) THEN
+  ASM_REWRITE_TAC [LEFT_IMP_EXISTS_THM] THEN
   GEN_TAC THEN
-  REWRITE_TAC [bconnect_def] THEN
+  DISCH_THEN (fun th -> POP_ASSUM MP_TAC THEN MP_TAC th) THEN
+  REWRITE_TAC [IMP_IMP; GSYM CONJ_ASSOC] THEN
+  SPEC_TAC (`y : bus`, `y : bus`) THEN
+  SPEC_TAC (`x : bus`, `x : bus`) THEN
+  SPEC_TAC (`n : num`, `n : num`) THEN
+  INDUCT_TAC THENL
+  [REPEAT GEN_TAC THEN
+   REWRITE_TAC [width_zero] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [width_suc; IMP_CONJ] THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `xh : wire`
+      (X_CHOOSE_THEN `xt : bus`
+         (CONJUNCTS_THEN2 SUBST_VAR_TAC ASSUME_TAC))) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `yh : wire`
+      (X_CHOOSE_THEN `yt : bus`
+         (CONJUNCTS_THEN2 SUBST_VAR_TAC ASSUME_TAC))) THEN
+  REWRITE_TAC [blift2_bappend_bwire] THEN
+  STRIP_TAC THEN
+  UNDISCH_THEN
+    `!xh xt yh yt.
+       r xh yh /\ blift2 r xt yt /\ p xt yt ==>
+       p (bappend (bwire xh) xt) (bappend (bwire yh) yt)`
+    MATCH_MP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm blift2_induct;;
+
+let blift2_exists = prove
+ (`!r. (!xi. ?yi. r xi yi) ==> !x. ?y. blift2 r x y`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (ISPEC `width x` EXISTS_REFL') THEN
+  REWRITE_TAC [GSYM LEFT_FORALL_IMP_THM] THEN
+  X_GEN_TAC `n : num` THEN
+  SPEC_TAC (`x : bus`, `x : bus`) THEN
+  SPEC_TAC (`n : num`, `n : num`) THEN
+  INDUCT_TAC THENL
+  [GEN_TAC THEN
+   REWRITE_TAC [width_zero] THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   EXISTS_TAC `bnil` THEN
+   REWRITE_TAC [blift2_bnil];
+   GEN_TAC THEN
+   REWRITE_TAC [width_suc] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `y : bus`) THEN
+   REWRITE_TAC [] THEN
+   DISCH_THEN (X_CHOOSE_THEN `z : bus` STRIP_ASSUME_TAC) THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `w : wire`) THEN
+   DISCH_THEN (X_CHOOSE_THEN `x : wire` STRIP_ASSUME_TAC) THEN
+   EXISTS_TAC `bappend (bwire x) z` THEN
+   MATCH_MP_TAC blift2_bappend THEN
+   ASM_REWRITE_TAC [blift2_bwire]]);;
+
+export_thm blift2_exists;;
+
+let blift2_refl = prove
+ (`!r. (!w. r w w) ==> (!x. blift2 r x x)`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [blift2_def] THEN
   EXISTS_TAC `width x` THEN
   REWRITE_TAC [] THEN
   REPEAT STRIP_TAC THEN
@@ -586,9 +670,120 @@ let bconnect_refl = prove
     (SPECL [`x : bus`; `i : num`; `xi : wire`; `yi : wire`] wire_inj) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN SUBST1_TAC THEN
-  REWRITE_TAC [connect_refl]);;
+  ASM_REWRITE_TAC []);;
+
+export_thm blift2_refl;;
+
+(* ~~~~~~~~~~~~~~~~~~~~~ *)
+(* Primitive bus devices *)
+(* ~~~~~~~~~~~~~~~~~~~~~ *)
+
+let bconnect_width = prove
+ (`!x y.
+     bconnect x y ==>
+     ?n.
+       width x = n /\
+       width y = n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bconnect_def] THEN
+  MATCH_ACCEPT_TAC blift2_width);;
+
+export_thm bconnect_width;;
+
+let bconnect_width_out = prove
+ (`!x y n.
+     bconnect x y /\ width x = n ==>
+     width y = n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bconnect_def] THEN
+  MATCH_ACCEPT_TAC blift2_width_out);;
+
+export_thm bconnect_width_out;;
+
+let bconnect_wire = prove
+ (`!x y i xi yi. bconnect x y /\ wire x i xi /\ wire y i yi ==> connect xi yi`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bconnect_def] THEN
+  MATCH_ACCEPT_TAC blift2_wire);;
+
+export_thm bconnect_wire;;
+
+let bconnect_bnil = prove
+ (`bconnect bnil bnil`,
+  REWRITE_TAC [bconnect_def] THEN
+  MATCH_ACCEPT_TAC blift2_bnil);;
+
+export_thm bconnect_bnil;;
+
+let bconnect_bappend = prove
+ (`!x1 x2 y1 y2.
+     bconnect x1 y1 /\ bconnect x2 y2 ==>
+     bconnect (bappend x1 x2) (bappend y1 y2)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bconnect_def] THEN
+  MATCH_ACCEPT_TAC blift2_bappend);;
+
+export_thm bconnect_bappend;;
+
+let bconnect_bsub = prove
+ (`!x y k n xs ys.
+     bconnect x y /\
+     bsub x k n xs /\
+     bsub y k n ys ==>
+     bconnect xs ys`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bconnect_def] THEN
+  MATCH_ACCEPT_TAC blift2_bsub);;
+
+export_thm bconnect_bsub;;
+
+let bconnect_bwire = prove
+ (`!x y. bconnect (bwire x) (bwire y) <=> connect x y`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bconnect_def] THEN
+  MATCH_ACCEPT_TAC blift2_bwire);;
+
+export_thm bconnect_bwire;;
+
+let bconnect_bappend_bwire = prove
+ (`!xh xt yh yt.
+     bconnect (bappend (bwire xh) xt) (bappend (bwire yh) yt) <=>
+     connect xh yh /\ bconnect xt yt`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bconnect_def] THEN
+  MATCH_ACCEPT_TAC blift2_bappend_bwire);;
+
+export_thm bconnect_bappend_bwire;;
+
+let bconnect_refl = prove
+ (`!x. bconnect x x`,
+  REWRITE_TAC [bconnect_def] THEN
+  MATCH_MP_TAC blift2_refl THEN
+  ACCEPT_TAC connect_refl);;
 
 export_thm bconnect_refl;;
+
+let bconnect_exists = prove
+ (`!x. ?y. bconnect x y`,
+  REWRITE_TAC [bconnect_def] THEN
+  MATCH_MP_TAC blift2_exists THEN
+  ACCEPT_TAC connect_exists);;
+
+export_thm bconnect_exists;;
+
+let bconnect_bsignal = prove
+ (`!x y t. bconnect x y ==> bsignal y t = bsignal x t`,
+  REWRITE_TAC [bconnect_def; RIGHT_FORALL_IMP_THM] THEN
+  MATCH_MP_TAC blift2_induct THEN
+  REWRITE_TAC [bappend_bwire_bsignal; CONS_11] THEN
+  REPEAT GEN_TAC THEN
+  STRIP_TAC THEN
+  GEN_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC connect_signal THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bconnect_bsignal;;
 
 let bdelay_width = prove
  (`!x y.
@@ -833,6 +1028,17 @@ let bdelay_bsignal = prove
    ASM_REWRITE_TAC [wire_suc]]);;
 
 export_thm bdelay_bsignal;;
+
+(***
+let bdelay_exists = prove
+ (`!x. ?y. bdelay x y`,
+  GEN_TAC THEN
+  EXISTS_TAC `x : bus` THEN
+  REWRITE_TAC [bdelay_def]
+  REWRITE_TAC [bconnect_refl]);;
+
+export_thm bdelay_exists;;
+***)
 
 let bnot_width = prove
  (`!x y.
