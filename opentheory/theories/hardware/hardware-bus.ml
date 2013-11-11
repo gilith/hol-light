@@ -994,6 +994,33 @@ let blift3_refl = prove
 
 export_thm blift3_refl;;
 
+(***
+let blift3_right = prove
+ (`!s r.
+     (!x y z. s x z ==> r x y z) ==>
+     !x y z.
+       width x = width y /\ blift2 s x z ==>
+       blift3 r x y z`,
+  REPEAT STRIP_TAC THEN
+
+let blift3_right_bground = prove
+ (`!s r.
+     (!w x. s w x ==> r w ground x) ==>
+     !x n y.
+       width x = n /\ blift2 s x y ==>
+       blift3 r x (bground n) y`,
+  REPEAT STRIP_TAC THEN
+  UNDISCH_TAC `width x = n` THEN
+  SPEC_TAC (`n : num`, `n : num`) THEN
+  UNDISCH_TAC `blift2 s x y` THEN
+  SPEC_TAC (`y : bus`, `y : bus`) THEN
+  SPEC_TAC (`x : bus`, `x : bus`) THEN
+  MATCH_MP_TAC blift2_induct THEN
+  REPEAT STRIP_TAC THENL
+  [FIRST_X_ASSUM SUBST_VAR_TAC
+  
+***)
+
 (* ~~~~~~~~~~~~~~~~~~~~~ *)
 (* Primitive bus devices *)
 (* ~~~~~~~~~~~~~~~~~~~~~ *)
