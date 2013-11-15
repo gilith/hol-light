@@ -141,6 +141,16 @@ let bappend_assoc = prove
 
 export_thm bappend_assoc;;
 
+let bappend_bwire_inj = prove
+ (`!w1 w2 x1 x2.
+     bappend (bwire w1) x1 = bappend (bwire w2) x2 <=>
+     w1 = w2 /\ x1 = x2`,
+  REWRITE_TAC
+    [bappend_def; bwire_def; bus_tybij; APPEND_SING; mk_bus_inj;
+     CONS_11; dest_bus_inj]);;
+
+export_thm bappend_bwire_inj;;
+
 (* ------------------------------------------------------------------------- *)
 (* Bus widths.                                                               *)
 (* ------------------------------------------------------------------------- *)
