@@ -648,6 +648,28 @@ let blift2_refl = prove
 
 export_thm blift2_refl;;
 
+(***
+let blift2_bsignal = prove
+ (`!r f.
+     !xi yi t. r xi yi ==> 
+     !x y t.
+       blift2 r x y ==>
+       bsignal y t = 
+ (!w. r w w) ==> (!x. )`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [blift2_def] THEN
+  EXISTS_TAC `width x` THEN
+  REWRITE_TAC [] THEN
+  REPEAT STRIP_TAC THEN
+  MP_TAC
+    (SPECL [`x : bus`; `i : num`; `xi : wire`; `yi : wire`] wire_inj) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm blift2_refl;;
+***)
+
 let blift2_bground = prove
  (`!r x y.
      blift2 r (bground (width x)) y <=>
