@@ -303,6 +303,7 @@ export_thm montgomery_double_exp_bound;;
 (* Definition of a Montgomery multiplication circuit.                        *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 let montgomery_y_def = new_definition
   `!ys yc ys' yc'.
      montgomery_y ys yc ys' yc' <=>
@@ -450,7 +451,6 @@ let montgomery_loop_def = new_definition
 
 export_thm montgomery_loop_def;;
 
-(***
 let montgomery_compress_def = new_definition
   `!rx ry rz xs xc ys' yc'.
       montgomery_compress rx ry rz xs xc ys' yc' <=>
@@ -492,7 +492,6 @@ let montgomery_circuit_def = new_definition
          montgomery_compress rx ry rz qs qc zs' zc'`;;
 
 export_thm montgomery_circuit_def;;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Correctness of a Montgomery multiplication circuit.                       *)
@@ -734,7 +733,6 @@ let montgomery_y0 = prove
   REWRITE_TAC [bit_cons_def; GSYM ADD_ASSOC; GSYM LEFT_ADD_DISTRIB] THEN
   REWRITE_TAC [GSYM bit_cons_def; bit_hd_cons]);;
 
-(***
 let montgomery_sc = prove
  (`!x y ld xs xc ys0 sap sbp cap cbp saq sbq caq cbq sar sbr car cbr t k.
       (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
@@ -843,7 +841,6 @@ let montgomery_circuit = prove
   REPEAT GEN_TAC THEN
   REWRITE_TAC [montgomery_circuit_def] THEN
   STRIP_TAC THEN
-
 ***)
 
 (* ------------------------------------------------------------------------- *)

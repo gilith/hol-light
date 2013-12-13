@@ -1699,7 +1699,6 @@ let counter_signal = prove
     STRIP_ASSUME_TAC THENL
   [MATCH_ACCEPT_TAC EXISTS_REFL;
    ALL_TAC] THEN
-  ***
   SUBGOAL_THEN
     `?nb'.
        width nb' = width nb /\
@@ -1731,26 +1730,29 @@ let counter_signal = prove
     EXISTS_TAC `nb : bus` THEN
     ASM_REWRITE_TAC [];
     ALL_TAC] THEN
-   ASM_REWRITE_TAC [bsignal_def]
-; bus_tybij; bmap_def; GSYM MAP_o; o_DEF] THEN
-
-
-   REWRITE_TAC [bmap_width] THEN
-   REPEAT STRIP_TAC THENL
-   [ASM_REWRITE_TAC [bsignal_def; bus_tybij; bmap_def; GSYM MAP_o; o_DEF] THEN
-    MP_TAC (ISPEC `(g : cycle -> cycle # cycle) u` PAIR_SURJECTIVE) THEN
-    DISCH_THEN
-     (X_CHOOSE_THEN `gj : cycle`
-       (X_CHOOSE_THEN `gk : cycle` SUBST1_TAC)) THEN
-    REWRITE_TAC [UNCURRY_DEF];
-    MATCH_MP_TAC wire_inj THEN
-    EXISTS_TAC
-      `bmap (\w. (gw : (cycle -> cycle -> bool) -> wire)
-                 (\j k. signal w (t + j))) nb` THEN
-    EXISTS_TAC `i : num` THEN
-    ASM_REWRITE_TAC [bmap_wire] THEN
-    EXISTS_TAC `nbi : wire` THEN
-    ASM_REWRITE_TAC []];
+   ASM_REWRITE_TAC [bsignal_def] THEN
+   SUBGOAL_THEN
+     `dest_bus nb' =
+      MAP (\nbi. (gw : (cycle -> cycle -> bool) -> wire)
+                 (\j k. signal nbi (t + j))) (dest_bus nb)`
+     SUBST1_TAC THENL
+   [POP_ASSUM MP_TAC THEN
+    POP_ASSUM_LIST (K ALL_TAC) THEN
+    SPEC_TAC (`nb' : bus`, `nb' : bus`) THEN
+    SPEC_TAC (`nb : bus`, `nb : bus`) THEN
+    MATCH_MP_TAC blift2_induct THEN
+    REWRITE_TAC [] THEN
+    REPEAT STRIP_TAC THENL
+    [REWRITE_TAC [bnil_def; bus_tybij; MAP_NIL];
+     ASM_REWRITE_TAC
+       [bappend_def; bwire_def; bus_tybij; APPEND_SING; MAP_CONS]];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [GSYM MAP_o; o_DEF] THEN
+   MP_TAC (ISPEC `(g : cycle -> cycle # cycle) u` PAIR_SURJECTIVE) THEN
+   DISCH_THEN
+    (X_CHOOSE_THEN `gj : cycle`
+      (X_CHOOSE_THEN `gk : cycle` SUBST1_TAC)) THEN
+   REWRITE_TAC [UNCURRY_DEF];
    ALL_TAC] THEN
   MP_TAC
     (SPECL
@@ -1841,27 +1843,32 @@ let counter_signal = prove
   EXISTS_TAC `r : num` THEN
   SUBGOAL_THEN
     `?cp'.
-       width cp' = r + 1 /\
-       !i cpi cpi'.
-         wire cp i cpi /\
-         wire cp' i cpi' ==>
-         cpi' = (gw : (cycle -> cycle -> bool) -> wire)
-                (\j k. ~(k = 0) /\ signal cpi (t + (j + (k - 1))))`
+       width cp' = width cp /\
+       blift2
+         (\cpi cpi'.
+            cpi' = (gw : (cycle -> cycle -> bool) -> wire)
+                   (\j k. ~(k = 0) /\ signal cpi (t + (j + (k - 1))))) cp cp'`
     STRIP_ASSUME_TAC THENL
-  [EXISTS_TAC
-     `bmap (\w. (gw : (cycle -> cycle -> bool) -> wire)
-                (\j k. ~(k = 0) /\ signal w (t + (j + (k - 1))))) cp` THEN
-   ASM_REWRITE_TAC [bmap_width] THEN
-   REPEAT STRIP_TAC THEN
-   MATCH_MP_TAC wire_inj THEN
+  [MP_TAC
+     (SPEC
+        `\cpi cpi'.
+           cpi' = (gw : (cycle -> cycle -> bool) -> wire)
+                  (\j k. ~(k = 0) /\ signal cpi (t + (j + (k - 1))))`
+        blift2_exists) THEN
+   REWRITE_TAC [EXISTS_REFL] THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `cp' : bus` STRIP_ASSUME_TAC o
+      SPEC `cp : bus`) THEN
+   EXISTS_TAC `cp' : bus` THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC blift2_width_out THEN
    EXISTS_TAC
-     `bmap (\w. (gw : (cycle -> cycle -> bool) -> wire)
-                (\j k. ~(k = 0) /\ signal w (t + (j + (k - 1))))) cp` THEN
-   EXISTS_TAC `i : num` THEN
-   ASM_REWRITE_TAC [bmap_wire] THEN
-   EXISTS_TAC `cpi : wire` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
+     `\cpi cpi'.
+        cpi' = (gw : (cycle -> cycle -> bool) -> wire)
+               (\j k. ~(k = 0) /\ signal cpi (t + (j + (k - 1))))` THEN
+    EXISTS_TAC `cp : bus` THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
   SUBGOAL_THEN
     `?cp0'. wire cp' 0 cp0'`
     STRIP_ASSUME_TAC THENL
@@ -1887,6 +1894,7 @@ let counter_signal = prove
     STRIP_ASSUME_TAC THENL
   [MATCH_ACCEPT_TAC EXISTS_REFL;
    ALL_TAC] THEN
+  ***
   SUBGOAL_THEN
     `?sp'.
        width sp' = r + 1 /\
