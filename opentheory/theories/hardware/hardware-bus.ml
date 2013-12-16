@@ -648,28 +648,6 @@ let blift2_refl = prove
 
 export_thm blift2_refl;;
 
-(***
-let blift2_bsignal = prove
- (`!r f.
-     !xi yi t. r xi yi ==> 
-     !x y t.
-       blift2 r x y ==>
-       bsignal y t = 
- (!w. r w w) ==> (!x. )`,
-  REPEAT STRIP_TAC THEN
-  REWRITE_TAC [blift2_def] THEN
-  EXISTS_TAC `width x` THEN
-  REWRITE_TAC [] THEN
-  REPEAT STRIP_TAC THEN
-  MP_TAC
-    (SPECL [`x : bus`; `i : num`; `xi : wire`; `yi : wire`] wire_inj) THEN
-  ASM_REWRITE_TAC [] THEN
-  DISCH_THEN SUBST1_TAC THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm blift2_refl;;
-***)
-
 let blift2_bground = prove
  (`!r x y.
      blift2 r (bground (width x)) y <=>
@@ -1891,6 +1869,15 @@ let bcase1_bappend_bwire = prove
 
 export_thm bcase1_bappend_bwire;;
 
+let bcase1_exists = prove
+ (`!s x y. width x = width y ==> ?z. bcase1 s x y z`,
+  GEN_TAC THEN
+  REWRITE_TAC [bcase1_def] THEN
+  MATCH_MP_TAC blift3_exists THEN
+  MATCH_ACCEPT_TAC case1_exists);;
+
+export_thm bcase1_exists;;
+
 let bcase1_bsignal = prove
  (`!s x y z t.
       bcase1 s x y z ==>
@@ -2155,6 +2142,30 @@ let band3_bappend_bwire = prove
 
 export_thm band3_bappend_bwire;;
 
+let band3_exists = prove
+ (`!w x y. width w = width x /\ width w = width y ==> ?z. band3 w x y z`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+  STRIP_TAC THEN
+  REWRITE_TAC [band3_def] THEN
+  MP_TAC (SPECL [`w : bus`; `x : bus`] band2_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `wx : bus` STRIP_ASSUME_TAC) THEN
+  MP_TAC (SPECL [`wx : bus`; `y : bus`] band2_exists) THEN
+  SUBGOAL_THEN `width wx = width w` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC band2_width_out THEN
+   EXISTS_TAC `w : bus` THEN
+   EXISTS_TAC `x : bus` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `z : bus` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `z : bus` THEN
+  EXISTS_TAC `wx : bus` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm band3_exists;;
+
 let bor3_width = prove
  (`!w x y z.
      bor3 w x y z ==>
@@ -2386,6 +2397,30 @@ let bor3_bappend_bwire = prove
    REWRITE_TAC [bsub_suffix]]);;
 
 export_thm bor3_bappend_bwire;;
+
+let bor3_exists = prove
+ (`!w x y. width w = width x /\ width w = width y ==> ?z. bor3 w x y z`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+  STRIP_TAC THEN
+  REWRITE_TAC [bor3_def] THEN
+  MP_TAC (SPECL [`w : bus`; `x : bus`] bor2_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `wx : bus` STRIP_ASSUME_TAC) THEN
+  MP_TAC (SPECL [`wx : bus`; `y : bus`] bor2_exists) THEN
+  SUBGOAL_THEN `width wx = width w` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bor2_width_out THEN
+   EXISTS_TAC `w : bus` THEN
+   EXISTS_TAC `x : bus` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `z : bus` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `z : bus` THEN
+  EXISTS_TAC `wx : bus` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bor3_exists;;
 
 let bor3_right_bground = prove
  (`!x y n z.
@@ -2637,6 +2672,30 @@ let bxor3_bappend_bwire = prove
    REWRITE_TAC [bsub_suffix]]);;
 
 export_thm bxor3_bappend_bwire;;
+
+let bxor3_exists = prove
+ (`!w x y. width w = width x /\ width w = width y ==> ?z. bxor3 w x y z`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+  STRIP_TAC THEN
+  REWRITE_TAC [bxor3_def] THEN
+  MP_TAC (SPECL [`w : bus`; `x : bus`] bxor2_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `wx : bus` STRIP_ASSUME_TAC) THEN
+  MP_TAC (SPECL [`wx : bus`; `y : bus`] bxor2_exists) THEN
+  SUBGOAL_THEN `width wx = width w` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bxor2_width_out THEN
+   EXISTS_TAC `w : bus` THEN
+   EXISTS_TAC `x : bus` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `z : bus` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `z : bus` THEN
+  EXISTS_TAC `wx : bus` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bxor3_exists;;
 
 let bxor3_right_bground = prove
  (`!x y n z.
@@ -2989,6 +3048,50 @@ let bmajority3_bappend_bwire = prove
    REWRITE_TAC [bsub_suffix]]);;
 
 export_thm bmajority3_bappend_bwire;;
+
+let bmajority3_exists = prove
+ (`!w x y. width w = width x /\ width w = width y ==> ?z. bmajority3 w x y z`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+  STRIP_TAC THEN
+  REWRITE_TAC [bmajority3_def] THEN
+  MP_TAC (SPECL [`w : bus`; `x : bus`] band2_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `wx : bus` STRIP_ASSUME_TAC) THEN
+  MP_TAC (SPECL [`w : bus`; `y : bus`] band2_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `wy : bus` STRIP_ASSUME_TAC) THEN
+  MP_TAC (SPECL [`x : bus`; `y : bus`] band2_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `xy : bus` STRIP_ASSUME_TAC) THEN
+  SUBGOAL_THEN `width wx = width w` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC band2_width_out THEN
+   EXISTS_TAC `w : bus` THEN
+   EXISTS_TAC `x : bus` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width wy = width w` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC band2_width_out THEN
+   EXISTS_TAC `w : bus` THEN
+   EXISTS_TAC `y : bus` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width xy = width w` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC band2_width_out THEN
+   EXISTS_TAC `x : bus` THEN
+   EXISTS_TAC `y : bus` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  MP_TAC (SPECL [`wx : bus`; `wy : bus`; `xy : bus`] bor3_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `z : bus` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `z : bus` THEN
+  EXISTS_TAC `wx : bus` THEN
+  EXISTS_TAC `wy : bus` THEN
+  EXISTS_TAC `xy : bus` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bmajority3_exists;;
 
 let bmajority3_right_bground = prove
  (`!x y n z.

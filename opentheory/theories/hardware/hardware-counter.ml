@@ -1894,6 +1894,58 @@ let counter_signal = prove
     STRIP_ASSUME_TAC THENL
   [MATCH_ACCEPT_TAC EXISTS_REFL;
    ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?sp1'.
+       width sp1' = width sp /\
+       blift2
+         (\spi spi'.
+            spi' = (gw : (cycle -> cycle -> bool) -> wire)
+                   (\j k. if k = 0 then signal spi (t + j)
+                          else signal spi (t + j + (k - 1)))) sp sp1'`
+    STRIP_ASSUME_TAC THENL
+  [MP_TAC
+     (SPEC
+        `\spi spi'.
+           spi' = (gw : (cycle -> cycle -> bool) -> wire)
+                  (\j k. if k = 0 then signal spi (t + j)
+                         else signal spi (t + j + (k - 1)))`
+        blift2_exists) THEN
+   REWRITE_TAC [EXISTS_REFL] THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `sp1' : bus` STRIP_ASSUME_TAC o
+      SPEC `sp : bus`) THEN
+   EXISTS_TAC `sp1' : bus` THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC blift2_width_out THEN
+   EXISTS_TAC
+     `\spi spi'.
+        spi' = (gw : (cycle -> cycle -> bool) -> wire)
+               (\j k. if k = 0 then signal spi (t + j)
+                      else signal spi (t + j + (k - 1)))` THEN
+    EXISTS_TAC `sp : bus` THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?sp'. sp' = bappend (bwire sp0') sp1'`
+    STRIP_ASSUME_TAC THENL
+  [MATCH_ACCEPT_TAC EXISTS_REFL;
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?sq0'. not sp0' sq0'`
+    STRIP_ASSUME_TAC THENL
+  [MATCH_ACCEPT_TAC not_exists;
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?cq0'. connect sp0' cq0'`
+    STRIP_ASSUME_TAC THENL
+  [MATCH_ACCEPT_TAC connect_exists;
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?sq1' cq1'. badder2 sp1' cp1' sq1' cq1'`
+    STRIP_ASSUME_TAC THENL
+  [MATCH_ACCEPT_TAC badder2_exists;
+   ALL_TAC] THEN
+  
   ***
   SUBGOAL_THEN
     `?sp'.
