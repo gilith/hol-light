@@ -1687,17 +1687,16 @@ let counter_signal = prove
     ASM_REWRITE_TAC [ADD1]];
    ALL_TAC] THEN
   SUBGOAL_THEN
-    `?ld'. ld' = (gw : (num -> num -> bool) -> wire) (\j k. k = 0)`
+    `?ld'. (gw : (num -> num -> bool) -> wire) (\j k. k = 0) = ld'`
     STRIP_ASSUME_TAC THENL
-  [MATCH_ACCEPT_TAC EXISTS_REFL;
+  [MATCH_ACCEPT_TAC EXISTS_REFL';
    ALL_TAC] THEN
   SUBGOAL_THEN
     `?dn'.
-       dn' =
        (gw : (num -> num -> bool) -> wire)
-       (\j k. 1 < k /\ signal dn (t + j + (k - 1)))`
+       (\j k. 1 < k /\ signal dn (t + j + (k - 1))) = dn'`
     STRIP_ASSUME_TAC THENL
-  [MATCH_ACCEPT_TAC EXISTS_REFL;
+  [MATCH_ACCEPT_TAC EXISTS_REFL';
    ALL_TAC] THEN
   SUBGOAL_THEN
     `?nb'.
@@ -1768,6 +1767,10 @@ let counter_signal = prove
   [UNDISCH_THEN
      `!i. i <= k + 1 ==> (g : cycle -> cycle # cycle) i = (0,i)`
      (STRIP_ASSUME_TAC o REWRITE_RULE [LE_REFL] o SPEC `k + 1`) THEN
+   UNDISCH_THEN
+     `(gw : (num -> num -> bool) -> wire)
+      (\j k. 1 < k /\ signal dn (t + j + (k - 1))) = dn'`
+     SUBST_VAR_TAC THEN
    ASM_REWRITE_TAC [ZERO_ADD; UNCURRY_DEF; LT_ADDR; ADD_SUB; LT_NZ] THEN
    DISCH_THEN SUBST1_TAC THEN
    REWRITE_TAC [power_signal; GSYM ADD1; NOT_SUC; GSYM LE_SUC_LT] THEN
@@ -1819,6 +1822,9 @@ let counter_signal = prove
    ALL_TAC] THEN
   CONJ_TAC THENL
   [REPEAT STRIP_TAC THEN
+   UNDISCH_THEN
+     `(gw : (num -> num -> bool) -> wire) (\j k. k = 0) = ld'`
+     SUBST_VAR_TAC THEN
    ASM_REWRITE_TAC [ZERO_ADD] THEN
    UNDISCH_THEN
      `!i. i <= k + 1 ==> (g : cycle -> cycle # cycle) i = (0,i)`
@@ -1881,6 +1887,12 @@ let counter_signal = prove
   [MATCH_MP_TAC bsub_exists THEN
    ASM_REWRITE_TAC [ZERO_ADD; LE_ADD];
    ALL_TAC] THEN
+  SUBGOAL_THEN `width cp1' = r` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `cp' : bus` THEN
+   EXISTS_TAC `0` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
   SUBGOAL_THEN
     `?cp2'. wire cp' r cp2'`
     STRIP_ASSUME_TAC THENL
@@ -1888,11 +1900,11 @@ let counter_signal = prove
    ASM_REWRITE_TAC [SUC_LT; GSYM ADD1];
    ALL_TAC] THEN
   SUBGOAL_THEN
-    `?sp0'. sp0' = (gw : (cycle -> cycle -> bool) -> wire)
-                   (\j k. if k = 0 then signal cp0 (t + j)
-                          else ~signal cp0 (t + j + (k - 1)))`
+    `?sp0'. (gw : (cycle -> cycle -> bool) -> wire)
+            (\j k. if k = 0 then signal cp0 (t + j)
+                   else ~signal cp0 (t + j + (k - 1))) = sp0'`
     STRIP_ASSUME_TAC THENL
-  [MATCH_ACCEPT_TAC EXISTS_REFL;
+  [MATCH_ACCEPT_TAC EXISTS_REFL';
    ALL_TAC] THEN
   SUBGOAL_THEN
     `?sp1'.
@@ -1926,9 +1938,14 @@ let counter_signal = prove
     ASM_REWRITE_TAC [];
     ALL_TAC] THEN
   SUBGOAL_THEN
-    `?sp'. sp' = bappend (bwire sp0') sp1'`
+    `?sp'. bappend (bwire sp0') sp1' = sp'`
     STRIP_ASSUME_TAC THENL
-  [MATCH_ACCEPT_TAC EXISTS_REFL;
+  [MATCH_ACCEPT_TAC EXISTS_REFL';
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width sp' = r + 1` STRIP_ASSUME_TAC THENL
+  [ONCE_REWRITE_TAC [ADD_SYM] THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   ASM_REWRITE_TAC [bappend_width; bwire_width];
    ALL_TAC] THEN
   SUBGOAL_THEN
     `?sq0'. not sp0' sq0'`
@@ -1943,10 +1960,102 @@ let counter_signal = prove
   SUBGOAL_THEN
     `?sq1' cq1'. badder2 sp1' cp1' sq1' cq1'`
     STRIP_ASSUME_TAC THENL
-  [MATCH_ACCEPT_TAC badder2_exists;
+  [MATCH_MP_TAC badder2_exists THEN
+   ASM_REWRITE_TAC [];
    ALL_TAC] THEN
-  
+  SUBGOAL_THEN `width sq1' = r` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC badder2_width_out1 THEN
+   EXISTS_TAC `sp1' : bus` THEN
+   EXISTS_TAC `cp1' : bus` THEN
+   EXISTS_TAC `cq1' : bus` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width cq1' = r` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC badder2_width_out2 THEN
+   EXISTS_TAC `sp1' : bus` THEN
+   EXISTS_TAC `cp1' : bus` THEN
+   EXISTS_TAC `sq1' : bus` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?sq'. bappend (bwire sq0') sq1' = sq'`
+    STRIP_ASSUME_TAC THENL
+  [MATCH_ACCEPT_TAC EXISTS_REFL';
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width sq' = r + 1` STRIP_ASSUME_TAC THENL
+  [ONCE_REWRITE_TAC [ADD_SYM] THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   ASM_REWRITE_TAC [bappend_width; bwire_width];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?cq'. bappend (bwire cq0') cq1' = cq'`
+    STRIP_ASSUME_TAC THENL
+  [MATCH_ACCEPT_TAC EXISTS_REFL';
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width cq' = r + 1` STRIP_ASSUME_TAC THENL
+  [ONCE_REWRITE_TAC [ADD_SYM] THEN
+   POP_ASSUM SUBST_VAR_TAC THEN
+   ASM_REWRITE_TAC [bappend_width; bwire_width];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?dq'. or2 dp' cp2' dq'`
+    STRIP_ASSUME_TAC THENL
+  [MATCH_ACCEPT_TAC or2_exists;
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?sr'. bcase1 ld' nb' sq' sr'`
+    STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bcase1_exists THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width sr' = r + 1` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bcase1_width_out THEN
+   EXISTS_TAC `ld' : wire` THEN
+   EXISTS_TAC `nb' : bus` THEN
+   EXISTS_TAC `sq' : bus` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?cr'. bcase1 ld' (bground (r + 1)) cq' cr'`
+    STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bcase1_exists THEN
+   ASM_REWRITE_TAC [bground_width];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width cr' = r + 1` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bcase1_width_out THEN
+   EXISTS_TAC `ld' : wire` THEN
+   EXISTS_TAC `bground (r + 1)` THEN
+   EXISTS_TAC `cq' : bus` THEN
+   ASM_REWRITE_TAC [bground_width];
+   ALL_TAC] THEN
   ***
+  EXISTS_TAC `sp' : bus` THEN
+  EXISTS_TAC `cp' : bus` THEN
+  EXISTS_TAC `sq' : bus` THEN
+  EXISTS_TAC `cq' : bus` THEN
+  EXISTS_TAC `sr' : bus` THEN
+  EXISTS_TAC `cr' : bus` THEN
+  EXISTS_TAC `dp' : wire` THEN
+  EXISTS_TAC `dq' : wire` THEN
+  EXISTS_TAC `sp0' : wire` THEN
+  EXISTS_TAC `sp1' : bus` THEN
+  EXISTS_TAC `cp0' : wire` THEN
+  EXISTS_TAC `cp1' : bus` THEN
+  EXISTS_TAC `cp2' : wire` THEN
+  EXISTS_TAC `sq0' : wire` THEN
+  EXISTS_TAC `sq1' : bus` THEN
+  EXISTS_TAC `cq0' : wire` THEN
+  EXISTS_TAC `cq1' : bus` THEN
+  ASM_REWRITE_TAC []
+bdelay_bsignal
+bdelay_def
+bconnect_bsignal
+and2_signal
+and2_def
+band2_def
+delay_def
+wire_zero]
+
   SUBGOAL_THEN
     `?sp'.
        width sp' = r + 1 /\

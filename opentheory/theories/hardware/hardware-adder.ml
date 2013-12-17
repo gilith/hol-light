@@ -101,6 +101,34 @@ logfile "hardware-adder-thm";;
 (* Wire adder devices *)
 (* ~~~~~~~~~~~~~~~~~~ *)
 
+let adder2_exists = prove
+ (`!x y. ?s c. adder2 x y s c`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [adder2_def] THEN
+  X_CHOOSE_THEN `s : wire` STRIP_ASSUME_TAC
+    (SPECL [`x : wire`; `y : wire`] xor2_exists) THEN
+  X_CHOOSE_THEN `c : wire` STRIP_ASSUME_TAC
+    (SPECL [`x : wire`; `y : wire`] and2_exists) THEN
+  EXISTS_TAC `s : wire` THEN
+  EXISTS_TAC `c : wire` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm adder2_exists;;
+
+let adder3_exists = prove
+ (`!x y z. ?s c. adder3 x y z s c`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [adder3_def] THEN
+  X_CHOOSE_THEN `s : wire` STRIP_ASSUME_TAC
+    (SPECL [`x : wire`; `y : wire`; `z : wire`] xor3_exists) THEN
+  X_CHOOSE_THEN `c : wire` STRIP_ASSUME_TAC
+    (SPECL [`x : wire`; `y : wire`; `z : wire`] majority3_exists) THEN
+  EXISTS_TAC `s : wire` THEN
+  EXISTS_TAC `c : wire` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm adder3_exists;;
+
 let adder3_right_ground = prove
  (`!x y s c. adder2 x y s c ==> adder3 x y ground s c`,
   REPEAT GEN_TAC THEN
@@ -372,6 +400,24 @@ let badder2_bappend_bwire = prove
 
 export_thm badder2_bappend_bwire;;
 
+let badder2_exists = prove
+ (`!x y. width x = width y ==> ?s c. badder2 x y s c`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+  STRIP_TAC THEN
+  REWRITE_TAC [badder2_def] THEN
+  MP_TAC (SPECL [`x : bus`; `y : bus`] bxor2_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `s : bus` STRIP_ASSUME_TAC) THEN
+  MP_TAC (SPECL [`x : bus`; `y : bus`] band2_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `c : bus` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `s : bus` THEN
+  EXISTS_TAC `c : bus` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm badder2_exists;;
+
 let badder3_width = prove
  (`!x y z s c.
      badder3 x y z s c ==>
@@ -610,6 +656,24 @@ let badder3_bappend_bwire = prove
 
 export_thm badder3_bappend_bwire;;
 
+let badder3_exists = prove
+ (`!x y z. width x = width y /\ width x = width z ==> ?s c. badder3 x y z s c`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+  STRIP_TAC THEN
+  REWRITE_TAC [badder3_def] THEN
+  MP_TAC (SPECL [`x : bus`; `y : bus`; `z : bus`] bxor3_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `s : bus` STRIP_ASSUME_TAC) THEN
+  MP_TAC (SPECL [`x : bus`; `y : bus`; `z : bus`] bmajority3_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (X_CHOOSE_THEN `c : bus` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `s : bus` THEN
+  EXISTS_TAC `c : bus` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm badder3_exists;;
+
 let badder3_right_bground = prove
  (`!x y n s c.
      width x = n /\ badder2 x y s c ==>
@@ -802,6 +866,144 @@ let badder4_width_out2 = prove
   ASM_REWRITE_TAC []);;
 
 export_thm badder4_width_out2;;
+
+let badder4_exists = prove
+ (`!w x y z.
+     ~(width w = 0) /\
+     width w = width x /\
+     width w = width y /\
+     width w = width z ==>
+     ?s c. badder4 w x y z s c`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+  STRIP_TAC THEN
+  REWRITE_TAC [badder4_def] THEN
+  MP_TAC (SPEC `width w` num_CASES) THEN
+  ASM_REWRITE_TAC [ADD1] THEN
+  STRIP_TAC THEN
+  SUBGOAL_THEN `?z0. wire z 0 z0` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC wire_exists THEN
+   ASM_REWRITE_TAC [LT_NZ; ADD_EQ_0; ONE; NOT_SUC];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `?z1. bsub z 1 n z1` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_exists THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   ASM_REWRITE_TAC [LE_REFL];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width z1 = n` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `z : bus` THEN
+   EXISTS_TAC `1` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  MP_TAC (SPECL [`w : bus`; `x : bus`; `y : bus`] badder3_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `p : bus`
+      (X_CHOOSE_THEN `q : bus` STRIP_ASSUME_TAC)) THEN
+  MP_TAC
+   (SPECL [`w : bus`; `x : bus`; `y : bus`; `p : bus`; `q : bus`; `width w`]
+      badder3_width_out1) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  MP_TAC
+   (SPECL [`w : bus`; `x : bus`; `y : bus`; `p : bus`; `q : bus`; `width w`]
+      badder3_width_out2) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  SUBGOAL_THEN `?p0. wire p 0 p0` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC wire_exists THEN
+   ASM_REWRITE_TAC [LT_NZ; ADD_EQ_0; ONE; NOT_SUC];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `?p1. bsub p 1 n p1` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_exists THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   ASM_REWRITE_TAC [LE_REFL];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width p1 = n` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `p : bus` THEN
+   EXISTS_TAC `1` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `?q1. bsub q 0 n q1` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_exists THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   ASM_REWRITE_TAC [LE_ADD_LCANCEL; LE_0];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width q1 = n` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `q : bus` THEN
+   EXISTS_TAC `0` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `?q2. wire q n q2` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC wire_exists THEN
+   ASM_REWRITE_TAC [LT_ADD; LT_NZ; ADD_EQ_0; ONE; NOT_SUC];
+   ALL_TAC] THEN
+  MP_TAC (SPECL [`p0 : wire`; `z0 : wire`] adder2_exists) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `s0 : wire`
+      (X_CHOOSE_THEN `c0 : wire` STRIP_ASSUME_TAC)) THEN
+  MP_TAC (SPECL [`p1 : bus`; `q1 : bus`; `z1 : bus`] badder3_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `s1 : bus`
+      (X_CHOOSE_THEN `c1 : bus` STRIP_ASSUME_TAC)) THEN
+  MP_TAC
+   (SPECL [`p1 : bus`; `q1 : bus`; `z1 : bus`; `s1 : bus`; `c1 : bus`; `n : num`]
+      badder3_width_out1) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  MP_TAC
+   (SPECL [`p1 : bus`; `q1 : bus`; `z1 : bus`; `s1 : bus`; `c1 : bus`; `n : num`]
+      badder3_width_out2) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  MP_TAC (SPEC `q2 : wire` connect_exists) THEN
+  DISCH_THEN (X_CHOOSE_THEN `s2 : wire` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `bappend (bwire s0) (bappend s1 (bwire s2))` THEN
+  EXISTS_TAC `bappend (bwire c0) c1` THEN
+  EXISTS_TAC `n : num` THEN
+  EXISTS_TAC `p : bus` THEN
+  EXISTS_TAC `q : bus` THEN
+  EXISTS_TAC `z0 : wire` THEN
+  EXISTS_TAC `z1 : bus` THEN
+  EXISTS_TAC `s0 : wire` THEN
+  EXISTS_TAC `s1 : bus` THEN
+  EXISTS_TAC `s2 : wire` THEN
+  EXISTS_TAC `c0 : wire` THEN
+  EXISTS_TAC `c1 : bus` THEN
+  EXISTS_TAC `p0 : wire` THEN
+  EXISTS_TAC `p1 : bus` THEN
+  EXISTS_TAC `q1 : bus` THEN
+  EXISTS_TAC `q2 : wire` THEN
+  ASM_REWRITE_TAC
+    [wire_zero; bappend_width; bwire_width; ONE; TWO; ADD_SUC;
+     SUC_ADD; ADD_0; ZERO_ADD; wire_suc] THEN
+  REPEAT CONJ_TAC THENL
+  [SUBGOAL_THEN `SUC 0 = width (bwire s0) + 0` SUBST1_TAC THENL
+   [REWRITE_TAC [bwire_width; ONE; ADD_0];
+    ALL_TAC] THEN
+   REWRITE_TAC [bsub_in_suffix] THEN
+   SUBGOAL_THEN `n = width s1` SUBST1_TAC THENL
+   [ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   REWRITE_TAC [bsub_prefix];
+   SUBGOAL_THEN `n = width s1 + 0` SUBST1_TAC THENL
+   [ASM_REWRITE_TAC [ADD_0];
+    ALL_TAC] THEN
+   REWRITE_TAC [wire_in_suffix; bwire_wire];
+   SUBGOAL_THEN `SUC 0 = width (bwire c0) + 0` SUBST1_TAC THENL
+   [REWRITE_TAC [bwire_width; ONE; ADD_0];
+    ALL_TAC] THEN
+   REWRITE_TAC [bsub_in_suffix] THEN
+   SUBGOAL_THEN `n = width c1` SUBST1_TAC THENL
+   [ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   REWRITE_TAC [bsub_all]]);;
+
+export_thm badder4_exists;;
 
 let badder4_bits_to_num = prove
  (`!w x y z s c t.

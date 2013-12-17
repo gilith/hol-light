@@ -340,16 +340,22 @@ let pulse_signal = prove
 
 export_thm pulse_signal;;
 
-(***
 let pulse_exists = prove
  (`!x. ?y. pulse x y`,
   GEN_TAC THEN
   REWRITE_TAC [pulse_def] THEN
   X_CHOOSE_THEN `xd : wire` STRIP_ASSUME_TAC
     (SPECL [`x : wire`] delay_exists) THEN
+  X_CHOOSE_THEN `xn : wire` STRIP_ASSUME_TAC
+    (SPECL [`xd : wire`] not_exists) THEN
+  X_CHOOSE_THEN `y : wire` STRIP_ASSUME_TAC
+    (SPECL [`x : wire`; `xn : wire`] and2_exists) THEN
+  EXISTS_TAC `y : wire` THEN
+  EXISTS_TAC `xd : wire` THEN
+  EXISTS_TAC `xn : wire` THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm pulse_exists;;
-***)
 
 let and3_signal = prove
  (`!w x y z t.
@@ -372,6 +378,20 @@ let and3_signal = prove
 
 export_thm and3_signal;;
 
+let and3_exists = prove
+ (`!w x y. ?z. and3 w x y z`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [and3_def] THEN
+  X_CHOOSE_THEN `wx : wire` STRIP_ASSUME_TAC
+    (SPECL [`w : wire`; `x : wire`] and2_exists) THEN
+  X_CHOOSE_THEN `z : wire` STRIP_ASSUME_TAC
+    (SPECL [`wx : wire`; `y : wire`] and2_exists) THEN
+  EXISTS_TAC `z : wire` THEN
+  EXISTS_TAC `wx : wire` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm and3_exists;;
+
 let or3_signal = prove
  (`!w x y z t.
      or3 w x y z ==>
@@ -392,6 +412,20 @@ let or3_signal = prove
   ASM_REWRITE_TAC [DISJ_ASSOC]);;
 
 export_thm or3_signal;;
+
+let or3_exists = prove
+ (`!w x y. ?z. or3 w x y z`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [or3_def] THEN
+  X_CHOOSE_THEN `wx : wire` STRIP_ASSUME_TAC
+    (SPECL [`w : wire`; `x : wire`] or2_exists) THEN
+  X_CHOOSE_THEN `z : wire` STRIP_ASSUME_TAC
+    (SPECL [`wx : wire`; `y : wire`] or2_exists) THEN
+  EXISTS_TAC `z : wire` THEN
+  EXISTS_TAC `wx : wire` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm or3_exists;;
 
 let or3_right_ground = prove
  (`!x y z. or2 x y z ==> or3 x y ground z`,
@@ -428,6 +462,20 @@ let xor3_signal = prove
   REWRITE_TAC []);;
 
 export_thm xor3_signal;;
+
+let xor3_exists = prove
+ (`!w x y. ?z. xor3 w x y z`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [xor3_def] THEN
+  X_CHOOSE_THEN `wx : wire` STRIP_ASSUME_TAC
+    (SPECL [`w : wire`; `x : wire`] xor2_exists) THEN
+  X_CHOOSE_THEN `z : wire` STRIP_ASSUME_TAC
+    (SPECL [`wx : wire`; `y : wire`] xor2_exists) THEN
+  EXISTS_TAC `z : wire` THEN
+  EXISTS_TAC `wx : wire` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm xor3_exists;;
 
 let xor3_right_ground = prove
  (`!x y z. xor2 x y z ==> xor3 x y ground z`,
@@ -474,6 +522,26 @@ let majority3_signal = prove
   ASM_REWRITE_TAC []);;
 
 export_thm majority3_signal;;
+
+let majority3_exists = prove
+ (`!w x y. ?z. majority3 w x y z`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [majority3_def] THEN
+  X_CHOOSE_THEN `wx : wire` STRIP_ASSUME_TAC
+    (SPECL [`w : wire`; `x : wire`] and2_exists) THEN
+  X_CHOOSE_THEN `wy : wire` STRIP_ASSUME_TAC
+    (SPECL [`w : wire`; `y : wire`] and2_exists) THEN
+  X_CHOOSE_THEN `xy : wire` STRIP_ASSUME_TAC
+    (SPECL [`x : wire`; `y : wire`] and2_exists) THEN
+  X_CHOOSE_THEN `z : wire` STRIP_ASSUME_TAC
+    (SPECL [`wx : wire`; `wy : wire`; `xy : wire`] or3_exists) THEN
+  EXISTS_TAC `z : wire` THEN
+  EXISTS_TAC `wx : wire` THEN
+  EXISTS_TAC `wy : wire` THEN
+  EXISTS_TAC `xy : wire` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm majority3_exists;;
 
 let majority3_right_ground = prove
  (`!x y z. and2 x y z ==> majority3 x y ground z`,
