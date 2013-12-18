@@ -1947,6 +1947,22 @@ let counter_signal = prove
    POP_ASSUM SUBST_VAR_TAC THEN
    ASM_REWRITE_TAC [bappend_width; bwire_width];
    ALL_TAC] THEN
+  SUBGOAL_THEN `wire sp' 0 sp0'` STRIP_ASSUME_TAC THENL
+  [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [wire_zero];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `bsub sp' 1 r sp1'` STRIP_ASSUME_TAC THENL
+  [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   MP_TAC (SPECL [`bwire sp0'`; `sp1' : bus`; `sp1' : bus`] bsub_suffix) THEN
+   ASM_REWRITE_TAC [bwire_width];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `?dp'.
+       (gw : (num -> num -> bool) -> wire)
+       (\j k. 1 < k /\ signal dp (t + j + (k - 1))) = dp'`
+    STRIP_ASSUME_TAC THENL
+  [MATCH_ACCEPT_TAC EXISTS_REFL';
+   ALL_TAC] THEN
   SUBGOAL_THEN
     `?sq0'. not sp0' sq0'`
     STRIP_ASSUME_TAC THENL
@@ -1987,6 +2003,15 @@ let counter_signal = prove
    POP_ASSUM SUBST_VAR_TAC THEN
    ASM_REWRITE_TAC [bappend_width; bwire_width];
    ALL_TAC] THEN
+  SUBGOAL_THEN `wire sq' 0 sq0'` STRIP_ASSUME_TAC THENL
+  [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [wire_zero];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `bsub sq' 1 r sq1'` STRIP_ASSUME_TAC THENL
+  [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   MP_TAC (SPECL [`bwire sq0'`; `sq1' : bus`; `sq1' : bus`] bsub_suffix) THEN
+   ASM_REWRITE_TAC [bwire_width];
+   ALL_TAC] THEN
   SUBGOAL_THEN
     `?cq'. bappend (bwire cq0') cq1' = cq'`
     STRIP_ASSUME_TAC THENL
@@ -1996,6 +2021,15 @@ let counter_signal = prove
   [ONCE_REWRITE_TAC [ADD_SYM] THEN
    POP_ASSUM SUBST_VAR_TAC THEN
    ASM_REWRITE_TAC [bappend_width; bwire_width];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `wire cq' 0 cq0'` STRIP_ASSUME_TAC THENL
+  [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [wire_zero];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `bsub cq' 1 r cq1'` STRIP_ASSUME_TAC THENL
+  [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   MP_TAC (SPECL [`bwire cq0'`; `cq1' : bus`; `cq1' : bus`] bsub_suffix) THEN
+   ASM_REWRITE_TAC [bwire_width];
    ALL_TAC] THEN
   SUBGOAL_THEN
     `?dq'. or2 dp' cp2' dq'`
@@ -2028,7 +2062,6 @@ let counter_signal = prove
    EXISTS_TAC `cq' : bus` THEN
    ASM_REWRITE_TAC [bground_width];
    ALL_TAC] THEN
-  ***
   EXISTS_TAC `sp' : bus` THEN
   EXISTS_TAC `cp' : bus` THEN
   EXISTS_TAC `sq' : bus` THEN
@@ -2046,7 +2079,71 @@ let counter_signal = prove
   EXISTS_TAC `sq1' : bus` THEN
   EXISTS_TAC `cq0' : wire` THEN
   EXISTS_TAC `cq1' : bus` THEN
-  ASM_REWRITE_TAC []
+  ASM_REWRITE_TAC [] THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC xor2_left_power THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC and2_left_power THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ***
+  CONJ_TAC THENL
+  [REWRITE_TAC [case1_def] THEN
+   X_GEN_TAC `u : cycle` THEN
+   MP_TAC
+    (SPECL [`dp' : wire`; `cp2' : wire`; `dq' : wire`; `u : cycle`]
+       or2_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC (ISPEC `(g : cycle -> cycle # cycle) u` PAIR_SURJECTIVE) THEN
+   DISCH_THEN
+    (X_CHOOSE_THEN `j : cycle`
+      (X_CHOOSE_THEN `k : cycle` STRIP_ASSUME_TAC)) THEN
+   UNDISCH_THEN
+     `(gw : (num -> num -> bool) -> wire)
+      (\j k. 1 < k /\ signal dn (t + j + (k - 1))) = dn'`
+     SUBST_VAR_TAC THEN
+   UNDISCH_THEN
+     `(gw : (num -> num -> bool) -> wire) (\j k. k = 0) = ld'`
+     SUBST_VAR_TAC THEN
+   UNDISCH_THEN
+     `(gw : (num -> num -> bool) -> wire)
+      (\j k. 1 < k /\ signal dp (t + j + (k - 1))) = dp'`
+     SUBST_VAR_TAC THEN
+   MP_TAC
+     (SPECL
+        [`\cpi cpi'.
+            cpi' = (gw : (cycle -> cycle -> bool) -> wire)
+                   (\j k. ~(k = 0) /\ signal cpi (t + (j + (k - 1))))`;
+         `cp : bus`;
+         `cp' : bus`;
+         `r : num`;
+         `cp2 : wire`;
+         `cp2' : wire`]
+        blift2_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   ASM_REWRITE_TAC [UNCURRY_DEF; ground_signal] THEN
+   COND_CASES_TAC THENL
+   [ASM_REWRITE_TAC [LT_ZERO];
+    ALL_TAC] THEN
+   MP_TAC (SPEC `k : num` num_CASES) THEN
+   ASM_REWRITE_TAC [] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   DISCH_THEN (X_CHOOSE_THEN `ks : cycle` SUBST_VAR_TAC) THEN
+   REWRITE_TAC [SUC_SUB1] THEN
+   REWRITE_TAC [ONE; LT_SUC; LT_NZ] THEN
+   ASM_CASES_TAC `ks = 0` THENL
+   [ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   ***
+
+MATCH_MP_TAC and2_left_power THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+
 bdelay_bsignal
 bdelay_def
 bconnect_bsignal
