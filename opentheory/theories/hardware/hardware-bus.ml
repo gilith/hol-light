@@ -296,40 +296,6 @@ let wire_bits_to_num = prove
 
 export_thm wire_bits_to_num;;
 
-let bmap_wire_imp = prove
- (`!f x k w. wire x k w ==> wire (bmap f x) k (f w)`,
-  REWRITE_TAC [wire_def; GSYM bmap_bwire] THEN
-  MATCH_ACCEPT_TAC bmap_bsub_imp);;
-
-export_thm bmap_wire_imp;;
-
-let bmap_wire = prove
- (`!f x k w. wire (bmap f x) k w <=> ?y. wire x k y /\ w = f y`,
-  REPEAT GEN_TAC THEN
-  REVERSE_TAC EQ_TAC THENL
-  [STRIP_TAC THEN
-   FIRST_X_ASSUM SUBST_VAR_TAC THEN
-   MATCH_MP_TAC bmap_wire_imp THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  REWRITE_TAC [wire_def; bmap_bsub] THEN
-  STRIP_TAC THEN
-  SUBGOAL_THEN
-    `width z = 1`
-    (X_CHOOSE_THEN `y : wire` SUBST_VAR_TAC o
-     REWRITE_RULE [width_one]) THENL
-  [MATCH_MP_TAC bsub_width THEN
-   EXISTS_TAC `x : bus` THEN
-   EXISTS_TAC `k : num` THEN
-   ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  EXISTS_TAC `y : wire` THEN
-  ASM_REWRITE_TAC [] THEN
-  POP_ASSUM MP_TAC THEN
-  REWRITE_TAC [bmap_bwire; bwire_inj]);;
-
-export_thm bmap_wire;;
-
 let bground_wire = prove
  (`!n k w. wire (bground n) k w <=> k < n /\ w = ground`,
   REWRITE_TAC
