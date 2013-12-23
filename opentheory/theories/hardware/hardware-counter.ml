@@ -2663,6 +2663,443 @@ let counter_signal = prove
    ALL_TAC] THEN
   CONJ_TAC THENL
   [***
+   REWRITE_TAC [bcase1_def; blift3_def] THEN
+   EXISTS_TAC `r + 1` THEN
+   ASM_REWRITE_TAC [bground_width; bground_wire] THEN
+   X_GEN_TAC `i : num` THEN
+   X_GEN_TAC `gnd : wire` THEN
+   X_GEN_TAC `cqi' : wire` THEN
+   X_GEN_TAC `cri' : wire` THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC
+   REWRITE_TAC [case1_def] THEN
+   X_GEN_TAC `u : cycle` THEN
+   MP_TAC (ISPEC `(g : cycle -> cycle # cycle) u` PAIR_SURJECTIVE) THEN
+   DISCH_THEN
+    (X_CHOOSE_THEN `j : cycle`
+      (X_CHOOSE_THEN `k : cycle` STRIP_ASSUME_TAC)) THEN
+   FIND_ASSUM
+     (SUBST1_TAC o SYM)
+     `(gw : (num -> num -> bool) -> wire) (\j k. k = 0) = ld'` THEN
+   ASM_REWRITE_TAC [UNCURRY_DEF] THEN
+   COND_CASES_TAC THENL
+   [***
+    SUBGOAL_THEN `?cri. wire cr i cri` STRIP_ASSUME_TAC THENL
+    [MATCH_MP_TAC wire_exists THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    MP_TAC
+      (SPECL
+         [`\cri cri'.
+             cri' = (gw : (cycle -> cycle -> bool) -> wire)
+                    (\j k. ~(k = 0) /\ signal cri (t + (j + (k - 1))))`;
+          `cr : bus`;
+          `cr' : bus`;
+          `i : num`;
+          `cri : wire`;
+          `cri' : wire`]
+         blift2_wire) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    ASM_REWRITE_TAC [UNCURRY_DEF; ground_signal];
+    ALL_TAC] THEN
+   MP_TAC (SPEC `k : num` num_CASES) THEN
+   ASM_REWRITE_TAC [] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   DISCH_THEN (X_CHOOSE_THEN `ks : cycle` SUBST_VAR_TAC) THEN
+   MP_TAC (SPEC `i : num` num_CASES) THEN
+   DISCH_THEN
+     (DISJ_CASES_THEN2
+       SUBST_VAR_TAC
+       (X_CHOOSE_THEN `is : num` SUBST_VAR_TAC)) THENL
+   [SUBGOAL_THEN `cqi' = (cq0' : wire)` SUBST_VAR_TAC THENL
+    [MATCH_MP_TAC wire_inj THEN
+     EXISTS_TAC `cq' : bus` THEN
+     EXISTS_TAC `0` THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    MP_TAC
+      (SPECL
+         [`sp0' : wire`;
+          `cq0' : wire`;
+          `u : cycle`]
+         connect_signal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    FIRST_X_ASSUM
+      (MP_TAC o SPECL [`u : cycle`; `j : cycle`; `ks : cycle`]) THEN
+    ANTS_TAC THENL
+    [FIRST_ASSUM ACCEPT_TAC;
+     ALL_TAC] THEN
+    STRIP_TAC THEN
+    FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    MP_TAC
+      (SPECL [`sr' : bus`; `sp' : bus`; `0`;
+              `sr0' : wire`; `sp0' : wire`] bdelay_wire) THEN
+    ASM_REWRITE_TAC [] THEN
+    STRIP_TAC THEN
+    MP_TAC
+      (SPECL [`sr0' : wire`; `sp0' : wire`; `us : cycle`] delay_signal) THEN
+    ASM_REWRITE_TAC [GSYM ADD1] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    FIND_ASSUM
+      (SUBST1_TAC o SYM)
+      `(gw : (cycle -> cycle -> bool) -> wire)
+       (\j k. if k = 0 then signal cr0 (t + j)
+              else ~signal cr0 (t + j + (k - 1))) = sr0'` THEN
+    ASM_REWRITE_TAC [UNCURRY_DEF; NOT_SUC; SUC_SUB1] THEN
+    MP_TAC
+      (SPECL
+         [`\cri cri'.
+             cri' = (gw : (cycle -> cycle -> bool) -> wire)
+                    (\j k. ~(k = 0) /\ signal cri (t + (j + (k - 1))))`;
+          `cr : bus`;
+          `cr' : bus`;
+          `0 : num`;
+          `cr0 : wire`;
+          `cri' : wire`]
+         blift2_wire) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    ASM_REWRITE_TAC [UNCURRY_DEF; NOT_SUC; SUC_SUB1] THEN
+    COND_CASES_TAC THENL
+    [ASM_REWRITE_TAC [ADD_0];
+     ALL_TAC] THEN
+    MP_TAC (SPEC `ks : num` num_CASES) THEN
+    ASM_REWRITE_TAC [] THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    DISCH_THEN (X_CHOOSE_THEN `kss : cycle` SUBST_VAR_TAC) THEN
+    REWRITE_TAC [SUC_SUB1] THEN
+    MP_TAC
+      (SPECL
+         [`ld : wire`;
+          `nb0 : wire`;
+          `cq0 : wire`;
+          `cr0 : wire`;
+          `t + j + SUC kss`]
+         case1_signal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    SUBGOAL_THEN `signal ld (t + j + SUC kss) <=> F` SUBST1_TAC THENL
+    [UNDISCH_TAC
+       `(g : cycle -> cycle # cycle) (SUC us) = (j, SUC (SUC kss))` THEN
+     ASM_REWRITE_TAC [GSYM ADD_ASSOC] THEN
+     STRIP_TAC THEN
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     REWRITE_TAC [SUC_LT];
+     ALL_TAC] THEN
+    REWRITE_TAC [ADD_SUC] THEN
+    MP_TAC
+      (SPECL
+         [`cp0 : wire`;
+          `cq0 : wire`;
+          `SUC (t + j + kss)`]
+         not_signal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    AP_TERM_TAC THEN
+    MP_TAC
+      (SPECL [`cr : bus`; `cp : bus`; `0`;
+              `cr0 : wire`; `cp0 : wire`] bdelay_wire) THEN
+    ASM_REWRITE_TAC [] THEN
+    STRIP_TAC THEN
+    MP_TAC
+      (SPECL
+        [`cr0 : wire`; `cp0 : wire`; `t + j + kss : cycle`]
+        delay_signal) THEN
+    ASM_REWRITE_TAC [GSYM ADD1];
+    ALL_TAC] THEN
+   UNDISCH_THEN
+     `SUC is < r + 1`
+     (STRIP_ASSUME_TAC o REWRITE_RULE [GSYM ADD1; LT_SUC]) THEN
+   SUBGOAL_THEN `?spi'. wire sp' (SUC is) spi'` STRIP_ASSUME_TAC THENL
+   [MATCH_MP_TAC wire_exists THEN
+    ASM_REWRITE_TAC [GSYM ADD1; LT_SUC];
+    ALL_TAC] THEN
+   SUBGOAL_THEN `?cpi'. wire cp' is cpi'` STRIP_ASSUME_TAC THENL
+   [MATCH_MP_TAC wire_exists THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LT_TRANS THEN
+    EXISTS_TAC `r : num` THEN
+    ASM_REWRITE_TAC [GSYM ADD1; SUC_LT];
+    ALL_TAC] THEN
+   MP_TAC
+     (SPECL
+        [`cq' : bus`;
+         `1`;
+         `r : num`;
+         `cq1' : bus`;
+         `is : num`;
+         `cqi' : wire`]
+        bsub_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_REWRITE_TAC [ONE; SUC_ADD; ZERO_ADD] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`sp' : bus`;
+         `1`;
+         `r : num`;
+         `sp1' : bus`;
+         `is : num`;
+         `spi' : wire`]
+        bsub_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_REWRITE_TAC [ONE; SUC_ADD; ZERO_ADD] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`cp' : bus`;
+         `0`;
+         `r : num`;
+         `cp1' : bus`;
+         `is : num`;
+         `cpi' : wire`]
+        bsub_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_REWRITE_TAC [ZERO_ADD] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`sp1' : bus`; `cp1' : bus`; `sq1' : bus`; `cq1' : bus`]
+        badder2_def) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`sp1' : bus`;
+         `cp1' : bus`;
+         `cq1' : bus`;
+         `is : num`;
+         `spi' : wire`;
+         `cpi' : wire`;
+         `cqi' : wire`]
+        band2_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`spi' : wire`;
+         `cpi' : wire`;
+         `cqi' : wire`;
+         `u : cycle`]
+        and2_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   FIRST_X_ASSUM
+     (MP_TAC o SPECL [`u : cycle`; `j : cycle`; `ks : cycle`]) THEN
+   ANTS_TAC THENL
+   [FIRST_ASSUM ACCEPT_TAC;
+    ALL_TAC] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   SUBGOAL_THEN `?sri'. wire sr' (SUC is) sri'` STRIP_ASSUME_TAC THENL
+   [MATCH_MP_TAC wire_exists THEN
+    ASM_REWRITE_TAC [GSYM ADD1; LT_SUC];
+    ALL_TAC] THEN
+   MP_TAC
+     (SPECL [`sr' : bus`; `sp' : bus`; `SUC is`;
+             `sri' : wire`; `spi' : wire`] bdelay_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`sri' : wire`; `spi' : wire`; `us : cycle`] delay_signal) THEN
+   ASM_REWRITE_TAC [GSYM ADD1] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   ***
+   MP_TAC
+     (SPECL [`cr' : bus`; `cp' : bus`; `SUC is`;
+             `cri' : wire`; `cpi' : wire`] bdelay_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL [`cri' : wire`; `cpi' : wire`; `us : cycle`] delay_signal) THEN
+   ASM_REWRITE_TAC [GSYM ADD1] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+       [`sr' : bus`;
+        `1`;
+        `r : num`;
+        `sr1' : bus`;
+        `is : num`;
+        `sri' : wire`]
+       bsub_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_REWRITE_TAC [ONE; SUC_ADD; ZERO_ADD] THEN
+   STRIP_TAC THEN
+   SUBGOAL_THEN `?sri. wire sr is sri` STRIP_ASSUME_TAC THENL
+   [MATCH_MP_TAC wire_exists THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   MP_TAC
+     (SPECL
+        [`\sri sri'.
+            sri' = (gw : (cycle -> cycle -> bool) -> wire)
+                   (\j k. if k = 0 then signal sri (t + j)
+                          else signal sri (t + j + (k - 1)))`;
+         `sr : bus`;
+         `sr1' : bus`;
+         `is : num`;
+         `sri : wire`;
+         `sri' : wire`]
+        blift2_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   ASM_REWRITE_TAC [UNCURRY_DEF; NOT_SUC; SUC_SUB1] THEN
+   SUBGOAL_THEN `?cri. wire cr is cri` STRIP_ASSUME_TAC THENL
+   [MATCH_MP_TAC wire_exists THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LT_TRANS THEN
+    EXISTS_TAC `r : num` THEN
+    ASM_REWRITE_TAC [GSYM ADD1; SUC_LT];
+    ALL_TAC] THEN
+   MP_TAC
+     (SPECL
+        [`\cri cri'.
+            cri' = (gw : (cycle -> cycle -> bool) -> wire)
+                   (\j k. ~(k = 0) /\ signal cri (t + (j + (k - 1))))`;
+         `cr : bus`;
+         `cr' : bus`;
+         `is : num`;
+         `cri : wire`;
+         `cri' : wire`]
+        blift2_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   ASM_REWRITE_TAC [UNCURRY_DEF; NOT_SUC; SUC_SUB1] THEN
+   COND_CASES_TAC THENL
+   [ASM_REWRITE_TAC [ADD_0];
+    ALL_TAC] THEN
+   MP_TAC (SPEC `ks : num` num_CASES) THEN
+   ASM_REWRITE_TAC [] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   DISCH_THEN (X_CHOOSE_THEN `kss : cycle` SUBST_VAR_TAC) THEN
+   REWRITE_TAC [SUC_SUB1] THEN
+   SUBGOAL_THEN `?nbi. wire nb (SUC is) nbi` STRIP_ASSUME_TAC THENL
+   [MATCH_MP_TAC wire_exists THEN
+    ASM_REWRITE_TAC [GSYM ADD1; LT_SUC];
+    ALL_TAC] THEN
+   SUBGOAL_THEN `?sqi. wire sq is sqi` STRIP_ASSUME_TAC THENL
+   [MATCH_MP_TAC wire_exists THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   MP_TAC
+     (SPECL
+       [`nb : bus`;
+        `1`;
+        `r : num`;
+        `nb1 : bus`;
+        `is : num`;
+        `nbi : wire`]
+       bsub_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_REWRITE_TAC [ONE; SUC_ADD; ZERO_ADD] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`ld : wire`;
+         `nb1 : bus`;
+         `sq : bus`;
+         `sr : bus`;
+         `is : num`;
+         `nbi : wire`;
+         `sqi : wire`;
+         `sri : wire`]
+        bcase1_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`ld : wire`;
+         `nbi : wire`;
+         `sqi : wire`;
+         `sri : wire`;
+         `t + j + SUC kss`]
+        case1_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   SUBGOAL_THEN `signal ld (t + j + SUC kss) <=> F` SUBST1_TAC THENL
+   [UNDISCH_TAC
+      `(g : cycle -> cycle # cycle) (SUC us) = (j, SUC (SUC kss))` THEN
+    ASM_REWRITE_TAC [GSYM ADD_ASSOC] THEN
+    STRIP_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    REWRITE_TAC [SUC_LT];
+    ALL_TAC] THEN
+   REWRITE_TAC [ADD_SUC] THEN
+   SUBGOAL_THEN `?spi. wire sp is spi` STRIP_ASSUME_TAC THENL
+   [MATCH_MP_TAC wire_exists THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   SUBGOAL_THEN `?cpi. wire cp is cpi` STRIP_ASSUME_TAC THENL
+   [MATCH_MP_TAC wire_exists THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LT_TRANS THEN
+    EXISTS_TAC `r : num` THEN
+    ASM_REWRITE_TAC [GSYM ADD1; SUC_LT];
+    ALL_TAC] THEN
+   MP_TAC
+     (SPECL
+        [`cp : bus`;
+         `0`;
+         `r : num`;
+         `cp1 : bus`;
+         `is : num`;
+         `cpi : wire`]
+        bsub_wire) THEN
+   ASM_REWRITE_TAC [ZERO_ADD] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`sp : bus`; `cp1 : bus`; `sq : bus`; `cq1 : bus`]
+        badder2_def) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`sp : bus`;
+         `cp1 : bus`;
+         `sq : bus`;
+         `is : num`;
+         `spi : wire`;
+         `cpi : wire`;
+         `sqi : wire`]
+        bxor2_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`spi : wire`;
+         `cpi : wire`;
+         `sqi : wire`;
+         `SUC (t + j + kss) : cycle`]
+        xor2_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL [`sr : bus`; `sp : bus`; `is : num`;
+             `sri : wire`; `spi : wire`] bdelay_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`sri : wire`; `spi : wire`; `t + j + kss : cycle`]
+        delay_signal) THEN
+   ASM_REWRITE_TAC [GSYM ADD1] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL [`cr : bus`; `cp : bus`; `is : num`;
+             `cri : wire`; `cpi : wire`] bdelay_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`cri : wire`; `cpi : wire`; `t + j + kss : cycle`]
+        delay_signal) THEN
+   ASM_REWRITE_TAC [GSYM ADD1] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [];
    ALL_TAC] THEN
   REWRITE_TAC [case1_def] THEN
   X_GEN_TAC `u : cycle` THEN
