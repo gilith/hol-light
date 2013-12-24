@@ -123,7 +123,7 @@ let sum_carry_bit_def = new_definition
        bdelay sr sp /\
        bdelay cr cp`;;
 
-export_thm sum_carry_def;;
+export_thm sum_carry_bit_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of hardware adder devices.                                     *)
