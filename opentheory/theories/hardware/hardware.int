@@ -59,3 +59,7 @@ const "HOLLight.wire" as "Hardware.Bus.wire"
 const "HOLLight.dest_bus" as "Hardware.Bus.wires"
 const "HOLLight.bxor2" as "Hardware.Bus.xor2"
 const "HOLLight.bxor3" as "Hardware.Bus.xor3"
+
+# Hardware.SumCarry
+
+const "HOLLight.sum_carry_bit" as "Hardware.SumCarry.bit"
