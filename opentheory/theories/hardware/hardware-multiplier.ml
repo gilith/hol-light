@@ -9,59 +9,69 @@
 
 logfile "hardware-multiplier-def";;
 
+(* -------------------------------------- *)
+(*       r+2 r+1  r  r-1  ...  2   1   0  *)
+(* -------------------------------------- *)
+(*  xs =  -   -   p   p   ...  p   p   op *)
+(*  xc =  -   o   o   o   ...  o   o   -  *)
+(*  sp =  -   -   p   p   ...  p   p   op *)
+(*  cp =  -   o   p   p   ...  p   p   -  *)
+(* -------------------------------------- *)
+(*  ps =  -   -   o   o   ...  o   o   -  *)
+(*  pc =  -   o   o   o   ...  o   o   -  *)
+(* -------------------------------------- *)
+(*  s  =  -   X   X   X   ...  X   X   X  *)
+(*  c  =  X   X   X   X   ...  X   -   -  *)
+(* -------------------------------------- *)
+
 (***
 let sum_carry_mult_def = new_definition
-  `!ld w xs xc sa ca sb cb.
-     sum_carry_mult ld w xs xc sa ca sb cb <=>
-     ?r sap cap sbp cbp xos xoc sbq cbq
-      sa0 sa1 ca0 ca1 sb1 cap0 cap1 cbp0 cbp1
-      xos0 xos1 xoc0 xoc1 sbq0 sbq1 cbq0 cbq1.
+  `!ld w xs xc s c.
+     sum_carry_mult ld w xs xc s c <=>
+     ?r sp cp xos xoc ps pc sq cq
+      s0 sp0 sp1 cp0 cp1 xos0 xos1 xoc0 xoc1 pc0 pc1 pc2 pc3 sq0 sq1 sq2 cq0 cq1.
        width xs = r + 1 /\
        width xc = r + 1 /\
-       width sa = r + 1 /\
-       width ca = r + 1 /\
-       width sb = r + 1 /\
-       width cb = r + 1 /\
-       width sap = r /\
-       width cap = r + 1 /\
-       width sbp = r /\
-       width cbp = r + 1 /\
+       width s = r + 2 /\
+       width c = r + 1 /\
+       width sp = r + 1 /\
+       width cp = r + 1 /\
        width xos = r + 1 /\
        width xoc = r + 1 /\
-       width sbq = r + 1 /\
-       width cbq = r + 1
+       width ps = r /\
+       width pc = r + 1 /\
+       width sq = r + 2 /\
+       width cq = r + 1
        /\
-       wire sa 0 sa0 /\
-       bsub sa 1 r sa1 /\
-       wire ca 0 ca0 /\
-       bsub ca 1 r ca1 /\
-       bsub sb 1 r sb1 /\
-       wire cap 0 cap0 /\
-       bsub cap 1 r cap1 /\
-       bsub cbp 0 r cbp0 /\
-       wire cbp r cbp1 /\
+       bsub s 1 (r + 1) s0 /\
+       wire sp 0 sp0 /\
+       bsub sp 1 r sp1 /\
+       bsub cp 0 r cp0 /\
+       wire cp r cp1 /\
        wire xos 0 xos0 /\
        bsub xos 1 r xos1 /\
        bsub xoc 0 r xoc0 /\
        wire xoc r xoc1 /\
-       bsub sbq 0 r sbq0 /\
-       wire sbq r sbq1 /\
-       bsub cbq 0 r cbq0 /\
-       wire cbq r cbq1
+       wire pc 0 pc0 /\
+       bsub pc 0 r pc1 /\
+       bsub pc 1 r pc2 /\
+       wire pc r pc3 /\
+       wire sq 0 sq0 /\
+       bsub sq 1 r sq1 /\
+       wire sq (r + 1) sq2 /\
+       bsub cq 0 r cq0 /\
+       wire cq r cq1
        /\
        bcase1 w xs (bground (r + 1)) xos /\
        bcase1 w xc (bground (r + 1)) xoc /\
-       adder2 xos0 cap0 sa0 ca0 /\
-       badder3 xos1 xoc0 cap1 sa1 ca1 /\
-       badder3 sap sbp cbp0 sbq0 cbq0 /\
-       connect xoc1 cbq1 /\
-       connect cbp1 sbq1 /\
-       bcase1 ld (bground (r + 1)) sbq sb /\
-       bcase1 ld (bground (r + 1)) cbq cb /\
-       bdelay sa1 sap /\
-       bdelay ca cap /\
-       bdelay sb1 sbp /\
-       bdelay cb cbp`;;
+       adder2 sp0 xos0 sq0 pc0 /\
+       badder3 sp1 cp0 xos1 ps pc2 /\
+       badder3 xoc0 ps pc1 sq1 cq0 /\
+       adder3 xoc1 cp1 pc3 sq2 cq1 /\
+       bcase1 ld (bground (r + 2)) sq s /\
+       bcase1 ld (bground (r + 1)) cq c /\
+       bdelay s0 sp /\
+       bdelay c cp`;;
 
 export_thm sum_carry_mult_def;;
 ***)
