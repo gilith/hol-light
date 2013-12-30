@@ -131,6 +131,27 @@ let bmajority3_def = new_definition
 
 export_thm bmajority3_def;;
 
+(***
+let pipe_def = new_definition
+  `!w x.
+     pipeXX w x <=>
+     ?r wp xp x0 xp0 xp1.
+       width x = r + 1 /\
+       width xp = r + 1
+       /\
+       wire x 0 x0 /\
+       bsub x 0 r x0 /\
+       wire xp 0 xp0 /\
+       bsub xp 1 r xp1
+       /\
+       connect wp x0 /\
+       bconnect xp x2 /\
+       delay w wp /\
+       bdelay x1 xp`;;
+
+export_thm pipe_def;;
+***)
+
 (* ------------------------------------------------------------------------- *)
 (* Properties of bus devices.                                                *)
 (* ------------------------------------------------------------------------- *)
@@ -3093,5 +3114,34 @@ let bmajority3_right_bground = prove
   ASM_REWRITE_TAC [bconnect_refl]);;
 
 export_thm bmajority3_right_bground;;
+
+(***
+let pipe_signal = prove
+ (`!w x i xi.
+     pipeXX w x /\
+     wire x i xi ==>
+     signal xi (t + (i + 1)) = signal w t`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [pipe_def] THEN
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM MP_TAC THEN
+  SPEC_TAC (`xi : wire`, `xi : wire`) THEN
+  SPEC_TAC (`i : num`, `i : num`) THEN
+  INDUCT_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`xoc0 : bus`;
+         `ps : bus`;
+         `pc1 : bus`;
+         `s0 : bus`;
+         `c0 : bus`;
+         `t : cycle`]
+        badder3_bits_to_num) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+
+export_thm pipe_signal;;
+***)
 
 logfile_end ();;
