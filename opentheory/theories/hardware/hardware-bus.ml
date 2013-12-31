@@ -131,26 +131,22 @@ let bmajority3_def = new_definition
 
 export_thm bmajority3_def;;
 
-(***
 let pipe_def = new_definition
   `!w x.
-     pipeXX w x <=>
-     ?r wp xp x0 xp0 xp1.
+     pipe w x <=>
+     ?r xp x0 xp0 xp1.
        width x = r + 1 /\
        width xp = r + 1
        /\
-       wire x 0 x0 /\
        bsub x 0 r x0 /\
        wire xp 0 xp0 /\
        bsub xp 1 r xp1
        /\
-       connect wp x0 /\
-       bconnect xp x2 /\
-       delay w wp /\
-       bdelay x1 xp`;;
+       bconnect xp x /\
+       delay w xp0 /\
+       bdelay x0 xp1`;;
 
 export_thm pipe_def;;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of bus devices.                                                *)
@@ -3115,10 +3111,9 @@ let bmajority3_right_bground = prove
 
 export_thm bmajority3_right_bground;;
 
-(***
 let pipe_signal = prove
  (`!w x i xi.
-     pipeXX w x /\
+     pipe w x /\
      wire x i xi ==>
      signal xi (t + (i + 1)) = signal w t`,
   REPEAT GEN_TAC THEN
@@ -3129,19 +3124,95 @@ let pipe_signal = prove
   SPEC_TAC (`i : num`, `i : num`) THEN
   INDUCT_TAC THENL
   [REPEAT STRIP_TAC THEN
+   REWRITE_TAC [ZERO_ADD] THEN
    MP_TAC
      (SPECL
-        [`xoc0 : bus`;
-         `ps : bus`;
-         `pc1 : bus`;
-         `s0 : bus`;
-         `c0 : bus`;
-         `t : cycle`]
-        badder3_bits_to_num) THEN
+        [`xp : bus`;
+         `x : bus`;
+         `0`;
+         `xp0 : wire`;
+         `xi : wire`]
+        bconnect_wire) THEN
    ASM_REWRITE_TAC [] THEN
-   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+       [`xp0 : wire`;
+        `xi : wire`;
+        `t + 1 : cycle`]
+       connect_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MATCH_MP_TAC delay_signal THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN `i < (r : num)` STRIP_ASSUME_TAC THENL
+  [MP_TAC (SPECL [`x : bus`; `SUC i`; `xi : wire`] wire_bound) THEN
+   ASM_REWRITE_TAC [GSYM ADD1; LT_SUC];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `?xpi. wire xp (SUC i) xpi` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC wire_exists THEN
+   ASM_REWRITE_TAC [GSYM ADD1; LT_SUC];
+   ALL_TAC] THEN
+  MP_TAC
+    (SPECL
+       [`xp : bus`;
+        `x : bus`;
+        `SUC i`;
+        `xpi : wire`;
+        `xi : wire`]
+       bconnect_wire) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+      [`xpi : wire`;
+       `xi : wire`;
+       `t + SUC i + 1 : cycle`]
+      connect_signal) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  SUBGOAL_THEN `?xis. wire x i xis` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC wire_exists THEN
+   ASM_REWRITE_TAC [GSYM ADD1; LT_SUC_LE] THEN
+   MATCH_MP_TAC LT_IMP_LE THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  FIRST_X_ASSUM (MP_TAC o SPEC `xis : wire`) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  REWRITE_TAC [ADD_SUC; SUC_ADD] THEN
+  REWRITE_TAC [ADD1] THEN
+  MATCH_MP_TAC delay_signal THEN
+  MATCH_MP_TAC bdelay_wire THEN
+  EXISTS_TAC `x0 : bus` THEN
+  EXISTS_TAC `xp1 : bus` THEN
+  EXISTS_TAC `i : num` THEN
+  ASM_REWRITE_TAC [] THEN
+  CONJ_TAC THENL
+  [MP_TAC
+    (SPECL
+       [`x : bus`;
+        `0`;
+        `r : num`;
+        `x0 : bus`;
+        `i : num`;
+        `xis : wire`]
+       bsub_wire) THEN
+   ASM_REWRITE_TAC [ZERO_ADD];
+   MP_TAC
+    (SPECL
+       [`xp : bus`;
+        `1`;
+        `r : num`;
+        `xp1 : bus`;
+        `i : num`;
+        `xpi : wire`]
+       bsub_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_REWRITE_TAC [ONE; SUC_ADD; ZERO_ADD]]);;
 
 export_thm pipe_signal;;
-***)
 
 logfile_end ();;
