@@ -3112,7 +3112,7 @@ let bmajority3_right_bground = prove
 export_thm bmajority3_right_bground;;
 
 let pipe_signal = prove
- (`!w x i xi.
+ (`!w x i xi t.
      pipe w x /\
      wire x i xi ==>
      signal xi (t + (i + 1)) = signal w t`,
