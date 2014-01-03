@@ -9,6 +9,36 @@
 
 logfile "hardware-counter-def";;
 
+let bpipe_def = new_definition
+  `!w x.
+     bpipe w x <=>
+     ?r xp x0 xp0 xp1.
+       width x = r + 1 /\
+       width xp = r + 1
+       /\
+       bsub x 0 r x0 /\
+       wire xp 0 xp0 /\
+       bsub xp 1 r xp1
+       /\
+       bconnect xp x /\
+       delay w xp0 /\
+       bdelay x0 xp1`;;
+
+export_thm bpipe_def;;
+
+let pipe_def = new_definition
+  `!d w x.
+     pipe d w x <=>
+     ?y y0.
+       width y = d + 1
+       /\
+       wire y d y0
+       /\
+       bpipe w y /\
+       connect y0 x`;;
+
+export_thm pipe_def;;
+
 let event_counter_def = new_definition
   `!ld nb inc dn.
       event_counter ld nb inc dn <=>
@@ -88,6 +118,129 @@ export_thm counter_def;;
 (* ------------------------------------------------------------------------- *)
 
 logfile "hardware-counter-thm";;
+
+let bpipe_signal = prove
+ (`!w x i xi t.
+     bpipe w x /\
+     wire x i xi ==>
+     signal xi (t + (i + 1)) = signal w t`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bpipe_def] THEN
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM MP_TAC THEN
+  SPEC_TAC (`xi : wire`, `xi : wire`) THEN
+  SPEC_TAC (`i : num`, `i : num`) THEN
+  INDUCT_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   REWRITE_TAC [ZERO_ADD] THEN
+   MP_TAC
+     (SPECL
+        [`xp : bus`;
+         `x : bus`;
+         `0`;
+         `xp0 : wire`;
+         `xi : wire`]
+        bconnect_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+       [`xp0 : wire`;
+        `xi : wire`;
+        `t + 1 : cycle`]
+       connect_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MATCH_MP_TAC delay_signal THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN `i < (r : num)` STRIP_ASSUME_TAC THENL
+  [MP_TAC (SPECL [`x : bus`; `SUC i`; `xi : wire`] wire_bound) THEN
+   ASM_REWRITE_TAC [GSYM ADD1; LT_SUC];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `?xpi. wire xp (SUC i) xpi` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC wire_exists THEN
+   ASM_REWRITE_TAC [GSYM ADD1; LT_SUC];
+   ALL_TAC] THEN
+  MP_TAC
+    (SPECL
+       [`xp : bus`;
+        `x : bus`;
+        `SUC i`;
+        `xpi : wire`;
+        `xi : wire`]
+       bconnect_wire) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+      [`xpi : wire`;
+       `xi : wire`;
+       `t + SUC i + 1 : cycle`]
+      connect_signal) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  SUBGOAL_THEN `?xis. wire x i xis` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC wire_exists THEN
+   ASM_REWRITE_TAC [GSYM ADD1; LT_SUC_LE] THEN
+   MATCH_MP_TAC LT_IMP_LE THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  FIRST_X_ASSUM (MP_TAC o SPEC `xis : wire`) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  REWRITE_TAC [ADD_SUC; SUC_ADD] THEN
+  REWRITE_TAC [ADD1] THEN
+  MATCH_MP_TAC delay_signal THEN
+  MATCH_MP_TAC bdelay_wire THEN
+  EXISTS_TAC `x0 : bus` THEN
+  EXISTS_TAC `xp1 : bus` THEN
+  EXISTS_TAC `i : num` THEN
+  ASM_REWRITE_TAC [] THEN
+  CONJ_TAC THENL
+  [MP_TAC
+    (SPECL
+       [`x : bus`;
+        `0`;
+        `r : num`;
+        `x0 : bus`;
+        `i : num`;
+        `xis : wire`]
+       bsub_wire) THEN
+   ASM_REWRITE_TAC [ZERO_ADD];
+   MP_TAC
+    (SPECL
+       [`xp : bus`;
+        `1`;
+        `r : num`;
+        `xp1 : bus`;
+        `i : num`;
+        `xpi : wire`]
+       bsub_wire) THEN
+   ASM_REWRITE_TAC [] THEN
+   ASM_REWRITE_TAC [ONE; SUC_ADD; ZERO_ADD]]);;
+
+export_thm bpipe_signal;;
+
+let pipe_signal = prove
+ (`!d w x. pipe d w x ==> signal x (t + (d + 1)) = signal w t`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [pipe_def] THEN
+  REPEAT STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+      [`y0 : wire`;
+       `x : wire`;
+       `t + (d + 1) : cycle`]
+      connect_signal) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  MATCH_MP_TAC bpipe_signal THEN
+  EXISTS_TAC `y : bus` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm pipe_signal;;
 
 let event_counter_signal = prove
  (`!n ld nb inc dn t k.
@@ -3266,5 +3419,42 @@ let counter_signal = prove
   REWRITE_TAC [ground_signal]);;
 
 export_thm counter_signal;;
+
+(* ------------------------------------------------------------------------- *)
+(* Automatically generating verified counter circuits.                       *)
+(* ------------------------------------------------------------------------- *)
+
+let mk_counter n ld dn =
+    let n2 = add_num n num_2 in
+    let (m,r) =
+        let r = bitwidth_num n2 -/ num_1 in
+        let m = bit_shl_num num_1 r +/ r in
+        if le_num n2 m then (m,r) else
+        let rs = r +/ num_1 in
+        (bit_shl_num num_1 rs +/ rs, rs) in
+    let nb = bits_to_bus (num_to_bits_bound r (m -/ n2)) in
+    let th0 = SPECL [mk_numeral n; ld; nb; dn;
+                     `t : cycle`; `k : cycle`] counter_signal in
+    let th1 =
+        let wth = (bus_conv THENC NUM_REDUCE_CONV) (mk_width nb) in
+        let conv =
+            REWRITE_CONV [wth] THENC
+            bus_conv THENC
+            REWRITE_CONV [ground_signal; power_signal] THENC
+            REWRITE_CONV [bits_to_num_cons; bits_to_num_nil] THENC
+            REWRITE_CONV [bit_cons_false; bit_cons_true] THENC
+            NUM_REDUCE_CONV in
+        CONV_RULE
+          (LAND_CONV
+             (RAND_CONV
+                (LAND_CONV conv THENC
+                 REWR_CONV TRUE_AND_THM))) th0 in
+     th1;;
+
+(*** Testing
+mk_counter (dest_numeral `0`) `ld : wire` `dn : wire`;;
+mk_counter (dest_numeral `91`) `ld : wire` `dn : wire`;;
+mk_counter (dest_numeral `2091`) `ld : wire` `dn : wire`;;
+***)
 
 logfile_end ();;

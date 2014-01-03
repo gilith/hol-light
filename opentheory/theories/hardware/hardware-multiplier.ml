@@ -538,4 +538,28 @@ let sum_carry_mult_bits_to_num = prove
 
 export_thm sum_carry_mult_bits_to_num;;
 
+(***
+let sum_carry_mult_bits_to_num = prove
+ (`!x y ld xs xc ys yc zs zc t k.
+    
+     (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
+     bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t) = n /\
+     sum_carry_bit ld s c w ==>
+     signal w (t + k) = bit_nth n k`,
+
+ (`!n x ld w xs xc b s c t k.
+     (!i.
+        i <= k ==>
+        (signal ld (t + i) <=> i = 0) /\
+        (signal w (t + i) = bit_nth n i) /\
+        bits_to_num (bsignal xs (t + i)) +
+        2 * bits_to_num (bsignal xc (t + i)) = x) /\
+     sum_carry_mult ld w xs xc b s c ==>
+     bit_cons (signal b (t + k))
+       (bits_to_num (bsignal s (t + k)) +
+        2 * bits_to_num (bsignal c (t + k))) =
+     bit_shr (x * bit_bound n (k + 1)) k`,
+  REPEAT GEN_TAC THEN
+***)
+
 logfile_end ();;

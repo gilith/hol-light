@@ -509,6 +509,12 @@ let bit_cons_false = prove
 
 export_thm bit_cons_false;;
 
+let bit_cons_true = prove
+  (`!n. bit_cons T n = 1 + 2 * n`,
+   REWRITE_TAC [bit_cons_def; bit_to_num_true]);;
+
+export_thm bit_cons_true;;
+
 let bit_cons_zero = prove
   (`!b. bit_cons b 0 = bit_to_num b`,
    REWRITE_TAC [bit_cons_def; ADD_0; MULT_0]);;
@@ -1150,5 +1156,43 @@ let bit_cons_le_rcancel = prove
    REWRITE_TAC [bit_cons_def; LE_ADD_RCANCEL]);;
 
 export_thm bit_cons_le_rcancel;;
+
+(* ------------------------------------------------------------------------- *)
+(* Bitlist functions operating on ML numerals.                               *)
+(* ------------------------------------------------------------------------- *)
+
+let bit_hd_num n = eq_num (mod_num n num_2) num_1;;
+
+let bit_tl_num n = quo_num n num_2;;
+
+let rec bitwidth_num n =
+    if eq_num n num_0 then num_0 else
+    succ_num (bitwidth_num (bit_tl n));;
+
+let bit_to_num b = if b then num_1 else num_0;;
+
+let bit_cons_num h t = bit_to_num h +/ (num_2 */ t);;
+
+let rec bit_shl_num n k =
+    if eq_num k num_0 then n else
+    bit_shl_num (bit_cons_num false n) (k -/ num_1);;
+
+let rec bit_shr_num n k =
+    if eq_num k num_0 then n else
+    bit_shr_num (bit_tl_num n) (k -/ num_1);;
+
+let bit_nth_num n i = bit_hd_num (bit_shr_num n i);;
+
+let bit_bound_num n k = n -/ bit_shl_num (bit_shr_num n k) k;;
+
+let bit_append_num = itlist bit_cons_num;;
+
+let bits_to_num l = bit_append_num l num_0;;
+
+let rec num_to_bits_bound k n =
+    if eq_num k num_0 then [] else
+    bit_hd_num n :: num_to_bits_bound (k -/ num_1) (bit_tl_num n);;
+
+let num_to_bits n = num_to_bit_bound (bitwidth_num n) n;;
 
 logfile_end ();;

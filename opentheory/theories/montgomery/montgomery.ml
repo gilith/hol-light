@@ -847,10 +847,6 @@ let montgomery_circuit = prove
 (* Automatically generating verified Montgomery multiplication circuits.     *)
 (* ------------------------------------------------------------------------- *)
 
-let rec bitwidth_num n =
-    if eq_num n num_0 then num_0 else
-    succ_num (bitwidth_num (quo_num n num_2));;
-
 let mk_montgomery n =
     let r = mk_numeral (add_num (bitwidth_num (dest_numeral n)) num_2) in
     let egcd =

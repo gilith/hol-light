@@ -636,4 +636,37 @@ let bground_bits_to_num = prove
 
 export_thm bground_bits_to_num;;
 
+(* ------------------------------------------------------------------------- *)
+(* Automatically generating verified circuits.                               *)
+(* ------------------------------------------------------------------------- *)
+
+let mk_ground = `ground`;;
+
+let mk_power = `power`;;
+
+let bit_to_wire b = if b then mk_power else mk_ground;;
+
+let mk_bnil = `bnil`;;
+
+let mk_bwire =
+    let bwire = `bwire` in
+    fun w -> mk_comb (bwire,w);;
+
+let mk_bappend =
+    let bappend = `bappend` in
+    fun x -> fun y -> mk_comb (mk_comb (bappend,x), y);;
+
+let mk_width =
+    let width = `width` in
+    fun x -> mk_comb (width,x);;
+
+let bits_to_bus l =
+    let f h t = mk_bappend (mk_bwire (bit_to_wire h)) t in
+    itlist f l mk_bnil;;
+
+let bus_conv =
+    REWRITE_CONV
+      [bnil_width; bwire_width; bappend_width;
+       bnil_bsignal; bwire_bsignal; bappend_bsignal; APPEND];;
+
 logfile_end ();;
