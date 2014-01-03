@@ -224,7 +224,7 @@ let bpipe_signal = prove
 export_thm bpipe_signal;;
 
 let pipe_signal = prove
- (`!d w x. pipe d w x ==> signal x (t + (d + 1)) = signal w t`,
+ (`!d w x t. pipe d w x ==> signal x (t + (d + 1)) = signal w t`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [pipe_def] THEN
   REPEAT STRIP_TAC THEN
