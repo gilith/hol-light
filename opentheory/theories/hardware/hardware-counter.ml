@@ -3449,10 +3449,16 @@ let mk_counter n ld dn =
              (RAND_CONV
                 (LAND_CONV conv THENC
                  REWR_CONV TRUE_AND_THM))) th0 in
-     th1;;
+     let th2 =
+         let (asms,_) = dest_imp (concl th1) in
+         let (ld_asm,_) = dest_conj asms in
+         DISCH ld_asm (UNDISCH th1) in
+     th2;;
 
 (*** Testing
 mk_counter (dest_numeral `0`) `ld : wire` `dn : wire`;;
+mk_counter (dest_numeral `1`) `ld : wire` `dn : wire`;;
+mk_counter (dest_numeral `2`) `ld : wire` `dn : wire`;;
 mk_counter (dest_numeral `91`) `ld : wire` `dn : wire`;;
 mk_counter (dest_numeral `2091`) `ld : wire` `dn : wire`;;
 ***)

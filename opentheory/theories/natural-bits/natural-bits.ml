@@ -1167,7 +1167,7 @@ let bit_tl_num n = quo_num n num_2;;
 
 let rec bitwidth_num n =
     if eq_num n num_0 then num_0 else
-    succ_num (bitwidth_num (bit_tl n));;
+    succ_num (bitwidth_num (bit_tl_num n));;
 
 let bit_to_num b = if b then num_1 else num_0;;
 
@@ -1193,6 +1193,6 @@ let rec num_to_bits_bound k n =
     if eq_num k num_0 then [] else
     bit_hd_num n :: num_to_bits_bound (k -/ num_1) (bit_tl_num n);;
 
-let num_to_bits n = num_to_bit_bound (bitwidth_num n) n;;
+let num_to_bits n = num_to_bits_bound (bitwidth_num n) n;;
 
 logfile_end ();;
