@@ -3424,6 +3424,66 @@ export_thm counter_signal;;
 (* Automatically generating verified counter circuits.                       *)
 (* ------------------------------------------------------------------------- *)
 
+let instantiate_hardware =
+    let imp_rule ith asm th =
+        let (_,inst,_) = term_match [] (concl ith) asm in
+        PROVE_HYP (INST inst ith) th in
+    let first_imp_rule asm th =
+        let rec first iths =
+            match iths with
+              [] -> None
+            | ith :: iths ->
+              try (Some (imp_rule ith asm th))
+              with Failure _ -> first iths in
+        first in
+    let process_exists =
+        let pth = prove
+            (`!(w : A) p. p w ==> (?) p`,
+             REPEAT STRIP_TAC THEN
+             REWRITE_TAC [EXISTS_DEF] THEN
+             REPEAT STRIP_TAC THEN
+             FIRST_X_ASSUM MATCH_MP_TAC THEN
+             EXISTS_TAC `w : A` THEN
+             FIRST_ASSUM ACCEPT_TAC) in
+        fun asm -> fun th ->
+        let ptm = rand asm in
+        let (wty,_) = dest_fun_ty (type_of ptm) in
+        let wtm = genvar wty in
+        let ith =
+            (UNDISCH o
+             CONV_RULE (LAND_CONV BETA_CONV) o
+             SPEC ptm o
+             ISPEC wtm) pth in
+        PROVE_HYP ith th in
+    let mk_imp_thm =
+        let eq_rule = MATCH_MP (TAUT `(a <=> b) ==> (b ==> a)`) in
+        let push_exists = CONV_RULE (REWR_CONV (GSYM LEFT_IMP_EXISTS_THM)) in
+        let gen_exists v th = push_exists (GEN v th) in
+        fun th ->
+        let th = SPEC_ALL th in
+        let th = if is_eq (concl th) then eq_rule th else th in
+        let tm = concl th in
+        let avs = frees tm in
+        let (_,con) = dest_imp tm in
+        let evs = filter (fun v -> not (vfree_in v con)) avs in
+        UNDISCH (itlist gen_exists evs th) in
+    let basic_imp_ths =
+        let conj_th = UNDISCH (UNDISCH (TAUT `a ==> b ==> a /\ b`)) in
+        conj_th :: map mk_imp_thm [] in
+    fun ths ->
+    let imp_ths = basic_imp_ths @ map mk_imp_thm ths in
+    let rec process_asms th =
+        let rec process asms =
+            match asms with
+              [] -> None
+            | asm :: asms ->
+              if is_exists asm then Some (process_exists asm th) else
+              first_imp_rule asm th imp_ths in
+        match process (hyp th) with
+          None -> th
+        | Some th -> process_asms th in
+    process_asms;;
+
 let mk_counter n ld dn =
     let n2 = add_num n num_2 in
     let (m,r) =
@@ -3433,8 +3493,8 @@ let mk_counter n ld dn =
         let rs = r +/ num_1 in
         (bit_shl_num num_1 rs +/ rs, rs) in
     let nb = bits_to_bus (num_to_bits_bound r (m -/ n2)) in
-    let th0 = SPECL [mk_numeral n; ld; nb; dn;
-                     `t : cycle`; `k : cycle`] counter_signal in
+    let fvs = [`t : cycle`; `k : cycle`] in
+    let th0 = SPECL ([mk_numeral n; ld; nb; dn] @ fvs) counter_signal in
     let th1 =
         let wth = (bus_conv THENC NUM_REDUCE_CONV) (mk_width nb) in
         let conv =
@@ -3449,11 +3509,21 @@ let mk_counter n ld dn =
              (RAND_CONV
                 (LAND_CONV conv THENC
                  REWR_CONV TRUE_AND_THM))) th0 in
-     let th2 =
-         let (asms,_) = dest_imp (concl th1) in
-         let (ld_asm,_) = dest_conj asms in
-         DISCH ld_asm (UNDISCH th1) in
-     th2;;
+    let th2 =
+        let (asms,_) = dest_imp (concl th1) in
+        let (_,ckt) = dest_conj asms in
+        let cth = EQT_INTRO (ASSUME ckt) in
+        CONV_RULE
+          (LAND_CONV
+             (RAND_CONV (REWR_CONV cth) THENC
+              REWR_CONV AND_TRUE_THM)) th1 in
+    GENL fvs th2;;
+
+(***
+let ths = [counter_def];;
+let th = mk_counter (dest_numeral `91`) `ld : wire` `dn : wire`;;
+instantiate_hardware ths th;;
+***)
 
 (*** Testing
 mk_counter (dest_numeral `0`) `ld : wire` `dn : wire`;;
