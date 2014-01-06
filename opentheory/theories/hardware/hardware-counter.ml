@@ -3424,66 +3424,6 @@ export_thm counter_signal;;
 (* Automatically generating verified counter circuits.                       *)
 (* ------------------------------------------------------------------------- *)
 
-let instantiate_hardware =
-    let imp_rule ith asm th =
-        let (_,inst,_) = term_match [] (concl ith) asm in
-        PROVE_HYP (INST inst ith) th in
-    let first_imp_rule asm th =
-        let rec first iths =
-            match iths with
-              [] -> None
-            | ith :: iths ->
-              try (Some (imp_rule ith asm th))
-              with Failure _ -> first iths in
-        first in
-    let process_exists =
-        let pth = prove
-            (`!(w : A) p. p w ==> (?) p`,
-             REPEAT STRIP_TAC THEN
-             REWRITE_TAC [EXISTS_DEF] THEN
-             REPEAT STRIP_TAC THEN
-             FIRST_X_ASSUM MATCH_MP_TAC THEN
-             EXISTS_TAC `w : A` THEN
-             FIRST_ASSUM ACCEPT_TAC) in
-        fun asm -> fun th ->
-        let ptm = rand asm in
-        let (wty,_) = dest_fun_ty (type_of ptm) in
-        let wtm = genvar wty in
-        let ith =
-            (UNDISCH o
-             CONV_RULE (LAND_CONV BETA_CONV) o
-             SPEC ptm o
-             ISPEC wtm) pth in
-        PROVE_HYP ith th in
-    let mk_imp_thm =
-        let eq_rule = MATCH_MP (TAUT `(a <=> b) ==> (b ==> a)`) in
-        let push_exists = CONV_RULE (REWR_CONV (GSYM LEFT_IMP_EXISTS_THM)) in
-        let gen_exists v th = push_exists (GEN v th) in
-        fun th ->
-        let th = SPEC_ALL th in
-        let th = if is_eq (concl th) then eq_rule th else th in
-        let tm = concl th in
-        let avs = frees tm in
-        let (_,con) = dest_imp tm in
-        let evs = filter (fun v -> not (vfree_in v con)) avs in
-        UNDISCH (itlist gen_exists evs th) in
-    let basic_imp_ths =
-        let conj_th = UNDISCH (UNDISCH (TAUT `a ==> b ==> a /\ b`)) in
-        conj_th :: map mk_imp_thm [] in
-    fun ths ->
-    let imp_ths = basic_imp_ths @ map mk_imp_thm ths in
-    let rec process_asms th =
-        let rec process asms =
-            match asms with
-              [] -> None
-            | asm :: asms ->
-              if is_exists asm then Some (process_exists asm th) else
-              first_imp_rule asm th imp_ths in
-        match process (hyp th) with
-          None -> th
-        | Some th -> process_asms th in
-    process_asms;;
-
 let mk_counter n ld dn =
     let n2 = add_num n num_2 in
     let (m,r) =
@@ -3496,6 +3436,10 @@ let mk_counter n ld dn =
     let fvs = [`t : cycle`; `k : cycle`] in
     let th0 = SPECL ([mk_numeral n; ld; nb; dn] @ fvs) counter_signal in
     let th1 =
+        let bus_conv =
+            REWRITE_CONV
+              [bnil_width; bwire_width; bappend_width;
+               bnil_bsignal; bwire_bsignal; bappend_bsignal; APPEND] in
         let wth = (bus_conv THENC NUM_REDUCE_CONV) (mk_width nb) in
         let conv =
             REWRITE_CONV [wth] THENC
@@ -3519,18 +3463,198 @@ let mk_counter n ld dn =
               REWR_CONV AND_TRUE_THM)) th1 in
     GENL fvs th2;;
 
-(***
-let ths = [counter_def];;
-let th = mk_counter (dest_numeral `91`) `ld : wire` `dn : wire`;;
-instantiate_hardware ths th;;
+let num_eq_asm_rule : asm_rule =
+    let is_num_type = (=) `:num` in
+    let add_tm = `(+) : num -> num -> num` in
+    let mk_add = mk_binop add_tm in
+    let dest_add = dest_binop add_tm in
+    let numeral_eq_add_numeral_conv tm =
+        let (m,t) = dest_eq tm in
+        let mn = dest_numeral m in
+        let (t,n) = dest_add t in
+        let nn = dest_numeral n in
+        let th = NUM_REDUCE_CONV (mk_add (mk_numeral (mn -/ nn)) n) in
+        let conv = LAND_CONV (K (SYM th)) THENC REWR_CONV EQ_ADD_RCANCEL in
+        conv tm in
+    let conv =
+        REWRITE_CONV [bnil_width; bwire_width; bappend_width] THENC
+        NUM_REDUCE_CONV THENC
+        TRY_CONV numeral_eq_add_numeral_conv in
+    fun asm -> fun th ->
+    let (l,r) = dest_eq asm in
+    if not (is_num_type (type_of l)) then failwith "num_eq_asm_rule" else
+    conv_asm_rule (CHANGED_CONV conv) asm th;;
+
+let mk_bus_asm_rule : asm_rule =
+    fun asm -> fun th ->
+    let (t,n) = dest_eq asm in
+    let nn = dest_numeral n in
+    let v = dest_width t in
+    if not (is_var v) then failwith "mk_bus_asm_rule" else
+    (None, INST [(genvar_bus nn, v)] th);;
+
+let (wire_asm_rule,bsub_asm_rule,bground_asm_rule) =
+    let numeral_conv : conv =
+        fun tm ->
+        if is_numeral tm then REFL tm else
+        let th = NUM_REDUCE_CONV tm in
+        if is_numeral (rhs (concl th)) then th else
+        failwith "numeral_conv" in
+    let zero_suc_conv : conv =
+        let suc_tm = `SUC` in
+        let mk_suc tm = mk_comb (suc_tm,tm) in
+        fun tm ->
+        let n = dest_numeral tm in
+        if eq_num n num_0 then REFL tm else
+        let m = mk_suc (mk_numeral (n -/ num_1)) in
+        SYM (NUM_SUC_CONV m) in
+    let wire_asm_rule =
+        let zero_rule = thm_asm_rule wire_zero in
+        let suc_rule = thm_asm_rule wire_suc in
+        let conv tm =
+            let (x,_,_) = dest_wire tm in
+            let (w,_) = dest_bappend x in
+            let _ = dest_bwire w in
+            LAND_CONV (numeral_conv THENC zero_suc_conv) tm in
+        then_asm_rule
+          (conv_asm_rule conv)
+          (orelse_asm_rule zero_rule suc_rule) in
+    let bsub_asm_rule =
+        let suc_thm = prove
+          (`!w x k n y.
+              bsub x k n y ==>
+              bsub (bappend (bwire w) x) (SUC k) n y`,
+           REPEAT STRIP_TAC THEN
+           SUBGOAL_THEN `SUC k = width (bwire w) + k` SUBST1_TAC THENL
+           [REWRITE_TAC [bwire_width; ONE; SUC_ADD; ZERO_ADD];
+            ASM_REWRITE_TAC [bsub_in_suffix]]) in
+        let zero_zero_thm = prove
+          (`!x y.
+              y = bnil ==>
+              bsub x 0 0 y`,
+           REPEAT STRIP_TAC THEN
+           ASM_REWRITE_TAC [bsub_zero; LE_0]) in
+        let zero_suc_thm = prove
+          (`!w x n y.
+              (?z. y = bappend (bwire w) z /\ bsub x 0 n z) ==>
+              bsub (bappend (bwire w) x) 0 (SUC n) y`,
+           REPEAT STRIP_TAC THEN
+           FIRST_X_ASSUM SUBST_VAR_TAC THEN
+           MATCH_MP_TAC bsub_suc THEN
+           REWRITE_TAC [wire_zero] THEN
+           MATCH_MP_TAC suc_thm THEN
+           ASM_REWRITE_TAC []) in
+        let suc_rule = thm_asm_rule suc_thm in
+        let zero_zero_rule = thm_asm_rule zero_zero_thm in
+        let zero_suc_rule = thm_asm_rule zero_suc_thm in
+        let conv tm =
+            let _ = dest_bsub tm in
+            RATOR_CONV
+              (LAND_CONV (numeral_conv THENC zero_suc_conv) THENC
+               RAND_CONV (numeral_conv THENC zero_suc_conv)) tm in
+        then_asm_rule
+          (conv_asm_rule conv)
+          (orelse_asm_rule
+             suc_rule
+             (orelse_asm_rule zero_zero_rule zero_suc_rule)) in
+    let bground_asm_rule =
+        let zero_conv = REWR_CONV bground_zero in
+        let suc_conv = REWR_CONV bground_suc in
+        let rec expand_conv tm =
+            (RAND_CONV zero_suc_conv THENC
+             (zero_conv ORELSEC
+              (suc_conv THENC
+               RAND_CONV expand_conv))) tm in
+        let conv tm =
+            let _ = dest_bground tm in
+            (RAND_CONV numeral_conv THENC expand_conv) tm in
+        conv_asm_rule (CHANGED_CONV (DEPTH_CONV conv)) in
+    (wire_asm_rule,bsub_asm_rule,bground_asm_rule);;
+
+let instantiate_hardware =
+    let basic_asm_rule =
+        let basic_rules =
+            [subst_var_asm_rule;
+             num_eq_asm_rule;
+             mk_bus_asm_rule;
+             wire_asm_rule;
+             bsub_asm_rule;
+             bground_asm_rule] in
+        let basic_thms =
+            [bconnect_bappend_bwire; bconnect_bnil;
+             bdelay_bappend_bwire; bdelay_bnil;
+             bnot_bappend_bwire; bnot_bnil;
+             band2_bappend_bwire; band2_bnil;
+             bor2_bappend_bwire; bor2_bnil;
+             bxor2_bappend_bwire; bxor2_bnil;
+             bcase1_bappend_bwire; bcase1_bnil;
+             case1_middle_ground; case1_middle_power] in
+        first_asm_rule (basic_rules @ map thm_asm_rule basic_thms) in
+    let rename_wires =
+        let rename w (n,s) =
+            (n + 1, (mk_var ("w" ^ string_of_int n, type_of w), w) :: s) in
+        fun th ->
+        let cvs = frees (concl th) in
+        let gvs = filter (not o C mem cvs) (freesl (hyp th)) in
+        let (_,sub) = itlist rename gvs (0,[]) in
+        INST sub th in
+    fun ths ->
+    let user_asm_rule = first_asm_rule (map thm_asm_rule ths) in
+    let asm_rule = orelse_asm_rule basic_asm_rule user_asm_rule in
+    rename_wires o apply_asm_rule asm_rule;;
+
+(*** In development
+let hardware_to_verilog =
+    let wire_name =
+        let wire_ty = `:wire` in
+        fun w ->
+        let (n,ty) = dest_var w in
+        if ty = wire_ty then n else failwith "wire_name" in
+    let wire_names = map wire_name in
+    let wire_num w =
+        let s = wire_name w in
+        let s = String.sub s 1 (length s - 1) in
+        int_of_string s in
+    let wire_cmp w1 w2 = wire_num w1 <= wire_num w2 in
+    let wire_sort = sort wire_cmp in
+    fun name -> fun primary_wires -> fun th ->
+    let (delays,combinational) = partition is_delay (hyp th) in
+    let (registers,wires) =
+        let ws = filter (not o C mem primary_wires) (freesl (hyp th)) in
+        let ws = wire_sort ws in
+        let delay_outputs = map rand delays in
+        partition (C mem delay_outputs) ws in
+    let (primary_outputs,primary_inputs) =
+        let combinational_outputs = map rand combinational in
+        partition (C mem combinational_outputs) primary_wires in
+    "module " ^ name ^ "(" ^
+    String.concat "," (wire_names (primary_inputs @ primary_outputs)) ^
+    ");" ^
+    (if length primary_inputs = 0 then "" else
+     ("\n  input " ^
+      String.concat ";\n  input " (wire_names primary_inputs) ^
+      ";\n")) ^
+    (if length primary_outputs = 0 then "" else
+     ("\n  output " ^
+      String.concat ";\n  output " (wire_names primary_outputs) ^
+      ";\n")) ^
+    (if length registers = 0 then "" else
+     ("\n  reg " ^
+      String.concat ";\n  reg " (wire_names registers) ^
+      ";\n")) ^
+    (if length wires = 0 then "" else
+     ("\n  wire " ^
+      String.concat ";\n  wire " (wire_names wires) ^
+      ";\n"));;
 ***)
 
 (*** Testing
-mk_counter (dest_numeral `0`) `ld : wire` `dn : wire`;;
-mk_counter (dest_numeral `1`) `ld : wire` `dn : wire`;;
-mk_counter (dest_numeral `2`) `ld : wire` `dn : wire`;;
-mk_counter (dest_numeral `91`) `ld : wire` `dn : wire`;;
-mk_counter (dest_numeral `2091`) `ld : wire` `dn : wire`;;
+let th = mk_counter (dest_numeral `91`) `ld : wire` `dn : wire`;;
+let ths = [counter_def; badder2_def];;
+let th = instantiate_hardware ths th;;
+output_string stdout
+  (hardware_to_verilog "counter91"
+    [`clk : wire`; `ld : wire`; `dn : wire`] th);;
 ***)
 
 logfile_end ();;

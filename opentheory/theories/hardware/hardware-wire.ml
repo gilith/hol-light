@@ -303,6 +303,33 @@ let case1_exists = prove
 
 export_thm case1_exists;;
 
+let case1_middle_ground = prove
+ (`!x y z. (?xn. not x xn /\ and2 xn y z) ==> case1 x ground y z`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [case1_def] THEN
+  GEN_TAC THEN
+  MP_TAC
+    (SPECL [`x : wire`; `xn : wire`; `t : cycle`] not_signal) THEN
+  MP_TAC
+    (SPECL [`xn : wire`; `y : wire`; `z : wire`; `t : cycle`] and2_signal) THEN
+  COND_CASES_TAC THEN
+  BOOL_CASES_TAC `signal xn t` THEN
+  ASM_REWRITE_TAC [ground_signal]);;
+
+export_thm case1_middle_ground;;
+
+let case1_middle_power = prove
+ (`!x y z. or2 x y z ==> case1 x power y z`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [case1_def] THEN
+  GEN_TAC THEN
+  MP_TAC
+    (SPECL [`x : wire`; `y : wire`; `z : wire`; `t : cycle`] or2_signal) THEN
+  COND_CASES_TAC THEN
+  ASM_REWRITE_TAC [power_signal]);;
+
+export_thm case1_middle_power;;
+
 (* ~~~~~~~~~~~~~~~~~~~~ *)
 (* Derived wire devices *)
 (* ~~~~~~~~~~~~~~~~~~~~ *)
@@ -562,5 +589,22 @@ let majority3_right_ground = prove
    MATCH_ACCEPT_TAC connect_refl]);;
 
 export_thm majority3_right_ground;;
+
+(* ------------------------------------------------------------------------- *)
+(* Automatically generating verified circuits.                               *)
+(* ------------------------------------------------------------------------- *)
+
+let mk_delay =
+    let delay_tm = `delay` in
+    fun x -> fun y -> mk_comb (mk_comb (delay_tm,x), y);;
+
+let dest_delay =
+    let delay_tm = `delay` in
+    fun tm ->
+    let (tm,y) = dest_comb tm in
+    let (tm,x) = dest_comb tm in
+    if tm = delay_tm then (x,y) else failwith "dest_delay";;
+
+let is_delay = can dest_delay;;
 
 logfile_end ();;

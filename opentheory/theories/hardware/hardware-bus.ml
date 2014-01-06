@@ -3094,4 +3094,21 @@ let bmajority3_right_bground = prove
 
 export_thm bmajority3_right_bground;;
 
+(* ------------------------------------------------------------------------- *)
+(* Automatically generating verified circuits.                               *)
+(* ------------------------------------------------------------------------- *)
+
+let mk_wire =
+    let wire_tm = `wire` in
+    fun x -> fun i -> fun xi ->
+    mk_comb (mk_comb (mk_comb (wire_tm,x), i), xi);;
+
+let dest_wire =
+    let wire_tm = `wire` in
+    fun tm ->
+    let (tm,xi) = dest_comb tm in
+    let (tm,i) = dest_comb tm in
+    let (tm,x) = dest_comb tm in
+    if tm = wire_tm then (x,i,xi) else failwith "dest_wire";;
+
 logfile_end ();;

@@ -588,9 +588,17 @@ let bground_zero = prove
 
 export_thm bground_zero;;
 
+let bground_suc = prove
+ (`!n. bground (SUC n) = bappend (bwire ground) (bground n)`,
+  REWRITE_TAC
+    [bground_def; REPLICATE_SUC; bwire_def; bappend_def; bus_tybij;
+     APPEND_SING]);;
+
+export_thm bground_suc;;
+
 let bground_one = prove
  (`bground 1 = bwire ground`,
-  REWRITE_TAC [bground_def; ONE; REPLICATE_SUC; REPLICATE_0; bwire_def]);;
+  REWRITE_TAC [ONE; bground_suc; bground_zero; bappend_bnil]);;
 
 export_thm bground_one;;
 
@@ -636,37 +644,72 @@ let bground_bits_to_num = prove
 
 export_thm bground_bits_to_num;;
 
-(* ------------------------------------------------------------------------- *)
-(* Automatically generating verified circuits.                               *)
-(* ------------------------------------------------------------------------- *)
+let bpower_width = prove
+ (`!n. width (bpower n) = n`,
+  REWRITE_TAC [bpower_def; width_def; bus_tybij; LENGTH_REPLICATE]);;
 
-let mk_ground = `ground`;;
+export_thm bpower_width;;
 
-let mk_power = `power`;;
+let bpower_zero = prove
+ (`bpower 0 = bnil`,
+  REWRITE_TAC [bpower_def; REPLICATE_0; bnil_def]);;
 
-let bit_to_wire b = if b then mk_power else mk_ground;;
+export_thm bpower_zero;;
 
-let mk_bnil = `bnil`;;
+let bpower_suc = prove
+ (`!n. bpower (SUC n) = bappend (bwire power) (bpower n)`,
+  REWRITE_TAC
+    [bpower_def; REPLICATE_SUC; bwire_def; bappend_def; bus_tybij;
+     APPEND_SING]);;
 
-let mk_bwire =
-    let bwire = `bwire` in
-    fun w -> mk_comb (bwire,w);;
+export_thm bpower_suc;;
 
-let mk_bappend =
-    let bappend = `bappend` in
-    fun x -> fun y -> mk_comb (mk_comb (bappend,x), y);;
+let bpower_one = prove
+ (`bpower 1 = bwire power`,
+  REWRITE_TAC [ONE; bpower_suc; bpower_zero; bappend_bnil]);;
 
-let mk_width =
-    let width = `width` in
-    fun x -> mk_comb (width,x);;
+export_thm bpower_one;;
 
-let bits_to_bus l =
-    let f h t = mk_bappend (mk_bwire (bit_to_wire h)) t in
-    itlist f l mk_bnil;;
+let bpower_add = prove
+ (`!m n. bpower (m + n) = bappend (bpower m) (bpower n)`,
+  REWRITE_TAC [bpower_def; REPLICATE_ADD; bappend_def; bus_tybij]);;
 
-let bus_conv =
-    REWRITE_CONV
-      [bnil_width; bwire_width; bappend_width;
-       bnil_bsignal; bwire_bsignal; bappend_bsignal; APPEND];;
+export_thm bpower_add;;
+
+let bpower_bsub = prove
+ (`!n i k x. bsub (bpower n) i k x <=> i + k <= n /\ x = bpower k`,
+  REPEAT GEN_TAC THEN
+  REVERSE_TAC (ASM_CASES_TAC `(i : num) + k <= n`) THENL
+  [ASM_REWRITE_TAC [bsub_def; bpower_width];
+   ALL_TAC] THEN
+  POP_ASSUM
+    (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+     REWRITE_RULE [LE_EXISTS]) THEN
+  REWRITE_TAC [LE_ADD] THEN
+  REWRITE_TAC [GSYM ADD_ASSOC] THEN
+  ONCE_REWRITE_TAC [bpower_add] THEN
+  MP_TAC
+    (SPECL [`bpower i`; `bpower (k + d)`; `0`; `k : num`; `x : bus`]
+       bsub_in_suffix) THEN
+  REWRITE_TAC [bpower_width; ADD_0] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [bpower_add] THEN
+  MP_TAC (SPECL [`bpower k`; `bpower d`; `x : bus`] bsub_prefix) THEN
+  REWRITE_TAC [bpower_width]);;
+
+export_thm bpower_bsub;;
+
+let bpower_bsignal = prove
+ (`!n t. bsignal (bpower n) t = REPLICATE T n`,
+  REWRITE_TAC
+    [bsignal_def; bpower_def; MAP_REPLICATE; bus_tybij; power_signal]);;
+
+export_thm bpower_bsignal;;
+
+let bpower_bits_to_num = prove
+ (`!n t. bits_to_num (bsignal (bpower n) t) = 2 EXP n - 1`,
+  REWRITE_TAC [bpower_bsignal; bits_to_num_replicate_true]);;
+
+export_thm bpower_bits_to_num;;
 
 logfile_end ();;
