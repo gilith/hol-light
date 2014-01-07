@@ -3591,12 +3591,16 @@ let instantiate_hardware =
              case1_middle_ground; case1_middle_power] in
         first_asm_rule (basic_rules @ map thm_asm_rule basic_thms) in
     let rename_wires =
-        let rename w (n,s) =
-            (n + 1, (mk_var ("w" ^ string_of_int n, type_of w), w) :: s) in
+        let rename p w (n,s) =
+            (n + 1, (mk_var (p ^ string_of_int n, type_of w), w) :: s) in
         fun th ->
         let cvs = frees (concl th) in
         let gvs = filter (not o C mem cvs) (freesl (hyp th)) in
-        let (_,sub) = itlist rename gvs (0,[]) in
+        let delays = filter is_delay (hyp th) in
+        let delay_outputs = map rand delays in
+        let (rvs,wvs) = partition (C mem delay_outputs) gvs in
+        let (_,sub) = itlist (rename "r") rvs (0,[]) in
+        let (_,sub) = itlist (rename "w") wvs (0,sub) in
         INST sub th in
     fun ths ->
     let user_asm_rule = first_asm_rule (map thm_asm_rule ths) in
@@ -3613,7 +3617,7 @@ let hardware_to_verilog =
     let wire_names = map wire_name in
     let wire_num w =
         let s = wire_name w in
-        let s = String.sub s 1 (length s - 1) in
+        let s = String.sub s 1 (String.length s - 1) in
         int_of_string s in
     let wire_cmp w1 w2 = wire_num w1 <= wire_num w2 in
     let wire_sort = sort wire_cmp in
