@@ -30,7 +30,7 @@ clean:
 	rm -f $(TEMP)
 
 ###############################################################################
-# Building using Icarus Verilog.
+# Building using Icarus Verilog: http://iverilog.icarus.com/
 ###############################################################################
 
 IVERILOG = iverilog
