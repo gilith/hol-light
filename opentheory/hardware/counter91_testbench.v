@@ -6,6 +6,7 @@ module main;
    wire out;
 
    counter91
+     root
      (.clk (clk),
       .ld (rst),
       .dn (out));
@@ -22,7 +23,7 @@ module main;
         rst = 1;
         @(posedge clk);
         rst = 0;
-        repeat(90) @(posedge clk);
+        repeat(91) @(posedge clk);
         if (out)
           begin
              $display("ERROR: counter91 finished too soon");
