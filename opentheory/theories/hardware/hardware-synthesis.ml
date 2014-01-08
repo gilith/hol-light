@@ -396,4 +396,10 @@ let hardware_to_verilog =
     verilog_delays (hd primary_wires) delays registers ^
     verilog_module_end name;;
 
-logfile_end ();;
+let hardware_to_verilog_file name wires th =
+    let file = "opentheory/hardware/" ^ name ^ ".v" in
+    let s = hardware_to_verilog name wires th in
+    let h = open_out file in
+    let () = output_string h s in
+    let () = close_out h in
+    file;;

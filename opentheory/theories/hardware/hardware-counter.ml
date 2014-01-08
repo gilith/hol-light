@@ -3490,11 +3490,12 @@ let mk_counter n ld dn =
     instantiate_hardware ths (GENL fvs th2);;
 
 (*** Testing
-let counter91_thm = mk_counter (dest_numeral `91`) `ld : wire` `dn : wire`;;
-let counter91_verilog =
-    (hardware_to_verilog "counter91"
-       [`clk : wire`; `ld : wire`; `dn : wire`] counter91_thm);;
-output_string stdout counter91_verilog;;
+let ld_wire = `ld : wire`;;
+let dn_wire = `dn : wire`;;
+let wires = [`clk : wire`; ld_wire; dn_wire];;
+let counter91_thm = mk_counter (dest_numeral `91`) ld_wire dn_wire;;
+output_string stdout (hardware_to_verilog "counter91" wires counter91_thm);;
+hardware_to_verilog_file "counter91" wires counter91_thm;;
 ***)
 
 logfile_end ();;
