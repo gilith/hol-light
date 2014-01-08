@@ -3095,7 +3095,7 @@ let bmajority3_right_bground = prove
 export_thm bmajority3_right_bground;;
 
 (* ------------------------------------------------------------------------- *)
-(* Automatically generating verified circuits.                               *)
+(* Syntax operations.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
 let mk_wire =

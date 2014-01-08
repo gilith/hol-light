@@ -591,12 +591,13 @@ let majority3_right_ground = prove
 export_thm majority3_right_ground;;
 
 (* ------------------------------------------------------------------------- *)
-(* Automatically generating verified circuits.                               *)
+(* Syntax operations.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
 let mk_delay =
     let delay_tm = `delay` in
-    fun x -> fun y -> mk_comb (mk_comb (delay_tm,x), y);;
+    fun x -> fun y ->
+    mk_comb (mk_comb (delay_tm,x), y);;
 
 let dest_delay =
     let delay_tm = `delay` in
@@ -606,5 +607,64 @@ let dest_delay =
     if tm = delay_tm then (x,y) else failwith "dest_delay";;
 
 let is_delay = can dest_delay;;
+
+let mk_not =
+    let not_tm = `not` in
+    fun x -> fun y ->
+    mk_comb (mk_comb (not_tm,x), y);;
+
+let dest_not =
+    let not_tm = `not` in
+    fun tm ->
+    let (tm,y) = dest_comb tm in
+    let (tm,x) = dest_comb tm in
+    if tm = not_tm then (x,y) else failwith "dest_not";;
+
+let is_not = can dest_not;;
+
+let mk_and2 =
+    let and2_tm = `and2` in
+    fun x -> fun y -> fun z ->
+    mk_comb (mk_comb (mk_comb (and2_tm,x), y), z);;
+
+let dest_and2 =
+    let and2_tm = `and2` in
+    fun tm ->
+    let (tm,z) = dest_comb tm in
+    let (tm,y) = dest_comb tm in
+    let (tm,x) = dest_comb tm in
+    if tm = and2_tm then (x,y,z) else failwith "dest_and2";;
+
+let is_and2 = can dest_and2;;
+
+let mk_or2 =
+    let or2_tm = `or2` in
+    fun x -> fun y -> fun z ->
+    mk_comb (mk_comb (mk_comb (or2_tm,x), y), z);;
+
+let dest_or2 =
+    let or2_tm = `or2` in
+    fun tm ->
+    let (tm,z) = dest_comb tm in
+    let (tm,y) = dest_comb tm in
+    let (tm,x) = dest_comb tm in
+    if tm = or2_tm then (x,y,z) else failwith "dest_or2";;
+
+let is_or2 = can dest_or2;;
+
+let mk_xor2 =
+    let xor2_tm = `xor2` in
+    fun x -> fun y -> fun z ->
+    mk_comb (mk_comb (mk_comb (xor2_tm,x), y), z);;
+
+let dest_xor2 =
+    let xor2_tm = `xor2` in
+    fun tm ->
+    let (tm,z) = dest_comb tm in
+    let (tm,y) = dest_comb tm in
+    let (tm,x) = dest_comb tm in
+    if tm = xor2_tm then (x,y,z) else failwith "dest_xor2";;
+
+let is_xor2 = can dest_xor2;;
 
 logfile_end ();;
