@@ -42,7 +42,7 @@ export_thm pipe_def;;
 let event_counter_def = new_definition
   `!ld nb inc dn.
       event_counter ld nb inc dn <=>
-      ?r sp cp sq cq sr cr dp dq sp0 sp1 cp0 cp1 cp2 sq0 sq1 cq0 cq1.
+      ?r sp cp sq cq sr cr dp dq dr sp0 sp1 cp0 cp1 cp2 sq0 sq1 cq0 cq1.
          width nb = r + 1 /\
          width sp = r + 1 /\
          width cp = r + 1 /\
@@ -64,22 +64,22 @@ let event_counter_def = new_definition
          xor2 inc sp0 sq0 /\
          and2 inc sp0 cq0 /\
          badder2 sp1 cp1 sq1 cq1 /\
-         or2 dp cp2 dq
-         /\
+         or2 dp cp2 dq /\
          bcase1 ld nb sq sr /\
          bcase1 ld (bground (r + 1)) cq cr /\
-         case1 ld ground dq dn
+         case1 ld ground dq dr /\
+         connect dr dn
          /\
          bdelay sr sp /\
          bdelay cr cp /\
-         delay dn dp`;;
+         delay dr dp`;;
 
 export_thm event_counter_def;;
 
 let counter_def = new_definition
   `!ld nb dn.
       counter ld nb dn <=>
-      ?r sp cp sq cq sr cr dp dq nb0 nb1 cp0 cp1 cp2 cq0 cq1 cr0 cr1.
+      ?r sp cp sq cq sr cr dp dq dr nb0 nb1 cp0 cp1 cp2 cq0 cq1 cr0 cr1.
          width nb = r + 1 /\
          width sp = r /\
          width cp = r + 1 /\
@@ -100,16 +100,16 @@ let counter_def = new_definition
          /\
          not cp0 cq0 /\
          badder2 sp cp1 sq cq1 /\
-         or2 dp cp2 dq
-         /\
+         or2 dp cp2 dq /\
          bcase1 ld nb1 sq sr /\
          case1 ld nb0 cq0 cr0 /\
          bcase1 ld (bground r) cq1 cr1 /\
-         case1 ld ground dq dn
+         case1 ld ground dq dr /\
+         connect dr dn
          /\
          bdelay sr sp /\
          bdelay cr cp /\
-         delay dn dp`;;
+         delay dr dp`;;
 
 export_thm counter_def;;
 
@@ -255,6 +255,14 @@ let event_counter_signal = prove
     [event_counter_def; GSYM RIGHT_EXISTS_AND_THM;
      GSYM LEFT_FORALL_IMP_THM] THEN
   REPEAT STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`dr : wire`;
+        `dn : wire`;
+        `t + k : cycle`]
+       connect_signal) THEN
+  UNDISCH_THEN `connect dr dn` (fun th -> REWRITE_TAC [th]) THEN
+  DISCH_THEN SUBST1_TAC THEN
   ASM_CASES_TAC `n = 0` THENL
   [UNDISCH_TAC `bits_to_num (bsignal nb t) + n = 2 EXP (width nb)` THEN
    ASM_REWRITE_TAC [ADD_0] THEN
@@ -313,7 +321,7 @@ let event_counter_signal = prove
        (bits_to_num (bsignal sr (t + k)) +
         2 * bits_to_num (bsignal cr (t + k)) + n =
         2 EXP (r + 1) + f k /\
-        ~signal dn (t + k))
+        ~signal dr (t + k))
      else
        ?s.
          (minimal j. n <= f j) + s = k /\
@@ -326,9 +334,9 @@ let event_counter_signal = prove
                bits_to_num (bsignal crs (t + k)) =
                2 EXP (r - s) /\
                signal crs0 (t + k) /\
-               ~signal dn (t + k))
+               ~signal dr (t + k))
           else
-            signal dn (t + k))` THENL
+            signal dr (t + k))` THENL
   [COND_CASES_TAC THENL
    [STRIP_TAC THEN
     ASM_REWRITE_TAC [] THEN
@@ -424,7 +432,7 @@ let event_counter_signal = prove
    MP_TAC
      (SPECL
         [`ld : wire`; `ground`; `dq : wire`;
-         `dn : wire`; `t : cycle`] case1_signal) THEN
+         `dr : wire`; `t : cycle`] case1_signal) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
    ASM_REWRITE_TAC [ground_signal; bground_bits_to_num; MULT_0; ZERO_ADD];
@@ -503,13 +511,13 @@ let event_counter_signal = prove
    ALL_TAC] THEN
   DISCH_THEN (X_CHOOSE_THEN `cr2 : wire` STRIP_ASSUME_TAC) THEN
   SUBGOAL_THEN
-    `signal dn (t + SUC k) <=>
-     signal dn (t + k) \/ signal cr2 (t + k)`
+    `signal dr (t + SUC k) <=>
+     signal dr (t + k) \/ signal cr2 (t + k)`
     SUBST1_TAC THENL
   [MP_TAC
      (SPECL
         [`ld : wire`; `ground`; `dq : wire`;
-         `dn : wire`; `t + SUC k`] case1_signal) THEN
+         `dr : wire`; `t + SUC k`] case1_signal) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
    MP_TAC
@@ -521,7 +529,7 @@ let event_counter_signal = prove
    REWRITE_TAC [ADD1] THEN
    MP_TAC
      (SPECL
-        [`dn : wire`; `dp : wire`; `t + k : cycle`]
+        [`dr : wire`; `dp : wire`; `t + k : cycle`]
         delay_signal) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
@@ -1533,10 +1541,16 @@ let counter_signal = prove
    REPEAT STRIP_TAC THEN
    MP_TAC
      (SPECL
+        [`dr : wire`;
+         `dn : wire`;
+         `t : cycle`]
+        connect_signal) THEN
+   MP_TAC
+     (SPECL
         [`ld : wire`;
          `ground`;
          `dq : wire`;
-         `dn : wire`;
+         `dr : wire`;
          `t : cycle`]
         case1_signal) THEN
    ASM_REWRITE_TAC [ground_signal];
@@ -2211,6 +2225,7 @@ let counter_signal = prove
   EXISTS_TAC `cr' : bus` THEN
   EXISTS_TAC `dp' : wire` THEN
   EXISTS_TAC `dq' : wire` THEN
+  EXISTS_TAC `dn' : wire` THEN
   EXISTS_TAC `sp0' : wire` THEN
   EXISTS_TAC `sp1' : bus` THEN
   EXISTS_TAC `cp0' : wire` THEN
@@ -2220,7 +2235,7 @@ let counter_signal = prove
   EXISTS_TAC `sq1' : bus` THEN
   EXISTS_TAC `cq0' : wire` THEN
   EXISTS_TAC `cq1' : bus` THEN
-  ASM_REWRITE_TAC [] THEN
+  ASM_REWRITE_TAC [connect_refl] THEN
   CONJ_TAC THENL
   [MATCH_MP_TAC xor2_left_power THEN
    ASM_REWRITE_TAC [];
@@ -3364,7 +3379,12 @@ let counter_signal = prove
   REWRITE_TAC [SUC_SUB1] THEN
   REWRITE_TAC [ONE; LT_SUC; LT_NZ] THEN
   MP_TAC
-   (SPECL [`ld : wire`; `ground`; `dq : wire`; `dn : wire`; `t + j + SUC kss`]
+   (SPECL [`dr : wire`; `dn : wire`; `t + j + SUC kss`]
+     connect_signal) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  MP_TAC
+   (SPECL [`ld : wire`; `ground`; `dq : wire`; `dr : wire`; `t + j + SUC kss`]
      case1_signal) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN SUBST1_TAC THEN
@@ -3384,7 +3404,7 @@ let counter_signal = prove
   DISCH_THEN SUBST1_TAC THEN
   MP_TAC
     (SPECL
-       [`dn : wire`; `dp : wire`; `t + j + kss : cycle`]
+       [`dr : wire`; `dp : wire`; `t + j + kss : cycle`]
        delay_signal) THEN
   ASM_REWRITE_TAC [ADD1] THEN
   DISCH_THEN SUBST1_TAC THEN
@@ -3401,13 +3421,18 @@ let counter_signal = prove
   DISCH_THEN SUBST1_TAC THEN
   AP_THM_TAC THEN
   AP_TERM_TAC THEN
+  MP_TAC
+   (SPECL [`dr : wire`; `dn : wire`; `t + j + kss : cycle`]
+     connect_signal) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
   REVERSE_TAC (ASM_CASES_TAC `kss = 0`) THENL
   [ASM_REWRITE_TAC [];
    ALL_TAC] THEN
   POP_ASSUM SUBST_VAR_TAC THEN
   ASM_REWRITE_TAC [ADD_0] THEN
   MP_TAC
-   (SPECL [`ld : wire`; `ground`; `dq : wire`; `dn : wire`; `t + j : cycle`]
+   (SPECL [`ld : wire`; `ground`; `dq : wire`; `dr : wire`; `t + j : cycle`]
      case1_signal) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN SUBST1_TAC THEN
@@ -3465,10 +3490,11 @@ let mk_counter n ld dn =
     instantiate_hardware ths (GENL fvs th2);;
 
 (*** Testing
-let th = mk_counter (dest_numeral `91`) `ld : wire` `dn : wire`;;
-output_string stdout
-  (hardware_to_verilog "counter91"
-    [`clk : wire`; `ld : wire`; `dn : wire`] th);;
+let counter91_thm = mk_counter (dest_numeral `91`) `ld : wire` `dn : wire`;;
+let counter91_verilog =
+    (hardware_to_verilog "counter91"
+       [`clk : wire`; `ld : wire`; `dn : wire`] counter91_thm);;
+output_string stdout counter91_verilog;;
 ***)
 
 logfile_end ();;
