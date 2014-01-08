@@ -266,40 +266,99 @@ let hardware_to_verilog =
         let (n,ty) = dest_var w in
         if ty = wire_ty then n else failwith "wire_name" in
     let wire_names = map wire_name in
-    let wire_num w =
-        let s = wire_name w in
-        let s = String.sub s 1 (String.length s - 1) in
-        int_of_string s in
-    let wire_cmp w1 w2 = wire_num w1 <= wire_num w2 in
-    let wire_sort = sort wire_cmp in
-    let wire_declarations kind ws =
+    let wire_sort =
+        let wire_num w =
+            let s = wire_name w in
+            let s = String.sub s 1 (String.length s - 1) in
+            int_of_string s in
+        let wire_cmp w1 w2 = wire_num w1 <= wire_num w2 in
+        sort wire_cmp in
+    let comment_box_text =
+        let split s =
+            let n = String.length s in
+            let rec f i =
+                try (if n <= i then [""] else
+                     let j = String.index_from s i '\n' in
+                     String.sub s i (j - i) :: f (j + 1))
+                with Not_found -> [String.sub s i (n - i)] in
+            f 0 in
+        let line_length = 79 in
+        let top = "/*" ^ String.make (line_length - 3) '-' ^ "+" in
+        let middle s =
+            let space = line_length - (String.length s + 3) in
+            "| " ^ s ^ String.make space ' ' ^ "|" in
+        let bottom = "+" ^ String.make (line_length - 3) '-' ^ "*/" in
+        fun text ->
+            top ^ "\n" ^
+            String.concat "\n" (map middle (split text)) ^ "\n" ^
+            bottom ^ "\n" in
+    let verilog_comment name property =
+        comment_box_text
+          ("module " ^ name ^ " satisfies the following property:\n\n" ^
+           string_of_term property) ^ "\n" in
+    let verilog_module_begin name wires =
+        "module " ^ name ^ "(" ^
+        String.concat "," (wire_names wires) ^
+        ");" in
+    let verilog_wire_declarations kind ws =
         if length ws = 0 then "" else
         ("\n  " ^ kind ^ " " ^
          String.concat (";\n  " ^ kind ^ " ") (wire_names ws) ^
          ";\n") in
-    let assignment comb =
-        if is_not comb then
-          let (x,y) = dest_not comb in
-          wire_name y ^ " = ~" ^ wire_name x
-        else if is_and2 comb then
-          let (x,y,z) = dest_and2 comb in
-          wire_name z ^ " = " ^ wire_name x ^ " & " ^ wire_name y
-        else if is_or2 comb then
-          let (x,y,z) = dest_or2 comb in
-          wire_name z ^ " = " ^ wire_name x ^ " | " ^ wire_name y
-        else if is_xor2 comb then
-          let (x,y,z) = dest_xor2 comb in
-          wire_name z ^ " = " ^ wire_name x ^ " ^ " ^ wire_name y
-        else
-          let msg =
-              "hardware_to_verilog: weird assumption: " ^
-              string_of_term comb in
-          failwith msg in
-    let assignments combs =
+    let verilog_connect tm =
+        let (x,y) = dest_connect tm in
+        wire_name y ^ " = " ^ wire_name x in
+    let verilog_delay tm =
+        let (w,r) = dest_delay tm in
+        wire_name r ^ " <= " ^ wire_name w in
+    let verilog_not tm =
+        let (x,y) = dest_not tm in
+        wire_name y ^ " = ~" ^ wire_name x in
+    let verilog_and2 tm =
+        let (x,y,z) = dest_and2 tm in
+        wire_name z ^ " = " ^ wire_name x ^ " & " ^ wire_name y in
+    let verilog_or2 tm =
+        let (x,y,z) = dest_or2 tm in
+        wire_name z ^ " = " ^ wire_name x ^ " | " ^ wire_name y in
+    let verilog_xor2 tm =
+        let (x,y,z) = dest_xor2 tm in
+        wire_name z ^ " = " ^ wire_name x ^ " ^ " ^ wire_name y in
+    let verilog_assignment comb =
+        if is_connect comb then verilog_connect comb
+        else if is_not comb then verilog_not comb
+        else if is_and2 comb then verilog_and2 comb
+        else if is_or2 comb then verilog_or2 comb
+        else if is_xor2 comb then verilog_xor2 comb
+        else failwith ("weird assumption: " ^ string_of_term comb) in
+    let verilog_assignments combs wires =
+        let find_comb w =
+            match filter ((=) w o rand) combs with
+              [] ->
+              failwith ("no combinational assignment for wire " ^ wire_name w)
+            | [c] -> c
+            | _ :: _ :: _ ->
+              failwith
+                ("multiple combinational assignments for wire " ^
+                 wire_name w) in
         if length combs = 0 then "" else
         ("\n  assign " ^
-         String.concat (";\n  assign ") (map assignment combs) ^
+         String.concat (";\n  assign ")
+           (map (verilog_assignment o find_comb) wires) ^
          ";\n") in
+    let verilog_delays clk delays registers =
+        let find_delay r =
+            match filter ((=) r o rand) delays with
+              [] -> failwith ("no delay for register " ^ wire_name r)
+            | [d] -> d
+            | _ :: _ :: _ ->
+              failwith ("multiple delays for register " ^ wire_name r) in
+        if length delays = 0 then "" else
+        ("\n  always @(posedge " ^ wire_name clk ^ ")\n" ^
+         "    begin\n      " ^
+         String.concat (";\n      ")
+           (map (verilog_delay o find_delay) registers) ^
+         ";\n    end\n") in
+    let verilog_module_end name = "\nendmodule // " ^ name ^ "\n" in
     fun name -> fun primary_wires -> fun th ->
     let (delays,combinational) = partition is_delay (hyp th) in
     let (registers,wires) =
@@ -310,22 +369,14 @@ let hardware_to_verilog =
     let (primary_outputs,primary_inputs) =
         let combinational_outputs = map rand combinational in
         partition (C mem combinational_outputs) primary_wires in
-    "module " ^ name ^ "(" ^
-    String.concat "," (wire_names (primary_inputs @ primary_outputs)) ^
-    ");" ^
-    wire_declarations "input" primary_inputs ^
-    wire_declarations "output" primary_outputs ^
-    wire_declarations "reg" registers ^
-    wire_declarations "wire" wires ^
-    assignments combinational;;
-
-(*** Testing
-let th = mk_counter (dest_numeral `91`) `ld : wire` `dn : wire`;;
-let ths = [counter_def; badder2_def];;
-let th = instantiate_hardware ths th;;
-output_string stdout
-  (hardware_to_verilog "counter91"
-    [`clk : wire`; `ld : wire`; `dn : wire`] th);;
-***)
+    verilog_comment name (concl th) ^
+    verilog_module_begin name (primary_inputs @ primary_outputs) ^
+    verilog_wire_declarations "input" primary_inputs ^
+    verilog_wire_declarations "output" primary_outputs ^
+    verilog_wire_declarations "reg" registers ^
+    verilog_wire_declarations "wire" wires ^
+    verilog_assignments combinational (wires @ primary_outputs) ^
+    verilog_delays (hd primary_wires) delays registers ^
+    verilog_module_end name;;
 
 logfile_end ();;

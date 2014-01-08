@@ -594,6 +594,20 @@ export_thm majority3_right_ground;;
 (* Syntax operations.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
+let mk_connect =
+    let connect_tm = `connect` in
+    fun x -> fun y ->
+    mk_comb (mk_comb (connect_tm,x), y);;
+
+let dest_connect =
+    let connect_tm = `connect` in
+    fun tm ->
+    let (tm,y) = dest_comb tm in
+    let (tm,x) = dest_comb tm in
+    if tm = connect_tm then (x,y) else failwith "dest_connect";;
+
+let is_connect = can dest_connect;;
+
 let mk_delay =
     let delay_tm = `delay` in
     fun x -> fun y ->
