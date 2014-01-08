@@ -219,6 +219,19 @@ let (wire_asm_rule,bsub_asm_rule,bground_asm_rule) =
         conv_asm_rule (CHANGED_CONV (DEPTH_CONV conv)) in
     (wire_asm_rule,bsub_asm_rule,bground_asm_rule);;
 
+let merge_wire_asm_rule gvs : asm_rule =
+    fun asm -> fun th ->
+    if not (mem (rand asm) gvs) then failwith "frozen output" else
+    if is_connect asm then
+       let (x,y) = dest_connect asm in
+       (None, PROVE_HYP (SPEC x connect_refl) (INST [(x,y)] th))
+    else
+      let (f,w) = dest_comb asm in
+      let pred h = rator h = f && not (h = asm) in
+      match filter pred (hyp th) with
+        [] -> failwith "no merge possible"
+      | h :: _ -> (None, INST [(rand h, w)] th);;
+
 let instantiate_hardware =
     let basic_asm_rule =
         let basic_rules =
@@ -238,6 +251,10 @@ let instantiate_hardware =
              bcase1_bappend_bwire; bcase1_bnil;
              case1_middle_ground; case1_middle_power] in
         first_asm_rule (basic_rules @ map thm_asm_rule basic_thms) in
+    let merge_wires th =
+        let cvs = frees (concl th) in
+        let gvs = filter (not o C mem cvs) (freesl (hyp th)) in
+        apply_asm_rule (merge_wire_asm_rule gvs) th in
     let rename_wires =
         let rename p w (n,s) =
             (n + 1, (mk_var (p ^ string_of_int n, type_of w), w) :: s) in
@@ -253,7 +270,7 @@ let instantiate_hardware =
     fun ths ->
     let user_asm_rule = first_asm_rule (map thm_asm_rule ths) in
     let asm_rule = orelse_asm_rule basic_asm_rule user_asm_rule in
-    rename_wires o apply_asm_rule asm_rule;;
+    rename_wires o merge_wires o apply_asm_rule asm_rule;;
 
 (* ------------------------------------------------------------------------- *)
 (* Pretty-printing synthesized hardware in Verilog.                          *)
