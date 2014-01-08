@@ -221,16 +221,43 @@ let (wire_asm_rule,bsub_asm_rule,bground_asm_rule) =
 
 let merge_wire_asm_rule gvs : asm_rule =
     fun asm -> fun th ->
-    if not (mem (rand asm) gvs) then failwith "frozen output" else
     if is_connect asm then
        let (x,y) = dest_connect asm in
-       (None, PROVE_HYP (SPEC x connect_refl) (INST [(x,y)] th))
+       if mem y gvs then
+         (None, PROVE_HYP (SPEC x connect_refl) (INST [(x,y)] th))
+       else if mem x gvs then
+         (None, PROVE_HYP (SPEC y connect_refl) (INST [(y,x)] th))
+       else
+         failwith "frozen connect"
     else
       let (f,w) = dest_comb asm in
+      if not (mem w gvs) then failwith "frozen output" else
       let pred h = rator h = f && not (h = asm) in
       match filter pred (hyp th) with
         [] -> failwith "no merge possible"
       | h :: _ -> (None, INST [(rand h, w)] th);;
+
+let rescue_primary_output_asm_rule : term -> asm_rule =
+    let simple_conv th =
+        let redex = lhs (concl th) in
+        fun tm ->
+        if tm = redex then th else NO_CONV tm in
+    let connect_equal_wires = prove
+        (`!w x. connect w x ==> x = w`,
+         REPEAT STRIP_TAC THEN
+         MATCH_MP_TAC signal_eq_imp THEN
+         GEN_TAC THEN
+         MATCH_MP_TAC connect_signal THEN
+         ASM_REWRITE_TAC []) in
+     fun primary_output ->
+     let wire = genvar (type_of primary_output) in
+     let rescue_th = SPECL [wire; primary_output] connect_equal_wires in
+     let (rescue_tm,_) = dest_imp (concl rescue_th) in
+     let rescue_conv = DEPTH_CONV (simple_conv (UNDISCH rescue_th)) in
+     fun asm -> fun th ->
+     if not (free_in primary_output asm) then failwith "nothing to rescue"
+     else if asm = rescue_tm then failwith "no need to rescue the rescue team"
+     else conv_asm_rule rescue_conv asm th;;
 
 let instantiate_hardware =
     let basic_asm_rule =
@@ -255,6 +282,16 @@ let instantiate_hardware =
         let cvs = frees (concl th) in
         let gvs = filter (not o C mem cvs) (freesl (hyp th)) in
         apply_asm_rule (merge_wire_asm_rule gvs) th in
+    let rescue_primary_outputs th =
+        let cvs = frees (concl th) in
+        let inputs = freesl (map rator (hyp th)) in
+        let outputs = map rand (hyp th) in
+        let primary_outputs = filter (C mem outputs) cvs in
+        let captured_primary_outputs = filter (C mem inputs) primary_outputs in
+        let asm_rule =
+            first_asm_rule
+              (map rescue_primary_output_asm_rule captured_primary_outputs) in
+        apply_asm_rule asm_rule th in
     let rename_wires =
         let rename p w (n,s) =
             (n + 1, (mk_var (p ^ string_of_int n, type_of w), w) :: s) in
@@ -270,7 +307,10 @@ let instantiate_hardware =
     fun ths ->
     let user_asm_rule = first_asm_rule (map thm_asm_rule ths) in
     let asm_rule = orelse_asm_rule basic_asm_rule user_asm_rule in
-    rename_wires o merge_wires o apply_asm_rule asm_rule;;
+    rename_wires o
+    rescue_primary_outputs o
+    merge_wires o
+    apply_asm_rule asm_rule;;
 
 (* ------------------------------------------------------------------------- *)
 (* Pretty-printing synthesized hardware in Verilog.                          *)
