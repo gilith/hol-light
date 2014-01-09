@@ -304,28 +304,16 @@ export_thm montgomery_double_exp_bound;;
 (* ------------------------------------------------------------------------- *)
 
 (***
-let montgomery_y_def = new_definition
-  `!ys yc ys' yc'.
-     montgomery_y ys yc ys' yc' <=>
-     ?r ys0 yc0 yc1 ys0' ys1' yc0' yc1'.
-       width ys = r + 1 /\
-       width yc = r + 1 /\
-       width ys' = r + 1 /\
-       width yc' = r + 1
-       /\
-       bsub ys 1 r ys0 /\
-       bsub yc 0 r yc0 /\
-       wire yc r yc1 /\
-       bsub ys' 0 r ys0' /\
-       wire ys' r ys1' /\
-       bsub yc' 0 r yc0' /\
-       wire yc' r yc1'
-       /\
-       compressor2 ys0 yc0 ys0' yc0' /\
-       ys1' = yc1 /\
-       yc1' = ground`;;
+let montgomery_mult_def = new_definition
+  `!d0 ld xs xc ys yc zs zc.
+     montgomery_mult d0 ld xs xc ys yc zs zc <=>
+     ?xw ld0 xw0 pb ps pc.
+       sum_carry_bit ld xs xc xw /\
+       pipe d0 ld ld0 /\
+       pipe d0 xw xw0 /\
+       sum_carry_mult ld0 xw0 ys yc pb ps pc`;;
 
-export_thm montgomery_y_def;;
+export_thm montgomery_mult_def;;
 
 let montgomery_sc_def = new_definition
   `!xs xc ys0 sa sb ca cb sa' sb' ca' cb'.
@@ -497,21 +485,29 @@ export_thm montgomery_circuit_def;;
 (* Correctness of a Montgomery multiplication circuit.                       *)
 (* ------------------------------------------------------------------------- *)
 
-let montgomery_y = prove
- (`!y ld ys yc ysp ycp ysq ycq ysr ycr t k.
-      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
-      (bits_to_num (bsignal ys t) +
-       2 * bits_to_num (bsignal yc t) = y) /\
-      montgomery_y ysp ycp ysq ycq /\
-      bcase1 ld ys ysq ysr /\
-      bcase1 ld yc ycq ycr /\
-      bdelay ysr ysp /\
-      bdelay ycr ycp ==>
-      bits_to_num (bsignal ysr (t + k)) +
-      2 * bits_to_num (bsignal ycr (t + k)) = bit_shr y k`,
+let montgomery_mult_bits_to_num = prove
+ (`!x y d0 ld xs xc ys yc zs zc t k.
+     (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
+     montgomery_mult d0 ld xs xc ys yc zs zc ==>
+     placeholder`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [montgomery_y_def] THEN
+  REWRITE_TAC [montgomery_mult_def] THEN
   STRIP_TAC THEN
+  SUBGOAL_THEN
+    `bit_cons (signal pb ((t + d0) + k))
+       (bits_to_num (bsignal ps ((t + d0) + k)) +
+        2 * bits_to_num (bsignal pc ((t + d0) + k))) =
+     bit_shr (y * bit_bound x (k + 1)) k`
+    ASSUME_TAC THENL
+  [MATCH_MP_TAC sum_carry_mult_bits_to_num THEN
+   EXISTS_TAC `ld0 : wire` THEN
+   EXISTS_TAC `xw0 : wire` THEN
+   EXISTS_TAC `ys : bus` THEN
+   EXISTS_TAC `yc : bus` THEN
+   ASM_REWRITE_TAC [] THEN
+   REPEAT STRIP_TAC THENL
+   [pipe_signal
+
   UNDISCH_TAC `!i. i <= k ==> (signal ld (t + i) <=> i = 0)` THEN
   SPEC_TAC (`k : num`, `k : num`) THEN
   INDUCT_TAC THENL

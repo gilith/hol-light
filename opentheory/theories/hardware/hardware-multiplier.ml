@@ -541,7 +541,7 @@ export_thm sum_carry_mult_bits_to_num;;
 (***
 let sum_carry_mult_bits_to_num = prove
  (`!x y ld xs xc ys yc zs zc t k.
-    
+     
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t) = n /\
      sum_carry_bit ld s c w ==>

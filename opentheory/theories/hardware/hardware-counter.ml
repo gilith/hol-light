@@ -11,18 +11,18 @@ logfile "hardware-counter-def";;
 
 let bpipe_def = new_definition
   `!w x.
-     bpipe w x <=>
-     ?r xp x0 xp0 xp1.
+     bpipeX w x <=>
+     ?r xp x0 x1 x2.
        width x = r + 1 /\
-       width xp = r + 1
+       width xp = r
        /\
-       bsub x 0 r x0 /\
-       wire xp 0 xp0 /\
-       bsub xp 1 r xp1
+       wire x 0 x0 /\
+       bsub x 0 r x1 /\
+       bsub x 1 r x2
        /\
-       bconnect xp x /\
-       delay w xp0 /\
-       bdelay x0 xp1`;;
+       connect w x0 /\
+       bconnect xp x2 /\
+       bdelay x1 xp`;;
 
 export_thm bpipe_def;;
 
@@ -121,9 +121,9 @@ logfile "hardware-counter-thm";;
 
 let bpipe_signal = prove
  (`!w x i xi t.
-     bpipe w x /\
+     bpipeX w x /\
      wire x i xi ==>
-     signal xi (t + (i + 1)) = signal w t`,
+     signal xi (t + i) = signal w t`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [bpipe_def] THEN
   REPEAT STRIP_TAC THEN
@@ -132,6 +132,7 @@ let bpipe_signal = prove
   SPEC_TAC (`i : num`, `i : num`) THEN
   INDUCT_TAC THENL
   [REPEAT STRIP_TAC THEN
+   wire_inj
    REWRITE_TAC [ZERO_ADD] THEN
    MP_TAC
      (SPECL
