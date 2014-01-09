@@ -11,7 +11,7 @@ logfile "hardware-counter-def";;
 
 let bpipe_def = new_definition
   `!w x.
-     bpipeX w x <=>
+     bpipe w x <=>
      ?r xp x0 x1 x2.
        width x = r + 1 /\
        width xp = r
@@ -121,7 +121,7 @@ logfile "hardware-counter-thm";;
 
 let bpipe_signal = prove
  (`!w x i xi t.
-     bpipeX w x /\
+     bpipe w x /\
      wire x i xi ==>
      signal xi (t + i) = signal w t`,
   REPEAT GEN_TAC THEN
@@ -132,27 +132,22 @@ let bpipe_signal = prove
   SPEC_TAC (`i : num`, `i : num`) THEN
   INDUCT_TAC THENL
   [REPEAT STRIP_TAC THEN
-   wire_inj
-   REWRITE_TAC [ZERO_ADD] THEN
+   REWRITE_TAC [ADD_0] THEN
    MP_TAC
      (SPECL
-        [`xp : bus`;
-         `x : bus`;
+        [`x : bus`;
          `0`;
-         `xp0 : wire`;
-         `xi : wire`]
-        bconnect_wire) THEN
+         `xi : wire`;
+         `x0 : wire`]
+        wire_inj) THEN
    ASM_REWRITE_TAC [] THEN
-   STRIP_TAC THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
    MP_TAC
      (SPECL
-       [`xp0 : wire`;
-        `xi : wire`;
-        `t + 1 : cycle`]
+       [`w : wire`;
+        `x0 : wire`;
+        `t : cycle`]
        connect_signal) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN SUBST1_TAC THEN
-   MATCH_MP_TAC delay_signal THEN
    ASM_REWRITE_TAC [];
    ALL_TAC] THEN
   REPEAT STRIP_TAC THEN
@@ -160,15 +155,26 @@ let bpipe_signal = prove
   [MP_TAC (SPECL [`x : bus`; `SUC i`; `xi : wire`] wire_bound) THEN
    ASM_REWRITE_TAC [GSYM ADD1; LT_SUC];
    ALL_TAC] THEN
-  SUBGOAL_THEN `?xpi. wire xp (SUC i) xpi` STRIP_ASSUME_TAC THENL
+  MP_TAC
+   (SPECL
+      [`x : bus`;
+       `1`;
+       `r : num`;
+       `x2 : bus`;
+       `i : num`;
+       `xi : wire`]
+      bsub_wire) THEN
+  ASM_REWRITE_TAC [ONCE_REWRITE_RULE [ADD_SYM] (GSYM ADD1)] THEN
+  STRIP_TAC THEN
+  SUBGOAL_THEN `?xpi. wire xp i xpi` STRIP_ASSUME_TAC THENL
   [MATCH_MP_TAC wire_exists THEN
-   ASM_REWRITE_TAC [GSYM ADD1; LT_SUC];
+   ASM_REWRITE_TAC [];
    ALL_TAC] THEN
   MP_TAC
     (SPECL
        [`xp : bus`;
-        `x : bus`;
-        `SUC i`;
+        `x2 : bus`;
+        `i : num`;
         `xpi : wire`;
         `xi : wire`]
        bconnect_wire) THEN
@@ -178,7 +184,7 @@ let bpipe_signal = prove
     (SPECL
       [`xpi : wire`;
        `xi : wire`;
-       `t + SUC i + 1 : cycle`]
+       `t + SUC i : cycle`]
       connect_signal) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN SUBST1_TAC THEN
@@ -191,41 +197,29 @@ let bpipe_signal = prove
   FIRST_X_ASSUM (MP_TAC o SPEC `xis : wire`) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN (SUBST1_TAC o SYM) THEN
-  REWRITE_TAC [ADD_SUC; SUC_ADD] THEN
+  REWRITE_TAC [ADD_SUC] THEN
   REWRITE_TAC [ADD1] THEN
   MATCH_MP_TAC delay_signal THEN
   MATCH_MP_TAC bdelay_wire THEN
-  EXISTS_TAC `x0 : bus` THEN
-  EXISTS_TAC `xp1 : bus` THEN
+  EXISTS_TAC `x1 : bus` THEN
+  EXISTS_TAC `xp : bus` THEN
   EXISTS_TAC `i : num` THEN
   ASM_REWRITE_TAC [] THEN
-  CONJ_TAC THENL
-  [MP_TAC
-    (SPECL
-       [`x : bus`;
-        `0`;
-        `r : num`;
-        `x0 : bus`;
-        `i : num`;
-        `xis : wire`]
-       bsub_wire) THEN
-   ASM_REWRITE_TAC [ZERO_ADD];
-   MP_TAC
-    (SPECL
-       [`xp : bus`;
-        `1`;
-        `r : num`;
-        `xp1 : bus`;
-        `i : num`;
-        `xpi : wire`]
-       bsub_wire) THEN
-   ASM_REWRITE_TAC [] THEN
-   ASM_REWRITE_TAC [ONE; SUC_ADD; ZERO_ADD]]);;
+  MP_TAC
+   (SPECL
+      [`x : bus`;
+       `0`;
+       `r : num`;
+       `x1 : bus`;
+       `i : num`;
+       `xis : wire`]
+      bsub_wire) THEN
+   ASM_REWRITE_TAC [ZERO_ADD]);;
 
 export_thm bpipe_signal;;
 
 let pipe_signal = prove
- (`!d w x t. pipe d w x ==> signal x (t + (d + 1)) = signal w t`,
+ (`!d w x t. pipe d w x ==> signal x (t + d) = signal w t`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [pipe_def] THEN
   REPEAT STRIP_TAC THEN
@@ -233,7 +227,7 @@ let pipe_signal = prove
     (SPECL
       [`y0 : wire`;
        `x : wire`;
-       `t + (d + 1) : cycle`]
+       `t + d : cycle`]
       connect_signal) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN SUBST1_TAC THEN

@@ -54,7 +54,7 @@ loads "opentheory/theories/hardware/hardware-adder.ml";;
 (* ------------------------------------------------------------------------- *)
 (* Hardware counter devices.                                                 *)
 (* ------------------------------------------------------------------------- *)
-(***
+
 loads "opentheory/theories/hardware/hardware-counter.ml";;
 
 (* ------------------------------------------------------------------------- *)
@@ -62,6 +62,5 @@ loads "opentheory/theories/hardware/hardware-counter.ml";;
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/hardware/hardware-multiplier.ml";;
-***)
 
 logfile_end ();;
