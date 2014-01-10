@@ -92,11 +92,11 @@ let badder4_def = new_definition
 export_thm badder4_def;;
 
 let sum_carry_bit_def = new_definition
-  `!ld s c b.
-     sum_carry_bit ld s c b <=>
-     ?r sp sq sr cp cq cr s0 s1 sq0 sq1 sq2 sq3 cp0 cp1 cq0 cq1.
-       width s = r + 1 /\
-       width c = r + 1 /\
+  `!ld xs xc xb.
+     sum_carry_bit ld xs xc xb <=>
+     ?r sp sq sr cp cq cr xs0 xs1 sq0 sq1 sq2 sq3 cp0 cp1 cq0 cq1.
+       width xs = r + 1 /\
+       width xc = r + 1 /\
        width sp = r /\
        width sq = r + 1 /\
        width sr = r /\
@@ -104,8 +104,8 @@ let sum_carry_bit_def = new_definition
        width cq = r + 1 /\
        width cr = r + 1
        /\
-       wire s 0 s0 /\
-       bsub s 1 r s1 /\
+       wire xs 0 xs0 /\
+       bsub xs 1 r xs1 /\
        wire sq 0 sq0 /\
        bsub sq 0 r sq1 /\
        bsub sq 1 r sq2 /\
@@ -118,9 +118,10 @@ let sum_carry_bit_def = new_definition
        badder2 sp cp0 sq1 cq0 /\
        connect cp1 sq3 /\
        connect ground cq1 /\
-       case1 ld s0 sq0 b /\
-       bcase1 ld s1 sq2 sr /\
-       bcase1 ld c cq cr /\
+       case1 ld xs0 sq0 xb /\
+       bcase1 ld xs1 sq2 sr /\
+       bcase1 ld xc cq cr
+       /\
        bdelay sr sp /\
        bdelay cr cp`;;
 
@@ -1190,11 +1191,11 @@ let badder4_bits_to_num = prove
 export_thm badder4_bits_to_num;;
 
 let sum_carry_bit_signal = prove
- (`!n ld s c b t k.
+ (`!x ld xs xc xb t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
-     bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t) = n /\
-     sum_carry_bit ld s c b ==>
-     signal b (t + k) = bit_nth n k`,
+     bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x /\
+     sum_carry_bit ld xs xc xb ==>
+     signal xb (t + k) = bit_nth x k`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [sum_carry_bit_def] THEN
   STRIP_TAC THEN
@@ -1202,10 +1203,10 @@ let sum_carry_bit_signal = prove
   REVERSE_TAC
     (SUBGOAL_THEN
        `bit_cons
-          (signal b (t + k))
+          (signal xb (t + k))
           (bits_to_num (bsignal sr (t + k)) +
            bits_to_num (bsignal cr (t + k))) =
-        bit_shr n k`
+        bit_shr x k`
        (SUBST1_TAC o SYM)) THENL
   [REWRITE_TAC [bit_hd_cons];
    ALL_TAC] THEN
@@ -1218,9 +1219,9 @@ let sum_carry_bit_signal = prove
    MP_TAC
      (SPECL
        [`ld : wire`;
-        `s0 : wire`;
+        `xs0 : wire`;
         `sq0 : wire`;
-        `b : wire`;
+        `xb : wire`;
         `t : cycle`]
        case1_signal) THEN
    ASM_REWRITE_TAC [] THEN
@@ -1228,7 +1229,7 @@ let sum_carry_bit_signal = prove
    MP_TAC
      (SPECL
        [`ld : wire`;
-        `s1 : bus`;
+        `xs1 : bus`;
         `sq2 : bus`;
         `sr : bus`;
         `t : cycle`]
@@ -1238,7 +1239,7 @@ let sum_carry_bit_signal = prove
    MP_TAC
      (SPECL
        [`ld : wire`;
-        `c : bus`;
+        `xc : bus`;
         `cq : bus`;
         `cr : bus`;
         `t : cycle`]
@@ -1246,10 +1247,10 @@ let sum_carry_bit_signal = prove
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
    UNDISCH_THEN
-     `bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t) = n`
+     `bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x`
      (SUBST1_TAC o SYM) THEN
    REWRITE_TAC [bit_cons_def; LEFT_ADD_DISTRIB; ADD_ASSOC; EQ_ADD_RCANCEL] THEN
-   SUBGOAL_THEN `s = bappend (bwire s0) s1` SUBST1_TAC THENL
+   SUBGOAL_THEN `xs = bappend (bwire xs0) xs1` SUBST1_TAC THENL
    [MATCH_MP_TAC EQ_SYM THEN
     ASM_REWRITE_TAC [GSYM bsub_all] THEN
     ONCE_REWRITE_TAC [ADD_SYM] THEN
@@ -1264,9 +1265,9 @@ let sum_carry_bit_signal = prove
   MP_TAC
     (SPECL
       [`ld : wire`;
-       `s0 : wire`;
+       `xs0 : wire`;
        `sq0 : wire`;
-       `b : wire`;
+       `xb : wire`;
        `t + SUC k : cycle`]
       case1_signal) THEN
   ASM_REWRITE_TAC [] THEN
@@ -1274,7 +1275,7 @@ let sum_carry_bit_signal = prove
   MP_TAC
     (SPECL
       [`ld : wire`;
-       `s1 : bus`;
+       `xs1 : bus`;
        `sq2 : bus`;
        `sr : bus`;
        `t + SUC k : cycle`]
@@ -1284,7 +1285,7 @@ let sum_carry_bit_signal = prove
   MP_TAC
     (SPECL
       [`ld : wire`;
-       `c : bus`;
+       `xc : bus`;
        `cq : bus`;
        `cr : bus`;
        `t + SUC k : cycle`]

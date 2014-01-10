@@ -21,7 +21,8 @@ let bpipe_def = new_definition
        bsub x 1 r x2
        /\
        connect w x0 /\
-       bconnect xp x2 /\
+       bconnect xp x2
+       /\
        bdelay x1 xp`;;
 
 export_thm bpipe_def;;
