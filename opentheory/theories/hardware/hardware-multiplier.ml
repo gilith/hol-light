@@ -28,9 +28,9 @@ logfile "hardware-multiplier-def";;
 (*  zc  =  X   X   X   X   ...  X   -   -  *)
 (* --------------------------------------- *)
 
-let sum_carry_mult_bit_def = new_definition
+let bmult_def = new_definition
   `!ld xb ys yc zb zs zc.
-     sum_carry_mult_bit ld xb ys yc zb zs zc <=>
+     bmult ld xb ys yc zb zs zc <=>
      ?r sp sq sr cp cq cr yos yoc ps pc
       sq0 sq1 sr0 sr1 cq0 cq1 cr0 cr1 yos0 yos1 yoc0 yoc1 pc0 pc1 pc2 pc3.
        width ys = r + 1 /\
@@ -79,7 +79,7 @@ let sum_carry_mult_bit_def = new_definition
        bdelay sr sp /\
        bdelay cr cp`;;
 
-export_thm sum_carry_mult_bit_def;;
+export_thm bmult_def;;
 
 (***
 let sum_carry_mult_def = new_definition
@@ -89,7 +89,7 @@ let sum_carry_mult_def = new_definition
        sum_carry_bit ld xs xc xb /\
        pipe ld d ldd /\
        pipe xb d xbd /\
-       sum_carry_mult_bit ldd xwd ys yc zb zs zc`;;
+       bmult ldd xwd ys yc zb zs zc`;;
 ***)
 
 (* ------------------------------------------------------------------------- *)
@@ -98,7 +98,7 @@ let sum_carry_mult_def = new_definition
 
 logfile "hardware-multiplier-thm";;
 
-let sum_carry_mult_bit_bits_to_num = prove
+let bmult_bits_to_num = prove
  (`!x y ld xb ys yc zb zs zc t k.
      (!i.
         i <= k ==>
@@ -107,13 +107,13 @@ let sum_carry_mult_bit_bits_to_num = prove
         (bit_nth x i ==>
          bits_to_num (bsignal ys (t + i)) +
          2 * bits_to_num (bsignal yc (t + i)) = y)) /\
-     sum_carry_mult_bit ld xb ys yc zb zs zc ==>
+     bmult ld xb ys yc zb zs zc ==>
      bit_cons (signal zb (t + k))
        (bits_to_num (bsignal zs (t + k)) +
         2 * bits_to_num (bsignal zc (t + k))) =
      bit_shr (bit_bound x (k + 1) * y) k`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [sum_carry_mult_bit_def] THEN
+  REWRITE_TAC [bmult_def] THEN
   STRIP_TAC THEN
   MP_TAC
     (SPECL
@@ -580,7 +580,7 @@ let sum_carry_mult_bit_bits_to_num = prove
      GSYM (ONCE_REWRITE_RULE [MULT_SYM] mult_bit_shl)] THEN
   REWRITE_TAC [bit_shl_suc'; ONCE_REWRITE_RULE [ADD_SYM] add_bit_shr]);;
 
-export_thm sum_carry_mult_bit_bits_to_num;;
+export_thm bmult_bits_to_num;;
 
 (***
 let sum_carry_bit_mult_bits_to_num = prove
@@ -595,7 +595,7 @@ let sum_carry_bit_mult_bits_to_num = prove
         2 * bits_to_num (bsignal zc ((t + d) + k))) =
      bit_shr (y * bit_bound x (k + 1)) k`,
   REPEAT STRIP_TAC THEN
-  MATCH_MP_TAC sum_carry_mult_bits_to_num THEN
+  MATCH_MP_TAC bmults_to_num THEN
    EXISTS_TAC `ld0 : wire` THEN
    EXISTS_TAC `xw0 : wire` THEN
    EXISTS_TAC `ys : bus` THEN
@@ -605,7 +605,7 @@ let sum_carry_bit_mult_bits_to_num = prove
    [pipe_signal
      
 
-let sum_carry_mult_bits_to_num = prove
+let bmults_to_num = prove
  (`!x y ld xs xc ys yc zs zc t k.
      
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
