@@ -425,6 +425,30 @@ let LE_MAX2 = prove
 
 export_thm LE_MAX2;;
 
+let MAX_LE = prove
+ (`!m n p. MAX m n <= p <=> m <= p /\ n <= p`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MAX] THEN
+  COND_CASES_TAC THENL
+  [EQ_TAC THENL
+   [STRIP_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `n : num` THEN
+    ASM_REWRITE_TAC [];
+    STRIP_TAC];
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `m : num` THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LT_IMP_LE THEN
+    ASM_REWRITE_TAC [GSYM NOT_LE];
+    STRIP_TAC]]);;
+
+export_thm MAX_LE;;
+
 let MAX_L0 = prove
  (`!n. MAX 0 n = n`,
   REPEAT GEN_TAC THEN

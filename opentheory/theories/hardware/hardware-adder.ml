@@ -1190,6 +1190,20 @@ let badder4_bits_to_num = prove
 
 export_thm badder4_bits_to_num;;
 
+let sum_carry_bit_width = prove
+ (`!ld xs xc xb.
+     sum_carry_bit ld xs xc xb ==>
+     ?r.
+       width xs = r + 1 /\
+       width xc = r + 1`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [sum_carry_bit_def] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `r : num` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm sum_carry_bit_width;;
+
 let sum_carry_bit_signal = prove
  (`!x ld xs xc xb t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\

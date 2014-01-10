@@ -81,16 +81,16 @@ let bmult_def = new_definition
 
 export_thm bmult_def;;
 
-(***
 let sum_carry_mult_def = new_definition
   `!ld xs xc d ys yc zb zs zc.
      sum_carry_mult ld xs xc d ys yc zb zs zc <=>
-     ?ldd xbd.
+     ?xb ldd xbd.
        sum_carry_bit ld xs xc xb /\
        pipe ld d ldd /\
        pipe xb d xbd /\
-       bmult ldd xwd ys yc zb zs zc`;;
-***)
+       bmult ldd xbd ys yc zb zs zc`;;
+
+export_thm sum_carry_mult_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of hardware multiplier devices.                                *)
@@ -583,49 +583,94 @@ let bmult_bits_to_num = prove
 export_thm bmult_bits_to_num;;
 
 (***
-let sum_carry_bit_mult_bits_to_num = prove
- (`!x y d ld xs xc xw ldd xwd ys yc zb zs zc t k.
+let sum_carry_mult_bits_to_num = prove
+ (`!x y ld xs xc d ys yc zb zs zc t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
-     sum_carry_bit ld xs xc xw /\
-     pipe d ld ldd /\
-     pipe d xw xwd /\
-     sum_carry_mult ldd xwd ys yc zb zs zc ==>
+     bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x /\
+     (!i.
+        d <= i /\ i <= MAX k (width xs + d + 1) ==>
+        bits_to_num (bsignal ys (t + i)) +
+        2 * bits_to_num (bsignal yc (t + i)) = y) /\
+     sum_carry_mult ld xs xc d ys yc zb zs zc ==>
      bit_cons (signal zb ((t + d) + k))
        (bits_to_num (bsignal zs ((t + d) + k)) +
         2 * bits_to_num (bsignal zc ((t + d) + k))) =
-     bit_shr (y * bit_bound x (k + 1)) k`,
-  REPEAT STRIP_TAC THEN
-  MATCH_MP_TAC bmults_to_num THEN
-   EXISTS_TAC `ld0 : wire` THEN
-   EXISTS_TAC `xw0 : wire` THEN
-   EXISTS_TAC `ys : bus` THEN
-   EXISTS_TAC `yc : bus` THEN
-   ASM_REWRITE_TAC [] THEN
-   REPEAT STRIP_TAC THENL
-   [pipe_signal
-     
-
-let bmults_to_num = prove
- (`!x y ld xs xc ys yc zs zc t k.
-     
-     (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
-     bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t) = n /\
-     sum_carry_bit ld s c w ==>
-     signal w (t + k) = bit_nth n k`,
-
- (`!n x ld w xs xc b s c t k.
-     (!i.
-        i <= k ==>
-        (signal ld (t + i) <=> i = 0) /\
-        (signal w (t + i) = bit_nth n i) /\
-        bits_to_num (bsignal xs (t + i)) +
-        2 * bits_to_num (bsignal xc (t + i)) = x) /\
-     sum_carry_mult ld w xs xc b s c ==>
-     bit_cons (signal b (t + k))
-       (bits_to_num (bsignal s (t + k)) +
-        2 * bits_to_num (bsignal c (t + k))) =
-     bit_shr (x * bit_bound n (k + 1)) k`,
+     bit_shr (bit_bound x (k + 1) * y) k`,
   REPEAT GEN_TAC THEN
+  REWRITE_TAC [sum_carry_mult_def] THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC bmult_bits_to_num THEN
+  EXISTS_TAC `ldd : wire` THEN
+  EXISTS_TAC `xbd : wire` THEN
+  EXISTS_TAC `ys : bus` THEN
+  EXISTS_TAC `yc : bus` THEN
+  ASM_REWRITE_TAC [] THEN
+  GEN_TAC THEN
+  STRIP_TAC THEN
+  CONJ_TAC THENL
+  [CONV_TAC
+    (ONCE_DEPTH_CONV
+      (REWR_CONV (GSYM ADD_ASSOC) THENC
+       RAND_CONV (REWR_CONV ADD_SYM) THENC
+       REWR_CONV ADD_ASSOC)) THEN
+   MP_TAC
+     (SPECL
+        [`ld : wire`;
+         `d : cycle`;
+         `ldd : wire`;
+         `t + i : cycle`]
+      pipe_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  CONJ_TAC THENL
+  [CONV_TAC
+    (ONCE_DEPTH_CONV
+      (REWR_CONV (GSYM ADD_ASSOC) THENC
+       RAND_CONV (REWR_CONV ADD_SYM) THENC
+       REWR_CONV ADD_ASSOC)) THEN
+   MP_TAC
+     (SPECL
+        [`xb : wire`;
+         `d : cycle`;
+         `xbd : wire`;
+         `t + i : cycle`]
+      pipe_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MATCH_MP_TAC sum_carry_bit_signal THEN
+   EXISTS_TAC `ld : wire` THEN
+   EXISTS_TAC `xs : bus` THEN
+   EXISTS_TAC `xc : bus` THEN
+   ASM_REWRITE_TAC [] THEN
+   X_GEN_TAC `j : cycle` THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `i : cycle` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  STRIP_TAC THEN
+  REWRITE_TAC [GSYM ADD_ASSOC] THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  ***
+  REWRITE_TAC [LE_ADD] THEN
+  CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+  REWRITE_TAC [GSYM ADD_ASSOC; LE_ADD_LCANCEL] THEN
+  CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+  MP_TAC
+    (SPECL
+       [`ld : wire`;
+        `xs : bus`;
+        `xc : bus`;
+        `xb : wire`]
+     sum_carry_bit_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+
+
 ***)
 
 logfile_end ();;
