@@ -84,9 +84,10 @@ let sum_carry_mult_bits_to_num = prove
      (!i.
         i <= k ==>
         (signal ld (t + i) <=> i = 0) /\
-        (signal w (t + i) = bit_nth n i) /\
-        bits_to_num (bsignal xs (t + i)) +
-        2 * bits_to_num (bsignal xc (t + i)) = x) /\
+        (signal w (t + i) <=> bit_nth n i) /\
+        (bit_nth n i ==>
+         bits_to_num (bsignal xs (t + i)) +
+         2 * bits_to_num (bsignal xc (t + i)) = x)) /\
      sum_carry_mult ld w xs xc b s c ==>
      bit_cons (signal b (t + k))
        (bits_to_num (bsignal s (t + k)) +
@@ -106,9 +107,10 @@ let sum_carry_mult_bits_to_num = prove
      `!i.
         i <= k ==>
         (signal ld (t + i) <=> i = 0) /\
-        (signal w (t + i) = bit_nth n i) /\
-        bits_to_num (bsignal xs (t + i)) +
-        2 * bits_to_num (bsignal xc (t + i)) = x`
+        (signal w (t + i) <=> bit_nth n i) /\
+        (bit_nth n i ==>
+         bits_to_num (bsignal xs (t + i)) +
+         2 * bits_to_num (bsignal xc (t + i)) = x)`
      (K ALL_TAC) THEN
    X_GEN_TAC `t : cycle` THEN
    SUBGOAL_THEN `bappend s0 (bwire s1) = s` (SUBST1_TAC o SYM) THENL
@@ -364,9 +366,10 @@ let sum_carry_mult_bits_to_num = prove
     `!i.
        i <= k ==>
        (signal ld (t + i) <=> i = 0) /\
-       (signal w (t + i) = bit_nth n i) /\
-       bits_to_num (bsignal xs (t + i)) +
-       2 * bits_to_num (bsignal xc (t + i)) = x` THEN
+       (signal w (t + i) <=> bit_nth n i) /\
+       (bit_nth n i ==>
+        bits_to_num (bsignal xs (t + i)) +
+        2 * bits_to_num (bsignal xc (t + i)) = x)` THEN
   SPEC_TAC (`k : cycle`, `k : cycle`) THEN
   INDUCT_TAC THENL
   [DISCH_THEN (MP_TAC o SPEC `0`) THEN
@@ -416,6 +419,7 @@ let sum_carry_mult_bits_to_num = prove
         bcase1_bsignal) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
+   POP_ASSUM MP_TAC THEN
    COND_CASES_TAC THEN
    ASM_REWRITE_TAC
      [bit_to_num_true; MULT_1; bit_to_num_false; MULT_0;
@@ -502,11 +506,13 @@ let sum_carry_mult_bits_to_num = prove
              else bsignal (bground (r + 1)) (SUC (t + k)))) =
      (if bit_nth n (SUC k) then x else 0)`
     SUBST1_TAC THENL
-  [COND_CASES_TAC THEN
+  [POP_ASSUM MP_TAC THEN
+   COND_CASES_TAC THEN
    ASM_REWRITE_TAC [GSYM ADD_SUC; bground_bits_to_num; MULT_0; ADD_0];
    ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
   (CONV_TAC o LAND_CONV o REWR_CONV o GSYM)
-  (SPEC `signal b (t + k)` bit_tl_cons) THEN
+    (SPEC `signal b (t + k)` bit_tl_cons) THEN
   SUBGOAL_THEN
     `bit_cons (signal b (t + k))
        ((if bit_nth n (SUC k) then x else 0) +
