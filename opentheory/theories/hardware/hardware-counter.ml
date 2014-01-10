@@ -27,15 +27,15 @@ let bpipe_def = new_definition
 export_thm bpipe_def;;
 
 let pipe_def = new_definition
-  `!d w x.
-     pipe d w x <=>
-     ?y y0.
-       width y = d + 1
+  `!w d wd.
+     pipe w d wd <=>
+     ?x x0.
+       width x = d + 1
        /\
-       wire y d y0
+       wire x d x0
        /\
-       bpipe w y /\
-       connect y0 x`;;
+       bpipe w x /\
+       connect x0 wd`;;
 
 export_thm pipe_def;;
 
@@ -219,20 +219,20 @@ let bpipe_signal = prove
 export_thm bpipe_signal;;
 
 let pipe_signal = prove
- (`!d w x t. pipe d w x ==> signal x (t + d) = signal w t`,
+ (`!w d wd t. pipe w d wd ==> signal wd (t + d) = signal w t`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [pipe_def] THEN
   REPEAT STRIP_TAC THEN
   MP_TAC
     (SPECL
-      [`y0 : wire`;
-       `x : wire`;
+      [`x0 : wire`;
+       `wd : wire`;
        `t + d : cycle`]
       connect_signal) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN SUBST1_TAC THEN
   MATCH_MP_TAC bpipe_signal THEN
-  EXISTS_TAC `y : bus` THEN
+  EXISTS_TAC `x : bus` THEN
   ASM_REWRITE_TAC []);;
 
 export_thm pipe_signal;;

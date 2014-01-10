@@ -92,8 +92,8 @@ let badder4_def = new_definition
 export_thm badder4_def;;
 
 let sum_carry_bit_def = new_definition
-  `!ld s c w.
-     sum_carry_bit ld s c w <=>
+  `!ld s c b.
+     sum_carry_bit ld s c b <=>
      ?r sp sq sr cp cq cr s0 s1 sq0 sq1 sq2 sq3 cp0 cp1 cq0 cq1.
        width s = r + 1 /\
        width c = r + 1 /\
@@ -118,7 +118,7 @@ let sum_carry_bit_def = new_definition
        badder2 sp cp0 sq1 cq0 /\
        connect cp1 sq3 /\
        connect ground cq1 /\
-       case1 ld s0 sq0 w /\
+       case1 ld s0 sq0 b /\
        bcase1 ld s1 sq2 sr /\
        bcase1 ld c cq cr /\
        bdelay sr sp /\
@@ -1190,11 +1190,11 @@ let badder4_bits_to_num = prove
 export_thm badder4_bits_to_num;;
 
 let sum_carry_bit_signal = prove
- (`!n ld s c w t k.
+ (`!n ld s c b t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal s t) + 2 * bits_to_num (bsignal c t) = n /\
-     sum_carry_bit ld s c w ==>
-     signal w (t + k) = bit_nth n k`,
+     sum_carry_bit ld s c b ==>
+     signal b (t + k) = bit_nth n k`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [sum_carry_bit_def] THEN
   STRIP_TAC THEN
@@ -1202,7 +1202,7 @@ let sum_carry_bit_signal = prove
   REVERSE_TAC
     (SUBGOAL_THEN
        `bit_cons
-          (signal w (t + k))
+          (signal b (t + k))
           (bits_to_num (bsignal sr (t + k)) +
            bits_to_num (bsignal cr (t + k))) =
         bit_shr n k`
@@ -1220,7 +1220,7 @@ let sum_carry_bit_signal = prove
        [`ld : wire`;
         `s0 : wire`;
         `sq0 : wire`;
-        `w : wire`;
+        `b : wire`;
         `t : cycle`]
        case1_signal) THEN
    ASM_REWRITE_TAC [] THEN
@@ -1266,7 +1266,7 @@ let sum_carry_bit_signal = prove
       [`ld : wire`;
        `s0 : wire`;
        `sq0 : wire`;
-       `w : wire`;
+       `b : wire`;
        `t + SUC k : cycle`]
       case1_signal) THEN
   ASM_REWRITE_TAC [] THEN
