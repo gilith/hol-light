@@ -582,23 +582,23 @@ let bmult_bits_to_num = prove
 
 export_thm bmult_bits_to_num;;
 
-(***
 let sum_carry_mult_bits_to_num = prove
  (`!x y ld xs xc d ys yc zb zs zc t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x /\
      (!i.
-        d <= i /\ i <= MAX k (width xs + d + 1) ==>
+        i <= d + k /\ d <= i /\ i <= width xs + d + 1 ==>
         bits_to_num (bsignal ys (t + i)) +
         2 * bits_to_num (bsignal yc (t + i)) = y) /\
      sum_carry_mult ld xs xc d ys yc zb zs zc ==>
-     bit_cons (signal zb ((t + d) + k))
-       (bits_to_num (bsignal zs ((t + d) + k)) +
-        2 * bits_to_num (bsignal zc ((t + d) + k))) =
+     bit_cons (signal zb (t + d + k))
+       (bits_to_num (bsignal zs (t + d + k)) +
+        2 * bits_to_num (bsignal zc (t + d + k))) =
      bit_shr (bit_bound x (k + 1) * y) k`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [sum_carry_mult_def] THEN
   STRIP_TAC THEN
+  REWRITE_TAC [ADD_ASSOC] THEN
   MATCH_MP_TAC bmult_bits_to_num THEN
   EXISTS_TAC `ldd : wire` THEN
   EXISTS_TAC `xbd : wire` THEN
@@ -655,11 +655,25 @@ let sum_carry_mult_bits_to_num = prove
   STRIP_TAC THEN
   REWRITE_TAC [GSYM ADD_ASSOC] THEN
   FIRST_X_ASSUM MATCH_MP_TAC THEN
-  ***
-  REWRITE_TAC [LE_ADD] THEN
+  ASM_REWRITE_TAC [LE_ADD; LE_ADD_LCANCEL] THEN
   CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
   REWRITE_TAC [GSYM ADD_ASSOC; LE_ADD_LCANCEL] THEN
   CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+  REWRITE_TAC [GSYM LT_SUC_LE; ONE; ADD_SUC; ADD_0] THEN
+  MATCH_MP_TAC LTE_TRANS THEN
+  EXISTS_TAC `bitwidth x` THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC bit_nth_bitwidth THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC
+    `MAX (bitwidth (bits_to_num (bsignal xs t)))
+         (bitwidth (2 * bits_to_num (bsignal xc t))) + 1` THEN
+  REWRITE_TAC [bitwidth_add] THEN
+  REWRITE_TAC [GSYM ADD1; LE_SUC; MAX_LE] THEN
   MP_TAC
     (SPECL
        [`ld : wire`;
@@ -669,8 +683,22 @@ let sum_carry_mult_bits_to_num = prove
      sum_carry_bit_width) THEN
   ASM_REWRITE_TAC [] THEN
   STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `LENGTH (bsignal xs t)` THEN
+   REWRITE_TAC [bitwidth_bits_to_num] THEN
+   ASM_REWRITE_TAC [length_bsignal; SUC_LE];
+   REWRITE_TAC [GSYM bit_shl_one] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `bitwidth (bits_to_num (bsignal xc t)) + 1` THEN
+   REWRITE_TAC [bitwidth_bit_shl_le] THEN
+   REWRITE_TAC [ADD1; LE_ADD_RCANCEL] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `LENGTH (bsignal xc t)` THEN
+   REWRITE_TAC [bitwidth_bits_to_num] THEN
+   ASM_REWRITE_TAC [length_bsignal; LE_REFL]]);;
 
-
-***)
+export_thm sum_carry_mult_bits_to_num;;
 
 logfile_end ();;

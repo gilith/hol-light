@@ -1225,7 +1225,7 @@ let rdecode_word = prove
       (list_to_word l, r2)`,
    GEN_TAC THEN
    REWRITE_TAC
-     [rdecode_word_def; rdecode_uniform_def; word_size_def; bitwidth_max] THEN
+     [rdecode_word_def; rdecode_uniform_def; word_size_def; bitwidth_ones] THEN
    ONCE_REWRITE_TAC [rdecode_uniform_loop_def] THEN
    PAIR_CASES_TAC `rsplit r` THEN
    DISCH_THEN

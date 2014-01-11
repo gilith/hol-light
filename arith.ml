@@ -426,7 +426,7 @@ let LE_MAX2 = prove
 export_thm LE_MAX2;;
 
 let MAX_LE = prove
- (`!m n p. MAX m n <= p <=> m <= p /\ n <= p`,
+ (`!m n p. MAX n p <= m <=> n <= m /\ p <= m`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [MAX] THEN
   COND_CASES_TAC THENL
@@ -434,14 +434,14 @@ let MAX_LE = prove
    [STRIP_TAC THEN
     ASM_REWRITE_TAC [] THEN
     MATCH_MP_TAC LE_TRANS THEN
-    EXISTS_TAC `n : num` THEN
+    EXISTS_TAC `p : num` THEN
     ASM_REWRITE_TAC [];
     STRIP_TAC];
    EQ_TAC THENL
    [STRIP_TAC THEN
     ASM_REWRITE_TAC [] THEN
     MATCH_MP_TAC LE_TRANS THEN
-    EXISTS_TAC `m : num` THEN
+    EXISTS_TAC `n : num` THEN
     ASM_REWRITE_TAC [] THEN
     MATCH_MP_TAC LT_IMP_LE THEN
     ASM_REWRITE_TAC [GSYM NOT_LE];
@@ -499,6 +499,30 @@ let MIN_LE1 = prove
   MATCH_ACCEPT_TAC MIN_LE2);;
 
 export_thm MIN_LE1;;
+
+let LE_MIN = prove
+ (`!m n p. m <= MIN n p <=> m <= n /\ m <= p`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MIN] THEN
+  COND_CASES_TAC THENL
+  [EQ_TAC THENL
+   [STRIP_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `n : num` THEN
+    ASM_REWRITE_TAC [];
+    STRIP_TAC];
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `p : num` THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LT_IMP_LE THEN
+    ASM_REWRITE_TAC [GSYM NOT_LE];
+    STRIP_TAC]]);;
+
+export_thm LE_MIN;;
 
 let MIN_L0 = prove
  (`!n. MIN 0 n = 0`,
