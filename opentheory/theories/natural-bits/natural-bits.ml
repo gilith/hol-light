@@ -410,7 +410,7 @@ let bit_to_num_bound = prove
      [bit_to_num_true; bit_to_num_false;
       TWO; ONE; LT_SUC_LE; LE_REFL; SUC_LE]);;
 
-export_thm bit_to_num_hd;;
+export_thm bit_to_num_bound;;
 
 let bitwidth_bit_to_num = prove
   (`!b. bitwidth (bit_to_num b) = (bit_to_num b)`,
