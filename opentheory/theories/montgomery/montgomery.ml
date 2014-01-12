@@ -305,13 +305,17 @@ export_thm montgomery_double_exp_bound;;
 
 (***
 let montgomery_mult_def = new_definition
-  `!d0 ld xs xc ys yc zs zc.
-     montgomery_mult d0 ld xs xc ys yc zs zc <=>
-     ?xw ld0 xw0 pb ps pc.
-       sum_carry_bit ld xs xc xw /\
-       pipe d0 ld ld0 /\
-       pipe d0 xw xw0 /\
-       sum_carry_mult ld0 xw0 ys yc pb ps pc`;;
+  `!ld xs xc d0 ys yc zs zc.
+     montgomery_mult ld xs xc d0 ys yc zs zc <=>
+     ?pb ps pc pbp.
+       width pbp = d1 + 1
+       /\
+       wire pbp d1 pb1
+       /\
+       sum_carry_mult ld xs xc d0 ys yc pb ps pc /\
+       bpipe pb pbp /\
+       bmult 
+`;;
 
 export_thm montgomery_mult_def;;
 
