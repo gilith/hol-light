@@ -1814,7 +1814,7 @@ let counter_signal = prove
    ALL_TAC] THEN
   SUBGOAL_THEN
     `!h. ?gw. !u. signal gw u = UNCURRY h ((g : num -> num # num) u)`
-    (STRIP_ASSUME_TAC o
+    (X_CHOOSE_THEN `gw : (cycle -> cycle -> bool) -> wire` STRIP_ASSUME_TAC o
      CONV_RULE (REWR_CONV SKOLEM_THM)) THENL
   [GEN_TAC THEN
    EXISTS_TAC
