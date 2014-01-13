@@ -630,14 +630,20 @@ let (COND_CASES_TAC :tactic) =
 logfile "bool-class";;
 
 let SKOLEM_THM = prove
- (`!p. (!x:A. ?y:B. p x y) <=> (?y. !x. p x (y x))`,
+ (`!r. (!x:A. ?y:B. r x y) <=> (?f. !x. r x (f x))`,
   REPEAT(STRIP_TAC ORELSE EQ_TAC) THENL
-   [EXISTS_TAC `\x:A. @y:B. p x y` THEN GEN_TAC THEN
+   [EXISTS_TAC `\x:A. @y:B. r x y` THEN GEN_TAC THEN
     BETA_TAC THEN CONV_TAC SELECT_CONV;
-    EXISTS_TAC `(y:A->B) x`] THEN
+    EXISTS_TAC `(f:A->B) x`] THEN
   POP_ASSUM MATCH_ACCEPT_TAC);;
 
 export_thm SKOLEM_THM;;
+
+let SKOLEM_THM_GEN = prove
+ (`!p r. (!x:A. p x ==> ?y:B. r x y) <=> (?f. !x. p x ==> r x (f x))`,
+  REWRITE_TAC[RIGHT_IMP_EXISTS_THM; SKOLEM_THM]);;
+
+export_thm SKOLEM_THM_GEN;;
 
 (* ------------------------------------------------------------------------- *)
 (* NB: this one is true intutionistically and intensionally.                 *)

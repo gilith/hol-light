@@ -345,6 +345,22 @@ let EXISTS_IN_INSERT = prove
 
 export_thm EXISTS_IN_INSERT;;
 
+let FORALL_IN_UNION = prove
+ (`!p s (t : A set).
+     (!x. x IN s UNION t ==> p x) <=>
+     (!x. x IN s ==> p x) /\ (!x. x IN t ==> p x)`,
+  REWRITE_TAC [IN_UNION; OR_IMP_DISTRIB; FORALL_AND_THM]);;
+
+export_thm FORALL_IN_UNION;;
+
+let EXISTS_IN_UNION = prove
+ (`!p s (t : A set).
+     (?x. x IN s UNION t /\ p x) <=>
+     (?x. x IN s /\ p x) \/ (?x. x IN t /\ p x)`,
+  REWRITE_TAC [IN_UNION; RIGHT_OR_DISTRIB; EXISTS_OR_THM]);;
+
+export_thm EXISTS_IN_UNION;;
+
 (* ------------------------------------------------------------------------- *)
 (* Misc. theorems.                                                           *)
 (* ------------------------------------------------------------------------- *)
@@ -5140,6 +5156,103 @@ let num_INFINITE = prove
   ASM_REWRITE_TAC [IN_UNIV]);;
 
 export_thm num_INFINITE;;
+
+let INFINITE_ENUMERATE = prove
+ (`!s : num set.
+     INFINITE s ==>
+     ?r : num -> num.
+       (!m n. m < n ==> r m < r n) /\ IMAGE r UNIV = s`,
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN `!n:num. ?x. n <= x /\ x IN s` MP_TAC THENL
+  [POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [INFINITE; num_FINITE] THEN
+   CONV_TAC (REWR_CONV (GSYM CONTRAPOS_THM)) THEN
+   REWRITE_TAC [NOT_FORALL_THM; NOT_EXISTS_THM] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `n : num` THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `x : num`) THEN
+   ASM_REWRITE_TAC [NOT_LE] THEN
+   MATCH_ACCEPT_TAC LT_IMP_LE;
+   ALL_TAC] THEN
+  GEN_REWRITE_TAC (LAND_CONV o BINDER_CONV) [num_WOP] THEN
+  REWRITE_TAC[SKOLEM_THM; LEFT_IMP_EXISTS_THM; FORALL_AND_THM] THEN
+  REWRITE_TAC[TAUT `p ==> ~(q /\ r) <=> q /\ p ==> ~r`] THEN
+  X_GEN_TAC `next:num->num` THEN
+  STRIP_TAC THEN
+  (MP_TAC o prove_recursive_functions_exist num_RECURSION)
+    `(f 0 = next 0) /\ (!n. f (SUC n) = next (f n + 1))` THEN
+  MATCH_MP_TAC MONO_EXISTS THEN
+  X_GEN_TAC `r : num -> num` THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC (TAUT `p /\ (p ==> q) ==> p /\ q`) THEN
+  CONJ_TAC THENL
+  [GEN_TAC THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [LT];
+    ASM_REWRITE_TAC [LT] THEN
+    STRIP_TAC THENL
+    [FIRST_X_ASSUM SUBST_VAR_TAC THEN
+     MATCH_MP_TAC LTE_TRANS THEN
+     EXISTS_TAC `(r : num -> num) n + 1` THEN
+     ASM_REWRITE_TAC [LT_ADD] THEN
+     REWRITE_TAC [ONE; SUC_LT];
+     MATCH_MP_TAC LT_TRANS THEN
+     EXISTS_TAC `(r : num -> num) n` THEN
+     CONJ_TAC THENL
+     [FIRST_X_ASSUM MATCH_MP_TAC THEN
+      ASM_REWRITE_TAC [];
+      ASM_REWRITE_TAC [GSYM LE_SUC_LT; ADD1]]]];
+   DISCH_TAC THEN
+   ASM_REWRITE_TAC [GSYM SUBSET_ANTISYM_EQ; FORALL_IN_IMAGE; SUBSET] THEN
+   REWRITE_TAC [IN_IMAGE; IN_UNIV] THEN
+   CONJ_TAC THENL
+   [INDUCT_TAC THEN
+    ASM_REWRITE_TAC [];
+    MATCH_MP_TAC num_WF THEN
+    X_GEN_TAC `n:num` THEN
+    REWRITE_TAC [IMP_IMP] THEN
+    REPEAT STRIP_TAC THEN
+    ASM_CASES_TAC `?m:num. m < n /\ m IN s` THENL
+    [MP_TAC (SPEC `\m:num. m < n /\ m IN s` num_MAX) THEN
+     ASM_REWRITE_TAC[] THEN
+     MATCH_MP_TAC (TAUT `p /\ (q ==> r) ==> (p <=> q) ==> r`) THEN
+     CONJ_TAC THENL
+     [EXISTS_TAC `n : num` THEN
+      REPEAT STRIP_TAC THEN
+      MATCH_MP_TAC LT_IMP_LE THEN
+      ASM_REWRITE_TAC [];
+      DISCH_THEN (X_CHOOSE_THEN `p:num` STRIP_ASSUME_TAC) THEN
+      SUBGOAL_THEN `?q. p = (r:num->num) q` (CHOOSE_THEN SUBST_ALL_TAC) THENL
+      [FIRST_X_ASSUM MATCH_MP_TAC THEN
+       ASM_REWRITE_TAC [];
+       EXISTS_TAC `SUC q` THEN
+       ASM_REWRITE_TAC [GSYM LE_ANTISYM; GSYM NOT_LT] THEN
+       REPEAT STRIP_TAC THENL
+       [FIRST_X_ASSUM (MP_TAC o SPEC `next (r (q : num) + 1) : num`) THEN
+        ASM_REWRITE_TAC [] THEN
+        REWRITE_TAC [NOT_LE] THEN
+        MATCH_MP_TAC LTE_TRANS THEN
+        EXISTS_TAC `(r : num -> num) q + 1` THEN
+        ASM_REWRITE_TAC [GSYM ADD1; SUC_LT];
+        UNDISCH_THEN
+          `!n m : num. n <= m /\ m < next n ==> ~(m IN s)`
+          (MP_TAC o SPECL [`r (q : num) + 1`; `n : num`]) THEN
+        ASM_REWRITE_TAC [] THEN
+        ASM_REWRITE_TAC [GSYM ADD1; LE_SUC_LT]]]];
+     EXISTS_TAC `0` THEN
+     ASM_REWRITE_TAC [GSYM LE_ANTISYM; GSYM NOT_LT] THEN
+     REPEAT STRIP_TAC THENL
+     [UNDISCH_TAC `~(?m : num. m < n /\ m IN s)` THEN
+      REWRITE_TAC [] THEN
+      EXISTS_TAC `next 0 : num` THEN
+      ASM_REWRITE_TAC [];
+      UNDISCH_THEN
+        `!n m : num. n <= m /\ m < next n ==> ~(m IN s)`
+        (MP_TAC o SPECL [`0`; `n : num`]) THEN
+      ASM_REWRITE_TAC [LE_0]]]]]);;
+
+export_thm INFINITE_ENUMERATE;;
 
 logfile "set-size-thm";;
 
