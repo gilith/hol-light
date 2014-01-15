@@ -633,8 +633,10 @@ let EQ_ADD_LCANCEL = prove
 export_thm EQ_ADD_LCANCEL;;
 
 let EQ_ADD_RCANCEL = prove
- (`!m n p. (m + p = n + p) <=> (m = n)`,
-  ONCE_REWRITE_TAC[ADD_SYM] THEN MATCH_ACCEPT_TAC EQ_ADD_LCANCEL);;
+ (`!p m n : num. (m + p = n + p) <=> (m = n)`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  MATCH_ACCEPT_TAC EQ_ADD_LCANCEL);;
 
 export_thm EQ_ADD_RCANCEL;;
 

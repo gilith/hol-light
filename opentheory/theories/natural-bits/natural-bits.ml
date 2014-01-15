@@ -854,8 +854,9 @@ let zero_bit_nth = prove
 export_thm zero_bit_nth;;
 
 let bit_bound = prove
-  (`!n k. bit_shl (bit_shr n k) k + bit_bound n k = n`,
+  (`!n k. bit_bound n k + bit_shl (bit_shr n k) k = n`,
    REPEAT GEN_TAC THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
    REWRITE_TAC [bit_shl_def; bit_shr_def; bit_bound_def] THEN
    MATCH_MP_TAC (ONCE_REWRITE_RULE [MULT_SYM] DIVISION_DEF_DIV) THEN
    REWRITE_TAC [EXP_EQ_0; two_nonzero]);;
@@ -866,7 +867,7 @@ let bit_bound_zero = prove
   (`!n. bit_bound n 0 = 0`,
    GEN_TAC THEN
    MP_TAC (SPECL [`n : num`; `0`] bit_bound) THEN
-   REWRITE_TAC [bit_shr_zero; bit_shl_zero; EQ_ADD_LCANCEL_0]);;
+   REWRITE_TAC [bit_shr_zero; bit_shl_zero; EQ_ADD_RCANCEL_0]);;
 
 export_thm bit_bound_zero;;
 
@@ -874,17 +875,15 @@ let bit_bound_suc = prove
   (`!n k. bit_bound n (SUC k) = bit_cons (bit_hd n) (bit_bound (bit_tl n) k)`,
    REPEAT GEN_TAC THEN
    ONCE_REWRITE_TAC
-     [GSYM (SPEC `bit_shl (bit_shr n (SUC k)) (SUC k)` EQ_ADD_LCANCEL)] THEN
+     [GSYM (SPEC `bit_shl (bit_shr n (SUC k)) (SUC k)` EQ_ADD_RCANCEL)] THEN
    REWRITE_TAC [bit_bound] THEN
    REWRITE_TAC [bit_shr_suc'; bit_shl_suc] THEN
-   ONCE_REWRITE_TAC [ADD_SYM] THEN
    REWRITE_TAC
      [bit_cons_def; bit_to_num_false; ZERO_ADD; GSYM ADD_ASSOC;
       GSYM LEFT_ADD_DISTRIB] THEN
    REWRITE_TAC [GSYM bit_cons_def] THEN
    CONV_TAC (LAND_CONV (REWR_CONV (GSYM bit_cons_hd_tl))) THEN
    REWRITE_TAC [bit_cons_inj] THEN
-   ONCE_REWRITE_TAC [ADD_SYM] THEN
    REWRITE_TAC [bit_bound]);;
 
 export_thm bit_bound_suc;;
@@ -894,14 +893,11 @@ let bit_bound_suc' = prove
       bit_bound n (SUC k) =
       bit_bound n k + bit_shl (bit_to_num (bit_nth n k)) k`,
    REPEAT GEN_TAC THEN
-   ONCE_REWRITE_TAC [ADD_SYM] THEN
    ONCE_REWRITE_TAC
-     [GSYM (SPEC `bit_shl (bit_shr n (SUC k)) (SUC k)` EQ_ADD_LCANCEL)] THEN
+     [GSYM (SPEC `bit_shl (bit_shr n (SUC k)) (SUC k)` EQ_ADD_RCANCEL)] THEN
    REWRITE_TAC [bit_bound] THEN
-   REWRITE_TAC [bit_shl_suc'; ADD_ASSOC; GSYM add_bit_shl] THEN
-   CONV_TAC (RAND_CONV (LAND_CONV (LAND_CONV (REWR_CONV ADD_SYM)))) THEN
-   REWRITE_TAC [bit_cons_def; bit_to_num_false; ZERO_ADD] THEN
-   REWRITE_TAC [GSYM bit_cons_def] THEN
+   REWRITE_TAC [bit_shl_suc'; GSYM ADD_ASSOC; GSYM add_bit_shl] THEN
+   REWRITE_TAC [bit_cons_false; GSYM bit_cons_def] THEN
    REWRITE_TAC [bit_shr_suc; bit_nth_def; bit_cons_hd_tl; bit_bound]);;
 
 export_thm bit_bound_suc';;
@@ -1287,6 +1283,154 @@ let bitwidth_add = prove
      REWRITE_TAC [LE_REFL]]]);;
 
 export_thm bitwidth_add;;
+
+let bit_shr_bound_add = prove
+  (`!n j k. bit_shr (bit_bound n (j + k)) k = bit_bound (bit_shr n k) j`,
+   REPEAT GEN_TAC THEN
+   SPEC_TAC (`n : num`, `n : num`) THEN
+   SPEC_TAC (`k : num`, `k : num`) THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [ADD_0; bit_shr_zero];
+    ASM_REWRITE_TAC [ADD_SUC; bit_bound_suc; bit_shr_suc'; bit_tl_cons]]);;
+
+export_thm bit_shr_bound_add;;
+
+let bit_shr_bound = prove
+  (`!n k. bit_shr (bit_bound n k) k = 0`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPECL [`n : num`; `0`; `k : num`] bit_shr_bound_add) THEN
+   REWRITE_TAC [ZERO_ADD; bit_bound_zero]);;
+
+export_thm bit_shr_bound;;
+
+let bit_nth_bound = prove
+  (`!n i k. bit_nth (bit_bound n k) i <=> i < k /\ bit_nth n i`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [bit_nth_def] THEN
+   ASM_CASES_TAC `i < (k : num)` THENL
+   [ASM_REWRITE_TAC [] THEN
+    POP_ASSUM
+      (X_CHOOSE_THEN `j : num` SUBST_VAR_TAC o
+       REWRITE_RULE [LT_EXISTS]) THEN
+    REWRITE_TAC [ONCE_REWRITE_RULE [ADD_SYM] bit_shr_bound_add] THEN
+    REWRITE_TAC [bit_bound_suc; bit_hd_cons];
+    ASM_REWRITE_TAC [] THEN
+    POP_ASSUM
+      (X_CHOOSE_THEN `j : num` SUBST_VAR_TAC o
+       REWRITE_RULE [LE_EXISTS; NOT_LT]) THEN
+    REWRITE_TAC [bit_shr_add; bit_shr_bound; zero_bit_shr; bit_hd_zero]]);;
+
+export_thm bit_nth_bound;;
+
+let bit_bound_shl_add = prove
+  (`!n j k. bit_bound (bit_shl n k) (j + k) = bit_shl (bit_bound n j) k`,
+   REPEAT GEN_TAC THEN
+   SPEC_TAC (`n : num`, `n : num`) THEN
+   SPEC_TAC (`k : num`, `k : num`) THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [ADD_0; bit_shl_zero];
+    ASM_REWRITE_TAC
+      [ADD_SUC; bit_bound_suc; bit_shl_suc; bit_hd_cons; bit_tl_cons]]);;
+
+export_thm bit_bound_shl_add;;
+
+let bit_bound_shl = prove
+  (`!n k. bit_bound (bit_shl n k) k = 0`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (SPECL [`n : num`; `0`; `k : num`] bit_bound_shl_add) THEN
+   REWRITE_TAC [ZERO_ADD; bit_bound_zero; zero_bit_shl]);;
+
+export_thm bit_bound_shl;;
+
+let bit_bound_bound_min = prove
+  (`!n j k. bit_bound (bit_bound n j) k = bit_bound n (MIN j k)`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [MIN] THEN
+   COND_CASES_TAC THENL
+   [POP_ASSUM
+      (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+       REWRITE_RULE [LE_EXISTS]) THEN
+    (CONV_TAC o REWR_CONV)
+      (GSYM
+        (SPEC `bit_shl (bit_shr (bit_bound n j) (j + d)) (j + d)`
+          EQ_ADD_RCANCEL)) THEN
+    SUBST1_TAC (SPECL [`bit_bound n j`; `j + d : num`] bit_bound) THEN
+    REWRITE_TAC
+      [bit_shr_add; bit_shr_bound; zero_bit_shr; zero_bit_shl; ADD_0];
+    POP_ASSUM
+      (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+       REWRITE_RULE [LT_EXISTS; NOT_LE]) THEN
+    SPEC_TAC (`n : num`, `n : num`) THEN
+    SPEC_TAC (`k : num`, `k : num`) THEN
+    INDUCT_TAC THENL
+    [REWRITE_TAC [bit_bound_zero];
+     ASM_REWRITE_TAC [SUC_ADD; bit_bound_suc; bit_hd_cons; bit_tl_cons]]]);;
+
+export_thm bit_bound_bound_min;;
+
+let bit_bound_bound = prove
+  (`!n k. bit_bound (bit_bound n k) k = bit_bound n k`,
+   REWRITE_TAC [bit_bound_bound_min; MIN_REFL]);;
+
+export_thm bit_bound_bound;;
+
+let zero_bit_bound = prove
+  (`!k. bit_bound 0 k = 0`,
+   INDUCT_TAC THENL
+   [REWRITE_TAC [bit_bound_zero];
+    ASM_REWRITE_TAC
+      [bit_bound_suc; bit_tl_zero; bit_cons_zero; bit_hd_zero;
+       bit_to_num_false]]);;
+
+export_thm zero_bit_bound;;
+
+let bit_bound_eq = prove
+  (`!m n p k. m = n + bit_shl p k ==> bit_bound m k = bit_bound n k`,
+   REPEAT GEN_TAC THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   (CONV_TAC o REWR_CONV)
+     (GSYM
+       (SPEC `bit_shl (bit_shr (n + bit_shl p k) k) k`
+         EQ_ADD_RCANCEL)) THEN
+   SUBST1_TAC (SPECL [`n + bit_shl p k`; `k : num`] bit_bound) THEN
+   REWRITE_TAC [add_bit_shr; add_bit_shl; ADD_ASSOC; bit_bound]);;
+
+export_thm bit_bound_eq;;
+
+let bit_bound_add = prove
+  (`!m n k. bit_bound (bit_bound m k + bit_bound n k) k = bit_bound (m + n) k`,
+   REPEAT GEN_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC bit_bound_eq THEN
+   EXISTS_TAC `bit_shr m k + bit_shr n k` THEN
+   REWRITE_TAC [add_bit_shl] THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC
+     `(bit_bound m k + bit_shl (bit_shr m k) k) +
+      (bit_bound n k + bit_shl (bit_shr n k) k)` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [bit_bound];
+    REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+    MATCH_ACCEPT_TAC ADD_SYM]);;
+
+export_thm bit_bound_add;;
+
+let bit_bound_mult = prove
+  (`!m n k. bit_bound (bit_bound m k * bit_bound n k) k = bit_bound (m * n) k`,
+   REPEAT GEN_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC bit_bound_eq THEN
+   EXISTS_TAC
+     `bit_bound m k * bit_shr n k +
+      n * bit_shr m k` THEN
+   REWRITE_TAC
+     [add_bit_shl; mult_bit_shl; ADD_ASSOC; GSYM LEFT_ADD_DISTRIB;
+      bit_bound] THEN
+   CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV MULT_SYM))) THEN
+   REWRITE_TAC [GSYM RIGHT_ADD_DISTRIB; bit_bound]);;
+
+export_thm bit_bound_mult;;
 
 (* ------------------------------------------------------------------------- *)
 (* Bitlist functions operating on ML numerals.                               *)
