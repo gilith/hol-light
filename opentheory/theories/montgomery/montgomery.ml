@@ -684,18 +684,18 @@ let montgomery_mult_bits_to_num = prove
   SUBGOAL_THEN
     `!i.
        i <= k ==>
-       bit_cons (signal qb (t + d0 + d1 + i))
-         (bits_to_num (bsignal qs (t + d0 + d1 + i)) +
-          2 * bits_to_num (bsignal qc (t + d0 + d1 + i))) =
-       bit_shr (bit_bound (x * y) (i + 1) * kn) i`
+       bit_cons (signal vb (t + d0 + d1 + d2 + i))
+         (bits_to_num (bsignal vs (t + d0 + d1 + d2 + i)) +
+          2 * bits_to_num (bsignal vc (t + d0 + d1 + d2 + i))) =
+       bit_shr (bit_bound (x * y * kn) (i + 1) * n) i`
     ASSUME_TAC THENL
   [REPEAT STRIP_TAC THEN
    REWRITE_TAC [ADD_ASSOC] THEN
    MATCH_MP_TAC bmult_bits_to_num THEN
-   EXISTS_TAC `ld1 : wire` THEN
-   EXISTS_TAC `pb1 : wire` THEN
-   EXISTS_TAC `ks : bus` THEN
-   EXISTS_TAC `kc : bus` THEN
+   EXISTS_TAC `ld2 : wire` THEN
+   EXISTS_TAC `qb2 : wire` THEN
+   EXISTS_TAC `ns : bus` THEN
+   EXISTS_TAC `nc : bus` THEN
    ASM_REWRITE_TAC [] THEN
    X_GEN_TAC `j : cycle` THEN
    STRIP_TAC THEN
