@@ -98,6 +98,22 @@ export_thm sum_carry_mult_def;;
 
 logfile "hardware-multiplier-thm";;
 
+let bmult_width = prove
+ (`!ld xb ys yc zb zs zc.
+     bmult ld xb ys yc zb zs zc ==>
+     ?r.
+       width ys = r + 1 /\
+       width yc = r + 1 /\
+       width zs = r + 1 /\
+       width zc = r + 1`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [bmult_def] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `r : num` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bmult_width;;
+
 let bmult_bits_to_num = prove
  (`!x y ld xb ys yc zb zs zc t k.
      (!i.
