@@ -18,6 +18,18 @@ let wire_def = new_definition
 
 export_thm wire_def;;
 
+(* ~~~~~~~~~~~~~~~ *)
+(* Reversing a bus *)
+(* ~~~~~~~~~~~~~~~ *)
+
+let brev_def = new_definition
+  `!x y.
+     brev x y <=>
+     width x = width y /\
+     !i j xi yj. i + j + 1 = width x /\ wire x i xi /\ wire y j yj ==> xi = yj`;;
+
+export_thm brev_def;;
+
 (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 (* Lifting relations between wires *)
 (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
@@ -50,9 +62,9 @@ let blift3_def = new_definition
 
 export_thm blift3_def;;
 
-(* ~~~~~~~~~~~~~~~~~~~~~ *)
-(* Primitive bus devices *)
-(* ~~~~~~~~~~~~~~~~~~~~~ *)
+(* ~~~~~~~~~~~~~~~~~~ *)
+(* Lifted bus devices *)
+(* ~~~~~~~~~~~~~~~~~~ *)
 
 let bconnect_def = new_definition
   `bconnect = blift2 connect`;;
@@ -296,12 +308,59 @@ let wire_bits_to_num = prove
 
 export_thm wire_bits_to_num;;
 
+(***
+let bit_nth_wire_bits_to_num = prove
+ (`!n x t.
+     (!i xi. wire x i xi ==> signal xi t = bit_nth n i) ==>
+     bits_to_num (bsignal x t) = bit_bound n (width x)`,
+  REPEAT GEN_TAC THEN
+  SUBGOAL_THEN `?m. width x = m` MP_TAC THENL
+  [MATCH_ACCEPT_TAC EXISTS_REFL';
+   ALL_TAC] THEN
+  REWRITE_TAC [LEFT_IMP_EXISTS_THM; IMP_IMP] THEN
+  GEN_TAC THEN
+  SPEC_TAC (`n : num`, `n : num`) THEN
+  SPEC_TAC (`x : bus`, `x : bus`) THEN
+  SPEC_TAC (`m : num`, `m : num`) THEN
+  INDUCT_TAC THENL
+  [REPEAT GEN_TAC THEN
+   REWRITE_TAC [width_zero] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [bnil_width; bit_bound_zero; bnil_bsignal; bits_to_num_nil];
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [width_suc] THEN
+  STRIP_TAC THEN
+  UNDISCH_THEN `x = bappend (bwire w) y` SUBST_VAR_TAC THEN
+  ASM_REWRITE_TAC
+    [bappend_bits_to_num; bwire_bits_to_num; bappend_width; bwire_width] THEN
+
+  STP_TAC `!m. width x = m ==> 
+  REWRITE_TAC [wire_def] THEN
+  STRIP_TAC THEN
+  STP_TAC `bit_shl (bits_to_num (bsignal (bwire w) t)) i = 2 EXP i` THENL
+  [DISCH_THEN (SUBST1_TAC o SYM) THEN
+   MATCH_MP_TAC bsub_bits_to_num THEN
+   EXISTS_TAC `1` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC
+    [bwire_bsignal; bits_to_num_sing; bit_to_num_true; one_bit_shl]);;
+
+export_thm wire_bits_to_num;;
+***)
+
 let bground_wire = prove
  (`!n k w. wire (bground n) k w <=> k < n /\ w = ground`,
   REWRITE_TAC
     [wire_def; bground_bsub; GSYM ADD1; LE_SUC_LT; bground_one; bwire_inj]);;
 
 export_thm bground_wire;;
+
+(* ~~~~~~~~~~~~~~~ *)
+(* Reversing a bus *)
+(* ~~~~~~~~~~~~~~~ *)
 
 (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 (* Lifting relations between wires *)

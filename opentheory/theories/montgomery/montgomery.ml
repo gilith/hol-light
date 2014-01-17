@@ -338,7 +338,7 @@ let montgomery_mult_def = new_definition
   `!ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc.
      montgomery_mult ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc <=>
      ?r pb ps pc pbp qb qs qc vb vs vc sa sb sc sd
-      ld1 ld2 pb1 qb2.
+      ld1 ld2 pb1 pbp0 pbp1 qb2.
        width xs = r + 2 /\
        width xc = r + 2 /\
        width ys = r + 2 /\
@@ -363,6 +363,7 @@ let montgomery_mult_def = new_definition
        /\
        wire pbp d1 pb1 /\
        bsub pbp 1 (d1 + d2) pbp0 /\
+       brev pbp0 pbp1
        /\
        sum_carry_mult ld xs xc d0 ys yc pb ps pc /\
        pipe ld (d0 + d1) ld1 /\
@@ -370,10 +371,7 @@ let montgomery_mult_def = new_definition
        bmult ld1 pb1 ks kc qb qs qc /\
        pipe ld1 d2 ld2 /\
        pipe qb d2 qb2 /\
-       bmult ld2 qb2 ns nc vb vs vc
-       /\
-       bdelay vs
-       `;;
+       bmult ld2 qb2 ns nc vb vs vc`;;
 
 export_thm montgomery_mult_def;;
 
@@ -806,6 +804,7 @@ let montgomery_mult_bits_to_num = prove
    ASM_REWRITE_TAC [GSYM ADD_ASSOC] THEN
    DISCH_THEN (SUBST1_TAC o SYM) THEN
    ***
+   
 
 
 let montgomery_circuit = prove
