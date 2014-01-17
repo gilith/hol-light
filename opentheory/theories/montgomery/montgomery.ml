@@ -303,29 +303,66 @@ export_thm montgomery_double_exp_bound;;
 (* Definition of a Montgomery multiplication circuit.                        *)
 (* ------------------------------------------------------------------------- *)
 
+(* -------------------------------------------------------------- *)
+(* Montgomery multiplication modulo 2^(r+4)                       *)
+(* -------------------------------------------------------------- *)
+(*        r+5 r+4 r+3 r+2 r+1  r  ... d+2 d+1  d  ...  2   1   0  *)
+(* -------------------------------------------------------------- *)
+(*  xs  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   X  *)
+(*  xc  =  -   -   -   X   X   X  ...  X   X   X  ...  X   X   -  *)
+(*  ys  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   X  *)
+(*  yc  =  -   -   -   X   X   X  ...  X   X   X  ...  X   X   -  *)
+(*  ks  =  -   -   -   X   X   X  ...  X   X   X  ...  X   X   X  *)
+(*  kc  =  -   -   X   X   X   X  ...  X   X   X  ...  X   X   -  *)
+(*  ns  =  -   -   -   -   -   X  ...  X   X   X  ...  X   X   X  *)
+(*  nc  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   -  *)
+(* -------------------------------------------------------------- *)
+(*  pb  =  -   -   -   -   -   -  ...  -   -   X  ...  X   X   X  *)
+(*  ps  =  -   -   -   -   X   X  ...  X   X   -  ...  -   -   -  *)
+(*  pc  =  -   -   -   X   X   X  ...  X   -   -  ...  -   -   -  *)
+(* -------------------------------------------------------------- *)
+(*  vs  =  -   -   -   -   -   X  ...  X   X   X  ...  X   X   X  *)
+(*  vc  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   -  *)
+(* -------------------------------------------------------------- *)
+(*  sa  =  -   -   -   X   X   X  ...  X   X   X  ...  X   X   X  *)
+(*  sb  =  -   -   -   X   X   X  ...  X   X   X  ...  X   X   X  *)
+(*  sc  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   X  *)
+(*  sd  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   X  *)
+(* -------------------------------------------------------------- *)
+(*  zs  =  -   -   -   X   X   X  ...  X   X   X  ...  X   X   X  *)
+(*  zc  =  -   -   X   X   X   X  ...  X   X   X  ...  X   X   -  *)
+(* -------------------------------------------------------------- *)
+
 (***
 let montgomery_mult_def = new_definition
   `!ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc.
      montgomery_mult ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc <=>
-     ?r pb ps pc pbp qb qs qc vb vs vc
+     ?r pb ps pc pbp qb qs qc vb vs vc sa sb sc sd
       ld1 ld2 pb1 qb2.
-       width xs = r + 1 /\
-       width xc = r + 1 /\
-       width ys = r + 1 /\
-       width yc = r + 1 /\
-       width ks = r + 2 /\
-       width kc = r + 2 /\
-       width ns = r /\
-       width nc = r /\
-       width zs = r + 1 /\
-       width zc = r + 1 /\
-       width ps = r + 1 /\
-       width pc = r + 1 /\
-       width pbp = d1 + 1 /\
-       width qs = r + 2 /\
-       width qc = r + 2
+       width xs = r + 2 /\
+       width xc = r + 2 /\
+       width ys = r + 2 /\
+       width yc = r + 2 /\
+       width ks = r + 3 /\
+       width kc = r + 3 /\
+       width ns = r + 1 /\
+       width nc = r + 1 /\
+       width zs = r + 2 /\
+       width zc = r + 2 /\
+       width ps = r + 2 /\
+       width pc = r + 2 /\
+       width pbp = d1 + d2 + 1 /\
+       width qs = r + 3 /\
+       width qc = r + 3 /\
+       width vs = r + 1 /\
+       width vc = r + 1 /\
+       width sa = r + 1 /\
+       width sb = r + 1 /\
+       width sc = r + 1 /\
+       width sd = r + 1
        /\
-       wire pbp d1 pb1
+       wire pbp d1 pb1 /\
+       bsub pbp 1 (d1 + d2) pbp0 /\
        /\
        sum_carry_mult ld xs xc d0 ys yc pb ps pc /\
        pipe ld (d0 + d1) ld1 /\
@@ -333,133 +370,12 @@ let montgomery_mult_def = new_definition
        bmult ld1 pb1 ks kc qb qs qc /\
        pipe ld1 d2 ld2 /\
        pipe qb d2 qb2 /\
-       bmult ld2 qb2 ns nc vb vs vc`;;
+       bmult ld2 qb2 ns nc vb vs vc
+       /\
+       bdelay vs
+       `;;
 
 export_thm montgomery_mult_def;;
-
-let montgomery_sc_def = new_definition
-  `!xs xc ys0 sa sb ca cb sa' sb' ca' cb'.
-     montgomery_sc xs xc ys0 sa sb ca cb sa' sb' ca' cb' <=>
-     ?r
-      sa0 sa1 sa2 sb0 sb1 ca0 ca1 cb0 cb1
-      sa0' sa1' sa2' sb0' sb1' ca0' ca1' cb0' cb1'
-      xsz xcz xsz0 xsz1 xcz0 xcz1.
-        width xs = r + 1 /\
-        width xc = r + 1 /\
-        width sa = r + 2 /\
-        width sb = r + 1 /\
-        width ca = r + 1 /\
-        width cb = r + 1 /\
-        width sa' = r + 2 /\
-        width sb' = r + 1 /\
-        width ca' = r + 1 /\
-        width cb' = r + 1 /\
-        width xsz = r + 1 /\
-        width xcz = r + 1
-        /\
-        wire sa 0 sa0 /\
-        bsub sa 1 r sa1 /\
-        wire sa (r + 1) sa2 /\
-        wire sb 0 sb0 /\
-        bsub sb 1 r sb1 /\
-        wire ca 0 ca0 /\
-        bsub ca 1 r ca1 /\
-        bsub cb 0 r cb0 /\
-        wire cb r cb1 /\
-        wire sa' 0 sa0' /\
-        bsub sa' 1 r sa1' /\
-        wire sa' (r + 1) sa2' /\
-        bsub sb' 0 r sb0' /\
-        wire sb' r sb1' /\
-        wire ca' 0 ca0' /\
-        bsub ca' 1 r ca1' /\
-        bsub cb' 0 r cb0' /\
-        wire cb' r cb1' /\
-        wire xsz 0 xsz0 /\
-        bsub xsz 1 r xsz1 /\
-        bsub xcz 0 r xcz0 /\
-        wire xcz r xcz1
-        /\
-        bcase1 ys0 xs (bground (r + 1)) xsz /\
-        bcase1 ys0 xc (bground (r + 1)) xcz /\
-        adder2 xsz0 ca0 sa0' ca0' /\
-        compressor3 xsz1 xcz0 ca1 sa1' ca1' /\
-        sa2' = xcz1 /\
-        compressor3 sa1 sb1 cb0 sb0' cb0' /\
-        adder2 sa2 cb1 sb1' cb1'`;;
-
-export_thm montgomery_sc_def;;
-
-let montgomery_comb_def = new_definition
-  `!(nb : bus) (kb : bus) (xs : bus) (xc : bus)
-    (ys : bus) (yc : bus) (sa : bus) (sb : bus) (sx : wire) (sy : wire) (sz : wire) (so : wire) (ca : bus) (cb : bus) (ks : bus) (kc : bus) (ns : bus) (nc : bus)
-    (ys' : bus) (yc' : bus) (sa' : bus) (sb' : bus) (sx' : wire) (sy' : wire) (sz' : wire) (so' : wire) (ca' : bus) (cb' : bus) (ks' : bus) (kc' : bus) (ns' : bus) (nc' : bus)
-    (zs' : bus) (zc' : bus).
-      montgomery_comb
-        nb kb xs xc
-        ys yc sa sb sx sy sz so ca cb ks kc ns nc
-        ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc'
-        zs' zc' <=>
-      ?ys0.
-        wire ys 0 ys0 /\
-        montgomery_y ys yc ys' yc' /\
-        montgomery_sc xs xc ys0 sa sb ca cb sa' sb' ca' cb'`;;
-
-export_thm montgomery_comb_def;;
-
-let montgomery_loop_def = new_definition
-  `!ld nb kb xs xc ys yc zs' zc'.
-      montgomery_loop ld nb kb xs xc ys yc zs' zc' <=>
-      ?r
-       ysp ycp sap sbp sxp syp szp sop cap cbp ksp kcp nsp ncp
-       ysq ycq saq sbq sxq syq szq soq caq cbq ksq kcq nsq ncq
-       ysr ycr sar sbr sxr syr szr sor car cbr ksr kcr nsr ncr.
-         width nb = r /\
-         width kb = r /\
-         width xs = r /\
-         width xc = r /\
-         width ys = r /\
-         width yc = r /\
-         width zs' = r /\
-         width zc' = r
-         /\
-         montgomery_comb
-           nb kb xs xc
-           ysp ycp sap sbp sxp syp szp sop cap cbp ksp kcp nsp ncp
-           ysq ycq saq sbq sxq syq szq soq caq cbq ksq kcq nsq ncq
-           zs' zc'
-         /\
-         bcase1 ld ys ysq ysr /\
-         bcase1 ld yc ycq ycr /\
-         bcase1 ld (bground (r + 1)) saq sar /\
-         bcase1 ld (bground r) sbq sbr /\
-         case1 ld ground sxq sxr /\
-         case1 ld ground syq syr /\
-         case1 ld ground szq szr /\
-         case1 ld ground soq sor /\
-         bcase1 ld (bground r) caq car /\
-         bcase1 ld (bground r) cbq cbr /\
-         bcase1 ld (bground r) ksq ksr /\
-         bcase1 ld (bground r) kcq kcr /\
-         bcase1 ld (bground r) nsq nsr /\
-         bcase1 ld (bground r) nsq nsr
-         /\
-         bdelay ysr ysp /\
-         bdelay ycr ycp /\
-         bdelay sar sap /\
-         bdelay sbr sbp /\
-         delay sxr sxp /\
-         delay syr syp /\
-         delay szr szp /\
-         delay sor sop /\
-         bdelay car cap /\
-         bdelay cbr cbp /\
-         bdelay ksr ksp /\
-         bdelay kcr kcp /\
-         bdelay nsr nsp /\
-         bdelay ncr ncp`;;
-
-export_thm montgomery_loop_def;;
 
 let montgomery_compress_def = new_definition
   `!rx ry rz xs xc ys' yc'.
@@ -525,8 +441,8 @@ let montgomery_mult_bits_to_num = prove
         2 * bits_to_num (bsignal nc (t + i)) = n) /\
      montgomery_mult ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc ==>
      bits_to_num (bsignal zs (t + d0 + d1 + d2 + k)) +
-     2 * bits_to_num (bsignal zc (t + d0 + d1 + d2 + k))) =
-     bit_shr (x * y + bit_bound (x * y * kn) (k + 1) * n) (k + 1)`
+     2 * bits_to_num (bsignal zc (t + d0 + d1 + d2 + k)) =
+     bit_shr (x * y + bit_bound (x * y * kn) (k + 1) * n) (k + 1)`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [montgomery_mult_def] THEN
   STRIP_TAC THEN
@@ -561,7 +477,7 @@ let montgomery_mult_bits_to_num = prove
    ALL_TAC] THEN
   SUBGOAL_THEN
     `!i. i <= k ==> signal pb (t + d0 + i) = bit_nth (x * y) i`
-    ASSUME_TAC THENL
+    MP_TAC THENL
   [REPEAT STRIP_TAC THEN
    MATCH_MP_TAC EQ_TRANS THEN
    EXISTS_TAC
@@ -586,6 +502,31 @@ let montgomery_mult_bits_to_num = prove
    REWRITE_TAC [bit_bound_mult] THEN
    REWRITE_TAC [bit_nth_bound; GSYM ADD1; SUC_LT];
    ALL_TAC] THEN
+  SUBGOAL_THEN
+    `!i.
+       i <= k ==>
+       bits_to_num (bsignal ps (t + d0 + i)) +
+       2 * bits_to_num (bsignal pc (t + d0 + i)) =
+       bit_shr (bit_bound x (i + 1) * y) (i + 1)`
+    MP_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC
+     `bit_tl
+        (bit_cons (signal pb (t + d0 + i))
+          (bits_to_num (bsignal ps (t + d0 + i)) +
+           2 * bits_to_num (bsignal pc (t + d0 + i))))` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [bit_tl_cons];
+    ALL_TAC] THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `i : cycle`) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [GSYM ADD1; bit_shr_suc];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  STRIP_TAC THEN
+  STRIP_TAC THEN
   SUBGOAL_THEN
     `!i. i <= k ==> (signal ld1 (t + d0 + d1 + i) <=> i = 0)`
     ASSUME_TAC THENL
@@ -780,131 +721,92 @@ let montgomery_mult_bits_to_num = prove
    FIRST_X_ASSUM MATCH_MP_TAC THEN
    ASM_REWRITE_TAC [ADD_ASSOC; LE_ADD; LE_ADD_LCANCEL];
    ALL_TAC] THEN
-  ***
-
-let montgomery_y0 = prove
- (`!y ld ys ysp ycp ysq ycq ysr ysr0 ycr t k.
-      montgomery_y ysp ycp ysq ycq /\
-      bcase1 ld ys ysq ysr /\
-      wire ysr 0 ysr0 /\
-      bits_to_num (bsignal ysr (t + k)) +
-      2 * bits_to_num (bsignal ycr (t + k)) = bit_shr y k ==>
-      signal ysr0 (t + k) = bit_nth y k`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [montgomery_y_def] THEN
-  STRIP_TAC THEN
-  REWRITE_TAC [bit_nth_def] THEN
-  POP_ASSUM (SUBST1_TAC o SYM) THEN
-  SUBGOAL_THEN `width ysr = r + 1` ASSUME_TAC THENL
-  [UNDISCH_TAC `bcase1 ld ys ysq ysr` THEN
-   REWRITE_TAC [bcase1_def] THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [] THEN
+  SUBGOAL_THEN
+    `!i.
+       i <= k ==>
+       bits_to_num (bsignal vs (t + d0 + d1 + d2 + i)) +
+       2 * bits_to_num (bsignal vc (t + d0 + d1 + d2 + i)) =
+       bit_shr (bit_bound (x * y * kn) (i + 1) * n) (i + 1)`
+    MP_TAC THENL
+  [REPEAT STRIP_TAC THEN
    MATCH_MP_TAC EQ_TRANS THEN
-   EXISTS_TAC `width ysq` THEN
+   EXISTS_TAC
+     `bit_tl
+        (bit_cons (signal vb (t + d0 + d1 + d2 + i))
+          (bits_to_num (bsignal vs (t + d0 + d1 + d2 + i)) +
+           2 * bits_to_num (bsignal vc (t + d0 + d1 + d2 + i))))` THEN
    CONJ_TAC THENL
-   [MATCH_MP_TAC EQ_SYM THEN
-    FIRST_ASSUM ACCEPT_TAC;
-    FIRST_ASSUM ACCEPT_TAC];
+   [REWRITE_TAC [bit_tl_cons];
+    ALL_TAC] THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `i : cycle`) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [GSYM ADD1; bit_shr_suc];
    ALL_TAC] THEN
-  MP_TAC (SPECL [`ysr : bus`; `1`; `r : num`] bsub_exists) THEN
-  ANTS_TAC THENL
-  [ONCE_REWRITE_TAC [ADD_SYM] THEN
-   POP_ASSUM SUBST1_TAC THEN
-   MATCH_ACCEPT_TAC LE_REFL;
-   ALL_TAC] THEN
-  DISCH_THEN (X_CHOOSE_THEN `ysr1 : bus` ASSUME_TAC) THEN
-  SUBGOAL_THEN `bappend (mk_bus [ysr0]) ysr1 = ysr`
-    (SUBST1_TAC o SYM) THENL
-  [CONV_TAC (REWR_CONV (GSYM bsub_width)) THEN
-   UNDISCH_THEN `width ysr = r + 1` SUBST1_TAC THEN
-   ONCE_REWRITE_TAC [ADD_SYM] THEN
-   MATCH_MP_TAC bsub_add THEN
-   REWRITE_TAC [ZERO_ADD; GSYM wire_def] THEN
-   CONJ_TAC THEN
-   FIRST_ASSUM ACCEPT_TAC;
-   ALL_TAC] THEN
-  REWRITE_TAC [bsignal_append; bsignal_wire; APPEND; bits_to_num_cons] THEN
-  REWRITE_TAC [bit_cons_def; GSYM ADD_ASSOC; GSYM LEFT_ADD_DISTRIB] THEN
-  REWRITE_TAC [GSYM bit_cons_def; bit_hd_cons]);;
-
-let montgomery_sc = prove
- (`!x y ld xs xc ys0 sap sbp cap cbp saq sbq caq cbq sar sbr car cbr t k.
-      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
-      (!i.
-         i <= k ==>
-         bits_to_num (bsignal xs (t + i)) +
-         2 * bits_to_num (bsignal xc (t + i)) = x) /\
-      (!i.
-         i <= k ==>
-         signal ys0 (t + i) = bit_nth y i) /\
-      montgomery_sc xs xc ys0 sap sbp cap cbp saq sbq caq cbq /\
-      bcase1 ld (bground (width sar)) saq sar /\
-      bcase1 ld (bground (width sbr)) sbq sbr /\
-      bcase1 ld (bground (width car)) caq car /\
-      bcase1 ld (bground (width cbr)) cbq cbr /\
-      bdelay sar sap /\
-      bdelay sbr sbp /\
-      bdelay car cap /\
-      bdelay cbr cbp ==>
-      (bits_to_num (bsignal sar (t + k)) +
-       bits_to_num (bsignal sbr (t + k))) +
-      2 * (bits_to_num (bsignal car (t + k)) +
-           bits_to_num (bsignal cbr (t + k))) =
-      bit_shr (x * bit_bound y k) k`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [montgomery_y_def] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (K ALL_TAC) THEN
   STRIP_TAC THEN
-  UNDISCH_TAC `!i. i <= k ==> (signal ld (t + i) <=> i = 0)` THEN
-  SPEC_TAC (`k : num`, `k : num`) THEN
-  INDUCT_TAC THENL
-  [DISCH_THEN (MP_TAC o SPEC `0`) THEN
-   REWRITE_TAC [ADD_0; LE_REFL; bit_shr_zero] THEN
-   STRIP_TAC THEN
-   MP_TAC
-     (SPECL
+  ***
+  SUBGOAL_THEN
+    `!i.
+       d1 + d2 + i <= k ==>
+       bits_to_num (bsignal sa (t + d0 + d1 + d2 + i + 1)) +
+       bits_to_num (bsignal sb (t + d0 + d1 + d2 + i + 1)) +
+       bits_to_num (bsignal sc (t + d0 + d1 + d2 + i + 1)) +
+       bits_to_num (bsignal sd (t + d0 + d1 + d2 + i + 1)) =
+       bit_shr (bit_bound (x * y * kn) (i + 1) * n) (i + 1) +
+       bit_shr (bit_bound x (d1 + d2 + i + 1) * y) (i + 1)`
+    MP_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC
+     `bit_shr (bit_bound (x * y * kn) (i + 1) * n) (i + 1) +
+      bit_bound (bit_shr (x * y) (i + 1)) (d1 + d2) +
+      bit_shl
+        (bit_shr (bit_bound x (d1 + d2 + i + 1) * y) (d1 + d2 + i + 1))
+        (d1 + d2)` THEN
+   REVERSE_TAC CONJ_TAC THENL
+   [REWRITE_TAC [ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+    REWRITE_TAC [GSYM ADD_ASSOC] THEN
+    MP_TAC
+      (SPECL
+         [`bit_shr (bit_bound x (d1 + d2 + i + 1) * y) (i + 1)`;
+          `d1 + d2 : num`]
+         bit_bound) THEN
+    DISCH_THEN (SUBST1_TAC o SYM) THEN
+    REWRITE_TAC [GSYM bit_shr_add; GSYM bit_shr_bound_add] THEN
+    SUBGOAL_THEN
+      `(i + 1) + (d1 + d2) = d1 + d2 + i + 1`
+      SUBST1_TAC THENL
+    [CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+     REWRITE_TAC [ADD_ASSOC];
+     ALL_TAC] THEN
+    REWRITE_TAC [EQ_ADD_RCANCEL; GSYM ADD_ASSOC] THEN
+    ONCE_REWRITE_TAC [GSYM bit_bound_mult] THEN
+    REWRITE_TAC [bit_bound_bound];
+    ALL_TAC] THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `i : cycle`) THEN
+   ANTS_TAC THENL
+   [MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `(d1 + d2) + i : cycle` THEN
+    REWRITE_TAC [LE_ADDR] THEN
+    ASM_REWRITE_TAC [GSYM ADD_ASSOC];
+    ALL_TAC] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   UNDISCH_THEN
+     `!i.
+        i <= k ==>
+        bits_to_num (bsignal ps (t + d0 + i)) +
+        2 * bits_to_num (bsignal pc (t + d0 + i)) =
+        bit_shr (bit_bound x (i + 1) * y) (i + 1)`
+     (MP_TAC o SPEC `d1 + d2 + i : cycle`) THEN
+   ASM_REWRITE_TAC [GSYM ADD_ASSOC] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   ***
 
-let montgomery_loop = prove
- (`!n r s k x y ld nb kb xs xc ys yc zs' zc' t.
-     ~(n = 0) /\
-     (2 EXP (r + 2)) * s = k * n + 1 /\
-     width nb = r /\
-     (!i. i < r ==> (signal ld (t + i) <=> i = 0)) /\
-     (!i.
-        0 < i /\ i < r ==>
-        bits_to_num (bsignal nb (t + i)) = n) /\
-     (!i.
-        0 < i /\ i < r ==>
-        bits_to_num (bsignal kb (t + i)) = k MOD (2 EXP r)) /\
-     (!i.
-       i < r ==>
-       bits_to_num (bsignal xs (t + i)) +
-       2 * bits_to_num (bsignal xc (t + i)) = x) /\
-     bits_to_num (bsignal ys t) +
-     2 * bits_to_num (bsignal yc t) = y /\
-     montgomery_loop ld nb kb xs xc ys yc zs' zc' ==>
-     (bits_to_num (bsignal zs' (t + (r + 8))) +
-      2 * bits_to_num (bsignal zc' (t + (r + 8)))) MOD n =
-     ((x * y) * s) MOD n`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [montgomery_loop_def; montgomery_comb_def] THEN
-  STRIP_TAC THEN
-
-let montgomery_comb_ysc = prove
- (`!nb kb rx ry rz xs xc
-    ys yc sa sb sx sy sz so ca cb ks kc ns nc rs rc
-    ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc' rs' rc'
-    zs' zc' t.
-      montgomery_comb
-        nb kb rx ry rz xs xc
-        ys yc sa sb sx sy sz so ca cb ks kc ns nc rs rc
-        ys' yc' sa' sb' sx' sy' sz' so' ca' cb' ks' kc' ns' nc' rs' rc'
-        zs' zc' ==>
-      bits_to_num (bsignal ys' t) + 2 * bits_to_num (bsignal yc' t) =
-      (bits_to_num (bsignal ys t) + 2 * bits_to_num (bsignal yc t)) DIV 2`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [montgomery_comb_def] THEN
-  STRIP_TAC THEN
 
 let montgomery_circuit = prove
  (`!n r s k x y ld nb kb rx ry rz xs xc ys yc zs' zc' t.
