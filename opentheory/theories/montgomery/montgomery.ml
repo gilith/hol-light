@@ -54,11 +54,8 @@ let montgomery_reduce_divides = prove
       r * s = k * n + 1 ==>
       montgomery_reduce n r k a =
       a DIV r + (((a * k) MOD r) * n) DIV r +
-      (
+      (if (a * k * n) MOD r = 0 then 0 else 1)`,
 
-      divides r ( + `;;
-
-       MOD n = (a * s) MOD n`,
    REPEAT STRIP_TAC THEN
    SUBGOAL_THEN `~(r = 0)` ASSUME_TAC THENL
 ***)
@@ -438,6 +435,7 @@ export_thm montgomery_circuit_def;;
 (* Correctness of a Montgomery multiplication circuit.                       *)
 (* ------------------------------------------------------------------------- *)
 
+(***)
 let montgomery_mult_bits_to_num = prove
  (`!x y n kn ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
