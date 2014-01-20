@@ -308,7 +308,6 @@ let wire_bits_to_num = prove
 
 export_thm wire_bits_to_num;;
 
-(***
 let bit_nth_wire_bits_to_num = prove
  (`!n x t.
      (!i xi. wire x i xi ==> signal xi t = bit_nth n i) ==>
@@ -329,27 +328,29 @@ let bit_nth_wire_bits_to_num = prove
    FIRST_X_ASSUM SUBST_VAR_TAC THEN
    REWRITE_TAC [bnil_width; bit_bound_zero; bnil_bsignal; bits_to_num_nil];
    ALL_TAC] THEN
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC [width_suc] THEN
-  STRIP_TAC THEN
+  REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC [bit_bound_suc] THEN
+  UNDISCH_THEN
+    `width x = SUC m`
+    (STRIP_ASSUME_TAC o REWRITE_RULE [width_suc]) THEN
   UNDISCH_THEN `x = bappend (bwire w) y` SUBST_VAR_TAC THEN
   ASM_REWRITE_TAC
     [bappend_bits_to_num; bwire_bits_to_num; bappend_width; bwire_width] THEN
-
-  STP_TAC `!m. width x = m ==> 
-  REWRITE_TAC [wire_def] THEN
-  STRIP_TAC THEN
-  STP_TAC `bit_shl (bits_to_num (bsignal (bwire w) t)) i = 2 EXP i` THENL
-  [DISCH_THEN (SUBST1_TAC o SYM) THEN
-   MATCH_MP_TAC bsub_bits_to_num THEN
-   EXISTS_TAC `1` THEN
-   ASM_REWRITE_TAC [];
+  FIRST_X_ASSUM (MP_TAC o SPECL [`y : bus`; `bit_tl n`]) THEN
+  ANTS_TAC THENL
+  [ASM_REWRITE_TAC [GSYM bit_nth_suc] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [wire_suc];
    ALL_TAC] THEN
-  ASM_REWRITE_TAC
-    [bwire_bsignal; bits_to_num_sing; bit_to_num_true; one_bit_shl]);;
+  DISCH_THEN SUBST1_TAC THEN
+  ASM_REWRITE_TAC [bit_shl_one; GSYM bit_cons_def; GSYM bit_nth_zero] THEN
+  AP_THM_TAC THEN
+  AP_TERM_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  REWRITE_TAC [wire_zero]);;
 
-export_thm wire_bits_to_num;;
-***)
+export_thm bit_nth_wire_bits_to_num;;
 
 let bground_wire = prove
  (`!n k w. wire (bground n) k w <=> k < n /\ w = ground`,
@@ -361,6 +362,60 @@ export_thm bground_wire;;
 (* ~~~~~~~~~~~~~~~ *)
 (* Reversing a bus *)
 (* ~~~~~~~~~~~~~~~ *)
+
+let brev_width = prove
+ (`!x y.
+     brev x y ==>
+     ?n.
+       width x = n /\
+       width y = n`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [brev_def] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `width y` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm brev_width;;
+
+let brev_width_out = prove
+ (`!x y n.
+     brev x y /\ width x = n ==>
+     width y = n`,
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MP_TAC (SPECL [`x : bus`; `y : bus`] brev_width) THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm brev_width_out;;
+
+let brev_wire_out = prove
+ (`!x y j yj.
+     brev x y /\ wire y j yj ==>
+     ?i. i + j + 1 = width x /\ wire x i yj`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [brev_def] THEN
+  STRIP_TAC THEN
+  MP_TAC (SPECL [`y : bus`; `j : num`; `yj : wire`] wire_bound) THEN
+  ASM_REWRITE_TAC [ONCE_REWRITE_RULE [ADD_SYM] LT_EXISTS; SUC_ADD] THEN
+  DISCH_THEN (X_CHOOSE_THEN `i : num` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `i : num` THEN
+  ASM_REWRITE_TAC [ADD1; ADD_ASSOC] THEN
+  MP_TAC (SPECL [`x : bus`; `i : num`] wire_exists) THEN
+  ANTS_TAC THENL
+  [REWRITE_TAC [LT_EXISTS] THEN
+   EXISTS_TAC `j : num` THEN
+   ASM_REWRITE_TAC [ADD_SUC];
+   ALL_TAC] THEN
+  DISCH_THEN (X_CHOOSE_THEN `xi : wire` STRIP_ASSUME_TAC) THEN
+  FIRST_X_ASSUM
+    (MP_TAC o SPECL [`i : num`; `j : num`; `xi : wire`; `yj : wire`]) THEN
+  ASM_REWRITE_TAC [ADD1; ADD_ASSOC] THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm brev_wire_out;;
 
 (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 (* Lifting relations between wires *)
@@ -1190,9 +1245,9 @@ let blift3_right_bground = prove
 
 export_thm blift3_right_bground;;
 
-(* ~~~~~~~~~~~~~~~~~~~~~ *)
-(* Primitive bus devices *)
-(* ~~~~~~~~~~~~~~~~~~~~~ *)
+(* ~~~~~~~~~~~~~~~~~~ *)
+(* Lifted bus devices *)
+(* ~~~~~~~~~~~~~~~~~~ *)
 
 let bconnect_width = prove
  (`!x y.

@@ -103,6 +103,17 @@ let majority3_def = new_definition
 
 export_thm majority3_def;;
 
+let sticky_def = new_definition
+  `!ld w x.
+     sticky ld w x <=>
+     ?p q r.
+       case1 ld ground p q /\
+       or2 w q r /\
+       delay r p /\
+       connect r x`;;
+
+export_thm sticky_def;;
+
 (* ------------------------------------------------------------------------- *)
 (* Properties of hardware wire devices.                                      *)
 (* ------------------------------------------------------------------------- *)
@@ -589,6 +600,92 @@ let majority3_right_ground = prove
    MATCH_ACCEPT_TAC connect_refl]);;
 
 export_thm majority3_right_ground;;
+
+let sticky_signal = prove
+ (`!ld w x t k.
+     (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
+     sticky ld w x ==>
+     (signal x (t + k) <=> ?i. i <= k /\ signal w (t + i))`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [sticky_def] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`r : wire`;
+        `x : wire`;
+        `t + k : cycle`]
+       connect_signal) THEN
+  FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; ALL_TAC]) THEN
+  DISCH_THEN SUBST1_TAC THEN
+  UNDISCH_TAC `!i. i <= k ==> (signal ld (t + i) <=> i = 0)` THEN
+  SPEC_TAC (`k : cycle`, `k : cycle`) THEN
+  INDUCT_TAC THENL
+  [DISCH_THEN (MP_TAC o SPEC `0`) THEN
+   REWRITE_TAC [ADD_0; LE_ZERO; UNWIND_THM2] THEN
+   STRIP_TAC THEN
+   MP_TAC
+     (SPECL
+        [`w : wire`;
+         `q : wire`;
+         `r : wire`;
+         `t : cycle`]
+        or2_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+        [`ld : wire`;
+         `ground`;
+         `p : wire`;
+         `q : wire`;
+         `t : cycle`]
+        case1_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [ground_signal];
+   ALL_TAC] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`w : wire`;
+        `q : wire`;
+        `r : wire`;
+        `t + SUC k : cycle`]
+       or2_signal) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [LE; RIGHT_OR_DISTRIB; EXISTS_OR_THM; UNWIND_THM2] THEN
+  AP_TERM_TAC THEN
+  MP_TAC
+    (SPECL
+       [`ld : wire`;
+        `ground`;
+        `p : wire`;
+        `q : wire`;
+        `t + SUC k : cycle`]
+       case1_signal) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  FIRST_ASSUM (MP_TAC o SPEC `SUC k`) THEN
+  REWRITE_TAC [LE_REFL; NOT_SUC] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  MP_TAC
+    (SPECL
+       [`r : wire`;
+        `p : wire`;
+        `t + k : cycle`]
+       delay_signal) THEN
+  ASM_REWRITE_TAC [GSYM ADD1; ADD_SUC] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC `k : cycle` THEN
+  ASM_REWRITE_TAC [SUC_LE]);;
+
+export_thm sticky_signal;;
 
 (* ------------------------------------------------------------------------- *)
 (* Syntax operations.                                                        *)

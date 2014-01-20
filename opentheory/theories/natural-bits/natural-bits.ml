@@ -1432,6 +1432,56 @@ let bit_bound_mult = prove
 
 export_thm bit_bound_mult;;
 
+let zero_bit_nth_imp = prove
+  (`!n. (!i. ~bit_nth n i) ==> n = 0`,
+   MATCH_MP_TAC bit_cons_induction THEN
+   REWRITE_TAC [bit_cons_eq_zero] THEN
+   REPEAT STRIP_TAC THENL
+   [FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
+    ASM_REWRITE_TAC [bit_nth_zero; bit_hd_cons];
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    GEN_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `SUC i`) THEN
+    ASM_REWRITE_TAC [bit_nth_suc; bit_tl_cons]]);;
+
+export_thm zero_bit_nth_imp;;
+
+let zero_bit_nth_eq = prove
+  (`!n. (!i. ~bit_nth n i) <=> n = 0`,
+   GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_ACCEPT_TAC zero_bit_nth_imp;
+    DISCH_THEN SUBST_VAR_TAC THEN
+    REWRITE_TAC [zero_bit_nth]]);;
+
+export_thm zero_bit_nth_eq;;
+
+let bit_nth_eq = prove
+  (`!m n. (!i. bit_nth m i = bit_nth n i) ==> m = n`,
+   ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+   MATCH_MP_TAC bit_cons_induction THEN
+   REWRITE_TAC [zero_bit_nth; zero_bit_nth_eq] THEN
+   X_GEN_TAC `h2 : bool` THEN
+   X_GEN_TAC `t2 : num` THEN
+   STRIP_TAC THEN
+   X_GEN_TAC `n : num` THEN
+   MP_TAC (SPEC `n : num` bit_cons_cases) THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `h1 : bool`
+       (X_CHOOSE_THEN `t1 : num`
+         SUBST_VAR_TAC)) THEN
+   STRIP_TAC THEN
+   REWRITE_TAC [bit_cons_inj] THEN
+   CONJ_TAC THENL
+   [FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
+    REWRITE_TAC [bit_nth_zero; bit_hd_cons];
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    GEN_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `SUC i`) THEN
+    REWRITE_TAC [bit_nth_suc; bit_tl_cons]]);;
+
+export_thm bit_nth_eq;;
+
 (* ------------------------------------------------------------------------- *)
 (* Bitlist functions operating on ML numerals.                               *)
 (* ------------------------------------------------------------------------- *)
