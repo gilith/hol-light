@@ -74,7 +74,6 @@ let montgomery_reduce_lemma = prove
    MATCH_MP_TAC MOD_MULT THEN
    FIRST_ASSUM ACCEPT_TAC);;
 
-(***
 let montgomery_reduce_divides = prove
   (`!n r s k a.
       r * s = k * n + 1 ==>
@@ -90,24 +89,17 @@ let montgomery_reduce_divides = prove
     ALL_TAC] THEN
    MATCH_MP_TAC (TAUT `!x y. y \/ x ==> (~x ==> y)`) THEN
    REWRITE_TAC [GSYM EQ_MULT_RCANCEL; RIGHT_ADD_DISTRIB] THEN
+   MP_TAC
+     (SPECL
+        [`n : num`; `r : num`; `s : num`; `k : num`; `a : num`]
+        montgomery_reduce_lemma) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MP_TAC (SPECL [`a + (a * k) MOD r * n`; `r : num`] DIVISION_DEF_DIV) THEN
+   ASM_REWRITE_TAC [ADD_0] THEN
+   DISCH_THEN SUBST1_TAC THEN
    ONCE_REWRITE_TAC
      [GSYM (SPEC `a MOD r + ((a * k) MOD r * n) MOD r` EQ_ADD_RCANCEL)] THEN
-   MP_TAC
-    (SPECL
-      [`a MOD r + ((a * k) MOD r * n) MOD r`; `r : num`]
-      DIVISION_DEF_DIV) THEN
-   ASM_REWRITE_TAC [] THEN
-   MP_TAC (SPECL [`a : num`; `(a * k) MOD r * n`; `r : num`] MOD_ADD_MOD) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN
-     (fun th ->
-        CONV_TAC
-          (LAND_CONV
-            (RAND_CONV (REWR_CONV (SYM th) THENC REWR_CONV ADD_SYM) THENC
-             REWR_CONV ADD_ASSOC))) THEN
-   MP_TAC (SPECL [`a + (a * k) MOD r * n`; `r : num`] DIVISION_DEF_DIV) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN SUBST1_TAC THEN
    MATCH_MP_TAC EQ_TRANS THEN
    EXISTS_TAC
      `((a DIV r * r + a MOD r) +
@@ -127,39 +119,107 @@ let montgomery_reduce_divides = prove
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
    REWRITE_TAC [EQ_ADD_LCANCEL] THEN
-   ASM_REWRITE_TAC [EQ_MULT_RCANCEL] THEN
-   SUBGOAL_THEN
-     `?q. a MOD r + ((a * k) MOD r * n) MOD r = q * r`
-     (X_CHOOSE_THEN `q : num` MP_TAC) THENL
-   [MP_TAC
-      (SPECL
-         [`n : num`; `r : num`; `s : num`; `k : num`; `a : num`]
-         montgomery_reduce_lemma)
-
-
-
-
-
-   DISCH_THEN (SUBST1_TAC o SYM) THEN
-
-
-
-   ONCE_REWRITE_TAC
-     [GSYM (SPEC `(a + (a * k) MOD r * n) MOD r` EQ_ADD_RCANCEL)] THEN
-   MP_TAC (SPECL [`a + (a * k) MOD r * n`; `r : num`] DIVISION_DEF_DIV) THEN
+   MP_TAC
+     (SPECL
+        [`r : num`;
+         `a MOD r + ((a * k) MOD r * n) MOD r`]
+        divides_mod) THEN
+   ASM_REWRITE_TAC [] THEN
+   MP_TAC
+     (SPECL
+        [`a : num`;
+         `(a * k) MOD r * n`;
+         `r : num`]
+        MOD_ADD_MOD) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
-   MP_TAC (SPECL [`a : num`; `(a * k) MOD r * n`; `r : num`] MOD_ADD_MOD) THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   MP_TAC
+     (SPECL
+        [`r : num`;
+         `(a * k) MOD r`;
+         `n : num`]
+        MOD_MULT_MOD2') THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN (SUBST1_TAC o SYM) THEN
-   SUBGOAL_THEN
-     
+   MP_TAC
+     (SPECL
+        [`a * k : num`;
+         `r : num`]
+        MOD_MOD_REFL) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+        [`r : num`;
+         `a * k : num`;
+         `n : num`]
+        MOD_MULT_MOD2') THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [GSYM MULT_ASSOC] THEN
+   REWRITE_TAC [divides_def] THEN
+   DISCH_THEN (X_CHOOSE_THEN `q : num` (ASSUME_TAC o SYM)) THEN
+   ASM_REWRITE_TAC [EQ_MULT_RCANCEL] THEN
+   POP_ASSUM MP_TAC THEN
+   MP_TAC (SPEC `q : num` num_CASES) THEN
+   DISCH_THEN
+     (DISJ_CASES_THEN2
+        SUBST_VAR_TAC
+        (X_CHOOSE_THEN `qs : num` SUBST_VAR_TAC)) THENL
+   [REWRITE_TAC [ZERO_MULT; ADD_EQ_0] THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [ZERO_MULT];
+    ALL_TAC] THEN
+   MP_TAC (SPEC `qs : num` num_CASES) THEN
+   DISCH_THEN
+     (DISJ_CASES_THEN2
+        SUBST_VAR_TAC
+        (X_CHOOSE_THEN `qss : num` SUBST_VAR_TAC)) THENL
+   [REWRITE_TAC [GSYM ONE; ONE_MULT] THEN
+    COND_CASES_TAC THENL
+    [ASM_REWRITE_TAC [ONE; NOT_SUC; ADD_0] THEN
+     STRIP_TAC THEN
+     MP_TAC (SPECL [`a : num`; `r : num`] DIVISION_DEF_MOD) THEN
+     ASM_REWRITE_TAC [NOT_LT; LE_REFL];
+     REWRITE_TAC []];
+    ALL_TAC] THEN
+   STRIP_TAC THEN
+   SUBGOAL_THEN `F` CONTR_TAC THEN
+   MP_TAC (SPEC `SUC (SUC qss) * r` LT_REFL) THEN
+   REWRITE_TAC [] THEN
+   POP_ASSUM (CONV_TAC o LAND_CONV o REWR_CONV o SYM) THEN
+   MATCH_MP_TAC LT_TRANS THEN
+   EXISTS_TAC `r + (a * k * n) MOD r` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [LT_ADD_RCANCEL] THEN
+    MATCH_MP_TAC DIVISION_DEF_MOD THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `r + r : num` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [LT_ADD_LCANCEL] THEN
+    MATCH_MP_TAC DIVISION_DEF_MOD THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [GSYM MULT_2; LE_MULT_RCANCEL] THEN
+   REWRITE_TAC [TWO; ONE; LE_SUC; LE_0]);;
 
+export_thm montgomery_reduce_divides;;
 
-   POP_ASSUM (fun th -> ASSUME_TAC th THEN MP_TAC th)
+(***
+let montgomery_reduce_bits = prove
+  (`!n r s k a.
+      2 EXP r * s = k * n + 1 ==>
+      montgomery_reduce n r k a =
+      a DIV r + (((a * k) MOD r) * n) DIV r +
+      (if (a * k * n) MOD r = 0 then 0 else 1)`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [montgomery_reduce_def] THEN
+   SUBGOAL_THEN `~(r = 0)` (fun th -> ASSUME_TAC th THEN MP_TAC th) THENL
 
-let montgomery_reduce_divides = prove
-montgomery_reduce n (2 EXP (r + 2 + 2)) kn (x * y)
+export_thm montgomery_reduce_bits;;
 ***)
 
 let montgomery_reduce_correct = prove
