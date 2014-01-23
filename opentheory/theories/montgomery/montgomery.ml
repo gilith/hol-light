@@ -208,19 +208,20 @@ let montgomery_reduce_divides = prove
 
 export_thm montgomery_reduce_divides;;
 
-(***
 let montgomery_reduce_bits = prove
   (`!n r s k a.
       2 EXP r * s = k * n + 1 ==>
-      montgomery_reduce n r k a =
-      a DIV r + (((a * k) MOD r) * n) DIV r +
-      (if (a * k * n) MOD r = 0 then 0 else 1)`,
+      montgomery_reduce n (2 EXP r) k a =
+      bit_shr a r +
+      bit_shr (bit_bound (a * k) r * n) r +
+      bit_to_num (~(bit_bound (a * k * n) r = 0))`,
    REPEAT STRIP_TAC THEN
-   REWRITE_TAC [montgomery_reduce_def] THEN
-   SUBGOAL_THEN `~(r = 0)` (fun th -> ASSUME_TAC th THEN MP_TAC th) THENL
+   REWRITE_TAC [bit_shr_def; bit_bound_def; bit_to_num_def; COND_NOT] THEN
+   MATCH_MP_TAC montgomery_reduce_divides THEN
+   EXISTS_TAC `s : num` THEN
+   ASM_REWRITE_TAC []);;
 
 export_thm montgomery_reduce_bits;;
-***)
 
 let montgomery_reduce_correct = prove
   (`!n r s k a.
@@ -584,12 +585,13 @@ export_thm montgomery_circuit_def;;
 
 (***)
 let montgomery_mult_bits_to_num = prove
- (`!x y n k ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc t r.
-     d1 + d2 + width xs + 1 = r /\
-     (!i. i <= r ==> (signal ld (t + i) <=> i = 0)) /\
+ (`!n r s k x y ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc t.
+     width xs = r /\
+     2 EXP (r + 2) * s = k * n + 1 /\
+     (!i. i <= d1 + d2 + r + 1 ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x /\
      (!i.
-        i <= d0 + r /\ d0 <= i /\ i <= width xs + d0 + 1 ==>
+        d0 <= i /\ i <= d0 + r + 1 ==>
         bits_to_num (bsignal ys (t + i)) +
         2 * bits_to_num (bsignal yc (t + i)) = y) /\
      (!i.
@@ -601,13 +603,15 @@ let montgomery_mult_bits_to_num = prove
         bits_to_num (bsignal ns (t + i)) +
         2 * bits_to_num (bsignal nc (t + i)) = n) /\
      montgomery_mult ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc ==>
-     bits_to_num (bsignal zs (t + d0 + r + 1)) +
-     2 * bits_to_num (bsignal zc (t + d0 + r + 1)) =
-     montgomery_reduce n (2 EXP (width xs + 2)) k (x * y)`,
+     bits_to_num (bsignal zs (t + d0 + d1 + d2 + r + 2)) +
+     2 * bits_to_num (bsignal zc (t + d0 + d1 + d2 + r + 2)) =
+     montgomery_reduce n (2 EXP (r + 2)) k (x * y)`,
+  X_GEN_TAC `n : num` THEN
+  X_GEN_TAC `r : num` THEN
+  X_GEN_TAC `s : num` THEN
+  X_GEN_TAC `k : num` THEN
   X_GEN_TAC `x : num` THEN
   X_GEN_TAC `y : num` THEN
-  X_GEN_TAC `n : num` THEN
-  X_GEN_TAC `kn : num` THEN
   X_GEN_TAC `ld : wire` THEN
   X_GEN_TAC `xs : bus` THEN
   X_GEN_TAC `xc : bus` THEN
@@ -623,12 +627,11 @@ let montgomery_mult_bits_to_num = prove
   X_GEN_TAC `zs : bus` THEN
   X_GEN_TAC `zc : bus` THEN
   X_GEN_TAC `t : cycle` THEN
-  X_GEN_TAC `k : cycle` THEN
   REWRITE_TAC [montgomery_mult_def] THEN
   STRIP_TAC THEN
   SUBGOAL_THEN
     `!i.
-       i <= k ==>
+       i <= d1 + d2 + r + 1 ==>
        bit_cons (signal pb (t + d0 + i))
          (bits_to_num (bsignal ps (t + d0 + i)) +
           2 * bits_to_num (bsignal pc (t + d0 + i))) =
@@ -645,18 +648,26 @@ let montgomery_mult_bits_to_num = prove
    REPEAT CONJ_TAC THENL
    [X_GEN_TAC `j : cycle` THEN
     STRIP_TAC THEN
-    MP_TAC (SPECL [`j : cycle`; `i : cycle`; `k : cycle`] LE_TRANS) THEN
+    MP_TAC
+      (SPECL
+         [`j : cycle`;
+          `i : cycle`;
+          `d1 + d2 + r + 1 : cycle`]
+         LE_TRANS) THEN
     ASM_REWRITE_TAC [];
     X_GEN_TAC `j : cycle` THEN
     STRIP_TAC THEN
     FIRST_X_ASSUM MATCH_MP_TAC THEN
     ASM_REWRITE_TAC [] THEN
     MATCH_MP_TAC LE_TRANS THEN
-    EXISTS_TAC `d0 + i : cycle` THEN
-    ASM_REWRITE_TAC [LE_ADD_LCANCEL]];
+    EXISTS_TAC `r + d0 + 1` THEN
+    ASM_REWRITE_TAC [] THEN
+    REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL] THEN
+    CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+    REWRITE_TAC [LE_REFL]];
    ALL_TAC] THEN
   SUBGOAL_THEN
-    `!i. i <= k ==> signal pb (t + d0 + i) = bit_nth (x * y) i`
+    `!i. i <= d1 + d2 + r + 1 ==> signal pb (t + d0 + i) = bit_nth (x * y) i`
     MP_TAC THENL
   [REPEAT STRIP_TAC THEN
    MATCH_MP_TAC EQ_TRANS THEN
@@ -684,7 +695,7 @@ let montgomery_mult_bits_to_num = prove
    ALL_TAC] THEN
   SUBGOAL_THEN
     `!i.
-       i <= k ==>
+       i <= d1 + d2 + r + 1 ==>
        bits_to_num (bsignal ps (t + d0 + i)) +
        2 * bits_to_num (bsignal pc (t + d0 + i)) =
        bit_shr (bit_bound x (i + 1) * y) (i + 1)`
@@ -708,7 +719,7 @@ let montgomery_mult_bits_to_num = prove
   STRIP_TAC THEN
   STRIP_TAC THEN
   SUBGOAL_THEN
-    `!i. i <= k ==> (signal ld1 (t + d0 + d1 + i) <=> i = 0)`
+    `!i. i <= d1 + d2 + r + 1 ==> (signal ld1 (t + d0 + d1 + i) <=> i = 0)`
     ASSUME_TAC THENL
   [REPEAT STRIP_TAC THEN
    SUBGOAL_THEN
@@ -731,7 +742,9 @@ let montgomery_mult_bits_to_num = prove
    ASM_REWRITE_TAC [];
    ALL_TAC] THEN
   SUBGOAL_THEN
-    `!i. i <= k ==> signal pb1 (t + d0 + d1 + i) = bit_nth (x * y) i`
+    `!i.
+       i <= d1 + d2 + r + 1 ==>
+       signal pb1 (t + d0 + d1 + i) = bit_nth (x * y) i`
     ASSUME_TAC THENL
   [REPEAT STRIP_TAC THEN
    SUBGOAL_THEN
@@ -755,11 +768,11 @@ let montgomery_mult_bits_to_num = prove
    ALL_TAC] THEN
   SUBGOAL_THEN
     `!i.
-       i <= k ==>
+       i <= r + 1 ==>
        bit_cons (signal qb (t + d0 + d1 + i))
          (bits_to_num (bsignal qs (t + d0 + d1 + i)) +
           2 * bits_to_num (bsignal qc (t + d0 + d1 + i))) =
-       bit_shr (bit_bound (x * y) (i + 1) * kn) i`
+       bit_shr (bit_bound (x * y) (i + 1) * k) i`
     MP_TAC THENL
   [REPEAT STRIP_TAC THEN
    REWRITE_TAC [ADD_ASSOC] THEN
@@ -771,15 +784,21 @@ let montgomery_mult_bits_to_num = prove
    ASM_REWRITE_TAC [] THEN
    X_GEN_TAC `j : cycle` THEN
    STRIP_TAC THEN
-   MP_TAC (SPECL [`j : cycle`; `i : cycle`; `k : cycle`] LE_TRANS) THEN
+   MP_TAC
+     (SPECL
+        [`j : cycle`; `i : cycle`; `r + 1 : cycle`]
+        LE_TRANS) THEN
    ASM_REWRITE_TAC [] THEN
-   UNDISCH_THEN `j <= (i : cycle)` (K ALL_TAC) THEN
-   UNDISCH_THEN `i <= (k : cycle)` (K ALL_TAC) THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM (K ALL_TAC) THEN
    STRIP_TAC THEN
    REWRITE_TAC [GSYM ADD_ASSOC] THEN
    CONJ_TAC THENL
    [FIRST_X_ASSUM MATCH_MP_TAC THEN
-    ASM_REWRITE_TAC [];
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `r + 1` THEN
+    ASM_REWRITE_TAC [] THEN
+    REWRITE_TAC [ADD_ASSOC; ;
     ALL_TAC] THEN
    CONJ_TAC THENL
    [FIRST_X_ASSUM MATCH_MP_TAC THEN
@@ -1169,10 +1188,14 @@ let montgomery_mult_bits_to_num = prove
   POP_ASSUM (K ALL_TAC) THEN
   DISCH_THEN (MP_TAC o SPEC `r + 3`) THEN
   UNDISCH_THEN `d1 + d2 + width xs + 1 = k` SUBST_VAR_TAC THEN
-  ASM_REWRITE_TAC [GSYM ADD_ASSOC; NUM_REDUCE_CONV `2 + 1`; LE_REFL] THEN
+  (***)
+  ASM_REWRITE_TAC
+    [GSYM ADD_ASSOC; LE_REFL; NUM_REDUCE_CONV `2 + 1`;
+     NUM_REDUCE_CONV `3 + 1`; NUM_REDUCE_CONV `1 + 1`;
+     NUM_REDUCE_CONV `2 + 2`] THEN
   STRIP_TAC THEN
   (***)
-
+  REWRITE_TAC [montgomery_reduce_bits]
 
 
 
