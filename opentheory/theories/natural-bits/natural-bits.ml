@@ -1482,6 +1482,62 @@ let bit_nth_eq = prove
 
 export_thm bit_nth_eq;;
 
+let bit_shr_bitwidth = prove
+  (`!n. bit_shr n (bitwidth n) = 0`,
+   GEN_TAC THEN
+   MATCH_MP_TAC bit_nth_eq THEN
+   GEN_TAC THEN
+   REWRITE_TAC [GSYM bit_nth_add; zero_bit_nth] THEN
+   MATCH_MP_TAC (ONCE_REWRITE_RULE [GSYM CONTRAPOS_THM] bit_nth_bitwidth) THEN
+   REWRITE_TAC [NOT_LT; LE_ADD]);;
+
+export_thm bit_shr_bitwidth;;
+
+(***
+let bitwidth_bit_bound = prove
+  (`!n k. bitwidth (bit_bound n k) = MIN (bitwidth n) k`,
+   CONV_TAC (REWR_CONV SWAP_FORALL_THM) THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [bit_bound_zero; bitwidth_zero; MIN_R0];
+    ALL_TAC] THEN
+   MATCH_MP_TAC bit_cons_induction THEN
+   REWRITE_TAC [zero_bit_bound; bitwidth_zero; MIN_L0] THEN
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [zero_bit_bound; bitwidth_zero; MIN_L0] THEN
+   REPEAT GEN_TAC THEN
+   DISCH_THEN (K ALL_TAC) THEN
+   REWRITE_TAC [bit_bound_suc; bit_tl_cons; bit_hd_cons] THEN
+   ASM_CASES_TAC `t = 0` THENL
+   [ASM_REWRITE_TAC [zero_bit_bound; bit_cons_zero; bitwidth_bit_to_num] THEN
+    BOOL_CASES_TAC `h : bool` THEN
+
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+
+let bitwidth_bit_bound_le = prove
+  (`!n k. bitwidth (bit_bound n k) <= k`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+
+let bit_shr_eq_zero = prove
+  (`!n k. bit_shr n k = 0 <=> bitwidth n <= k`,
+   REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    MP_TAC (SPECL [`n : num`; `k : num`] bit_bound) THEN
+    ASM_REWRITE_TAC [zero_bit_shl; ADD_0] THEN
+    DISCH_THEN (SUBST1_TAC o SYM)
+   MATCH_MP_TAC bit_nth_eq THEN
+   GEN_TAC THEN
+   REWRITE_TAC [GSYM bit_nth_add; zero_bit_nth] THEN
+   MATCH_MP_TAC (ONCE_REWRITE_RULE [GSYM CONTRAPOS_THM] bit_nth_bitwidth) THEN
+   REWRITE_TAC [NOT_LT; LE_ADD]);;
+
+export_thm bit_shr_bitwidth;;
+***)
+
 (* ------------------------------------------------------------------------- *)
 (* Bitlist functions operating on ML numerals.                               *)
 (* ------------------------------------------------------------------------- *)
