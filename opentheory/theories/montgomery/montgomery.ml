@@ -1199,13 +1199,45 @@ let montgomery_mult_bits_to_num = prove
   POP_ASSUM (K ALL_TAC) THEN
   DISCH_THEN (MP_TAC o SPEC `r + 1`) THEN
   ASM_REWRITE_TAC [LE_REFL; GSYM ADD_ASSOC; NUM_REDUCE_CONV `1 + 1`] THEN
-  (***)
   SUBGOAL_THEN
     `bitwidth x <= r + 2`
     ASSUME_TAC THENL
-  [bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x
-
-
+  [UNDISCH_THEN
+     `bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x`
+     (SUBST1_TAC o SYM) THEN
+   UNDISCH_THEN `width xs = r` MP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC
+     `MAX (bitwidth ((bits_to_num (bsignal xs t))))
+          (bitwidth (2 * bits_to_num (bsignal xc t))) + 1` THEN
+   REWRITE_TAC [bitwidth_add] THEN
+   SUBGOAL_THEN `r + 2 = (r + 1) + 1` SUBST1_TAC THENL
+   [REWRITE_TAC [GSYM ADD_ASSOC; NUM_REDUCE_CONV `1 + 1`];
+    ALL_TAC] THEN
+   REWRITE_TAC [LE_ADD_RCANCEL; MAX_LE] THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `LENGTH (bsignal xs t)` THEN
+    REWRITE_TAC [bitwidth_bits_to_num] THEN
+    ASM_REWRITE_TAC [length_bsignal; LE_ADD];
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `bitwidth (bits_to_num (bsignal xc t)) + 1` THEN
+    REWRITE_TAC [GSYM bit_shl_one; bitwidth_bit_shl_le; LE_ADD_RCANCEL] THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `LENGTH (bsignal xc t)` THEN
+    REWRITE_TAC [bitwidth_bits_to_num] THEN
+    ASM_REWRITE_TAC [length_bsignal; LE_REFL]];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `bit_bound x (d1 + d2 + r + 2) = x`
+    SUBST1_TAC THENL
+  [REWRITE_TAC [bit_bound_id] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `r + 2` THEN
+   ASM_REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL; LE_ADDR];
+   ALL_TAC] THEN
   MP_TAC
     (SPECL
        [`n : num`;
@@ -1216,6 +1248,8 @@ let montgomery_mult_bits_to_num = prove
        montgomery_reduce_bits) THEN
   ASM_REWRITE_TAC [GSYM MULT_ASSOC] THEN
   DISCH_THEN (SUBST1_TAC o SYM) THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  (***)
 
 
 

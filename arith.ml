@@ -464,6 +464,15 @@ let MAX_R0 = prove
 
 export_thm MAX_R0;;
 
+let MAX_SUC = prove
+ (`!m n. MAX (SUC m) (SUC n) = SUC (MAX m n)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MAX; LE_SUC] THEN
+  COND_CASES_TAC THEN
+  REWRITE_TAC []);;
+
+export_thm MAX_SUC;;
+
 let MIN_REFL = prove
  (`!n. MIN n n = n`,
   REWRITE_TAC [MIN; LE_REFL]);;
@@ -538,6 +547,15 @@ let MIN_R0 = prove
   MATCH_ACCEPT_TAC MIN_L0);;
 
 export_thm MIN_R0;;
+
+let MIN_SUC = prove
+ (`!m n. MIN (SUC m) (SUC n) = SUC (MIN m n)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [MIN; LE_SUC] THEN
+  COND_CASES_TAC THEN
+  REWRITE_TAC []);;
+
+export_thm MIN_SUC;;
 
 let MINIMAL_EQ = prove
  (`!p n. p n /\ (!m. m < n ==> ~(p m)) ==> (minimal) p = n`,
