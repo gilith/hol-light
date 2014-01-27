@@ -467,7 +467,7 @@ export_thm montgomery_double_exp_bound;;
 (* -------------------------------------------------------------- *)
 (* Montgomery multiplication modulo 2^(r+4)                       *)
 (* -------------------------------------------------------------- *)
-(*        r+5 r+4 r+3 r+2 r+1  r  ... d+2 d+1  d  ...  2   1   0  *)
+(*        r+5 r+4 r+3 r+2 r+1  r  ... d+1  d  d-1 ...  2   1   0  *)
 (* -------------------------------------------------------------- *)
 (*  xs  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   X  *)
 (*  xc  =  -   -   -   X   X   X  ...  X   X   X  ...  X   X   -  *)
@@ -479,18 +479,20 @@ export_thm montgomery_double_exp_bound;;
 (*  nc  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   -  *)
 (* -------------------------------------------------------------- *)
 (*  pb  =  -   -   -   -   -   -  ...  -   -   X  ...  X   X   X  *)
-(*  ps  =  -   -   -   -   X   X  ...  X   X   -  ...  -   -   -  *)
-(*  pc  =  -   -   -   X   X   X  ...  X   -   -  ...  -   -   -  *)
+(*  ps  =  -   -   X   X   X   X  ...  X   X   -  ...  -   -   -  *)
+(*  pc  =  -   -   X   X   X   X  ...  X   -   -  ...  -   -   -  *)
 (* -------------------------------------------------------------- *)
 (*  vs  =  -   -   -   -   -   X  ...  X   X   X  ...  X   X   X  *)
 (*  vc  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   -  *)
 (* -------------------------------------------------------------- *)
-(*  sa  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   X  *)
-(*  sb  =  -   -   -   X   X   X  ...  X   -   -  ...  -   -   -  *)
+(*  vt  =  -   -   -   -   -   -  ...  -   -   -  ...  -   -   X  *)
+(* -------------------------------------------------------------- *)
+(*  sa  =  -   -   X   X   X   X  ...  X   X   X  ...  X   X   X  *)
+(*  sb  =  -   -   X   X   X   X  ...  X   -   -  ...  -   -   -  *)
 (*  sc  =  -   -   -   -   -   X  ...  X   X   X  ...  X   X   X  *)
 (*  sd  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   X  *)
 (* -------------------------------------------------------------- *)
-(*  zs  =  -   -   -   X   X   X  ...  X   X   X  ...  X   X   X  *)
+(*  zs  =  -   -   X   X   X   X  ...  X   X   X  ...  X   X   X  *)
 (*  zc  =  -   -   X   X   X   X  ...  X   X   X  ...  X   X   -  *)
 (* -------------------------------------------------------------- *)
 
@@ -499,29 +501,31 @@ let montgomery_mult_def = new_definition
   `!ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc.
      montgomery_mult ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc <=>
      ?r pb ps pc pbp qb qs qc vb vs vc vt sa sb sc sd
-      ld1 ld2 pb1 pbp0 pbp1 qb2.
-       width xs = r + 2 /\
-       width xc = r + 2 /\
-       width ys = r + 2 /\
-       width yc = r + 2 /\
-       width ks = r + 3 /\
-       width kc = r + 3 /\
-       width ns = r + 1 /\
-       width nc = r + 1 /\
-       width zs = r + 2 /\
-       width zc = r + 2 /\
-       width ps = r + 2 /\
-       width pc = r + 2 /\
+      ld1 ld2 ps0 pc0 pb1 pbp0 pbp1 qb2.
+       width xs = d1 + d2 + r + 2 /\
+       width xc = d1 + d2 + r + 2 /\
+       width ys = d1 + d2 + r + 2 /\
+       width yc = d1 + d2 + r + 2 /\
+       width ks = d1 + d2 + r + 3 /\
+       width kc = d1 + d2 + r + 3 /\
+       width ns = d1 + d2 + r + 1 /\
+       width nc = d1 + d2 + r + 1 /\
+       width zs = d1 + d2 + r + 2 /\
+       width zc = d1 + d2 + r + 2 /\
+       width ps = d1 + d2 + r + 2 /\
+       width pc = d1 + d2 + r + 2 /\
        width pbp = d1 + d2 + 1 /\
-       width qs = r + 3 /\
-       width qc = r + 3 /\
-       width vs = r + 1 /\
-       width vc = r + 1 /\
-       width sa = r + 1 /\
-       width sb = r + 1 /\
-       width sc = r + 1 /\
-       width sd = r + 1
+       width qs = d1 + d2 + r + 3 /\
+       width qc = d1 + d2 + r + 3 /\
+       width vs = d1 + d2 + r + 1 /\
+       width vc = d1 + d2 + r + 1 /\
+       width sa = d1 + d2 + r + 1 /\
+       width sb = d1 + d2 + r + 1 /\
+       width sc = d1 + d2 + r + 1 /\
+       width sd = d1 + d2 + r + 1
        /\
+       bsub ps 0 (r + 4) ps0 /\
+       bsub pc 0 (r + 3) pc0 /\
        wire pbp d1 pb1 /\
        bsub pbp 1 (d1 + d2) pbp0 /\
        brev pbp0 pbp1
@@ -631,6 +635,178 @@ let montgomery_mult_bits_to_num = prove
   POP_ASSUM MP_TAC THEN
   REWRITE_TAC [montgomery_mult_def] THEN
   DISCH_THEN (X_CHOOSE_THEN `rs : num` STRIP_ASSUME_TAC) THEN
+  (***)
+  SUBGOAL_THEN
+    `x + 3 <= 2 EXP r + 2 EXP (r + 1)`
+    ASSUME_TAC THENL
+  [UNDISCH_THEN
+     `bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x`
+     (SUBST1_TAC o SYM) THEN
+   UNDISCH_THEN `width xs = r` MP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC
+     `SUC (bits_to_num (bsignal xs t)) +
+      2 * SUC (bits_to_num (bsignal xc t))` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC
+      [MULT_SUC; SUC_ADD; THREE; TWO; ONE; ADD_SUC; ADD_0; ZERO_ADD; LE_REFL];
+    ALL_TAC] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC
+     `2 EXP (LENGTH (bsignal xs t)) +
+      2 * SUC (bits_to_num (bsignal xc t))` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [LE_ADD_RCANCEL; LE_SUC_LT; bits_to_num_bound];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [length_bsignal; LE_ADD_LCANCEL] THEN
+   REWRITE_TAC [GSYM ADD1; EXP_SUC; LE_MULT_LCANCEL] THEN
+   DISJ2_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `2 EXP (LENGTH (bsignal xc t))` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [LE_SUC_LT; bits_to_num_bound];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [length_bsignal; LE_REFL];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `y + 3 <= 2 EXP r + 2 EXP (r + 1)`
+    ASSUME_TAC THENL
+  [UNDISCH_THEN
+     `!i.
+        d0 <= i /\ i <= d0 + r + 1 ==>
+        bits_to_num (bsignal ys (t + i)) +
+        2 * bits_to_num (bsignal yc (t + i)) = y`
+     (MP_TAC o SPEC `d0 : cycle`) THEN
+   ASM_REWRITE_TAC [LE_REFL; LE_ADD] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   UNDISCH_THEN `width xs = r` MP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC
+     `SUC (bits_to_num (bsignal ys (t + d0))) +
+      2 * SUC (bits_to_num (bsignal yc (t + d0)))` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC
+      [MULT_SUC; SUC_ADD; THREE; TWO; ONE; ADD_SUC; ADD_0; ZERO_ADD; LE_REFL];
+    ALL_TAC] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC
+     `2 EXP (LENGTH (bsignal ys (t + d0))) +
+      2 * SUC (bits_to_num (bsignal yc (t + d0)))` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [LE_ADD_RCANCEL; LE_SUC_LT; bits_to_num_bound];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [length_bsignal; LE_ADD_LCANCEL] THEN
+   REWRITE_TAC [GSYM ADD1; EXP_SUC; LE_MULT_LCANCEL] THEN
+   DISJ2_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `2 EXP (LENGTH (bsignal yc (t + d0)))` THEN
+   CONJ_TAC THENL
+   [REWRITE_TAC [LE_SUC_LT; bits_to_num_bound];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [length_bsignal; LE_REFL];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+   
+
+
+MAX (bitwidth ((bits_to_num (bsignal xs t))))
+          (bitwidth (2 * bits_to_num (bsignal xc t))) + 1` THEN
+   
+   EXISTS_TAC
+     `MAX (bitwidth ((bits_to_num (bsignal xs t))))
+          (bitwidth (2 * bits_to_num (bsignal xc t))) + 1` THEN
+   REWRITE_TAC [bitwidth_add] THEN
+   SUBGOAL_THEN `r + 2 = (r + 1) + 1` SUBST1_TAC THENL
+   [REWRITE_TAC [GSYM ADD_ASSOC; NUM_REDUCE_CONV `1 + 1`];
+    ALL_TAC] THEN
+   REWRITE_TAC [LE_ADD_RCANCEL; MAX_LE] THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `LENGTH (bsignal xs t)` THEN
+    REWRITE_TAC [bitwidth_bits_to_num] THEN
+    ASM_REWRITE_TAC [length_bsignal; LE_ADD];
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `bitwidth (bits_to_num (bsignal xc t)) + 1` THEN
+    REWRITE_TAC [GSYM bit_shl_one; bitwidth_bit_shl_le; LE_ADD_RCANCEL] THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `LENGTH (bsignal xc t)` THEN
+    REWRITE_TAC [bitwidth_bits_to_num] THEN
+    ASM_REWRITE_TAC [length_bsignal; LE_REFL]];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `bit_bound x (d1 + d2 + r + 2) = x`
+    SUBST1_TAC THENL
+  [REWRITE_TAC [bit_bound_id] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `r + 2` THEN
+   ASM_REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL; LE_ADDR];
+   ALL_TAC] THEN
+  MP_TAC
+    (SPECL
+       [`n : num`;
+        `r + 2 : num`;
+        `s : num`;
+        `k : num`;
+        `x * y : num`]
+       montgomery_reduce_bits) THEN
+  ASM_REWRITE_TAC [GSYM MULT_ASSOC] THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  STRIP_TAC THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  SUBGOAL_THEN
+    `bitwidth y <= r + 2`
+    ASSUME_TAC THENL
+  [UNDISCH_THEN
+     `!i.
+        d0 <= i /\ i <= d0 + r + 1 ==>
+        bits_to_num (bsignal ys (t + i)) +
+        2 * bits_to_num (bsignal yc (t + i)) = y`
+     (MP_TAC o SPEC `d0 : cycle`) THEN
+   ASM_REWRITE_TAC [LE_REFL; LE_ADD] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   UNDISCH_THEN `width xs = r` MP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC
+     `MAX (bitwidth ((bits_to_num (bsignal ys (t + d0)))))
+          (bitwidth (2 * bits_to_num (bsignal yc (t + d0)))) + 1` THEN
+   REWRITE_TAC [bitwidth_add] THEN
+   SUBGOAL_THEN `r + 2 = (r + 1) + 1` SUBST1_TAC THENL
+   [REWRITE_TAC [GSYM ADD_ASSOC; NUM_REDUCE_CONV `1 + 1`];
+    ALL_TAC] THEN
+   REWRITE_TAC [LE_ADD_RCANCEL; MAX_LE] THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `LENGTH (bsignal ys (t + d0))` THEN
+    REWRITE_TAC [bitwidth_bits_to_num] THEN
+    ASM_REWRITE_TAC [length_bsignal; LE_ADD];
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `bitwidth (bits_to_num (bsignal yc (t + d0))) + 1` THEN
+    REWRITE_TAC [GSYM bit_shl_one; bitwidth_bit_shl_le; LE_ADD_RCANCEL] THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `LENGTH (bsignal yc (t + d0))` THEN
+    REWRITE_TAC [bitwidth_bits_to_num] THEN
+    ASM_REWRITE_TAC [length_bsignal; LE_REFL]];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `bitwidth (x * y) <= (r + 2) + (r + 2)`
+    ASSUME_TAC THENL
+  [MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `bitwidth x + bitwidth y` THEN
+   REWRITE_TAC [bitwidth_mult] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `(r + 2) + bitwidth y` THEN
+   ASM_REWRITE_TAC [LE_ADD_LCANCEL; LE_ADD_RCANCEL];
+   ALL_TAC] THEN
+
+
+
+
   SUBGOAL_THEN
     `!i.
        i <= d1 + d2 + r + 1 ==>
@@ -1196,8 +1372,8 @@ let montgomery_mult_bits_to_num = prove
   POP_ASSUM (K ALL_TAC) THEN
   POP_ASSUM (K ALL_TAC) THEN
   POP_ASSUM (K ALL_TAC) THEN
-  POP_ASSUM (K ALL_TAC) THEN
   DISCH_THEN (MP_TAC o SPEC `r + 1`) THEN
+  POP_ASSUM (MP_TAC o SPEC `d1 + d2 + r + 1`) THEN
   ASM_REWRITE_TAC [LE_REFL; GSYM ADD_ASSOC; NUM_REDUCE_CONV `1 + 1`] THEN
   SUBGOAL_THEN
     `bitwidth x <= r + 2`
@@ -1248,27 +1424,86 @@ let montgomery_mult_bits_to_num = prove
        montgomery_reduce_bits) THEN
   ASM_REWRITE_TAC [GSYM MULT_ASSOC] THEN
   DISCH_THEN (SUBST1_TAC o SYM) THEN
-  DISCH_THEN (SUBST1_TAC o SYM) THEN
-  (***)
-
-
-
-  ASM_REWRITE_TAC
-    [GSYM ADD_ASSOC; LE_REFL; NUM_REDUCE_CONV `2 + 1`;
-     NUM_REDUCE_CONV `3 + 1`; NUM_REDUCE_CONV `1 + 1`;
-     NUM_REDUCE_CONV `2 + 2`] THEN
   STRIP_TAC THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  SUBGOAL_THEN
+    `bitwidth y <= r + 2`
+    ASSUME_TAC THENL
+  [UNDISCH_THEN
+     `!i.
+        d0 <= i /\ i <= d0 + r + 1 ==>
+        bits_to_num (bsignal ys (t + i)) +
+        2 * bits_to_num (bsignal yc (t + i)) = y`
+     (MP_TAC o SPEC `d0 : cycle`) THEN
+   ASM_REWRITE_TAC [LE_REFL; LE_ADD] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   UNDISCH_THEN `width xs = r` MP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC
+     `MAX (bitwidth ((bits_to_num (bsignal ys (t + d0)))))
+          (bitwidth (2 * bits_to_num (bsignal yc (t + d0)))) + 1` THEN
+   REWRITE_TAC [bitwidth_add] THEN
+   SUBGOAL_THEN `r + 2 = (r + 1) + 1` SUBST1_TAC THENL
+   [REWRITE_TAC [GSYM ADD_ASSOC; NUM_REDUCE_CONV `1 + 1`];
+    ALL_TAC] THEN
+   REWRITE_TAC [LE_ADD_RCANCEL; MAX_LE] THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `LENGTH (bsignal ys (t + d0))` THEN
+    REWRITE_TAC [bitwidth_bits_to_num] THEN
+    ASM_REWRITE_TAC [length_bsignal; LE_ADD];
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `bitwidth (bits_to_num (bsignal yc (t + d0))) + 1` THEN
+    REWRITE_TAC [GSYM bit_shl_one; bitwidth_bit_shl_le; LE_ADD_RCANCEL] THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `LENGTH (bsignal yc (t + d0))` THEN
+    REWRITE_TAC [bitwidth_bits_to_num] THEN
+    ASM_REWRITE_TAC [length_bsignal; LE_REFL]];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `bitwidth (x * y) <= (r + 2) + (r + 2)`
+    ASSUME_TAC THENL
+  [MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `bitwidth x + bitwidth y` THEN
+   REWRITE_TAC [bitwidth_mult] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `(r + 2) + bitwidth y` THEN
+   ASM_REWRITE_TAC [LE_ADD_LCANCEL; LE_ADD_RCANCEL];
+   ALL_TAC] THEN
   (***)
-  REWRITE_TAC []
-
-
-
-    FIRST_X_ASSUM (MP_TAC o SPEC `j + i + 1`) THEN
-    ANTS_TAC THENL
-    [CHEAT_TAC;
+  SUBGOAL_THEN
+    `bits_to_num (bsignal ps (t + d0 + d1 + d2 + r + 1)) +
+     2 * bits_to_num (bsignal pc (t + d0 + d1 + d2 + r + 1)) =
+     bits_to_num (bsignal ps0 (t + d0 + d1 + d2 + r + 1)) +
+     2 * bits_to_num (bsignal pc0 (t + d0 + d1 + d2 + r + 1))`
+    SUBST1_TAC THENL
+  [UNDISCH_TAC
+     `bits_to_num (bsignal ps (t + d0 + d1 + d2 + r + 1)) +
+      2 * bits_to_num (bsignal pc (t + d0 + d1 + d2 + r + 1)) =
+      bit_shr (x * y) (d1 + d2 + r + 2)` THEN
+   SUBGOAL_THEN
+     `?ps1. bsub ps (rs + 2) (d1 + d2) ps1`
+     STRIP_ASSUME_TAC THENL
+   [MATCH_MP_TAC bsub_exists THEN
+    ASM_REWRITE_TAC [] THEN
+    CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+    REWRITE_TAC [ADD_ASSOC; LE_REFL];
+    ALL_TAC] THEN
+   SUBGOAL_THEN `bappend ps0 ps1 = ps` (SUBST1_TAC o SYM) THENL
+   [ASM_REWRITE_TAC [GSYM bsub_all] THEN
+    SUBGOAL_THEN `d1 + d2 + rs + 2 = (rs + 2) + (d1 + d2)` SUBST1_TAC THENL
+    [CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+     REWRITE_TAC [ADD_ASSOC];
      ALL_TAC] THEN
-    DISCH_THEN (SUBST1_TAC o SYM) THEN
+    MATCH_MP_TAC bsub_add THEN
+    ASM_REWRITE_TAC [ZERO_ADD];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [bappend_bits_to_num]
 
+UNDISCH_THEN `width xs = r` SUBST_VAR_TAC THEN
+   
   SUBGOAL_THEN
     `!i.
        d1 + d2 + i <= k ==>

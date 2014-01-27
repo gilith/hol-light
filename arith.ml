@@ -2603,6 +2603,34 @@ let log_mono = prove
 
 export_thm log_mono;;
 
+let log_mult_upper_bound = prove
+  (`!k n1 n2.
+      1 < k /\ ~(n1 = 0) /\ ~(n2 = 0) ==>
+      log k (n1 * n2) <= log k n1 + log k n2 + 1`,
+   REPEAT STRIP_TAC THEN
+   REWRITE_TAC [ADD_ASSOC; GSYM LT_SUC_LE] THEN
+   REWRITE_TAC [GSYM ADD1] THEN
+   MATCH_MP_TAC log_upper_bound THEN
+   ASM_REWRITE_TAC [MULT_EQ_0] THEN
+   ONCE_REWRITE_TAC [GSYM ADD_SUC] THEN
+   ONCE_REWRITE_TAC [GSYM SUC_ADD] THEN
+   REWRITE_TAC [EXP_ADD] THEN
+   MATCH_MP_TAC LT_TRANS THEN
+   EXISTS_TAC `k EXP SUC (log k n1) * n2` THEN
+   ASM_REWRITE_TAC [LT_MULT_LCANCEL; LT_MULT_RCANCEL; EXP_EQ_0; NOT_SUC] THEN
+   REPEAT CONJ_TAC THENL
+   [REWRITE_TAC [ADD1] THEN
+    MATCH_MP_TAC lt_exp_log THEN
+    ASM_REWRITE_TAC [];
+    STRIP_TAC THEN
+    UNDISCH_TAC `1 < k` THEN
+    ASM_REWRITE_TAC [NOT_LT; LE_0];
+    REWRITE_TAC [ADD1] THEN
+    MATCH_MP_TAC lt_exp_log THEN
+    ASM_REWRITE_TAC []]);;
+
+export_thm log_mult_upper_bound;;
+
 (* ------------------------------------------------------------------------- *)
 (* The factorial function.                                                   *)
 (* ------------------------------------------------------------------------- *)

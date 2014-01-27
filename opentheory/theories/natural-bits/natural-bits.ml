@@ -1535,6 +1535,24 @@ let bit_bound_id = prove
 
 export_thm bit_bound_id;;
 
+let bitwidth_mult = prove
+  (`!m n. bitwidth (m * n) <= bitwidth m + bitwidth n`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [bitwidth_def; MULT_EQ_0] THEN
+   ASM_CASES_TAC `m = 0` THENL
+   [ASM_REWRITE_TAC [LE_0];
+    ALL_TAC] THEN
+   ASM_CASES_TAC `n = 0` THENL
+   [ASM_REWRITE_TAC [LE_0];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL] THEN
+   REWRITE_TAC [GSYM ADD_ASSOC] THEN
+   CONV_TAC (RAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
+   MATCH_MP_TAC log_mult_upper_bound THEN
+   ASM_REWRITE_TAC [TWO; SUC_LT]);;
+
+export_thm bitwidth_mult;;
+
 (* ------------------------------------------------------------------------- *)
 (* Bitlist functions operating on ML numerals.                               *)
 (* ------------------------------------------------------------------------- *)
