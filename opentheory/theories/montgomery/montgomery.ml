@@ -465,9 +465,9 @@ export_thm montgomery_double_exp_bound;;
 (* ------------------------------------------------------------------------- *)
 
 (* -------------------------------------------------------------- *)
-(* Montgomery multiplication modulo 2^(r+4)                       *)
+(* Montgomery multiplication modulo 2^(r+2), where d = d1 + d2    *)
 (* -------------------------------------------------------------- *)
-(*        r+5 r+4 r+3 r+2 r+1  r  ... d+1  d  d-1 ...  2   1   0  *)
+(*        r+3 r+2 r+1  r  r-1 r-2  ... d+1  d  d-1 ...  2   1   0  *)
 (* -------------------------------------------------------------- *)
 (*  xs  =  -   -   -   -   X   X  ...  X   X   X  ...  X   X   X  *)
 (*  xc  =  -   -   -   X   X   X  ...  X   X   X  ...  X   X   -  *)
@@ -501,7 +501,7 @@ let montgomery_mult_def = new_definition
   `!ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc.
      montgomery_mult ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc <=>
      ?r pb ps pc pbp qb qs qc vb vs vc vt sa sb sc sd
-      ld1 ld2 ps0 pc0 pb1 pbp0 pbp1 qb2.
+      ld1 ld2 ps0 pc0 pb1 pbp0 pbp1 qb2 sa0 sa1 sd0 sd1.
        width xs = d1 + d2 + r + 2 /\
        width xc = d1 + d2 + r + 2 /\
        width ys = d1 + d2 + r + 2 /\
@@ -519,16 +519,20 @@ let montgomery_mult_def = new_definition
        width qc = d1 + d2 + r + 3 /\
        width vs = d1 + d2 + r + 1 /\
        width vc = d1 + d2 + r + 1 /\
-       width sa = d1 + d2 + r + 1 /\
-       width sb = d1 + d2 + r + 1 /\
+       width sa = d1 + d2 + r + 4 /\
+       width sb = r + 3 /\
        width sc = d1 + d2 + r + 1 /\
-       width sd = d1 + d2 + r + 1
+       width sd = d1 + d2 + r + 2
        /\
        bsub ps 0 (r + 4) ps0 /\
        bsub pc 0 (r + 3) pc0 /\
        wire pbp d1 pb1 /\
        bsub pbp 1 (d1 + d2) pbp0 /\
-       brev pbp0 pbp1
+       brev pbp0 pbp1 /\
+       bsub sa 0 (d1 + d2) sa0 /\
+       bsub sa (d1 + d2) (r + 4) sa1 /\
+       wire sd 0 sd0 /\
+       bsub sd 1 (d1 + d2 + r + 1) sd1
        /\
        sum_carry_mult ld xs xc d0 ys yc pb ps pc /\
        pipe ld (d0 + d1) ld1 /\
@@ -537,7 +541,13 @@ let montgomery_mult_def = new_definition
        pipe ld1 d2 ld2 /\
        pipe qb d2 qb2 /\
        bmult ld2 qb2 ns nc vb vs vc /\
-       sticky ld2 vb vt`;;
+       sticky ld2 vb vt /\
+       bconnect pbp1 sa0 /\
+       bdelay ps0 sa1 /\
+       bdelay pc0 sb /\
+       bdelay vs sc /\
+       delay vt sd0 /\
+       bdelay vc sd1`;;
 
 export_thm montgomery_mult_def;;
 
@@ -1551,8 +1561,50 @@ let montgomery_mult_bits_to_num = prove
    DISCH_THEN SUBST1_TAC THEN
    REWRITE_TAC [];
    ALL_TAC] THEN
-  REWRITE_TAC [GSYM ADD_ASSOC] THEN
+  REWRITE_TAC [GSYM ADD_ASSOC; GSYM bit_shl_add] THEN
+  SUBGOAL_THEN `1 + d1 + d2 = d1 + d2 + 1` SUBST1_TAC THENL
+  [CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+   REWRITE_TAC [ADD_ASSOC];
+   ALL_TAC] THEN
   (***)
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `bit_bound
+       ((bits_to_num (bsignal pbp1 (t + d0 + d1 + d2 + r + 2)) +
+         bit_shl (bits_to_num (bsignal ps0 (t + d0 + d1 + d2 + r + 1)))
+           (d1 + d2)) +
+        bit_shl (bits_to_num (bsignal pc0 (t + d0 + d1 + d2 + r + 1)))
+          (d1 + d2 + 1) +
+        bits_to_num (bsignal vs (t + d0 + d1 + d2 + r + 1)) +
+        (bit_to_num (signal vt (t + d0 + d1 + d2 + r + 1)) +
+         bit_shl (bits_to_num (bsignal vc (t + d0 + d1 + d2 + r + 1))) 1))
+       (r + 2)` THEN
+   CONJ_TAC THENL
+   [AP_THM_TAC THEN
+    AP_TERM_TAC THEN
+    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+    MATCH_ACCEPT_TAC ADD_SYM;
+    ALL_TAC] THEN
+   SUBGOAL_THEN
+     `bits_to_num (bsignal pbp1 (t + d0 + d1 + d2 + r + 2)) +
+      bit_shl (bits_to_num (bsignal ps0 (t + d0 + d1 + d2 + r + 1)))
+        (d1 + d2) =
+      bits_to_num (bsignal sa (t + d0 + d1 + d2 + r + 2))`
+     SUBST1_TAC THENL
+   (***)
+   [
+
+
+
+   [SUBGOAL_THEN `bappend (bwire pc0) pc2 = pc` (SUBST1_TAC o SYM) THENL
+    [ASM_REWRITE_TAC [GSYM bsub_all] THEN
+     ONCE_REWRITE_TAC [ADD_SYM] THEN
+     MATCH_MP_TAC bsub_add THEN
+     ASM_REWRITE_TAC [ZERO_ADD; GSYM wire_def];
+     ALL_TAC] THEN
+    REWRITE_TAC [bappend_bwire_bsignal; bits_to_num_cons; bit_cons_def];
+    ALL_TAC] THEN
 
 
 let montgomery_circuit = prove
