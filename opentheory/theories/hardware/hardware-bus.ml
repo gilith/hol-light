@@ -299,7 +299,7 @@ let wire_bits_to_num = prove
   STRIP_TAC THEN
   STP_TAC `bit_shl (bits_to_num (bsignal (bwire w) t)) i = 2 EXP i` THENL
   [DISCH_THEN (SUBST1_TAC o SYM) THEN
-   MATCH_MP_TAC bsub_bits_to_num THEN
+   MATCH_MP_TAC bsub_bits_to_num_le THEN
    EXISTS_TAC `1` THEN
    ASM_REWRITE_TAC [];
    ALL_TAC] THEN

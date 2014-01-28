@@ -1553,6 +1553,35 @@ let bitwidth_mult = prove
 
 export_thm bitwidth_mult;;
 
+let bitwidth_upper_bound = prove
+  (`!n k. bitwidth n <= k <=> n < 2 EXP k`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [bitwidth_def] THEN
+   COND_CASES_TAC THENL
+   [ASM_REWRITE_TAC [LE_0; LT_NZ; EXP_EQ_0; TWO; NOT_SUC];
+    ALL_TAC] THEN
+   REWRITE_TAC [GSYM ADD1; LE_SUC_LT] THEN
+   ASSUME_TAC (EQT_ELIM (NUM_REDUCE_CONV `1 < 2`)) THEN
+   ASM_CASES_TAC `n < 2 EXP k` THENL
+   [ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC log_upper_bound THEN
+    ASM_REWRITE_TAC [];
+    ASM_REWRITE_TAC [NOT_LT] THEN
+    MATCH_MP_TAC log_lower_bound THEN
+    ASM_REWRITE_TAC [GSYM NOT_LT]]);;
+
+export_thm bitwidth_upper_bound;;
+
+let bit_bound_le = prove
+  (`!n k. bit_bound n k <= n`,
+   REPEAT GEN_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `bit_bound n k + bit_shl (bit_shr n k) k` THEN
+   REWRITE_TAC [LE_ADD] THEN
+   REWRITE_TAC [bit_bound; LE_REFL]);;
+
+export_thm bit_bound_le;;
+
 (* ------------------------------------------------------------------------- *)
 (* Bitlist functions operating on ML numerals.                               *)
 (* ------------------------------------------------------------------------- *)

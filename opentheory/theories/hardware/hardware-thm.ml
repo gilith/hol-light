@@ -549,7 +549,8 @@ export_thm bsub_bsub_imp;;
 let bsub_bits_to_num = prove
  (`!x k n y t.
      bsub x k n y ==>
-     bit_shl (bits_to_num (bsignal y t)) k <= bits_to_num (bsignal x t)`,
+     bits_to_num (bsignal y t) =
+     bit_bound (bit_shr (bits_to_num (bsignal x t)) k) n`,
   REPEAT STRIP_TAC THEN
   MP_TAC
    (SPECL
@@ -558,19 +559,63 @@ let bsub_bits_to_num = prove
   ASM_REWRITE_TAC [] THEN
   STRIP_TAC THEN
   ASM_REWRITE_TAC [bappend_bits_to_num] THEN
-  MATCH_MP_TAC LE_TRANS THEN
-  EXISTS_TAC
-    `bits_to_num (bsignal p t) + bit_shl (bits_to_num (bsignal y t)) k` THEN
-  REWRITE_TAC [LE_ADDR; LE_ADD_LCANCEL] THEN
-  SUBGOAL_THEN `width p = k` SUBST1_TAC THENL
+  SUBGOAL_THEN `width p = k` ASSUME_TAC THENL
   [MATCH_MP_TAC bsub_width THEN
    EXISTS_TAC `x : bus` THEN
    EXISTS_TAC `0` THEN
    ASM_REWRITE_TAC [];
    ALL_TAC] THEN
-  REWRITE_TAC [bit_shl_mono_le; LE_ADD]);;
+  ASM_REWRITE_TAC [add_bit_shr] THEN
+  SUBGOAL_THEN
+    `bit_shr (bits_to_num (bsignal p t)) k = 0`
+    SUBST1_TAC THENL
+  [REWRITE_TAC [bit_shr_eq_zero] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `LENGTH (bsignal p t)` THEN
+   REWRITE_TAC [bitwidth_bits_to_num] THEN
+   ASM_REWRITE_TAC [length_bsignal; LE_REFL];
+   ALL_TAC] THEN
+  REWRITE_TAC [ZERO_ADD] THEN
+  CONV_TAC (RAND_CONV (REWR_CONV (GSYM bit_bound_add))) THEN
+  SUBGOAL_THEN `width y = n` ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `x : bus` THEN
+   EXISTS_TAC `k : num` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [bit_bound_shl; ADD_0; bit_bound_bound] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  REWRITE_TAC [bit_bound_id] THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC `LENGTH (bsignal y t)` THEN
+  REWRITE_TAC [bitwidth_bits_to_num] THEN
+  ASM_REWRITE_TAC [length_bsignal; LE_REFL]);;
 
 export_thm bsub_bits_to_num;;
+
+let bsub_bits_to_num_le = prove
+ (`!x k n y t.
+     bsub x k n y ==>
+     bit_shl (bits_to_num (bsignal y t)) k <= bits_to_num (bsignal x t)`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC
+   (SPECL
+      [`x : bus`; `k : num`; `n : num`; `y : bus`; `t : cycle`]
+      bsub_bits_to_num) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [GSYM bit_bound_shl_add] THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC `bit_shl (bit_shr (bits_to_num (bsignal x t)) k) k` THEN
+  REWRITE_TAC [bit_bound_le] THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC
+    `bit_bound (bits_to_num (bsignal x t)) k +
+     bit_shl (bit_shr (bits_to_num (bsignal x t)) k) k` THEN
+  REWRITE_TAC [LE_ADDR] THEN
+  REWRITE_TAC [bit_bound; LE_REFL]);;
+
+export_thm bsub_bits_to_num_le;;
 
 (* ------------------------------------------------------------------------- *)
 (* Power and ground buses.                                                   *)
