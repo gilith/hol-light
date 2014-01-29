@@ -920,6 +920,7 @@ let montgomery_mult_bits_to_num = prove
        montgomery_mult_bitwidth) THEN
   ASM_REWRITE_TAC [] THEN
   POP_ASSUM (fun th -> STRIP_TAC THEN MP_TAC th) THEN
+  (***)
   POP_ASSUM (SUBST1_TAC o SYM o REWRITE_RULE [GSYM bit_bound_id]) THEN
   POP_ASSUM (K ALL_TAC) THEN
   POP_ASSUM (K ALL_TAC) THEN
