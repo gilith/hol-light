@@ -464,6 +464,8 @@ export_thm montgomery_double_exp_bound;;
 (* Definition of a Montgomery multiplication circuit.                        *)
 (* ------------------------------------------------------------------------- *)
 
+logfile "hardware-montgomery-def";;
+
 (* -------------------------------------------------------------- *)
 (* Montgomery multiplication modulo 2^(r+2), where d = d1 + d2    *)
 (* -------------------------------------------------------------- *)
@@ -560,11 +562,11 @@ let montgomery_mult_def = new_definition
        bsub ms (d1 + d2 + 1) (r + 1) ms4 /\
        wire ms (d1 + d2 + r + 1) ms2 /\
        wire ms (d1 + d2 + r + 2) ms3 /\
-       bsub mc 0 (d1 + d2) mc3 /\
-       bsub mc 0 (d1 + d2 + r + 1) mc0 /\
-       bsub mc (d1 + d2) (r + 1) mc4 /\
-       wire mc (d1 + d2 + r + 1) mc1 /\
-       wire mc (d1 + d2 + r + 2) mc2
+       bsub mc 0 (d1 + d2) mc0 /\
+       bsub mc 0 (d1 + d2 + r + 1) mc1 /\
+       bsub mc (d1 + d2) (r + 1) mc2 /\
+       wire mc (d1 + d2 + r + 1) mc3 /\
+       wire mc (d1 + d2 + r + 2) mc4
        /\
        sum_carry_mult ld xs xc d0 ys yc pb ps pc /\
        pipe ld (d0 + d1) ld1 /\
@@ -575,16 +577,16 @@ let montgomery_mult_def = new_definition
        bmult ld2 qb2 ns nc vb vs vc /\
        sticky ld2 vb vt /\
        bconnect pbp1 sa0 /\
-       badder3 sa1 sc sd1 ms1 mc0 /\
-       adder2 sa3 sd3 ms2 mc1 /\
+       badder3 sa1 sc sd1 ms1 mc1 /\
+       adder2 sa3 sd3 ms2 mc3 /\
        connect sa4 ms3 /\
-       connect sa5 mc2 /\
+       connect sa5 mc4 /\
        bconnect ms0 zs0 /\
-       bconnect mc3 zc0 /\
+       bconnect mc0 zc0 /\
        connect ground zc1 /\
-       badder3 sb0 ms4 mc4 zs1 zc2 /\
-       adder3 sb1 ms3 mc1 zs2 mw /\
-       or3 sb2 mc2 mw zc3
+       badder3 sb0 ms4 mc2 zs1 zc2 /\
+       adder3 sb1 ms3 mc3 zs2 mw /\
+       or3 sb2 mc4 mw zc3
        /\
        bdelay ps0 sa2 /\
        bdelay pc0 sb /\
@@ -641,6 +643,8 @@ export_thm montgomery_circuit_def;;
 (* ------------------------------------------------------------------------- *)
 (* Correctness of a Montgomery multiplication circuit.                       *)
 (* ------------------------------------------------------------------------- *)
+
+logfile "hardware-montgomery-thm";;
 
 let montgomery_mult_bitwidth = prove
  (`!n r k x y ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc t.
@@ -1863,7 +1867,7 @@ let montgomery_mult_bits_to_num = prove
       [GSYM ADD_ASSOC; GSYM wire_def; NUM_REDUCE_CONV `1 + 1`];
     ALL_TAC] THEN
    SUBGOAL_THEN
-     `bappend mc0 (bappend (bwire mc1) (bwire mc2)) = mc`
+     `bappend mc1 (bappend (bwire mc3) (bwire mc4)) = mc`
      (SUBST1_TAC o SYM) THENL
    [ASM_REWRITE_TAC [GSYM bsub_all] THEN
     SUBGOAL_THEN
@@ -1899,7 +1903,7 @@ let montgomery_mult_bits_to_num = prove
     EXISTS_TAC `0` THEN
     ASM_REWRITE_TAC [];
     ALL_TAC] THEN
-   SUBGOAL_THEN `width mc0 = d1 + d2 + rs + 1` ASSUME_TAC THENL
+   SUBGOAL_THEN `width mc1 = d1 + d2 + rs + 1` ASSUME_TAC THENL
    [MATCH_MP_TAC bsub_width THEN
     EXISTS_TAC `mc : bus` THEN
     EXISTS_TAC `0` THEN
@@ -1940,7 +1944,7 @@ let montgomery_mult_bits_to_num = prove
          `sc : bus`;
          `sd1 : bus`;
          `ms1 : bus`;
-         `mc0 : bus`;
+         `mc1 : bus`;
          `t + d0 + d1 + d2 + r + 2`]
         badder3_bits_to_num) THEN
    ASM_REWRITE_TAC [] THEN
@@ -1949,14 +1953,14 @@ let montgomery_mult_bits_to_num = prove
    MATCH_MP_TAC EQ_TRANS THEN
    EXISTS_TAC
      `bits_to_num (bsignal ms1 (t + d0 + d1 + d2 + r + 2)) +
-      bit_shl (bits_to_num (bsignal mc0 (t + d0 + d1 + d2 + r + 2))) 1 +
+      bit_shl (bits_to_num (bsignal mc1 (t + d0 + d1 + d2 + r + 2))) 1 +
       bit_shl (bit_to_num (signal ms2 (t + d0 + d1 + d2 + r + 2)))
         (d1 + d2 + rs + 1) +
       bit_shl (bit_to_num (signal ms3 (t + d0 + d1 + d2 + r + 2)))
         (d1 + d2 + rs + 2) +
-      bit_shl (bit_to_num (signal mc1 (t + d0 + d1 + d2 + r + 2)))
+      bit_shl (bit_to_num (signal mc3 (t + d0 + d1 + d2 + r + 2)))
         (d1 + d2 + rs + 2) +
-      bit_shl (bit_to_num (signal mc2 (t + d0 + d1 + d2 + r + 2)))
+      bit_shl (bit_to_num (signal mc4 (t + d0 + d1 + d2 + r + 2)))
         (d1 + d2 + rs + 3)` THEN
    REVERSE_TAC CONJ_TAC THENL
    [REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
@@ -1985,7 +1989,7 @@ let montgomery_mult_bits_to_num = prove
         [`sa3 : wire`;
          `sd3 : wire`;
          `ms2 : wire`;
-         `mc1 : wire`;
+         `mc3 : wire`;
          `t + d0 + d1 + d2 + r + 2`]
         adder2_bit_to_num) THEN
    ASM_REWRITE_TAC [] THEN
@@ -1994,11 +1998,11 @@ let montgomery_mult_bits_to_num = prove
    EXISTS_TAC
      `bit_shl
         (bit_to_num (signal ms2 (t + d0 + d1 + d2 + r + 2)) +
-         2 * bit_to_num (signal mc1 (t + d0 + d1 + d2 + r + 2)))
+         2 * bit_to_num (signal mc3 (t + d0 + d1 + d2 + r + 2)))
         (d1 + d2 + rs + 1) +
       bit_shl (bit_to_num (signal ms3 (t + d0 + d1 + d2 + r + 2)))
         (d1 + d2 + rs + 2) +
-      bit_shl (bit_to_num (signal mc2 (t + d0 + d1 + d2 + r + 2)))
+      bit_shl (bit_to_num (signal mc4 (t + d0 + d1 + d2 + r + 2)))
         (d1 + d2 + rs + 3)` THEN
    REVERSE_TAC CONJ_TAC THENL
    [REWRITE_TAC [add_bit_shl; GSYM bit_shl_one; GSYM bit_shl_add] THEN
@@ -2023,7 +2027,7 @@ let montgomery_mult_bits_to_num = prove
    MP_TAC
      (SPECL
         [`sa5 : wire`;
-         `mc2 : wire`;
+         `mc4 : wire`;
          `t + d0 + d1 + d2 + r + 2`]
         connect_signal) THEN
    ASM_REWRITE_TAC [] THEN
@@ -2100,7 +2104,7 @@ let montgomery_mult_bits_to_num = prove
    ALL_TAC] THEN
   ASM_REWRITE_TAC [GSYM ADD_ASSOC] THEN
   SUBGOAL_THEN
-    `bappend mc3 (bappend mc4 (bappend (bwire mc1) (bwire mc2))) = mc`
+    `bappend mc0 (bappend mc2 (bappend (bwire mc3) (bwire mc4))) = mc`
     (SUBST1_TAC o SYM) THENL
   [ASM_REWRITE_TAC [GSYM bsub_all] THEN
    SUBGOAL_THEN
@@ -2120,13 +2124,13 @@ let montgomery_mult_bits_to_num = prove
   REWRITE_TAC
     [bappend_bits_to_num; add_bit_shl; bwire_width; GSYM bit_shl_add;
      bwire_bits_to_num; GSYM bit_shl_one] THEN
-  SUBGOAL_THEN `width mc3 = d1 + d2` SUBST1_TAC THENL
+  SUBGOAL_THEN `width mc0 = d1 + d2` SUBST1_TAC THENL
   [MATCH_MP_TAC bsub_width THEN
    EXISTS_TAC `mc : bus` THEN
    EXISTS_TAC `0` THEN
    ASM_REWRITE_TAC [];
    ALL_TAC] THEN
-  SUBGOAL_THEN `width mc4 = rs + 1` SUBST1_TAC THENL
+  SUBGOAL_THEN `width mc2 = rs + 1` SUBST1_TAC THENL
   [MATCH_MP_TAC bsub_width THEN
    EXISTS_TAC `mc : bus` THEN
    EXISTS_TAC `d1 + d2 : num` THEN
@@ -2159,28 +2163,28 @@ let montgomery_mult_bits_to_num = prove
        (d1 + d2 + 1) +
      bit_shl (bit_to_num (signal ms3 (t + d0 + d1 + d2 + r + 2)))
        (d1 + d2 + rs + 2) +
-     bit_shl (bits_to_num (bsignal mc3 (t + d0 + d1 + d2 + r + 2))) 1 +
-     bit_shl (bits_to_num (bsignal mc4 (t + d0 + d1 + d2 + r + 2)))
+     bit_shl (bits_to_num (bsignal mc0 (t + d0 + d1 + d2 + r + 2))) 1 +
+     bit_shl (bits_to_num (bsignal mc2 (t + d0 + d1 + d2 + r + 2)))
        (d1 + d2 + 1) +
-     bit_shl (bit_to_num (signal mc1 (t + d0 + d1 + d2 + r + 2)))
+     bit_shl (bit_to_num (signal mc3 (t + d0 + d1 + d2 + r + 2)))
        (d1 + d2 + rs + 2) +
-     bit_shl (bit_to_num (signal mc2 (t + d0 + d1 + d2 + r + 2)))
+     bit_shl (bit_to_num (signal mc4 (t + d0 + d1 + d2 + r + 2)))
        (d1 + d2 + rs + 3) =
      bits_to_num (bsignal ms0 (t + d0 + d1 + d2 + r + 2)) +
-     bit_shl (bits_to_num (bsignal mc3 (t + d0 + d1 + d2 + r + 2))) 1 +
+     bit_shl (bits_to_num (bsignal mc0 (t + d0 + d1 + d2 + r + 2))) 1 +
      bit_shl
        (bits_to_num (bsignal sb0 (t + d0 + d1 + d2 + r + 2)) +
         bits_to_num (bsignal ms4 (t + d0 + d1 + d2 + r + 2)) +
-        bits_to_num (bsignal mc4 (t + d0 + d1 + d2 + r + 2)))
+        bits_to_num (bsignal mc2 (t + d0 + d1 + d2 + r + 2)))
        (d1 + d2 + 1) +
      bit_shl
        (bit_to_num (signal sb1 (t + d0 + d1 + d2 + r + 2)) +
         bit_to_num (signal ms3 (t + d0 + d1 + d2 + r + 2)) +
-        bit_to_num (signal mc1 (t + d0 + d1 + d2 + r + 2)))
+        bit_to_num (signal mc3 (t + d0 + d1 + d2 + r + 2)))
        (d1 + d2 + rs + 2) +
      bit_shl
        (bit_to_num (signal sb2 (t + d0 + d1 + d2 + r + 2)) +
-        bit_to_num (signal mc2 (t + d0 + d1 + d2 + r + 2)))
+        bit_to_num (signal mc4 (t + d0 + d1 + d2 + r + 2)))
        (d1 + d2 + rs + 3)`
     SUBST1_TAC THENL
   [REWRITE_TAC [add_bit_shl; ADD_ASSOC; EQ_ADD_RCANCEL] THEN
@@ -2208,7 +2212,7 @@ let montgomery_mult_bits_to_num = prove
   DISCH_THEN (SUBST1_TAC o SYM) THEN
   MP_TAC
     (SPECL
-       [`mc3 : bus`;
+       [`mc0 : bus`;
         `zc0 : bus`;
         `t + d0 + d1 + d2 + r + 2`]
        bconnect_bsignal) THEN
@@ -2218,7 +2222,7 @@ let montgomery_mult_bits_to_num = prove
     (SPECL
        [`sb0 : bus`;
         `ms4 : bus`;
-        `mc4 : bus`;
+        `mc2 : bus`;
         `zs1 : bus`;
         `zc2 : bus`;
         `t + d0 + d1 + d2 + r + 2`]
@@ -2229,7 +2233,7 @@ let montgomery_mult_bits_to_num = prove
     (SPECL
        [`sb1 : wire`;
         `ms3 : wire`;
-        `mc1 : wire`;
+        `mc3 : wire`;
         `zs2 : wire`;
         `mw : wire`;
         `t + d0 + d1 + d2 + r + 2`]
@@ -2253,7 +2257,7 @@ let montgomery_mult_bits_to_num = prove
        (d1 + d2 + rs + 3) +
      bit_shl (bit_to_num (signal sb2 (t + d0 + d1 + d2 + r + 2)))
        (d1 + d2 + rs + 3) +
-     bit_shl (bit_to_num (signal mc2 (t + d0 + d1 + d2 + r + 2)))
+     bit_shl (bit_to_num (signal mc4 (t + d0 + d1 + d2 + r + 2)))
        (d1 + d2 + rs + 3) =
      bits_to_num (bsignal zs0 (t + d0 + d1 + d2 + r + 2)) +
      bit_shl (bits_to_num (bsignal zs1 (t + d0 + d1 + d2 + r + 2)))
@@ -2265,7 +2269,7 @@ let montgomery_mult_bits_to_num = prove
        (d1 + d2 + 2) +
      bit_shl
        (bit_to_num (signal sb2 (t + d0 + d1 + d2 + r + 2)) +
-        bit_to_num (signal mc2 (t + d0 + d1 + d2 + r + 2)) +
+        bit_to_num (signal mc4 (t + d0 + d1 + d2 + r + 2)) +
         bit_to_num (signal mw (t + d0 + d1 + d2 + r + 2)))
        (d1 + d2 + rs + 3)`
     SUBST1_TAC THENL
@@ -2282,22 +2286,22 @@ let montgomery_mult_bits_to_num = prove
    ALL_TAC] THEN
   SUBGOAL_THEN
     `bit_to_num (signal sb2 (t + d0 + d1 + d2 + r + 2)) +
-     bit_to_num (signal mc2 (t + d0 + d1 + d2 + r + 2)) +
+     bit_to_num (signal mc4 (t + d0 + d1 + d2 + r + 2)) +
      bit_to_num (signal mw (t + d0 + d1 + d2 + r + 2)) =
      bit_cons
        ((signal sb2 (t + d0 + d1 + d2 + r + 2) <=>
-         signal mc2 (t + d0 + d1 + d2 + r + 2)) <=>
+         signal mc4 (t + d0 + d1 + d2 + r + 2)) <=>
         signal mw (t + d0 + d1 + d2 + r + 2))
        (bit_to_num
           ((signal sb2 (t + d0 + d1 + d2 + r + 2) /\
-            signal mc2 (t + d0 + d1 + d2 + r + 2)) \/
+            signal mc4 (t + d0 + d1 + d2 + r + 2)) \/
            (signal sb2 (t + d0 + d1 + d2 + r + 2) /\
             signal mw (t + d0 + d1 + d2 + r + 2)) \/
-           (signal mc2 (t + d0 + d1 + d2 + r + 2) /\
+           (signal mc4 (t + d0 + d1 + d2 + r + 2) /\
             signal mw (t + d0 + d1 + d2 + r + 2))))`
     SUBST1_TAC THENL
   [BOOL_CASES_TAC `signal sb2 (t + d0 + d1 + d2 + r + 2)` THEN
-   BOOL_CASES_TAC `signal mc2 (t + d0 + d1 + d2 + r + 2)` THEN
+   BOOL_CASES_TAC `signal mc4 (t + d0 + d1 + d2 + r + 2)` THEN
    BOOL_CASES_TAC `signal mw (t + d0 + d1 + d2 + r + 2)` THEN
    REWRITE_TAC [bit_to_num_def; bit_cons_def] THEN
    NUM_REDUCE_TAC;
@@ -2313,17 +2317,17 @@ let montgomery_mult_bits_to_num = prove
   POP_ASSUM MP_TAC THEN
   SUBGOAL_THEN
     `((signal sb2 (t + d0 + d1 + d2 + r + 2) <=>
-       signal mc2 (t + d0 + d1 + d2 + r + 2)) <=>
+       signal mc4 (t + d0 + d1 + d2 + r + 2)) <=>
       signal mw (t + d0 + d1 + d2 + r + 2)) <=>
      (signal sb2 (t + d0 + d1 + d2 + r + 2) \/
-      signal mc2 (t + d0 + d1 + d2 + r + 2) \/
+      signal mc4 (t + d0 + d1 + d2 + r + 2) \/
       signal mw (t + d0 + d1 + d2 + r + 2))`
     SUBST1_TAC THENL
   [POP_ASSUM MP_TAC THEN
    POP_ASSUM MP_TAC THEN
    POP_ASSUM MP_TAC THEN
    BOOL_CASES_TAC `signal sb2 (t + d0 + d1 + d2 + r + 2)` THEN
-   BOOL_CASES_TAC `signal mc2 (t + d0 + d1 + d2 + r + 2)` THEN
+   BOOL_CASES_TAC `signal mc4 (t + d0 + d1 + d2 + r + 2)` THEN
    BOOL_CASES_TAC `signal mw (t + d0 + d1 + d2 + r + 2)` THEN
    REWRITE_TAC [];
    ALL_TAC] THEN
@@ -2334,7 +2338,7 @@ let montgomery_mult_bits_to_num = prove
   MP_TAC
     (SPECL
        [`sb2 : wire`;
-        `mc2 : wire`;
+        `mc4 : wire`;
         `mw : wire`;
         `zc3 : wire`;
         `t + d0 + d1 + d2 + r + 2`]
