@@ -679,7 +679,7 @@ let sum_carry_mult_bits_to_num = prove
   MATCH_MP_TAC LTE_TRANS THEN
   EXISTS_TAC `bit_width x` THEN
   CONJ_TAC THENL
-  [MATCH_MP_TAC bit_nth_bit_width THEN
+  [MATCH_MP_TAC bit_nth_width THEN
    ASM_REWRITE_TAC [];
    ALL_TAC] THEN
   POP_ASSUM (K ALL_TAC) THEN
@@ -708,7 +708,7 @@ let sum_carry_mult_bits_to_num = prove
    REWRITE_TAC [GSYM bit_shl_one] THEN
    MATCH_MP_TAC LE_TRANS THEN
    EXISTS_TAC `bit_width (bits_to_num (bsignal xc t)) + 1` THEN
-   REWRITE_TAC [bit_width_bit_shl_le] THEN
+   REWRITE_TAC [bit_width_shl_le] THEN
    REWRITE_TAC [ADD1; LE_ADD_RCANCEL] THEN
    MATCH_MP_TAC LE_TRANS THEN
    EXISTS_TAC `LENGTH (bsignal xc t)` THEN
