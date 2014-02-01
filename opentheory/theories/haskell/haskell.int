@@ -69,7 +69,7 @@ const "HOLLight.rdecode_fib_destH" as "Haskell.Number.Natural.fromRandom.dest"
 const "HOLLight.bit_consH" as "Haskell.Number.Natural.Bits.cons"
 const "HOLLight.bit_tlH" as "Haskell.Number.Natural.Bits.tail"
 const "HOLLight.bits_to_numH" as "Haskell.Number.Natural.Bits.toNatural"
-const "HOLLight.bitwidthH" as "Haskell.Number.Natural.Bits.width"
+const "HOLLight.bit_widthH" as "Haskell.Number.Natural.Bits.width"
 
 # Haskell.Number.Natural.Geometric
 

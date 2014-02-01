@@ -3448,7 +3448,7 @@ export_thm counter_signal;;
 let mk_counter n ld dn =
     let n2 = add_num n num_2 in
     let (m,r) =
-        let r = bitwidth_num n2 -/ num_1 in
+        let r = bit_width_num n2 -/ num_1 in
         let m = bit_shl_num num_1 r +/ r in
         if le_num n2 m then (m,r) else
         let rs = r +/ num_1 in

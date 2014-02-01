@@ -22,7 +22,7 @@ const "HOLLight.bit_shl" as "Number.Natural.Bits.shiftLeft"
 const "HOLLight.bit_shr" as "Number.Natural.Bits.shiftRight"
 const "HOLLight.bit_tl" as "Number.Natural.Bits.tail"
 const "HOLLight.bits_to_num" as "Number.Natural.Bits.toNatural"
-const "HOLLight.bitwidth" as "Number.Natural.Bits.width"
+const "HOLLight.bit_width" as "Number.Natural.Bits.width"
 
 # Number.Natural.Uniform
 

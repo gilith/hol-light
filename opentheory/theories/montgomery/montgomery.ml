@@ -646,21 +646,21 @@ export_thm montgomery_circuit_def;;
 
 logfile "hardware-montgomery-thm";;
 
-let montgomery_mult_bitwidth = prove
+let montgomery_mult_bit_width = prove
  (`!n r k x y ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc t.
      width xs = r /\
      ~(n = 0) /\
-     bitwidth n <= r /\
+     bit_width n <= r /\
      bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x /\
      (!i.
         d0 <= i /\ i <= d0 + r + 1 ==>
         bits_to_num (bsignal ys (t + i)) +
         2 * bits_to_num (bsignal yc (t + i)) = y) /\
      montgomery_mult ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc ==>
-     bitwidth x <= r + 2 /\
-     bitwidth y <= r + 2 /\
-     bitwidth (x * y) <= (r + 2) + (r + 2) /\
-     bitwidth (montgomery_reduce n (2 EXP (r + 2)) k (x * y)) <= r + 2`,
+     bit_width x <= r + 2 /\
+     bit_width y <= r + 2 /\
+     bit_width (x * y) <= (r + 2) + (r + 2) /\
+     bit_width (montgomery_reduce n (2 EXP (r + 2)) k (x * y)) <= r + 2`,
   X_GEN_TAC `n : num` THEN
   X_GEN_TAC `r : num` THEN
   X_GEN_TAC `k : num` THEN
@@ -743,7 +743,7 @@ let montgomery_mult_bitwidth = prove
    ALL_TAC] THEN
   MATCH_MP_TAC (TAUT `!a b. a /\ (a ==> b) ==> a /\ b`) THEN
   CONJ_TAC THENL
-  [REWRITE_TAC [bitwidth_upper_bound] THEN
+  [REWRITE_TAC [bit_width_upper_bound] THEN
    MATCH_MP_TAC LTE_TRANS THEN
    EXISTS_TAC `2 EXP r + 2 EXP (r + 1)` THEN
    ASM_REWRITE_TAC [] THEN
@@ -757,7 +757,7 @@ let montgomery_mult_bitwidth = prove
   STRIP_TAC THEN
   MATCH_MP_TAC (TAUT `!a b. a /\ (a ==> b) ==> a /\ b`) THEN
   CONJ_TAC THENL
-  [REWRITE_TAC [bitwidth_upper_bound] THEN
+  [REWRITE_TAC [bit_width_upper_bound] THEN
    MATCH_MP_TAC LTE_TRANS THEN
    EXISTS_TAC `2 EXP r + 2 EXP (r + 1)` THEN
    ASM_REWRITE_TAC [] THEN
@@ -771,10 +771,10 @@ let montgomery_mult_bitwidth = prove
   STRIP_TAC THEN
   CONJ_TAC THENL
   [MATCH_MP_TAC LE_TRANS THEN
-   EXISTS_TAC `bitwidth x + bitwidth y` THEN
-   REWRITE_TAC [bitwidth_mult] THEN
+   EXISTS_TAC `bit_width x + bit_width y` THEN
+   REWRITE_TAC [bit_width_mult] THEN
    MATCH_MP_TAC LE_TRANS THEN
-   EXISTS_TAC `(r + 2) + bitwidth y` THEN
+   EXISTS_TAC `(r + 2) + bit_width y` THEN
    ASM_REWRITE_TAC [LE_ADD_LCANCEL; LE_ADD_RCANCEL];
    ALL_TAC] THEN
   POP_ASSUM (K ALL_TAC) THEN
@@ -801,7 +801,7 @@ let montgomery_mult_bitwidth = prove
   STRIP_TAC THEN
   STRIP_TAC THEN
   REWRITE_TAC [TWO; GSYM ADD1; ADD_SUC] THEN
-  REWRITE_TAC [GSYM TWO; bitwidth_upper_bound] THEN
+  REWRITE_TAC [GSYM TWO; bit_width_upper_bound] THEN
   MATCH_MP_TAC LTE_TRANS THEN
   EXISTS_TAC `(2 EXP q + 2 EXP SUC (SUC (SUC q))) + n` THEN
   CONJ_TAC THENL
@@ -838,7 +838,7 @@ let montgomery_mult_bitwidth = prove
   CONJ_TAC THENL
   [REWRITE_TAC [LE_ADD_LCANCEL] THEN
    MATCH_MP_TAC LT_IMP_LE THEN
-   ASM_REWRITE_TAC [GSYM bitwidth_upper_bound];
+   ASM_REWRITE_TAC [GSYM bit_width_upper_bound];
    ALL_TAC] THEN
   REWRITE_TAC [GSYM ADD_ASSOC] THEN
   CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV ADD_SYM))) THEN
@@ -854,13 +854,13 @@ let montgomery_mult_bitwidth = prove
   REWRITE_TAC [LE_ADDR] THEN
   REWRITE_TAC [ADD_ASSOC; GSYM MULT_2; GSYM EXP_SUC; LE_REFL]);;
 
-export_thm montgomery_mult_bitwidth;;
+export_thm montgomery_mult_bit_width;;
 
 let montgomery_mult_bits_to_num = prove
  (`!n r s k x y ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc t.
      width xs = r /\
      ~(n = 0) /\
-     bitwidth n <= r /\
+     bit_width n <= r /\
      2 EXP (r + 2) * s = k * n + 1 /\
      (!i. i <= d1 + d2 + r + 1 ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x /\
@@ -924,7 +924,7 @@ let montgomery_mult_bits_to_num = prove
         `zs : bus`;
         `zc : bus`;
         `t : cycle`]
-       montgomery_mult_bitwidth) THEN
+       montgomery_mult_bit_width) THEN
   ASM_REWRITE_TAC [] THEN
   POP_ASSUM (fun th -> STRIP_TAC THEN MP_TAC th) THEN
   POP_ASSUM MP_TAC THEN
@@ -1544,7 +1544,7 @@ let montgomery_mult_bits_to_num = prove
     REWRITE_TAC [zero_bit_shl; ZERO_ADD];
     ALL_TAC] THEN
    UNDISCH_THEN
-     `bitwidth (montgomery_reduce n (2 EXP (r + 2)) k (x * y)) <= r + 2`
+     `bit_width (montgomery_reduce n (2 EXP (r + 2)) k (x * y)) <= r + 2`
      (MP_TAC o SYM o REWRITE_RULE [GSYM bit_bound_id]) THEN
    POP_ASSUM (SUBST1_TAC o SYM) THEN
    MP_TAC (SPECL [`bit_shl a (r + 2) + b`; `r + 2`] bit_bound) THEN
@@ -2492,7 +2492,7 @@ let montgomery_circuit = prove
 (* ------------------------------------------------------------------------- *)
 
 let mk_montgomery n =
-    let r = mk_numeral (add_num (bitwidth_num (dest_numeral n)) num_2) in
+    let r = mk_numeral (add_num (bit_width_num (dest_numeral n)) num_2) in
     let egcd =
         let rth = NUM_REDUCE_CONV (mk_comb (`(EXP) 2`, r)) in
         let eth = prove_egcd (rhs (concl rth)) n in

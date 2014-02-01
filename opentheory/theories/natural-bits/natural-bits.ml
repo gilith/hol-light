@@ -178,10 +178,10 @@ let mod_div_exp_two = prove
 
 logfile "natural-bits-def";;
 
-let bitwidth_def = new_definition
-  `!n. bitwidth n = if n = 0 then 0 else log 2 n + 1`;;
+let bit_width_def = new_definition
+  `!n. bit_width n = if n = 0 then 0 else log 2 n + 1`;;
 
-export_thm bitwidth_def;;
+export_thm bit_width_def;;
 
 let bit_to_num_def = new_definition
   `!b. bit_to_num b = if b then 1 else 0`;;
@@ -234,7 +234,7 @@ let bits_to_num_def = new_definition
 export_thm bits_to_num_def;;
 
 let num_to_bits_def = new_definition
-  `!n. num_to_bits n = MAP (bit_nth n) (interval 0 (bitwidth n))`;;
+  `!n. num_to_bits n = MAP (bit_nth n) (interval 0 (bit_width n))`;;
 
 export_thm num_to_bits_def;;
 
@@ -292,7 +292,7 @@ export_thm rdecode_uniform_loop_def;;
 let rdecode_uniform_def = new_definition
   `!n r.
      rdecode_uniform n r =
-     let w = bitwidth (n - 1) in
+     let w = bit_width (n - 1) in
      let (r1,r2) = rsplit r in
      (rdecode_uniform_loop n w r1 MOD n, r2)`;;
 
@@ -305,32 +305,32 @@ export_thm rdecode_uniform_def;;
 logfile "natural-bits-thm";;
 
 let length_num_to_bits = prove
-  (`!n. LENGTH (num_to_bits n) = bitwidth n`,
+  (`!n. LENGTH (num_to_bits n) = bit_width n`,
    REWRITE_TAC [num_to_bits_def; LENGTH_MAP; length_interval]);;
 
 export_thm length_num_to_bits;;
 
-let bitwidth_zero = prove
-  (`bitwidth 0 = 0`,
-   REWRITE_TAC [bitwidth_def]);;
+let bit_width_zero = prove
+  (`bit_width 0 = 0`,
+   REWRITE_TAC [bit_width_def]);;
 
-export_thm bitwidth_zero;;
+export_thm bit_width_zero;;
 
-let bitwidth_one = prove
-  (`bitwidth 1 = 1`,
-   REWRITE_TAC [bitwidth_def] THEN
+let bit_width_one = prove
+  (`bit_width 1 = 1`,
+   REWRITE_TAC [bit_width_def] THEN
    COND_CASES_TAC THENL
    [ASM_REWRITE_TAC [];
     ASM_REWRITE_TAC [EQ_ADD_RCANCEL_0] THEN
     MATCH_MP_TAC log_one THEN
     REWRITE_TAC [TWO; SUC_LT]]);;
 
-export_thm bitwidth_one;;
+export_thm bit_width_one;;
 
-let bitwidth_recursion = prove
-  (`!n. bitwidth n = if n = 0 then 0 else bitwidth (bit_tl n) + 1`,
+let bit_width_recursion = prove
+  (`!n. bit_width n = if n = 0 then 0 else bit_width (bit_tl n) + 1`,
    GEN_TAC THEN
-   REWRITE_TAC [bitwidth_def; bit_tl_def] THEN
+   REWRITE_TAC [bit_width_def; bit_tl_def] THEN
    ASM_CASES_TAC `n = 0` THENL
    [ASM_REWRITE_TAC [];
     ASM_REWRITE_TAC [EQ_ADD_RCANCEL] THEN
@@ -345,34 +345,34 @@ let bitwidth_recursion = prove
      MATCH_MP_TAC DIV_EQ_0 THEN
      REWRITE_TAC [TWO; NOT_SUC]]]);;
 
-export_thm bitwidth_recursion;;
+export_thm bit_width_recursion;;
 
-let bitwidth_mono = prove
-  (`!n1 n2. n1 <= n2 ==> bitwidth n1 <= bitwidth n2`,
+let bit_width_mono = prove
+  (`!n1 n2. n1 <= n2 ==> bit_width n1 <= bit_width n2`,
    REPEAT STRIP_TAC THEN
    ASM_CASES_TAC `n1 = 0` THENL
-   [ASM_REWRITE_TAC [bitwidth_zero; LE_0];
+   [ASM_REWRITE_TAC [bit_width_zero; LE_0];
     ASM_CASES_TAC `n2 = 0` THENL
     [SUBGOAL_THEN `F` CONTR_TAC THEN
      POP_ASSUM SUBST_VAR_TAC THEN
      POP_ASSUM MP_TAC THEN
      ASM_REWRITE_TAC [GSYM LE_ZERO];
-     ASM_REWRITE_TAC [bitwidth_def; LE_ADD_RCANCEL] THEN
+     ASM_REWRITE_TAC [bit_width_def; LE_ADD_RCANCEL] THEN
      MATCH_MP_TAC log_mono THEN
      ASM_REWRITE_TAC [TWO; SUC_LT]]]);;
 
-export_thm bitwidth_mono;;
+export_thm bit_width_mono;;
 
-let lt_exp_bitwidth = prove
-  (`!n. n < 2 EXP (bitwidth n)`,
+let lt_exp_bit_width = prove
+  (`!n. n < 2 EXP (bit_width n)`,
    GEN_TAC THEN
-   REWRITE_TAC [bitwidth_def] THEN
+   REWRITE_TAC [bit_width_def] THEN
    COND_CASES_TAC THENL
    [ASM_REWRITE_TAC [EXP; ONE; SUC_LT];
     MATCH_MP_TAC lt_exp_log THEN
     ASM_REWRITE_TAC [TWO; SUC_LT]]);;
 
-export_thm lt_exp_bitwidth;;
+export_thm lt_exp_bit_width;;
 
 let bit_to_num_true = prove
   (`bit_to_num T = 1`,
@@ -412,14 +412,14 @@ let bit_to_num_bound = prove
 
 export_thm bit_to_num_bound;;
 
-let bitwidth_bit_to_num = prove
-  (`!b. bitwidth (bit_to_num b) = (bit_to_num b)`,
+let bit_width_bit_to_num = prove
+  (`!b. bit_width (bit_to_num b) = (bit_to_num b)`,
    GEN_TAC THEN
    BOOL_CASES_TAC `b : bool` THENL
-   [REWRITE_TAC [bit_to_num_true; bitwidth_one];
-    REWRITE_TAC [bit_to_num_false; bitwidth_zero]]);;
+   [REWRITE_TAC [bit_to_num_true; bit_width_one];
+    REWRITE_TAC [bit_to_num_false; bit_width_zero]]);;
 
-export_thm bitwidth_bit_to_num;;
+export_thm bit_width_bit_to_num;;
 
 let bit_hd_zero = prove
   (`~bit_hd 0`,
@@ -966,9 +966,9 @@ let num_to_bits_recursion = prove
    GEN_TAC THEN
    REWRITE_TAC [num_to_bits_def] THEN
    ASM_CASES_TAC `n = 0` THENL
-   [ASM_REWRITE_TAC [bitwidth_def; interval_zero; MAP];
+   [ASM_REWRITE_TAC [bit_width_def; interval_zero; MAP];
     ASM_REWRITE_TAC [] THEN
-    CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [bitwidth_recursion])) THEN
+    CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [bit_width_recursion])) THEN
     ASM_REWRITE_TAC [interval_suc; GSYM ADD1; MAP; bit_nth_zero] THEN
     REWRITE_TAC [bit_tl_nth; MAP_o; map_suc_interval]]);;
 
@@ -1027,24 +1027,24 @@ let bit_nth_bits_to_num = prove
 
 export_thm bit_nth_bits_to_num;;
 
-let bitwidth_bits_to_num = prove
-  (`!l. bitwidth (bits_to_num l) <= LENGTH l`,
+let bit_width_bits_to_num = prove
+  (`!l. bit_width (bits_to_num l) <= LENGTH l`,
    LIST_INDUCT_TAC THENL
-   [REWRITE_TAC [bits_to_num_nil; bitwidth_zero; LE_0];
-    ONCE_REWRITE_TAC [bitwidth_recursion] THEN
+   [REWRITE_TAC [bits_to_num_nil; bit_width_zero; LE_0];
+    ONCE_REWRITE_TAC [bit_width_recursion] THEN
     BOOL_CASES_TAC `bits_to_num (CONS h t) = 0` THENL
     [REWRITE_TAC [LE_0];
      ASM_REWRITE_TAC
        [LENGTH; bits_to_num_cons; bit_tl_cons; GSYM ADD1; LE_SUC]]]);;
 
-export_thm bitwidth_bits_to_num;;
+export_thm bit_width_bits_to_num;;
 
 let bits_to_num_bound = prove
   (`!l. bits_to_num l < 2 EXP (LENGTH l)`,
    GEN_TAC THEN
    MATCH_MP_TAC LTE_TRANS THEN
-   EXISTS_TAC `2 EXP (bitwidth (bits_to_num l))` THEN
-   REWRITE_TAC [lt_exp_bitwidth; le_exp_two; bitwidth_bits_to_num]);;
+   EXISTS_TAC `2 EXP (bit_width (bits_to_num l))` THEN
+   REWRITE_TAC [lt_exp_bit_width; le_exp_two; bit_width_bits_to_num]);;
 
 export_thm bits_to_num_bound;;
 
@@ -1099,18 +1099,18 @@ let is_bits_replicate = prove
 
 export_thm is_bits_replicate;;
 
-let is_bits_bitwidth = prove
-  (`!l. is_bits l <=> bitwidth (bits_to_num l) = LENGTH l`,
+let is_bits_bit_width = prove
+  (`!l. is_bits l <=> bit_width (bits_to_num l) = LENGTH l`,
    LIST_INDUCT_TAC THENL
-   [REWRITE_TAC [is_bits_nil; bits_to_num_nil; bitwidth_zero; LENGTH];
-    ONCE_REWRITE_TAC [bitwidth_recursion] THEN
+   [REWRITE_TAC [is_bits_nil; bits_to_num_nil; bit_width_zero; LENGTH];
+    ONCE_REWRITE_TAC [bit_width_recursion] THEN
     ASM_REWRITE_TAC [is_bits_cons; LENGTH; bits_to_num_cons_eq_zero] THEN
     POP_ASSUM (K ALL_TAC) THEN
     REWRITE_TAC [bits_to_num_cons; bit_tl_cons; GSYM ADD1] THEN
     BOOL_CASES_TAC `h : bool` THENL
     [REWRITE_TAC [SUC_INJ; NULL_EQ_NIL] THEN
      COND_CASES_TAC THENL
-     [ASM_REWRITE_TAC [bits_to_num_nil; bitwidth_zero; LENGTH];
+     [ASM_REWRITE_TAC [bits_to_num_nil; bit_width_zero; LENGTH];
       REFL_TAC];
      SPEC_TAC (`t : bool list`, `l : bool list`) THEN
      LIST_INDUCT_TAC THENL
@@ -1118,16 +1118,16 @@ let is_bits_bitwidth = prove
       POP_ASSUM (K ALL_TAC) THEN
       REWRITE_TAC [NULL_CONS] THEN
       COND_CASES_TAC THENL
-      [ASM_REWRITE_TAC [NOT_SUC; bitwidth_zero; LENGTH];
+      [ASM_REWRITE_TAC [NOT_SUC; bit_width_zero; LENGTH];
        REWRITE_TAC [SUC_INJ]]]]]);;
 
-export_thm is_bits_bitwidth;;
+export_thm is_bits_bit_width;;
 
 let bits_to_num_to_bits = prove
   (`!l. is_bits l <=> num_to_bits (bits_to_num l) = l`,
    GEN_TAC THEN
    EQ_TAC THENL
-   [REWRITE_TAC [is_bits_bitwidth] THEN
+   [REWRITE_TAC [is_bits_bit_width] THEN
     STRIP_TAC THEN
     MATCH_MP_TAC nth_eq THEN
     ASM_REWRITE_TAC [length_num_to_bits] THEN
@@ -1143,7 +1143,7 @@ let bits_to_num_to_bits = prove
     DISCH_THEN SUBST1_TAC THEN
     ASM_REWRITE_TAC [bit_nth_bits_to_num];
     STRIP_TAC THEN
-    ASM_REWRITE_TAC [is_bits_bitwidth] THEN
+    ASM_REWRITE_TAC [is_bits_bit_width] THEN
     POP_ASSUM (CONV_TAC o RAND_CONV o RAND_CONV o REWR_CONV o SYM) THEN
     REWRITE_TAC [length_num_to_bits]]);;
 
@@ -1155,17 +1155,17 @@ let is_bits_num_to_bits = prove
 
 export_thm is_bits_num_to_bits;;
 
-let bitwidth_ones = prove
-  (`!k. bitwidth (2 EXP k - 1) = k`,
+let bit_width_ones = prove
+  (`!k. bit_width (2 EXP k - 1) = k`,
    GEN_TAC THEN
    REWRITE_TAC [GSYM bits_to_num_replicate_true] THEN
    MATCH_MP_TAC EQ_TRANS THEN
    EXISTS_TAC `LENGTH (REPLICATE T k)` THEN
    CONJ_TAC THENL
-   [REWRITE_TAC [GSYM is_bits_bitwidth; is_bits_replicate];
+   [REWRITE_TAC [GSYM is_bits_bit_width; is_bits_replicate];
     MATCH_ACCEPT_TAC LENGTH_REPLICATE]);;
 
-export_thm bitwidth_ones;;
+export_thm bit_width_ones;;
 
 let bit_cons_le_lcancel = prove
   (`!h t1 t2.
@@ -1183,76 +1183,76 @@ let bit_cons_le_rcancel = prove
 
 export_thm bit_cons_le_rcancel;;
 
-let bit_nth_bitwidth = prove
-  (`!n i. bit_nth n i ==> i < bitwidth n`,
+let bit_nth_bit_width = prove
+  (`!n i. bit_nth n i ==> i < bit_width n`,
    REPEAT GEN_TAC THEN
    CONV_TAC (LAND_CONV (LAND_CONV (REWR_CONV (GSYM num_to_bits_to_num)))) THEN
    REWRITE_TAC [bit_nth_bits_to_num; length_num_to_bits] THEN
    STRIP_TAC);;
 
-export_thm bit_nth_bitwidth;;
+export_thm bit_nth_bit_width;;
 
-let bitwidth_bit_cons = prove
-  (`!h t. ~(t = 0) ==> bitwidth (bit_cons h t) = SUC (bitwidth t)`,
+let bit_width_bit_cons = prove
+  (`!h t. ~(t = 0) ==> bit_width (bit_cons h t) = SUC (bit_width t)`,
    REPEAT STRIP_TAC THEN
-   CONV_TAC (LAND_CONV (REWR_CONV bitwidth_recursion)) THEN
+   CONV_TAC (LAND_CONV (REWR_CONV bit_width_recursion)) THEN
    ASM_REWRITE_TAC [bit_cons_eq_zero; bit_tl_cons; ADD1]);;
 
-export_thm bitwidth_bit_cons;;
+export_thm bit_width_bit_cons;;
 
-let bitwidth_bit_cons_le = prove
-  (`!h t. bitwidth (bit_cons h t) <= SUC (bitwidth t)`,
+let bit_width_bit_cons_le = prove
+  (`!h t. bit_width (bit_cons h t) <= SUC (bit_width t)`,
    REPEAT GEN_TAC THEN
    ASM_CASES_TAC `t = 0` THENL
-   [ASM_REWRITE_TAC [bit_cons_zero; bitwidth_zero; bitwidth_bit_to_num] THEN
+   [ASM_REWRITE_TAC [bit_cons_zero; bit_width_zero; bit_width_bit_to_num] THEN
     REWRITE_TAC [GSYM ONE; GSYM TWO; GSYM LT_SUC_LE; bit_to_num_bound];
-    MP_TAC (SPECL [`h : bool`; `t : num`] bitwidth_bit_cons) THEN
+    MP_TAC (SPECL [`h : bool`; `t : num`] bit_width_bit_cons) THEN
     ASM_REWRITE_TAC [] THEN
     DISCH_THEN SUBST1_TAC THEN
     MATCH_ACCEPT_TAC LE_REFL]);;
 
-export_thm bitwidth_bit_cons_le;;
+export_thm bit_width_bit_cons_le;;
 
-let bitwidth_bit_shl = prove
-  (`!n k. ~(n = 0) ==> bitwidth (bit_shl n k) = bitwidth n + k`,
+let bit_width_bit_shl = prove
+  (`!n k. ~(n = 0) ==> bit_width (bit_shl n k) = bit_width n + k`,
    ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
    INDUCT_TAC THENL
    [REWRITE_TAC [bit_shl_zero; ADD_0];
     REPEAT STRIP_TAC THEN
     REWRITE_TAC [bit_shl_suc] THEN
     MATCH_MP_TAC EQ_TRANS THEN
-    EXISTS_TAC `SUC (bitwidth (bit_shl n k))` THEN
+    EXISTS_TAC `SUC (bit_width (bit_shl n k))` THEN
     CONJ_TAC THENL
-    [MATCH_MP_TAC bitwidth_bit_cons THEN
+    [MATCH_MP_TAC bit_width_bit_cons THEN
      ASM_REWRITE_TAC [bit_shl_eq_zero];
      REWRITE_TAC [ADD_SUC; SUC_INJ] THEN
      FIRST_X_ASSUM MATCH_MP_TAC THEN
      ASM_REWRITE_TAC []]]);;
 
-export_thm bitwidth_bit_shl;;
+export_thm bit_width_bit_shl;;
 
-let bitwidth_bit_shl_le = prove
-  (`!n k. bitwidth (bit_shl n k) <= bitwidth n + k`,
+let bit_width_bit_shl_le = prove
+  (`!n k. bit_width (bit_shl n k) <= bit_width n + k`,
    REPEAT GEN_TAC THEN
    ASM_CASES_TAC `n = 0` THENL
-   [ASM_REWRITE_TAC [zero_bit_shl; bitwidth_zero; LE_0];
-    MP_TAC (SPECL [`n : num`; `k : num`] bitwidth_bit_shl) THEN
+   [ASM_REWRITE_TAC [zero_bit_shl; bit_width_zero; LE_0];
+    MP_TAC (SPECL [`n : num`; `k : num`] bit_width_bit_shl) THEN
     ASM_REWRITE_TAC [] THEN
     DISCH_THEN SUBST1_TAC THEN
     MATCH_ACCEPT_TAC LE_REFL]);;
 
-export_thm bitwidth_bit_shl_le;;
+export_thm bit_width_bit_shl_le;;
 
-let bitwidth_max = prove
-  (`!m n. bitwidth (MAX m n) = MAX (bitwidth m) (bitwidth n)`,
+let bit_width_max = prove
+  (`!m n. bit_width (MAX m n) = MAX (bit_width m) (bit_width n)`,
    REPEAT GEN_TAC THEN
    REWRITE_TAC [MAX] THEN
    COND_CASES_TAC THENL
-   [MP_TAC (SPECL [`m : num`; `n : num`] bitwidth_mono) THEN
+   [MP_TAC (SPECL [`m : num`; `n : num`] bit_width_mono) THEN
     ASM_REWRITE_TAC [] THEN
     STRIP_TAC THEN
     ASM_REWRITE_TAC [];
-    MP_TAC (SPECL [`n : num`; `m : num`] bitwidth_mono) THEN
+    MP_TAC (SPECL [`n : num`; `m : num`] bit_width_mono) THEN
     ANTS_TAC THENL
     [MATCH_MP_TAC LT_IMP_LE THEN
      ASM_REWRITE_TAC [GSYM NOT_LE];
@@ -1262,27 +1262,27 @@ let bitwidth_max = prove
     [ASM_REWRITE_TAC [GSYM LE_ANTISYM];
      REFL_TAC]]);;
 
-export_thm bitwidth_max;;
+export_thm bit_width_max;;
 
-let bitwidth_add = prove
-  (`!m n. bitwidth (m + n) <= MAX (bitwidth m) (bitwidth n) + 1`,
+let bit_width_add = prove
+  (`!m n. bit_width (m + n) <= MAX (bit_width m) (bit_width n) + 1`,
    REPEAT GEN_TAC THEN
    MATCH_MP_TAC LE_TRANS THEN
-   EXISTS_TAC `bitwidth (bit_shl (MAX m n) 1)` THEN
+   EXISTS_TAC `bit_width (bit_shl (MAX m n) 1)` THEN
    CONJ_TAC THENL
-   [MATCH_MP_TAC bitwidth_mono THEN
+   [MATCH_MP_TAC bit_width_mono THEN
     REWRITE_TAC [bit_shl_one; MULT_2] THEN
     MATCH_MP_TAC LE_ADD2 THEN
     REWRITE_TAC [LE_MAX1; LE_MAX2];
-    REWRITE_TAC [GSYM bitwidth_max] THEN
+    REWRITE_TAC [GSYM bit_width_max] THEN
     ASM_CASES_TAC `MAX m n = 0` THENL
-    [ASM_REWRITE_TAC [zero_bit_shl; bitwidth_zero; LE_0];
-     MP_TAC (SPECL [`MAX m n`; `1`] bitwidth_bit_shl) THEN
+    [ASM_REWRITE_TAC [zero_bit_shl; bit_width_zero; LE_0];
+     MP_TAC (SPECL [`MAX m n`; `1`] bit_width_bit_shl) THEN
      ASM_REWRITE_TAC [] THEN
      DISCH_THEN SUBST1_TAC THEN
      REWRITE_TAC [LE_REFL]]]);;
 
-export_thm bitwidth_add;;
+export_thm bit_width_add;;
 
 let bit_shr_bound_add = prove
   (`!n j k. bit_shr (bit_bound n (j + k)) k = bit_bound (bit_shr n k) j`,
@@ -1482,49 +1482,49 @@ let bit_nth_eq = prove
 
 export_thm bit_nth_eq;;
 
-let bit_shr_bitwidth = prove
-  (`!n. bit_shr n (bitwidth n) = 0`,
+let bit_shr_bit_width = prove
+  (`!n. bit_shr n (bit_width n) = 0`,
    GEN_TAC THEN
    MATCH_MP_TAC bit_nth_eq THEN
    GEN_TAC THEN
    REWRITE_TAC [GSYM bit_nth_add; zero_bit_nth] THEN
-   MATCH_MP_TAC (ONCE_REWRITE_RULE [GSYM CONTRAPOS_THM] bit_nth_bitwidth) THEN
+   MATCH_MP_TAC (ONCE_REWRITE_RULE [GSYM CONTRAPOS_THM] bit_nth_bit_width) THEN
    REWRITE_TAC [NOT_LT; LE_ADD]);;
 
-export_thm bit_shr_bitwidth;;
+export_thm bit_shr_bit_width;;
 
-let bitwidth_bit_bound = prove
-  (`!n k. bitwidth (bit_bound n k) <= k`,
+let bit_width_bit_bound = prove
+  (`!n k. bit_width (bit_bound n k) <= k`,
    CONV_TAC (REWR_CONV SWAP_FORALL_THM) THEN
    INDUCT_TAC THENL
-   [REWRITE_TAC [bit_bound_zero; bitwidth_zero; LE_REFL];
+   [REWRITE_TAC [bit_bound_zero; bit_width_zero; LE_REFL];
     ALL_TAC] THEN
    GEN_TAC THEN
    REWRITE_TAC [bit_bound_suc] THEN
    MATCH_MP_TAC LE_TRANS THEN
-   EXISTS_TAC `SUC (bitwidth (bit_bound (bit_tl n) k))` THEN
-   ASM_REWRITE_TAC [bitwidth_bit_cons_le; LE_SUC]);;
+   EXISTS_TAC `SUC (bit_width (bit_bound (bit_tl n) k))` THEN
+   ASM_REWRITE_TAC [bit_width_bit_cons_le; LE_SUC]);;
 
-export_thm bitwidth_bit_bound;;
+export_thm bit_width_bit_bound;;
 
 let bit_shr_eq_zero = prove
-  (`!n k. bit_shr n k = 0 <=> bitwidth n <= k`,
+  (`!n k. bit_shr n k = 0 <=> bit_width n <= k`,
    REPEAT GEN_TAC THEN
    EQ_TAC THENL
    [STRIP_TAC THEN
     MP_TAC (SPECL [`n : num`; `k : num`] bit_bound) THEN
     ASM_REWRITE_TAC [zero_bit_shl; ADD_0] THEN
     DISCH_THEN (SUBST1_TAC o SYM) THEN
-    REWRITE_TAC [bitwidth_bit_bound];
+    REWRITE_TAC [bit_width_bit_bound];
     DISCH_THEN
       (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
        REWRITE_RULE [LE_EXISTS]) THEN
-    REWRITE_TAC [bit_shr_add; bit_shr_bitwidth; zero_bit_shr]]);;
+    REWRITE_TAC [bit_shr_add; bit_shr_bit_width; zero_bit_shr]]);;
 
 export_thm bit_shr_eq_zero;;
 
 let bit_bound_id = prove
-  (`!n k. bit_bound n k = n <=> bitwidth n <= k`,
+  (`!n k. bit_bound n k = n <=> bit_width n <= k`,
    REPEAT GEN_TAC THEN
    CONV_TAC
      (LAND_CONV
@@ -1535,10 +1535,10 @@ let bit_bound_id = prove
 
 export_thm bit_bound_id;;
 
-let bitwidth_mult = prove
-  (`!m n. bitwidth (m * n) <= bitwidth m + bitwidth n`,
+let bit_width_mult = prove
+  (`!m n. bit_width (m * n) <= bit_width m + bit_width n`,
    REPEAT GEN_TAC THEN
-   REWRITE_TAC [bitwidth_def; MULT_EQ_0] THEN
+   REWRITE_TAC [bit_width_def; MULT_EQ_0] THEN
    ASM_CASES_TAC `m = 0` THENL
    [ASM_REWRITE_TAC [LE_0];
     ALL_TAC] THEN
@@ -1551,12 +1551,12 @@ let bitwidth_mult = prove
    MATCH_MP_TAC log_mult_upper_bound THEN
    ASM_REWRITE_TAC [TWO; SUC_LT]);;
 
-export_thm bitwidth_mult;;
+export_thm bit_width_mult;;
 
-let bitwidth_upper_bound = prove
-  (`!n k. bitwidth n <= k <=> n < 2 EXP k`,
+let bit_width_upper_bound = prove
+  (`!n k. bit_width n <= k <=> n < 2 EXP k`,
    REPEAT GEN_TAC THEN
-   REWRITE_TAC [bitwidth_def] THEN
+   REWRITE_TAC [bit_width_def] THEN
    COND_CASES_TAC THENL
    [ASM_REWRITE_TAC [LE_0; LT_NZ; EXP_EQ_0; TWO; NOT_SUC];
     ALL_TAC] THEN
@@ -1570,7 +1570,7 @@ let bitwidth_upper_bound = prove
     MATCH_MP_TAC log_lower_bound THEN
     ASM_REWRITE_TAC [GSYM NOT_LT]]);;
 
-export_thm bitwidth_upper_bound;;
+export_thm bit_width_upper_bound;;
 
 let bit_bound_le = prove
   (`!n k. bit_bound n k <= n`,
@@ -1590,9 +1590,9 @@ let bit_hd_num n = eq_num (mod_num n num_2) num_1;;
 
 let bit_tl_num n = quo_num n num_2;;
 
-let rec bitwidth_num n =
+let rec bit_width_num n =
     if eq_num n num_0 then num_0 else
-    succ_num (bitwidth_num (bit_tl_num n));;
+    succ_num (bit_width_num (bit_tl_num n));;
 
 let bit_to_num b = if b then num_1 else num_0;;
 
@@ -1618,6 +1618,6 @@ let rec num_to_bits_bound k n =
     if eq_num k num_0 then [] else
     bit_hd_num n :: num_to_bits_bound (k -/ num_1) (bit_tl_num n);;
 
-let num_to_bits n = num_to_bits_bound (bitwidth_num n) n;;
+let num_to_bits n = num_to_bits_bound (bit_width_num n) n;;
 
 logfile_end ();;

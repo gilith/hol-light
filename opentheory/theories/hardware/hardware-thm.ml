@@ -572,7 +572,7 @@ let bsub_bits_to_num = prove
   [REWRITE_TAC [bit_shr_eq_zero] THEN
    MATCH_MP_TAC LE_TRANS THEN
    EXISTS_TAC `LENGTH (bsignal p t)` THEN
-   REWRITE_TAC [bitwidth_bits_to_num] THEN
+   REWRITE_TAC [bit_width_bits_to_num] THEN
    ASM_REWRITE_TAC [length_bsignal; LE_REFL];
    ALL_TAC] THEN
   REWRITE_TAC [ZERO_ADD] THEN
@@ -588,7 +588,7 @@ let bsub_bits_to_num = prove
   REWRITE_TAC [bit_bound_id] THEN
   MATCH_MP_TAC LE_TRANS THEN
   EXISTS_TAC `LENGTH (bsignal y t)` THEN
-  REWRITE_TAC [bitwidth_bits_to_num] THEN
+  REWRITE_TAC [bit_width_bits_to_num] THEN
   ASM_REWRITE_TAC [length_bsignal; LE_REFL]);;
 
 export_thm bsub_bits_to_num;;

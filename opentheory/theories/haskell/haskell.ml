@@ -178,10 +178,10 @@ let bit_consH_def = define_haskell_const
 
 export_thm bit_consH_def;;
 
-let bitwidthH_def = define_haskell_const
-  `bitwidth : num -> num`;;
+let bit_widthH_def = define_haskell_const
+  `bit_width : num -> num`;;
 
-export_thm bitwidthH_def;;
+export_thm bit_widthH_def;;
 
 let bits_to_numH_def = define_haskell_const
   `bits_to_num : bool list -> num`;;
@@ -541,10 +541,10 @@ let () = (export_haskell_thm o prove)
 
 let () = (export_haskell_thm o prove)
  (`!n.
-     bitwidthH n =
-     if n = 0 then 0 else bitwidthH (bit_tlH n) + 1`,
+     bit_widthH n =
+     if n = 0 then 0 else bit_widthH (bit_tlH n) + 1`,
   HASKELL_TAC [] THEN
-  ACCEPT_TAC bitwidth_recursion);;
+  ACCEPT_TAC bit_width_recursion);;
 
 let () = (export_haskell_thm o prove)
  (`bits_to_numH [] = 0 /\
@@ -573,7 +573,7 @@ let () = (export_haskell_thm o prove)
  (`!n.
      rdecode_uniformH n =
      \r.
-       let w = bitwidthH (n - 1) in
+       let w = bit_widthH (n - 1) in
        let r1,r2 = rsplit r in
        (rdecode_uniform_loopH n w r1 MOD n, r2)`,
   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
