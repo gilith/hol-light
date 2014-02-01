@@ -3,6 +3,12 @@
 # Joe Leslie-Hurd
 ###############################################################################
 
+# Hardware
+
+# Hardware.Montgomery
+
+const "HOLLight.montgomery_mult" as "Hardware.Montgomery.multiply.mult"
+
 # Number
 
 # Number.Natural
