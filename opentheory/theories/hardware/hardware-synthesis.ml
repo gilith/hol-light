@@ -270,6 +270,13 @@ let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
         conv_prolog_rule (CHANGED_CONV (DEPTH_CONV conv)) in
     (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule);;
 
+let connect_prolog_rule : prolog_rule =
+    fun frozen -> fun tm ->
+    let (x,y) = dest_connect tm in
+    if is_unfrozen_var frozen y then (SPEC x connect_refl, [(x,y)])
+    else if is_unfrozen_var frozen x then (SPEC y connect_refl, [(y,x)])
+    else failwith "connect_prolog_rule: frozen";;
+
 (***
 let merge_wire_prolog_rule gvs : prolog_rule =
     fun asm -> fun th ->
@@ -320,7 +327,8 @@ let instantiate_hardware =
          mk_bus_prolog_rule;
          wire_prolog_rule;
          bsub_prolog_rule;
-         bground_prolog_rule] @
+         bground_prolog_rule;
+         connect_prolog_rule] @
         map thm_prolog_rule
         [bconnect_bappend_bwire; bconnect_bnil;
          bdelay_bappend_bwire; bdelay_bnil;
@@ -331,9 +339,6 @@ let instantiate_hardware =
          bcase1_bappend_bwire; bcase1_bnil;
          case1_middle_ground; case1_middle_power] in
 (***
-    let merge_wires frozen th =
-        let gvs = filter (not o C mem frozen) (freesl (hyp th)) in
-        apply_prolog_rule (merge_wire_prolog_rule gvs) th in
     let rescue_primary_outputs frozen th =
         let inputs = freesl (map rator (hyp th)) in
         let outputs = map rand (hyp th) in
@@ -343,6 +348,9 @@ let instantiate_hardware =
             first_prolog_rule
               (map rescue_primary_output_prolog_rule captured_primary_outputs) in
         apply_prolog_rule prolog_rule th in
+    let merge_wires frozen th =
+        let gvs = filter (not o C mem frozen) (freesl (hyp th)) in
+        apply_prolog_rule (merge_wire_prolog_rule gvs) th in
 ***)
     let rename_wires frozen =
         let rename p w (n,s) =
