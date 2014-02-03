@@ -4,55 +4,103 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Assumption rules allow backward reasoning on theorem assumptions.         *)
+(* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-type asm_rule = term -> thm -> term list option * thm;;
+let null_subst (sub : (term * term) list) =
+    match sub with
+      [] -> true
+    | _ -> false;;
 
-let apply_asm_rule (asm_rule : asm_rule) =
-    let rec apply_iteration same asms th =
+let compose_subst old_sub new_sub =
+    new_sub @ map (fun (t,v) -> (vsubst new_sub t, v)) old_sub;;
+
+let orelse_sym_conv : conv -> conv =
+    let rewr = REWR_CONV EQ_SYM_EQ in
+    fun c -> c ORELSEC (rewr THENC c);;
+
+let is_unfrozen_var frozen v = is_var v && not (mem v frozen);;
+
+let not_unfrozen_var frozen v = not (is_unfrozen_var frozen v);;
+
+(* ------------------------------------------------------------------------- *)
+(* Prolog rules allow backward reasoning on theorem assumptions.             *)
+(* ------------------------------------------------------------------------- *)
+
+type prolog_rule = term list -> term -> thm * (term * term) list;;
+
+let all_prolog_rule : prolog_rule =
+    fun _ -> fun tm -> (ASSUME tm, []);;
+
+let no_prolog_rule : prolog_rule =
+    fun _ -> fun _ -> failwith "no_prolog_rule";;
+
+let orelse_prolog_rule (pr1 : prolog_rule) (pr2 : prolog_rule) : prolog_rule =
+    fun frozen -> fun tm ->
+    try (pr1 frozen tm)
+    with Failure _ -> pr2 frozen tm;;
+
+let try_prolog_rule (pr : prolog_rule) : prolog_rule =
+    orelse_prolog_rule pr all_prolog_rule;;
+
+let first_prolog_rule (prs0 : prolog_rule list) : prolog_rule =
+    let rec first prs frozen tm =
+        match prs with
+          [] -> failwith "first_prolog_rule"
+        | pr :: prs -> orelse_prolog_rule pr (first prs) frozen tm in
+    first prs0;;
+
+let prove_hyp_prolog_rule (pr : prolog_rule) =
+    fun frozen ->
+    let rec prolog_asms th sub asms =
         match asms with
-          [] -> (same,th)
+          [] -> (th,sub)
         | asm :: asms ->
-          try (let (newso,th) = asm_rule asm th in
-               match newso with
-                 Some news -> apply_iteration false (news @ asms) th
-               | None -> (false,th))
-          with Failure _ -> apply_iteration same asms th in
-    let rec apply_loop th =
-        let (same,th) = apply_iteration true (hyp th) th in
-        if same then th else apply_loop th in
-    apply_loop;;
+          let asm = vsubst sub asm in
+          let (asm_th,asm_sub) = pr frozen asm in
+          let th = PROVE_HYP asm_th (INST asm_sub th) in
+          let sub = compose_subst sub asm_sub in
+          prolog_asms th sub asms in
+     fun th -> prolog_asms th [] (hyp th);;
 
-let then_asm_rule (ar1 : asm_rule) (ar2 : asm_rule) : asm_rule =
-    let ar2l asm (asmso,th) =
-        let (newso,th) = ar2 asm th in
-        let asmso =
-            match (newso,asmso) with
-              (Some news, Some asms) -> Some (news @ asms)
-            | _ -> None in
-        (asmso,th) in
-    fun asm -> fun th ->
-    let (newso,th) = ar1 asm th in
-    match newso with
-      Some news -> itlist ar2l news (Some [], th)
-    | None -> failwith "then_asm_rule";;
+let then_prolog_rule (pr1 : prolog_rule) (pr2 : prolog_rule) : prolog_rule =
+    fun frozen -> fun tm ->
+    let (th,sub1) = pr1 frozen tm in
+    let (th,sub2) = prove_hyp_prolog_rule pr2 frozen th in
+    let sub = compose_subst sub1 sub2 in
+    (th,sub);;
 
-let orelse_asm_rule (ar1 : asm_rule) (ar2 : asm_rule) : asm_rule =
-    fun asm -> fun th ->
-    try (ar1 asm th)
-    with Failure _ -> ar2 asm th;;
+let repeat_prove_hyp_prolog_rule (pr : prolog_rule) =
+    fun frozen ->
+    let rec prolog_asms fvs th sub asms =
+        match asms with
+          [] -> (th,sub)
+        | asm :: asms ->
+          let asm = vsubst sub asm in
+          let (asm_th,asm_sub) = pr frozen asm in
+          let th = PROVE_HYP asm_th (INST asm_sub th) in
+          let sub = compose_subst sub asm_sub in
+          if length (intersect (map snd asm_sub) fvs) = 0 then
+            prolog_asms (union (frees asm) fvs) th sub asms
+          else
+            prolog_asms [] th sub (hyp th) in
+     fun th -> prolog_asms [] th [] (hyp th);;
 
-let first_asm_rule (ars0 : asm_rule list) : asm_rule =
-    let rec first ars asm th =
-        match ars with
-          [] -> failwith "first_asm_rule"
-        | ar :: ars -> orelse_asm_rule ar (first ars) asm th in
-    first ars0;;
+let then_repeat_prolog_rule (pr1 : prolog_rule) pr2 : prolog_rule =
+    fun frozen -> fun tm ->
+    let (th,sub1) = pr1 frozen tm in
+    let (th,sub2) = repeat_prove_hyp_prolog_rule pr2 frozen th in
+    let sub = compose_subst sub1 sub2 in
+    (th,sub);;
 
-let (thm_asm_rule,conv_asm_rule) =
+let rec repeat_prolog_rule (pr : prolog_rule) : prolog_rule =
+    fun frozen -> fun tm ->
+    try_prolog_rule
+      (then_repeat_prolog_rule pr (repeat_prolog_rule pr)) frozen tm;;
+
+let (thm_prolog_rule,conv_prolog_rule) =
     let eq_to_imp_thm = MATCH_MP (TAUT `(a <=> b) ==> (b ==> a)`) in
-    let mk_imp_thm =
+    let mk_prolog_thm =
         let pull_exists =
             let conv = REWR_CONV LEFT_IMP_EXISTS_THM in
             let rec pull tm =
@@ -63,55 +111,63 @@ let (thm_asm_rule,conv_asm_rule) =
         let collect_asms =
             let conv = TRY_CONV (REWR_CONV IMP_CONJ) in
             let rec collect th =
-                if not (is_imp (concl th)) then ([],th) else
+                if not (is_imp (concl th)) then th else
                 let th = CONV_RULE conv th in
-                let (asm,_) = dest_imp (concl th) in
-                let (asms,th) = collect (UNDISCH th) in
-                (asm :: asms, th) in
+                collect (UNDISCH th) in
             collect in
         let norm_imp_thm th =
-            let th = pull_exists th in
-            let (vs,_) = strip_forall (concl th) in
-            let th = SPEC_ALL th in
-            let (asms,th) = collect_asms th in
-            (vs,asms,th) in
+            let th = SPEC_ALL (pull_exists th) in
+            let (asms,conc) = dest_imp (concl th) in
+            let vs = filter (not o C mem (frees conc)) (frees asms) in
+            (vs, collect_asms th) in
         fun th ->
         let th = SPEC_ALL th in
-        let tm = concl th in
-        if is_iff tm then norm_imp_thm (eq_to_imp_thm th)
-        else if is_imp tm then norm_imp_thm th
-        else ([],[],th) in
-    let imp_thm_asm_rule (vs,asms,ith) : asm_rule =
-        fun asm -> fun th ->
+        let th = if is_iff (concl th) then eq_to_imp_thm th else th in
+        if is_imp (concl th) then norm_imp_thm th else ([],th) in
+    let prolog_thm_rule (vs,th) : prolog_rule =
         let fresh v = (genvar (type_of v), v) in
-        let (_,sub,_) = term_match [] (concl ith) asm in
-        let fsub = map fresh vs in
-        let ith = INST sub (INST fsub ith) in
-        let asms = map (vsubst sub o vsubst fsub) asms in
-        (Some asms, PROVE_HYP ith th) in
-    let thm_asm_rule th = imp_thm_asm_rule (mk_imp_thm th) in
-    let conv_asm_rule (conv : conv) : asm_rule =
-        fun asm -> fun th ->
-        let eth = conv asm in
-        let ith =
-            try (EQT_ELIM eth)
-            with Failure _ -> UNDISCH (eq_to_imp_thm eth) in
-        (Some (hyp ith), PROVE_HYP ith th) in
-    (thm_asm_rule,conv_asm_rule);;
+        let pat = concl th in
+        fun _ -> fun tm ->
+        let (_,sub,_) = term_match [] pat tm in
+        let sub = map fresh vs @ sub in
+        let th = INST sub th in
+        (th,[]) in
+    let thm_rule th = prolog_thm_rule (mk_prolog_thm th) in
+    let conv_rule (conv : conv) : prolog_rule =
+        fun _ -> fun tm ->
+        let eq_th = conv tm in
+        let th =
+            try (EQT_ELIM eq_th)
+            with Failure _ -> UNDISCH (eq_to_imp_thm eq_th) in
+        (th,[]) in
+    (thm_rule,conv_rule);;
 
-let subst_var_asm_rule : asm_rule =
-    fun asm -> fun th ->
-    let asm_rule l r = (None, PROVE_HYP (REFL r) (INST [(r,l)] th)) in
-    let (l,r) = dest_eq asm in
-    if is_var l then asm_rule l r
-    else if is_var r then asm_rule r l
-    else failwith "subst_var_asm_rule";;
+let sym_prolog_rule : prolog_rule =
+    fun _ -> fun tm ->
+    let (l,r) = dest_eq tm in
+    (SYM (ASSUME (mk_eq (r,l))), []);;
+
+let orelse_sym_prolog_rule (pr : prolog_rule) : prolog_rule =
+    orelse_prolog_rule pr (then_prolog_rule sym_prolog_rule pr);;
+
+let subst_var_prolog_rule : prolog_rule =
+    orelse_sym_prolog_rule
+      (fun frozen -> fun tm ->
+       let (l,r) = dest_eq tm in
+       if is_unfrozen_var frozen l then (REFL r, [(r,l)])
+       else failwith "subst_var_prolog_rule");;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing hardware.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-let num_eq_asm_rule : asm_rule =
+let num_simp_prolog_rule : prolog_rule =
+    let simp_conv =
+        REWRITE_CONV [bnil_width; bwire_width; bappend_width] THENC
+        NUM_REDUCE_CONV in
+    conv_prolog_rule (CHANGED_CONV simp_conv);;
+
+let num_eq_prolog_rule : prolog_rule =
     let is_num_type = (=) `:num` in
     let add_tm = `(+) : num -> num -> num` in
     let mk_add = mk_binop add_tm in
@@ -124,30 +180,25 @@ let num_eq_asm_rule : asm_rule =
         let th = NUM_REDUCE_CONV (mk_add (mk_numeral (mn -/ nn)) n) in
         let conv = LAND_CONV (K (SYM th)) THENC REWR_CONV EQ_ADD_RCANCEL in
         conv tm in
-    let conv =
-        REWRITE_CONV [bnil_width; bwire_width; bappend_width] THENC
-        NUM_REDUCE_CONV THENC
-        TRY_CONV numeral_eq_add_numeral_conv in
-    fun asm -> fun th ->
-    let (l,r) = dest_eq asm in
-    if not (is_num_type (type_of l)) then failwith "num_eq_asm_rule" else
-    conv_asm_rule (CHANGED_CONV conv) asm th;;
+    let reduce_conv =
+        FIRST_CONV
+          [numeral_eq_add_numeral_conv] in
+    fun frozen -> fun tm ->
+    let (l,r) = dest_eq tm in
+    if not (is_num_type (type_of l)) then failwith "num_eq_prolog_rule" else
+    orelse_sym_prolog_rule (conv_prolog_rule reduce_conv) frozen tm;;
 
-let mk_bus_asm_rule : asm_rule =
-    fun asm -> fun th ->
-    let (t,n) = dest_eq asm in
-    let nn = dest_numeral n in
-    let v = dest_width t in
-    if not (is_var v) then failwith "mk_bus_asm_rule" else
-    (None, INST [(genvar_bus nn, v)] th);;
+let mk_bus_prolog_rule : prolog_rule =
+    orelse_sym_prolog_rule
+      (fun frozen -> fun tm ->
+       let (t,n) = dest_eq tm in
+       let nn = dest_numeral n in
+       let v = dest_width t in
+       if not_unfrozen_var frozen v then failwith "mk_bus_prolog_rule" else
+       let sub = [(genvar_bus nn, v)] in
+       (ASSUME (vsubst sub tm), sub));;
 
-let (wire_asm_rule,bsub_asm_rule,bground_asm_rule) =
-    let numeral_conv : conv =
-        fun tm ->
-        if is_numeral tm then REFL tm else
-        let th = NUM_REDUCE_CONV tm in
-        if is_numeral (rhs (concl th)) then th else
-        failwith "numeral_conv" in
+let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
     let zero_suc_conv : conv =
         let suc_tm = `SUC` in
         let mk_suc tm = mk_comb (suc_tm,tm) in
@@ -156,18 +207,18 @@ let (wire_asm_rule,bsub_asm_rule,bground_asm_rule) =
         if eq_num n num_0 then REFL tm else
         let m = mk_suc (mk_numeral (n -/ num_1)) in
         SYM (NUM_SUC_CONV m) in
-    let wire_asm_rule =
-        let zero_rule = thm_asm_rule wire_zero in
-        let suc_rule = thm_asm_rule wire_suc in
+    let wire_prolog_rule =
+        let zero_rule = thm_prolog_rule wire_zero in
+        let suc_rule = thm_prolog_rule wire_suc in
         let conv tm =
             let (x,_,_) = dest_wire tm in
             let (w,_) = dest_bappend x in
             let _ = dest_bwire w in
-            LAND_CONV (numeral_conv THENC zero_suc_conv) tm in
-        then_asm_rule
-          (conv_asm_rule conv)
-          (orelse_asm_rule zero_rule suc_rule) in
-    let bsub_asm_rule =
+            LAND_CONV (zero_suc_conv) tm in
+        then_prolog_rule
+          (conv_prolog_rule conv)
+          (orelse_prolog_rule zero_rule suc_rule) in
+    let bsub_prolog_rule =
         let suc_thm = prove
           (`!w x k n y.
               bsub x k n y ==>
@@ -192,20 +243,20 @@ let (wire_asm_rule,bsub_asm_rule,bground_asm_rule) =
            REWRITE_TAC [wire_zero] THEN
            MATCH_MP_TAC suc_thm THEN
            ASM_REWRITE_TAC []) in
-        let suc_rule = thm_asm_rule suc_thm in
-        let zero_zero_rule = thm_asm_rule zero_zero_thm in
-        let zero_suc_rule = thm_asm_rule zero_suc_thm in
+        let suc_rule = thm_prolog_rule suc_thm in
+        let zero_zero_rule = thm_prolog_rule zero_zero_thm in
+        let zero_suc_rule = thm_prolog_rule zero_suc_thm in
         let conv tm =
             let _ = dest_bsub tm in
             RATOR_CONV
-              (LAND_CONV (numeral_conv THENC zero_suc_conv) THENC
-               RAND_CONV (numeral_conv THENC zero_suc_conv)) tm in
-        then_asm_rule
-          (conv_asm_rule conv)
-          (orelse_asm_rule
+              (LAND_CONV zero_suc_conv THENC
+               RAND_CONV zero_suc_conv) tm in
+        then_prolog_rule
+          (conv_prolog_rule conv)
+          (orelse_prolog_rule
              suc_rule
-             (orelse_asm_rule zero_zero_rule zero_suc_rule)) in
-    let bground_asm_rule =
+             (orelse_prolog_rule zero_zero_rule zero_suc_rule)) in
+    let bground_prolog_rule =
         let zero_conv = REWR_CONV bground_zero in
         let suc_conv = REWR_CONV bground_suc in
         let rec expand_conv tm =
@@ -215,11 +266,12 @@ let (wire_asm_rule,bsub_asm_rule,bground_asm_rule) =
                RAND_CONV expand_conv))) tm in
         let conv tm =
             let _ = dest_bground tm in
-            (RAND_CONV numeral_conv THENC expand_conv) tm in
-        conv_asm_rule (CHANGED_CONV (DEPTH_CONV conv)) in
-    (wire_asm_rule,bsub_asm_rule,bground_asm_rule);;
+            expand_conv tm in
+        conv_prolog_rule (CHANGED_CONV (DEPTH_CONV conv)) in
+    (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule);;
 
-let merge_wire_asm_rule gvs : asm_rule =
+(***
+let merge_wire_prolog_rule gvs : prolog_rule =
     fun asm -> fun th ->
     if is_connect asm then
        let (x,y) = dest_connect asm in
@@ -237,7 +289,7 @@ let merge_wire_asm_rule gvs : asm_rule =
         [] -> failwith "no merge possible"
       | h :: _ -> (None, INST [(rand h, w)] th);;
 
-let rescue_primary_output_asm_rule : term -> asm_rule =
+let rescue_primary_output_prolog_rule : term -> prolog_rule =
     let simple_conv th =
         let redex = lhs (concl th) in
         fun tm ->
@@ -257,47 +309,46 @@ let rescue_primary_output_asm_rule : term -> asm_rule =
      fun asm -> fun th ->
      if not (free_in primary_output asm) then failwith "nothing to rescue"
      else if asm = rescue_tm then failwith "no need to rescue the rescue team"
-     else conv_asm_rule rescue_conv asm th;;
+     else conv_prolog_rule rescue_conv asm th;;
+***)
 
 let instantiate_hardware =
-    let basic_asm_rule =
-        let basic_rules =
-            [subst_var_asm_rule;
-             num_eq_asm_rule;
-             mk_bus_asm_rule;
-             wire_asm_rule;
-             bsub_asm_rule;
-             bground_asm_rule] in
-        let basic_thms =
-            [bconnect_bappend_bwire; bconnect_bnil;
-             bdelay_bappend_bwire; bdelay_bnil;
-             bnot_bappend_bwire; bnot_bnil;
-             band2_bappend_bwire; band2_bnil;
-             bor2_bappend_bwire; bor2_bnil;
-             bxor2_bappend_bwire; bxor2_bnil;
-             bcase1_bappend_bwire; bcase1_bnil;
-             case1_middle_ground; case1_middle_power] in
-        first_asm_rule (basic_rules @ map thm_asm_rule basic_thms) in
-    let merge_wires th =
-        let cvs = frees (concl th) in
-        let gvs = filter (not o C mem cvs) (freesl (hyp th)) in
-        apply_asm_rule (merge_wire_asm_rule gvs) th in
-    let rescue_primary_outputs th =
-        let cvs = frees (concl th) in
+    let basic_rules =
+        [subst_var_prolog_rule;
+         num_simp_prolog_rule;
+         num_eq_prolog_rule;
+         mk_bus_prolog_rule;
+         wire_prolog_rule;
+         bsub_prolog_rule;
+         bground_prolog_rule] @
+        map thm_prolog_rule
+        [bconnect_bappend_bwire; bconnect_bnil;
+         bdelay_bappend_bwire; bdelay_bnil;
+         bnot_bappend_bwire; bnot_bnil;
+         band2_bappend_bwire; band2_bnil;
+         bor2_bappend_bwire; bor2_bnil;
+         bxor2_bappend_bwire; bxor2_bnil;
+         bcase1_bappend_bwire; bcase1_bnil;
+         case1_middle_ground; case1_middle_power] in
+(***
+    let merge_wires frozen th =
+        let gvs = filter (not o C mem frozen) (freesl (hyp th)) in
+        apply_prolog_rule (merge_wire_prolog_rule gvs) th in
+    let rescue_primary_outputs frozen th =
         let inputs = freesl (map rator (hyp th)) in
         let outputs = map rand (hyp th) in
-        let primary_outputs = filter (C mem outputs) cvs in
+        let primary_outputs = filter (C mem outputs) frozen in
         let captured_primary_outputs = filter (C mem inputs) primary_outputs in
-        let asm_rule =
-            first_asm_rule
-              (map rescue_primary_output_asm_rule captured_primary_outputs) in
-        apply_asm_rule asm_rule th in
-    let rename_wires =
+        let prolog_rule =
+            first_prolog_rule
+              (map rescue_primary_output_prolog_rule captured_primary_outputs) in
+        apply_prolog_rule prolog_rule th in
+***)
+    let rename_wires frozen =
         let rename p w (n,s) =
             (n + 1, (mk_var (p ^ string_of_int n, type_of w), w) :: s) in
         fun th ->
-        let cvs = frees (concl th) in
-        let gvs = filter (not o C mem cvs) (freesl (hyp th)) in
+        let gvs = filter (not o C mem frozen) (freesl (hyp th)) in
         let delays = filter is_delay (hyp th) in
         let delay_outputs = map rand delays in
         let (rvs,wvs) = partition (C mem delay_outputs) gvs in
@@ -305,12 +356,19 @@ let instantiate_hardware =
         let (_,sub) = itlist (rename "w") wvs (0,sub) in
         INST sub th in
     fun ths ->
-    let user_asm_rule = first_asm_rule (map thm_asm_rule ths) in
-    let asm_rule = orelse_asm_rule basic_asm_rule user_asm_rule in
-    rename_wires o
-    rescue_primary_outputs o
-    merge_wires o
-    apply_asm_rule asm_rule;;
+    let user_rules = map thm_prolog_rule ths in
+    let rule = first_prolog_rule (basic_rules @ user_rules) in
+    let instantiate = repeat_prove_hyp_prolog_rule (repeat_prolog_rule rule) in
+    fun frozen -> fun th ->
+    let (th,_) = instantiate frozen th in
+(***
+    let (th,_) = merge_wires frozen th in
+***)
+    rename_wires frozen th;;
+
+(*** Testing
+instantiate_hardware [badder2_def; counter_def] (frees (concl counter91_thm)) counter91_thm;;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Pretty-printing synthesized hardware in Verilog.                          *)

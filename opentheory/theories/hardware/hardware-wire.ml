@@ -315,7 +315,7 @@ let case1_exists = prove
 export_thm case1_exists;;
 
 let case1_middle_ground = prove
- (`!x y z. (?xn. not x xn /\ and2 xn y z) ==> case1 x ground y z`,
+ (`!x y z xn. not x xn /\ and2 xn y z ==> case1 x ground y z`,
   REPEAT STRIP_TAC THEN
   REWRITE_TAC [case1_def] THEN
   GEN_TAC THEN
