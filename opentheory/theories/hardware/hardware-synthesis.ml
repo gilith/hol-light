@@ -274,12 +274,24 @@ let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
         conv_prolog_rule (CHANGED_CONV (DEPTH_CONV conv)) in
     (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule);;
 
-let connect_prolog_rule : prolog_rule =
+let connect_wire_prolog_rule : prolog_rule =
     fun frozen -> fun tm ->
     let (x,y) = dest_connect tm in
     if is_unfrozen_var frozen y then (SPEC x connect_refl, [(x,y)])
-    else if is_unfrozen_var frozen x then (SPEC y connect_refl, [(y,x)])
-    else failwith "connect_prolog_rule: frozen";;
+    else failwith "connect_wire_prolog_rule: frozen";;
+
+let wire_connect_prolog_rule : prolog_rule =
+    fun frozen -> fun tm ->
+    let (x,y) = dest_connect tm in
+    if is_unfrozen_var frozen x then (SPEC y connect_refl, [(y,x)])
+    else failwith "wire_connect_prolog_rule: frozen";;
+
+let connect_prolog_rule : prolog_rule =
+    orelse_prolog_rule connect_wire_prolog_rule wire_connect_prolog_rule;;
+
+let partition_primary primary th =
+    let outputs = map rand (hyp th) in
+    partition (not o C mem outputs) primary;;
 
 let rescue_primary_outputs_prolog_rule : term list -> prolog_rule =
     let connect_equal_wires = prove
@@ -297,31 +309,78 @@ let rescue_primary_outputs_prolog_rule : term list -> prolog_rule =
      let rescue_conv = FIRST_CONV (map connect_conv primary_outputs) in
      conv_prolog_rule (ONCE_DEPTH_CONV rescue_conv);;
 
-let rescue_primary_outputs frozen th =
-    let outputs = map rand (hyp th) in
-    let primary_outputs = filter (C mem outputs) frozen in
+let rescue_primary_outputs =
+    let cleanup_rule = try_prolog_rule connect_wire_prolog_rule in
+    fun primary_outputs -> fun th ->
     if length primary_outputs = 0 then th else
     let rescue_rule = rescue_primary_outputs_prolog_rule primary_outputs in
-    fst (prove_hyp_prolog_rule rescue_rule frozen th);;
+    let (th,_) = prove_hyp_prolog_rule rescue_rule primary_outputs th in
+    let (th,_) = repeat_prove_hyp_prolog_rule cleanup_rule primary_outputs th in
+    th;;
+
+let merge_logic =
+    let rec merge_asms th asms =
+        match asms with
+          [] -> th
+        | asm :: asms ->
+          if is_connect asm then merge_asms th asms else
+          let (f,w) = dest_comb asm in
+          let pred h = rator h = f in
+          match filter pred asms with
+            [] -> merge_asms th asms
+          | h :: _ -> merge_thm (INST [(rand h, w)] th)
+    and merge_thm th = merge_asms th (hyp th) in
+    merge_thm;;
+
+let delete_dead_logic primary_inputs primary_outputs th =
+    let defs =
+        let mk_def asm = (rand asm, frees (rator asm), asm) in
+        map mk_def (hyp th) in
+    let find_def wire =
+        match filter (fun (w,_,_) -> w = wire) defs with
+          [] -> failwith "delete_dead_logic: no definition found for wire"
+        | [(_,ws,asm)] -> (ws,asm)
+        | _ :: _ :: _ ->
+          failwith "delete_dead_logic: multiple definitions found for wire" in
+    let rec reachable seen work =
+        match work with
+          [] -> seen
+        | wire :: work ->
+          if mem wire seen then reachable seen work else
+          let seen = wire :: seen in
+          if mem wire primary_inputs then reachable seen work else
+          let (ws,_) = find_def wire in
+          reachable seen (ws @ work) in
+    let alive = reachable [] primary_outputs in
+    let (pis,alive) = partition (C mem primary_inputs) alive in
+    let () =
+        let n = length primary_inputs - length pis in
+        if n = 0 then () else
+        warn true
+          (string_of_int n ^ " unused primary input" ^
+           (if n = 1 then "" else "s")) in
+    let () =
+        let n = length defs - length alive in
+        if n = 0 then () else
+        warn true
+          (string_of_int n ^ " unused internal wire" ^
+           (if n = 1 then "" else "s")) in
+    (*** Delete dead logic ***)
+    let alive = filter (not o C mem primary_outputs) alive in
+    (th,alive);;
 
 (***
-let merge_wire_prolog_rule gvs : prolog_rule =
-    fun asm -> fun th ->
-    if is_connect asm then
-       let (x,y) = dest_connect asm in
-       if mem y gvs then
-         (None, PROVE_HYP (SPEC x connect_refl) (INST [(x,y)] th))
-       else if mem x gvs then
-         (None, PROVE_HYP (SPEC y connect_refl) (INST [(y,x)] th))
-       else
-         failwith "frozen connect"
-    else
-      let (f,w) = dest_comb asm in
-      if not (mem w gvs) then failwith "frozen output" else
-      let pred h = rator h = f && not (h = asm) in
-      match filter pred (hyp th) with
-        [] -> failwith "no merge possible"
-      | h :: _ -> (None, INST [(rand h, w)] th);;
+let rename_wires =
+    let rename p w (n,s) =
+        (n + 1, (mk_var (p ^ string_of_int n, type_of w), w) :: s) in
+    fun wires -> fun th ->
+    let gvs = filter (not o C mem frozen) (freesl (hyp th)) in
+    let delays = filter is_delay (hyp th) in
+    let delay_outputs = map rand delays in
+    let (rvs,wvs) = partition (C mem delay_outputs) gvs in
+    let (_,sub) = itlist (rename "r") rvs (0,[]) in
+    let (_,sub) = itlist (rename "w") wvs (0,sub) in
+    INST sub th;;
 ***)
 
 let instantiate_hardware =
@@ -343,33 +402,20 @@ let instantiate_hardware =
          bxor2_bappend_bwire; bxor2_bnil;
          bcase1_bappend_bwire; bcase1_bnil;
          case1_middle_ground; case1_middle_power] in
-(***
-    let merge_wires frozen th =
-        let gvs = filter (not o C mem frozen) (freesl (hyp th)) in
-        apply_prolog_rule (merge_wire_prolog_rule gvs) th in
-***)
-    let rename_wires frozen =
-        let rename p w (n,s) =
-            (n + 1, (mk_var (p ^ string_of_int n, type_of w), w) :: s) in
-        fun th ->
-        let gvs = filter (not o C mem frozen) (freesl (hyp th)) in
-        let delays = filter is_delay (hyp th) in
-        let delay_outputs = map rand delays in
-        let (rvs,wvs) = partition (C mem delay_outputs) gvs in
-        let (_,sub) = itlist (rename "r") rvs (0,[]) in
-        let (_,sub) = itlist (rename "w") wvs (0,sub) in
-        INST sub th in
     fun ths ->
     let user_rules = map thm_prolog_rule ths in
     let rule = first_prolog_rule (basic_rules @ user_rules) in
     let instantiate = repeat_prove_hyp_prolog_rule (repeat_prolog_rule rule) in
-    fun frozen -> fun th ->
-    let (th,_) = instantiate frozen th in
-    let (th,_) = rescue_primary_outputs frozen th in
+    fun primary -> fun th ->
+    let (th,_) = instantiate primary th in
+    let (primary_inputs,primary_outputs) = partition_primary primary th in
+    let th = rescue_primary_outputs primary_outputs th in
+    let th = merge_logic th in
+    let (th,wires) = delete_dead_logic primary_inputs primary_outputs th in
 (***
-    let (th,_) = merge_wires frozen th in
+    let th = rename_wires wires th in
 ***)
-    rename_wires frozen th;;
+    th;;
 
 (*** Testing
 let mk_asms asms =
