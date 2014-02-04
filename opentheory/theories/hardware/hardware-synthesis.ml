@@ -15,6 +15,10 @@ let null_subst (sub : (term * term) list) =
 let compose_subst old_sub new_sub =
     new_sub @ map (fun (t,v) -> (vsubst new_sub t, v)) old_sub;;
 
+let simple_conv th =
+    let redex = lhs (concl th) in
+    fun tm -> if tm = redex then th else failwith "simple_conv";;
+
 let orelse_sym_conv : conv -> conv =
     let rewr = REWR_CONV EQ_SYM_EQ in
     fun c -> c ORELSEC (rewr THENC c);;
@@ -277,6 +281,29 @@ let connect_prolog_rule : prolog_rule =
     else if is_unfrozen_var frozen x then (SPEC y connect_refl, [(y,x)])
     else failwith "connect_prolog_rule: frozen";;
 
+let rescue_primary_outputs_prolog_rule : term list -> prolog_rule =
+    let connect_equal_wires = prove
+        (`!w x. connect w x ==> x = w`,
+         REPEAT STRIP_TAC THEN
+         MATCH_MP_TAC signal_eq_imp THEN
+         GEN_TAC THEN
+         MATCH_MP_TAC connect_signal THEN
+         ASM_REWRITE_TAC []) in
+     let connect_conv primary_output =
+         let wire = genvar (type_of primary_output) in
+         let rescue_th = SPECL [wire; primary_output] connect_equal_wires in
+         simple_conv (UNDISCH rescue_th) in
+     fun primary_outputs ->
+     let rescue_conv = FIRST_CONV (map connect_conv primary_outputs) in
+     conv_prolog_rule (ONCE_DEPTH_CONV rescue_conv);;
+
+let rescue_primary_outputs frozen th =
+    let outputs = map rand (hyp th) in
+    let primary_outputs = filter (C mem outputs) frozen in
+    if length primary_outputs = 0 then th else
+    let rescue_rule = rescue_primary_outputs_prolog_rule primary_outputs in
+    fst (prove_hyp_prolog_rule rescue_rule frozen th);;
+
 (***
 let merge_wire_prolog_rule gvs : prolog_rule =
     fun asm -> fun th ->
@@ -295,28 +322,6 @@ let merge_wire_prolog_rule gvs : prolog_rule =
       match filter pred (hyp th) with
         [] -> failwith "no merge possible"
       | h :: _ -> (None, INST [(rand h, w)] th);;
-
-let rescue_primary_output_prolog_rule : term -> prolog_rule =
-    let simple_conv th =
-        let redex = lhs (concl th) in
-        fun tm ->
-        if tm = redex then th else NO_CONV tm in
-    let connect_equal_wires = prove
-        (`!w x. connect w x ==> x = w`,
-         REPEAT STRIP_TAC THEN
-         MATCH_MP_TAC signal_eq_imp THEN
-         GEN_TAC THEN
-         MATCH_MP_TAC connect_signal THEN
-         ASM_REWRITE_TAC []) in
-     fun primary_output ->
-     let wire = genvar (type_of primary_output) in
-     let rescue_th = SPECL [wire; primary_output] connect_equal_wires in
-     let (rescue_tm,_) = dest_imp (concl rescue_th) in
-     let rescue_conv = DEPTH_CONV (simple_conv (UNDISCH rescue_th)) in
-     fun asm -> fun th ->
-     if not (free_in primary_output asm) then failwith "nothing to rescue"
-     else if asm = rescue_tm then failwith "no need to rescue the rescue team"
-     else conv_prolog_rule rescue_conv asm th;;
 ***)
 
 let instantiate_hardware =
@@ -339,15 +344,6 @@ let instantiate_hardware =
          bcase1_bappend_bwire; bcase1_bnil;
          case1_middle_ground; case1_middle_power] in
 (***
-    let rescue_primary_outputs frozen th =
-        let inputs = freesl (map rator (hyp th)) in
-        let outputs = map rand (hyp th) in
-        let primary_outputs = filter (C mem outputs) frozen in
-        let captured_primary_outputs = filter (C mem inputs) primary_outputs in
-        let prolog_rule =
-            first_prolog_rule
-              (map rescue_primary_output_prolog_rule captured_primary_outputs) in
-        apply_prolog_rule prolog_rule th in
     let merge_wires frozen th =
         let gvs = filter (not o C mem frozen) (freesl (hyp th)) in
         apply_prolog_rule (merge_wire_prolog_rule gvs) th in
@@ -369,12 +365,19 @@ let instantiate_hardware =
     let instantiate = repeat_prove_hyp_prolog_rule (repeat_prolog_rule rule) in
     fun frozen -> fun th ->
     let (th,_) = instantiate frozen th in
+    let (th,_) = rescue_primary_outputs frozen th in
 (***
     let (th,_) = merge_wires frozen th in
 ***)
     rename_wires frozen th;;
 
 (*** Testing
+let mk_asms asms =
+    MATCH_MP (TAUT `!t. t ==> T`) (itlist (CONJ o ASSUME) asms TRUTH);;
+let frozen : term list = [`x : wire`; `y : wire`; `z : wire`];;
+let th = mk_asms [`connect w x`; `connect x y`; `connect y z`];;
+rescue_primary_outputs frozen th;;
+
 instantiate_hardware [badder2_def; counter_def] (frees (concl counter91_thm)) counter91_thm;;
 ***)
 
