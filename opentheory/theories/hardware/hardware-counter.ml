@@ -3483,9 +3483,9 @@ let mk_counter n ld dn =
              (RAND_CONV (REWR_CONV cth) THENC
               REWR_CONV AND_TRUE_THM)) th1 in
     let th = GENL fvs th2 in
-    let frozen = frees (concl th) in
+    let primary = frees (concl th) in
     let ths = [counter_def; badder2_def] in
-    (***instantiate_hardware ths frozen***) th;;
+    (***instantiate_hardware ths primary***) th;;
 
 (*** Testing
 let ld_wire = `ld : wire`;;

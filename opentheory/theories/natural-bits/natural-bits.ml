@@ -1620,4 +1620,18 @@ let rec num_to_bits_bound k n =
 
 let num_to_bits n = num_to_bits_bound (bit_width_num n) n;;
 
+(* ------------------------------------------------------------------------- *)
+(* Bitlist conversions.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+let bit_tl_conv = REWR_CONV bit_tl_def THENC NUM_REDUCE_CONV;;
+
+let rec bit_width_conv tm =
+    (REWR_CONV bit_width_recursion THENC
+     RATOR_CONV (LAND_CONV NUM_REDUCE_CONV) THENC
+     (REWR_CONV COND_TRUE ORELSEC
+      (REWR_CONV COND_FALSE THENC
+       LAND_CONV (RAND_CONV bit_tl_conv THENC bit_width_conv) THENC
+       NUM_REDUCE_CONV))) tm;;
+
 logfile_end ();;

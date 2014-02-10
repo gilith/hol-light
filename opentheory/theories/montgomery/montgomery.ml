@@ -2491,16 +2491,165 @@ let montgomery_circuit = prove
 (* Automatically generating verified Montgomery multiplication circuits.     *)
 (* ------------------------------------------------------------------------- *)
 
-let mk_montgomery n =
-    let r = mk_numeral (add_num (bit_width_num (dest_numeral n)) num_2) in
-    let egcd =
-        let rth = NUM_REDUCE_CONV (mk_comb (`(EXP) 2`, r)) in
-        let eth = prove_egcd (rhs (concl rth)) n in
+let mk_montgomery_mult n ld xs xc ys yc zs zc =
+    let undisch_bind th =
+        let (tm,_) = dest_imp (concl th) in
+        (tm, UNDISCH th) in
+    let nn = mk_numeral n in
+    let r_th = bit_width_conv (mk_comb (`bit_width`,nn)) in
+    let rn = rand (concl r_th) in
+    let r = dest_numeral rn in
+    let r1 = add_num r num_1 in
+    let (d0,d1,d2) =
+        let d = add_num (div_num (bit_width_num r1) num_2) num_1 in
+        let dn = mk_numeral d in
+        (dn,dn,dn) in
+    let xs = variable_bus xs r in
+    let xc = variable_bus xc r in
+    let ys = variable_bus ys r in
+    let yc = variable_bus yc r in
+    let zs = variable_bus zs r1 in
+    let zc = variable_bus zc r1 in
+    let egcd_th =
+        let rtm =
+            let tm0 = mk_comb (`(+) : num -> num -> num`, rn) in
+            mk_comb (`(EXP) 2`, mk_comb (tm0, `2`)) in
+        let rth = NUM_REDUCE_CONV rtm in
+        let eth = prove_egcd (rhs (concl rth)) nn in
         CONV_RULE (LAND_CONV (REWR_CONV MULT_SYM THENC
                               LAND_CONV (REWR_CONV (SYM rth)))) eth in
-    let s = rand (lhs (concl egcd)) in
-    let k = lhand (lhand (rhs (concl egcd))) in
-    (egcd,s,k);;
+    let sn = rand (lhs (concl egcd_th)) in
+    let kn = lhand (lhand (rhs (concl egcd_th))) in
+    let (ns,nc) =
+        let r1 = sub_num r num_1 in
+        let n1 = num_to_bits_bound r1 n in
+        let n2 = div_num (sub_num n (bits_to_num n1)) num_2 in
+        (bits_to_bus n1, bits_to_bus (num_to_bits_bound r1 n2)) in
+    let k = dest_numeral kn in
+    let (ks,kc) =
+        let k1 = num_to_bits_bound r1 k in
+        let k2 = div_num (sub_num k (bits_to_num k1)) num_2 in
+        (bits_to_bus k1, bits_to_bus (num_to_bits_bound r1 k2)) in
+    let fv_x = `x : num` in
+    let fv_y = `y : num` in
+    let fv_t = `t : cycle` in
+    let th0 =
+        SPECL
+          [nn; rn; sn; kn; fv_x; fv_y; ld; xs; xc; d0; ys; yc; d1;
+           ks; kc; d2; ns; nc; zs; zc; fv_t]
+          montgomery_mult_bits_to_num in
+    let th1 =
+        let conv =
+            REWRITE_CONV [bnil_width; bwire_width; bappend_width] THENC
+            NUM_REDUCE_CONV in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th0 in
+    let th2 =
+        let conv =
+            NUM_REDUCE_CONV in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th1 in
+    let th3 =
+        let conv =
+            LAND_CONV (REWR_CONV r_th) THENC
+            REWR_CONV (EQT_INTRO (SPEC_ALL LE_REFL)) in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th2 in
+    let th4 =
+        let conv =
+            REWR_CONV (EQT_INTRO egcd_th) in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th3 in
+    let (ld_cond,th5) =
+        let conv =
+            RAND_CONV (ABS_CONV (LAND_CONV (RAND_CONV NUM_REDUCE_CONV))) in
+        undisch_bind
+          (CONV_RULE
+             (LAND_CONV (LAND_CONV conv) THENC
+              REWR_CONV IMP_CONJ) th4) in
+    let (x_cond,th6) =
+        let conv = ALL_CONV in
+        undisch_bind
+          (CONV_RULE
+             (LAND_CONV (LAND_CONV conv) THENC
+              REWR_CONV IMP_CONJ) th5) in
+    let (y_cond,th7) =
+        let conv =
+            RAND_CONV
+              (ABS_CONV (LAND_CONV (RAND_CONV (RAND_CONV NUM_REDUCE_CONV)))) in
+        undisch_bind
+          (CONV_RULE
+             (LAND_CONV (LAND_CONV conv) THENC
+              REWR_CONV IMP_CONJ) th6) in
+    let th8 =
+        let bits_conv =
+            REWRITE_CONV
+              [bnil_bsignal; bwire_bsignal; bappend_bsignal;
+               ground_signal; power_signal; APPEND_SING;
+               bits_to_num_cons; bits_to_num_nil;
+               bit_cons_true; bit_cons_false] THENC
+            NUM_REDUCE_CONV in
+        let conv =
+            RAND_CONV (ABS_CONV (RAND_CONV bits_conv)) THENC
+            REWRITE_CONV [] in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th7 in
+    let th9 =
+        let bits_conv =
+            REWRITE_CONV
+              [bnil_bsignal; bwire_bsignal; bappend_bsignal;
+               ground_signal; power_signal; APPEND_SING;
+               bits_to_num_cons; bits_to_num_nil;
+               bit_cons_true; bit_cons_false] THENC
+            NUM_REDUCE_CONV in
+        let conv =
+            RAND_CONV (ABS_CONV (RAND_CONV bits_conv)) THENC
+            REWRITE_CONV [] in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th8 in
+    let (ckt,th10) = undisch_bind th9 in
+    let th11 =
+        let conv =
+            LAND_CONV
+              (LAND_CONV
+                 (RAND_CONV (RAND_CONV (RAND_CONV NUM_REDUCE_CONV))) THENC
+               RAND_CONV
+                 (RAND_CONV
+                    (RAND_CONV (RAND_CONV (RAND_CONV NUM_REDUCE_CONV))))) THENC
+            RAND_CONV
+              (RATOR_CONV
+                 (RATOR_CONV (RAND_CONV (RAND_CONV NUM_REDUCE_CONV)))) in
+        CONV_RULE conv th10 in
+    let th =
+        (GEN fv_x o GEN fv_y o GEN fv_t o
+         DISCH ld_cond o DISCH x_cond o DISCH y_cond) th11 in
+    let primary = frees (concl th) in
+    let ths = [montgomery_mult_def] in
+    instantiate_hardware ths primary th;;
+
+(*** Testing
+let n = dest_numeral `91`;;
+let ld = `ld : wire`;;
+let xs = "xs";;
+let xc = "xc";;
+let ys = "ys";;
+let yc = "yc";;
+let zs = "zs";;
+let zc = "zc";;
+mk_montgomery_mult n ld xs xc ys yc zs zc;;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* LCS35 Time Capsule Crypto-Puzzle [1].                                     *)

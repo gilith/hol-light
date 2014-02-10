@@ -352,36 +352,45 @@ let delete_dead_logic primary_inputs primary_outputs th =
           let (ws,_) = find_def wire in
           reachable seen (ws @ work) in
     let alive = reachable [] primary_outputs in
-    let (pis,alive) = partition (C mem primary_inputs) alive in
-    let () =
+    let alive =
+        let (pis,alive) = partition (C mem primary_inputs) alive in
         let n = length primary_inputs - length pis in
+        let () =
+            if n = 0 then () else
+            warn true
+              (string_of_int n ^ " unused primary input" ^
+               (if n = 1 then "" else "s")) in
+        alive in
+    let (delays,wires) = partition (fun (_,_,asm) -> is_delay asm) defs in
+    let (alive_delays,alive_wires) =
+        let is_delay wire = exists (fun (w,_,_) -> w = wire) delays in
+        partition is_delay alive in
+    let () =
+        let n = length delays - length alive_delays in
         if n = 0 then () else
         warn true
-          (string_of_int n ^ " unused primary input" ^
+          (string_of_int n ^ " unused delay" ^
            (if n = 1 then "" else "s")) in
     let () =
-        let n = length defs - length alive in
+        let n = length wires - length alive_wires in
         if n = 0 then () else
         warn true
-          (string_of_int n ^ " unused internal wire" ^
+          (string_of_int n ^ " unused wire" ^
            (if n = 1 then "" else "s")) in
     (*** Delete dead logic ***)
-    let alive = filter (not o C mem primary_outputs) alive in
-    (th,alive);;
+    th;;
 
-(***
 let rename_wires =
     let rename p w (n,s) =
         (n + 1, (mk_var (p ^ string_of_int n, type_of w), w) :: s) in
-    fun wires -> fun th ->
-    let gvs = filter (not o C mem frozen) (freesl (hyp th)) in
+    fun primary -> fun th ->
+    let gvs = filter (not o C mem primary) (freesl (hyp th)) in
     let delays = filter is_delay (hyp th) in
     let delay_outputs = map rand delays in
     let (rvs,wvs) = partition (C mem delay_outputs) gvs in
     let (_,sub) = itlist (rename "r") rvs (0,[]) in
     let (_,sub) = itlist (rename "w") wvs (0,sub) in
     INST sub th;;
-***)
 
 let instantiate_hardware =
     let basic_rules =
@@ -411,10 +420,8 @@ let instantiate_hardware =
     let (primary_inputs,primary_outputs) = partition_primary primary th in
     let th = rescue_primary_outputs primary_outputs th in
     let th = merge_logic th in
-    let (th,wires) = delete_dead_logic primary_inputs primary_outputs th in
-(***
-    let th = rename_wires wires th in
-***)
+    let th = delete_dead_logic primary_inputs primary_outputs th in
+    let th = rename_wires primary th in
     th;;
 
 (*** Testing

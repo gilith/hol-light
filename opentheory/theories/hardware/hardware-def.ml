@@ -130,6 +130,10 @@ let bit_to_wire b = if b then mk_power else mk_ground;;
 
 let mk_bnil = `bnil`;;
 
+let is_bnil =
+    let bnil_tm = `bnil` in
+    fun tm -> tm = bnil_tm;;
+
 let mk_bwire =
     let bwire_tm = `bwire` in
     fun w -> mk_comb (bwire_tm,w);;
@@ -190,6 +194,98 @@ let dest_bpower =
 let bits_to_bus l =
     let f h t = mk_bappend (mk_bwire (bit_to_wire h)) t in
     itlist f l mk_bnil;;
+
+let mk_bus_wire =
+    let wire_ty = `:wire` in
+    fun x -> fun i ->
+    mk_var (x ^ "[" ^ string_of_num i ^ "]", wire_ty);;
+
+let mk_bus_wire =
+    let wire_ty = `:wire` in
+    fun x -> fun i ->
+    mk_var (x ^ "[" ^ string_of_num i ^ "]", wire_ty);;
+
+let dest_bus_wire =
+    let wire_ty = `:wire` in
+    let is_digit = function
+      | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' -> true
+      | _ -> false in
+    let parse_var s =
+        let rec parse_digits n =
+            if n < 2 then failwith "eos" else
+            let n = n - 1 in
+            let c = String.get s n in
+            if is_digit c then parse_digits n
+            else if c <> '[' then failwith "no '[' char"
+            else n in
+        let parse_end n =
+            if n < 4 then failwith "eos" else
+            let n = n - 1 in
+            let c = String.get s n in
+            if c <> ']' then failwith "not a ']' char" else
+            parse_digits n in
+        let b = String.length s in
+        let a = parse_end b in
+        let n = b - (a + 2) in
+        if n = 0 then failwith "no digits"
+        else if n > 1 && String.get s (a + 1) = '0' then failwith "leading 0"
+        else (String.sub s 0 a, num_of_string (String.sub s (a + 1) n)) in
+    fun v ->
+    let (s,ty) = dest_var v in
+    if ty = wire_ty then parse_var s else failwith "not a wire variable";;
+
+let variable_bus x =
+    let rec mk_bus i n =
+        if eq_num n num_0 then mk_bnil else
+        let w = mk_bus_wire x i in
+        let b = mk_bus (i +/ num_1) (n -/ num_1) in
+        mk_bappend (mk_bwire w) b in
+    mk_bus num_0;;
+
+let dest_variable_bus =
+    let rec dest_bus x =
+        if is_bnil x then [] else
+        let (h,t) = dest_bappend x in
+        dest_bwire h :: dest_bus t in
+    fun x ->
+    let (xs,is) = unzip (map dest_bus_wire (dest_bus x)) in
+    match xs with
+      [] -> failwith "no bus wires"
+    | x :: xs ->
+      if exists ((<>) x) xs then failwith "different bus wires" else (x,is);;
+
+let range_to_string =
+    let single_to_string m = string_of_num m in
+    let mono_to_string m n = single_to_string m ^ ":" ^ single_to_string n in
+    let rec rising m n xs =
+        match xs with
+          [] -> mono_to_string m n
+        | x :: xs ->
+          if x = add_num n num_1 then rising m x xs else
+          mono_to_string m n ^ "," ^ single x xs
+    and falling m n xs =
+        match xs with
+          [] -> mono_to_string m n
+        | x :: xs ->
+          if x = sub_num n num_1 then falling m x xs else
+          mono_to_string m n ^ "," ^ single x xs
+    and single n xs =
+        match xs with
+          [] -> single_to_string n
+        | x :: xs ->
+          if x = add_num n num_1 then rising n x xs else
+          if x = sub_num n num_1 then falling n x xs else
+          single_to_string n ^ "," ^ single x xs in
+    fun xs ->
+    match xs with
+      [] -> failwith "empty range"
+    | x :: xs -> "[" ^ single x xs ^ "]";;
+
+let variable_bus_to_string tm =
+    let (x,xs) = dest_variable_bus tm in
+    x ^ range_to_string xs;;
+
+install_user_printer ("variable_bus", print_string o variable_bus_to_string);;
 
 let genvar_bus =
     let wire_ty = `:wire` in
