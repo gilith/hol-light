@@ -177,11 +177,11 @@ let pp_print_type,pp_print_qtype =
 (* ------------------------------------------------------------------------- *)
 
 let install_user_printer,delete_user_printer,try_user_printer =
-  let user_printers = ref ([]:(string*(term->unit))list) in
+  let user_printers = ref ([]:(string*(formatter->term->unit))list) in
   (fun pr -> user_printers := pr::(!user_printers)),
   (fun s -> user_printers := snd(remove (fun (s',_) -> s = s')
                                         (!user_printers))),
-  (fun tm -> tryfind (fun (_,pr) -> pr tm) (!user_printers));;
+  (fun fmt -> fun tm -> tryfind (fun (_,pr) -> pr fmt tm) (!user_printers));;
 
 (* ------------------------------------------------------------------------- *)
 (* Printer for terms.                                                        *)
@@ -235,7 +235,7 @@ let pp_print_term =
     else [dest_clause tm] in
   fun fmt ->
     let rec print_term prec tm =
-      try try_user_printer tm with Failure _ ->
+      try try_user_printer fmt tm with Failure _ ->
       try pp_print_string fmt (string_of_num(dest_numeral tm)) with Failure _ ->
       try (let tms = dest_list tm in
            try if fst(dest_type(hd(snd(dest_type(type_of tm))))) <> "char"
