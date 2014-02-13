@@ -329,6 +329,19 @@ let case1_middle_ground = prove
 
 export_thm case1_middle_ground;;
 
+let case1_right_ground = prove
+ (`!x y z. and2 x y z ==> case1 x y ground z`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [case1_def] THEN
+  GEN_TAC THEN
+  MP_TAC
+    (SPECL [`x : wire`; `y : wire`; `z : wire`; `t : cycle`] and2_signal) THEN
+  COND_CASES_TAC THEN
+  BOOL_CASES_TAC `signal x t` THEN
+  ASM_REWRITE_TAC [ground_signal]);;
+
+export_thm case1_right_ground;;
+
 let case1_middle_power = prove
  (`!x y z. or2 x y z ==> case1 x power y z`,
   REPEAT STRIP_TAC THEN
@@ -777,5 +790,35 @@ let dest_xor2 =
     if tm = xor2_tm then (x,y,z) else failwith "dest_xor2";;
 
 let is_xor2 = can dest_xor2;;
+
+let mk_case1 =
+    let case1_tm = `case1` in
+    fun w -> fun x -> fun y -> fun z ->
+    mk_comb (mk_comb (mk_comb (mk_comb (case1_tm,w), x), y), z);;
+
+let dest_case1 =
+    let case1_tm = `case1` in
+    fun tm ->
+    let (tm,z) = dest_comb tm in
+    let (tm,y) = dest_comb tm in
+    let (tm,x) = dest_comb tm in
+    let (tm,w) = dest_comb tm in
+    if tm = case1_tm then (w,x,y,z) else failwith "dest_case1";;
+
+let is_case1 = can dest_case1;;
+
+(* ------------------------------------------------------------------------- *)
+(* Automatically synthesizing hardware.                                      *)
+(* ------------------------------------------------------------------------- *)
+
+let and3_syn = [and3_def];;
+
+let or3_syn = [or3_def];;
+
+let xor3_syn = [xor3_def];;
+
+let majority3_syn = setify (majority3_def :: or3_syn);;
+
+let sticky_syn = [sticky_def];;
 
 logfile_end ();;

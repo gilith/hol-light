@@ -717,4 +717,14 @@ let sum_carry_mult_bits_to_num = prove
 
 export_thm sum_carry_mult_bits_to_num;;
 
+(* ------------------------------------------------------------------------- *)
+(* Automatically synthesizing hardware.                                      *)
+(* ------------------------------------------------------------------------- *)
+
+let bpipe_syn = [bpipe_def];;
+
+let pipe_syn = setify (pipe_def :: bpipe_syn);;
+
+let counter_syn = setify (counter_def :: badder2_syn);;
+
 logfile_end ();;

@@ -144,6 +144,8 @@ let dest_bwire =
     let (tm,w) = dest_comb tm in
     if tm = bwire_tm then w else failwith "dest_bwire";;
 
+let is_bwire = can dest_bwire;;
+
 let mk_bappend =
     let bappend_tm = `bappend` in
     fun x -> fun y -> mk_comb (mk_comb (bappend_tm,x), y);;
@@ -154,6 +156,8 @@ let dest_bappend =
     let (tm,y) = dest_comb tm in
     let (tm,x) = dest_comb tm in
     if tm = bappend_tm then (x,y) else failwith "dest_bappend";;
+
+let is_bappend = can dest_bappend;;
 
 let mk_width =
     let width_tm = `width` in

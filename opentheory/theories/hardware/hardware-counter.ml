@@ -3442,7 +3442,17 @@ let counter_signal = prove
 export_thm counter_signal;;
 
 (* ------------------------------------------------------------------------- *)
-(* Automatically generating verified counter circuits.                       *)
+(* Automatically synthesizing hardware.                                      *)
+(* ------------------------------------------------------------------------- *)
+
+let bpipe_syn = [bpipe_def];;
+
+let pipe_syn = setify (pipe_def :: bpipe_syn);;
+
+let counter_syn = setify (counter_def :: badder2_syn);;
+
+(* ------------------------------------------------------------------------- *)
+(* Automatically synthesizing verified counter circuits.                     *)
 (* ------------------------------------------------------------------------- *)
 
 let mk_counter n ld dn =
@@ -3484,8 +3494,7 @@ let mk_counter n ld dn =
               REWR_CONV AND_TRUE_THM)) th1 in
     let th = GENL fvs th2 in
     let primary = frees (concl th) in
-    let ths = [counter_def; badder2_def] in
-    (***instantiate_hardware ths primary***) th;;
+    instantiate_hardware counter_syn primary th;;
 
 (*** Testing
 let ld_wire = `ld : wire`;;

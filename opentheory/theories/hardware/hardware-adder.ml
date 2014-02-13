@@ -1431,4 +1431,21 @@ let sum_carry_bit_signal = prove
 
 export_thm sum_carry_bit_signal;;
 
+(* ------------------------------------------------------------------------- *)
+(* Automatically synthesizing hardware.                                      *)
+(* ------------------------------------------------------------------------- *)
+
+let adder2_syn = [adder2_def];;
+
+let adder3_syn =
+    setify (adder3_def :: xor3_syn @ majority3_syn);;
+
+let badder2_syn = [badder2_def];;
+
+let badder3_syn =
+    setify (badder3_def :: bxor3_syn @ bmajority3_syn);;
+
+let sum_carry_bit_syn =
+    setify (sum_carry_bit_def :: badder2_syn);;
+
 logfile_end ();;

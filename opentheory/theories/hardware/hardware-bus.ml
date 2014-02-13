@@ -432,17 +432,71 @@ let brev_bwire = prove
 
 export_thm brev_bwire;;
 
-(***
 let brev_bappend = prove
  (`!x1 x2 y1 y2.
      brev x1 y2 /\ brev x2 y1 ==> brev (bappend x1 x2) (bappend y1 y2)`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [brev_def; bappend_width] THEN
-  REPEAT STRIP_TAC THEN
+  REPEAT STRIP_TAC THENL
+  [ASM_REWRITE_TAC [] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+  ASM_CASES_TAC `i < width x1` THENL
+  [MP_TAC
+     (SPECL
+        [`x1 : bus`; `x2 : bus`; `i : num`; `xi : wire`]
+        wire_in_prefix) THEN
+   ASM_REWRITE_TAC [] THEN
+   UNDISCH_TAC `i + j + 1 = width x1 + width x2` THEN
+   POP_ASSUM
+     (X_CHOOSE_THEN `d : num` (fun th -> SUBST1_TAC th THEN ASSUME_TAC th) o
+      REWRITE_RULE [LT_EXISTS]) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   REWRITE_TAC [GSYM ADD1; SUC_ADD; SUC_INJ] THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   UNDISCH_TAC `wire (bappend y1 y2) (d + width x2) yj` THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   ASM_REWRITE_TAC [wire_in_suffix] THEN
+   STRIP_TAC THEN
+   STRIP_TAC THEN
+   UNDISCH_THEN
+     `!i j xi yj.
+        i + j + 1 = width x1 /\ wire x1 i xi /\ wire y2 j yj ==> xi = yj`
+     (MATCH_MP_TAC o SPECL [`i : num`; `d : num`]) THEN
+   UNDISCH_THEN `width x1 = i + SUC d` SUBST1_TAC THEN
+   ASM_REWRITE_TAC [ADD1];
+   ALL_TAC] THEN
+
+  UNDISCH_TAC `i + j + 1 = width x1 + width x2` THEN
+  POP_ASSUM
+    (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+     REWRITE_RULE [LE_EXISTS; NOT_LT]) THEN
+  REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+  STRIP_TAC THEN
+  UNDISCH_TAC `wire (bappend x1 x2) (width x1 + d) xi` THEN
+  ASM_REWRITE_TAC [wire_in_suffix] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`y1 : bus`; `y2 : bus`; `j : num`; `yj : wire`]
+       wire_in_prefix) THEN
+  ANTS_TAC THENL
+  [REWRITE_TAC [LT_EXISTS] THEN
+   EXISTS_TAC `d : num` THEN
+   UNDISCH_THEN `width x2 = width y1` (SUBST1_TAC o SYM) THEN
+   UNDISCH_THEN `d + j + 1 = width x2` (SUBST1_TAC o SYM) THEN
+   REWRITE_TAC [ADD_ASSOC; ADD1; EQ_ADD_RCANCEL] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  UNDISCH_THEN
+    `!i j xi yj.
+       i + j + 1 = width x2 /\ wire x2 i xi /\ wire y1 j yj ==> xi = yj`
+    (MATCH_MP_TAC o SPECL [`d : num`; `j : num`]) THEN
   ASM_REWRITE_TAC []);;
 
-export_thm brev_bwire;;
-***)
+export_thm brev_bappend;;
 
 (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 (* Lifting relations between wires *)
@@ -3251,5 +3305,130 @@ let dest_wire =
     let (tm,i) = dest_comb tm in
     let (tm,x) = dest_comb tm in
     if tm = wire_tm then (x,i,xi) else failwith "dest_wire";;
+
+let mk_brev =
+    let brev_tm = `brev` in
+    fun x -> fun y ->
+    mk_comb (mk_comb (brev_tm,x), y);;
+
+let dest_brev =
+    let brev_tm = `brev` in
+    fun tm ->
+    let (tm,y) = dest_comb tm in
+    let (tm,x) = dest_comb tm in
+    if tm = brev_tm then (x,y) else failwith "dest_brev";;
+
+(* ------------------------------------------------------------------------- *)
+(* Automatically synthesizing hardware.                                      *)
+(* ------------------------------------------------------------------------- *)
+
+let band3_syn =
+    let syn = prove
+      (`!w x y z.
+           band3 w x y z <=>
+           ?wx.
+             width wx = width w /\
+             band2 w x wx /\
+             band2 wx y z`,
+       REPEAT GEN_TAC THEN
+       REWRITE_TAC [band3_def] THEN
+       AP_TERM_TAC THEN
+       ABS_TAC THEN
+       EQ_TAC THENL
+       [STRIP_TAC THEN
+        ASM_REWRITE_TAC [] THEN
+        MATCH_MP_TAC band2_width_out THEN
+        EXISTS_TAC `w : bus` THEN
+        EXISTS_TAC `x : bus` THEN
+        ASM_REWRITE_TAC [];
+        STRIP_TAC THEN
+        ASM_REWRITE_TAC []]) in
+    [syn];;
+
+let bor3_syn =
+    let syn = prove
+      (`!w x y z.
+           bor3 w x y z <=>
+           ?wx.
+             width wx = width w /\
+             bor2 w x wx /\
+             bor2 wx y z`,
+       REPEAT GEN_TAC THEN
+       REWRITE_TAC [bor3_def] THEN
+       AP_TERM_TAC THEN
+       ABS_TAC THEN
+       EQ_TAC THENL
+       [STRIP_TAC THEN
+        ASM_REWRITE_TAC [] THEN
+        MATCH_MP_TAC bor2_width_out THEN
+        EXISTS_TAC `w : bus` THEN
+        EXISTS_TAC `x : bus` THEN
+        ASM_REWRITE_TAC [];
+        STRIP_TAC THEN
+        ASM_REWRITE_TAC []]) in
+    [syn];;
+
+let bxor3_syn =
+    let syn = prove
+      (`!w x y z.
+           bxor3 w x y z <=>
+           ?wx.
+             width wx = width w /\
+             bxor2 w x wx /\
+             bxor2 wx y z`,
+       REPEAT GEN_TAC THEN
+       REWRITE_TAC [bxor3_def] THEN
+       AP_TERM_TAC THEN
+       ABS_TAC THEN
+       EQ_TAC THENL
+       [STRIP_TAC THEN
+        ASM_REWRITE_TAC [] THEN
+        MATCH_MP_TAC bxor2_width_out THEN
+        EXISTS_TAC `w : bus` THEN
+        EXISTS_TAC `x : bus` THEN
+        ASM_REWRITE_TAC [];
+        STRIP_TAC THEN
+        ASM_REWRITE_TAC []]) in
+    [syn];;
+
+let bmajority3_syn =
+    let syn = prove
+      (`!w x y z.
+           bmajority3 w x y z <=>
+           ?wx wy xy.
+             width wx = width w /\
+             width wy = width w /\
+             width xy = width x /\
+             band2 w x wx /\
+             band2 w y wy /\
+             band2 x y xy /\
+             bor3 wx wy xy z`,
+       REPEAT GEN_TAC THEN
+       REWRITE_TAC [bmajority3_def] THEN
+       AP_TERM_TAC THEN
+       ABS_TAC THEN
+       AP_TERM_TAC THEN
+       ABS_TAC THEN
+       AP_TERM_TAC THEN
+       ABS_TAC THEN
+       EQ_TAC THENL
+       [STRIP_TAC THEN
+        ASM_REWRITE_TAC [] THEN
+        REPEAT CONJ_TAC THENL
+        [MATCH_MP_TAC band2_width_out THEN
+         EXISTS_TAC `w : bus` THEN
+         EXISTS_TAC `x : bus` THEN
+         ASM_REWRITE_TAC [];
+         MATCH_MP_TAC band2_width_out THEN
+         EXISTS_TAC `w : bus` THEN
+         EXISTS_TAC `y : bus` THEN
+         ASM_REWRITE_TAC [];
+         MATCH_MP_TAC band2_width_out THEN
+         EXISTS_TAC `x : bus` THEN
+         EXISTS_TAC `y : bus` THEN
+         ASM_REWRITE_TAC []];
+        STRIP_TAC THEN
+        ASM_REWRITE_TAC []]) in
+    setify (syn :: bor3_syn);;
 
 logfile_end ();;

@@ -293,46 +293,46 @@ let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
         conv_prolog_rule (CHANGED_CONV (DEPTH_CONV conv)) in
     (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule);;
 
-(***
-let brev_prolog_rule =
-    let suc_thm = prove
-          (`!w x k n y.
-              bsub x k n y ==>
-              bsub (bappend (bwire w) x) (SUC k) n y`,
-           REPEAT STRIP_TAC THEN
-           SUBGOAL_THEN `SUC k = width (bwire w) + k` SUBST1_TAC THENL
-           [REWRITE_TAC [bwire_width; ONE; SUC_ADD; ZERO_ADD];
-            ASM_REWRITE_TAC [bsub_in_suffix]]) in
-        let zero_zero_thm = prove
-          (`!x y.
-              y = bnil ==>
-              bsub x 0 0 y`,
-           REPEAT STRIP_TAC THEN
-           ASM_REWRITE_TAC [bsub_zero; LE_0]) in
-        let zero_suc_thm = prove
-          (`!w x n y.
-              (?z. y = bappend (bwire w) z /\ bsub x 0 n z) ==>
-              bsub (bappend (bwire w) x) 0 (SUC n) y`,
-           REPEAT STRIP_TAC THEN
-           FIRST_X_ASSUM SUBST_VAR_TAC THEN
-           MATCH_MP_TAC bsub_suc THEN
-           REWRITE_TAC [wire_zero] THEN
-           MATCH_MP_TAC suc_thm THEN
-           ASM_REWRITE_TAC []) in
-        let suc_rule = thm_prolog_rule suc_thm in
-        let zero_zero_rule = thm_prolog_rule zero_zero_thm in
-        let zero_suc_rule = thm_prolog_rule zero_suc_thm in
-        let conv tm =
-            let _ = dest_bsub tm in
-            RATOR_CONV
-              (LAND_CONV zero_suc_conv THENC
-               RAND_CONV zero_suc_conv) tm in
+let brev_prolog_rule : prolog_rule =
+    let bnil_thm = prove
+      (`!y. y = bnil ==> brev bnil y`,
+       REPEAT STRIP_TAC THEN
+       ASM_REWRITE_TAC [brev_bnil]) in
+    let bwire_thm = prove
+      (`!w y. y = bwire w ==> brev (bwire w) y`,
+       REPEAT STRIP_TAC THEN
+       ASM_REWRITE_TAC [brev_bwire]) in
+    let bappend_thm = prove
+      (`!x1 x2 y1 y2 y.
+          y = bappend y1 y2 /\ brev x1 y2 /\ brev x2 y1 ==>
+          brev (bappend x1 x2) y`,
+       REPEAT STRIP_TAC THEN
+       ASM_REWRITE_TAC [] THEN
+       MATCH_MP_TAC brev_bappend THEN
+       ASM_REWRITE_TAC []) in
+    let bappend_conv =
+        let rewr0 = (REWR_CONV o prove)
+          (`!x. bappend x bnil = bappend bnil x`,
+           REWRITE_TAC [bappend_bnil; bnil_bappend]) in
+        let rewr1 = REWR_CONV (GSYM bappend_assoc) in
+        let rec conv tm =
+            (let (x,y) = dest_bappend tm in
+             if is_bnil y then rewr0 else
+             if is_bappend y then RAND_CONV conv THENC rewr1 else
+             failwith "brev_prolog_rule.bappend_conv") tm in
+        LAND_CONV conv in
+    let bnil_rule = thm_prolog_rule bnil_thm in
+    let bwire_rule = thm_prolog_rule bwire_thm in
+    let bappend_rule =
         then_prolog_rule
-          (conv_prolog_rule conv)
-          (orelse_prolog_rule
-             suc_rule
-             (orelse_prolog_rule zero_zero_rule zero_suc_rule)) in
-***)
+          (conv_prolog_rule bappend_conv)
+          (thm_prolog_rule bappend_thm) in
+    fun frozen -> fun tm ->
+        let (x,_) = dest_brev tm in
+        if is_bnil x then bnil_rule frozen tm else
+        if is_bwire x then bwire_rule frozen tm else
+        if is_bappend x then bappend_rule frozen tm else
+        failwith "brev_prolog_rule";;
 
 let connect_wire_prolog_rule : prolog_rule =
     fun frozen -> fun tm ->
@@ -464,6 +464,7 @@ let instantiate_hardware =
          mk_bus_prolog_rule;
          wire_prolog_rule;
          bsub_prolog_rule;
+         brev_prolog_rule;
          bground_prolog_rule;
          connect_prolog_rule] @
         map thm_prolog_rule
@@ -474,7 +475,8 @@ let instantiate_hardware =
          bor2_bappend_bwire; bor2_bnil;
          bxor2_bappend_bwire; bxor2_bnil;
          bcase1_bappend_bwire; bcase1_bnil;
-         case1_middle_ground; case1_middle_power] in
+         case1_middle_ground; case1_right_ground;
+         case1_middle_power] in
     fun ths ->
     let user_rules = map thm_prolog_rule ths in
     let rule = first_prolog_rule (basic_rules @ user_rules) in
@@ -484,20 +486,12 @@ let instantiate_hardware =
     let (primary_inputs,primary_outputs) = partition_primary primary th in
     let th = rescue_primary_outputs primary_outputs th in
     let th = merge_logic th in
-(***
     let th = delete_dead_logic primary_inputs primary_outputs th in
-***)
     let th = rename_wires primary th in
     th;;
 
 (*** Testing
-let mk_asms asms =
-    MATCH_MP (TAUT `!t. t ==> T`) (itlist (CONJ o ASSUME) asms TRUTH);;
-let frozen : term list = [`x : wire`; `y : wire`; `z : wire`];;
-let th = mk_asms [`connect w x`; `connect x y`; `connect y z`];;
-rescue_primary_outputs frozen th;;
-
-instantiate_hardware [badder2_def; counter_def] (frees (concl counter91_thm)) counter91_thm;;
+instantiate_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgomery91_thm;;
 ***)
 
 (* ------------------------------------------------------------------------- *)
@@ -568,6 +562,9 @@ let hardware_to_verilog =
     let verilog_xor2 tm =
         let (x,y,z) = dest_xor2 tm in
         wire_name z ^ " = " ^ wire_name x ^ " ^ " ^ wire_name y in
+    let verilog_case1 tm =
+        let (w,x,y,z) = dest_case1 tm in
+        wire_name z ^ " = " ^ wire_name x ^ " ^ " ^ wire_name y in
     let verilog_assignment comb =
         if is_connect comb then verilog_connect comb
         else if is_not comb then verilog_not comb
@@ -575,7 +572,15 @@ let hardware_to_verilog =
         else if is_or2 comb then verilog_or2 comb
         else if is_xor2 comb then verilog_xor2 comb
         else failwith ("weird assumption: " ^ string_of_term comb) in
-    let verilog_assignments combs wires =
+    let verilog_assignments find_assign assigns =
+        if length assigns = 0 then "" else
+        ("\n  assign " ^
+         String.concat (";\n  assign ")
+           (map (verilog_assignment o find_assign) assigns) ^
+         ";\n") in
+    let verilog_cases find_case cases =
+        if length cases = 0 then "" else "" in
+    let verilog_combinational combs wires =
         let find_comb w =
             match filter ((=) w o rand) combs with
               [] ->
@@ -585,11 +590,9 @@ let hardware_to_verilog =
               failwith
                 ("multiple combinational assignments for wire " ^
                  wire_name w) in
-        if length combs = 0 then "" else
-        ("\n  assign " ^
-         String.concat (";\n  assign ")
-           (map (verilog_assignment o find_comb) wires) ^
-         ";\n") in
+        let (cases,assigns) = partition is_case1 combs in
+        verilog_assignments find_comb assigns ^
+        verilog_cases find_comb cases in
     let verilog_delays clk delays registers =
         let find_delay r =
             match filter ((=) r o rand) delays with
@@ -620,7 +623,7 @@ let hardware_to_verilog =
     verilog_wire_declarations "output" primary_outputs ^
     verilog_wire_declarations "reg" registers ^
     verilog_wire_declarations "wire" wires ^
-    verilog_assignments combinational (wires @ primary_outputs) ^
+    verilog_combinational combinational (wires @ primary_outputs) ^
     verilog_delays (hd primary_wires) delays registers ^
     verilog_module_end name;;
 

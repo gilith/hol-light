@@ -2488,7 +2488,24 @@ let montgomery_circuit = prove
 ***)
 
 (* ------------------------------------------------------------------------- *)
-(* Automatically generating verified Montgomery multiplication circuits.     *)
+(* Automatically synthesizing hardware.                                      *)
+(* ------------------------------------------------------------------------- *)
+
+let montgomery_mult_syn =
+    setify
+      (montgomery_mult_def ::
+       sum_carry_mult_syn @
+       pipe_syn @
+       bpipe_syn @
+       bmult_syn @
+       sticky_syn @
+       badder3_syn @
+       adder2_syn @
+       adder3_syn @
+       or3_syn);;
+
+(* ------------------------------------------------------------------------- *)
+(* Automatically synthesizing verified Montgomery multiplication circuits.   *)
 (* ------------------------------------------------------------------------- *)
 
 let mk_montgomery_mult n ld xs xc ys yc zs zc =
@@ -2636,8 +2653,7 @@ let mk_montgomery_mult n ld xs xc ys yc zs zc =
         (GEN fv_x o GEN fv_y o GEN fv_t o
          DISCH ld_cond o DISCH x_cond o DISCH y_cond) th11 in
     let primary = frees (concl th) in
-    let ths = [montgomery_mult_def] in
-    (***instantiate_hardware ths primary***) th;;
+    instantiate_hardware montgomery_mult_syn primary th;;
 
 (*** Testing
 let n = dest_numeral `91`;;
@@ -2649,6 +2665,9 @@ let yc = "yc";;
 let zs = "zs";;
 let zc = "zc";;
 let montgomery91_thm = mk_montgomery_mult n ld xs xc ys yc zs zc;;
+let wires = `clk : wire` :: frees (concl montgomery91_thm);;
+output_string stdout (hardware_to_verilog "montgomery91" wires montgomery91_thm);;
+hardware_to_verilog_file "montgomery91" wires montgomery91_thm;;
 ***)
 
 (* ------------------------------------------------------------------------- *)
