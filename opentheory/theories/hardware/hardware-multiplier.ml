@@ -721,10 +721,10 @@ export_thm sum_carry_mult_bits_to_num;;
 (* Automatically synthesizing hardware.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-let bpipe_syn = [bpipe_def];;
+let bmult_syn =
+    setify (bmult_def :: adder2_syn @ badder3_syn @ adder3_syn);;
 
-let pipe_syn = setify (pipe_def :: bpipe_syn);;
-
-let counter_syn = setify (counter_def :: badder2_syn);;
+let sum_carry_mult_syn =
+    setify (sum_carry_mult_def :: sum_carry_bit_syn @ pipe_syn @ bmult_syn);;
 
 logfile_end ();;

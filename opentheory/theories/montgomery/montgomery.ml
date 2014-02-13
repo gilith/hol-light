@@ -2651,6 +2651,7 @@ let mk_montgomery_mult n ld xs xc ys yc zs zc =
         CONV_RULE conv th10 in
     let th =
         (GEN fv_x o GEN fv_y o GEN fv_t o
+         REWRITE_RULE [IMP_IMP] o
          DISCH ld_cond o DISCH x_cond o DISCH y_cond) th11 in
     let primary = frees (concl th) in
     instantiate_hardware montgomery_mult_syn primary th;;
@@ -2665,9 +2666,9 @@ let yc = "yc";;
 let zs = "zs";;
 let zc = "zc";;
 let montgomery91_thm = mk_montgomery_mult n ld xs xc ys yc zs zc;;
-let wires = `clk : wire` :: frees (concl montgomery91_thm);;
-output_string stdout (hardware_to_verilog "montgomery91" wires montgomery91_thm);;
-hardware_to_verilog_file "montgomery91" wires montgomery91_thm;;
+let primary = `clk : wire` :: frees (concl montgomery91_thm);;
+output_string stdout (hardware_to_verilog "montgomery91" primary montgomery91_thm);;
+hardware_to_verilog_file "montgomery91" primary montgomery91_thm;;
 ***)
 
 (* ------------------------------------------------------------------------- *)

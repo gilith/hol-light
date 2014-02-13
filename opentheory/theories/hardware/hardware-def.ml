@@ -124,7 +124,15 @@ export_thm bpower_def;;
 
 let mk_ground = `ground`;;
 
+let is_ground =
+    let ground_tm = `ground` in
+    fun tm -> tm = ground_tm;;
+
 let mk_power = `power`;;
+
+let is_power =
+    let power_tm = `power` in
+    fun tm -> tm = power_tm;;
 
 let bit_to_wire b = if b then mk_power else mk_ground;;
 
@@ -289,7 +297,9 @@ let variable_bus_to_string tm =
     let (x,xs) = dest_variable_bus tm in
     x ^ range_to_string xs;;
 
-install_user_printer ("variable_bus", print_string o variable_bus_to_string);;
+install_user_printer
+   ("variable_bus",
+    fun fmt -> fun tm -> pp_print_string fmt (variable_bus_to_string tm));;
 
 let genvar_bus =
     let wire_ty = `:wire` in

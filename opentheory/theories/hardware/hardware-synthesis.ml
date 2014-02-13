@@ -498,12 +498,41 @@ instantiate_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgo
 (* Pretty-printing synthesized hardware in Verilog.                          *)
 (* ------------------------------------------------------------------------- *)
 
+let line_length = 79;;
+
+let comment_box_text =
+    let split s =
+        let n = String.length s in
+        let rec f i =
+                try (if n <= i then [""] else
+                 let j = String.index_from s i '\n' in
+                 String.sub s i (j - i) :: f (j + 1))
+            with Not_found -> [String.sub s i (n - i)] in
+            f 0 in
+    let top = "/*" ^ String.make (line_length - 3) '-' ^ "+" in
+    let middle s =
+        let space = line_length - (String.length s + 3) in
+        "| " ^ s ^ String.make space ' ' ^ "|" in
+    let bottom = "+" ^ String.make (line_length - 3) '-' ^ "*/" in
+    fun text ->
+        top ^ "\n" ^
+        String.concat "\n" (map middle (split text)) ^ "\n" ^
+        bottom ^ "\n";;
+
 let hardware_to_verilog =
     let wire_name =
         let wire_ty = `:wire` in
         fun w ->
+        if is_ground w then "1b0" else
+        if is_power w then "1b1" else
+        if not (is_var w) then
+          failwith ("wire not a var: " ^ string_of_term w)
+        else
         let (n,ty) = dest_var w in
-        if ty = wire_ty then n else failwith "wire_name" in
+        if ty <> wire_ty then
+          failwith ("wire has bad type: " ^ string_of_term w)
+        else
+          n in
     let wire_names = map wire_name in
     let wire_sort =
         let wire_num w =
@@ -512,29 +541,16 @@ let hardware_to_verilog =
             int_of_string s in
         let wire_cmp w1 w2 = wire_num w1 <= wire_num w2 in
         sort wire_cmp in
-    let comment_box_text =
-        let split s =
-            let n = String.length s in
-            let rec f i =
-                try (if n <= i then [""] else
-                     let j = String.index_from s i '\n' in
-                     String.sub s i (j - i) :: f (j + 1))
-                with Not_found -> [String.sub s i (n - i)] in
-            f 0 in
-        let line_length = 79 in
-        let top = "/*" ^ String.make (line_length - 3) '-' ^ "+" in
-        let middle s =
-            let space = line_length - (String.length s + 3) in
-            "| " ^ s ^ String.make space ' ' ^ "|" in
-        let bottom = "+" ^ String.make (line_length - 3) '-' ^ "*/" in
-        fun text ->
-            top ^ "\n" ^
-            String.concat "\n" (map middle (split text)) ^ "\n" ^
-            bottom ^ "\n" in
     let verilog_comment name property =
+        let prop =
+            let n = get_margin () in
+            let () = set_margin (line_length - 6) in
+            let s = string_of_term property in
+            let () = set_margin n in
+            s in
         comment_box_text
           ("module " ^ name ^ " satisfies the following property:\n\n" ^
-           string_of_term property) ^ "\n" in
+           prop) ^ "\n" in
     let verilog_module_begin name wires =
         "module " ^ name ^ "(" ^
         String.concat "," (wire_names wires) ^
@@ -546,40 +562,36 @@ let hardware_to_verilog =
          ";\n") in
     let verilog_connect tm =
         let (x,y) = dest_connect tm in
-        wire_name y ^ " = " ^ wire_name x in
+        "assign " ^ wire_name y ^ " = " ^ wire_name x ^ ";" in
     let verilog_delay tm =
         let (w,r) = dest_delay tm in
         wire_name r ^ " <= " ^ wire_name w in
     let verilog_not tm =
         let (x,y) = dest_not tm in
-        wire_name y ^ " = ~" ^ wire_name x in
+        "assign " ^ wire_name y ^ " = ~" ^ wire_name x ^ ";" in
     let verilog_and2 tm =
         let (x,y,z) = dest_and2 tm in
-        wire_name z ^ " = " ^ wire_name x ^ " & " ^ wire_name y in
+        "assign " ^ wire_name z ^
+        " = " ^ wire_name x ^ " & " ^ wire_name y ^ ";" in
     let verilog_or2 tm =
         let (x,y,z) = dest_or2 tm in
-        wire_name z ^ " = " ^ wire_name x ^ " | " ^ wire_name y in
+        "assign " ^ wire_name z ^
+        " = " ^ wire_name x ^ " | " ^ wire_name y ^ ";" in
     let verilog_xor2 tm =
         let (x,y,z) = dest_xor2 tm in
-        wire_name z ^ " = " ^ wire_name x ^ " ^ " ^ wire_name y in
+        "assign " ^ wire_name z ^
+        " = " ^ wire_name x ^ " ^ " ^ wire_name y ^ ";" in
     let verilog_case1 tm =
         let (w,x,y,z) = dest_case1 tm in
         wire_name z ^ " = " ^ wire_name x ^ " ^ " ^ wire_name y in
-    let verilog_assignment comb =
+    let verilog_comb comb =
         if is_connect comb then verilog_connect comb
         else if is_not comb then verilog_not comb
         else if is_and2 comb then verilog_and2 comb
         else if is_or2 comb then verilog_or2 comb
         else if is_xor2 comb then verilog_xor2 comb
+        else if is_case1 comb then verilog_case1 comb
         else failwith ("weird assumption: " ^ string_of_term comb) in
-    let verilog_assignments find_assign assigns =
-        if length assigns = 0 then "" else
-        ("\n  assign " ^
-         String.concat (";\n  assign ")
-           (map (verilog_assignment o find_assign) assigns) ^
-         ";\n") in
-    let verilog_cases find_case cases =
-        if length cases = 0 then "" else "" in
     let verilog_combinational combs wires =
         let find_comb w =
             match filter ((=) w o rand) combs with
@@ -590,9 +602,11 @@ let hardware_to_verilog =
               failwith
                 ("multiple combinational assignments for wire " ^
                  wire_name w) in
-        let (cases,assigns) = partition is_case1 combs in
-        verilog_assignments find_comb assigns ^
-        verilog_cases find_comb cases in
+        if length combs = 0 then "" else
+        ("\n  " ^
+         String.concat ("\n  ")
+           (map (verilog_comb o find_comb) wires) ^
+         "\n") in
     let verilog_delays clk delays registers =
         let find_delay r =
             match filter ((=) r o rand) delays with
@@ -607,25 +621,27 @@ let hardware_to_verilog =
            (map (verilog_delay o find_delay) registers) ^
          ";\n    end\n") in
     let verilog_module_end name = "\nendmodule // " ^ name ^ "\n" in
-    fun name -> fun primary_wires -> fun th ->
-    let (delays,combinational) = partition is_delay (hyp th) in
-    let (registers,wires) =
-        let ws = filter (not o C mem primary_wires) (freesl (hyp th)) in
-        let ws = wire_sort ws in
-        let delay_outputs = map rand delays in
-        partition (C mem delay_outputs) ws in
-    let (primary_outputs,primary_inputs) =
-        let combinational_outputs = map rand combinational in
-        partition (C mem combinational_outputs) primary_wires in
+    fun name -> fun primary -> fun th ->
+    let (delays,combs) = partition is_delay (hyp th) in
+    let registers = wire_sort (map rand delays) in
+    let wires = map rand combs in
+    let (primary_outputs,primary_inputs) = partition (C mem wires) primary in
+    let wires = wire_sort (filter (not o C mem primary_outputs) wires) in
     verilog_comment name (concl th) ^
     verilog_module_begin name (primary_inputs @ primary_outputs) ^
     verilog_wire_declarations "input" primary_inputs ^
     verilog_wire_declarations "output" primary_outputs ^
     verilog_wire_declarations "reg" registers ^
     verilog_wire_declarations "wire" wires ^
-    verilog_combinational combinational (wires @ primary_outputs) ^
-    verilog_delays (hd primary_wires) delays registers ^
+    verilog_combinational combs (wires @ primary_outputs) ^
+    verilog_delays (hd primary) delays registers ^
     verilog_module_end name;;
+
+(*** Testing
+let name = "montgomery91";;
+let property = concl montgomery91_thm;;
+output_string stdout (hardware_to_verilog "montgomery91" primary montgomery91_thm);;
+***)
 
 let hardware_to_verilog_file name wires th =
     let file = "opentheory/hardware/" ^ name ^ ".v" in
