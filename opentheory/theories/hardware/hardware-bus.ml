@@ -417,6 +417,33 @@ let brev_wire_out = prove
 
 export_thm brev_wire_out;;
 
+let brev_bnil = prove
+ (`brev bnil bnil`,
+  REWRITE_TAC [brev_def; bnil_width; ADD_EQ_0; ONE; NOT_SUC]);;
+
+export_thm brev_bnil;;
+
+let brev_bwire = prove
+ (`!w. brev (bwire w) (bwire w)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [brev_def; bwire_wire] THEN
+  REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm brev_bwire;;
+
+(***
+let brev_bappend = prove
+ (`!x1 x2 y1 y2.
+     brev x1 y2 /\ brev x2 y1 ==> brev (bappend x1 x2) (bappend y1 y2)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [brev_def; bappend_width] THEN
+  REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm brev_bwire;;
+***)
+
 (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 (* Lifting relations between wires *)
 (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)

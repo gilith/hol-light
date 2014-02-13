@@ -166,8 +166,27 @@ let subst_var_prolog_rule : prolog_rule =
 (* ------------------------------------------------------------------------- *)
 
 let num_simp_prolog_rule : prolog_rule =
+    let push_numeral_conv =
+        let dest_add = dest_binop `(+) : num -> num -> num` in
+        let th = prove
+          (`!m n p : num. m + (n + p) = n + (m + p)`,
+           REPEAT GEN_TAC THEN
+           REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+           MATCH_ACCEPT_TAC ADD_SYM) in
+        let rewr1 = REWR_CONV ADD_SYM in
+        let rewr2 = REWR_CONV th in
+        let conv tm =
+            let (x,y) = dest_add tm in
+            if not (is_numeral x) then failwith "push_numeral_conv" else
+            try (rewr2 tm) with Failure _ ->
+            if is_numeral y then NUM_REDUCE_CONV tm else
+            rewr1 tm in
+        REDEPTH_CONV conv in
     let simp_conv =
-        REWRITE_CONV [bnil_width; bwire_width; bappend_width] THENC
+        REWRITE_CONV
+          [ZERO_ADD; ADD_0; GSYM ADD_ASSOC;
+           bnil_width; bwire_width; bappend_width] THENC
+        push_numeral_conv THENC
         NUM_REDUCE_CONV in
     conv_prolog_rule (CHANGED_CONV simp_conv);;
 
@@ -274,6 +293,47 @@ let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
         conv_prolog_rule (CHANGED_CONV (DEPTH_CONV conv)) in
     (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule);;
 
+(***
+let brev_prolog_rule =
+    let suc_thm = prove
+          (`!w x k n y.
+              bsub x k n y ==>
+              bsub (bappend (bwire w) x) (SUC k) n y`,
+           REPEAT STRIP_TAC THEN
+           SUBGOAL_THEN `SUC k = width (bwire w) + k` SUBST1_TAC THENL
+           [REWRITE_TAC [bwire_width; ONE; SUC_ADD; ZERO_ADD];
+            ASM_REWRITE_TAC [bsub_in_suffix]]) in
+        let zero_zero_thm = prove
+          (`!x y.
+              y = bnil ==>
+              bsub x 0 0 y`,
+           REPEAT STRIP_TAC THEN
+           ASM_REWRITE_TAC [bsub_zero; LE_0]) in
+        let zero_suc_thm = prove
+          (`!w x n y.
+              (?z. y = bappend (bwire w) z /\ bsub x 0 n z) ==>
+              bsub (bappend (bwire w) x) 0 (SUC n) y`,
+           REPEAT STRIP_TAC THEN
+           FIRST_X_ASSUM SUBST_VAR_TAC THEN
+           MATCH_MP_TAC bsub_suc THEN
+           REWRITE_TAC [wire_zero] THEN
+           MATCH_MP_TAC suc_thm THEN
+           ASM_REWRITE_TAC []) in
+        let suc_rule = thm_prolog_rule suc_thm in
+        let zero_zero_rule = thm_prolog_rule zero_zero_thm in
+        let zero_suc_rule = thm_prolog_rule zero_suc_thm in
+        let conv tm =
+            let _ = dest_bsub tm in
+            RATOR_CONV
+              (LAND_CONV zero_suc_conv THENC
+               RAND_CONV zero_suc_conv) tm in
+        then_prolog_rule
+          (conv_prolog_rule conv)
+          (orelse_prolog_rule
+             suc_rule
+             (orelse_prolog_rule zero_zero_rule zero_suc_rule)) in
+***)
+
 let connect_wire_prolog_rule : prolog_rule =
     fun frozen -> fun tm ->
     let (x,y) = dest_connect tm in
@@ -310,7 +370,11 @@ let rescue_primary_outputs_prolog_rule : term list -> prolog_rule =
      conv_prolog_rule (ONCE_DEPTH_CONV rescue_conv);;
 
 let rescue_primary_outputs =
-    let cleanup_rule = try_prolog_rule connect_wire_prolog_rule in
+    let cleanup_rule =
+        try_prolog_rule
+          (first_prolog_rule
+             [subst_var_prolog_rule;
+              connect_wire_prolog_rule]) in
     fun primary_outputs -> fun th ->
     if length primary_outputs = 0 then th else
     let rescue_rule = rescue_primary_outputs_prolog_rule primary_outputs in
@@ -420,7 +484,9 @@ let instantiate_hardware =
     let (primary_inputs,primary_outputs) = partition_primary primary th in
     let th = rescue_primary_outputs primary_outputs th in
     let th = merge_logic th in
+(***
     let th = delete_dead_logic primary_inputs primary_outputs th in
+***)
     let th = rename_wires primary th in
     th;;
 

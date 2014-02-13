@@ -1190,11 +1190,16 @@ let egcd_num =
     let rec egcd a b =
         if eq_num b num_0 then (num_1,num_0,a)
         else if le_num a b then
-          let (s,t,g) = egcd a (b -/ a) in
-          (s +/ t, t, g)
+          let q = quo_num b a in
+          let b = sub_num b (mult_num q a) in
+          let (s,t,g) = egcd a b in
+          (add_num s (mult_num q t), t, g)
         else
-          let (s,t,g) = egcd (a -/ b) b in
-          (s, s +/ t, g) in
+          let q = quo_num a b in
+          let a = sub_num a (mult_num q b) in
+          if eq_num a num_0 then (num_1, sub_num q num_1, b) else
+          let (s,t,g) = egcd a b in
+          (s, add_num (mult_num q s) t, g) in
     egcd;;
 
 let prove_egcd a b =

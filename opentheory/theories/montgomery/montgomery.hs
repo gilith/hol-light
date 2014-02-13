@@ -54,7 +54,7 @@ egcd a b =
               then (1, q - 1, b)
               else
                 let (s,t,g) = egcd a' b in
-                (s, s * q + t, g)
+                (s, q * s + t, g)
 
 egcdProp :: Natural -> Natural -> Bool
 egcdProp a b =

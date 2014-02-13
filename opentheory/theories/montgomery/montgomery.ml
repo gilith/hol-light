@@ -2501,7 +2501,7 @@ let mk_montgomery_mult n ld xs xc ys yc zs zc =
     let r = dest_numeral rn in
     let r1 = add_num r num_1 in
     let (d0,d1,d2) =
-        let d = add_num (div_num (bit_width_num r1) num_2) num_1 in
+        let d = add_num (quo_num (bit_width_num r) num_2) num_1 in
         let dn = mk_numeral d in
         (dn,dn,dn) in
     let xs = variable_bus xs r in
@@ -2637,7 +2637,7 @@ let mk_montgomery_mult n ld xs xc ys yc zs zc =
          DISCH ld_cond o DISCH x_cond o DISCH y_cond) th11 in
     let primary = frees (concl th) in
     let ths = [montgomery_mult_def] in
-    instantiate_hardware ths primary th;;
+    (***instantiate_hardware ths primary***) th;;
 
 (*** Testing
 let n = dest_numeral `91`;;
@@ -2648,7 +2648,7 @@ let ys = "ys";;
 let yc = "yc";;
 let zs = "zs";;
 let zc = "zc";;
-mk_montgomery_mult n ld xs xc ys yc zs zc;;
+let montgomery91_thm = mk_montgomery_mult n ld xs xc ys yc zs zc;;
 ***)
 
 (* ------------------------------------------------------------------------- *)
