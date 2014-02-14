@@ -2651,7 +2651,7 @@ let mk_montgomery_mult n ld xs xc ys yc zs zc =
         CONV_RULE conv th10 in
     let th =
         (GEN fv_x o GEN fv_y o GEN fv_t o
-         REWRITE_RULE [IMP_IMP] o
+         REWRITE_RULE [IMP_IMP; GSYM CONJ_ASSOC] o
          DISCH ld_cond o DISCH x_cond o DISCH y_cond) th11 in
     let primary = frees (concl th) in
     instantiate_hardware montgomery_mult_syn primary th;;

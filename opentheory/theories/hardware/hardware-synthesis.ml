@@ -544,7 +544,7 @@ let hardware_to_verilog =
     let verilog_comment name property =
         let prop =
             let n = get_margin () in
-            let () = set_margin (line_length - 6) in
+            let () = set_margin (line_length - 4) in
             let s = string_of_term property in
             let () = set_margin n in
             s in
