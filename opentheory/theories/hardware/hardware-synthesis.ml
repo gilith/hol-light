@@ -475,6 +475,13 @@ let instantiate_hardware =
          bor2_bappend_bwire; bor2_bnil;
          bxor2_bappend_bwire; bxor2_bnil;
          bcase1_bappend_bwire; bcase1_bnil;
+         not_ground; not_power;
+         and2_left_ground; and2_right_ground;
+         and2_left_power; and2_right_power;
+         or2_left_ground; or2_right_ground;
+         or2_left_power; or2_right_power;
+         xor2_left_ground; xor2_right_ground;
+         xor2_left_power; xor2_right_power;
          case1_middle_ground; case1_right_ground;
          case1_middle_power] in
     fun ths ->
@@ -498,7 +505,24 @@ instantiate_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgo
 (* Pretty-printing synthesized hardware in Verilog.                          *)
 (* ------------------------------------------------------------------------- *)
 
-let line_length = 79;;
+let VERILOG_LINE_LENGTH = 79;;
+
+type verilog_arg =
+     Wire_verilog_arg of term
+   | Bus_verilog_arg of bus_wires;;
+
+let rec collect_verilog_args wires =
+    match wires with
+      [] -> []
+    | wire :: wires ->
+      let args = collect_verilog_args wires in
+      try (let (w,i) = dest_bus_wire wire in
+           match args with
+             Bus_verilog_arg (Bus_wires (x,js)) :: rest ->
+             if w = x then Bus_verilog_arg (Bus_wires (w, i :: js)) :: rest else
+             Bus_verilog_arg (Bus_wires (w,[i])) :: args
+           | _ -> Bus_verilog_arg (Bus_wires (w,[i])) :: args)
+      with Failure _ -> Wire_verilog_arg wire :: args;;
 
 let comment_box_text =
     let split s =
@@ -509,11 +533,11 @@ let comment_box_text =
                  String.sub s i (j - i) :: f (j + 1))
             with Not_found -> [String.sub s i (n - i)] in
             f 0 in
-    let top = "/*" ^ String.make (line_length - 3) '-' ^ "+" in
+    let top = "/*" ^ String.make (VERILOG_LINE_LENGTH - 3) '-' ^ "+" in
     let middle s =
-        let space = line_length - (String.length s + 3) in
+        let space = VERILOG_LINE_LENGTH - (String.length s + 3) in
         "| " ^ s ^ String.make space ' ' ^ "|" in
-    let bottom = "+" ^ String.make (line_length - 3) '-' ^ "*/" in
+    let bottom = "+" ^ String.make (VERILOG_LINE_LENGTH - 3) '-' ^ "*/" in
     fun text ->
         top ^ "\n" ^
         String.concat "\n" (map middle (split text)) ^ "\n" ^
@@ -523,8 +547,8 @@ let hardware_to_verilog =
     let wire_name =
         let wire_ty = `:wire` in
         fun w ->
-        if is_ground w then "1b0" else
-        if is_power w then "1b1" else
+        if is_ground w then "1'b0" else
+        if is_power w then "1'b1" else
         if not (is_var w) then
           failwith ("wire not a var: " ^ string_of_term w)
         else
@@ -541,25 +565,39 @@ let hardware_to_verilog =
             int_of_string s in
         let wire_cmp w1 w2 = wire_num w1 <= wire_num w2 in
         sort wire_cmp in
+    let arg_name arg =
+        match arg with
+          Wire_verilog_arg w -> wire_name w
+        | Bus_verilog_arg (Bus_wires (b,_)) -> b in
+    let arg_names = map arg_name in
+    let arg_decl arg =
+        match arg with
+          Wire_verilog_arg w -> wire_name w
+        | Bus_verilog_arg (Bus_wires (b,is)) -> range_to_string is ^ " " ^ b in
+    let arg_decls = map arg_decl in
     let verilog_comment name property =
         let prop =
             let n = get_margin () in
-            let () = set_margin (line_length - 4) in
+            let () = set_margin (VERILOG_LINE_LENGTH - 4) in
             let s = string_of_term property in
             let () = set_margin n in
             s in
         comment_box_text
           ("module " ^ name ^ " satisfies the following property:\n\n" ^
            prop) ^ "\n" in
-    let verilog_module_begin name wires =
+    let verilog_module_begin name args =
         "module " ^ name ^ "(" ^
-        String.concat "," (wire_names wires) ^
+        String.concat "," (arg_names args) ^
         ");" in
-    let verilog_wire_declarations kind ws =
-        if length ws = 0 then "" else
+    let verilog_declarations kind xs =
+        if length xs = 0 then "" else
         ("\n  " ^ kind ^ " " ^
-         String.concat (";\n  " ^ kind ^ " ") (wire_names ws) ^
+         String.concat (";\n  " ^ kind ^ " ") xs ^
          ";\n") in
+    let verilog_wire_declarations kind wires =
+        verilog_declarations kind (wire_names wires) in
+    let verilog_arg_declarations kind args =
+        verilog_declarations kind (arg_decls args) in
     let verilog_connect tm =
         let (x,y) = dest_connect tm in
         "assign " ^ wire_name y ^ " = " ^ wire_name x ^ ";" in
@@ -583,7 +621,8 @@ let hardware_to_verilog =
         " = " ^ wire_name x ^ " ^ " ^ wire_name y ^ ";" in
     let verilog_case1 tm =
         let (w,x,y,z) = dest_case1 tm in
-        wire_name z ^ " = " ^ wire_name x ^ " ^ " ^ wire_name y in
+        "assign " ^ wire_name z ^
+        " = " ^ wire_name w ^ " ? " ^ wire_name x ^ " : " ^ wire_name y ^ ";" in
     let verilog_comb comb =
         if is_connect comb then verilog_connect comb
         else if is_not comb then verilog_not comb
@@ -627,10 +666,12 @@ let hardware_to_verilog =
     let wires = map rand combs in
     let (primary_outputs,primary_inputs) = partition (C mem wires) primary in
     let wires = wire_sort (filter (not o C mem primary_outputs) wires) in
+    let primary_input_args = collect_verilog_args primary_inputs in
+    let primary_output_args = collect_verilog_args primary_outputs in
     verilog_comment name (concl th) ^
-    verilog_module_begin name (primary_inputs @ primary_outputs) ^
-    verilog_wire_declarations "input" primary_inputs ^
-    verilog_wire_declarations "output" primary_outputs ^
+    verilog_module_begin name (primary_input_args @ primary_output_args) ^
+    verilog_arg_declarations "input" primary_input_args ^
+    verilog_arg_declarations "output" primary_output_args ^
     verilog_wire_declarations "reg" registers ^
     verilog_wire_declarations "wire" wires ^
     verilog_combinational combs (wires @ primary_outputs) ^

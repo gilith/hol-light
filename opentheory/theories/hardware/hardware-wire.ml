@@ -186,6 +186,26 @@ let not_exists = prove
 
 export_thm not_exists;;
 
+let not_ground = prove
+ (`!x. connect power x ==> not ground x`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [not_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`power`; `x : wire`; `t : cycle`] connect_signal) THEN
+  ASM_REWRITE_TAC [power_signal; ground_signal]);;
+
+export_thm not_ground;;
+
+let not_power = prove
+ (`!x. connect ground x ==> not power x`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [not_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`ground`; `x : wire`; `t : cycle`] connect_signal) THEN
+  ASM_REWRITE_TAC [power_signal; ground_signal]);;
+
+export_thm not_power;;
+
 let and2_signal = prove
  (`!x y z t.
      and2 x y z ==>
@@ -204,6 +224,16 @@ let and2_exists = prove
   REWRITE_TAC [mk_wire_signal; stream_tybij]);;
 
 export_thm and2_exists;;
+
+let and2_left_ground = prove
+ (`!x y. connect ground y ==> and2 ground x y`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [and2_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`ground`; `y : wire`; `t : cycle`] connect_signal) THEN
+  ASM_REWRITE_TAC [ground_signal]);;
+
+export_thm and2_left_ground;;
 
 let and2_right_ground = prove
  (`!x y. connect ground y ==> and2 x ground y`,
@@ -225,6 +255,16 @@ let and2_left_power = prove
 
 export_thm and2_left_power;;
 
+let and2_right_power = prove
+ (`!x y. connect x y ==> and2 x power y`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [and2_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`x : wire`; `y : wire`; `t : cycle`] connect_signal) THEN
+  ASM_REWRITE_TAC [power_signal]);;
+
+export_thm and2_right_power;;
+
 let or2_signal = prove
  (`!x y z t.
      or2 x y z ==>
@@ -244,6 +284,16 @@ let or2_exists = prove
 
 export_thm or2_exists;;
 
+let or2_left_ground = prove
+ (`!x y. connect x y ==> or2 ground x y`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [or2_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`x : wire`; `y : wire`; `t : cycle`] connect_signal) THEN
+  ASM_REWRITE_TAC [ground_signal]);;
+
+export_thm or2_left_ground;;
+
 let or2_right_ground = prove
  (`!x y. connect x y ==> or2 x ground y`,
   REPEAT STRIP_TAC THEN
@@ -253,6 +303,26 @@ let or2_right_ground = prove
   ASM_REWRITE_TAC [ground_signal]);;
 
 export_thm or2_right_ground;;
+
+let or2_left_power = prove
+ (`!x y. connect power y ==> or2 power x y`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [or2_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`power`; `y : wire`; `t : cycle`] connect_signal) THEN
+  ASM_REWRITE_TAC [power_signal]);;
+
+export_thm or2_left_power;;
+
+let or2_right_power = prove
+ (`!x y. connect power y ==> or2 x power y`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [or2_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`power`; `y : wire`; `t : cycle`] connect_signal) THEN
+  ASM_REWRITE_TAC [power_signal]);;
+
+export_thm or2_right_power;;
 
 let xor2_signal = prove
  (`!x y z t.
@@ -273,6 +343,16 @@ let xor2_exists = prove
 
 export_thm xor2_exists;;
 
+let xor2_left_ground = prove
+ (`!x y. connect x y ==> xor2 ground x y`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [xor2_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`x : wire`; `y : wire`; `t : cycle`] connect_signal) THEN
+  ASM_REWRITE_TAC [ground_signal]);;
+
+export_thm xor2_left_ground;;
+
 let xor2_right_ground = prove
  (`!x y. connect x y ==> xor2 x ground y`,
   REPEAT STRIP_TAC THEN
@@ -292,6 +372,16 @@ let xor2_left_power = prove
   ASM_REWRITE_TAC [power_signal]);;
 
 export_thm xor2_left_power;;
+
+let xor2_right_power = prove
+ (`!x y. not x y ==> xor2 x power y`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [xor2_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`x : wire`; `y : wire`; `t : cycle`] not_signal) THEN
+  ASM_REWRITE_TAC [power_signal]);;
+
+export_thm xor2_right_power;;
 
 let case1_signal = prove
  (`!s x y z t.

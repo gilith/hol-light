@@ -122,6 +122,8 @@ export_thm bpower_def;;
 (* Syntax operations.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
+type bus_wires = Bus_wires of string * num list;;
+
 let mk_ground = `ground`;;
 
 let is_ground =
@@ -264,7 +266,8 @@ let dest_variable_bus =
     match xs with
       [] -> failwith "no bus wires"
     | x :: xs ->
-      if exists ((<>) x) xs then failwith "different bus wires" else (x,is);;
+      if exists ((<>) x) xs then failwith "different bus wires" else
+      Bus_wires (x,is);;
 
 let range_to_string =
     let single_to_string m = string_of_num m in
@@ -293,9 +296,10 @@ let range_to_string =
       [] -> failwith "empty range"
     | x :: xs -> "[" ^ single x xs ^ "]";;
 
-let variable_bus_to_string tm =
-    let (x,xs) = dest_variable_bus tm in
-    x ^ range_to_string xs;;
+let bus_wires_to_string bw =
+    match bw with Bus_wires (x,is) -> x ^ range_to_string is;;
+
+let variable_bus_to_string tm = bus_wires_to_string (dest_variable_bus tm);;
 
 install_user_printer
    ("variable_bus",

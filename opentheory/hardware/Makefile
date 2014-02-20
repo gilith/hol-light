@@ -38,7 +38,8 @@ IVERILOG = iverilog
 VVP = vvp
 
 TARGETS = \
-  counter91_testbench.out
+  counter91_testbench.out \
+  montgomery91_testbench.out
 
 .PHONY: iverilog-info
 iverilog-info:
