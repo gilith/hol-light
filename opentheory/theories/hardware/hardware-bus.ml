@@ -3429,6 +3429,6 @@ let bmajority3_syn =
          ASM_REWRITE_TAC []];
         STRIP_TAC THEN
         ASM_REWRITE_TAC []]) in
-    setify (("bmajority3",syn) :: bor3_syn);;
+    setify (("bmaj3",syn) :: bor3_syn);;
 
 logfile_end ();;

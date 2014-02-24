@@ -2493,7 +2493,7 @@ let montgomery_circuit = prove
 
 let montgomery_mult_syn =
     setify
-      (("montgomery_mult",montgomery_mult_def) ::
+      (("montgomery",montgomery_mult_def) ::
        sum_carry_mult_syn @
        pipe_syn @
        bpipe_syn @
@@ -2654,7 +2654,7 @@ let mk_montgomery_mult n ld xs xc ys yc zs zc =
          REWRITE_RULE [IMP_IMP; GSYM CONJ_ASSOC] o
          DISCH ld_cond o DISCH x_cond o DISCH y_cond) th11 in
     let primary = frees (concl th) in
-    instantiate_hardware montgomery_mult_syn primary th;;
+    (***instantiate_hardware montgomery_mult_syn primary***) th;;
 
 (*** Testing
 let n = dest_numeral `91`;;

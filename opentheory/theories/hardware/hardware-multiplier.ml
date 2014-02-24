@@ -726,7 +726,7 @@ let bmult_syn =
 
 let sum_carry_mult_syn =
     setify
-      (("sum_carry_mult",sum_carry_mult_def) ::
+      (("scmult",sum_carry_mult_def) ::
        sum_carry_bit_syn @ pipe_syn @ bmult_syn);;
 
 logfile_end ();;

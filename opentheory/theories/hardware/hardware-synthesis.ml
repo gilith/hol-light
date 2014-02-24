@@ -55,19 +55,27 @@ let is_unfrozen_var namer v = is_var v && not (mem v (frozen_vars namer));;
 
 let not_unfrozen_var namer v = not (is_unfrozen_var namer v);;
 
+let fresh_variant v namer =
+    let v = variant (generated_vars namer) v in
+    let namer = add_generated_vars [v] namer in
+    (v,namer);;
+
 let fresh_var v namer =
     let (s,ty) = dest_var v in
     let sc = current_scope namer in
     let s = if String.length sc = 0 then s else sc ^ "." ^ s in
-    let v = variant (generated_vars namer) (mk_var (s,ty)) in
-    let namer = add_generated_vars [v] namer in
-    (v,namer);;
+    fresh_variant (mk_var (s,ty)) namer;;
 
-let freshen_var v namer =
-    let (v',namer) = fresh_var v namer in
-    ((v',v),namer);;
+let freshen_vars vs namer =
+    let (vs',namer) = maps fresh_var vs namer in
+    (zip vs' vs, namer);;
 
-let freshen_vars = maps freshen_var;;
+let fresh_bus v n namer =
+    let (s,_) = dest_var v in
+    let tm = variable_bus s n in
+    let vs = frees tm in
+    let (vs',namer) = maps fresh_variant vs namer in
+    (vsubst (zip vs' vs) tm, namer);;
 
 let narrow_scope s namer =
     if String.length s = 0 then namer else
@@ -199,11 +207,11 @@ let (scope_thm_prolog_rule,conv_prolog_rule) =
         let pat = concl th in
         Prolog_rule
           (fun tm -> fun namer ->
+           let namer = narrow_scope s namer in
            let (_,sub,_) = term_match [] pat tm in
            let (vs_sub,namer) = freshen_vars vs namer in
            let sub = vs_sub @ sub in
            let th = INST sub th in
-           let namer = narrow_scope s namer in
            (th,[],namer)) in
     let thm_rule s th = prolog_thm_rule s (mk_prolog_thm th) in
     let conv_rule (conv : conv) =
@@ -295,7 +303,8 @@ let mk_bus_prolog_rule =
           let nn = dest_numeral n in
           let v = dest_width t in
           if not_unfrozen_var namer v then failwith "mk_bus_prolog_rule" else
-          let sub = [(genvar_bus nn, v)] in
+          let (b,namer) = fresh_bus v nn namer in
+          let sub = [(b,v)] in
           (ASSUME (vsubst sub tm), sub, namer)));;
 
 let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
@@ -441,13 +450,16 @@ let rescue_primary_outputs_prolog_rule =
          GEN_TAC THEN
          MATCH_MP_TAC connect_signal THEN
          ASM_REWRITE_TAC []) in
-     let connect_conv primary_output =
-         let wire = genvar (type_of primary_output) in
+     let connect_conv primary_output namer =
+         let wire =
+             let (s,ty) = dest_var primary_output in
+             mk_var (s ^ "_o", ty) in
+         let (wire,namer) = fresh_var wire namer in
          let rescue_th = SPECL [wire; primary_output] connect_equal_wires in
-         simple_conv (UNDISCH rescue_th) in
-     fun primary_outputs ->
-     let rescue_conv = FIRST_CONV (map connect_conv primary_outputs) in
-     conv_prolog_rule (ONCE_DEPTH_CONV rescue_conv);;
+         (simple_conv (UNDISCH rescue_th), namer) in
+     fun primary_outputs -> fun namer ->
+     let (convs,namer) = maps connect_conv primary_outputs namer in
+     (conv_prolog_rule (ONCE_DEPTH_CONV (FIRST_CONV convs)), namer);;
 
 let rescue_primary_outputs =
     let cleanup_rule =
@@ -457,12 +469,17 @@ let rescue_primary_outputs =
               connect_wire_prolog_rule]) in
     fun primary_outputs -> fun th -> fun namer ->
     if length primary_outputs = 0 then (th,namer) else
-    let rescue_rule = rescue_primary_outputs_prolog_rule primary_outputs in
+    let (rescue_rule,namer) =
+        rescue_primary_outputs_prolog_rule primary_outputs namer in
     let (th,_,namer) = prove_hyp_prolog_rule rescue_rule th namer in
     let (th,_,namer) = repeat_prove_hyp_prolog_rule cleanup_rule th namer in
     (th,namer);;
 
 let merge_logic =
+    let sort_wires w1 w2 =
+        let (s1,_) = dest_var w1 in
+        let (s2,_) = dest_var w2 in
+        if String.length s2 < String.length s1 then (w2,w1) else (w1,w2) in
     let rec merge_asms th asms =
         match asms with
           [] -> th
@@ -472,7 +489,7 @@ let merge_logic =
           let pred h = rator h = f in
           match filter pred asms with
             [] -> merge_asms th asms
-          | h :: _ -> merge_thm (INST [(rand h, w)] th)
+          | h :: _ -> merge_thm (INST [sort_wires w (rand h)] th)
     and merge_thm th = merge_asms th (hyp th) in
     merge_thm;;
 
@@ -581,6 +598,7 @@ let instantiate_hardware =
     th;;
 
 (*** Testing
+instantiate_hardware counter_syn (frees (concl counter91_thm)) counter91_thm;;
 instantiate_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgomery91_thm;;
 ***)
 

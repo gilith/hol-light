@@ -907,7 +907,7 @@ let or3_syn = [("or3",or3_def)];;
 
 let xor3_syn = [("xor3",xor3_def)];;
 
-let majority3_syn = setify (("majority3",majority3_def) :: or3_syn);;
+let majority3_syn = setify (("maj3",majority3_def) :: or3_syn);;
 
 let sticky_syn = [("sticky",sticky_def)];;
 

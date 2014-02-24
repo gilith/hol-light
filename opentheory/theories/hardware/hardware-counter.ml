@@ -3494,12 +3494,12 @@ let mk_counter n ld dn =
               REWR_CONV AND_TRUE_THM)) th1 in
     let th = GENL fvs th2 in
     let primary = frees (concl th) in
-    instantiate_hardware counter_syn primary th;;
+    (***instantiate_hardware counter_syn primary***) th;;
 
 (*** Testing
 let ld_wire = `ld : wire`;;
 let dn_wire = `dn : wire`;;
-let wires = [`clk : wire`; ld_wire; dn_wire];;
+let primary = [`clk : wire`; ld_wire; dn_wire];;
 let counter91_thm = mk_counter (dest_numeral `91`) ld_wire dn_wire;;
 output_string stdout (hardware_to_verilog "counter91" wires counter91_thm);;
 hardware_to_verilog_file "counter91" wires counter91_thm;;
