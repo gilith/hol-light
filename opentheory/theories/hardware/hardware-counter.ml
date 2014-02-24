@@ -3445,11 +3445,11 @@ export_thm counter_signal;;
 (* Automatically synthesizing hardware.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-let bpipe_syn = [bpipe_def];;
+let bpipe_syn = [("bpipe",bpipe_def)];;
 
-let pipe_syn = setify (pipe_def :: bpipe_syn);;
+let pipe_syn = setify (("pipe",pipe_def) :: bpipe_syn);;
 
-let counter_syn = setify (counter_def :: badder2_syn);;
+let counter_syn = setify (("counter",counter_def) :: badder2_syn);;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing verified counter circuits.                     *)

@@ -3343,7 +3343,7 @@ let band3_syn =
         ASM_REWRITE_TAC [];
         STRIP_TAC THEN
         ASM_REWRITE_TAC []]) in
-    [syn];;
+    [("band3",syn)];;
 
 let bor3_syn =
     let syn = prove
@@ -3366,7 +3366,7 @@ let bor3_syn =
         ASM_REWRITE_TAC [];
         STRIP_TAC THEN
         ASM_REWRITE_TAC []]) in
-    [syn];;
+    [("bor3",syn)];;
 
 let bxor3_syn =
     let syn = prove
@@ -3389,7 +3389,7 @@ let bxor3_syn =
         ASM_REWRITE_TAC [];
         STRIP_TAC THEN
         ASM_REWRITE_TAC []]) in
-    [syn];;
+    [("bxor3",syn)];;
 
 let bmajority3_syn =
     let syn = prove
@@ -3429,6 +3429,6 @@ let bmajority3_syn =
          ASM_REWRITE_TAC []];
         STRIP_TAC THEN
         ASM_REWRITE_TAC []]) in
-    setify (syn :: bor3_syn);;
+    setify (("bmajority3",syn) :: bor3_syn);;
 
 logfile_end ();;

@@ -2493,7 +2493,7 @@ let montgomery_circuit = prove
 
 let montgomery_mult_syn =
     setify
-      (montgomery_mult_def ::
+      (("montgomery_mult",montgomery_mult_def) ::
        sum_carry_mult_syn @
        pipe_syn @
        bpipe_syn @

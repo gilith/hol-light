@@ -7,6 +7,16 @@
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
+let maps (f : 'a -> 's -> 'b * 's) =
+    let rec m xs s =
+        match xs with
+          [] -> ([],s)
+        | x :: xs ->
+          let (y,s) = f x s in
+          let (ys,s) = m xs s in
+          (y :: ys, s) in
+     m;;
+
 let null_subst (sub : (term * term) list) =
     match sub with
       [] -> true
@@ -23,86 +33,143 @@ let orelse_sym_conv : conv -> conv =
     let rewr = REWR_CONV EQ_SYM_EQ in
     fun c -> c ORELSEC (rewr THENC c);;
 
-let is_unfrozen_var frozen v = is_var v && not (mem v frozen);;
+(* ------------------------------------------------------------------------- *)
+(* Name generators.                                                          *)
+(* ------------------------------------------------------------------------- *)
 
-let not_unfrozen_var frozen v = not (is_unfrozen_var frozen v);;
+type namer = Namer of term list * string * term list;;
+
+let frozen_vars (Namer (x,_,_)) = x;;
+
+let current_scope (Namer (_,x,_)) = x;;
+
+let generated_vars (Namer (_,_,x)) = x;;
+
+let new_namer frozen = Namer (frozen,"",frozen);;
+
+let add_generated_vars vs' (Namer (f,s,vs)) = Namer (f, s, vs' @ vs);;
+
+let reset_scope s (Namer (f,_,vs)) = Namer (f,s,vs);;
+
+let is_unfrozen_var namer v = is_var v && not (mem v (frozen_vars namer));;
+
+let not_unfrozen_var namer v = not (is_unfrozen_var namer v);;
+
+let fresh_var v namer =
+    let (s,ty) = dest_var v in
+    let sc = current_scope namer in
+    let s = if String.length sc = 0 then s else sc ^ "." ^ s in
+    let v = variant (generated_vars namer) (mk_var (s,ty)) in
+    let namer = add_generated_vars [v] namer in
+    (v,namer);;
+
+let freshen_var v namer =
+    let (v',namer) = fresh_var v namer in
+    ((v',v),namer);;
+
+let freshen_vars = maps freshen_var;;
+
+let narrow_scope s namer =
+    if String.length s = 0 then namer else
+    let sc = mk_var (s,bool_ty) in
+    let (sc,namer) = fresh_var sc namer in
+    let (sc,_) = dest_var sc in
+    reset_scope sc namer;;
 
 (* ------------------------------------------------------------------------- *)
 (* Prolog rules allow backward reasoning on theorem assumptions.             *)
 (* ------------------------------------------------------------------------- *)
 
-type prolog_rule = term list -> term -> thm * (term * term) list;;
+type prolog_rule =
+     Prolog_rule of
+       (term -> namer -> thm * (term * term) list * namer);;
 
-let all_prolog_rule : prolog_rule =
-    fun _ -> fun tm -> (ASSUME tm, []);;
+let all_prolog_rule =
+    Prolog_rule (fun tm -> fun namer -> (ASSUME tm, [], namer));;
 
-let no_prolog_rule : prolog_rule =
-    fun _ -> fun _ -> failwith "no_prolog_rule";;
+let no_prolog_rule =
+    Prolog_rule (fun _ -> fun _ -> failwith "no_prolog_rule");;
 
-let orelse_prolog_rule (pr1 : prolog_rule) (pr2 : prolog_rule) : prolog_rule =
-    fun frozen -> fun tm ->
-    try (pr1 frozen tm)
-    with Failure _ -> pr2 frozen tm;;
+let apply_prolog_rule (Prolog_rule pr) = pr;;
 
-let try_prolog_rule (pr : prolog_rule) : prolog_rule =
+let check_prolog_rule f pr =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let () = f tm in
+       apply_prolog_rule pr tm namer);;
+
+let orelse_prolog_rule pr1 pr2 =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       try (apply_prolog_rule pr1 tm namer)
+       with Failure _ -> apply_prolog_rule pr2 tm namer);;
+
+let try_prolog_rule pr =
     orelse_prolog_rule pr all_prolog_rule;;
 
-let first_prolog_rule (prs0 : prolog_rule list) : prolog_rule =
-    let rec first prs frozen tm =
+let first_prolog_rule =
+    let rec first prs =
         match prs with
-          [] -> failwith "first_prolog_rule"
-        | pr :: prs -> orelse_prolog_rule pr (first prs) frozen tm in
-    first prs0;;
+          [] -> no_prolog_rule
+        | pr :: prs -> orelse_prolog_rule pr (first prs) in
+    first;;
 
-let prove_hyp_prolog_rule (pr : prolog_rule) =
-    fun frozen ->
-    let rec prolog_asms th sub asms =
+let prove_hyp_prolog_rule pr =
+    let rec prolog_asms th sub namer asms =
         match asms with
-          [] -> (th,sub)
+          [] -> (th,sub,namer)
         | asm :: asms ->
           let asm = vsubst sub asm in
-          let (asm_th,asm_sub) = pr frozen asm in
+          let (asm_th,asm_sub,asm_namer) = apply_prolog_rule pr asm namer in
           let th = PROVE_HYP asm_th (INST asm_sub th) in
           let sub = compose_subst sub asm_sub in
-          prolog_asms th sub asms in
-     fun th -> prolog_asms th [] (hyp th);;
+          let namer = reset_scope (current_scope namer) asm_namer in
+          prolog_asms th sub namer asms in
+    fun th -> fun namer -> prolog_asms th [] namer (hyp th);;
 
-let then_prolog_rule (pr1 : prolog_rule) (pr2 : prolog_rule) : prolog_rule =
-    fun frozen -> fun tm ->
-    let (th,sub1) = pr1 frozen tm in
-    let (th,sub2) = prove_hyp_prolog_rule pr2 frozen th in
-    let sub = compose_subst sub1 sub2 in
-    (th,sub);;
+let then_prolog_rule pr1 pr2 =
+    Prolog_rule
+      (fun tm -> fun namer0 ->
+       let (th,sub1,namer) = apply_prolog_rule pr1 tm namer0 in
+       let (th,sub2,namer) = prove_hyp_prolog_rule pr2 th namer in
+       let sub = compose_subst sub1 sub2 in
+       let namer = reset_scope (current_scope namer0) namer in
+       (th,sub,namer));;
 
-let repeat_prove_hyp_prolog_rule (pr : prolog_rule) =
-    fun frozen ->
-    let rec prolog_asms fvs th sub asms =
+let repeat_prove_hyp_prolog_rule pr =
+    let rec prolog_asms fvs th sub namer asms =
         match asms with
-          [] -> (th,sub)
+          [] -> (th,sub,namer)
         | asm :: asms ->
           let asm = vsubst sub asm in
-          let (asm_th,asm_sub) = pr frozen asm in
+          let (asm_th,asm_sub,asm_namer) = apply_prolog_rule pr asm namer in
           let th = PROVE_HYP asm_th (INST asm_sub th) in
           let sub = compose_subst sub asm_sub in
+          let namer = reset_scope (current_scope namer) asm_namer in
           if length (intersect (map snd asm_sub) fvs) = 0 then
-            prolog_asms (union (frees asm) fvs) th sub asms
+            prolog_asms (union (frees asm) fvs) th sub namer asms
           else
-            prolog_asms [] th sub (hyp th) in
-     fun th -> prolog_asms [] th [] (hyp th);;
+            prolog_asms [] th sub namer (hyp th) in
+     fun th -> fun namer -> prolog_asms [] th [] namer (hyp th);;
 
-let then_repeat_prolog_rule (pr1 : prolog_rule) pr2 : prolog_rule =
-    fun frozen -> fun tm ->
-    let (th,sub1) = pr1 frozen tm in
-    let (th,sub2) = repeat_prove_hyp_prolog_rule pr2 frozen th in
-    let sub = compose_subst sub1 sub2 in
-    (th,sub);;
+let then_repeat_prolog_rule pr1 pr2 =
+    Prolog_rule
+      (fun tm -> fun namer0 ->
+       let (th,sub1,namer) = apply_prolog_rule pr1 tm namer0 in
+       let (th,sub2,namer) = repeat_prove_hyp_prolog_rule pr2 th namer in
+       let sub = compose_subst sub1 sub2 in
+       let namer = reset_scope (current_scope namer0) namer in
+       (th,sub,namer));;
 
-let rec repeat_prolog_rule (pr : prolog_rule) : prolog_rule =
-    fun frozen -> fun tm ->
-    try_prolog_rule
-      (then_repeat_prolog_rule pr (repeat_prolog_rule pr)) frozen tm;;
+let rec repeat_prolog_rule pr =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let rule =
+           try_prolog_rule
+             (then_repeat_prolog_rule pr (repeat_prolog_rule pr)) in
+       apply_prolog_rule rule tm namer);;
 
-let (thm_prolog_rule,conv_prolog_rule) =
+let (scope_thm_prolog_rule,conv_prolog_rule) =
     let eq_to_imp_thm = MATCH_MP (TAUT `(a <=> b) ==> (b ==> a)`) in
     let mk_prolog_thm =
         let pull_exists =
@@ -128,44 +195,51 @@ let (thm_prolog_rule,conv_prolog_rule) =
         let th = SPEC_ALL th in
         let th = if is_iff (concl th) then eq_to_imp_thm th else th in
         if is_imp (concl th) then norm_imp_thm th else ([],th) in
-    let prolog_thm_rule (vs,th) : prolog_rule =
-        let fresh v = (genvar (type_of v), v) in
+    let prolog_thm_rule s (vs,th) =
         let pat = concl th in
-        fun _ -> fun tm ->
-        let (_,sub,_) = term_match [] pat tm in
-        let sub = map fresh vs @ sub in
-        let th = INST sub th in
-        (th,[]) in
-    let thm_rule th = prolog_thm_rule (mk_prolog_thm th) in
-    let conv_rule (conv : conv) : prolog_rule =
-        fun _ -> fun tm ->
-        let eq_th = conv tm in
-        let th =
-            try (EQT_ELIM eq_th)
-            with Failure _ -> UNDISCH (eq_to_imp_thm eq_th) in
-        (th,[]) in
+        Prolog_rule
+          (fun tm -> fun namer ->
+           let (_,sub,_) = term_match [] pat tm in
+           let (vs_sub,namer) = freshen_vars vs namer in
+           let sub = vs_sub @ sub in
+           let th = INST sub th in
+           let namer = narrow_scope s namer in
+           (th,[],namer)) in
+    let thm_rule s th = prolog_thm_rule s (mk_prolog_thm th) in
+    let conv_rule (conv : conv) =
+        Prolog_rule
+          (fun tm -> fun namer ->
+           let eq_th = conv tm in
+           let th =
+               try (EQT_ELIM eq_th)
+               with Failure _ -> UNDISCH (eq_to_imp_thm eq_th) in
+           (th,[],namer)) in
     (thm_rule,conv_rule);;
 
-let sym_prolog_rule : prolog_rule =
-    fun _ -> fun tm ->
-    let (l,r) = dest_eq tm in
-    (SYM (ASSUME (mk_eq (r,l))), []);;
+let thm_prolog_rule = scope_thm_prolog_rule "";;
 
-let orelse_sym_prolog_rule (pr : prolog_rule) : prolog_rule =
+let sym_prolog_rule : prolog_rule =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let (l,r) = dest_eq tm in
+       (SYM (ASSUME (mk_eq (r,l))), [], namer));;
+
+let orelse_sym_prolog_rule pr =
     orelse_prolog_rule pr (then_prolog_rule sym_prolog_rule pr);;
 
-let subst_var_prolog_rule : prolog_rule =
+let subst_var_prolog_rule =
     orelse_sym_prolog_rule
-      (fun frozen -> fun tm ->
-       let (l,r) = dest_eq tm in
-       if is_unfrozen_var frozen l then (REFL r, [(r,l)])
-       else failwith "subst_var_prolog_rule");;
+      (Prolog_rule
+         (fun tm -> fun namer ->
+          let (l,r) = dest_eq tm in
+          if is_unfrozen_var namer l then (REFL r, [(r,l)], namer)
+          else failwith "subst_var_prolog_rule"));;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing hardware.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-let num_simp_prolog_rule : prolog_rule =
+let num_simp_prolog_rule =
     let push_numeral_conv =
         let dest_add = dest_binop `(+) : num -> num -> num` in
         let th = prove
@@ -190,7 +264,7 @@ let num_simp_prolog_rule : prolog_rule =
         NUM_REDUCE_CONV in
     conv_prolog_rule (CHANGED_CONV simp_conv);;
 
-let num_eq_prolog_rule : prolog_rule =
+let num_eq_prolog_rule =
     let is_num_type = (=) `:num` in
     let add_tm = `(+) : num -> num -> num` in
     let mk_add = mk_binop add_tm in
@@ -206,20 +280,23 @@ let num_eq_prolog_rule : prolog_rule =
     let reduce_conv =
         FIRST_CONV
           [numeral_eq_add_numeral_conv] in
-    fun frozen -> fun tm ->
-    let (l,r) = dest_eq tm in
-    if not (is_num_type (type_of l)) then failwith "num_eq_prolog_rule" else
-    orelse_sym_prolog_rule (conv_prolog_rule reduce_conv) frozen tm;;
+    let check tm =
+       let (l,r) = dest_eq tm in
+       if is_num_type (type_of l) then () else
+       failwith "num_eq_prolog_rule" in
+    check_prolog_rule check
+      (orelse_sym_prolog_rule (conv_prolog_rule reduce_conv));;
 
-let mk_bus_prolog_rule : prolog_rule =
+let mk_bus_prolog_rule =
     orelse_sym_prolog_rule
-      (fun frozen -> fun tm ->
-       let (t,n) = dest_eq tm in
-       let nn = dest_numeral n in
-       let v = dest_width t in
-       if not_unfrozen_var frozen v then failwith "mk_bus_prolog_rule" else
-       let sub = [(genvar_bus nn, v)] in
-       (ASSUME (vsubst sub tm), sub));;
+      (Prolog_rule
+         (fun tm -> fun namer ->
+          let (t,n) = dest_eq tm in
+          let nn = dest_numeral n in
+          let v = dest_width t in
+          if not_unfrozen_var namer v then failwith "mk_bus_prolog_rule" else
+          let sub = [(genvar_bus nn, v)] in
+          (ASSUME (vsubst sub tm), sub, namer)));;
 
 let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
     let zero_suc_conv : conv =
@@ -293,7 +370,7 @@ let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
         conv_prolog_rule (CHANGED_CONV (DEPTH_CONV conv)) in
     (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule);;
 
-let brev_prolog_rule : prolog_rule =
+let brev_prolog_rule =
     let bnil_thm = prove
       (`!y. y = bnil ==> brev bnil y`,
        REPEAT STRIP_TAC THEN
@@ -327,33 +404,36 @@ let brev_prolog_rule : prolog_rule =
         then_prolog_rule
           (conv_prolog_rule bappend_conv)
           (thm_prolog_rule bappend_thm) in
-    fun frozen -> fun tm ->
-        let (x,_) = dest_brev tm in
-        if is_bnil x then bnil_rule frozen tm else
-        if is_bwire x then bwire_rule frozen tm else
-        if is_bappend x then bappend_rule frozen tm else
-        failwith "brev_prolog_rule";;
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let (x,_) = dest_brev tm in
+       if is_bnil x then apply_prolog_rule bnil_rule tm namer else
+       if is_bwire x then apply_prolog_rule bwire_rule tm namer else
+       if is_bappend x then apply_prolog_rule bappend_rule tm namer else
+       failwith "brev_prolog_rule");;
 
-let connect_wire_prolog_rule : prolog_rule =
-    fun frozen -> fun tm ->
-    let (x,y) = dest_connect tm in
-    if is_unfrozen_var frozen y then (SPEC x connect_refl, [(x,y)])
-    else failwith "connect_wire_prolog_rule: frozen";;
+let connect_wire_prolog_rule =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let (x,y) = dest_connect tm in
+       if is_unfrozen_var namer y then (SPEC x connect_refl, [(x,y)], namer)
+       else failwith "connect_wire_prolog_rule");;
 
-let wire_connect_prolog_rule : prolog_rule =
-    fun frozen -> fun tm ->
-    let (x,y) = dest_connect tm in
-    if is_unfrozen_var frozen x then (SPEC y connect_refl, [(y,x)])
-    else failwith "wire_connect_prolog_rule: frozen";;
+let wire_connect_prolog_rule =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let (x,y) = dest_connect tm in
+       if is_unfrozen_var namer x then (SPEC y connect_refl, [(y,x)], namer)
+       else failwith "wire_connect_prolog_rule");;
 
-let connect_prolog_rule : prolog_rule =
+let connect_prolog_rule =
     orelse_prolog_rule connect_wire_prolog_rule wire_connect_prolog_rule;;
 
 let partition_primary primary th =
     let outputs = map rand (hyp th) in
     partition (not o C mem outputs) primary;;
 
-let rescue_primary_outputs_prolog_rule : term list -> prolog_rule =
+let rescue_primary_outputs_prolog_rule =
     let connect_equal_wires = prove
         (`!w x. connect w x ==> x = w`,
          REPEAT STRIP_TAC THEN
@@ -375,12 +455,12 @@ let rescue_primary_outputs =
           (first_prolog_rule
              [subst_var_prolog_rule;
               connect_wire_prolog_rule]) in
-    fun primary_outputs -> fun th ->
-    if length primary_outputs = 0 then th else
+    fun primary_outputs -> fun th -> fun namer ->
+    if length primary_outputs = 0 then (th,namer) else
     let rescue_rule = rescue_primary_outputs_prolog_rule primary_outputs in
-    let (th,_) = prove_hyp_prolog_rule rescue_rule primary_outputs th in
-    let (th,_) = repeat_prove_hyp_prolog_rule cleanup_rule primary_outputs th in
-    th;;
+    let (th,_,namer) = prove_hyp_prolog_rule rescue_rule th namer in
+    let (th,_,namer) = repeat_prove_hyp_prolog_rule cleanup_rule th namer in
+    (th,namer);;
 
 let merge_logic =
     let rec merge_asms th asms =
@@ -485,16 +565,19 @@ let instantiate_hardware =
          case1_middle_ground; case1_right_ground;
          case1_middle_power] in
     fun ths ->
-    let user_rules = map thm_prolog_rule ths in
+    let user_rules = map (uncurry scope_thm_prolog_rule) ths in
     let rule = first_prolog_rule (basic_rules @ user_rules) in
     let instantiate = repeat_prove_hyp_prolog_rule (repeat_prolog_rule rule) in
     fun primary -> fun th ->
-    let (th,_) = instantiate primary th in
+    let namer = new_namer primary in
+    let (th,_,namer) = instantiate th namer in
     let (primary_inputs,primary_outputs) = partition_primary primary th in
-    let th = rescue_primary_outputs primary_outputs th in
+    let (th,namer) = rescue_primary_outputs primary_outputs th namer in
     let th = merge_logic th in
     let th = delete_dead_logic primary_inputs primary_outputs th in
+(***
     let th = rename_wires primary th in
+***)
     th;;
 
 (*** Testing
