@@ -568,7 +568,7 @@ let montgomery_mult_def = new_definition
        wire mc (d1 + d2 + r + 1) mc3 /\
        wire mc (d1 + d2 + r + 2) mc4
        /\
-       sum_carry_mult ld xs xc d0 ys yc pb ps pc /\
+       scmult ld xs xc d0 ys yc pb ps pc /\
        pipe ld (d0 + d1) ld1 /\
        bpipe pb pbp /\
        bmult ld1 pb1 ks kc qb qs qc /\
@@ -942,7 +942,7 @@ let montgomery_mult_bits_to_num = prove
        bit_shr (bit_bound x (i + 1) * y) i`
     ASSUME_TAC THENL
   [REPEAT STRIP_TAC THEN
-   MATCH_MP_TAC sum_carry_mult_bits_to_num THEN
+   MATCH_MP_TAC scmult_bits_to_num THEN
    EXISTS_TAC `ld : wire` THEN
    EXISTS_TAC `xs : bus` THEN
    EXISTS_TAC `xc : bus` THEN
@@ -2494,7 +2494,7 @@ let montgomery_circuit = prove
 let montgomery_mult_syn =
     setify
       (("montgomery",montgomery_mult_def) ::
-       sum_carry_mult_syn @
+       scmult_syn @
        pipe_syn @
        bpipe_syn @
        bmult_syn @

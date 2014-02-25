@@ -3445,7 +3445,7 @@ export_thm counter_signal;;
 (* Automatically synthesizing hardware.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-let bpipe_syn = [("bpipe",bpipe_def)];;
+let bpipe_syn = [("pipeb",bpipe_def)];;
 
 let pipe_syn = setify (("pipe",pipe_def) :: bpipe_syn);;
 

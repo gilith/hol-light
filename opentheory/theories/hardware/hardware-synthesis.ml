@@ -495,12 +495,12 @@ let merge_logic =
 
 let delete_dead_logic primary_inputs primary_outputs th =
     let defs =
-        let mk_def asm = (rand asm, frees (rator asm), asm) in
+        let mk_def asm = (rand asm, (frees (rator asm), asm)) in
         map mk_def (hyp th) in
     let find_def wire =
-        match filter (fun (w,_,_) -> w = wire) defs with
+        match filter (fun (w,_) -> w = wire) defs with
           [] -> failwith "delete_dead_logic: no definition found for wire"
-        | [(_,ws,asm)] -> (ws,asm)
+        | [(_,ws_asm)] -> ws_asm
         | _ :: _ :: _ ->
           failwith "delete_dead_logic: multiple definitions found for wire" in
     let rec reachable seen work =
@@ -522,9 +522,9 @@ let delete_dead_logic primary_inputs primary_outputs th =
               (string_of_int n ^ " unused primary input" ^
                (if n = 1 then "" else "s")) in
         alive in
-    let (delays,wires) = partition (fun (_,_,asm) -> is_delay asm) defs in
+    let (delays,wires) = partition (fun (_,(_,asm)) -> is_delay asm) defs in
     let (alive_delays,alive_wires) =
-        let is_delay wire = exists (fun (w,_,_) -> w = wire) delays in
+        let is_delay wire = exists (fun (w,_) -> w = wire) delays in
         partition is_delay alive in
     let () =
         let n = length delays - length alive_delays in
@@ -535,9 +535,12 @@ let delete_dead_logic primary_inputs primary_outputs th =
     let () =
         let n = length wires - length alive_wires in
         if n = 0 then () else
-        warn true
-          (string_of_int n ^ " unused wire" ^
-           (if n = 1 then "" else "s")) in
+        let dead = subtract (map fst wires) alive_wires in
+        let msg =
+            string_of_int n ^ " unused wire" ^
+            (if n = 1 then "" else "s") ^ ":\n  " ^
+            String.concat "\n  " (map string_of_term dead) in
+        warn true msg in
     (*** Delete dead logic ***)
     th;;
 
@@ -660,12 +663,9 @@ let hardware_to_verilog =
           n in
     let wire_names = map wire_name in
     let wire_sort =
-        let wire_num w =
-            let s = wire_name w in
-            let s = String.sub s 1 (String.length s - 1) in
-            int_of_string s in
-        let wire_cmp w1 w2 = wire_num w1 <= wire_num w2 in
-        sort wire_cmp in
+        let var_name v = fst (dest_var v) in
+        let var_cmp v1 v2 = String.compare (var_name v1) (var_name v2) < 0 in
+        sort var_cmp in
     let arg_name arg =
         match arg with
           Wire_verilog_arg w -> wire_name w
@@ -783,6 +783,7 @@ let hardware_to_verilog =
 let name = "montgomery91";;
 let property = concl montgomery91_thm;;
 output_string stdout (hardware_to_verilog "montgomery91" primary montgomery91_thm);;
+output_string stdout (hardware_to_verilog "montgomery91" primary th);;
 ***)
 
 let hardware_to_verilog_file name wires th =

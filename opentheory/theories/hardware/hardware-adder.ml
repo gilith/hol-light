@@ -91,9 +91,9 @@ let badder4_def = new_definition
 
 export_thm badder4_def;;
 
-let sum_carry_bit_def = new_definition
+let scshiftr_def = new_definition
   `!ld xs xc xb.
-     sum_carry_bit ld xs xc xb <=>
+     scshiftr ld xs xc xb <=>
      ?r sp sq sr cp cq cr xs0 xs1 sq0 sq1 sq2 sq3 cp0 cp1 cq0 cq1.
        width xs = r + 1 /\
        width xc = r + 1 /\
@@ -125,7 +125,7 @@ let sum_carry_bit_def = new_definition
        bdelay sr sp /\
        bdelay cr cp`;;
 
-export_thm sum_carry_bit_def;;
+export_thm scshiftr_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of hardware adder devices.                                     *)
@@ -1190,28 +1190,28 @@ let badder4_bits_to_num = prove
 
 export_thm badder4_bits_to_num;;
 
-let sum_carry_bit_width = prove
+let scshiftr_width = prove
  (`!ld xs xc xb.
-     sum_carry_bit ld xs xc xb ==>
+     scshiftr ld xs xc xb ==>
      ?r.
        width xs = r + 1 /\
        width xc = r + 1`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [sum_carry_bit_def] THEN
+  REWRITE_TAC [scshiftr_def] THEN
   STRIP_TAC THEN
   EXISTS_TAC `r : num` THEN
   ASM_REWRITE_TAC []);;
 
-export_thm sum_carry_bit_width;;
+export_thm scshiftr_width;;
 
-let sum_carry_bit_signal = prove
+let scshiftr_signal = prove
  (`!x ld xs xc xb t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x /\
-     sum_carry_bit ld xs xc xb ==>
+     scshiftr ld xs xc xb ==>
      signal xb (t + k) = bit_nth x k`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [sum_carry_bit_def] THEN
+  REWRITE_TAC [scshiftr_def] THEN
   STRIP_TAC THEN
   REWRITE_TAC [bit_nth_def] THEN
   REVERSE_TAC
@@ -1429,7 +1429,7 @@ let sum_carry_bit_signal = prove
   DISCH_THEN (SUBST1_TAC o SYM) THEN
   REWRITE_TAC [bit_tl_cons]);;
 
-export_thm sum_carry_bit_signal;;
+export_thm scshiftr_signal;;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing hardware.                                      *)
@@ -1440,12 +1440,12 @@ let adder2_syn = [("add2",adder2_def)];;
 let adder3_syn =
     setify (("add3",adder3_def) :: xor3_syn @ majority3_syn);;
 
-let badder2_syn = [("badd2",badder2_def)];;
+let badder2_syn = [("add2b",badder2_def)];;
 
 let badder3_syn =
-    setify (("badd3",badder3_def) :: bxor3_syn @ bmajority3_syn);;
+    setify (("add3b",badder3_def) :: bxor3_syn @ bmajority3_syn);;
 
-let sum_carry_bit_syn =
-    setify (("scbit",sum_carry_bit_def) :: badder2_syn);;
+let scshiftr_syn =
+    setify (("shrsc",scshiftr_def) :: badder2_syn);;
 
 logfile_end ();;

@@ -67,5 +67,5 @@ const "HOLLight.bxor3" as "Hardware.Bus.xor3"
 
 # Hardware.SumCarry
 
-const "HOLLight.sum_carry_bit" as "Hardware.SumCarry.bit"
-const "HOLLight.sum_carry_mult" as "Hardware.SumCarry.multiplier"
+const "HOLLight.scmult" as "Hardware.SumCarry.multiplier"
+const "HOLLight.scshiftr" as "Hardware.SumCarry.shiftRight"

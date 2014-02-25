@@ -81,16 +81,16 @@ let bmult_def = new_definition
 
 export_thm bmult_def;;
 
-let sum_carry_mult_def = new_definition
+let scmult_def = new_definition
   `!ld xs xc d ys yc zb zs zc.
-     sum_carry_mult ld xs xc d ys yc zb zs zc <=>
+     scmult ld xs xc d ys yc zb zs zc <=>
      ?xb ldd xbd.
-       sum_carry_bit ld xs xc xb /\
+       scshiftr ld xs xc xb /\
        pipe ld d ldd /\
        pipe xb d xbd /\
        bmult ldd xbd ys yc zb zs zc`;;
 
-export_thm sum_carry_mult_def;;
+export_thm scmult_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of hardware multiplier devices.                                *)
@@ -598,7 +598,7 @@ let bmult_bits_to_num = prove
 
 export_thm bmult_bits_to_num;;
 
-let sum_carry_mult_bits_to_num = prove
+let scmult_bits_to_num = prove
  (`!x y ld xs xc d ys yc zb zs zc t k.
      (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x /\
@@ -606,13 +606,13 @@ let sum_carry_mult_bits_to_num = prove
         i <= d + k /\ d <= i /\ i <= width xs + d + 1 ==>
         bits_to_num (bsignal ys (t + i)) +
         2 * bits_to_num (bsignal yc (t + i)) = y) /\
-     sum_carry_mult ld xs xc d ys yc zb zs zc ==>
+     scmult ld xs xc d ys yc zb zs zc ==>
      bit_cons (signal zb (t + d + k))
        (bits_to_num (bsignal zs (t + d + k)) +
         2 * bits_to_num (bsignal zc (t + d + k))) =
      bit_shr (bit_bound x (k + 1) * y) k`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [sum_carry_mult_def] THEN
+  REWRITE_TAC [scmult_def] THEN
   STRIP_TAC THEN
   REWRITE_TAC [ADD_ASSOC] THEN
   MATCH_MP_TAC bmult_bits_to_num THEN
@@ -656,7 +656,7 @@ let sum_carry_mult_bits_to_num = prove
       pipe_signal) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
-   MATCH_MP_TAC sum_carry_bit_signal THEN
+   MATCH_MP_TAC scshiftr_signal THEN
    EXISTS_TAC `ld : wire` THEN
    EXISTS_TAC `xs : bus` THEN
    EXISTS_TAC `xc : bus` THEN
@@ -696,7 +696,7 @@ let sum_carry_mult_bits_to_num = prove
         `xs : bus`;
         `xc : bus`;
         `xb : wire`]
-     sum_carry_bit_width) THEN
+     scshiftr_width) THEN
   ASM_REWRITE_TAC [] THEN
   STRIP_TAC THEN
   ASM_REWRITE_TAC [] THEN
@@ -715,18 +715,18 @@ let sum_carry_mult_bits_to_num = prove
    REWRITE_TAC [bit_width_bits_to_num] THEN
    ASM_REWRITE_TAC [length_bsignal; LE_REFL]]);;
 
-export_thm sum_carry_mult_bits_to_num;;
+export_thm scmult_bits_to_num;;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing hardware.                                      *)
 (* ------------------------------------------------------------------------- *)
 
 let bmult_syn =
-    setify (("bmult",bmult_def) :: adder2_syn @ badder3_syn @ adder3_syn);;
+    setify (("mulb",bmult_def) :: adder2_syn @ badder3_syn @ adder3_syn);;
 
-let sum_carry_mult_syn =
+let scmult_syn =
     setify
-      (("scmult",sum_carry_mult_def) ::
-       sum_carry_bit_syn @ pipe_syn @ bmult_syn);;
+      (("mulsc",scmult_def) ::
+       scshiftr_syn @ pipe_syn @ bmult_syn);;
 
 logfile_end ();;
