@@ -2491,9 +2491,9 @@ let montgomery_circuit = prove
 (* Automatically synthesizing hardware.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-let montgomery_mult_syn =
+let montgomery_mult_syn_gen n =
     setify
-      (("montgomery",montgomery_mult_def) ::
+      ((n,montgomery_mult_def) ::
        scmult_syn @
        pipe_syn @
        bpipe_syn @
@@ -2504,11 +2504,14 @@ let montgomery_mult_syn =
        adder3_syn @
        or3_syn);;
 
+let montgomery_mult_syn = montgomery_mult_syn_gen "montgomery";;
+
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing verified Montgomery multiplication circuits.   *)
 (* ------------------------------------------------------------------------- *)
 
-let mk_montgomery_mult n ld xs xc ys yc zs zc =
+let mk_montgomery_mult n =
+    let wire_ty = `:wire` in
     let undisch_bind th =
         let (tm,_) = dest_imp (concl th) in
         (tm, UNDISCH th) in
@@ -2521,12 +2524,13 @@ let mk_montgomery_mult n ld xs xc ys yc zs zc =
         let d = add_num (quo_num (bit_width_num r) num_2) num_1 in
         let dn = mk_numeral d in
         (dn,dn,dn) in
-    let xs = variable_bus xs r in
-    let xc = variable_bus xc r in
-    let ys = variable_bus ys r in
-    let yc = variable_bus yc r in
-    let zs = variable_bus zs r1 in
-    let zc = variable_bus zc r1 in
+    let ld = mk_var ("ld",wire_ty) in
+    let xs = variable_bus "xs" r in
+    let xc = variable_bus "xc" r in
+    let ys = variable_bus "ys" r in
+    let yc = variable_bus "yc" r in
+    let zs = variable_bus "zs" r1 in
+    let zc = variable_bus "zc" r1 in
     let egcd_th =
         let rtm =
             let tm0 = mk_comb (`(+) : num -> num -> num`, rn) in
@@ -2653,19 +2657,13 @@ let mk_montgomery_mult n ld xs xc ys yc zs zc =
         (GEN fv_x o GEN fv_y o GEN fv_t o
          REWRITE_RULE [IMP_IMP; GSYM CONJ_ASSOC] o
          DISCH ld_cond o DISCH x_cond o DISCH y_cond) th11 in
+    let syn = montgomery_mult_syn_gen "" in
     let primary = frees (concl th) in
-    (***instantiate_hardware montgomery_mult_syn primary***) th;;
+    instantiate_hardware syn primary th;;
 
 (*** Testing
 let n = dest_numeral `91`;;
-let ld = `ld : wire`;;
-let xs = "xs";;
-let xc = "xc";;
-let ys = "ys";;
-let yc = "yc";;
-let zs = "zs";;
-let zc = "zc";;
-let montgomery91_thm = mk_montgomery_mult n ld xs xc ys yc zs zc;;
+let montgomery91_thm = mk_montgomery_mult n;;
 let primary = `clk : wire` :: frees (concl montgomery91_thm);;
 output_string stdout (hardware_to_verilog "montgomery91" primary montgomery91_thm);;
 hardware_to_verilog_file "montgomery91" primary montgomery91_thm;;

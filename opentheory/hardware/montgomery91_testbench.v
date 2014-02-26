@@ -11,6 +11,13 @@ module main;
    wire [0:7] zs;
    wire [0:7] zc;
 
+   integer x;
+   integer y;
+   integer z;
+   integer spec;
+   integer ckt;
+   integer seed;
+
    montgomery91
      root
      (.clk (clk),
@@ -24,54 +31,68 @@ module main;
 
    initial
      begin
+        seed = `SEED;
         $display("+-----------------------------+");
         $display("| Test bench for montgomery91 |");
         $display("+-----------------------------+");
+        $display("random seed = %0d", seed);
         $display("");
-        $display("  t | ld |  xs |  xc |  ys |  yc |  zs |  zc |");
-        $display("----+----+-----+-----+-----+-----+-----+-----+");
-        $monitor("%d |  %b | %d | %d | %d | %d | %d | %d | %b",
-                  t, ld, xs, xc, ys, yc, zs, zc, root.w318);
+        $display("+----+----+-----+-----+-----+-----+-----+-----+");
+        $display("|  t | ld |  xs |  xc |  ys |  yc |  zs |  zc |");
+        $display("+----+----+-----+-----+-----+-----+-----+-----+");
+        $monitor("|%d |  %b | %d | %d | %d | %d | %d | %d | ",
+                  t, ld, xs, xc, ys, yc, zs, zc);
         clk = 1'b0;
         repeat(10) @(posedge clk);
+        @(posedge clk);
         // Time 0
-        t = 8'd255;
+        t = 8'h00;
         ld = 1'b1;
-        xs = 7'd111;
-        xc = 7'd73;
-        //$display("x = %d", xs + 2 * xc);
+        xs = $random(seed);
+        xc = $random(seed);
+        x = xs + 2 * xc;
         @(posedge clk);
         // Time 1
         ld = 1'b0;
-        //xs = 7'bx;
-        //xc = 7'bx;
+        xs = 7'bx;
+        xc = 7'bx;
         @(posedge clk);
         // Time 2
-        ys = 7'd111;
-        yc = 7'd73;
-        //$display("y = %d", ys + 2 * yc);
+        ys = $random(seed);
+        yc = $random(seed);
+        y = ys + 2 * yc;
         repeat(9) @(posedge clk);
         // Time 11
-        //ys = 7'bx;
-        //yc = 7'bx;
+        ys = 7'bx;
+        yc = 7'bx;
         repeat(2) @(posedge clk);
         // Time 13
-        //ld = 1'bx;
+        ld = 1'bx;
         repeat(2) @(posedge clk);
         // Time 15
-        //$display("z = %d", zs + 2 * zc);
-        if (0)
-          begin
-             $display("ERROR: montomgery91 finished too soon");
-          end
-        repeat(5) @(posedge clk);
+        #1 z = zs + 2 * zc;
+        repeat(3) @(posedge clk);
         $monitoroff;
+        @(posedge clk);
+        spec = (x * y * 8) % 91;
+        ckt = z % 91;
+        $display("+----+----+-----+-----+-----+-----+-----+-----+");
+        $display("");
+        $display("Inputs: x = %0d, y = %0d", x, y);
+        $display("Outputs: z = %0d", z);
+        $display("Spec: (x * y * 8) %% 91 = %0d", spec);
+        $display("Circuit: z %% 91        = %0d", ckt);
+        $display("");
+        if (ckt != spec)
+          begin
+             $display("ERROR: montomgery91 computed an incorrect result");
+          end
         $display("Test complete at time %0t.", $time);
         $finish;
      end
 
    always
-     #5 clk = !clk;
+     #5 clk = ~clk;
 
    always @(posedge clk)
      t = t + 1;

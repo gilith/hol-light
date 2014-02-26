@@ -3455,7 +3455,9 @@ let counter_syn = setify (("counter",counter_def) :: badder2_syn);;
 (* Automatically synthesizing verified counter circuits.                     *)
 (* ------------------------------------------------------------------------- *)
 
-let mk_counter n ld dn =
+let mk_counter n =
+    let ld = `ld : wire` in
+    let dn = `dn : wire` in
     let n2 = add_num n num_2 in
     let (m,r) =
         let r = bit_width_num n2 -/ num_1 in
@@ -3494,15 +3496,13 @@ let mk_counter n ld dn =
               REWR_CONV AND_TRUE_THM)) th1 in
     let th = GENL fvs th2 in
     let primary = frees (concl th) in
-    (***instantiate_hardware counter_syn primary***) th;;
+    instantiate_hardware counter_syn primary th;;
 
 (*** Testing
-let ld_wire = `ld : wire`;;
-let dn_wire = `dn : wire`;;
-let primary = [`clk : wire`; ld_wire; dn_wire];;
-let counter91_thm = mk_counter (dest_numeral `91`) ld_wire dn_wire;;
-output_string stdout (hardware_to_verilog "counter91" wires counter91_thm);;
-hardware_to_verilog_file "counter91" wires counter91_thm;;
+let counter91_thm = mk_counter (dest_numeral `91`);;
+let primary = [`clk : wire`; `ld : wire`; `dn : wire`];;
+output_string stdout (hardware_to_verilog "counter91" primary counter91_thm);;
+hardware_to_verilog_file "counter91" primary counter91_thm;;
 ***)
 
 logfile_end ();;

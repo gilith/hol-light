@@ -17,6 +17,24 @@ let maps (f : 'a -> 's -> 'b * 's) =
           (y :: ys, s) in
      m;;
 
+let translate f s =
+    let rec tr acc i =
+        if i = 0 then String.concat "" acc else
+        let i = i - 1 in
+        let c = String.get s i in
+        tr (f c :: acc) i in
+    tr [] (String.length s);;
+
+let split c s =
+    let rec split_from i =
+    try (let j = String.index_from s i c in
+         let (x,xs) = split_from (j + 1) in
+         (String.sub s i (j - i), x :: xs))
+    with Not_found -> (String.sub s i (String.length s - i), []) in
+    split_from 0;;
+
+let deprime s = fst (split '\'' s);;
+
 let null_subst (sub : (term * term) list) =
     match sub with
       [] -> true
@@ -544,16 +562,80 @@ let delete_dead_logic primary_inputs primary_outputs th =
     (*** Delete dead logic ***)
     th;;
 
-let rename_wires =
-    let rename p w (n,s) =
-        (n + 1, (mk_var (p ^ string_of_int n, type_of w), w) :: s) in
-    fun primary -> fun th ->
-    let gvs = filter (not o C mem primary) (freesl (hyp th)) in
-    let delays = filter is_delay (hyp th) in
-    let delay_outputs = map rand delays in
-    let (rvs,wvs) = partition (C mem delay_outputs) gvs in
-    let (_,sub) = itlist (rename "r") rvs (0,[]) in
-    let (_,sub) = itlist (rename "w") wvs (0,sub) in
+type deprime_name =
+     Wire_deprime of term
+   | Module_deprime of deprime
+
+and deprime = Deprime of (string * (string * deprime_name) list) list;;
+
+let empty_deprime = Deprime [];;
+
+let add_deprime w =
+    let rec add mp ms (Deprime l) =
+        let m = deprime mp in
+        let (ml,l) = partition (fun (x,_) -> x = m) l in
+        let ml =
+            match ml with
+              [] -> []
+            | [(_,x)] -> x
+            | _ :: _ :: _ -> failwith "add_deprime: multiple ml" in
+        let (mpl,ml) = partition (fun (x,_) -> x = mp) ml in
+        let mpl = addn ms mpl in
+        Deprime ((m, ((mp,mpl) :: ml)) :: l)
+    and addn ms mpl =
+        match ms with
+          [] ->
+          if length mpl = 0 then Wire_deprime w else
+          failwith "add_deprime: wire slot already occupied"
+        | mp :: ms ->
+          let dp =
+              match mpl with
+                [] -> empty_deprime
+              | [(_, Module_deprime dp)] -> dp
+              | _ -> failwith "add_deprime: bad module slot" in
+          Module_deprime (add mp ms dp) in
+    let (s,_) = dest_var w in
+    uncurry add (split '.' s);;
+
+let wires_to_deprime ws = itlist add_deprime ws empty_deprime;;
+
+let deprime_to_sub =
+    let wire_ty = `:wire` in
+    let mpl_cmp (mp1,_) (mp2,_) = String.length mp1 < String.length mp2 in
+    let narrow sc n = if String.length sc = 0 then n else sc ^ "." ^ n in
+    fun frozen ->
+    let rec go_dp sc sub (Deprime l) = go_ml sc sub l
+    and go_ml sc sub ml =
+        match ml with
+          [] -> sub
+        | (m,[(_,dpn)]) :: ml ->
+          let sub = go_dpn (narrow sc m) sub dpn in
+          go_ml sc sub ml
+        | (m,mpl) :: ml ->
+          let mpl = sort mpl_cmp mpl in
+          let sub = go_mpl (narrow sc m) 0 sub mpl in
+          go_ml sc sub ml
+    and go_mpl sc n sub mpl =
+        match mpl with
+          [] -> sub
+        | (_,dpn) :: mpl ->
+          let sub = go_dpn (sc ^ string_of_int n) sub dpn in
+          go_mpl sc (n + 1) sub mpl
+    and go_dpn sc sub dpn =
+        match dpn with
+          Wire_deprime w ->
+          if mem w frozen then sub else
+          let w' = mk_var (sc,wire_ty) in
+          if w' = w then sub else
+          if mem w' frozen then failwith "deprime_to_sub: hitting frozen" else
+          (w',w) :: sub
+        | Module_deprime dp -> go_dp sc sub dp in
+     go_dp "" [];;
+
+let rename_wires primary th =
+    let ws = freesl (hyp th) in
+    let dp = wires_to_deprime ws in
+    let sub = deprime_to_sub primary dp in
     INST sub th;;
 
 let instantiate_hardware =
@@ -595,9 +677,7 @@ let instantiate_hardware =
     let (th,namer) = rescue_primary_outputs primary_outputs th namer in
     let th = merge_logic th in
     let th = delete_dead_logic primary_inputs primary_outputs th in
-(***
     let th = rename_wires primary th in
-***)
     th;;
 
 (*** Testing
@@ -647,10 +727,34 @@ let comment_box_text =
         String.concat "\n" (map middle (split text)) ^ "\n" ^
         bottom ^ "\n";;
 
-let hardware_to_verilog =
-    let wire_name =
+let verilog_wire_names =
+    let verilog_name =
+        let zap = "[]" in
+        let spacer = "." in
+        let tr c =
+            if String.contains zap c then "" else
+            if String.contains spacer c then "_" else
+            String.make 1 c in
+        translate tr in
+    fun primary ->
+    let verilog_wire =
         let wire_ty = `:wire` in
         fun w ->
+        if mem w primary then w else
+        let (s,_) = dest_var w in
+        mk_var (verilog_name s, wire_ty) in
+    fun th ->
+    let ws = freesl (hyp th) in
+    let ws' = map verilog_wire ws in
+    let () =
+        if length (setify ws') = length ws' then () else
+        failwith "verilog_wire_names: collision" in
+    let sub = filter (fun (w',w) -> w' <> w) (zip ws' ws) in
+    INST sub th;;
+
+let hardware_to_verilog =
+    let wire_ty = `:wire` in
+    let wire_name w =
         if is_ground w then "1'b0" else
         if is_power w then "1'b1" else
         if not (is_var w) then
@@ -674,7 +778,8 @@ let hardware_to_verilog =
     let arg_decl arg =
         match arg with
           Wire_verilog_arg w -> wire_name w
-        | Bus_verilog_arg (Bus_wires (b,is)) -> range_to_string is ^ " " ^ b in
+        | Bus_verilog_arg (Bus_wires (b,is)) ->
+          range_to_string (rev is) ^ " " ^ b in
     let arg_decls = map arg_decl in
     let verilog_comment name property =
         let prop =
@@ -762,6 +867,7 @@ let hardware_to_verilog =
          ";\n    end\n") in
     let verilog_module_end name = "\nendmodule // " ^ name ^ "\n" in
     fun name -> fun primary -> fun th ->
+    let th = verilog_wire_names primary th in
     let (delays,combs) = partition is_delay (hyp th) in
     let registers = wire_sort (map rand delays) in
     let wires = map rand combs in
@@ -783,7 +889,6 @@ let hardware_to_verilog =
 let name = "montgomery91";;
 let property = concl montgomery91_thm;;
 output_string stdout (hardware_to_verilog "montgomery91" primary montgomery91_thm);;
-output_string stdout (hardware_to_verilog "montgomery91" primary th);;
 ***)
 
 let hardware_to_verilog_file name wires th =

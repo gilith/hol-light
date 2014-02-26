@@ -56,4 +56,4 @@ iverilog: iverilog-info $(TARGETS)
 	$(VVP) $< | tee $@
 
 %.o: %.v
-	$(IVERILOG) -o $@ $<
+	$(IVERILOG) -DSEED=$(shell date +%s) -o $@ $<
