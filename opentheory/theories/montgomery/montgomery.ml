@@ -598,17 +598,17 @@ export_thm montgomery_mult_def;;
 
 (***
 let montgomery_compress_def = new_definition
-  `!rx ry rz xs xc ys' yc'.
-      montgomery_compress rx ry rz xs xc ys' yc' <=>
+  `!xs xc d rx ry rz ys yc.
+      montgomery_compress xs xc d rx ry rz ys yc <=>
       ?r.
          width rx = r /\
          width ry = r /\
          width rz = r /\
-         width xs = (r + 2) /\
-         width xc = (r + 2)
-         /\
-         width ys' = r /\
-         width yc' = r`;;
+         width xs = r + 1 /\
+         width xc = r + 1 /\
+         width ys = r /\
+         width yc = r /\
+`;;
 
 export_thm montgomery_compress_def;;
 
