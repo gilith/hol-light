@@ -596,19 +596,63 @@ let montgomery_mult_def = new_definition
 
 export_thm montgomery_mult_def;;
 
+(* --------------------------------------------- *)
+(* Compress the Montgomery multiplication result *)
+(* --------------------------------------------- *)
+(*        r+2 r+1  r  ...  1   0                 *)
+(* --------------------------------------------- *)
+(*  xs  =  -   X   X  ...  X   X                 *)
+(*  xc  =  X   X   X  ...  X   -                 *)
+(*  rx  =  -   -   X  ...  X   X                 *)
+(*  ry  =  -   -   X  ...  X   X                 *)
+(*  rz  =  -   -   X  ...  X   X                 *)
+(* --------------------------------------------- *)
+(*  ns  =  -   X   -  ...  -   -                 *)
+(*  nc  =  X   -   -  ...  -   -                 *)
+(* --------------------------------------------- *)
+(*  ys  =  -   -   X  ...  X   X                 *)
+(*  yc  =  -   X   X  ...  X   -                 *)
+(* --------------------------------------------- *)
+
 (***
 let montgomery_compress_def = new_definition
   `!xs xc d rx ry rz ys yc.
       montgomery_compress xs xc d rx ry rz ys yc <=>
-      ?r.
-         width rx = r /\
-         width ry = r /\
-         width rz = r /\
-         width xs = r + 1 /\
-         width xc = r + 1 /\
-         width ys = r /\
-         width yc = r /\
-`;;
+      ?r nct ns nc nsd ncd rnl rnh rn
+       xs0 xs1 xs2 xc0 xc1 xc2 ys0 ys1 yc0 yc1 rn0 rn1.
+         width xs = r + 2 /\
+         width xc = r + 2 /\
+         width rx = r + 1 /\
+         width ry = r + 1 /\
+         width rz = r + 1 /\
+         width ys = r + 1 /\
+         width yc = r + 1 /\
+         width rnl = r + 1 /\
+         width rnh = r + 1 /\
+         width rn = r + 1
+         /\
+         wire xs 0 xs0 /\
+         bsub xs 1 r xs1 /\
+         wire xs (r + 1) xs2 /\
+         bsub xc 0 r xc0 /\
+         wire xc r xc1 /\
+         wire xc (r + 1) xc2 /\
+         wire ys 0 ys0 /\
+         bsub ys 1 r ys1 /\
+         wire yc 0 yc0 /\
+         bsub yc 1 r yc1 /\
+         wire rn 0 rn0 /\
+         bsub rn 1 r rn1
+         /\
+         adder2 xs2 xc1 ns nct /\
+         or2 nct xc2 nc /\
+         pipe ns d nsd /\
+         pipe nc d ncd /\
+         bcase1 nsd rx (bground (r + 1)) rnl /\
+         bcase1 nsd rz ry rnh /\
+         bcase1 ncd rnh rnl rn /\
+         adder2 xs0 rn0 ys0 yc0 /\
+         badder3 xs1 xc0 rn1 ys1 yc1`;;
 
 export_thm montgomery_compress_def;;
 
@@ -2455,6 +2499,26 @@ let montgomery_mult_bits_to_num = prove
 export_thm montgomery_mult_bits_to_num;;
 
 (***
+let montgomery_compress_bits_to_num = prove
+ (`!n r x xs xc d rx ry rz ys yc t.
+     width rx = r /\
+     ~(n = 0) /\
+     bit_width x <= r + 1 /\
+     bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x /\
+     bsignal xs (t + d) = bsignal xs t /\
+     bsignal xc (t + d) = bsignal xc t /\
+     bits_to_num (bsignal rx (t + d)) = (2 EXP r) MOD n /\
+     bits_to_num (bsignal ry (t + d)) = (2 * (2 EXP r)) MOD n /\
+     bits_to_num (bsignal rz (t + d)) = (3 * (2 EXP r)) MOD n /\
+     montgomery_compress xs xc d rx ry rz ys yc ==>
+     (bits_to_num (bsignal ys (t + d)) +
+      2 * bits_to_num (bsignal yc (t + d))) MOD n = x MOD n`,
+  X_GEN_TAC `n : num` THEN
+  X_GEN_TAC `r : num` THEN
+  X_GEN_TAC `s : num` THEN
+  X_GEN_TAC `k : num` THEN
+  X_GEN_TAC `x : num` THEN
+
 let montgomery_circuit = prove
  (`!n r s k x y ld nb kb rx ry rz xs xc ys yc zs' zc' t.
       ~(n = 0) /\

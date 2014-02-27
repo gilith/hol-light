@@ -686,6 +686,75 @@ instantiate_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgo
 ***)
 
 (* ------------------------------------------------------------------------- *)
+(* Profiling synthesized hardware.                                           *)
+(* ------------------------------------------------------------------------- *)
+
+let profile_wires f ws =
+    let ws = map (fun w -> (w, f w)) ws in
+    let ws = sort (fun (_,n1) -> fun (_,n2) -> n1 < n2) ws in
+    let imax = length ws - 1 in
+    let i99 = (imax * 99) / 100 in
+    let i95 = (imax * 19) / 20 in
+    let i90 = (imax * 9) / 10 in
+    let i75 = (imax * 3) / 4 in
+    let i50 = imax / 2 in
+    let i25 = imax / 4 in
+    let (_,n25) = List.nth ws i25 in
+    let (_,n50) = List.nth ws i50 in
+    let (_,n75) = List.nth ws i75 in
+    let (_,n90) = List.nth ws i90 in
+    let (_,n95) = List.nth ws i95 in
+    let (_,n99) = List.nth ws i99 in
+    let (wmax,nmax) = List.nth ws imax in
+    "25%=" ^ string_of_int n25 ^ ", " ^
+    "50%=" ^ string_of_int n50 ^ ", " ^
+    "75%=" ^ string_of_int n75 ^ ", " ^
+    "90%=" ^ string_of_int n90 ^ ", " ^
+    "95%=" ^ string_of_int n95 ^ ", " ^
+    "99%=" ^ string_of_int n99 ^ ", " ^
+    "max=" ^ string_of_int nmax ^ "\n" ^
+    "  (" ^ string_of_term wmax ^ ")";;
+
+let profile_hardware th =
+    let logic = hyp th in
+    let wires = freesl logic in
+    let primary_inputs = subtract wires (map rand logic) in
+    let (delays,gates) = partition is_delay logic in
+    let delays = map (snd o dest_delay) delays in
+    let (primary_outputs,gates) = partition is_connect gates in
+    let primary_outputs = map (snd o dest_connect) primary_outputs in
+    let fanin =
+        let rec f seen ws =
+            match ws with
+              [] -> length seen
+            | w :: ws ->
+              if mem w seen then f seen ws else
+              let d =
+                  match filter (fun d -> rand d = w) logic with
+                    [] -> failwith "can't find fanin definition"
+                  | [d] -> d
+                  | _ :: _ :: _ -> failwith "multiple fanin definitions" in
+              let vs = frees (rator d) in
+              let vs = filter (not o C mem primary_inputs) vs in
+              let vs = filter (not o C mem delays) vs in
+              f (w :: seen) (vs @ ws) in
+        fun w -> f [] [w] in
+    let fanout =
+        (* FO(w) = *)
+        fun w -> 1 in
+    "Primary inputs: " ^ string_of_int (length primary_inputs) ^ "\n" ^
+    "Primary outputs: " ^ string_of_int (length primary_outputs) ^ "\n" ^
+    "Delays: " ^ string_of_int (length delays) ^ "\n" ^
+    "Gates: " ^ string_of_int (length gates) ^ "\n" ^
+    "Fan-in: " ^ profile_wires fanin (primary_outputs @ delays) ^ "\n" ^
+    "Fan-out: " ^ profile_wires fanout (subtract wires primary_outputs);;
+
+(*** Testing
+print_string ("\n" ^ profile_hardware counter91_thm ^ "\n");;
+print_string ("\n" ^ profile_hardware montgomery91_thm ^ "\n");;
+***)
+
+(* ------------------------------------------------------------------------- *)
 (* Pretty-printing synthesized hardware in Verilog.                          *)
 (* ------------------------------------------------------------------------- *)
 
@@ -694,19 +763,6 @@ let VERILOG_LINE_LENGTH = 79;;
 type verilog_arg =
      Wire_verilog_arg of term
    | Bus_verilog_arg of bus_wires;;
-
-let rec collect_verilog_args wires =
-    match wires with
-      [] -> []
-    | wire :: wires ->
-      let args = collect_verilog_args wires in
-      try (let (w,i) = dest_bus_wire wire in
-           match args with
-             Bus_verilog_arg (Bus_wires (x,js)) :: rest ->
-             if w = x then Bus_verilog_arg (Bus_wires (w, i :: js)) :: rest else
-             Bus_verilog_arg (Bus_wires (w,[i])) :: args
-           | _ -> Bus_verilog_arg (Bus_wires (w,[i])) :: args)
-      with Failure _ -> Wire_verilog_arg wire :: args;;
 
 let comment_box_text =
     let split s =
@@ -726,6 +782,19 @@ let comment_box_text =
         top ^ "\n" ^
         String.concat "\n" (map middle (split text)) ^ "\n" ^
         bottom ^ "\n";;
+
+let rec collect_verilog_args wires =
+    match wires with
+      [] -> []
+    | wire :: wires ->
+      let args = collect_verilog_args wires in
+      try (let (w,i) = dest_bus_wire wire in
+           match args with
+             Bus_verilog_arg (Bus_wires (x,js)) :: rest ->
+             if w = x then Bus_verilog_arg (Bus_wires (w, i :: js)) :: rest else
+             Bus_verilog_arg (Bus_wires (w,[i])) :: args
+           | _ -> Bus_verilog_arg (Bus_wires (w,[i])) :: args)
+      with Failure _ -> Wire_verilog_arg wire :: args;;
 
 let verilog_wire_names =
     let verilog_name =
@@ -866,6 +935,8 @@ let hardware_to_verilog =
            (map (verilog_delay o find_delay) registers) ^
          ";\n    end\n") in
     let verilog_module_end name = "\nendmodule // " ^ name ^ "\n" in
+    let verilog_profile th =
+        "\n" ^ comment_box_text (profile_hardware th) ^ "\n" in
     fun name -> fun primary -> fun th ->
     let th = verilog_wire_names primary th in
     let (delays,combs) = partition is_delay (hyp th) in
@@ -883,12 +954,13 @@ let hardware_to_verilog =
     verilog_wire_declarations "wire" wires ^
     verilog_combinational combs (wires @ primary_outputs) ^
     verilog_delays (hd primary) delays registers ^
-    verilog_module_end name;;
+    verilog_module_end name ^
+    verilog_profile th;;
 
 (*** Testing
 let name = "montgomery91";;
-let property = concl montgomery91_thm;;
-output_string stdout (hardware_to_verilog "montgomery91" primary montgomery91_thm);;
+let primary = `clk : wire` :: frees (concl montgomery91_thm);;
+output_string stdout (hardware_to_verilog name primary montgomery91_thm);;
 ***)
 
 let hardware_to_verilog_file name wires th =
