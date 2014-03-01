@@ -711,9 +711,9 @@ let profile_wires f ws =
     "75%=" ^ string_of_int n75 ^ ", " ^
     "90%=" ^ string_of_int n90 ^ ", " ^
     "95%=" ^ string_of_int n95 ^ ", " ^
-    "99%=" ^ string_of_int n99 ^ ", " ^
-    "max=" ^ string_of_int nmax ^ "\n" ^
-    "  (" ^ string_of_term wmax ^ ")";;
+    "99%=" ^ string_of_int n99 ^ ",\n  " ^
+    "max=" ^ string_of_int nmax ^ " " ^
+    "(" ^ string_of_term wmax ^ ")";;
 
 let profile_hardware th =
     let logic = hyp th in
@@ -723,22 +723,25 @@ let profile_hardware th =
     let delays = map (snd o dest_delay) delays in
     let (primary_outputs,gates) = partition is_connect gates in
     let primary_outputs = map (snd o dest_connect) primary_outputs in
-    let fanin =
-        let rec f seen ws =
+    let primary_inputs_delays = primary_inputs @ delays in
+    let primary_outputs_delays = primary_outputs @ delays in
+    let (fanin,fanin_cone) =
+        let rec f fringe cone ws =
             match ws with
-              [] -> length seen
+              [] -> (fringe,cone)
             | w :: ws ->
-              if mem w seen then f seen ws else
+              if mem w cone then f fringe cone ws else
               let d =
                   match filter (fun d -> rand d = w) logic with
                     [] -> failwith "can't find fanin definition"
                   | [d] -> d
                   | _ :: _ :: _ -> failwith "multiple fanin definitions" in
               let vs = frees (rator d) in
-              let vs = filter (not o C mem primary_inputs) vs in
-              let vs = filter (not o C mem delays) vs in
-              f (w :: seen) (vs @ ws) in
-        fun w -> f [] [w] in
+              let (vs1,vs2) = partition (C mem primary_inputs_delays) vs in
+              f (union vs1 fringe) (w :: cone) (vs2 @ ws) in
+        let fringe w = length (fst (f [] [] [w])) in
+        let cone w = length (snd (f [] [] [w])) - 1 in
+        (fringe,cone) in
     let fanout =
         (* FO(w) = *)
         fun w -> 1 in
@@ -746,8 +749,10 @@ let profile_hardware th =
     "Primary outputs: " ^ string_of_int (length primary_outputs) ^ "\n" ^
     "Delays: " ^ string_of_int (length delays) ^ "\n" ^
     "Gates: " ^ string_of_int (length gates) ^ "\n" ^
-    "Fan-in: " ^ profile_wires fanin (primary_outputs @ delays) ^ "\n" ^
-    "Fan-out: " ^ profile_wires fanout (subtract wires primary_outputs);;
+    "Fan-in: " ^ profile_wires fanin primary_outputs_delays ^ "\n" ^
+    "Fan-in cone: " ^
+    profile_wires fanin_cone primary_outputs_delays ^ "\n" ^
+    "Fan-out: " ^ profile_wires fanout primary_inputs_delays;;
 
 (*** Testing
 print_string ("\n" ^ profile_hardware counter91_thm ^ "\n");;

@@ -2726,8 +2726,7 @@ let mk_montgomery_mult n =
     instantiate_hardware syn primary th;;
 
 (*** Testing
-let n = dest_numeral `91`;;
-let montgomery91_thm = mk_montgomery_mult n;;
+let montgomery91_thm = mk_montgomery_mult (dest_numeral `91`);;
 let primary = `clk : wire` :: frees (concl montgomery91_thm);;
 output_string stdout (hardware_to_verilog "montgomery91" primary montgomery91_thm);;
 hardware_to_verilog_file "montgomery91" primary montgomery91_thm;;
