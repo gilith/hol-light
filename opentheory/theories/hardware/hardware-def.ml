@@ -124,6 +124,17 @@ export_thm bpower_def;;
 
 type bus_wires = Bus_wires of string * num list;;
 
+let wire_ty = `:wire`;;
+
+let mk_wire_var n = mk_var (n,wire_ty);;
+
+let dest_wire_var w =
+    let (n,ty) = dest_var w in
+    if ty = wire_ty then n else
+    failwith "dest_wire_var";;
+
+let is_wire_var = can dest_wire_var;;
+
 let mk_ground = `ground`;;
 
 let is_ground =
@@ -209,18 +220,9 @@ let bits_to_bus l =
     let f h t = mk_bappend (mk_bwire (bit_to_wire h)) t in
     itlist f l mk_bnil;;
 
-let mk_bus_wire =
-    let wire_ty = `:wire` in
-    fun x -> fun i ->
-    mk_var (x ^ "[" ^ string_of_num i ^ "]", wire_ty);;
-
-let mk_bus_wire =
-    let wire_ty = `:wire` in
-    fun x -> fun i ->
-    mk_var (x ^ "[" ^ string_of_num i ^ "]", wire_ty);;
+let mk_bus_wire x i = mk_wire_var (x ^ "[" ^ string_of_num i ^ "]");;
 
 let dest_bus_wire =
-    let wire_ty = `:wire` in
     let is_digit = function
       | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' -> true
       | _ -> false in
@@ -245,8 +247,7 @@ let dest_bus_wire =
         else if n > 1 && String.get s (a + 1) = '0' then failwith "leading 0"
         else (String.sub s 0 a, num_of_string (String.sub s (a + 1) n)) in
     fun v ->
-    let (s,ty) = dest_var v in
-    if ty = wire_ty then parse_var s else failwith "not a wire variable";;
+    parse_var (dest_wire_var v);;
 
 let variable_bus x =
     let rec mk_bus i n =
@@ -306,7 +307,6 @@ install_user_printer
     fun fmt -> fun tm -> pp_print_string fmt (variable_bus_to_string tm));;
 
 let genvar_bus =
-    let wire_ty = `:wire` in
     let rec mk_bus n =
         if eq_num n num_0 then mk_bnil else
         let w = genvar wire_ty in

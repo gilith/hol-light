@@ -17,6 +17,13 @@ let maps (f : 'a -> 's -> 'b * 's) =
           (y :: ys, s) in
      m;;
 
+let find_max cmp =
+    let f x m = if cmp m x then x else m in
+    fun xs ->
+    match xs with
+      [] -> failwith "find_max: empty list"
+    | x :: xs -> itlist f xs x;;
+
 let translate f s =
     let rec tr acc i =
         if i = 0 then String.concat "" acc else
@@ -262,6 +269,114 @@ let subst_var_prolog_rule =
           else failwith "subst_var_prolog_rule"));;
 
 (* ------------------------------------------------------------------------- *)
+(* Extracting information from a synthesized circuit.                        *)
+(* ------------------------------------------------------------------------- *)
+
+let ckt_logic' th = hyp th;;
+
+let wire_defn' logic w =
+    match filter (fun g -> rand g = w) logic with
+      [] -> failwith "wire_defn: no definition"
+    | [g] -> g
+    | _ :: _ :: _ -> failwith "wire_defn: multiple definitions";;
+
+let wire_fanin1' logic w = frees (rator (wire_defn' logic w));;
+
+let ckt_wires' logic = freesl logic;;
+
+let ckt_primary_inputs' logic wires =
+    subtract wires (map rand logic);;
+
+let ckt_primary_outputs' logic =
+    map (snd o dest_connect) (filter is_connect logic);;
+
+let ckt_delays' logic =
+    map (snd o dest_delay) (filter is_delay logic);;
+
+let ckt_gates' logic =
+    let pred g = not (is_delay g) && not (is_connect g) in
+    filter pred logic;;
+
+let wire_fanin' logic primary_inputs =
+    let rec f fringe cone ws =
+        match ws with
+          [] -> (fringe,cone)
+        | w :: ws ->
+          if mem w fringe then f fringe cone ws else
+          if mem w cone then f fringe cone ws else
+          if mem w primary_inputs then f (w :: fringe) cone ws else
+          let g = wire_defn' logic w in
+          if is_delay g then f (w :: fringe) cone ws else
+          f fringe (w :: cone) (frees (rator g) @ ws) in
+    fun w -> f [] [] (wire_fanin1' logic w);;
+
+let ckt_fanin' logic primary_inputs primary_outputs delays =
+    let fanin w = (w, wire_fanin' logic primary_inputs w) in
+    map fanin (primary_outputs @ delays);;
+
+let wire_fanout' (fanin : (term * (term list * term list)) list) w =
+    let add (v,(f,_)) z = if mem w f then v :: z else z in
+    itlist add fanin [];;
+
+let ckt_fanout' (primary_inputs : term list) delays fanin =
+    map (fun w -> (w, wire_fanout' fanin w)) (primary_inputs @ delays);;
+
+let ckt_logic = ckt_logic';;
+
+let ckt_wires th =
+    let logic = ckt_logic' th in
+    ckt_wires' logic;;
+
+let ckt_primary_inputs th =
+    let logic = ckt_logic' th in
+    let wires = ckt_wires' logic in
+    ckt_primary_inputs' logic wires;;
+
+let ckt_delays th =
+    let logic = ckt_logic' th in
+    ckt_delays' logic;;
+
+let ckt_primary_outputs th =
+    let logic = ckt_logic' th in
+    ckt_primary_outputs' logic;;
+
+let ckt_gates th =
+    let logic = ckt_logic' th in
+    ckt_gates' logic;;
+
+let wire_fanin th =
+    let logic = ckt_logic' th in
+    let wires = ckt_wires' logic in
+    let primary_inputs = ckt_primary_inputs' logic wires in
+    wire_fanin' logic primary_inputs;;
+
+let ckt_fanin th =
+    let logic = ckt_logic' th in
+    let wires = ckt_wires' logic in
+    let primary_inputs = ckt_primary_inputs' logic wires in
+    let primary_outputs = ckt_primary_outputs' logic in
+    let delays = ckt_delays' logic in
+    ckt_fanin' logic primary_inputs primary_outputs delays;;
+
+let wire_fanout th =
+    let logic = ckt_logic' th in
+    let wires = ckt_wires' logic in
+    let primary_inputs = ckt_primary_inputs' logic wires in
+    let primary_outputs = ckt_primary_outputs' logic in
+    let delays = ckt_delays' logic in
+    let fanin = ckt_fanin' logic primary_inputs primary_outputs delays in
+    wire_fanout' fanin;;
+
+let ckt_fanout th =
+    let logic = ckt_logic' th in
+    let wires = ckt_wires' logic in
+    let primary_inputs = ckt_primary_inputs' logic wires in
+    let primary_outputs = ckt_primary_outputs' logic in
+    let delays = ckt_delays' logic in
+    let fanin = ckt_fanin' logic primary_inputs primary_outputs delays in
+    ckt_fanout' primary_inputs delays fanin;;
+
+(* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing hardware.                                      *)
 (* ------------------------------------------------------------------------- *)
 
@@ -495,8 +610,8 @@ let rescue_primary_outputs =
 
 let merge_logic =
     let sort_wires w1 w2 =
-        let (s1,_) = dest_var w1 in
-        let (s2,_) = dest_var w2 in
+        let s1 = dest_wire_var w1 in
+        let s2 = dest_wire_var w2 in
         if String.length s2 < String.length s1 then (w2,w1) else (w1,w2) in
     let rec merge_asms th asms =
         match asms with
@@ -600,7 +715,6 @@ let add_deprime w =
 let wires_to_deprime ws = itlist add_deprime ws empty_deprime;;
 
 let deprime_to_sub =
-    let wire_ty = `:wire` in
     let mpl_cmp (mp1,_) (mp2,_) = String.length mp1 < String.length mp2 in
     let narrow sc n = if String.length sc = 0 then n else sc ^ "." ^ n in
     fun frozen ->
@@ -689,8 +803,7 @@ instantiate_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgo
 (* Profiling synthesized hardware.                                           *)
 (* ------------------------------------------------------------------------- *)
 
-let profile_wires f ws =
-    let ws = map (fun w -> (w, f w)) ws in
+let profile_wires ws =
     let ws = sort (fun (_,n1) -> fun (_,n2) -> n1 < n2) ws in
     let imax = length ws - 1 in
     let i99 = (imax * 99) / 100 in
@@ -716,43 +829,63 @@ let profile_wires f ws =
     "(" ^ string_of_term wmax ^ ")";;
 
 let profile_hardware th =
-    let logic = hyp th in
-    let wires = freesl logic in
-    let primary_inputs = subtract wires (map rand logic) in
-    let (delays,gates) = partition is_delay logic in
-    let delays = map (snd o dest_delay) delays in
-    let (primary_outputs,gates) = partition is_connect gates in
-    let primary_outputs = map (snd o dest_connect) primary_outputs in
-    let primary_inputs_delays = primary_inputs @ delays in
-    let primary_outputs_delays = primary_outputs @ delays in
+    let logic = ckt_logic' th in
+    let wires = ckt_wires' logic in
+    let primary_inputs = ckt_primary_inputs' logic wires in
+    let primary_outputs = ckt_primary_outputs' logic in
+    let delays = ckt_delays' logic in
+    let gates = ckt_gates' logic in
+    let fanin = ckt_fanin' logic primary_inputs primary_outputs delays in
+    let fanout = ckt_fanout' primary_inputs delays fanin in
     let (fanin,fanin_cone) =
-        let rec f fringe cone ws =
-            match ws with
-              [] -> (fringe,cone)
-            | w :: ws ->
-              if mem w cone then f fringe cone ws else
-              let d =
-                  match filter (fun d -> rand d = w) logic with
-                    [] -> failwith "can't find fanin definition"
-                  | [d] -> d
-                  | _ :: _ :: _ -> failwith "multiple fanin definitions" in
-              let vs = frees (rator d) in
-              let (vs1,vs2) = partition (C mem primary_inputs_delays) vs in
-              f (union vs1 fringe) (w :: cone) (vs2 @ ws) in
-        let fringe w = length (fst (f [] [] [w])) in
-        let cone w = length (snd (f [] [] [w])) - 1 in
-        (fringe,cone) in
-    let fanout =
-        (* FO(w) = *)
-        fun w -> 1 in
+        let fc (w,(f,c)) = ((w,f), (w, length c)) in
+        unzip (map fc fanin) in
+    let fanout = map (fun (w,f) -> (w, length f)) fanout in
+    let (duplication,fanout_load) =
+        let load d n = ((n - 1) / d) + 1 in
+        let cmp (_,(d1,n1)) (_,(d2,n2)) = load d1 n1 < load d2 n2 in
+        let reduce_load fdns (d,n) =
+            let test d' =
+                let testf (fd,fo) m = max m (load fd (fo + d')) in
+                itlist testf fdns (load (d + d') n) in
+            let rec loop prev d' =
+                let ld = test d' in
+                if ld < prev then loop ld (d' + 1) else d' - 1 in
+            loop (test 0) 1 in
+        let rec loop xs =
+            let (w,dn) = find_max cmp xs in
+            if mem w primary_inputs then xs else
+            let fs = assoc w fanin in
+            let fdns = map (fun f -> assoc f xs) fs in
+            let d' = reduce_load fdns dn in
+            if d' = 0 then xs else
+(* Debugging
+            let () =
+                let msg =
+                    "Making " ^ string_of_int d' ^
+                    " duplication" ^ (if d' = 1 then "" else "s") ^
+                    " of wire " ^ string_of_term w ^ "\n" in
+                print_string msg in
+*)
+            let update (x,(d,n)) =
+                let dn =
+                    if x = w then (d + d', n) else
+                    if mem x fs then (d, n + d') else
+                    (d,n) in
+                (x,dn) in
+            loop (map update xs) in
+        let init = map (fun (w,n) -> (w,(1,n))) fanout in
+        unzip (map (fun (w,(d,n)) -> ((w,d), (w, load d n))) (loop init)) in
+    let fanin = map (fun (w,f) -> (w, length f)) fanin in
     "Primary inputs: " ^ string_of_int (length primary_inputs) ^ "\n" ^
     "Primary outputs: " ^ string_of_int (length primary_outputs) ^ "\n" ^
     "Delays: " ^ string_of_int (length delays) ^ "\n" ^
     "Gates: " ^ string_of_int (length gates) ^ "\n" ^
-    "Fan-in: " ^ profile_wires fanin primary_outputs_delays ^ "\n" ^
-    "Fan-in cone: " ^
-    profile_wires fanin_cone primary_outputs_delays ^ "\n" ^
-    "Fan-out: " ^ profile_wires fanout primary_inputs_delays;;
+    "Fan-in: " ^ profile_wires fanin ^ "\n" ^
+    "Fan-in cone: " ^ profile_wires fanin_cone ^ "\n" ^
+    "Fan-out: " ^ profile_wires fanout ^ "\n" ^
+    "Fan-out load: " ^ profile_wires fanout_load ^ "\n" ^
+    "Duplication: " ^ profile_wires duplication;;
 
 (*** Testing
 print_string ("\n" ^ profile_hardware counter91_thm ^ "\n");;
@@ -811,12 +944,10 @@ let verilog_wire_names =
             String.make 1 c in
         translate tr in
     fun primary ->
-    let verilog_wire =
-        let wire_ty = `:wire` in
-        fun w ->
+    let verilog_wire w =
         if mem w primary then w else
-        let (s,_) = dest_var w in
-        mk_var (verilog_name s, wire_ty) in
+        let s = dest_wire_var w in
+        mk_wire_var (verilog_name s) in
     fun th ->
     let ws = freesl (hyp th) in
     let ws' = map verilog_wire ws in
@@ -827,7 +958,6 @@ let verilog_wire_names =
     INST sub th;;
 
 let hardware_to_verilog =
-    let wire_ty = `:wire` in
     let wire_name w =
         if is_ground w then "1'b0" else
         if is_power w then "1'b1" else

@@ -2575,7 +2575,6 @@ let montgomery_mult_syn = montgomery_mult_syn_gen "montgomery";;
 (* ------------------------------------------------------------------------- *)
 
 let mk_montgomery_mult n =
-    let wire_ty = `:wire` in
     let undisch_bind th =
         let (tm,_) = dest_imp (concl th) in
         (tm, UNDISCH th) in
