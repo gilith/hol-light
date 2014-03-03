@@ -20,7 +20,7 @@ let maps (f : 'a -> 's -> 'b * 's) =
 let find_max cmp =
     let f x m = if cmp m x then x else m in
     fun xs ->
-    match xs with
+    match rev xs with
       [] -> failwith "find_max: empty list"
     | x :: xs -> itlist f xs x;;
 
@@ -854,10 +854,8 @@ let profile_hardware th =
             loop (test 0) 1 in
         let rec loop xs =
             let (w,dn) = find_max cmp xs in
-            if mem w primary_inputs then xs else
-            let fs = assoc w fanin in
-            let fdns = map (fun f -> assoc f xs) fs in
-            let d' = reduce_load fdns dn in
+            let fs = if mem w primary_inputs then [] else assoc w fanin in
+            let d' = reduce_load (map (C assoc xs) fs) dn in
             if d' = 0 then xs else
 (* Debugging
             let () =
