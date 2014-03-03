@@ -112,6 +112,14 @@ let REAL_LE_BETWEEN = prove
  (`!a b. a <= b <=> ?x. a <= x /\ x <= b`,
   MESON_TAC[REAL_LE_TRANS; REAL_LE_REFL]);;
 
+let REAL_LET_BETWEEN = prove
+ (`!a b. a < b <=> (?x. a <= x /\ x < b)`,
+  MESON_TAC[REAL_LE_REFL; REAL_LET_TRANS]);;
+
+let REAL_LTE_BETWEEN = prove
+ (`!a b. a < b <=> (?x. a < x /\ x <= b)`,
+  MESON_TAC[REAL_LE_REFL; REAL_LTE_TRANS]);;
+
 let REAL_LT_BETWEEN = prove
  (`!a b. a < b <=> ?x. a < x /\ x < b`,
   REPEAT GEN_TAC THEN EQ_TAC THENL [ALL_TAC; MESON_TAC[REAL_LT_TRANS]] THEN
@@ -415,20 +423,24 @@ let REAL_MIN_INF = prove
 
 (* ------------------------------------------------------------------------- *)
 (* Define square root here to decouple it from the existing analysis theory. *)
+(* We totalize by making sqrt(-x) = -sqrt(x), which looks rather unnatural   *)
+(* but allows many convenient properties to be used without sideconditions.  *)
 (* ------------------------------------------------------------------------- *)
 
 let sqrt = new_definition
-  `sqrt(x) = @y. &0 <= y /\ (y pow 2 = x)`;;
+ `sqrt(x) = @y. real_sgn y = real_sgn x /\ y pow 2 = abs x`;;
 
 let SQRT_UNIQUE = prove
- (`!x y. &0 <= y /\ (y pow 2 = x) ==> (sqrt(x) = y)`,
+ (`!x y. &0 <= y /\ y pow 2 = x ==> sqrt(x) = y`,
   REPEAT STRIP_TAC THEN REWRITE_TAC[sqrt] THEN MATCH_MP_TAC SELECT_UNIQUE THEN
-  FIRST_X_ASSUM(SUBST1_TAC o SYM) THEN REWRITE_TAC[REAL_POW_2] THEN
-  REWRITE_TAC[REAL_ARITH `(x * x = y * y) <=> ((x + y) * (x - y) = &0)`] THEN
-  REWRITE_TAC[REAL_ENTIRE] THEN POP_ASSUM MP_TAC THEN REAL_ARITH_TAC);;
+  FIRST_X_ASSUM(SUBST1_TAC o SYM) THEN
+  REWRITE_TAC[REAL_SGN_POW_2; REAL_ABS_POW] THEN
+  X_GEN_TAC `z:real` THEN ASM_REWRITE_TAC[real_abs] THEN
+  REWRITE_TAC[REAL_RING `x pow 2 = y pow 2 <=> x:real = y \/ x = --y`] THEN
+  REWRITE_TAC[real_sgn] THEN ASM_REAL_ARITH_TAC);;
 
 let POW_2_SQRT = prove
- (`!x. &0 <= x ==> (sqrt(x pow 2) = x)`,
+ (`!x. &0 <= x ==> sqrt(x pow 2) = x`,
   MESON_TAC[SQRT_UNIQUE]);;
 
 let SQRT_0 = prove
@@ -518,3 +530,29 @@ let INFINITE_FROM = prove
    (fun th -> SIMP_TAC[th; INFINITE_DIFF_FINITE; FINITE_NUMSEG_LT;
    num_INFINITE]) THEN
   REWRITE_TAC[EXTENSION; from; IN_DIFF; IN_UNIV; IN_ELIM_THM] THEN ARITH_TAC);;
+
+(* ------------------------------------------------------------------------- *)
+(* Make a Horner-style evaluation of sum(m..n) (\k. a(k) * x pow k).         *)
+(* ------------------------------------------------------------------------- *)
+
+let HORNER_SUM_CONV =
+  let horner_0,horner_s = (CONJ_PAIR o prove)
+   (`(sum(0..0) (\i. c(i) * x pow i) = c 0) /\
+     (sum(0..SUC n) (\i. c(i) * x pow i) =
+      c(0) + x * sum(0..n) (\i. c(i+1) * x pow i))`,
+    REWRITE_TAC[CONJUNCT1 SUM_CLAUSES_NUMSEG] THEN
+    REWRITE_TAC[GSYM SUM_LMUL] THEN
+    ONCE_REWRITE_TAC[REAL_ARITH `x * c * y:real = c * x * y`] THEN
+    REWRITE_TAC[GSYM(CONJUNCT2 real_pow); ADD1] THEN
+    REWRITE_TAC[GSYM(SPEC `1` SUM_OFFSET)] THEN
+    SIMP_TAC[SUM_CLAUSES_LEFT; LE_0; real_pow; REAL_MUL_RID]) in
+  let conv_0 = GEN_REWRITE_CONV I [horner_0] THENC NUM_REDUCE_CONV
+  and conv_s = LAND_CONV(RAND_CONV(num_CONV)) THENC
+               GEN_REWRITE_CONV I [horner_s] THENC
+               GEN_REWRITE_CONV ONCE_DEPTH_CONV [LEFT_ADD_DISTRIB] THENC
+               GEN_REWRITE_CONV TOP_DEPTH_CONV [GSYM ADD_ASSOC] THENC
+               NUM_REDUCE_CONV in
+  let rec conv tm =
+    try (conv_0 THENC REAL_RAT_REDUCE_CONV) tm with Failure _ ->
+    (conv_s THENC RAND_CONV(RAND_CONV conv) THENC REAL_RAT_REDUCE_CONV) tm in
+  conv;;

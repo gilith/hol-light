@@ -49,11 +49,26 @@
     (while (search-forward " SUBSET " nil t)
       (replace-match " ⊂ " nil t))
     (goto-char (point-min))
+    (while (search-forward " SUBSET
+" nil t)
+      (replace-match " ⊂
+" nil t))
+    (goto-char (point-min))
     (while (search-forward " INTER " nil t)
       (replace-match " ∩ " nil t))
     (goto-char (point-min))
+    (while (search-forward " INTER
+" nil t)
+      (replace-match " ∩
+" nil t))
+    (goto-char (point-min))
     (while (search-forward " UNION " nil t)
       (replace-match " ∪ " nil t))
+    (goto-char (point-min))
+    (while (search-forward " UNION
+" nil t)
+      (replace-match " ∪
+" nil t))
     (goto-char (point-min))
     (while (search-forward "{}" nil t)
       (replace-match "∅" nil t))
@@ -66,6 +81,14 @@
     (goto-char (point-min))
     (while (search-forward " DIFF " nil t)
       (replace-match " ━ " nil t))
+    (goto-char (point-min))
+    (while (search-forward " DIFF
+" nil t)
+      (replace-match " ━
+" nil t))
+    (goto-char (point-min))
+    (while (search-forward " INSERT " nil t)
+      (replace-match " ╪ " nil t))
     (goto-char (point-min))
     (while (search-forward "alpha" nil t)
       (replace-match "α" nil t))
@@ -245,8 +268,8 @@
 (global-set-key '[f2 110] '(lambda () (interactive) (insert "¬")))        ;; F2 n
 (global-set-key '[f2 111] '(lambda () (interactive) (insert " ∨ ")))     ;; F2 o
 (global-set-key '[f2 97]  '(lambda () (interactive) (insert " ∧ ")))     ;; F2 a
-(global-set-key '[f2 102] '(lambda () (interactive) (insert "∀ ")))      ;; F2 f
-(global-set-key '[f2 69]  '(lambda () (interactive) (insert "∃ ")))      ;; F2 E
+(global-set-key '[f2 102] '(lambda () (interactive) (insert "∀")))      ;; F2 f
+(global-set-key '[f2 69]  '(lambda () (interactive) (insert "∃")))      ;; F2 E
 (global-set-key '[f2 115] '(lambda () (interactive) (insert " ⊂ ")))     ;; F2 s
 (global-set-key '[f2 105] '(lambda () (interactive) (insert " ∈ ")))       ;; F2 i
 (global-set-key '[f2 86]  '(lambda () (interactive) (insert " ∪ ")))       ;; F2 V

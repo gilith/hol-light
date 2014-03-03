@@ -439,6 +439,10 @@ let COMPLEX_NORM_CX = prove
  (`!x. norm(Cx(x)) = abs(x)`,
   REWRITE_TAC[GSYM CX_INJ; CX_ABS]);;
 
+let DIST_CX = prove
+ (`!x y. dist(Cx x,Cx y) = abs(x - y)`,
+  REWRITE_TAC[dist; GSYM CX_SUB; COMPLEX_NORM_CX]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Some "linear" things hold for Re and Im too.                              *)
 (* ------------------------------------------------------------------------- *)
@@ -888,13 +892,25 @@ let COMPLEX_INV_II = prove
 let COMPLEX_DIV_POW = prove
  (`!x:complex n k:num.
       ~(x= Cx(&0)) /\ k <= n /\ ~(k = 0)
-      ==> x pow (n-k) = x pow n / x pow k`,
+      ==> x pow (n - k) = x pow n / x pow k`,
   REPEAT STRIP_TAC THEN SUBGOAL_THEN `x:complex pow (n - k) * x pow k =
   x pow n / x pow k * x pow k` (fun th-> ASM_MESON_TAC
   [th;COMPLEX_POW_EQ_0;COMPLEX_EQ_MUL_RCANCEL])
   THEN ASM_SIMP_TAC[GSYM COMPLEX_POW_ADD;SUB_ADD] THEN
   MP_TAC (MESON [COMPLEX_POW_EQ_0;ASSUME `~(k = 0)`; ASSUME `~(x = Cx(&0))`]
   `~(x pow k = Cx(&0))`) THEN ASM_SIMP_TAC[COMPLEX_DIV_RMUL]);;
+
+let COMPLEX_DIV_POW2 = prove
+ (`!z m n. ~(z = Cx(&0))
+           ==> z pow m / z pow n =
+               if n <= m then z pow (m - n) else inv(z pow (n - m))`,
+  REPEAT STRIP_TAC THEN COND_CASES_TAC THEN
+  ASM_SIMP_TAC[COMPLEX_POW_EQ_0; COMPLEX_FIELD
+    `~(b = Cx(&0)) /\ ~(c = Cx(&0))
+     ==> (a / b = inv c <=> a * c = b)`] THEN
+  ASM_SIMP_TAC[COMPLEX_POW_EQ_0; COMPLEX_FIELD
+   `~(b = Cx(&0)) ==> (a / b = c <=> b * c = a)`] THEN
+  REWRITE_TAC[GSYM COMPLEX_POW_ADD] THEN AP_TERM_TAC THEN ASM_ARITH_TAC);;
 
 (* ------------------------------------------------------------------------- *)
 (* Norms (aka "moduli").                                                     *)
@@ -1393,9 +1409,10 @@ let VSUM_COMPLEX_RMUL = prove
   ONCE_REWRITE_TAC[COMPLEX_MUL_SYM] THEN REWRITE_TAC[VSUM_COMPLEX_LMUL]);;
 
 let VSUM_CX = prove
- (`!f:A->real s. FINITE s ==> vsum s (\a. Cx(f a)) = Cx(sum s f)`,
-  GEN_TAC THEN MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
-  SIMP_TAC[SUM_CLAUSES; VSUM_CLAUSES; COMPLEX_VEC_0; CX_ADD]);;
+ (`!f:A->real s. vsum s (\a. Cx(f a)) = Cx(sum s f)`,
+  SIMP_TAC[CART_EQ; VSUM_COMPONENT] THEN
+  REWRITE_TAC[DIMINDEX_2; FORALL_2; GSYM RE_DEF; GSYM IM_DEF] THEN
+  REWRITE_TAC[IM_CX; SUM_0; RE_CX; ETA_AX]);;
 
 let CNJ_VSUM = prove
  (`!f s. FINITE s ==> cnj(vsum s f) = vsum s (\x. cnj(f x))`,
@@ -1508,6 +1525,10 @@ let REAL_DIV = prove
 let REAL_VSUM = prove
  (`!f s. FINITE s /\ (!a. a IN s ==> real(f a)) ==> real(vsum s f)`,
   SIMP_TAC[CNJ_VSUM; REAL_CNJ]);;
+
+let REAL_MUL_CNJ = prove
+ (`(!z. real(z * cnj z)) /\ (!z. real(cnj z * z))`,
+  REWRITE_TAC[COMPLEX_MUL_CNJ; GSYM CX_POW; REAL_CX]);;
 
 let REAL_SEGMENT = prove
  (`!a b x. x IN segment[a,b] /\ real a /\ real b ==> real x`,
@@ -1942,3 +1963,49 @@ let CPRODUCT_EQ = prove
  (`!f g s. (!x. x IN s ==> (f x = g x)) ==> cproduct s f = cproduct s g`,
   REWRITE_TAC[cproduct] THEN MATCH_MP_TAC ITERATE_EQ THEN
   REWRITE_TAC[MONOIDAL_COMPLEX_MUL]);;
+
+let CPRODUCT_SING = prove
+ (`!f x. cproduct {x} f = f(x)`,
+  SIMP_TAC[CPRODUCT_CLAUSES; FINITE_RULES; NOT_IN_EMPTY; COMPLEX_MUL_RID]);;
+
+let CPRODUCT_CLAUSES_NUMSEG = prove
+ (`(!m. cproduct(m..0) f = if m = 0 then f(0) else Cx(&1)) /\
+   (!m n. cproduct(m..SUC n) f = if m <= SUC n then cproduct(m..n) f * f(SUC n)
+                                 else cproduct(m..n) f)`,
+  REWRITE_TAC[NUMSEG_CLAUSES] THEN REPEAT STRIP_TAC THEN
+  COND_CASES_TAC THEN
+  ASM_SIMP_TAC[CPRODUCT_SING; CPRODUCT_CLAUSES; FINITE_NUMSEG; IN_NUMSEG] THEN
+  REWRITE_TAC[ARITH_RULE `~(SUC n <= n)`; COMPLEX_MUL_AC]);;
+
+let CPRODUCT_CLAUSES_RIGHT = prove
+ (`!f m n. 0 < n /\ m <= n ==> cproduct(m..n) f = cproduct(m..n-1) f * (f n)`,
+  GEN_TAC THEN GEN_TAC THEN INDUCT_TAC THEN
+  SIMP_TAC[LT_REFL; CPRODUCT_CLAUSES_NUMSEG; SUC_SUB1]);;
+
+let CPRODUCT_CLAUSES_LEFT = prove
+ (`!f m n. m <= n ==> cproduct(m..n) f = f m * cproduct(m + 1..n) f`,
+  SIMP_TAC[GSYM NUMSEG_LREC; CPRODUCT_CLAUSES; FINITE_NUMSEG; IN_NUMSEG] THEN
+  ARITH_TAC);;
+
+let CPRODUCT_IMAGE = prove
+ (`!f g s. (!x y. x IN s /\ y IN s /\ f x = f y ==> (x = y))
+           ==> (cproduct (IMAGE f s) g = cproduct s (g o f))`,
+  REWRITE_TAC[cproduct; GSYM NEUTRAL_COMPLEX_MUL] THEN
+  MATCH_MP_TAC ITERATE_IMAGE THEN REWRITE_TAC[MONOIDAL_COMPLEX_MUL]);;
+
+let CPRODUCT_OFFSET = prove
+ (`!f m p. cproduct(m+p..n+p) f = cproduct(m..n) (\i. f(i + p))`,
+  SIMP_TAC[NUMSEG_OFFSET_IMAGE; CPRODUCT_IMAGE;
+           EQ_ADD_RCANCEL; FINITE_NUMSEG] THEN
+  REWRITE_TAC[o_DEF]);;
+
+let th = prove
+ (`(!f g s.   (!x. x IN s ==> f(x) = g(x))
+              ==> cproduct s (\i. f(i)) = cproduct s g) /\
+   (!f g a b. (!i. a <= i /\ i <= b ==> f(i) = g(i))
+              ==> cproduct(a..b) (\i. f(i)) = cproduct(a..b) g) /\
+   (!f g p.   (!x. p x ==> f x = g x)
+              ==> cproduct {y | p y} (\i. f(i)) = cproduct {y | p y} g)`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC CPRODUCT_EQ THEN
+  ASM_SIMP_TAC[IN_ELIM_THM; IN_NUMSEG]) in
+  extend_basic_congs (map SPEC_ALL (CONJUNCTS th));;

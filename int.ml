@@ -504,6 +504,9 @@ let INT_SGN_EQ = INT_OF_REAL_THM REAL_SGN_EQ;;
 let INT_SGN_INEQS = INT_OF_REAL_THM REAL_SGN_INEQS;;
 let INT_SGN_MUL = INT_OF_REAL_THM REAL_SGN_MUL;;
 let INT_SGN_NEG = INT_OF_REAL_THM REAL_SGN_NEG;;
+let INT_SGN_POW = INT_OF_REAL_THM REAL_SGN_POW;;
+let INT_SGN_POW_2 = INT_OF_REAL_THM REAL_SGN_POW_2;;
+let INT_SGN_INT_SGN = INT_OF_REAL_THM REAL_SGN_REAL_SGN;;
 let INT_SOS_EQ_0 = INT_OF_REAL_THM REAL_SOS_EQ_0;;
 let INT_SUB_0 = INT_OF_REAL_THM REAL_SUB_0;;
 let INT_SUB_ABS = INT_OF_REAL_THM REAL_SUB_ABS;;
@@ -646,7 +649,7 @@ let INT_MAX = INT_ARITH `!x y. max x y = if x <= y then y else x`;;
 let INT_MIN = INT_ARITH `!x y. min x y = if x <= y then x else y`;;
 
 (* ------------------------------------------------------------------------- *)
-(* Another useful lemma.                                                     *)
+(* Additional useful lemmas.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
 let INT_OF_NUM_EXISTS = prove
@@ -655,6 +658,8 @@ let INT_OF_NUM_EXISTS = prove
   MP_TAC(ISPEC `x:int` INT_IMAGE) THEN
   REWRITE_TAC[OR_EXISTS_THM] THEN MATCH_MP_TAC MONO_EXISTS THEN
   ASM_INT_ARITH_TAC);;
+
+let INT_LE_DISCRETE = INT_ARITH `!x y:int. x <= y <=> x < y + &1`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Archimedian property for the integers.                                    *)
@@ -1415,6 +1420,15 @@ let NUMBER_TAC =
   INTEGER_TAC;;
 
 let NUMBER_RULE tm = prove(tm,NUMBER_TAC);;
+
+let divides = prove
+ (`a divides b <=> ?x. b = a * x`,
+  EQ_TAC THENL [REWRITE_TAC[num_divides; int_divides]; NUMBER_TAC] THEN
+  DISCH_THEN(X_CHOOSE_TAC `x:int`) THEN EXISTS_TAC `num_of_int(abs x)` THEN
+  SIMP_TAC[GSYM INT_OF_NUM_EQ;
+           INT_ARITH `&m:int = &n <=> abs(&m :int) = abs(&n)`] THEN
+  ASM_REWRITE_TAC[GSYM INT_OF_NUM_MUL; INT_ABS_MUL] THEN
+  SIMP_TAC[INT_OF_NUM_OF_INT; INT_ABS_POS; INT_ABS_ABS]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Make sure we give priority to N.                                          *)

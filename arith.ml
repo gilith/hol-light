@@ -2219,6 +2219,18 @@ let EXP_MONO_EQ = prove
 
 export_thm EXP_MONO_EQ;;
 
+let LT_POW2_REFL = prove
+ (`!n. n < 2 EXP n`,
+  INDUCT_TAC THENL
+  [REWRITE_TAC [EXP; LT; ONE];
+   REWRITE_TAC [EXP] THEN
+   REWRITE_TAC [MULT_2; ADD1] THEN
+   MATCH_MP_TAC LTE_ADD2 THEN
+   ASM_REWRITE_TAC [LE_SUC_LT; ONE; LT_NZ; EXP_EQ_0] THEN
+   REWRITE_TAC [TWO; NOT_SUC]]);;
+
+export_thm LT_POW2_REFL;;
+
 let EVEN_EXP = prove
  (`!m n. EVEN(m EXP n) <=> EVEN(m) /\ ~(n = 0)`,
   GEN_TAC THEN INDUCT_TAC THEN
