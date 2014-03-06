@@ -800,6 +800,119 @@ instantiate_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgo
 ***)
 
 (* ------------------------------------------------------------------------- *)
+(* Duplicating delays to reduce fanout load.                                 *)
+(* ------------------------------------------------------------------------- *)
+
+let duplicate_logic =
+    let load d n =
+        match d with
+          Some d -> float n /. float d
+        | None -> 0.0 in
+    let ann_load ((w : term), (d,n)) = (w, (d, n, load d n)) in
+    let cmp_load
+          ((_,(_,_,l1)) : term * (int option * int * float))
+          ((_,(_,_,l2)) : term * (int option * int * float)) =
+        l2 < l1 in
+    let sort_load = sort cmp_load in
+    let merge_load = merge cmp_load in
+    let reduce_load w d n =
+        let minopt x yo =
+            match yo with
+              None -> Some x
+            | Some y -> Some (min x y) in
+        let find_delta fd fn =
+            let a = 1.0 in
+            let b = float (fn + d) in
+            let c = float (fn * d - fd * n) in
+            let b2 = b *. b in
+            let ac4 = 4.0 *. a *. c in
+            if b2 < ac4 then failwith "negative discriminant" else
+            let x = (sqrt (b2 -. ac4) -. b) /. (2.0 *. a) in
+            if x < 0.0 then 0 else truncate x in
+        let min_delta (_,(fdo,fn,_)) xo =
+            match fdo with
+              None -> xo
+            | Some fd -> minopt (find_delta fd fn) xo in
+        fun self -> fun fds ->
+        let x = if self then Some (find_delta d n) else None in
+        let x =
+            match itlist min_delta fds x with
+              None -> -d
+            | Some x -> x in
+        if x = 0 then None else
+        let d = if x < 0 then None else Some (d + x) in
+        let n = if self then n + x else n in
+        let fds = map (fun (f,(fd,fn,_)) -> (f, (fd, fn + x))) fds in
+(* Debugging
+*)
+              let () =
+                  let dup =
+                      match d with
+                        None -> "infinity"
+                      | Some x -> string_of_int x in
+                  let msg =
+                      "Raising duplication of wire " ^ string_of_term w ^
+                      " to " ^ dup ^ "\n" in
+                  print_string msg in
+        Some ((w,(d,n)) :: fds) in
+    fun (fanin : (term * (term list * term list)) list) ->
+    let rec balance seen wds =
+        match wds with
+          [] -> seen
+        | wd :: wds ->
+          match wd with
+            (_,(None,_,_)) -> balance (wd :: seen) wds
+          | (w, (Some d, n, l)) ->
+            let (fs,_) = assoc w fanin in
+            let pred (f,_) = mem f fs in
+            let (fds1,seen') = partition pred seen in
+            let (fds2,wds') = partition pred wds in
+            match reduce_load w d n (mem w fs) (fds1 @ fds2) with
+              None -> balance (wd :: seen) wds
+            | Some fds ->
+              let fds = sort_load (map ann_load fds) in
+              balance [] (merge_load fds (List.rev_append seen' wds')) in
+    fun primary_inputs ->
+    let add_finite (w,(n,_)) inf =
+        let fs =
+            if mem w primary_inputs then [] else
+            fst (assoc w fanin) in
+        let update (f,(fn,fl)) =
+            let fn = if mem f fs then fn + n else fn in
+            (f,(fn,fl)) in
+        ((w,n,1.0), map update inf) in
+    let rec finitize inf normal =
+        let in_inf = C mem (map fst inf) in
+        let proj (w,(n,fs)) = (w, (n, filter in_inf fs)) in
+        let is_fin (_,(_,fs)) = length fs = 0 in
+        if length inf = 0 then normal else
+        let inf = map proj inf in
+        let (fin,inf) = partition is_fin inf in
+        let (fin,inf) = maps add_finite fin inf in
+        finitize inf (fin @ normal) in
+    fun fanout ->
+    let init_balance (w, (ws : term list)) =
+        let d = if mem w primary_inputs then None else Some 1 in
+        let n = length ws in
+        ann_load (w,(d,n)) in
+    let init_finitize (w,(d,n,l)) (inf,normal) =
+        match d with
+          None -> ((w, (n, assoc w fanout)) :: inf, normal)
+        | Some x -> (inf, (w,x,l) :: normal) in
+    let balanced = balance [] (sort_load (map init_balance fanout)) in
+    let (inf,normal) = itlist init_finitize balanced ([],[]) in
+    finitize inf normal;;
+
+(* Testing
+let ckt = counter91_thm;;
+let ckt = montgomery91_thm;;
+let fanin = ckt_fanin ckt;;
+let primary_inputs = ckt_primary_inputs ckt;;
+let fanout = ckt_fanout ckt;;
+duplicate_logic fanin primary_inputs fanout;;
+*)
+
+(* ------------------------------------------------------------------------- *)
 (* Profiling synthesized hardware.                                           *)
 (* ------------------------------------------------------------------------- *)
 
