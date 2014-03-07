@@ -804,22 +804,15 @@ instantiate_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgo
 (* ------------------------------------------------------------------------- *)
 
 let duplicate_logic =
-    let load d n =
-        match d with
-          Some d -> float n /. float d
-        | None -> 0.0 in
+    let load d n = float n /. float d in
     let ann_load ((w : term), (d,n)) = (w, (d, n, load d n)) in
     let cmp_load
-          ((_,(_,_,l1)) : term * (int option * int * float))
-          ((_,(_,_,l2)) : term * (int option * int * float)) =
+          ((_,(_,_,l1)) : term * (int * int * float))
+          ((_,(_,_,l2)) : term * (int * int * float)) =
         l2 < l1 in
     let sort_load = sort cmp_load in
     let merge_load = merge cmp_load in
     let reduce_load w d n =
-        let minopt x yo =
-            match yo with
-              None -> Some x
-            | Some y -> Some (min x y) in
         let find_delta fd fn =
             let a = 1.0 in
             let b = float (fn + d) in
@@ -829,80 +822,45 @@ let duplicate_logic =
             if b2 < ac4 then failwith "negative discriminant" else
             let x = (sqrt (b2 -. ac4) -. b) /. (2.0 *. a) in
             if x < 0.0 then 0 else truncate x in
-        let min_delta (_,(fdo,fn,_)) xo =
-            match fdo with
-              None -> xo
-            | Some fd -> minopt (find_delta fd fn) xo in
+        let min_delta (_,(fd,fn,_)) x = min (find_delta fd fn) x in
         fun self -> fun fds ->
-        let x = if self then Some (find_delta d n) else None in
         let x =
-            match itlist min_delta fds x with
-              None -> -d
-            | Some x -> x in
+            if self then find_delta d n else
+            match fds with
+              [] -> find_delta 1 d
+            | (_,(fd,fn,_)) :: fds ->
+              itlist min_delta fds (find_delta fd fn) in
         if x = 0 then None else
-        let d = if x < 0 then None else Some (d + x) in
+        let d = d + x in
         let n = if self then n + x else n in
         let fds = map (fun (f,(fd,fn,_)) -> (f, (fd, fn + x))) fds in
 (* Debugging
+        let () =
+            let msg =
+                "Raising duplication of wire " ^ string_of_term w ^
+                " to " ^ string_of_int d ^ "\n" in
+            print_string msg in
 *)
-              let () =
-                  let dup =
-                      match d with
-                        None -> "infinity"
-                      | Some x -> string_of_int x in
-                  let msg =
-                      "Raising duplication of wire " ^ string_of_term w ^
-                      " to " ^ dup ^ "\n" in
-                  print_string msg in
         Some ((w,(d,n)) :: fds) in
+    fun primary_inputs ->
     fun (fanin : (term * (term list * term list)) list) ->
     let rec balance seen wds =
         match wds with
           [] -> seen
         | wd :: wds ->
-          match wd with
-            (_,(None,_,_)) -> balance (wd :: seen) wds
-          | (w, (Some d, n, l)) ->
-            let (fs,_) = assoc w fanin in
-            let pred (f,_) = mem f fs in
-            let (fds1,seen') = partition pred seen in
-            let (fds2,wds') = partition pred wds in
-            match reduce_load w d n (mem w fs) (fds1 @ fds2) with
-              None -> balance (wd :: seen) wds
-            | Some fds ->
-              let fds = sort_load (map ann_load fds) in
-              balance [] (merge_load fds (List.rev_append seen' wds')) in
-    let add_finite (w,(n,_)) inf =
-        let fs = fst (assoc w fanin) in
-        let update (f,(fn,fl)) =
-            let fn = if mem f fs then fn + n else fn in
-            (f,(fn,fl)) in
-        map update inf in
-    fun primary_inputs ->
-    let rec finitize inf inp =
-        let in_inf = C mem (map fst inf) in
-        let proj (w,(n,fs)) = (w, (n, filter in_inf fs)) in
-        let is_fin (_,(_,fs)) = length fs = 0 in
-        let is_inp (w,_) = mem w primary_inputs in
-        if length inf = 0 then inp else
-        let inf = map proj inf in
-        let (fin,inf) = partition is_fin inf in
-        let (new_inp,fin) = partition is_inp fin in
-        let inf = itlist add_finite fin inf in
-        finitize inf (new_inp @ inp) in
+          let (w,(d,n,l)) = wd in
+          let fs = if mem w primary_inputs then [] else fst (assoc w fanin) in
+          let pred (f,_) = mem f fs in
+          let (fds1,seen') = partition pred seen in
+          let (fds2,wds') = partition pred wds in
+          match reduce_load w d n (mem w fs) (fds1 @ fds2) with
+            None -> balance (wd :: seen) wds
+          | Some fds ->
+            let fds = sort_load (map ann_load fds) in
+            balance [] (merge_load fds (List.rev_append seen' wds')) in
     fun fanout ->
-    let init_balance (w, (ws : term list)) =
-        let d = if mem w primary_inputs then None else Some 1 in
-        let n = length ws in
-        ann_load (w,(d,n)) in
-    let init_finitize (w,(d,n,l)) (inf,normal) =
-        match d with
-          None -> ((w, (n, assoc w fanout)) :: inf, normal)
-        | Some x -> (inf, (w,x,l) :: normal) in
-    let balanced = balance [] (sort_load (map init_balance fanout)) in
-    let (inp,del) = itlist init_finitize balanced ([],[]) in
-    let inp = finitize inp [] in
-    (inp,del);;
+    let init (w, (ws : term list)) = ann_load (w, (1, length ws)) in
+    balance [] (sort_load (map init fanout));;
 
 (* Testing
 let ckt = counter91_thm;;
@@ -910,39 +868,56 @@ let ckt = montgomery91_thm;;
 let fanin = ckt_fanin ckt;;
 let primary_inputs = ckt_primary_inputs ckt;;
 let fanout = ckt_fanout ckt;;
-duplicate_logic fanin primary_inputs fanout;;
+duplicate_logic primary_inputs fanin fanout;;
 *)
 
 (* ------------------------------------------------------------------------- *)
 (* Profiling synthesized hardware.                                           *)
 (* ------------------------------------------------------------------------- *)
 
-let profile_wires ws =
-    let ws = sort (fun (_,n1) -> fun (_,n2) -> n1 < n2) ws in
-    let imax = length ws - 1 in
+let pp_print_float fmt f = Format.fprintf fmt "%.1f" f;;
+
+let pp_print_count fmt (title,i) =
+    let () = Format.pp_open_box fmt 2 in
+    let () = Format.pp_print_string fmt (title ^ ":") in
+    let () = Format.pp_print_space fmt () in
+    let () = Format.pp_print_int fmt i in
+    let () = Format.pp_close_box fmt () in
+    ();;
+
+let pp_print_distribution print_x print_y fmt (title,xys) =
+    let xys = sort (fun (_,y1) -> fun (_,y2) -> y1 < y2) xys in
+    let print_iy s i =
+        let (_,y) = List.nth xys i in
+        let () = Format.pp_print_space fmt () in
+        let () = Format.pp_print_string fmt s in
+        let () = Format.pp_print_string fmt "=" in
+        let () = print_y fmt y in
+        () in
+    let imax = length xys - 1 in
     let i99 = (imax * 99) / 100 in
     let i95 = (imax * 19) / 20 in
     let i90 = (imax * 9) / 10 in
     let i75 = (imax * 3) / 4 in
     let i50 = imax / 2 in
     let i25 = imax / 4 in
-    let (_,n25) = List.nth ws i25 in
-    let (_,n50) = List.nth ws i50 in
-    let (_,n75) = List.nth ws i75 in
-    let (_,n90) = List.nth ws i90 in
-    let (_,n95) = List.nth ws i95 in
-    let (_,n99) = List.nth ws i99 in
-    let (wmax,nmax) = List.nth ws imax in
-    "25%=" ^ string_of_int n25 ^ ", " ^
-    "50%=" ^ string_of_int n50 ^ ", " ^
-    "75%=" ^ string_of_int n75 ^ ", " ^
-    "90%=" ^ string_of_int n90 ^ ", " ^
-    "95%=" ^ string_of_int n95 ^ ", " ^
-    "99%=" ^ string_of_int n99 ^ ",\n  " ^
-    "max=" ^ string_of_int nmax ^ " " ^
-    "(" ^ string_of_term wmax ^ ")";;
+    let (xmax,_) = List.nth xys imax in
+    let () = Format.pp_open_box fmt 2 in
+    let () = Format.pp_print_string fmt (title ^ ":") in
+    let () = print_iy "25%" i25 in
+    let () = print_iy "50%" i50 in
+    let () = print_iy "75%" i75 in
+    let () = print_iy "90%" i90 in
+    let () = print_iy "95%" i95 in
+    let () = print_iy "99%" i99 in
+    let () = print_iy "max" imax in
+    let () = Format.pp_print_string fmt " (" in
+    let () = print_x fmt xmax in
+    let () = Format.pp_print_string fmt ")" in
+    let () = Format.pp_close_box fmt () in
+    ();;
 
-let profile_hardware th =
+let pp_print_hardware_profile fmt th =
     let logic = ckt_logic' th in
     let wires = ckt_wires' logic in
     let primary_inputs = ckt_primary_inputs' logic wires in
@@ -951,57 +926,41 @@ let profile_hardware th =
     let gates = ckt_gates' logic in
     let fanin = ckt_fanin' logic primary_inputs primary_outputs delays in
     let fanout = ckt_fanout' primary_inputs delays fanin in
+    let fanout_load = duplicate_logic primary_inputs fanin fanout in
     let (fanin,fanin_cone) =
-        let fc (w,(f,c)) = ((w,f), (w, length c)) in
+        let fc (w,(f,c)) = ((w, length f), (w, length c)) in
         unzip (map fc fanin) in
     let fanout = map (fun (w,f) -> (w, length f)) fanout in
-    let (duplication,fanout_load) =
-        let load d n = ((n - 1) / d) + 1 in
-        let cmp (_,(d1,n1)) (_,(d2,n2)) = load d1 n1 < load d2 n2 in
-        let reduce_load fdns (d,n) =
-            let test d' =
-                let testf (fd,fo) m = max m (load fd (fo + d')) in
-                itlist testf fdns (load (d + d') n) in
-            let rec loop prev d' =
-                let ld = test d' in
-                if ld < prev then loop ld (d' + 1) else d' - 1 in
-            loop (test 0) 1 in
-        let rec loop xs =
-            let (w,dn) = find_max cmp xs in
-            let fs = if mem w primary_inputs then [] else assoc w fanin in
-            let d' = reduce_load (map (C assoc xs) fs) dn in
-            if d' = 0 then xs else
-(* Debugging
-            let () =
-                let msg =
-                    "Making " ^ string_of_int d' ^
-                    " duplication" ^ (if d' = 1 then "" else "s") ^
-                    " of wire " ^ string_of_term w ^ "\n" in
-                print_string msg in
-*)
-            let update (x,(d,n)) =
-                let dn =
-                    if x = w then (d + d', n) else
-                    if mem x fs then (d, n + d') else
-                    (d,n) in
-                (x,dn) in
-            loop (map update xs) in
-        let init = map (fun (w,n) -> (w,(1,n))) fanout in
-        unzip (map (fun (w,(d,n)) -> ((w,d), (w, load d n))) (loop init)) in
-    let fanin = map (fun (w,f) -> (w, length f)) fanin in
-    "Primary inputs: " ^ string_of_int (length primary_inputs) ^ "\n" ^
-    "Primary outputs: " ^ string_of_int (length primary_outputs) ^ "\n" ^
-    "Delays: " ^ string_of_int (length delays) ^ "\n" ^
-    "Gates: " ^ string_of_int (length gates) ^ "\n" ^
-    "Fan-in: " ^ profile_wires fanin ^ "\n" ^
-    "Fan-in cone: " ^ profile_wires fanin_cone ^ "\n" ^
-    "Fan-out: " ^ profile_wires fanout ^ "\n" ^
-    "Fan-out load: " ^ profile_wires fanout_load ^ "\n" ^
-    "Duplication: " ^ profile_wires duplication;;
+    let duplication = map (fun (w,(d,_,_)) -> (w,d)) fanout_load in
+    let fanout_load = map (fun (w,(_,_,l)) -> (w, truncate l)) fanout_load in
+    let pp_print_wire_dist =
+        pp_print_distribution pp_print_term Format.pp_print_int in
+    let () = Format.pp_open_box fmt 0 in
+    let () = pp_print_count fmt ("Primary inputs", length primary_inputs) in
+    let () = Format.pp_print_newline fmt () in
+    let () = pp_print_count fmt ("Primary outputs", length primary_outputs) in
+    let () = Format.pp_print_newline fmt () in
+    let () = pp_print_count fmt ("Delays", length delays) in
+    let () = Format.pp_print_newline fmt () in
+    let () = pp_print_count fmt ("Gates", length gates) in
+    let () = Format.pp_print_newline fmt () in
+    let () = pp_print_wire_dist fmt ("Fan-in",fanin) in
+    let () = Format.pp_print_newline fmt () in
+    let () = pp_print_wire_dist fmt ("Fan-in cone",fanin_cone) in
+    let () = Format.pp_print_newline fmt () in
+    let () = pp_print_wire_dist fmt ("Fan-out",fanout) in
+    let () = Format.pp_print_newline fmt () in
+    let () = pp_print_wire_dist fmt ("Fan-out load",fanout_load) in
+    let () = Format.pp_print_newline fmt () in
+    let () = pp_print_wire_dist fmt ("Duplication",duplication) in
+    let () = Format.pp_close_box fmt () in
+    ();;
+
+let hardware_profile_to_string = print_to_string pp_print_hardware_profile;;
 
 (*** Testing
-print_string ("\n" ^ profile_hardware counter91_thm ^ "\n");;
-print_string ("\n" ^ profile_hardware montgomery91_thm ^ "\n");;
+print_string ("\n" ^ hardware_profile_to_string counter91_thm ^ "\n");;
+print_string ("\n" ^ hardware_profile_to_string montgomery91_thm ^ "\n");;
 ***)
 
 (* ------------------------------------------------------------------------- *)
@@ -1183,7 +1142,13 @@ let hardware_to_verilog =
          ";\n    end\n") in
     let verilog_module_end name = "\nendmodule // " ^ name ^ "\n" in
     let verilog_profile th =
-        "\n" ^ comment_box_text (profile_hardware th) ^ "\n" in
+        let prof =
+            let n = get_margin () in
+            let () = set_margin (VERILOG_LINE_LENGTH - 4) in
+            let s = hardware_profile_to_string th in
+            let () = set_margin n in
+            s in
+        "\n" ^ comment_box_text prof ^ "\n" in
     fun name -> fun primary -> fun th ->
     let th = verilog_wire_names primary th in
     let (delays,combs) = partition is_delay (hyp th) in
