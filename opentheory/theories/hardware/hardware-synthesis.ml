@@ -872,24 +872,24 @@ let duplicate_logic =
             | Some fds ->
               let fds = sort_load (map ann_load fds) in
               balance [] (merge_load fds (List.rev_append seen' wds')) in
-    fun primary_inputs ->
     let add_finite (w,(n,_)) inf =
-        let fs =
-            if mem w primary_inputs then [] else
-            fst (assoc w fanin) in
+        let fs = fst (assoc w fanin) in
         let update (f,(fn,fl)) =
             let fn = if mem f fs then fn + n else fn in
             (f,(fn,fl)) in
-        ((w,n,1.0), map update inf) in
-    let rec finitize inf normal =
+        map update inf in
+    fun primary_inputs ->
+    let rec finitize inf inp =
         let in_inf = C mem (map fst inf) in
         let proj (w,(n,fs)) = (w, (n, filter in_inf fs)) in
         let is_fin (_,(_,fs)) = length fs = 0 in
-        if length inf = 0 then normal else
+        let is_inp (w,_) = mem w primary_inputs in
+        if length inf = 0 then inp else
         let inf = map proj inf in
         let (fin,inf) = partition is_fin inf in
-        let (fin,inf) = maps add_finite fin inf in
-        finitize inf (fin @ normal) in
+        let (new_inp,fin) = partition is_inp fin in
+        let inf = itlist add_finite fin inf in
+        finitize inf (new_inp @ inp) in
     fun fanout ->
     let init_balance (w, (ws : term list)) =
         let d = if mem w primary_inputs then None else Some 1 in
@@ -900,8 +900,9 @@ let duplicate_logic =
           None -> ((w, (n, assoc w fanout)) :: inf, normal)
         | Some x -> (inf, (w,x,l) :: normal) in
     let balanced = balance [] (sort_load (map init_balance fanout)) in
-    let (inf,normal) = itlist init_finitize balanced ([],[]) in
-    finitize inf normal;;
+    let (inp,del) = itlist init_finitize balanced ([],[]) in
+    let inp = finitize inp [] in
+    (inp,del);;
 
 (* Testing
 let ckt = counter91_thm;;
