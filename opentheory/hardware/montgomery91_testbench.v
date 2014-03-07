@@ -32,9 +32,9 @@ module main;
    initial
      begin
         seed = `SEED;
-        $display("+-----------------------------+");
-        $display("| Test bench for montgomery91 |");
-        $display("+-----------------------------+");
+        $display("+-------------------------------------+");
+        $display("| Test bench for montgomery91 circuit |");
+        $display("+-------------------------------------+");
         $display("random seed = %0d", seed);
         $display("");
         $display("+----+----+-----+-----+-----+-----+-----+-----+");
@@ -82,11 +82,15 @@ module main;
         $display("Outputs: z = %0d", z);
         $display("Spec: (x * y * 8) %% 91 = %0d", spec);
         $display("Circuit: z %% 91        = %0d", ckt);
-        $display("");
-        if (ckt != spec)
+        if (ckt == spec)
           begin
-             $display("ERROR: montomgery91 computed an incorrect result");
+             $display("TEST PASSED: Circuit computed the correct result");
           end
+        else
+          begin
+             $display("TEST FAILED: Circuit computed an incorrect result");
+          end
+        $display("");
         $display("Test complete at time %0t.", $time);
         $finish;
      end
