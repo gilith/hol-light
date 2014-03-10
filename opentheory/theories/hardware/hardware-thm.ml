@@ -617,6 +617,45 @@ let bsub_bits_to_num_le = prove
 
 export_thm bsub_bits_to_num_le;;
 
+(***
+let bsub_bsignal = prove
+ (`!x y k n xs ys xt yt.
+     bsub x k n xs /\ bsub y k n ys /\ bsignal x xt = bsignal y yt ==>
+     bsignal xs xt = bsignal ys yt`,
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM MP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`;
+        `k : num`;
+        `n : num`;
+        `xs : bus`]
+       bsub_bappend_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `xd : num`
+       (X_CHOOSE_THEN `xp : bus`
+          (X_CHOOSE_THEN `xq : bus`
+             STRIP_ASSUME_TAC))) THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  MP_TAC
+    (SPECL
+       [`y : bus`;
+        `k : num`;
+        `n : num`;
+        `ys : bus`]
+       bsub_bappend_exists) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `yd : num`
+       (X_CHOOSE_THEN `yp : bus`
+          (X_CHOOSE_THEN `yq : bus`
+             STRIP_ASSUME_TAC))) THEN
+  FIRST_X_ASSUM SUBST_VAR_TAC THEN
+  ***
+
+***)
+
 (* ------------------------------------------------------------------------- *)
 (* Power and ground buses.                                                   *)
 (* ------------------------------------------------------------------------- *)
