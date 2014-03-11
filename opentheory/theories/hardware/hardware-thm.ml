@@ -637,6 +637,25 @@ let bsub_bsignal = prove
        (X_CHOOSE_THEN `xp : bus`
           (X_CHOOSE_THEN `xq : bus`
              STRIP_ASSUME_TAC))) THEN
+  SUBGOAL_THEN `width xp = k` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `x : bus` THEN
+   EXISTS_TAC `0` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width xs = n` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `x : bus` THEN
+   EXISTS_TAC `k : num` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  ***
+  SUBGOAL_THEN `width xq = n` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `x : bus` THEN
+   EXISTS_TAC `k : num` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
   FIRST_X_ASSUM SUBST_VAR_TAC THEN
   MP_TAC
     (SPECL
@@ -653,6 +672,9 @@ let bsub_bsignal = prove
              STRIP_ASSUME_TAC))) THEN
   FIRST_X_ASSUM SUBST_VAR_TAC THEN
   ***
+  REWRITE_TAC [bappend_bsignal] THEN
+  STRIP_TAC THEN
+  MP_TAC
 
 ***)
 

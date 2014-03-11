@@ -614,6 +614,47 @@ let APPEND_RCANCEL = prove
 
 export_thm APPEND_RCANCEL;;
 
+let APPEND_LINJ = prove
+ (`!(l1 : A list) l1' l2 l2'.
+     LENGTH l1 = LENGTH l1' /\ APPEND l1 l2 = APPEND l1' l2' ==> l1 = l1'`,
+  REPEAT GEN_TAC THEN
+  SPEC_TAC (`l1' : A list`, `l1' : A list`) THEN
+  SPEC_TAC (`l1 : A list`, `l1 : A list`) THEN
+  LIST_INDUCT_TAC THENL
+  [LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [];
+    REWRITE_TAC [LENGTH_NIL; LENGTH_CONS; NOT_SUC]];
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [LENGTH_NIL; LENGTH_CONS; NOT_SUC];
+    POP_ASSUM (K ALL_TAC) THEN
+    REWRITE_TAC [CONS_APPEND; LENGTH_CONS; SUC_INJ; CONS_11] THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_REWRITE_TAC []]]);;
+
+export_thm APPEND_LINJ;;
+
+let APPEND_RINJ = prove
+ (`!(l1 : A list) l1' l2 l2'.
+     LENGTH l2 = LENGTH l2' /\ APPEND l1 l2 = APPEND l1' l2' ==> l2 = l2'`,
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN `(l1 : A list) = l1'` (SUBST_VAR_TAC o SYM) THENL
+  [MATCH_MP_TAC APPEND_LINJ THEN
+   EXISTS_TAC `l2 : A list` THEN
+   EXISTS_TAC `l2' : A list` THEN
+   ASM_REWRITE_TAC [] THEN
+   SUBGOAL_THEN
+     `LENGTH (APPEND (l1 : A list) l2) = LENGTH (APPEND (l1' : A list) l2')`
+     MP_TAC THENL
+   [ASM_REWRITE_TAC [];
+    POP_ASSUM (K ALL_TAC) THEN
+    ASM_REWRITE_TAC [LENGTH_APPEND; EQ_ADD_RCANCEL]];
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [APPEND_LCANCEL]]);;
+
+export_thm APPEND_RINJ;;
+
 let SET_OF_LIST_APPEND = prove
  (`!(l1 : A list) l2.
      set_of_list (APPEND l1 l2) = set_of_list l1 UNION set_of_list l2`,
