@@ -352,6 +352,26 @@ let bit_nth_wire_bits_to_num = prove
 
 export_thm bit_nth_wire_bits_to_num;;
 
+let wire_signal = prove
+ (`!x y i xi yi xt yt.
+     wire x i xi /\ wire y i yi /\ bsignal x xt = bsignal y yt ==>
+     signal xi xt = signal yi yt`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`x : bus`;
+        `y : bus`;
+        `i : num`;
+        `1`;
+        `bwire xi`;
+        `bwire yi`;
+        `xt : cycle`;
+        `yt : cycle`]
+       bsub_bsignal) THEN
+  ASM_REWRITE_TAC [GSYM wire_def; bwire_bsignal; CONS_11]);;
+
+export_thm wire_signal;;
+
 let bground_wire = prove
  (`!n k w. wire (bground n) k w <=> k < n /\ w = ground`,
   REWRITE_TAC

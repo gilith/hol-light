@@ -617,7 +617,6 @@ let bsub_bits_to_num_le = prove
 
 export_thm bsub_bits_to_num_le;;
 
-(***
 let bsub_bsignal = prove
  (`!x y k n xs ys xt yt.
      bsub x k n xs /\ bsub y k n ys /\ bsignal x xt = bsignal y yt ==>
@@ -633,7 +632,7 @@ let bsub_bsignal = prove
        bsub_bappend_exists) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `xd : num`
+    (X_CHOOSE_THEN `d : num`
        (X_CHOOSE_THEN `xp : bus`
           (X_CHOOSE_THEN `xq : bus`
              STRIP_ASSUME_TAC))) THEN
@@ -649,14 +648,12 @@ let bsub_bsignal = prove
    EXISTS_TAC `k : num` THEN
    FIRST_ASSUM ACCEPT_TAC;
    ALL_TAC] THEN
-  ***
-  SUBGOAL_THEN `width xq = n` STRIP_ASSUME_TAC THENL
+  SUBGOAL_THEN `width xq = d` STRIP_ASSUME_TAC THENL
   [MATCH_MP_TAC bsub_width THEN
    EXISTS_TAC `x : bus` THEN
-   EXISTS_TAC `k : num` THEN
+   EXISTS_TAC `k + n : num` THEN
    FIRST_ASSUM ACCEPT_TAC;
    ALL_TAC] THEN
-  FIRST_X_ASSUM SUBST_VAR_TAC THEN
   MP_TAC
     (SPECL
        [`y : bus`;
@@ -666,17 +663,46 @@ let bsub_bsignal = prove
        bsub_bappend_exists) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `yd : num`
+    (X_CHOOSE_THEN `d' : num`
        (X_CHOOSE_THEN `yp : bus`
           (X_CHOOSE_THEN `yq : bus`
              STRIP_ASSUME_TAC))) THEN
-  FIRST_X_ASSUM SUBST_VAR_TAC THEN
-  ***
-  REWRITE_TAC [bappend_bsignal] THEN
+  SUBGOAL_THEN `width yp = k` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `y : bus` THEN
+   EXISTS_TAC `0` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width ys = n` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `y : bus` THEN
+   EXISTS_TAC `k : num` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  SUBGOAL_THEN `width yq = d'` STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC bsub_width THEN
+   EXISTS_TAC `y : bus` THEN
+   EXISTS_TAC `k + n : num` THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
   STRIP_TAC THEN
-  MP_TAC
+  SUBGOAL_THEN `LENGTH (bsignal x xt) = LENGTH (bsignal y yt)` MP_TAC THENL
+  [ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [length_bsignal; bappend_width; EQ_ADD_LCANCEL] THEN
+  DISCH_THEN (SUBST_VAR_TAC o SYM) THEN
+  MATCH_MP_TAC APPEND_LINJ THEN
+  EXISTS_TAC `bsignal xq xt` THEN
+  EXISTS_TAC `bsignal yq yt` THEN
+  ASM_REWRITE_TAC [length_bsignal] THEN
+  MATCH_MP_TAC APPEND_RINJ THEN
+  EXISTS_TAC `bsignal xp xt` THEN
+  EXISTS_TAC `bsignal yp yt` THEN
+  ASM_REWRITE_TAC [LENGTH_APPEND; length_bsignal] THEN
+  ASM_REWRITE_TAC [GSYM bappend_bsignal]);;
 
-***)
+export_thm bsub_bsignal;;
 
 (* ------------------------------------------------------------------------- *)
 (* Power and ground buses.                                                   *)
