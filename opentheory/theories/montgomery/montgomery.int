@@ -7,9 +7,9 @@
 
 # Hardware.Montgomery
 
-const "HOLLight.montgomery_compress" as "Hardware.Montgomery.compress"
-const "HOLLight.montgomery" as "Hardware.Montgomery.multiply"
-const "HOLLight.montgomery_mult" as "Hardware.Montgomery.reduce"
+const "HOLLight.montgomery_mult" as "Hardware.Montgomery.multiply"
+const "HOLLight.montgomery_mult_compress" as "Hardware.Montgomery.multiply.compress"
+const "HOLLight.montgomery_mult_reduce" as "Hardware.Montgomery.multiply.reduce"
 
 # Number
 

@@ -501,9 +501,9 @@ logfile "hardware-montgomery-def";;
 (*  zc  =  -   -   X   X   X   X  ...  X   X   X  ...  X   X   -  *)
 (* -------------------------------------------------------------- *)
 
-let montgomery_mult_def = new_definition
+let montgomery_mult_reduce_def = new_definition
   `!ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc.
-     montgomery_mult ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc <=>
+     montgomery_mult_reduce ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc <=>
      ?r pb ps pc pbp qb qs qc vb vs vc vt sa sb sc sd ms mc
       ld1 ld2 zs0 zs1 zs2 zc0 zc1 zc2 zc3 ps0 pc0 pb1 pbp0 pbp1 qb2
       sa0 sa1 sa2 sa3 sa4 sa5 sb0 sb1 sb2 sd0 sd1 sd2 sd3
@@ -594,7 +594,7 @@ let montgomery_mult_def = new_definition
        delay vt sd0 /\
        bdelay vc sd2`;;
 
-export_thm montgomery_mult_def;;
+export_thm montgomery_mult_reduce_def;;
 
 (* --------------------------------------------- *)
 (* Compress the Montgomery multiplication result *)
@@ -614,10 +614,9 @@ export_thm montgomery_mult_def;;
 (*  yc  =  -   X   X  ...  X   -                 *)
 (* --------------------------------------------- *)
 
-(***
-let montgomery_compress_def = new_definition
+let montgomery_mult_compress_def = new_definition
   `!xs xc d rx ry rz ys yc.
-      montgomery_compress xs xc d rx ry rz ys yc <=>
+      montgomery_mult_compress xs xc d rx ry rz ys yc <=>
       ?r nct ns nc nsd ncd rnl rnh rn
        xs0 xs1 xs2 xc0 xc1 xc2 ys0 ys1 yc0 yc1 rn0 rn1.
          width xs = r + 2 /\
@@ -654,34 +653,46 @@ let montgomery_compress_def = new_definition
          adder2 xs0 rn0 ys0 yc0 /\
          badder3 xs1 xc0 rn1 ys1 yc1`;;
 
-export_thm montgomery_compress_def;;
+export_thm montgomery_mult_compress_def;;
 
-let montgomery_circuit_def = new_definition
-  `!ld nb kb rx ry rz xs xc ys yc
-    zs' zc'.
-      montgomery_circuit
-        ld nb kb rx ry rz xs xc ys yc
-        zs' zc' <=>
-      ?r ps pc qs qc.
-         width nb = r /\
-         width kb = r /\
-         width rx = r /\
-         width ry = r /\
-         width rz = r /\
-         width xs = r /\
-         width xc = r /\
-         width ys = r /\
-         width yc = r
-         /\
-         width zs' = r /\
-         width zc' = r
-         /\
-         montgomery_loop nb kb xs xc ps pc /\
-         bdelay ps qs /\
-         bdelay pc qc /\
-         montgomery_compress rx ry rz qs qc zs' zc'`;;
+(***
+let montgomery_mult_def = new_definition
+  `!ld xs xc d0 ys yc d1 ks kc d2 ns nc jb d3 d4 rx ry rz zs zc.
+     montgomery_mult
+       ld xs xc d0 ys yc d1 ks kc d2 ns nc jb d3 d4 rx ry rz zs zc <=>
+     ?r js jp jpd ps pc qsp qcp qsr qcr.
+        width xs = r + 1 /\
+        width xc = r + 1 /\
+        width ys = r + 1 /\
+        width yc = r + 1 /\
+        width ks = r + 2 /\
+        width kc = r + 2 /\
+        width ns = r /\
+        width nc = r /\
+        width rx = r + 1 /\
+        width ry = r + 1 /\
+        width rz = r + 1 /\
+        width zs = r + 1 /\
+        width zc = r + 1 /\
+        width ps = r + 2 /\
+        width pc = r + 2 /\
+        width qsp = r + 2 /\
+        width qcp = r + 2 /\
+        width qsr = r + 2 /\
+        width qcr = r + 2
+        /\
+        montgomery_mult_reduce ld xs xc d0 ys yc d1 ks kc d2 ns nc ps pc /\
+        counter ld jb js /\
+        pulse js jp /\
+        pipe jp d3 jpd /\
+        bcase1 jpd ps qsp qsr /\
+        bcase1 jpd pc qcp qcr /\
+        montgomery_mult_compress qsp qcp d4 rx ry rz zs zc
+        /\
+        bdelay qsr qsp /\
+        bdelay qcr qcp`;;
 
-export_thm montgomery_circuit_def;;
+export_thm montgomery_mult_def;;
 ***)
 
 (* ------------------------------------------------------------------------- *)
@@ -690,7 +701,7 @@ export_thm montgomery_circuit_def;;
 
 logfile "hardware-montgomery-thm";;
 
-let montgomery_mult_bit_width = prove
+let montgomery_mult_reduce_bit_width = prove
  (`!n r k x y ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc t.
      width xs = r /\
      ~(n = 0) /\
@@ -700,7 +711,7 @@ let montgomery_mult_bit_width = prove
         d0 <= i /\ i <= d0 + r + 1 ==>
         bits_to_num (bsignal ys (t + i)) +
         2 * bits_to_num (bsignal yc (t + i)) = y) /\
-     montgomery_mult ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc ==>
+     montgomery_mult_reduce ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc ==>
      bit_width x <= r + 2 /\
      bit_width y <= r + 2 /\
      bit_width (x * y) <= (r + 2) + (r + 2) /\
@@ -727,7 +738,7 @@ let montgomery_mult_bit_width = prove
   X_GEN_TAC `t : cycle` THEN
   STRIP_TAC THEN
   POP_ASSUM MP_TAC THEN
-  REWRITE_TAC [montgomery_mult_def] THEN
+  REWRITE_TAC [montgomery_mult_reduce_def] THEN
   DISCH_THEN (X_CHOOSE_THEN `rs : num` STRIP_ASSUME_TAC) THEN
   UNDISCH_THEN `width xs = r` MP_TAC THEN
   ASM_REWRITE_TAC [] THEN
@@ -898,9 +909,9 @@ let montgomery_mult_bit_width = prove
   REWRITE_TAC [LE_ADDR] THEN
   REWRITE_TAC [ADD_ASSOC; GSYM MULT_2; GSYM EXP_SUC; LE_REFL]);;
 
-export_thm montgomery_mult_bit_width;;
+export_thm montgomery_mult_reduce_bit_width;;
 
-let montgomery_mult_bits_to_num = prove
+let montgomery_mult_reduce_bits_to_num = prove
  (`!n r s k x y ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc t.
      width xs = r /\
      ~(n = 0) /\
@@ -920,7 +931,7 @@ let montgomery_mult_bits_to_num = prove
         d0 + d1 + d2 <= i /\ i <= d0 + d1 + d2 + r + 1 ==>
         bits_to_num (bsignal ns (t + i)) +
         2 * bits_to_num (bsignal nc (t + i)) = n) /\
-     montgomery_mult ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc ==>
+     montgomery_mult_reduce ld xs xc d0 ys yc d1 ks kc d2 ns nc zs zc ==>
      bits_to_num (bsignal zs (t + d0 + d1 + d2 + r + 2)) +
      2 * bits_to_num (bsignal zc (t + d0 + d1 + d2 + r + 2)) =
      montgomery_reduce n (2 EXP (r + 2)) k (x * y)`,
@@ -968,14 +979,14 @@ let montgomery_mult_bits_to_num = prove
         `zs : bus`;
         `zc : bus`;
         `t : cycle`]
-       montgomery_mult_bit_width) THEN
+       montgomery_mult_reduce_bit_width) THEN
   ASM_REWRITE_TAC [] THEN
   POP_ASSUM (fun th -> STRIP_TAC THEN MP_TAC th) THEN
   POP_ASSUM MP_TAC THEN
   POP_ASSUM (K ALL_TAC) THEN
   POP_ASSUM (K ALL_TAC) THEN
   STRIP_TAC THEN
-  REWRITE_TAC [montgomery_mult_def] THEN
+  REWRITE_TAC [montgomery_mult_reduce_def] THEN
   DISCH_THEN (X_CHOOSE_THEN `rs : num` STRIP_ASSUME_TAC) THEN
   SUBGOAL_THEN
     `!i.
@@ -2496,10 +2507,9 @@ let montgomery_mult_bits_to_num = prove
     [EQ_ADD_LCANCEL; ground_signal; bit_to_num_false; zero_bit_shl;
      ZERO_ADD]);;
 
-export_thm montgomery_mult_bits_to_num;;
+export_thm montgomery_mult_reduce_bits_to_num;;
 
-(***
-let montgomery_compress_bits_to_num = prove
+let montgomery_mult_compress_bits_to_num = prove
  (`!n r x xs xc d rx ry rz ys yc t.
      width rx = r /\
      ~(n = 0) /\
@@ -2510,13 +2520,13 @@ let montgomery_compress_bits_to_num = prove
      bits_to_num (bsignal rx (t + d)) = (2 EXP r) MOD n /\
      bits_to_num (bsignal ry (t + d)) = (2 * (2 EXP r)) MOD n /\
      bits_to_num (bsignal rz (t + d)) = (3 * (2 EXP r)) MOD n /\
-     montgomery_compress xs xc d rx ry rz ys yc ==>
+     montgomery_mult_compress xs xc d rx ry rz ys yc ==>
      (bits_to_num (bsignal ys (t + d)) +
       2 * bits_to_num (bsignal yc (t + d))) MOD n = x MOD n`,
   X_GEN_TAC `n : num` THEN
   X_GEN_TAC `k : num` THEN
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [montgomery_compress_def] THEN
+  REWRITE_TAC [montgomery_mult_compress_def] THEN
   STRIP_TAC THEN
   SUBGOAL_THEN `k = r + 1` SUBST_VAR_TAC THENL
   [UNDISCH_THEN `width rx = k` (SUBST1_TAC o SYM) THEN
@@ -2759,7 +2769,6 @@ let montgomery_compress_bits_to_num = prove
     CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
     REWRITE_TAC [ADD_ASSOC; LE_ADDR]];
    ALL_TAC] THEN
-  (***)
   SUBGOAL_THEN
     `bit_to_num (signal ns t) +
      2 * bit_to_num (signal nc t) =
@@ -2788,8 +2797,64 @@ let montgomery_compress_bits_to_num = prove
         and2_signal) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN SUBST1_TAC THEN
-   (***)
+   MP_TAC
+     (SPECL
+        [`xs2 : wire`;
+         `xc1 : wire`;
+         `ns : wire`;
+         `t : cycle`]
+        xor2_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   UNDISCH_TAC `~(signal xs2 t /\ signal xc1 t /\ signal xc2 t)` THEN
+   BOOL_CASES_TAC `signal xs2 t` THEN
+   BOOL_CASES_TAC `signal xc1 t` THEN
+   BOOL_CASES_TAC `signal xc2 t` THEN
+   REWRITE_TAC
+     [bit_to_num_true; bit_to_num_false; ZERO_ADD; MULT_0; ADD_0; MULT_1;
+      NUM_REDUCE_CONV `1 + 1`];
+   ALL_TAC] THEN
+  UNDISCH_THEN
+    `bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x`
+    (SUBST1_TAC o SYM) THEN
+  SUBGOAL_THEN
+    `bappend (bwire xs0) (bappend xs1 (bwire xs2)) = xs`
+    (SUBST1_TAC o SYM) THENL
+  [ASM_REWRITE_TAC [GSYM bsub_all] THEN
+   SUBGOAL_THEN `r + 2 = 1 + (r + 1)` SUBST1_TAC THENL
+   [CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+    REWRITE_TAC [GSYM ADD_ASSOC; NUM_REDUCE_CONV `1 + 1`];
+    ALL_TAC] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [ZERO_ADD; GSYM wire_def] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   ASM_REWRITE_TAC [GSYM wire_def];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `bappend xc0 (bappend (bwire xc1) (bwire xc2)) = xc`
+    (SUBST1_TAC o SYM) THENL
+  [ASM_REWRITE_TAC [GSYM bsub_all] THEN
+   SUBGOAL_THEN `r + 2 = r + (1 + 1)` SUBST1_TAC THENL
+   [REWRITE_TAC [GSYM ADD_ASSOC; NUM_REDUCE_CONV `1 + 1`];
+    ALL_TAC] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [ZERO_ADD; GSYM wire_def] THEN
+   MATCH_MP_TAC bsub_add THEN
+   ASM_REWRITE_TAC [GSYM wire_def];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC
+    [bappend_bits_to_num; bwire_bits_to_num; bwire_width;
+     GSYM bit_shl_one; bit_to_num_true; add_bit_shl; GSYM bit_shl_add] THEN
+  REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+  CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+  REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+  CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+  REWRITE_TAC [GSYM ADD_ASSOC]);;
 
+export_thm montgomery_mult_compress_bits_to_num;;
+
+(***
 let montgomery_circuit = prove
  (`!n r s k x y ld nb kb rx ry rz xs xc ys yc zs' zc' t.
       ~(n = 0) /\
@@ -2826,9 +2891,9 @@ let montgomery_circuit = prove
 (* Automatically synthesizing hardware.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-let montgomery_mult_syn_gen n =
+let montgomery_mult_reduce_syn_gen n =
     setify
-      ((n,montgomery_mult_def) ::
+      ((n,montgomery_mult_reduce_def) ::
        scmult_syn @
        pipe_syn @
        bpipe_syn @
@@ -2839,13 +2904,13 @@ let montgomery_mult_syn_gen n =
        adder3_syn @
        or3_syn);;
 
-let montgomery_mult_syn = montgomery_mult_syn_gen "montgomery";;
+let montgomery_mult_reduce_syn = montgomery_mult_reduce_syn_gen "reduce";;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing verified Montgomery multiplication circuits.   *)
 (* ------------------------------------------------------------------------- *)
 
-let mk_montgomery_mult n =
+let mk_montgomery_mult_reduce n =
     let undisch_bind th =
         let (tm,_) = dest_imp (concl th) in
         (tm, UNDISCH th) in
@@ -2892,7 +2957,7 @@ let mk_montgomery_mult n =
         SPECL
           [nn; rn; sn; kn; fv_x; fv_y; ld; xs; xc; d0; ys; yc; d1;
            ks; kc; d2; ns; nc; zs; zc; fv_t]
-          montgomery_mult_bits_to_num in
+          montgomery_mult_reduce_bits_to_num in
     let th1 =
         let conv =
             REWRITE_CONV [bnil_width; bwire_width; bappend_width] THENC
@@ -2991,12 +3056,12 @@ let mk_montgomery_mult n =
         (GEN fv_x o GEN fv_y o GEN fv_t o
          REWRITE_RULE [IMP_IMP; GSYM CONJ_ASSOC] o
          DISCH ld_cond o DISCH x_cond o DISCH y_cond) th11 in
-    let syn = montgomery_mult_syn_gen "" in
+    let syn = montgomery_mult_reduce_syn_gen "" in
     let primary = frees (concl th) in
     instantiate_hardware syn primary th;;
 
 (*** Testing
-let montgomery91_thm = mk_montgomery_mult (dest_numeral `91`);;
+let montgomery91_thm = mk_montgomery_mult_reduce (dest_numeral `91`);;
 let primary = `clk : wire` :: frees (concl montgomery91_thm);;
 output_string stdout (hardware_to_verilog "montgomery91" primary montgomery91_thm);;
 hardware_to_verilog_file "montgomery91" primary montgomery91_thm;;
