@@ -2855,36 +2855,46 @@ let montgomery_mult_compress_bits_to_num = prove
 export_thm montgomery_mult_compress_bits_to_num;;
 
 (***
-let montgomery_circuit = prove
- (`!n r s k x y ld nb kb rx ry rz xs xc ys yc zs' zc' t.
-      ~(n = 0) /\
-      (2 EXP (r + 2)) * s = k * n + 1 /\
-      width nb = r /\
-      (!i. i < r ==> (signal ld (t + i) <=> i = 0)) /\
-      (!i.
-         0 < i /\ i < r ==>
-         bits_to_num (bsignal nb (t + i)) = n) /\
-      (!i.
-         0 < i /\ i < r ==>
-         bits_to_num (bsignal kb (t + i)) = k MOD (2 EXP r)) /\
-      bits_to_num (bsignal rx (t + (r + 8))) = (2 EXP r) MOD n /\
-      bits_to_num (bsignal ry (t + (r + 8))) = (2 * (2 EXP r)) MOD n /\
-      bits_to_num (bsignal rz (t + (r + 8))) = (3 * (2 EXP r)) MOD n /\
-      (!i.
-        i < r ==>
-        bits_to_num (bsignal xs' (t + i)) +
-        2 * bits_to_num (bsignal xc' (t + i)) = x) /\
-      bits_to_num (bsignal ys' t) +
-      2 * bits_to_num (bsignal yc' t) = y /\
-      montgomery_circuit
-        ld nb kb rx ry rz xs xc ys yc
-        zs' zc' ==>
-      (bits_to_num (bsignal zs' (t + (r + 8))) +
-       2 * bits_to_num (bsignal zc' (t + (r + 8)))) MOD n =
-      ((x * y) * s) MOD n`,
+let montgomery_mult_bits_to_num = prove
+ (`!n r s k x y ld xs xc d0 ys yc d1 ks kc d2 ns nc jb d3 d4 rx ry rz zs zc t.
+     width xs = r /\
+     ~(n = 0) /\
+     bit_width n <= r /\
+     2 EXP (r + 2) * s = k * n + 1 /\
+     (!i. i <= d1 + d2 + r + 1 ==> (signal ld (t + i) <=> i = 0)) /\
+     bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x /\
+     (!i.
+        d0 <= i /\ i <= d0 + r + 1 ==>
+        bits_to_num (bsignal ys (t + i)) +
+        2 * bits_to_num (bsignal yc (t + i)) = y) /\
+     (!i.
+        d0 + d1 <= i /\ i <= d0 + d1 + r + 1 ==>
+        bits_to_num (bsignal ks (t + i)) +
+        2 * bits_to_num (bsignal kc (t + i)) = k) /\
+     (!i.
+        d0 + d1 + d2 <= i /\ i <= d0 + d1 + d2 + r + 1 ==>
+        bits_to_num (bsignal ns (t + i)) +
+        2 * bits_to_num (bsignal nc (t + i)) = n) /\
+     bits_to_num (bsignal rx (t + d0 + d1 + d2 + d4 + r + 2)) =
+     (2 EXP r) MOD n /\
+     bits_to_num (bsignal ry (t + d0 + d1 + d2 + d4 + r + 2)) =
+     (2 * (2 EXP r)) MOD n /\
+     bits_to_num (bsignal rz (t + d0 + d1 + d2 + d4 + r + 2)) =
+     (3 * (2 EXP r)) MOD n /\
+     montgomery_mult
+       ld xs xc d0 ys yc d1 ks kc d2 ns nc jb d3 d4 rx ry rz zs zc ==>
+     (bits_to_num (bsignal zs (t + d0 + d1 + d2 + d4 + r + 2)) +
+      2 * bits_to_num (bsignal zc (t + d0 + d1 + d2 + d4 + r + 2))) MOD n =
+     (x * y * s) MOD n`,
+  X_GEN_TAC `n : num` THEN
+  X_GEN_TAC `r' : num` THEN
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [montgomery_circuit_def] THEN
+  REWRITE_TAC [montgomery_mult_def] THEN
   STRIP_TAC THEN
+  UNDISCH_TAC `width xs = r'` THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST_VAR_TAC THEN
+
 ***)
 
 (* ------------------------------------------------------------------------- *)
