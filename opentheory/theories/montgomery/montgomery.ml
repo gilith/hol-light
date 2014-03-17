@@ -2885,7 +2885,7 @@ let montgomery_mult_bits_to_num = prove
        ld xs xc d0 ys yc d1 ks kc d2 ns nc jb d3 d4 rx ry rz zs zc ==>
      (bits_to_num (bsignal zs (t + d0 + d1 + d2 + d4 + r + 2)) +
       2 * bits_to_num (bsignal zc (t + d0 + d1 + d2 + d4 + r + 2))) MOD n =
-     (x * y * s) MOD n`,
+     ((x * y) * s) MOD n`,
   X_GEN_TAC `n : num` THEN
   X_GEN_TAC `r' : num` THEN
   REPEAT GEN_TAC THEN
