@@ -2875,25 +2875,244 @@ let montgomery_mult_bits_to_num = prove
         d0 + d1 + d2 <= i /\ i <= d0 + d1 + d2 + r + 1 ==>
         bits_to_num (bsignal ns (t + i)) +
         2 * bits_to_num (bsignal nc (t + i)) = n) /\
-     bits_to_num (bsignal rx (t + d0 + d1 + d2 + d4 + r + 2)) =
+     bits_to_num (bsignal jb t) + d0 + d1 + d2 + r + 3 =
+     2 EXP width jb + width jb + d3 /\
+     bits_to_num (bsignal rx (t + d0 + d1 + d2 + d4 + r + 3)) =
      (2 EXP r) MOD n /\
-     bits_to_num (bsignal ry (t + d0 + d1 + d2 + d4 + r + 2)) =
+     bits_to_num (bsignal ry (t + d0 + d1 + d2 + d4 + r + 3)) =
      (2 * (2 EXP r)) MOD n /\
-     bits_to_num (bsignal rz (t + d0 + d1 + d2 + d4 + r + 2)) =
+     bits_to_num (bsignal rz (t + d0 + d1 + d2 + d4 + r + 3)) =
      (3 * (2 EXP r)) MOD n /\
      montgomery_mult
        ld xs xc d0 ys yc d1 ks kc d2 ns nc jb d3 d4 rx ry rz zs zc ==>
-     (bits_to_num (bsignal zs (t + d0 + d1 + d2 + d4 + r + 2)) +
-      2 * bits_to_num (bsignal zc (t + d0 + d1 + d2 + d4 + r + 2))) MOD n =
+     (bits_to_num (bsignal zs (t + d0 + d1 + d2 + d4 + r + 3)) +
+      2 * bits_to_num (bsignal zc (t + d0 + d1 + d2 + d4 + r + 3))) MOD n =
      ((x * y) * s) MOD n`,
-  X_GEN_TAC `n : num` THEN
-  X_GEN_TAC `r' : num` THEN
   REPEAT GEN_TAC THEN
   REWRITE_TAC [montgomery_mult_def] THEN
   STRIP_TAC THEN
-  UNDISCH_TAC `width xs = r'` THEN
+  SUBGOAL_THEN
+    `t + d0 + d1 + d2 + d4 + r + 3 = (t + d0 + d1 + d2 + r + 3) + d4`
+    ASSUME_TAC THENL
+  [REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+   REWRITE_TAC [ADD_ASSOC];
+   ALL_TAC] THEN
+  MP_TAC
+    (SPECL
+       [`n : num`;
+        `2 EXP (r + 2)`;
+        `s : num`;
+        `k : num`;
+        `x * y : num`]
+       montgomery_reduce_correct) THEN
   ASM_REWRITE_TAC [] THEN
-  DISCH_THEN SUBST_VAR_TAC THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  MATCH_MP_TAC montgomery_mult_compress_bits_to_num THEN
+  EXISTS_TAC `r : num` THEN
+  EXISTS_TAC `qsp : bus` THEN
+  EXISTS_TAC `qcp : bus` THEN
+  EXISTS_TAC `rx : bus` THEN
+  EXISTS_TAC `ry : bus` THEN
+  EXISTS_TAC `rz : bus` THEN
+  CONJ_TAC THENL
+  [UNDISCH_THEN `width xs = r` (SUBST1_TAC o SYM) THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  CONJ_TAC THENL
+  [MP_TAC
+     (SPECL
+        [`n : num`;
+         `r : num`;
+         `k : num`;
+         `x : num`;
+         `y : num`;
+         `ld : wire`;
+         `xs : bus`;
+         `xc : bus`;
+         `d0 : num`;
+         `ys : bus`;
+         `yc : bus`;
+         `d1 : num`;
+         `ks : bus`;
+         `kc : bus`;
+         `d2 : num`;
+         `ns : bus`;
+         `nc : bus`;
+         `ps : bus`;
+         `pc : bus`;
+         `t : cycle`]
+        montgomery_mult_reduce_bit_width) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC;
+   ALL_TAC] THEN
+  (***)
+  SUBGOAL_THEN
+    `!d.
+       d <= d4 ==>
+       (signal jpd ((t + d0 + d1 + d2 + r + 2) + d) <=> d = 0)`
+    ASSUME_TAC THENL
+  [
+
+CHEAT_TAC;
+   ALL_TAC] THEN
+
+REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+   REWRITE_TAC [ADD_ASSOC];
+   ALL_TAC] THEN
+
+     `signal jpd (t + d0 + d1 + d2 + r + 2)`
+   SUBGOAL_THEN
+     `~signal jpd ((t + d0 + d1 + d2 + r + 3) + d)`
+     (SUBST1_TAC o EQF_INTRO) THENL
+
+bits_to_num (bsignal jb t) + d0 + d1 + d2 + r + 3 = 2 EXP width jb + width jb + d3 /\
+
+
+pulse_signal
+pipe_signal
+
+  CONJ_TAC THENL
+  [SUBGOAL_THEN
+     `t + d0 + d1 + d2 + r + 3 = (t + d0 + d1 + d2 + r + 2) + 1`
+     SUBST1_TAC THENL
+   [REWRITE_TAC [GSYM ADD_ASSOC; NUM_REDUCE_CONV `2 + 1`];
+    ALL_TAC] THEN
+   MP_TAC
+     (SPECL
+        [`qsr : bus`;
+         `qsp : bus`;
+         `t + d0 + d1 + d2 + r + 2`]
+        bdelay_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+        [`qcr : bus`;
+         `qcp : bus`;
+         `t + d0 + d1 + d2 + r + 2`]
+        bdelay_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+        [`jpd : wire`;
+         `ps : bus`;
+         `qsp : bus`;
+         `qsr : bus`;
+         `t + d0 + d1 + d2 + r + 2`]
+        bcase1_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+        [`jpd : wire`;
+         `pc : bus`;
+         `qcp : bus`;
+         `qcr : bus`;
+         `t + d0 + d1 + d2 + r + 2`]
+        bcase1_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   SUBGOAL_THEN
+     `signal jpd (t + d0 + d1 + d2 + r + 2)`
+     (SUBST1_TAC o EQT_INTRO) THENL
+   [FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
+    REWRITE_TAC [LE_0; ADD_0];
+    ALL_TAC] THEN
+   REWRITE_TAC [] THEN
+   MATCH_MP_TAC montgomery_mult_reduce_bits_to_num THEN
+   EXISTS_TAC `s : num` THEN
+   EXISTS_TAC `ld : wire` THEN
+   EXISTS_TAC `xs : bus` THEN
+   EXISTS_TAC `xc : bus` THEN
+   EXISTS_TAC `ys : bus` THEN
+   EXISTS_TAC `yc : bus` THEN
+   EXISTS_TAC `ks : bus` THEN
+   EXISTS_TAC `kc : bus` THEN
+   EXISTS_TAC `ns : bus` THEN
+   EXISTS_TAC `nc : bus` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `!d.
+       d <= d4 ==>
+       bsignal qsp ((t + d0 + d1 + d2 + r + 3) + d) =
+       bsignal qsp (t + d0 + d1 + d2 + r + 3) /\
+       bsignal qcp ((t + d0 + d1 + d2 + r + 3) + d) =
+       bsignal qcp (t + d0 + d1 + d2 + r + 3)`
+    (MP_TAC o SPEC `d4 : num`) THENL
+  [INDUCT_TAC THENL
+   [REWRITE_TAC [ADD_0];
+    ALL_TAC] THEN
+   STRIP_TAC THEN
+   REWRITE_TAC [ADD_SUC] THEN
+   REWRITE_TAC [ADD1] THEN
+   MP_TAC
+     (SPECL
+        [`qsr : bus`;
+         `qsp : bus`;
+         `(t + d0 + d1 + d2 + r + 3) + d`]
+        bdelay_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+        [`qcr : bus`;
+         `qcp : bus`;
+         `(t + d0 + d1 + d2 + r + 3) + d`]
+        bdelay_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+        [`jpd : wire`;
+         `ps : bus`;
+         `qsp : bus`;
+         `qsr : bus`;
+         `(t + d0 + d1 + d2 + r + 3) + d`]
+        bcase1_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+        [`jpd : wire`;
+         `pc : bus`;
+         `qcp : bus`;
+         `qcr : bus`;
+         `(t + d0 + d1 + d2 + r + 3) + d`]
+        bcase1_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   SUBGOAL_THEN
+     `~signal jpd ((t + d0 + d1 + d2 + r + 3) + d)`
+     (SUBST1_TAC o EQF_INTRO) THENL
+   [FIRST_X_ASSUM (MP_TAC o SPEC `SUC d`) THEN
+    ASM_REWRITE_TAC [NOT_SUC] THEN
+    MATCH_MP_TAC EQ_IMP THEN
+    AP_TERM_TAC THEN
+    AP_TERM_TAC THEN
+    REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+    REWRITE_TAC
+      [ONCE_REWRITE_RULE [ADD_SYM] ADD1; ADD_ASSOC;
+       NUM_REDUCE_CONV `2 + 1`];
+    ALL_TAC] THEN
+   REWRITE_TAC [] THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `SUC d` THEN
+   ASM_REWRITE_TAC [SUC_LE];
+   ALL_TAC] THEN
+  REWRITE_TAC [LE_REFL] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (SUBST1_TAC o SYM) THEN
+  ASM_REWRITE_TAC []);;
 
 ***)
 
