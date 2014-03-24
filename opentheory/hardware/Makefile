@@ -39,7 +39,8 @@ VVP = vvp
 
 TARGETS = \
   counter_91_testbench.out \
-  montgomery_reduce_91_testbench.out
+  montgomery_reduce_91_testbench.out \
+  montgomery_91_testbench.out
 
 .PHONY: iverilog-info
 iverilog-info:
