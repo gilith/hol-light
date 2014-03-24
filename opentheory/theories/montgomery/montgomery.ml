@@ -655,12 +655,11 @@ let montgomery_mult_compress_def = new_definition
 
 export_thm montgomery_mult_compress_def;;
 
-(***
 let montgomery_mult_def = new_definition
   `!ld xs xc d0 ys yc d1 ks kc d2 ns nc jb d3 d4 rx ry rz zs zc.
      montgomery_mult
        ld xs xc d0 ys yc d1 ks kc d2 ns nc jb d3 d4 rx ry rz zs zc <=>
-     ?r js jp jpd ps pc qsp qcp qsr qcr.
+     ?r jp jpd ps pc qsp qcp qsr qcr.
         width xs = r + 1 /\
         width xc = r + 1 /\
         width ys = r + 1 /\
@@ -682,8 +681,7 @@ let montgomery_mult_def = new_definition
         width qcr = r + 2
         /\
         montgomery_mult_reduce ld xs xc d0 ys yc d1 ks kc d2 ns nc ps pc /\
-        counter ld jb js /\
-        pulse js jp /\
+        counter_pulse ld jb jp /\
         pipe jp d3 jpd /\
         bcase1 jpd ps qsp qsr /\
         bcase1 jpd pc qcp qcr /\
@@ -693,7 +691,6 @@ let montgomery_mult_def = new_definition
         bdelay qcr qcp`;;
 
 export_thm montgomery_mult_def;;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Correctness of a Montgomery multiplication circuit.                       *)
@@ -2854,14 +2851,14 @@ let montgomery_mult_compress_bits_to_num = prove
 
 export_thm montgomery_mult_compress_bits_to_num;;
 
-(***
 let montgomery_mult_bits_to_num = prove
  (`!n r s k x y ld xs xc d0 ys yc d1 ks kc d2 ns nc jb d3 d4 rx ry rz zs zc t.
      width xs = r /\
      ~(n = 0) /\
      bit_width n <= r /\
      2 EXP (r + 2) * s = k * n + 1 /\
-     (!i. i <= d1 + d2 + r + 1 ==> (signal ld (t + i) <=> i = 0)) /\
+     d3 <= d0 + d1 + d2 + r + 1 /\
+     (!i. i <= d0 + d1 + d2 + d4 + r + 2 ==> (signal ld (t + i) <=> i = 0)) /\
      bits_to_num (bsignal xs t) + 2 * bits_to_num (bsignal xc t) = x /\
      (!i.
         d0 <= i /\ i <= d0 + r + 1 ==>
@@ -2947,33 +2944,76 @@ let montgomery_mult_bits_to_num = prove
    ASM_REWRITE_TAC [] THEN
    STRIP_TAC;
    ALL_TAC] THEN
-  (***)
   SUBGOAL_THEN
     `!d.
        d <= d4 ==>
        (signal jpd ((t + d0 + d1 + d2 + r + 2) + d) <=> d = 0)`
     ASSUME_TAC THENL
-  [
-
-CHEAT_TAC;
-   ALL_TAC] THEN
-
-REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
-   CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
-   REWRITE_TAC [ADD_ASSOC];
-   ALL_TAC] THEN
-
-     `signal jpd (t + d0 + d1 + d2 + r + 2)`
+  [REPEAT STRIP_TAC THEN
+   UNDISCH_THEN
+     `d3 <= d0 + d1 + d2 + r + 1`
+     (X_CHOOSE_THEN `dk : num` STRIP_ASSUME_TAC o
+      REWRITE_RULE [LE_EXISTS]) THEN
    SUBGOAL_THEN
-     `~signal jpd ((t + d0 + d1 + d2 + r + 3) + d)`
-     (SUBST1_TAC o EQF_INTRO) THENL
-
-bits_to_num (bsignal jb t) + d0 + d1 + d2 + r + 3 = 2 EXP width jb + width jb + d3 /\
-
-
-pulse_signal
-pipe_signal
-
+     `(t + d0 + d1 + d2 + r + 2) + d = (t + (dk + d) + 1) + d3`
+     SUBST1_TAC THENL
+   [REWRITE_TAC
+      [GSYM ADD_ASSOC; GSYM (NUM_REDUCE_CONV `1 + 1`); EQ_ADD_LCANCEL] THEN
+    CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+    REWRITE_TAC [GSYM ADD_ASSOC] THEN
+    POP_ASSUM (SUBST1_TAC o SYM) THEN
+    CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+    REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+    CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+    REWRITE_TAC [ADD_ASSOC];
+    ALL_TAC] THEN
+   MP_TAC
+     (SPECL
+        [`jp : wire`;
+         `d3 : num`;
+         `jpd : wire`;
+         `t + (dk + d) + 1 : cycle`]
+        pipe_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC
+     (SPECL
+        [`dk : num`;
+         `ld : wire`;
+         `jb : bus`;
+         `jp : wire`;
+         `t : cycle`;
+         `dk + d : cycle`]
+        counter_pulse_signal) THEN
+   ASM_REWRITE_TAC [EQ_ADD_LCANCEL_0] THEN
+   DISCH_THEN MATCH_MP_TAC THEN
+   CONJ_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `(dk + d) + 1` THEN
+    ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `(d0 + d1 + d2 + r + 1) + d + 1` THEN
+    CONJ_TAC THENL
+    [ASM_REWRITE_TAC [] THEN
+     REWRITE_TAC [GSYM ADD_ASSOC; LE_ADDR];
+     REWRITE_TAC [GSYM ADD_ASSOC; LE_ADD_LCANCEL] THEN
+     REWRITE_TAC
+       [ADD_ASSOC; LE_ADD_RCANCEL; SYM (NUM_REDUCE_CONV `1 + 1`)] THEN
+     CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+     ASM_REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL]];
+    ALL_TAC] THEN
+   CONV_TAC (REWR_CONV (GSYM (SPEC `d3 : num` EQ_ADD_RCANCEL))) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC] THEN
+   FIRST_X_ASSUM (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
+   REWRITE_TAC [EQ_ADD_LCANCEL] THEN
+   CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC] THEN
+   POP_ASSUM (SUBST1_TAC o SYM) THEN
+   CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; NUM_REDUCE_CONV `1 + 2`];
+   ALL_TAC] THEN
   CONJ_TAC THENL
   [SUBGOAL_THEN
      `t + d0 + d1 + d2 + r + 3 = (t + d0 + d1 + d2 + r + 2) + 1`
@@ -3034,7 +3074,18 @@ pipe_signal
    EXISTS_TAC `kc : bus` THEN
    EXISTS_TAC `ns : bus` THEN
    EXISTS_TAC `nc : bus` THEN
-   ASM_REWRITE_TAC [];
+   ASM_REWRITE_TAC [] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `d1 + d2 + r + 1` THEN
+   ASM_REWRITE_TAC [] THEN
+   CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; LE_ADD_LCANCEL] THEN
+   CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+   REWRITE_TAC
+     [GSYM ADD_ASSOC; LE_ADD_LCANCEL; SYM (NUM_REDUCE_CONV `1 + 1`);
+      LE_ADD];
    ALL_TAC] THEN
   SUBGOAL_THEN
     `!d.
@@ -3114,7 +3165,7 @@ pipe_signal
   POP_ASSUM (SUBST1_TAC o SYM) THEN
   ASM_REWRITE_TAC []);;
 
-***)
+export_thm montgomery_mult_bits_to_num;;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing hardware.                                      *)
@@ -3134,6 +3185,23 @@ let montgomery_mult_reduce_syn_gen n =
        or3_syn);;
 
 let montgomery_mult_reduce_syn = montgomery_mult_reduce_syn_gen "reduce";;
+
+let montgomery_mult_compress_syn =
+    setify
+      (("compress",montgomery_mult_compress_def) ::
+       adder2_syn @
+       pipe_syn @
+       badder3_syn);;
+
+let montgomery_mult_syn_gen n =
+    setify
+      ((n,montgomery_mult_def) ::
+       montgomery_mult_reduce_syn @
+       counter_pulse_syn @
+       pipe_syn @
+       montgomery_mult_compress_syn);;
+
+let montgomery_mult_syn = montgomery_mult_syn_gen "multm";;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing verified Montgomery multiplication circuits.   *)
@@ -3289,11 +3357,257 @@ let mk_montgomery_mult_reduce n =
     let primary = frees (concl th) in
     instantiate_hardware syn primary th;;
 
+let mk_montgomery_mult n =
+    let undisch_bind th =
+        let (tm,_) = dest_imp (concl th) in
+        (tm, UNDISCH th) in
+    let nn = mk_numeral n in
+    let r_th = bit_width_conv (mk_comb (`bit_width`,nn)) in
+    let rn = rand (concl r_th) in
+    let r = dest_numeral rn in
+    let (d0,d1,d2,d3,d4) =
+        let d = add_num (quo_num (bit_width_num r) num_2) num_1 in
+        (d,d,d,d,d) in
+    let d0n = mk_numeral d0 in
+    let d1n = mk_numeral d1 in
+    let d2n = mk_numeral d2 in
+    let d3n = mk_numeral d3 in
+    let d4n = mk_numeral d4 in
+    let ld = mk_var ("ld",wire_ty) in
+    let xs = variable_bus "xs" r in
+    let xc = variable_bus "xc" r in
+    let ys = variable_bus "ys" r in
+    let yc = variable_bus "yc" r in
+    let zs = variable_bus "zs" r in
+    let zc = variable_bus "zc" r in
+    let egcd_th =
+        let rtm =
+            let tm0 = mk_comb (`(+) : num -> num -> num`, rn) in
+            mk_comb (`(EXP) 2`, mk_comb (tm0, `2`)) in
+        let rth = NUM_REDUCE_CONV rtm in
+        let eth = prove_egcd (rhs (concl rth)) nn in
+        CONV_RULE (LAND_CONV (REWR_CONV MULT_SYM THENC
+                              LAND_CONV (REWR_CONV (SYM rth)))) eth in
+    let sn = rand (lhs (concl egcd_th)) in
+    let kn = lhand (lhand (rhs (concl egcd_th))) in
+    let (ns,nc) =
+        let r1 = sub_num r num_1 in
+        let n1 = num_to_bits_bound r1 n in
+        let n2 = div_num (sub_num n (bits_to_num n1)) num_2 in
+        (bits_to_bus n1, bits_to_bus (num_to_bits_bound r1 n2)) in
+    let k = dest_numeral kn in
+    let (ks,kc) =
+        let r1 = add_num r num_1 in
+        let k1 = num_to_bits_bound r1 k in
+        let k2 = div_num (sub_num k (bits_to_num k1)) num_2 in
+        (bits_to_bus k1, bits_to_bus (num_to_bits_bound r1 k2)) in
+    let jb =
+        let jn = add_num d0 (add_num d1 (add_num d2 (add_num r num_1))) in
+        mk_counter_arg (sub_num jn d3) in
+    let rx_th =
+        let tm =
+            let tm0 = mk_comb (`(EXP) 2`, rn) in
+            list_mk_comb (`(MOD)`, [tm0; nn]) in
+        NUM_REDUCE_CONV tm in
+    let rx =
+        let n = dest_numeral (rhs (concl rx_th)) in
+        bits_to_bus (num_to_bits_bound r n) in
+    let ry_th =
+        let tm =
+            let tm0 = mk_comb (`(EXP) 2`, rn) in
+            let tm1 = mk_comb (`( * ) 2`, tm0) in
+            list_mk_comb (`(MOD)`, [tm1; nn]) in
+        NUM_REDUCE_CONV tm in
+    let ry =
+        let n = dest_numeral (rhs (concl ry_th)) in
+        bits_to_bus (num_to_bits_bound r n) in
+    let rz_th =
+        let tm =
+            let tm0 = mk_comb (`(EXP) 2`, rn) in
+            let tm1 = mk_comb (`( * ) 3`, tm0) in
+            list_mk_comb (`(MOD)`, [tm1; nn]) in
+        NUM_REDUCE_CONV tm in
+    let rz =
+        let n = dest_numeral (rhs (concl rz_th)) in
+        bits_to_bus (num_to_bits_bound r n) in
+    let fv_x = `x : num` in
+    let fv_y = `y : num` in
+    let fv_t = `t : cycle` in
+    let th0 =
+        SPECL
+          [nn; rn; sn; kn; fv_x; fv_y; ld; xs; xc; d0n; ys; yc; d1n;
+           ks; kc; d2n; ns; nc; jb; d3n; d4n; rx; ry; rz; zs; zc; fv_t]
+          montgomery_mult_bits_to_num in
+    let th1 =
+        let conv =
+            REWRITE_CONV [bnil_width; bwire_width; bappend_width] THENC
+            NUM_REDUCE_CONV in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th0 in
+    let th2 =
+        let conv =
+            NUM_REDUCE_CONV in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th1 in
+    let th3 =
+        let conv =
+            LAND_CONV (REWR_CONV r_th) THENC
+            REWR_CONV (EQT_INTRO (SPEC_ALL LE_REFL)) in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th2 in
+    let th4 =
+        let conv =
+            REWR_CONV (EQT_INTRO egcd_th) in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th3 in
+    let th5 =
+        let conv =
+            NUM_REDUCE_CONV in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th4 in
+    let (ld_cond,th6) =
+        let conv =
+            RAND_CONV (ABS_CONV (LAND_CONV (RAND_CONV NUM_REDUCE_CONV))) in
+        undisch_bind
+          (CONV_RULE
+             (LAND_CONV (LAND_CONV conv) THENC
+              REWR_CONV IMP_CONJ) th5) in
+    let (x_cond,th7) =
+        let conv = ALL_CONV in
+        undisch_bind
+          (CONV_RULE
+             (LAND_CONV (LAND_CONV conv) THENC
+              REWR_CONV IMP_CONJ) th6) in
+    let (y_cond,th8) =
+        let conv =
+            RAND_CONV
+              (ABS_CONV (LAND_CONV (RAND_CONV (RAND_CONV NUM_REDUCE_CONV)))) in
+        undisch_bind
+          (CONV_RULE
+             (LAND_CONV (LAND_CONV conv) THENC
+              REWR_CONV IMP_CONJ) th7) in
+    let th9 =
+        let bits_conv =
+            REWRITE_CONV
+              [bnil_bsignal; bwire_bsignal; bappend_bsignal;
+               ground_signal; power_signal; APPEND_SING;
+               bits_to_num_cons; bits_to_num_nil;
+               bit_cons_true; bit_cons_false] THENC
+            NUM_REDUCE_CONV in
+        let conv =
+            RAND_CONV (ABS_CONV (RAND_CONV bits_conv)) THENC
+            REWRITE_CONV [] in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th8 in
+    let th10 =
+        let bits_conv =
+            REWRITE_CONV
+              [bnil_bsignal; bwire_bsignal; bappend_bsignal;
+               ground_signal; power_signal; APPEND_SING;
+               bits_to_num_cons; bits_to_num_nil;
+               bit_cons_true; bit_cons_false] THENC
+            NUM_REDUCE_CONV in
+        let conv =
+            RAND_CONV (ABS_CONV (RAND_CONV bits_conv)) THENC
+            REWRITE_CONV [] in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th9 in
+    let th11 =
+        let bits_conv =
+            REWRITE_CONV [bnil_width; bwire_width; bappend_width] THENC
+            REWRITE_CONV
+              [bnil_bsignal; bwire_bsignal; bappend_bsignal;
+               ground_signal; power_signal; APPEND_SING;
+               bits_to_num_cons; bits_to_num_nil;
+               bit_cons_true; bit_cons_false] THENC
+            NUM_REDUCE_CONV in
+        let conv = bits_conv in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th10 in
+    let th12 =
+        let bits_conv =
+            REWRITE_CONV
+              [bnil_bsignal; bwire_bsignal; bappend_bsignal;
+               ground_signal; power_signal; APPEND_SING;
+               bits_to_num_cons; bits_to_num_nil;
+               bit_cons_true; bit_cons_false] THENC
+            NUM_REDUCE_CONV in
+        let conv = RAND_CONV (REWR_CONV rx_th) THENC bits_conv in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th11 in
+    let th13 =
+        let bits_conv =
+            REWRITE_CONV
+              [bnil_bsignal; bwire_bsignal; bappend_bsignal;
+               ground_signal; power_signal; APPEND_SING;
+               bits_to_num_cons; bits_to_num_nil;
+               bit_cons_true; bit_cons_false] THENC
+            NUM_REDUCE_CONV in
+        let conv = RAND_CONV (REWR_CONV ry_th) THENC bits_conv in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th12 in
+    let th14 =
+        let bits_conv =
+            REWRITE_CONV
+              [bnil_bsignal; bwire_bsignal; bappend_bsignal;
+               ground_signal; power_signal; APPEND_SING;
+               bits_to_num_cons; bits_to_num_nil;
+               bit_cons_true; bit_cons_false] THENC
+            NUM_REDUCE_CONV in
+        let conv = RAND_CONV (REWR_CONV rz_th) THENC bits_conv in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th13 in
+    let (ckt,th15) = undisch_bind th14 in
+    let th16 =
+        let conv =
+            LAND_CONV
+              (LAND_CONV
+                 (LAND_CONV
+                    (RAND_CONV (RAND_CONV (RAND_CONV NUM_REDUCE_CONV))) THENC
+                  RAND_CONV
+                    (RAND_CONV
+                       (RAND_CONV (RAND_CONV (RAND_CONV NUM_REDUCE_CONV)))))) in
+        CONV_RULE conv th15 in
+    let th =
+        (GEN fv_x o GEN fv_y o GEN fv_t o
+         REWRITE_RULE [IMP_IMP; GSYM CONJ_ASSOC] o
+         DISCH ld_cond o DISCH x_cond o DISCH y_cond) th16 in
+    let syn = montgomery_mult_syn_gen "" in
+    let primary = frees (concl th) in
+    instantiate_hardware syn primary th;;
+
 (*** Testing
-let montgomery91_thm = mk_montgomery_mult_reduce (dest_numeral `91`);;
-let primary = `clk : wire` :: frees (concl montgomery91_thm);;
-output_string stdout (hardware_to_verilog "montgomery91" primary montgomery91_thm);;
-hardware_to_verilog_file "montgomery91" primary montgomery91_thm;;
+let montgomery_reduce_91_thm = mk_montgomery_mult_reduce (dest_numeral `91`);;
+let primary = `clk : wire` :: frees (concl montgomery_reduce_91_thm);;
+output_string stdout (hardware_to_verilog "montgomery_reduce_91" primary montgomery_reduce_91_thm);;
+hardware_to_verilog_file "montgomery_reduce_91" primary montgomery_reduce_91_thm;;
+
+let montgomery_91_thm = mk_montgomery_mult (dest_numeral `91`);;
+let primary = `clk : wire` :: frees (concl montgomery_91_thm);;
+output_string stdout (hardware_to_verilog "montgomery_91" primary montgomery_91_thm);;
+hardware_to_verilog_file "montgomery_91" primary montgomery_91_thm;;
 ***)
 
 (* ------------------------------------------------------------------------- *)

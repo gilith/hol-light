@@ -1,11 +1,11 @@
-`include "counter91.v"
+`include "counter_91.v"
 
 module main;
    reg clk;
    reg rst;
    wire out;
 
-   counter91
+   counter_91
      root
      (.clk (clk),
       .ld (rst),
@@ -13,9 +13,9 @@ module main;
 
    initial
      begin
-        $display("+--------------------------+");
-        $display("| Test bench for counter91 |");
-        $display("+--------------------------+");
+        $display("+---------------------------+");
+        $display("| Test bench for counter_91 |");
+        $display("+---------------------------+");
         $monitor("ld = %b, dn = %b",
                   root.ld, root.dn);
         clk = 0;
@@ -26,12 +26,12 @@ module main;
         repeat(91) @(posedge clk);
         if (out)
           begin
-             $display("ERROR: counter91 finished too soon");
+             $display("ERROR: counter_91 finished too soon");
           end
         @(posedge clk);
         if (!out)
           begin
-             $display("ERROR: counter91 did not finish on time");
+             $display("ERROR: counter_91 did not finish on time");
           end
         repeat(5) @(posedge clk);
         $monitoroff;

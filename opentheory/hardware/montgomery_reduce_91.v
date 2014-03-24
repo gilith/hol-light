@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------+
-| module montgomery91 satisfies the following property:                       |
+| module montgomery_reduce_91 satisfies the following property:               |
 |                                                                             |
 | !x y t.                                                                     |
 |     (!i. i <= 12 ==> (signal ld (t + i) <=> i = 0)) /\                      |
@@ -14,7 +14,7 @@
 |         montgomery_reduce 91 (2 EXP 9) 45 (x * y)                           |
 +----------------------------------------------------------------------------*/
 
-module montgomery91(clk,ld,xs,xc,ys,yc,zs,zc);
+module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   input clk;
   input ld;
   input [6:0] xs;
@@ -868,7 +868,7 @@ module montgomery91(clk,ld,xs,xc,ys,yc,zs,zc);
       sd6 <= mulb0_cr5;
     end
 
-endmodule // montgomery91
+endmodule // montgomery_reduce_91
 
 /*----------------------------------------------------------------------------+
 | Primary inputs: 29                                                          |

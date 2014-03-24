@@ -1,4 +1,4 @@
-`include "montgomery91.v"
+`include "montgomery_reduce_91.v"
 
 module main;
    reg [0:7] t;
@@ -18,7 +18,7 @@ module main;
    integer ckt;
    integer seed;
 
-   montgomery91
+   montgomery_reduce_91
      root
      (.clk (clk),
       .ld (ld),
@@ -32,9 +32,9 @@ module main;
    initial
      begin
         seed = `SEED;
-        $display("+-------------------------------------+");
-        $display("| Test bench for montgomery91 circuit |");
-        $display("+-------------------------------------+");
+        $display("+---------------------------------------------+");
+        $display("| Test bench for montgomery_reduce_91 circuit |");
+        $display("+---------------------------------------------+");
         $display("random seed = %0d", seed);
         $display("");
         $display("+----+----+-----+-----+-----+-----+-----+-----+");

@@ -114,6 +114,13 @@ let counter_def = new_definition
 
 export_thm counter_def;;
 
+let counter_pulse_def = new_definition
+  `!ld nb dn.
+      counter_pulse ld nb dn <=>
+      ?ds. counter ld nb ds /\ pulse ds dn`;;
+
+export_thm counter_pulse_def;;
+
 (* ------------------------------------------------------------------------- *)
 (* Properties of hardware counter devices.                                   *)
 (* ------------------------------------------------------------------------- *)
@@ -3441,6 +3448,56 @@ let counter_signal = prove
 
 export_thm counter_signal;;
 
+let counter_pulse_signal = prove
+ (`!n ld nb dn t k.
+     (!i. i <= k + 1 ==> (signal ld (t + i) <=> i = 0)) /\
+     bits_to_num (bsignal nb t) + n + 2 = 2 EXP (width nb) + width nb /\
+     counter_pulse ld nb dn ==>
+     (signal dn (t + k + 1) <=> k = n)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [counter_pulse_def] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`ds : wire`;
+        `dn : wire`;
+        `t + k : cycle`]
+       pulse_signal) THEN
+  ASM_REWRITE_TAC [GSYM ADD_ASSOC] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  MP_TAC
+    (SPECL
+       [`n : num`;
+        `ld : wire`;
+        `nb : bus`;
+        `ds : wire`;
+        `t : cycle`;
+        `k : cycle`]
+       counter_signal) THEN
+  ANTS_TAC THENL
+  [ASM_REWRITE_TAC [] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `k : num` THEN
+   ASM_REWRITE_TAC [LE_ADD];
+   ALL_TAC] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  MP_TAC
+    (SPECL
+       [`n : num`;
+        `ld : wire`;
+        `nb : bus`;
+        `ds : wire`;
+        `t : cycle`;
+        `k + 1 : cycle`]
+       counter_signal) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [NOT_LT; GSYM ADD1; LT_SUC_LE; LE_ANTISYM]);;
+
+export_thm counter_pulse_signal;;
+
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing hardware.                                      *)
 (* ------------------------------------------------------------------------- *)
@@ -3449,15 +3506,16 @@ let bpipe_syn = [("pipeb",bpipe_def)];;
 
 let pipe_syn = setify (("pipe",pipe_def) :: bpipe_syn);;
 
-let counter_syn = setify (("counter",counter_def) :: badder2_syn);;
+let counter_syn = setify (("ctr",counter_def) :: badder2_syn);;
+
+let counter_pulse_syn =
+    setify (("ctrp",counter_pulse_def) :: pulse_syn @ counter_syn);;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing verified counter circuits.                     *)
 (* ------------------------------------------------------------------------- *)
 
-let mk_counter n =
-    let ld = `ld : wire` in
-    let dn = `dn : wire` in
+let mk_counter_arg n =
     let n2 = add_num n num_2 in
     let (m,r) =
         let r = bit_width_num n2 -/ num_1 in
@@ -3465,7 +3523,12 @@ let mk_counter n =
         if le_num n2 m then (m,r) else
         let rs = r +/ num_1 in
         (bit_shl_num num_1 rs +/ rs, rs) in
-    let nb = bits_to_bus (num_to_bits_bound r (m -/ n2)) in
+    bits_to_bus (num_to_bits_bound r (m -/ n2));;
+
+let mk_counter n =
+    let ld = `ld : wire` in
+    let nb = mk_counter_arg n in
+    let dn = `dn : wire` in
     let fvs = [`t : cycle`; `k : cycle`] in
     let th0 = SPECL ([mk_numeral n; ld; nb; dn] @ fvs) counter_signal in
     let th1 =
@@ -3499,10 +3562,10 @@ let mk_counter n =
     instantiate_hardware counter_syn primary th;;
 
 (*** Testing
-let counter91_thm = mk_counter (dest_numeral `91`);;
+let counter_91_thm = mk_counter (dest_numeral `91`);;
 let primary = [`clk : wire`; `ld : wire`; `dn : wire`];;
-output_string stdout (hardware_to_verilog "counter91" primary counter91_thm);;
-hardware_to_verilog_file "counter91" primary counter91_thm;;
+output_string stdout (hardware_to_verilog "counter_91" primary counter_91_thm);;
+hardware_to_verilog_file "counter_91" primary counter_91_thm;;
 ***)
 
 logfile_end ();;
