@@ -36,7 +36,7 @@ parse_as_binder "minimal";;
 (* The predecessor function.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-dest";;
+logfile "natural-dest-def";;
 
 let PRE =
     let def = new_recursive_definition num_RECURSION
