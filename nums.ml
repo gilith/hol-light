@@ -330,7 +330,7 @@ inductive_type_store :=
 (* "Bitwise" binary representation of numerals.                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-numeral";;
+logfile "natural-numeral-def";;
 
 let (BIT0_ZERO,BIT0_SUC) =
   let def = new_definition
