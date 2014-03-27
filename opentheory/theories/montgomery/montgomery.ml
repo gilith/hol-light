@@ -697,7 +697,7 @@ export_thm montgomery_mult_def;;
 (* --------------------------------------------------------------------- *)
 (* This circuit implements a controller with the following 4 states:     *)
 (* --------------------------------------------------------------------- *)
-(* (sa,sb)  description                                                  *)
+(* (sb,sa)  description                                                  *)
 (* --------------------------------------------------------------------- *)
 (* reset    The circuit assumes this state whenever ld is true.          *)
 (* (1,1)    In this state the internal register is loaded from the xs/xc *)
@@ -724,10 +724,11 @@ export_thm montgomery_mult_def;;
 
 (***
 let montgomery_repeat_square_def = new_definition
-  `!ld xs xc d0 ys yc d1 ks kc d2 ns nc jb d3 d4 rx ry rz zs zc.
+  `!ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc.
      montgomery_repeat_square
-       ld xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc <=>
-     ?r sa sar sb sbr sad sbd jp ps psq psr pc pcq pcr qs qc.
+       ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc <=>
+     ?r sa sb jp ps pc qs qc
+      dnn sad san sap saq sar sbd sbp sbq sbr jpn psq psr pcq pcr srd md mdn.
         width xs = r + 1 /\
         width xc = r + 1 /\
         width ks = r + 2 /\
@@ -740,9 +741,11 @@ let montgomery_repeat_square_def = new_definition
         width ys = r + 1 /\
         width yc = r + 1 /\
         width ps = r + 1 /\
+        width pc = r + 1 /\
+        width qs = r + 1 /\
+        width qc = r + 1 /\
         width psq = r + 1 /\
         width psr = r + 1 /\
-        width pc = r + 1 /\
         width pcq = r + 1 /\
         width pcr = r + 1
         /\
@@ -760,7 +763,17 @@ let montgomery_repeat_square_def = new_definition
         or2 sad sbd dnn /\
         not dnn dn /\
         bconnect ps ys /\
-        bconnect pc yc
+        bconnect pc yc /\
+        case1 sa ld saq sar /\
+        not jp jpn /\
+        not md mdn /\
+        not sa san /\
+        and2 sb jp sap /\
+        and2 san sap saq /\
+        or2 ld saq sar /\
+        and2 sa mdn sbp /\
+        case1 sb jpn sbp sbq /\
+        or2 ld sbq sbr
         /\
         delay sar sa /\
         delay sbr sb /\
@@ -3244,6 +3257,43 @@ let montgomery_mult_bits_to_num = prove
   ASM_REWRITE_TAC []);;
 
 export_thm montgomery_mult_bits_to_num;;
+
+(***
+let montgomery_repeat_square_bits_to_num = prove
+ (`!n r s k m x ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc t j.
+     width xs = r /\
+     ~(n = 0) /\
+     bit_width n <= r /\
+     2 EXP (r + 2) * s = k * n + 1 /\
+     d3 <= d0 + d1 + d2 + r + 1 /\
+     (!i. i <= d3 + d4 + j ==> (signal ld (t + i) <=> i <= d3 + d4)) /\
+     bits_to_num (bsignal mb t) + m = 2 EXP width mb /\
+     (bits_to_num (bsignal xs (t + d3 + d4)) +
+      2 * bits_to_num (bsignal xc (t + d3 + d4))) MOD n =
+     (x * 2 EXP (r + 2)) MOD n /\
+     (!i.
+        d0 + d1 <= i /\ i <= d0 + d1 + r + 1 ==>
+        bits_to_num (bsignal ks (t + i)) +
+        2 * bits_to_num (bsignal kc (t + i)) = k) /\
+     (!i.
+        d0 + d1 + d2 <= i /\ i <= d0 + d1 + d2 + r + 1 ==>
+        bits_to_num (bsignal ns (t + i)) +
+        2 * bits_to_num (bsignal nc (t + i)) = n) /\
+     bits_to_num (bsignal jb t) + d0 + d1 + d2 + r + 3 =
+     2 EXP width jb + width jb + d3 /\
+     bits_to_num (bsignal rx (t + d0 + d1 + d2 + d4 + r + 3)) =
+     (2 EXP r) MOD n /\
+     bits_to_num (bsignal ry (t + d0 + d1 + d2 + d4 + r + 3)) =
+     (2 * (2 EXP r)) MOD n /\
+     bits_to_num (bsignal rz (t + d0 + d1 + d2 + d4 + r + 3)) =
+     (3 * (2 EXP r)) MOD n /\
+     montgomery_repeat_square
+       ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc ==>
+     ?d.
+       (bits_to_num (bsignal ys (t + j)) +
+        2 * bits_to_num (bsignal yc (t + j))) MOD n =
+       (x EXP (2 EXP m) * (2 EXP (r + 2))) MOD n`,
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing hardware.                                      *)
