@@ -692,6 +692,84 @@ let montgomery_mult_def = new_definition
 
 export_thm montgomery_mult_def;;
 
+(* --------------------------------------------------------------------- *)
+(* Double exponentiation using Montgomery multiplication                 *)
+(* --------------------------------------------------------------------- *)
+(* This circuit implements a controller with the following 4 states:     *)
+(* --------------------------------------------------------------------- *)
+(* (sa,sb)  description                                                  *)
+(* --------------------------------------------------------------------- *)
+(* reset    The circuit assumes this state whenever ld is true.          *)
+(* (1,1)    In this state the internal register is loaded from the xs/xc *)
+(*          input wires, and both counters and the Montgomery multiplier *)
+(*          are reset.                                                   *)
+(*          When ld becomes false the state changes to compute.          *)
+(* --------------------------------------------------------------------- *)
+(* compute  In this state the Montgomery multiplier is computing with    *)
+(* (1,0)    both inputs wired to the internal register.                  *)
+(*          When the counter becomes true the state changes to round.    *)
+(* --------------------------------------------------------------------- *)
+(* round    This state lasts for one cycle, and in it the event counter  *)
+(* (0,1)    is incremented, the counter and Montgomery multiplier are    *)
+(*          reset, and the computed result is copied to the internal     *)
+(*          register.                                                    *)
+(*          On the next cycle the state either changes to compute (if    *)
+(*          the event counter is false) or done (if the event counter is *)
+(*          true).                                                       *)
+(* --------------------------------------------------------------------- *)
+(* done     In this state the dn output wire is set to true, and the     *)
+(* (0,0)    result can be read from the ys/yc output wires (which are    *)
+(*          wired to the internal register).                             *)
+(* --------------------------------------------------------------------- *)
+
+(***
+let montgomery_repeat_square_def = new_definition
+  `!ld xs xc d0 ys yc d1 ks kc d2 ns nc jb d3 d4 rx ry rz zs zc.
+     montgomery_repeat_square
+       ld xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc <=>
+     ?r sa sar sb sbr sad sbd jp ps psq psr pc pcq pcr qs qc.
+        width xs = r + 1 /\
+        width xc = r + 1 /\
+        width ks = r + 2 /\
+        width kc = r + 2 /\
+        width ns = r /\
+        width nc = r /\
+        width rx = r + 1 /\
+        width ry = r + 1 /\
+        width rz = r + 1 /\
+        width ys = r + 1 /\
+        width yc = r + 1 /\
+        width ps = r + 1 /\
+        width psq = r + 1 /\
+        width psr = r + 1 /\
+        width pc = r + 1 /\
+        width pcq = r + 1 /\
+        width pcr = r + 1
+        /\
+        pipe sa (d3 + d4) sad /\
+        pipe sb (d3 + d4) sbd /\
+        and2 sad sbd srd /\
+        event_counter srd mb sad md /\
+        counter_pulse sad jb jp /\
+        montgomery_mult
+          sad ps pc d0 ps pc d1 ks kc d2 ns nc jb d3 d4 rx ry rz qs qc /\
+        bcase1 sbd xs qs psq /\
+        bcase1 sad psq ps psr /\
+        bcase1 sbd xc qc pcq /\
+        bcase1 sad pcq pc pcr /\
+        or2 sad sbd dnn /\
+        not dnn dn /\
+        bconnect ps ys /\
+        bconnect pc yc
+        /\
+        delay sar sa /\
+        delay sbr sb /\
+        bdelay psr ps /\
+        bdelay pcr pc`;;
+
+export_thm montgomery_repeat_square_def;;
+***)
+
 (* ------------------------------------------------------------------------- *)
 (* Correctness of a Montgomery multiplication circuit.                       *)
 (* ------------------------------------------------------------------------- *)
