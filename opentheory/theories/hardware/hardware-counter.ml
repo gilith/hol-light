@@ -3506,6 +3506,8 @@ let bpipe_syn = [("pipeb",bpipe_def)];;
 
 let pipe_syn = setify (("pipe",pipe_def) :: bpipe_syn);;
 
+let event_counter_syn = setify (("ctre",event_counter_def) :: badder2_syn);;
+
 let counter_syn = setify (("ctr",counter_def) :: badder2_syn);;
 
 let counter_pulse_syn =
@@ -3514,6 +3516,11 @@ let counter_pulse_syn =
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing verified counter circuits.                     *)
 (* ------------------------------------------------------------------------- *)
+
+let mk_event_counter_arg n =
+    let r = bit_width_num n in
+    let m = bit_shl_num num_1 r in
+    bits_to_bus (num_to_bits_bound r (m -/ n));;
 
 let mk_counter_arg n =
     let n2 = add_num n num_2 in

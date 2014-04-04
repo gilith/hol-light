@@ -722,7 +722,6 @@ export_thm montgomery_mult_def;;
 (*          wired to the internal register).                             *)
 (* --------------------------------------------------------------------- *)
 
-(***
 let montgomery_repeat_square_def = new_definition
   `!ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc.
      montgomery_repeat_square
@@ -780,7 +779,6 @@ let montgomery_repeat_square_def = new_definition
         bdelay pcr pc`;;
 
 export_thm montgomery_repeat_square_def;;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Correctness of a Montgomery multiplication circuit.                       *)
@@ -3463,6 +3461,16 @@ let montgomery_mult_syn_gen n =
 
 let montgomery_mult_syn = montgomery_mult_syn_gen "multm";;
 
+let montgomery_repeat_square_syn_gen n =
+    setify
+      ((n,montgomery_repeat_square_def) ::
+       pipe_syn @
+       event_counter_syn @
+       counter_pulse_syn @
+       montgomery_mult_syn);;
+
+let montgomery_repeat_square_syn = montgomery_repeat_square_syn_gen "dexp2m";;
+
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing verified Montgomery multiplication circuits.   *)
 (* ------------------------------------------------------------------------- *)
@@ -3858,6 +3866,94 @@ let mk_montgomery_mult n =
     let primary = frees (concl th) in
     instantiate_hardware syn primary th;;
 
+let mk_montgomery_repeat_square m n =
+    let undisch_bind th =
+        let (tm,_) = dest_imp (concl th) in
+        (tm, UNDISCH th) in
+    let nn = mk_numeral n in
+    let r_th = bit_width_conv (mk_comb (`bit_width`,nn)) in
+    let rn = rand (concl r_th) in
+    let r = dest_numeral rn in
+    let (d0,d1,d2,d3,d4) =
+        let d = add_num (quo_num (bit_width_num r) num_2) num_1 in
+        (d,d,d,d,d) in
+    let d0n = mk_numeral d0 in
+    let d1n = mk_numeral d1 in
+    let d2n = mk_numeral d2 in
+    let d3n = mk_numeral d3 in
+    let d4n = mk_numeral d4 in
+    let ld = mk_var ("ld",wire_ty) in
+    let dn = mk_var ("dn",wire_ty) in
+    let xs = variable_bus "xs" r in
+    let xc = variable_bus "xc" r in
+    let ys = variable_bus "ys" r in
+    let yc = variable_bus "yc" r in
+    let egcd_th =
+        let rtm =
+            let tm0 = mk_comb (`(+) : num -> num -> num`, rn) in
+            mk_comb (`(EXP) 2`, mk_comb (tm0, `2`)) in
+        let rth = NUM_REDUCE_CONV rtm in
+        let eth = prove_egcd (rhs (concl rth)) nn in
+        CONV_RULE (LAND_CONV (REWR_CONV MULT_SYM THENC
+                              LAND_CONV (REWR_CONV (SYM rth)))) eth in
+    let sn = rand (lhs (concl egcd_th)) in
+    let kn = lhand (lhand (rhs (concl egcd_th))) in
+    let (ns,nc) =
+        let r1 = sub_num r num_1 in
+        let n1 = num_to_bits_bound r1 n in
+        let n2 = div_num (sub_num n (bits_to_num n1)) num_2 in
+        (bits_to_bus n1, bits_to_bus (num_to_bits_bound r1 n2)) in
+    let k = dest_numeral kn in
+    let (ks,kc) =
+        let r1 = add_num r num_1 in
+        let k1 = num_to_bits_bound r1 k in
+        let k2 = div_num (sub_num k (bits_to_num k1)) num_2 in
+        (bits_to_bus k1, bits_to_bus (num_to_bits_bound r1 k2)) in
+    let mb =
+        let m1 = sub_num m num_1 in
+        mk_event_counter_arg m1 in
+    let jb =
+        let jn = add_num d0 (add_num d1 (add_num d2 (add_num r num_1))) in
+        mk_counter_arg (sub_num jn d3) in
+    let rx_th =
+        let tm =
+            let tm0 = mk_comb (`(EXP) 2`, rn) in
+            list_mk_comb (`(MOD)`, [tm0; nn]) in
+        NUM_REDUCE_CONV tm in
+    let rx =
+        let n = dest_numeral (rhs (concl rx_th)) in
+        bits_to_bus (num_to_bits_bound r n) in
+    let ry_th =
+        let tm =
+            let tm0 = mk_comb (`(EXP) 2`, rn) in
+            let tm1 = mk_comb (`( * ) 2`, tm0) in
+            list_mk_comb (`(MOD)`, [tm1; nn]) in
+        NUM_REDUCE_CONV tm in
+    let ry =
+        let n = dest_numeral (rhs (concl ry_th)) in
+        bits_to_bus (num_to_bits_bound r n) in
+    let rz_th =
+        let tm =
+            let tm0 = mk_comb (`(EXP) 2`, rn) in
+            let tm1 = mk_comb (`( * ) 3`, tm0) in
+            list_mk_comb (`(MOD)`, [tm1; nn]) in
+        NUM_REDUCE_CONV tm in
+    let rz =
+        let n = dest_numeral (rhs (concl rz_th)) in
+        bits_to_bus (num_to_bits_bound r n) in
+    let fv_x = `x : num` in
+    let fv_y = `y : num` in
+    let fv_t = `t : cycle` in
+    let th0 =
+        (fun tm -> SPEC tm IMP_REFL)
+        (curry list_mk_comb `montgomery_repeat_square`
+          [ld; mb; xs; xc; d0n; d1n;
+           ks; kc; d2n; ns; nc; jb; d3n; d4n; rx; ry; rz; dn; ys; yc]) in
+    let (ckt,th) = undisch_bind th0 in
+    let syn = montgomery_repeat_square_syn_gen "" in
+    let primary = frees (concl th) in
+    instantiate_hardware syn primary th;;
+
 (*** Testing
 let montgomery_reduce_91_thm = mk_montgomery_mult_reduce (dest_numeral `91`);;
 let primary = `clk : wire` :: frees (concl montgomery_reduce_91_thm);;
@@ -3868,6 +3964,11 @@ let montgomery_91_thm = mk_montgomery_mult (dest_numeral `91`);;
 let primary = `clk : wire` :: frees (concl montgomery_91_thm);;
 output_string stdout (hardware_to_verilog "montgomery_91" primary montgomery_91_thm);;
 hardware_to_verilog_file "montgomery_91" primary montgomery_91_thm;;
+
+let double_exp_91_thm = mk_montgomery_repeat_square (dest_numeral `11`) (dest_numeral `91`);;
+let primary = `clk : wire` :: frees (concl double_exp_91_thm);;
+output_string stdout (hardware_to_verilog "double_exp_91" primary double_exp_91_thm);;
+hardware_to_verilog_file "double_exp_91" primary double_exp_91_thm;;
 ***)
 
 (* ------------------------------------------------------------------------- *)

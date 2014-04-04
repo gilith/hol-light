@@ -569,7 +569,19 @@ let wire_connect_prolog_rule =
        else failwith "wire_connect_prolog_rule");;
 
 let connect_prolog_rule =
-    orelse_prolog_rule connect_wire_prolog_rule wire_connect_prolog_rule;;
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let (x,y) = dest_connect tm in
+       let (w2,w1) =
+           if is_unfrozen_var namer x then
+             if is_unfrozen_var namer y then
+               let sx = dest_wire_var x in
+               let sy = dest_wire_var y in
+               if String.length sy < String.length sx then (y,x) else (x,y)
+             else (y,x)
+           else if is_unfrozen_var namer y then (x,y)
+           else  failwith "connect_prolog_rule" in
+       (SPEC w2 connect_refl, [(w2,w1)], namer));;
 
 let partition_primary primary th =
     let outputs = map rand (hyp th) in
