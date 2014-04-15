@@ -727,7 +727,8 @@ let montgomery_repeat_square_def = new_definition
      montgomery_repeat_square
        ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc <=>
      ?r sa sb jp ps pc qs qc
-      dnn sad san sap saq sar sbd sbp sbq sbr srd jpn psq psr pcq pcr md mdn.
+      sad sadd san sap saq sar sbd sbdd sbp sbq sbr srdd
+      jpn psq psr pcq pcr md mdn.
         width xs = r + 1 /\
         width xc = r + 1 /\
         width ks = r + 2 /\
@@ -758,18 +759,19 @@ let montgomery_repeat_square_def = new_definition
         case1 sb jpn sbp sbq /\
         or2 ld sbq sbr /\
         pipe sa (d3 + d4) sad /\
+        delay sad sadd /\
         pipe sb (d3 + d4) sbd /\
-        and2 sad sbd srd /\
-        event_counter srd mb sad md /\
-        counter_pulse sad jb jp /\
+        delay sbd sbdd /\
+        and2 sadd sbdd srdd /\
+        event_counter srdd mb sadd md /\
+        counter_pulse sadd jb jp /\
         montgomery_mult
-          sad ps pc d0 ps pc d1 ks kc d2 ns nc jb d3 d4 rx ry rz qs qc /\
+          sadd ps pc d0 ps pc d1 ks kc d2 ns nc jb d3 d4 rx ry rz qs qc /\
         bcase1 sbd xs qs psq /\
         bcase1 sad psq ps psr /\
         bcase1 sbd xc qc pcq /\
         bcase1 sad pcq pc pcr /\
-        or2 sad sbd dnn /\
-        not dnn dn /\
+        nor2 sadd sbdd dn /\
         bconnect ps ys /\
         bconnect pc yc
         /\
@@ -3297,7 +3299,7 @@ let montgomery_repeat_square_bits_to_num = prove
      ((x EXP (2 EXP m)) * (2 EXP (r + 2))) MOD n`,
   REPEAT GEN_TAC THEN
   SUBGOAL_THEN
-    `?d. (d0 + d1 + d2 + d4 + r + 3) * m = d`
+    `?d. (d0 + d1 + d2 + d4 + r + 4) * m = d`
     STRIP_ASSUME_TAC THENL
   [MATCH_ACCEPT_TAC EXISTS_REFL';
    ALL_TAC] THEN
@@ -3421,6 +3423,15 @@ let montgomery_repeat_square_bits_to_num = prove
          or2_signal) THEN
     ASM_REWRITE_TAC [] THEN
     DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+    UNDISCH_THEN
+      `!i. i <= l + d + SUC j ==> (signal ld (t + i) <=> i <= l)`
+      (MP_TAC o SPEC `d + j : cycle`) THEN
+    ANTS_TAC THENL
+    [REWRITE_TAC [ADD_SUC] THEN
+     REWRITE_TAC [GSYM SUC_ADD; LE_ADDR];
+     ALL_TAC] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [DE_MORGAN_THM; NOT_LE]
 
 
 ***)

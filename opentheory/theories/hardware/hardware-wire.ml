@@ -73,6 +73,13 @@ let pulse_def = new_definition
 
 export_thm pulse_def;;
 
+let nor2_def = new_definition
+  `!x y z.
+     nor2 x y z <=>
+     ?zn. or2 x y zn /\ not zn z`;;
+
+export_thm nor2_def;;
+
 let and3_def = new_definition
   `!w x y z.
      and3 w x y z <=>
@@ -497,6 +504,41 @@ let pulse_exists = prove
   ASM_REWRITE_TAC []);;
 
 export_thm pulse_exists;;
+
+let nor2_signal = prove
+ (`!x y z t.
+     nor2 x y z ==>
+     signal z t = (~signal x t /\ ~signal y t)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [nor2_def] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`zn : wire`; `z : wire`; `t : cycle`]
+       not_signal) THEN
+  FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
+  MP_TAC
+    (SPECL
+       [`x : wire`; `y : wire`; `zn : wire`; `t : cycle`]
+       or2_signal) THEN
+  FIRST_X_ASSUM (fun th -> ANTS_TAC THENL [ACCEPT_TAC th; STRIP_TAC]) THEN
+  ASM_REWRITE_TAC [DE_MORGAN_THM]);;
+
+export_thm nor2_signal;;
+
+let nor2_exists = prove
+ (`!x y. ?z. nor2 x y z`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [nor2_def] THEN
+  X_CHOOSE_THEN `zn : wire` STRIP_ASSUME_TAC
+    (SPECL [`x : wire`; `y : wire`] or2_exists) THEN
+  X_CHOOSE_THEN `z : wire` STRIP_ASSUME_TAC
+    (SPECL [`zn : wire`] not_exists) THEN
+  EXISTS_TAC `z : wire` THEN
+  EXISTS_TAC `zn : wire` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm nor2_exists;;
 
 let and3_signal = prove
  (`!w x y z t.
