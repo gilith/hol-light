@@ -607,11 +607,7 @@ let rescue_primary_outputs_prolog_rule =
      (conv_prolog_rule (ONCE_DEPTH_CONV (FIRST_CONV convs)), namer);;
 
 let rescue_primary_outputs =
-    let cleanup_rule =
-        try_prolog_rule
-          (first_prolog_rule
-             [subst_var_prolog_rule;
-              connect_wire_prolog_rule]) in
+    let cleanup_rule = try_prolog_rule connect_wire_prolog_rule in
     fun primary_outputs -> fun th -> fun namer ->
     if length primary_outputs = 0 then (th,namer) else
     let (rescue_rule,namer) =
@@ -634,7 +630,16 @@ let merge_logic =
           let pred h = rator h = f in
           match filter pred asms with
             [] -> merge_asms th asms
-          | h :: _ -> merge_thm (INST [sort_wires w (rand h)] th)
+          | h :: _ ->
+            let w' = rand h in
+(* Debugging
+*)
+            let () =
+                let msg =
+                    "Merging wires " ^ string_of_term w ^
+                    " and " ^ string_of_term w' ^ "\n" in
+                    print_string msg in
+                merge_thm (INST [sort_wires w w'] th)
     and merge_thm th = merge_asms th (hyp th) in
     merge_thm;;
 
@@ -1067,7 +1072,19 @@ let verilog_wire_names =
     let ws' = map verilog_wire ws in
     let () =
         if length (setify ws') = length ws' then () else
-        failwith "verilog_wire_names: collision" in
+        let f w ws =
+            let w' = verilog_wire w in
+            match filter (fun (_,y) -> y = w') ws with
+              [] -> (w,w') :: ws
+            | (x,_) :: _ ->
+              let msg =
+                  "verilog_wire_names: different wire names:\n  " ^
+                  dest_wire_var x ^ "\n  " ^ dest_wire_var w ^
+                  "map to the same verilog wire name:\n  " ^
+                  dest_wire_var w' in
+              failwith msg in
+        let _ = itlist f ws [] in
+        failwith "verilog_wire_names: bug" in
     let sub = filter (fun (w',w) -> w' <> w) (zip ws' ws) in
     INST sub th;;
 

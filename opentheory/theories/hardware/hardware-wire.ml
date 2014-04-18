@@ -945,6 +945,8 @@ let is_case1 = can dest_case1;;
 
 let pulse_syn = [("pulse",pulse_def)];;
 
+let nor2_syn = [("nor2",nor2_def)];;
+
 let and3_syn = [("and3",and3_def)];;
 
 let or3_syn = [("or3",or3_def)];;

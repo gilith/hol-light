@@ -194,11 +194,13 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   reg pipe0_x1;
   reg pipe0_x2;
   reg pipe0_x3;
+  reg pipe0_x4;
   reg pipe1_x0;
   reg pipe1_x1;
   reg pipe1_x2;
   reg pipe1_x3;
   reg pipe1_x4;
+  reg sbdd;
   reg yc0_o;
   reg yc1_o;
   reg yc2_o;
@@ -251,7 +253,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire ctrp_ds;
   wire ctrp_pulse_xn;
   wire dn_o;
-  wire dnn;
   wire jp;
   wire jpn;
   wire md;
@@ -670,6 +671,7 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire multm_reduce_vs5;
   wire multm_reduce_vt;
   wire multm_xn;
+  wire nor2_zn;
   wire pcq0;
   wire pcq1;
   wire pcq2;
@@ -719,7 +721,7 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire sbp;
   wire sbq;
   wire sbr;
-  wire srd;
+  wire srdd;
 
   assign ctre_cq0 = multm_reduce_mulsc_pipe1_x0 & ctre_sp0;
   assign ctre_cq1 = ctre_sp1 & ctre_cp0;
@@ -735,10 +737,10 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign ctre_sq2 = ctre_sp2 ^ ctre_cp1;
   assign ctre_sq3 = ctre_sp3 ^ ctre_cp2;
   assign ctre_sr0 = ctre_xn & ctre_sq0;
-  assign ctre_sr1 = srd | ctre_sq1;
-  assign ctre_sr2 = srd | ctre_sq2;
+  assign ctre_sr1 = srdd | ctre_sq1;
+  assign ctre_sr2 = srdd | ctre_sq2;
   assign ctre_sr3 = ctre_xn & ctre_sq3;
-  assign ctre_xn = ~srd;
+  assign ctre_xn = ~srdd;
   assign ctrp_ctr_cq0 = ~ctrp_ctr_cp0;
   assign ctrp_ctr_cq1 = ctrp_ctr_sp0 & ctrp_ctr_cp0;
   assign ctrp_ctr_cq2 = ctrp_ctr_sp1 & ctrp_ctr_cp1;
@@ -757,8 +759,7 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign ctrp_ctr_xn = ~multm_reduce_mulsc_pipe1_x0;
   assign ctrp_ds = ctrp_ctr_xn & ctrp_ctr_dq;
   assign ctrp_pulse_xn = ~ctrp_ctr_dp;
-  assign dn_o = ~dnn;
-  assign dnn = multm_reduce_mulsc_pipe1_x0 | pipe1_x4;
+  assign dn_o = ~nor2_zn;
   assign jp = ctrp_ds & ctrp_pulse_xn;
   assign jpn = ~jp;
   assign md = ctre_xn & ctre_dq;
@@ -1177,6 +1178,7 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_reduce_vs5 = multm_reduce_mulb1_add3_xor3_wx ^ multm_reduce_mulb1_pc5;
   assign multm_reduce_vt = multm_reduce_vb | multm_reduce_sticky_q;
   assign multm_xn = ~multm_pipe_x2;
+  assign nor2_zn = multm_reduce_mulsc_pipe1_x0 | sbdd;
   assign pcq0 = pipe1_x4 ? xc[0] : qc0;
   assign pcq1 = pipe1_x4 ? xc[1] : qc1;
   assign pcq2 = pipe1_x4 ? xc[2] : qc2;
@@ -1184,13 +1186,13 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign pcq4 = pipe1_x4 ? xc[4] : qc4;
   assign pcq5 = pipe1_x4 ? xc[5] : qc5;
   assign pcq6 = pipe1_x4 ? xc[6] : qc6;
-  assign pcr0 = multm_reduce_mulsc_pipe1_x0 ? pcq0 : yc0_o;
-  assign pcr1 = multm_reduce_mulsc_pipe1_x0 ? pcq1 : yc1_o;
-  assign pcr2 = multm_reduce_mulsc_pipe1_x0 ? pcq2 : yc2_o;
-  assign pcr3 = multm_reduce_mulsc_pipe1_x0 ? pcq3 : yc3_o;
-  assign pcr4 = multm_reduce_mulsc_pipe1_x0 ? pcq4 : yc4_o;
-  assign pcr5 = multm_reduce_mulsc_pipe1_x0 ? pcq5 : yc5_o;
-  assign pcr6 = multm_reduce_mulsc_pipe1_x0 ? pcq6 : yc6_o;
+  assign pcr0 = pipe0_x4 ? pcq0 : yc0_o;
+  assign pcr1 = pipe0_x4 ? pcq1 : yc1_o;
+  assign pcr2 = pipe0_x4 ? pcq2 : yc2_o;
+  assign pcr3 = pipe0_x4 ? pcq3 : yc3_o;
+  assign pcr4 = pipe0_x4 ? pcq4 : yc4_o;
+  assign pcr5 = pipe0_x4 ? pcq5 : yc5_o;
+  assign pcr6 = pipe0_x4 ? pcq6 : yc6_o;
   assign psq0 = pipe1_x4 ? xs[0] : qs0;
   assign psq1 = pipe1_x4 ? xs[1] : qs1;
   assign psq2 = pipe1_x4 ? xs[2] : qs2;
@@ -1198,13 +1200,13 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign psq4 = pipe1_x4 ? xs[4] : qs4;
   assign psq5 = pipe1_x4 ? xs[5] : qs5;
   assign psq6 = pipe1_x4 ? xs[6] : qs6;
-  assign psr0 = multm_reduce_mulsc_pipe1_x0 ? psq0 : ys0_o;
-  assign psr1 = multm_reduce_mulsc_pipe1_x0 ? psq1 : ys1_o;
-  assign psr2 = multm_reduce_mulsc_pipe1_x0 ? psq2 : ys2_o;
-  assign psr3 = multm_reduce_mulsc_pipe1_x0 ? psq3 : ys3_o;
-  assign psr4 = multm_reduce_mulsc_pipe1_x0 ? psq4 : ys4_o;
-  assign psr5 = multm_reduce_mulsc_pipe1_x0 ? psq5 : ys5_o;
-  assign psr6 = multm_reduce_mulsc_pipe1_x0 ? psq6 : ys6_o;
+  assign psr0 = pipe0_x4 ? psq0 : ys0_o;
+  assign psr1 = pipe0_x4 ? psq1 : ys1_o;
+  assign psr2 = pipe0_x4 ? psq2 : ys2_o;
+  assign psr3 = pipe0_x4 ? psq3 : ys3_o;
+  assign psr4 = pipe0_x4 ? psq4 : ys4_o;
+  assign psr5 = pipe0_x4 ? psq5 : ys5_o;
+  assign psr6 = pipe0_x4 ? psq6 : ys6_o;
   assign qc0 = multm_qsp0 & multm_compress_rn0;
   assign qc1 = multm_compress_add3b_maj3b_or3b_wx0 | multm_compress_add3b_maj3b_xy0;
   assign qc2 = multm_compress_add3b_maj3b_or3b_wx1 | multm_compress_add3b_maj3b_xy1;
@@ -1226,7 +1228,7 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign sbp = pipe0_x0 & mdn;
   assign sbq = pipe1_x0 ? jpn : sbp;
   assign sbr = ld | sbq;
-  assign srd = multm_reduce_mulsc_pipe1_x0 & pipe1_x4;
+  assign srdd = multm_reduce_mulsc_pipe1_x0 & sbdd;
   assign dn = dn_o;
   assign ys[0] = ys0_o;
   assign ys[1] = ys1_o;
@@ -1315,7 +1317,7 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
       multm_reduce_mulsc_mulb_sp6 <= multm_reduce_ps6;
       multm_reduce_mulsc_pipe0_x1 <= multm_reduce_mulsc_pipe0_x0;
       multm_reduce_mulsc_pipe0_x2 <= multm_reduce_mulsc_pipe0_x1;
-      multm_reduce_mulsc_pipe1_x0 <= pipe0_x3;
+      multm_reduce_mulsc_pipe1_x0 <= pipe0_x4;
       multm_reduce_mulsc_shrsc_cp0 <= multm_reduce_mulsc_shrsc_cr0;
       multm_reduce_mulsc_shrsc_cp1 <= multm_reduce_mulsc_shrsc_cr1;
       multm_reduce_mulsc_shrsc_cp2 <= multm_reduce_mulsc_shrsc_cr2;
@@ -1367,11 +1369,13 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
       pipe0_x1 <= pipe0_x0;
       pipe0_x2 <= pipe0_x1;
       pipe0_x3 <= pipe0_x2;
+      pipe0_x4 <= pipe0_x3;
       pipe1_x0 <= sbr;
       pipe1_x1 <= pipe1_x0;
       pipe1_x2 <= pipe1_x1;
       pipe1_x3 <= pipe1_x2;
       pipe1_x4 <= pipe1_x3;
+      sbdd <= pipe1_x4;
       yc0_o <= pcr0;
       yc1_o <= pcr1;
       yc2_o <= pcr2;
@@ -1393,15 +1397,15 @@ endmodule // double_exp_91
 /*----------------------------------------------------------------------------+
 | Primary inputs: 15                                                          |
 | Primary outputs: 15                                                         |
-| Delays: 141                                                                 |
+| Delays: 143                                                                 |
 | Gates: 506                                                                  |
 | Fan-in: 25%=2 50%=4 75%=6 90%=8 95%=9 99%=9 max=9 (multm_qcp5)              |
 | Fan-in cone: 25%=1 50%=3 75%=9 90%=13 95%=17 99%=20                         |
 |   max=20 (multm_reduce_sb1)                                                 |
-| Fan-out: 25%=2 50%=3 75%=5 90%=7 95%=14 99%=18                              |
-|   max=58 (multm_reduce_mulsc_pipe1_x0)                                      |
+| Fan-out: 25%=2 50%=3 75%=5 90%=8 95%=14 99%=16                              |
+|   max=44 (multm_reduce_mulsc_pipe1_x0)                                      |
 | Fan-out load: 25%=2 50%=3 75%=4 90%=6 95%=7 99%=8 max=8 (multm_reduce_sa5)  |
-| Duplication: 25%=1 50%=1 75%=1 90%=1 95%=3 99%=4                            |
-|   max=13 (multm_reduce_mulsc_pipe1_x0)                                      |
+| Duplication: 25%=1 50%=1 75%=1 90%=1 95%=3 99%=5                            |
+|   max=10 (multm_reduce_mulsc_pipe1_x0)                                      |
 +----------------------------------------------------------------------------*/
 
