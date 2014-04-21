@@ -24,6 +24,10 @@ let find_max cmp =
       [] -> failwith "find_max: empty list"
     | x :: xs -> itlist f xs x;;
 
+let disjoint xs =
+    let notmem x = not (mem x xs) in
+    forall notmem;;
+
 let translate f s =
     let rec tr acc i =
         if i = 0 then String.concat "" acc else
@@ -115,10 +119,10 @@ let narrow_scope s namer =
 
 type prolog_rule =
      Prolog_rule of
-       (term -> namer -> thm * (term * term) list * namer);;
+       (term -> namer -> term list * thm * (term * term) list * namer);;
 
 let all_prolog_rule =
-    Prolog_rule (fun tm -> fun namer -> (ASSUME tm, [], namer));;
+    Prolog_rule (fun tm -> fun namer -> ([tm], ASSUME tm, [], namer));;
 
 let no_prolog_rule =
     Prolog_rule (fun _ -> fun _ -> failwith "no_prolog_rule");;
@@ -148,51 +152,70 @@ let first_prolog_rule =
     first;;
 
 let prove_hyp_prolog_rule pr =
-    let rec prolog_asms th sub namer asms =
-        match asms with
-          [] -> (th,sub,namer)
-        | asm :: asms ->
-          let asm = vsubst sub asm in
-          let (asm_th,asm_sub,asm_namer) = apply_prolog_rule pr asm namer in
-          let th = PROVE_HYP asm_th (INST asm_sub th) in
-          let sub = compose_subst sub asm_sub in
-          let namer = reset_scope (current_scope namer) asm_namer in
-          prolog_asms th sub namer asms in
-    fun th -> fun namer -> prolog_asms th [] namer (hyp th);;
+    let rec finalize_asms acc sub asmsl =
+        match asmsl with
+          [] -> acc
+        | (gasms,gsub) :: asmsl ->
+          let acc = map (vsubst sub) gasms @ acc in
+          let sub = compose_subst gsub sub in
+          finalize_asms acc sub asmsl in
+    let rec prolog_asms asmsl th sub namer goals =
+        match goals with
+          [] -> (finalize_asms [] [] asmsl, th, sub, namer)
+        | goal :: goals ->
+          let goal = vsubst sub goal in
+          let (gasms,gth,gsub,gnamer) = apply_prolog_rule pr goal namer in
+          let asmsl = (gasms,gsub) :: asmsl in
+          let th = PROVE_HYP gth (INST gsub th) in
+          let sub = compose_subst sub gsub in
+          let namer = reset_scope (current_scope namer) gnamer in
+          prolog_asms asmsl th sub namer goals in
+    fun asms -> fun th -> fun namer -> prolog_asms [] th [] namer asms;;
 
 let then_prolog_rule pr1 pr2 =
     Prolog_rule
       (fun tm -> fun namer0 ->
-       let (th,sub1,namer) = apply_prolog_rule pr1 tm namer0 in
-       let (th,sub2,namer) = prove_hyp_prolog_rule pr2 th namer in
+       let (asms,th,sub1,namer) = apply_prolog_rule pr1 tm namer0 in
+       let (asms,th,sub2,namer) = prove_hyp_prolog_rule pr2 asms th namer in
        let sub = compose_subst sub1 sub2 in
        let namer = reset_scope (current_scope namer0) namer in
-       (th,sub,namer));;
+       (asms,th,sub,namer));;
 
 let repeat_prove_hyp_prolog_rule pr =
-    let rec prolog_asms fvs th sub namer asms =
-        match asms with
-          [] -> (th,sub,namer)
-        | asm :: asms ->
-          let asm = vsubst sub asm in
-          let (asm_th,asm_sub,asm_namer) = apply_prolog_rule pr asm namer in
-          let th = PROVE_HYP asm_th (INST asm_sub th) in
-          let sub = compose_subst sub asm_sub in
-          let namer = reset_scope (current_scope namer) asm_namer in
-          if length (intersect (map snd asm_sub) fvs) = 0 then
-            prolog_asms (union (frees asm) fvs) th sub namer asms
+    let rec finalize_asms acc asmsl =
+        match asmsl with
+          [] -> acc
+        | (asms,_) :: asmsl ->
+          let acc = asms @ acc in
+          finalize_asms acc asmsl in
+    let rec prolog_asms fvs asmsl th sub namer goals =
+        match goals with
+          [] -> (finalize_asms [] asmsl, th, sub, namer)
+        | goal :: goals ->
+          let goal = vsubst sub goal in
+          let (gasms,gth,gsub,gnamer) = apply_prolog_rule pr goal namer in
+          let gsubdom = map snd gsub in
+          if disjoint gsubdom fvs then
+            let asmsl = (gasms,fvs) :: asmsl in
+            let fvs = union fvs (freesl gasms) in
+            let th = PROVE_HYP gth (INST gsub th) in
+            let sub = compose_subst sub gsub in
+            let namer = reset_scope (current_scope namer) gnamer in
+            prolog_asms fvs asmsl th sub namer goals
           else
-            prolog_asms [] th sub namer (hyp th) in
-     fun th -> fun namer -> prolog_asms [] th [] namer (hyp th);;
+            let (fvs,asmsl,...) = rollback ... in
+            prolog_asms fvs asmsl th sub namer goals in
+    fun asms -> fun th -> fun namer -> prolog_asms [] [] th [] namer asms;;
 
 let then_repeat_prolog_rule pr1 pr2 =
     Prolog_rule
       (fun tm -> fun namer0 ->
-       let (th,sub1,namer) = apply_prolog_rule pr1 tm namer0 in
-       let (th,sub2,namer) = repeat_prove_hyp_prolog_rule pr2 th namer in
+       let (asms,th,sub1,namer) = apply_prolog_rule pr1 tm namer0 in
+       let (asms,th,sub2,namer) =
+           repeat_prove_hyp_prolog_rule pr2 asms th namer in
        let sub = compose_subst sub1 sub2 in
        let namer = reset_scope (current_scope namer0) namer in
-       (th,sub,namer));;
+       (asms,th,sub,namer));;
 
 let rec repeat_prolog_rule pr =
     Prolog_rule
@@ -797,19 +820,23 @@ let instantiate_hardware =
          xor2_left_power; xor2_right_power;
          case1_middle_ground; case1_right_ground;
          case1_middle_power] in
-    fun ths ->
-    let user_rules = map (uncurry scope_thm_prolog_rule) ths in
+    fun syn ->
+    let user_rules = map (uncurry scope_thm_prolog_rule) syn in
     let rule = first_prolog_rule (basic_rules @ user_rules) in
     let instantiate = repeat_prove_hyp_prolog_rule (repeat_prolog_rule rule) in
     fun primary -> fun th ->
     let namer = new_namer primary in
     let (th,_,namer) = instantiate th namer in
+(***
     let (primary_inputs,primary_outputs) = partition_primary primary th in
     let (th,namer) = rescue_primary_outputs primary_outputs th namer in
     let th = merge_logic th in
     let th = delete_dead_logic primary_inputs primary_outputs th in
     let th = rename_wires primary th in
+***)
     th;;
+
+instantiate_hardware pipe_syn [] (ASSUME `pipe a 3 b`);;
 
 (*** Testing
 instantiate_hardware counter_syn (frees (concl counter91_thm)) counter91_thm;;

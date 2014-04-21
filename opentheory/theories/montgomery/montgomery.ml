@@ -3971,7 +3971,7 @@ let mk_montgomery_repeat_square m n =
     let (ckt,th) = undisch_bind th0 in
     let syn = montgomery_repeat_square_syn_gen "" in
     let primary = frees (concl th) in
-    instantiate_hardware syn primary th;;
+    (***instantiate_hardware syn primary***) th;;
 
 (*** Testing
 let montgomery_reduce_91_thm = mk_montgomery_mult_reduce (dest_numeral `91`);;
