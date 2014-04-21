@@ -1260,7 +1260,7 @@ let hardware_to_verilog =
             let s = hardware_profile_to_string th in
             let () = set_margin n in
             s in
-        "\n" ^ comment_box_text prof ^ "\n" in
+        "\n" ^ comment_box_text prof in
     fun name -> fun primary -> fun th ->
     let th = verilog_wire_names primary th in
     let (delays,combs) = partition is_delay (hyp th) in

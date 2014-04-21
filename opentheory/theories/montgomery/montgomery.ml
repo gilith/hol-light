@@ -771,7 +771,7 @@ let montgomery_repeat_square_def = new_definition
         bcase1 sad psq ps psr /\
         bcase1 sbd xc qc pcq /\
         bcase1 sad pcq pc pcr /\
-        nor2 sadd sbdd dn /\
+        nor2 sad sbd dn /\
         bconnect ps ys /\
         bconnect pc yc
         /\
@@ -3348,6 +3348,21 @@ let montgomery_repeat_square_bits_to_num = prove
   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
   MP_TAC
     (SPECL
+       [`ps : bus`;
+        `ys : bus`]
+       bconnect_bsignal) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  MP_TAC
+    (SPECL
+       [`pc : bus`;
+        `yc : bus`]
+       bconnect_bsignal) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+
+  MP_TAC
+    (SPECL
        [`sa : wire`;
         `d3 + d4 : cycle`;
         `sad : wire`]
@@ -3360,20 +3375,6 @@ let montgomery_repeat_square_bits_to_num = prove
         `d3 + d4 : cycle`;
         `sbd : wire`]
        pipe_signal) THEN
-  ASM_REWRITE_TAC [] THEN
-  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-  MP_TAC
-    (SPECL
-       [`ps : bus`;
-        `ys : bus`]
-       bconnect_bsignal) THEN
-  ASM_REWRITE_TAC [] THEN
-  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-  MP_TAC
-    (SPECL
-       [`pc : bus`;
-        `yc : bus`]
-       bconnect_bsignal) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
   UNDISCH_TAC `!i. i <= l + d + j ==> (signal ld (t + i) <=> i <= l)` THEN

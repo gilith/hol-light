@@ -8,8 +8,8 @@ module main;
    reg [0:6] xc;
    wire sa;
    wire sb;
-   wire [6:0] ps;
-   wire [6:0] pc;
+   wire [6:0] qs;
+   wire [6:0] qc;
    wire dn;
    wire [0:6] ys;
    wire [0:6] yc;
@@ -30,22 +30,22 @@ module main;
       .ys (ys),
       .yc (yc));
 
-   assign sa = root.pipe0_x0;
-   assign sb = root.pipe1_x0;
-   assign ps[0] = root.qs0;
-   assign ps[1] = root.qs1;
-   assign ps[2] = root.qs2;
-   assign ps[3] = root.qs3;
-   assign ps[4] = root.qs4;
-   assign ps[5] = root.qs5;
-   assign ps[6] = root.qs6;
-   assign pc[0] = root.qc0;
-   assign pc[1] = root.qc1;
-   assign pc[2] = root.qc2;
-   assign pc[3] = root.qc3;
-   assign pc[4] = root.qc4;
-   assign pc[5] = root.qc5;
-   assign pc[6] = root.qc6;
+   assign sa = root.sa;
+   assign sb = root.sb;
+   assign qs[0] = root.qs0;
+   assign qs[1] = root.qs1;
+   assign qs[2] = root.qs2;
+   assign qs[3] = root.qs3;
+   assign qs[4] = root.qs4;
+   assign qs[5] = root.qs5;
+   assign qs[6] = root.qs6;
+   assign qc[0] = root.qc0;
+   assign qc[1] = root.qc1;
+   assign qc[2] = root.qc2;
+   assign qc[3] = root.qc3;
+   assign qc[4] = root.qc4;
+   assign qc[5] = root.qc5;
+   assign qc[6] = root.qc6;
 
    initial
      begin
@@ -59,7 +59,7 @@ module main;
         $display("|   t | ld |  xs |  xc | state |  qs |  qc | dn |  ys |  yc |");
         $display("+-----+----+-----+-----+-------+-----+-----+----+-----+-----+");
         $monitor("| %d |  %b | %d | %d | (%b,%b) | %d | %d |  %b | %d | %d |",
-                  t, ld, xs, xc, sb, sa, ps, pc, dn, ys, yc);
+                  t, ld, xs, xc, sb, sa, qs, qc, dn, ys, yc);
         clk = 1'b0;
         repeat(10) @(posedge clk);
         @(posedge clk);
@@ -82,16 +82,15 @@ module main;
         repeat(3) @(posedge clk);
         $monitoroff;
         @(posedge clk);
-        spec = x % 91;
+        spec = (x * 8) % 91;
         repeat(11) spec = (spec * spec) % 91;
-        spec = (spec * 8) % 91;
-        ckt = y % 91;
+        ckt = (y * 8) % 91;
         $display("+-----+----+-----+-----+-------+-----+-----+----+-----+-----+");
         $display("");
         $display("Inputs: x = %0d", x);
         $display("Outputs: y = %0d", y);
-        $display("Spec: (x^2^11 * 8) %% 91 = %0d", spec);
-        $display("Circuit: y %% 91         = %0d", ckt);
+        $display("Spec: ((x * 8) ^ 2 ^ 11) %% 91 = %0d", spec);
+        $display("Circuit: (y * 8) %% 91         = %0d", ckt);
         if (ckt == spec)
           begin
              $display("TEST PASSED: Circuit computed the correct result");
