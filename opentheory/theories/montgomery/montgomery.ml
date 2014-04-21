@@ -3495,9 +3495,6 @@ let montgomery_repeat_square_syn = montgomery_repeat_square_syn_gen "dexp2m";;
 (* ------------------------------------------------------------------------- *)
 
 let mk_montgomery_mult_reduce n =
-    let undisch_bind th =
-        let (tm,_) = dest_imp (concl th) in
-        (tm, UNDISCH th) in
     let nn = mk_numeral n in
     let r_th = bit_width_conv (mk_comb (`bit_width`,nn)) in
     let rn = rand (concl r_th) in
@@ -3645,9 +3642,6 @@ let mk_montgomery_mult_reduce n =
     instantiate_hardware syn primary th;;
 
 let mk_montgomery_mult n =
-    let undisch_bind th =
-        let (tm,_) = dest_imp (concl th) in
-        (tm, UNDISCH th) in
     let nn = mk_numeral n in
     let r_th = bit_width_conv (mk_comb (`bit_width`,nn)) in
     let rn = rand (concl r_th) in
@@ -3886,9 +3880,6 @@ let mk_montgomery_mult n =
     instantiate_hardware syn primary th;;
 
 let mk_montgomery_repeat_square m n =
-    let undisch_bind th =
-        let (tm,_) = dest_imp (concl th) in
-        (tm, UNDISCH th) in
     let nn = mk_numeral n in
     let r_th = bit_width_conv (mk_comb (`bit_width`,nn)) in
     let rn = rand (concl r_th) in
@@ -3971,7 +3962,7 @@ let mk_montgomery_repeat_square m n =
     let (ckt,th) = undisch_bind th0 in
     let syn = montgomery_repeat_square_syn_gen "" in
     let primary = frees (concl th) in
-    (***instantiate_hardware syn primary***) th;;
+    instantiate_hardware syn primary th;;
 
 (*** Testing
 let montgomery_reduce_91_thm = mk_montgomery_mult_reduce (dest_numeral `91`);;
