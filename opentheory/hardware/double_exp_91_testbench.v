@@ -14,6 +14,8 @@ module main;
    wire [0:6] ys;
    wire [0:6] yc;
 
+   reg too_early;
+   reg on_time;
    integer x;
    integer y;
    integer spec;
@@ -66,19 +68,27 @@ module main;
         // Time 0
         t = 8'h00;
         ld = 1'b1;
-        repeat(10) @(posedge clk);
-        // Time ??
+        repeat(6) @(posedge clk);
+        // Time 6
         ld = 1'b0;
+        repeat(4) @(posedge clk);
+        // Time 10
         xs = $random(seed);
         xc = $random(seed);
         x = xs + 2 * xc;
-        repeat(10) @(posedge clk);
-        // Time ??
+        @(posedge clk);
+        // Time 11
         xs = 7'bx;
         xc = 7'bx;
-        @(posedge dn);
-        // Time ??
-        #1 y = ys + 2 * yc;
+        repeat(205) @(posedge clk);
+        // Time 216
+        ld = 1'bx;
+        repeat(3) @(posedge clk);
+        // Time 219
+        #1 too_early = dn;
+        @(posedge clk);
+        // Time 220
+        #1 on_time = dn; y = ys + 2 * yc;
         repeat(3) @(posedge clk);
         $monitoroff;
         @(posedge clk);
@@ -91,13 +101,27 @@ module main;
         $display("Outputs: y = %0d", y);
         $display("Spec: ((x * 8) ^ 2 ^ 11) %% 91 = %0d", spec);
         $display("Circuit: (y * 8) %% 91         = %0d", ckt);
-        if (ckt == spec)
+        if (on_time)
           begin
-             $display("TEST PASSED: Circuit computed the correct result");
+             if (!too_early)
+               begin
+                  if (ckt == spec)
+                    begin
+                       $display("TEST PASSED: Circuit computed the correct result");
+                    end
+                  else
+                    begin
+                       $display("TEST FAILED: Circuit computed an incorrect result");
+                    end
+               end
+             else
+               begin
+                  $display("TEST FAILED: dn asserted too early");
+               end
           end
         else
           begin
-             $display("TEST FAILED: Circuit computed an incorrect result");
+             $display("TEST FAILED: dn not asserted on time");
           end
         $display("");
         $display("Test complete at time %0t.", $time);

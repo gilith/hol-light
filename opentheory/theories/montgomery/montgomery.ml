@@ -3267,10 +3267,10 @@ let montgomery_repeat_square_bits_to_num = prove
      2 EXP (r + 2) * s = k * n + 1 /\
      d3 <= d0 + d1 + d2 + r + 1 /\
      d3 + d4 + 1 = l /\
-     (!i. i <= d + j ==> (signal ld (t + i) <=> i < l)) /\
+     (!i. i <= d + j ==> (signal ld (t + i) <=> i <= l)) /\
      bits_to_num (bsignal mb (t + l)) + m = 2 EXP width mb /\
-     (bits_to_num (bsignal xs (t + l)) +
-      2 * bits_to_num (bsignal xc (t + l))) MOD n =
+     (bits_to_num (bsignal xs (t + l + l)) +
+      2 * bits_to_num (bsignal xc (t + l + l))) MOD n =
      (x * 2 EXP (r + 2)) MOD n /\
      (!i.
         i <= d ==>
@@ -3299,7 +3299,7 @@ let montgomery_repeat_square_bits_to_num = prove
      ((x EXP (2 EXP m)) * (2 EXP (r + 2))) MOD n`,
   REPEAT GEN_TAC THEN
   SUBGOAL_THEN
-    `?d. l + (d0 + d1 + d2 + d4 + r + 4) * m = d`
+    `?d. l + 1 + (d0 + d1 + d2 + d4 + r + 4) * m = d`
     STRIP_ASSUME_TAC THENL
   [MATCH_ACCEPT_TAC EXISTS_REFL';
    ALL_TAC] THEN
@@ -3318,32 +3318,21 @@ let montgomery_repeat_square_bits_to_num = prove
    ALL_TAC] THEN
   (***)
   SUBGOAL_THEN
-    `!i : cycle. t + l + i = ((t + i) + (d3 + d4)) + 1`
-    (fun th -> CONV_TAC (LAND_CONV (REWRITE_CONV [th]))) THENL
+    `!i : cycle. t + l + i = (t + i + 1) + (d3 + d4)`
+    (fun th -> REWRITE_TAC [th]) THENL
   [GEN_TAC THEN
-   ASM_REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
-   MATCH_ACCEPT_TAC ADD_SYM;
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+   ASM_REWRITE_TAC [GSYM ADD_ASSOC];
    ALL_TAC] THEN
   MP_TAC
     (SPECL
-       [`sadd : wire`;
-        `sbdd : wire`;
+       [`sad : wire`;
+        `sbd : wire`;
         `dn : wire`]
        nor2_signal) THEN
-  ASM_REWRITE_TAC [] THEN
-  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-  MP_TAC
-    (SPECL
-       [`sad : wire`;
-        `sadd : wire`]
-       delay_signal) THEN
-  ASM_REWRITE_TAC [] THEN
-  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-  MP_TAC
-    (SPECL
-       [`sbd : wire`;
-        `sbdd : wire`]
-       delay_signal) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
   MP_TAC
@@ -3360,7 +3349,6 @@ let montgomery_repeat_square_bits_to_num = prove
        bconnect_bsignal) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-
   MP_TAC
     (SPECL
        [`sa : wire`;
@@ -3377,7 +3365,7 @@ let montgomery_repeat_square_bits_to_num = prove
        pipe_signal) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-  UNDISCH_TAC `!i. i <= l + d + j ==> (signal ld (t + i) <=> i <= l)` THEN
+  UNDISCH_TAC `!i. i <= d + j ==> (signal ld (t + i) <=> i <= l)` THEN
   SPEC_TAC (`j : cycle`, `j : cycle`) THEN
   REVERSE_TAC INDUCT_TAC (***) THENL
   [STRIP_TAC THEN
@@ -3385,8 +3373,8 @@ let montgomery_repeat_square_bits_to_num = prove
    [REPEAT STRIP_TAC THEN
     FIRST_X_ASSUM MATCH_MP_TAC THEN
     MATCH_MP_TAC LE_TRANS THEN
-    EXISTS_TAC `l + d + j : cycle` THEN
-    ASM_REWRITE_TAC [LE_ADD_LCANCEL; SUC_LE];
+    EXISTS_TAC `SUC i` THEN
+    ASM_REWRITE_TAC [ADD_SUC; SUC_LE; LE_SUC];
     ALL_TAC] THEN
    STRIP_TAC THEN
    REWRITE_TAC [ADD_SUC; LE] THEN
