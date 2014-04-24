@@ -3273,23 +3273,23 @@ let montgomery_repeat_square_bits_to_num = prove
       2 * bits_to_num (bsignal xc (t + l + l))) MOD n =
      (x * 2 EXP (r + 2)) MOD n /\
      (!i.
-        i <= d ==>
+        i < d ==>
         bits_to_num (bsignal ks (t + l + i)) +
         2 * bits_to_num (bsignal kc (t + l + i)) = k) /\
      (!i.
-        i <= d ==>
+        i < d ==>
         bits_to_num (bsignal ns (t + l + i)) +
         2 * bits_to_num (bsignal nc (t + l + i)) = n) /\
      bits_to_num (bsignal jb t) + d0 + d1 + d2 + r + 3 =
      2 EXP width jb + width jb + d3 /\
      (!i.
-        i <= d ==>
+        i < d ==>
         bits_to_num (bsignal rx (t + l + i)) = (2 EXP r) MOD n) /\
      (!i.
-        i <= d ==>
+        i < d ==>
         bits_to_num (bsignal ry (t + l + i)) = (2 * (2 EXP r)) MOD n) /\
      (!i.
-        i <= d ==>
+        i < d ==>
         bits_to_num (bsignal rz (t + l + i)) = (3 * (2 EXP r)) MOD n) /\
      montgomery_repeat_square
        ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc ==>
@@ -3316,7 +3316,6 @@ let montgomery_repeat_square_bits_to_num = prove
      (SUBST1_TAC o SYM) THEN
    ASM_REWRITE_TAC [ADD_0; LE_REFL];
    ALL_TAC] THEN
-  (***)
   SUBGOAL_THEN
     `!i : cycle. t + l + i = (t + i + 1) + (d3 + d4)`
     (fun th -> REWRITE_TAC [th]) THENL
@@ -3367,7 +3366,7 @@ let montgomery_repeat_square_bits_to_num = prove
   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
   UNDISCH_TAC `!i. i <= d + j ==> (signal ld (t + i) <=> i <= l)` THEN
   SPEC_TAC (`j : cycle`, `j : cycle`) THEN
-  REVERSE_TAC INDUCT_TAC (***) THENL
+  REVERSE_TAC INDUCT_TAC THENL
   [STRIP_TAC THEN
    FIRST_X_ASSUM (fun th -> MP_TAC th THEN ANTS_TAC) THENL
    [REPEAT STRIP_TAC THEN
@@ -3377,17 +3376,16 @@ let montgomery_repeat_square_bits_to_num = prove
     ASM_REWRITE_TAC [ADD_SUC; SUC_LE; LE_SUC];
     ALL_TAC] THEN
    STRIP_TAC THEN
-   REWRITE_TAC [ADD_SUC; LE] THEN
-   CONJ_TAC (***) THENL
+   CONJ_TAC THENL
    [GEN_TAC THEN
+    REWRITE_TAC [ADD_SUC; LE] THEN
     REVERSE_TAC STRIP_TAC THENL
     [FIRST_X_ASSUM MATCH_MP_TAC THEN
      ASM_REWRITE_TAC [];
      ALL_TAC] THEN
     POP_ASSUM SUBST_VAR_TAC THEN
     REWRITE_TAC [GSYM ADD_SUC; LE_ADD] THEN
-    REWRITE_TAC [ADD_SUC] THEN
-    REWRITE_TAC [ADD1] THEN
+    REWRITE_TAC [ADD_ASSOC] THEN
     MP_TAC
       (SPECL
          [`sar : wire`;
@@ -3419,16 +3417,116 @@ let montgomery_repeat_square_bits_to_num = prove
     ASM_REWRITE_TAC [] THEN
     DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
     UNDISCH_THEN
-      `!i. i <= l + d + SUC j ==> (signal ld (t + i) <=> i <= l)`
-      (MP_TAC o SPEC `d + j : cycle`) THEN
+      `!i. i <= d + SUC j ==> (signal ld (t + i) <=> i <= l)`
+      (MP_TAC o SPEC `d + SUC j : cycle`) THEN
     ANTS_TAC THENL
-    [REWRITE_TAC [ADD_SUC] THEN
-     REWRITE_TAC [GSYM SUC_ADD; LE_ADDR];
+    [REWRITE_TAC [LE_REFL];
+     ALL_TAC] THEN
+    REWRITE_TAC [GSYM ADD_ASSOC] THEN
+    SUBGOAL_THEN `d + SUC j <= l <=> F` SUBST1_TAC THENL
+    [UNDISCH_THEN
+       `l + 1 + (d0 + d1 + d2 + d4 + r + 4) * m = d`
+       (SUBST1_TAC o SYM) THEN
+     REWRITE_TAC [GSYM ADD_ASSOC; LE_ADD_LCANCEL_0; ADD_EQ_0; NOT_SUC];
      ALL_TAC] THEN
     DISCH_THEN SUBST1_TAC THEN
-    REWRITE_TAC [DE_MORGAN_THM; NOT_LE] THEN
-    
-
+    REWRITE_TAC [] THEN
+    MP_TAC
+      (SPECL
+         [`san : wire`;
+          `sap : wire`;
+          `saq : wire`]
+         and2_signal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+    MP_TAC
+      (SPECL
+         [`sb : wire`;
+          `jp : wire`;
+          `sap : wire`]
+         and2_signal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+    MP_TAC
+      (SPECL
+         [`sb : wire`;
+          `jpn : wire`;
+          `sbp : wire`;
+          `sbq : wire`]
+         case1_signal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+    MP_TAC
+      (SPECL
+         [`sa : wire`;
+          `mdn : wire`;
+          `sbp : wire`]
+         and2_signal) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `d + j : cycle`) THEN
+    ASM_REWRITE_TAC [LE_REFL; LE_ADD; ADD1; GSYM ADD_ASSOC] THEN
+    STRIP_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   REWRITE_TAC [ADD_SUC; SUC_ADD] THEN
+   REWRITE_TAC [ADD1] THEN
+   MP_TAC
+     (SPECL
+        [`psr : bus`;
+         `ps : bus`]
+        bdelay_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL
+        [`pcr : bus`;
+         `pc : bus`]
+        bdelay_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL
+        [`sad : wire`;
+         `psq : bus`;
+         `ps : bus`;
+         `psr : bus`]
+        bcase1_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL
+        [`sad : wire`;
+         `pcq : bus`;
+         `pc : bus`;
+         `pcr : bus`]
+        bcase1_bsignal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL
+        [`sa : wire`;
+         `d3 + d4 : cycle`;
+         `sad : wire`]
+        pipe_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   MP_TAC
+     (SPECL
+        [`sb : wire`;
+         `d3 + d4 : cycle`;
+         `sbd : wire`]
+        pipe_signal) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `d + j : cycle`) THEN
+   ASM_REWRITE_TAC [LE_REFL; LE_ADD] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC [ADD_0] THEN
+  (***)
+  
 
 ***)
 
