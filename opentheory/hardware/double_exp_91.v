@@ -81,14 +81,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   reg ctre_sp1;
   reg ctre_sp2;
   reg ctre_sp3;
-  reg ctrp_ctr_cp0;
-  reg ctrp_ctr_cp1;
-  reg ctrp_ctr_cp2;
-  reg ctrp_ctr_cp3;
-  reg ctrp_ctr_dp;
-  reg ctrp_ctr_sp0;
-  reg ctrp_ctr_sp1;
-  reg ctrp_ctr_sp2;
   reg multm_compress_ncd;
   reg multm_compress_nsd;
   reg multm_compress_pipe0_x1;
@@ -234,24 +226,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire ctre_sr2;
   wire ctre_sr3;
   wire ctre_xn;
-  wire ctrp_ctr_cq0;
-  wire ctrp_ctr_cq1;
-  wire ctrp_ctr_cq2;
-  wire ctrp_ctr_cq3;
-  wire ctrp_ctr_cr0;
-  wire ctrp_ctr_cr1;
-  wire ctrp_ctr_cr2;
-  wire ctrp_ctr_cr3;
-  wire ctrp_ctr_dq;
-  wire ctrp_ctr_sq0;
-  wire ctrp_ctr_sq1;
-  wire ctrp_ctr_sq2;
-  wire ctrp_ctr_sr0;
-  wire ctrp_ctr_sr1;
-  wire ctrp_ctr_sr2;
-  wire ctrp_ctr_xn;
-  wire ctrp_ds;
-  wire ctrp_pulse_xn;
   wire dn_o;
   wire jp;
   wire jpn;
@@ -311,9 +285,9 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire multm_ctrp_ctr_sr0;
   wire multm_ctrp_ctr_sr1;
   wire multm_ctrp_ctr_sr2;
+  wire multm_ctrp_ctr_xn;
   wire multm_ctrp_ds;
   wire multm_ctrp_pulse_xn;
-  wire multm_jp;
   wire multm_pc0;
   wire multm_pc1;
   wire multm_pc2;
@@ -741,26 +715,8 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign ctre_sr2 = srdd | ctre_sq2;
   assign ctre_sr3 = ctre_xn & ctre_sq3;
   assign ctre_xn = ~srdd;
-  assign ctrp_ctr_cq0 = ~ctrp_ctr_cp0;
-  assign ctrp_ctr_cq1 = ctrp_ctr_sp0 & ctrp_ctr_cp0;
-  assign ctrp_ctr_cq2 = ctrp_ctr_sp1 & ctrp_ctr_cp1;
-  assign ctrp_ctr_cq3 = ctrp_ctr_sp2 & ctrp_ctr_cp2;
-  assign ctrp_ctr_cr0 = ctrp_ctr_xn & ctrp_ctr_cq0;
-  assign ctrp_ctr_cr1 = ctrp_ctr_xn & ctrp_ctr_cq1;
-  assign ctrp_ctr_cr2 = ctrp_ctr_xn & ctrp_ctr_cq2;
-  assign ctrp_ctr_cr3 = ctrp_ctr_xn & ctrp_ctr_cq3;
-  assign ctrp_ctr_dq = ctrp_ctr_dp | ctrp_ctr_cp3;
-  assign ctrp_ctr_sq0 = ctrp_ctr_sp0 ^ ctrp_ctr_cp0;
-  assign ctrp_ctr_sq1 = ctrp_ctr_sp1 ^ ctrp_ctr_cp1;
-  assign ctrp_ctr_sq2 = ctrp_ctr_sp2 ^ ctrp_ctr_cp2;
-  assign ctrp_ctr_sr0 = sadd | ctrp_ctr_sq0;
-  assign ctrp_ctr_sr1 = sadd | ctrp_ctr_sq1;
-  assign ctrp_ctr_sr2 = ctrp_ctr_xn & ctrp_ctr_sq2;
-  assign ctrp_ctr_xn = ~sadd;
-  assign ctrp_ds = ctrp_ctr_xn & ctrp_ctr_dq;
-  assign ctrp_pulse_xn = ~ctrp_ctr_dp;
   assign dn_o = ~nor2_zn;
-  assign jp = ctrp_ds & ctrp_pulse_xn;
+  assign jp = multm_ctrp_ds & multm_ctrp_pulse_xn;
   assign jpn = ~jp;
   assign md = ctre_xn & ctre_dq;
   assign mdn = ~md;
@@ -807,20 +763,20 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_ctrp_ctr_cq1 = multm_ctrp_ctr_sp0 & multm_ctrp_ctr_cp0;
   assign multm_ctrp_ctr_cq2 = multm_ctrp_ctr_sp1 & multm_ctrp_ctr_cp1;
   assign multm_ctrp_ctr_cq3 = multm_ctrp_ctr_sp2 & multm_ctrp_ctr_cp2;
-  assign multm_ctrp_ctr_cr0 = ctrp_ctr_xn & multm_ctrp_ctr_cq0;
-  assign multm_ctrp_ctr_cr1 = ctrp_ctr_xn & multm_ctrp_ctr_cq1;
-  assign multm_ctrp_ctr_cr2 = ctrp_ctr_xn & multm_ctrp_ctr_cq2;
-  assign multm_ctrp_ctr_cr3 = ctrp_ctr_xn & multm_ctrp_ctr_cq3;
+  assign multm_ctrp_ctr_cr0 = multm_ctrp_ctr_xn & multm_ctrp_ctr_cq0;
+  assign multm_ctrp_ctr_cr1 = multm_ctrp_ctr_xn & multm_ctrp_ctr_cq1;
+  assign multm_ctrp_ctr_cr2 = multm_ctrp_ctr_xn & multm_ctrp_ctr_cq2;
+  assign multm_ctrp_ctr_cr3 = multm_ctrp_ctr_xn & multm_ctrp_ctr_cq3;
   assign multm_ctrp_ctr_dq = multm_ctrp_ctr_dp | multm_ctrp_ctr_cp3;
   assign multm_ctrp_ctr_sq0 = multm_ctrp_ctr_sp0 ^ multm_ctrp_ctr_cp0;
   assign multm_ctrp_ctr_sq1 = multm_ctrp_ctr_sp1 ^ multm_ctrp_ctr_cp1;
   assign multm_ctrp_ctr_sq2 = multm_ctrp_ctr_sp2 ^ multm_ctrp_ctr_cp2;
   assign multm_ctrp_ctr_sr0 = sadd | multm_ctrp_ctr_sq0;
   assign multm_ctrp_ctr_sr1 = sadd | multm_ctrp_ctr_sq1;
-  assign multm_ctrp_ctr_sr2 = ctrp_ctr_xn & multm_ctrp_ctr_sq2;
-  assign multm_ctrp_ds = ctrp_ctr_xn & multm_ctrp_ctr_dq;
+  assign multm_ctrp_ctr_sr2 = multm_ctrp_ctr_xn & multm_ctrp_ctr_sq2;
+  assign multm_ctrp_ctr_xn = ~sadd;
+  assign multm_ctrp_ds = multm_ctrp_ctr_xn & multm_ctrp_ctr_dq;
   assign multm_ctrp_pulse_xn = ~multm_ctrp_ctr_dp;
-  assign multm_jp = multm_ctrp_ds & multm_ctrp_pulse_xn;
   assign multm_pc0 = multm_reduce_add3b0_maj3b_or3b_wx0 | multm_reduce_add3b0_maj3b_xy0;
   assign multm_pc1 = multm_reduce_add3b0_maj3b_or3b_wx1 | multm_reduce_add3b0_maj3b_xy1;
   assign multm_pc2 = multm_reduce_add3b0_maj3b_or3b_wx2 | multm_reduce_add3b0_maj3b_xy2;
@@ -1256,14 +1212,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
       ctre_sp1 <= ctre_sr1;
       ctre_sp2 <= ctre_sr2;
       ctre_sp3 <= ctre_sr3;
-      ctrp_ctr_cp0 <= ctrp_ctr_cr0;
-      ctrp_ctr_cp1 <= ctrp_ctr_cr1;
-      ctrp_ctr_cp2 <= ctrp_ctr_cr2;
-      ctrp_ctr_cp3 <= ctrp_ctr_cr3;
-      ctrp_ctr_dp <= ctrp_ds;
-      ctrp_ctr_sp0 <= ctrp_ctr_sr0;
-      ctrp_ctr_sp1 <= ctrp_ctr_sr1;
-      ctrp_ctr_sp2 <= ctrp_ctr_sr2;
       multm_compress_ncd <= multm_compress_pipe1_x1;
       multm_compress_nsd <= multm_compress_pipe0_x1;
       multm_compress_pipe0_x1 <= multm_compress_ns;
@@ -1277,7 +1225,7 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
       multm_ctrp_ctr_sp1 <= multm_ctrp_ctr_sr1;
       multm_ctrp_ctr_sp2 <= multm_ctrp_ctr_sr2;
       multm_jpd <= multm_pipe_x1;
-      multm_pipe_x1 <= multm_jp;
+      multm_pipe_x1 <= jp;
       multm_qcp0 <= multm_qcr0;
       multm_qcp1 <= multm_qcr1;
       multm_qcp2 <= multm_qcr2;
@@ -1397,12 +1345,12 @@ endmodule // double_exp_91
 /*----------------------------------------------------------------------------+
 | Primary inputs: 15                                                          |
 | Primary outputs: 15                                                         |
-| Delays: 143                                                                 |
-| Gates: 506                                                                  |
-| Fan-in: 25%=2 50%=4 75%=6 90%=8 95%=9 99%=9 max=9 (multm_qcp5)              |
-| Fan-in cone: 25%=1 50%=3 75%=9 90%=13 95%=17 99%=20                         |
+| Delays: 135                                                                 |
+| Gates: 488                                                                  |
+| Fan-in: 25%=1 50%=4 75%=6 90%=8 95%=9 99%=9 max=9 (multm_qcp5)              |
+| Fan-in cone: 25%=0 50%=4 75%=9 90%=13 95%=17 99%=20                         |
 |   max=20 (multm_reduce_sb1)                                                 |
-| Fan-out: 25%=2 50%=3 75%=5 90%=8 95%=14 99%=16 max=43 (sadd)                |
-| Fan-out load: 25%=2 50%=3 75%=4 90%=6 95%=7 99%=8 max=8 (multm_reduce_sa5)  |
-| Duplication: 25%=1 50%=1 75%=1 90%=1 95%=3 99%=5 max=11 (sadd)              |
+| Fan-out: 25%=2 50%=3 75%=5 90%=8 95%=14 99%=16 max=35 (sadd)                |
+| Fan-out load: 25%=2 50%=3 75%=5 90%=6 95%=7 99%=8 max=8 (multm_reduce_sa5)  |
+| Duplication: 25%=1 50%=1 75%=1 90%=1 95%=3 99%=5 max=8 (sadd)               |
 +----------------------------------------------------------------------------*/

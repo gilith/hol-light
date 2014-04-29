@@ -3448,20 +3448,78 @@ let counter_signal = prove
 
 export_thm counter_signal;;
 
-let counter_pulse_signal = prove
- (`!n ld nb dn t k.
-     (!i. i <= k + 1 ==> (signal ld (t + i) <=> i = 0)) /\
-     bits_to_num (bsignal nb t) + n + 2 = 2 EXP (width nb) + width nb /\
+let counter_signal_load = prove
+ (`!ld nb dn t.
+     signal ld t /\
+     counter ld nb dn ==>
+     ~signal dn t`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [counter_def] THEN
+  STRIP_TAC THEN
+  MP_TAC
+   (SPECL [`dr : wire`; `dn : wire`; `t : cycle`]
+     connect_signal) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  MP_TAC
+   (SPECL [`ld : wire`; `ground`; `dq : wire`; `dr : wire`; `t : cycle`]
+     case1_signal) THEN
+  ASM_REWRITE_TAC [ground_signal]);;
+
+export_thm counter_signal_load;;
+
+let counter_pulse_signal_load = prove
+ (`!ld nb dn t.
+     signal ld t /\
      counter_pulse ld nb dn ==>
-     (signal dn (t + k + 1) <=> k = n)`,
+     ~signal dn t`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [counter_pulse_def] THEN
   STRIP_TAC THEN
+  MATCH_MP_TAC
+   (SPECL [`ds : wire`; `dn : wire`; `t : cycle`]
+     pulse_signal_false) THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC
+   (SPECL [`ld : wire`; `nb : bus`; `ds : wire`; `t : cycle`]
+     counter_signal_load) THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm counter_pulse_signal_load;;
+
+let counter_pulse_signal = prove
+ (`!n ld nb dn t k.
+     (!i. i <= k ==> (signal ld (t + i) <=> i = 0)) /\
+     bits_to_num (bsignal nb t) + n + 2 = 2 EXP (width nb) + width nb /\
+     counter_pulse ld nb dn ==>
+     (signal dn (t + k) <=> k = n + 1)`,
+  REPEAT STRIP_TAC THEN
+  ASM_CASES_TAC `k = 0` THENL
+  [POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [ADD_0; GSYM ADD1; NOT_SUC] THEN
+   MATCH_MP_TAC
+     (SPECL
+        [`ld : wire`;
+         `nb : bus`;
+         `dn : wire`;
+         `t : cycle`]
+        counter_pulse_signal_load) THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `0`) THEN
+   ASM_REWRITE_TAC [ADD_0; LE_REFL];
+   ALL_TAC] THEN
+  MP_TAC (SPEC `k : cycle` num_CASES) THEN
+  ASM_REWRITE_TAC [] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  DISCH_THEN (X_CHOOSE_THEN `ks : cycle` SUBST_VAR_TAC) THEN
+  REWRITE_TAC [ADD1; EQ_ADD_RCANCEL] THEN
+  UNDISCH_THEN
+    `counter_pulse ld nb dn`
+    (STRIP_ASSUME_TAC o REWRITE_RULE [counter_pulse_def]) THEN
   MP_TAC
     (SPECL
        [`ds : wire`;
         `dn : wire`;
-        `t + k : cycle`]
+        `t + ks : cycle`]
        pulse_signal) THEN
   ASM_REWRITE_TAC [GSYM ADD_ASSOC] THEN
   DISCH_THEN SUBST1_TAC THEN
@@ -3472,15 +3530,15 @@ let counter_pulse_signal = prove
         `nb : bus`;
         `ds : wire`;
         `t : cycle`;
-        `k : cycle`]
+        `ks : cycle`]
        counter_signal) THEN
   ANTS_TAC THENL
   [ASM_REWRITE_TAC [] THEN
    REPEAT STRIP_TAC THEN
    FIRST_X_ASSUM MATCH_MP_TAC THEN
    MATCH_MP_TAC LE_TRANS THEN
-   EXISTS_TAC `k : num` THEN
-   ASM_REWRITE_TAC [LE_ADD];
+   EXISTS_TAC `ks : cycle` THEN
+   ASM_REWRITE_TAC [SUC_LE];
    ALL_TAC] THEN
   DISCH_THEN SUBST1_TAC THEN
   MP_TAC
@@ -3490,9 +3548,10 @@ let counter_pulse_signal = prove
         `nb : bus`;
         `ds : wire`;
         `t : cycle`;
-        `k + 1 : cycle`]
+        `SUC ks : cycle`]
        counter_signal) THEN
   ASM_REWRITE_TAC [] THEN
+  REWRITE_TAC [ADD1] THEN
   DISCH_THEN SUBST1_TAC THEN
   REWRITE_TAC [NOT_LT; GSYM ADD1; LT_SUC_LE; LE_ANTISYM]);;
 

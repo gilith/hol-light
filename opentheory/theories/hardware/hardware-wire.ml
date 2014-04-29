@@ -488,6 +488,19 @@ let pulse_signal = prove
 
 export_thm pulse_signal;;
 
+let pulse_signal_false = prove
+ (`!x y t. pulse x y /\ ~signal x t ==> ~signal y t`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [pulse_def] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`x : wire`; `xn : wire`; `y : wire`; `t : cycle`]
+       and2_signal) THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm pulse_signal_false;;
+
 let pulse_exists = prove
  (`!x. ?y. pulse x y`,
   GEN_TAC THEN
