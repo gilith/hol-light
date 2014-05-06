@@ -3834,7 +3834,10 @@ let montgomery_repeat_square_bits_to_num = prove
        ~signal sb (t + l + 1 + (d0 + d1 + d2 + d4 + r + 4) * SUC mi) /\
        (bits_to_num (bsignal ps (((t + l + 1 + (d0 + d1 + d2 + d4 + r + 4) * SUC mi) + d3 + d4) + 1)) +
        2 * bits_to_num (bsignal pc (((t + l + 1 + (d0 + d1 + d2 + d4 + r + 4) * SUC mi) + d3 + d4) + 1))) MOD n =
-       (x EXP (2 EXP SUC mi) * 2 EXP (r + 2)) MOD n`
+       (x EXP (2 EXP SUC mi) * 2 EXP (r + 2)) MOD n /\
+       CARD {i | 0 < i /\
+                 i + width mb + l <= (d0 + d1 + d2 + d4 + r + 4) * SUC mi /\
+                 signal sa (t + l + 1 + i)} = mi`
     ASSUME_TAC (***) THENL
   [MATCH_MP_TAC num_WF THEN
    GEN_TAC THEN
@@ -4242,7 +4245,7 @@ let montgomery_repeat_square_bits_to_num = prove
     UNDISCH_THEN
       `!i. i <= d ==> (signal ld (t + i) <=> i <= l)`
       (MP_TAC o SPEC `l + 1 + (d0 + d1 + d2 + d4 + r + 4) * mi + i`) THEN
-    ANTS_TAC (***) THENL
+    ANTS_TAC THENL
     [UNDISCH_THEN
        `l + 1 + (d0 + d1 + d2 + d4 + r + 4) * SUC ms = d`
        (SUBST1_TAC o SYM) THEN
@@ -4392,7 +4395,7 @@ let montgomery_repeat_square_bits_to_num = prove
     ASM_REWRITE_TAC [] THEN
     DISCH_THEN (X_CHOOSE_THEN `mis : cycle` SUBST_VAR_TAC) THEN
     POP_ASSUM (K ALL_TAC) THEN
-    FIRST_X_ASSUM (MP_TAC o SPEC `mis : cycle`) THEN
+    FIRST_ASSUM (MP_TAC o SPEC `mis : cycle`) THEN
     REWRITE_TAC [SUC_LT] THEN
     ANTS_TAC THENL
     [MATCH_MP_TAC LE_TRANS THEN
@@ -4401,16 +4404,73 @@ let montgomery_repeat_square_bits_to_num = prove
      ALL_TAC] THEN
     STRIP_TAC THEN
     ASM_REWRITE_TAC [] THEN
-    (***)
+    SUBGOAL_THEN
+      `l <= d0 + d1 + d2 + d4 + r + 4`
+      (X_CHOOSE_THEN `dl : cycle` ASSUME_TAC o
+       REWRITE_RULE [LE_EXISTS]) THENL
+    [UNDISCH_THEN
+       `d3 + d4 + 1 = l`
+       (SUBST1_TAC o SYM) THEN
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `(d0 + d1 + d2 + r + 1) + d4 + 1` THEN
+     ASM_REWRITE_TAC [LE_ADD_RCANCEL] THEN
+     REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL; SYM (NUM_REDUCE_CONV `3 + 1`)] THEN
+     REWRITE_TAC [GSYM ADD_ASSOC; LE_ADD_LCANCEL] THEN
+     CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+     REWRITE_TAC [ADD_ASSOC; LE_ADD_RCANCEL; SYM (NUM_REDUCE_CONV `2 + 1`)] THEN
+     REWRITE_TAC [LE_ADD];
+     ALL_TAC] THEN
     FIRST_X_ASSUM
       (fun th ->
-         MP_TAC (SPEC `(d0 + d1 + d2 + d4 + r + 4) * SUC mis` th) THEN
+         MP_TAC (SPEC `dl + (l + dl) * mis : cycle` th) THEN
          ANTS_TAC THENL
          [GEN_TAC;
           ALL_TAC]) THENL
+    (***)
+    [STRIP_TAC THEN
+     SUBGOAL_THEN `i <= (d0 + d1 + d2 + d4 + r + 4) * SUC mis` MP_TAC THENL
+     [MATCH_MP_TAC LE_TRANS THEN
+      EXISTS_TAC `dl + (l + dl) * mis : cycle` THEN
+      ASM_REWRITE_TAC [MULT_SUC; LE_ADD_RCANCEL; LE_ADDR];
+      ALL_TAC] THEN
+     POP_ASSUM (K ALL_TAC) THEN
+     POP_ASSUM MP_TAC THEN
+     POP_ASSUM (K ALL_TAC) THEN
+     MP_TAC
+       (SPECL
+          [`i : cycle`; `d0 + d1 + d2 + d4 + r + 4`]
+          (ONCE_REWRITE_RULE [MULT_SYM] DIVISION)) THEN
+     ANTS_TAC THENL
+     [REWRITE_TAC [ADD_EQ_0; SYM (NUM_REDUCE_CONV `SUC 3`); NOT_SUC];
+      ALL_TAC] THEN
+     DISCH_THEN (fun th -> ONCE_REWRITE_TAC [th]) THEN
+     SPEC_TAC (`i DIV (d0 + d1 + d2 + d4 + r + 4)`, `iq : num`) THEN
+     GEN_TAC THEN
+     SPEC_TAC (`i MOD (d0 + d1 + d2 + d4 + r + 4)`, `ir : num`) THEN
+     GEN_TAC THEN
+
+CHEAT_TAC ;
+     ALL_TAC] THEN
+    ASM_REWRITE_TAC [GSYM ADD_ASSOC] THEN
+    SUBGOAL_THEN
+      `1 + (l + dl) * SUC mis =
+       l + 1 + dl + (l + dl) * mis`
+      SUBST1_TAC THENL
+    [REWRITE_TAC [MULT_SUC; ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+     MATCH_ACCEPT_TAC ADD_SYM;
+     ALL_TAC] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    SUBGOAL_THEN
+      `!i.
+         i + width mb <= dl + (l + dl) * mis <=>
+         i + width mb + l <= (d0 + d1 + d2 + d4 + r + 4) * SUC mis`
+      (fun th -> REWRITE_TAC [th]) THENL
     [CHEAT_TAC (***);
      ALL_TAC] THEN
-    DISCH_THEN SUBST1_TAC
+    POP_ASSUM (K ALL_TAC) THEN
+    POP_ASSUM SUBST1_TAC THEN
+    ASM_REWRITE_TAC [NOT_LE; GSYM LE_SUC_LT];
+    ALL_TAC] THEN
 
    (***)
    MP_TAC
