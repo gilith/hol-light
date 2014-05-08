@@ -4865,11 +4865,32 @@ let montgomery_repeat_square_bits_to_num = prove
       ASM_REWRITE_TAC
         [ADD_ASSOC; LE_ADD_RCANCEL; LE_MULT_LCANCEL; ADD_EQ_0; NOT_SUC];
       ALL_TAC] THEN
-     (***)
      REVERSE_TAC CONJ_TAC THENL
      [REWRITE_TAC [GSYM ADD_ASSOC] THEN
       FIRST_X_ASSUM MATCH_MP_TAC THEN
-      (***)
+      UNDISCH_THEN
+        `l + 1 + (d0 + d1 + d2 + d4 + r + 4) * SUC ms = d`
+        (SUBST1_TAC o SYM) THEN
+      SUBGOAL_THEN
+        `1 + (d0 + d1 + d2 + d4 + r + 4) * mi + d3 + d4 + 1 =
+         l + 1 + (d0 + d1 + d2 + d4 + r + 4) * mi`
+        (CONV_TAC o LAND_CONV o REWR_CONV) THENL
+      [CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+       UNDISCH_THEN
+         `d3 + d4 + 1 = l`
+         (SUBST1_TAC o SYM) THEN
+       REWRITE_TAC [GSYM ADD_ASSOC];
+       ALL_TAC] THEN
+      REWRITE_TAC [LT_ADD_LCANCEL] THEN
+      MATCH_MP_TAC LET_TRANS THEN
+      EXISTS_TAC `(d0 + d1 + d2 + d4 + r + 4) * ms` THEN
+      ASM_REWRITE_TAC [LE_MULT_LCANCEL; MULT_SUC; LT_ADDR] THEN
+      REWRITE_TAC [LT_NZ; SYM (NUM_REDUCE_CONV `SUC 3`); ADD_EQ_0; NOT_SUC];
+      ALL_TAC] THEN
+     REVERSE_TAC CONJ_TAC THENL
+     [REPEAT STRIP_TAC THEN
+      REWRITE_TAC [GSYM ADD_ASSOC] THEN
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
       UNDISCH_THEN
         `l + 1 + (d0 + d1 + d2 + d4 + r + 4) * SUC ms = d`
         (SUBST1_TAC o SYM) THEN
@@ -4888,12 +4909,56 @@ let montgomery_repeat_square_bits_to_num = prove
        REWRITE_TAC [GSYM ADD_ASSOC];
        ALL_TAC] THEN
       REWRITE_TAC [LT_ADD_LCANCEL] THEN
+      MATCH_MP_TAC LET_TRANS THEN
+      EXISTS_TAC `(d0 + d1 + d2 + d4 + r + 4) * ms + i` THEN
+      ASM_REWRITE_TAC [LE_ADD_RCANCEL; LE_MULT_LCANCEL] THEN
+      REWRITE_TAC [ONCE_REWRITE_RULE [ADD_SYM] MULT_SUC; LT_ADD_LCANCEL] THEN
+      REWRITE_TAC [LT_SUC_LE; ADD_SUC; SYM (NUM_REDUCE_CONV `SUC 3`)] THEN
+      MATCH_MP_TAC LE_TRANS THEN
+      EXISTS_TAC `d0 + d1 + d2 + r + 1` THEN
+      ASM_REWRITE_TAC [LE_ADD_LCANCEL] THEN
+      CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
       REWRITE_TAC
-        [GSYM LE_SUC_LT; GSYM ADD_SUC; SYM (NUM_REDUCE_CONV `SUC 3`)] THEN
-      REWRITE_TAC [ONCE_REWRITE_RULE [ADD_SYM] MULT_SUC] THEN
-      ASM_REWRITE_TAC
-        [ADD_ASSOC; LE_ADD_RCANCEL; LE_MULT_LCANCEL; ADD_EQ_0; NOT_SUC];
+        [GSYM ADD_ASSOC; LE_ADD_LCANCEL; SYM (NUM_REDUCE_CONV `1 + 2`);
+         LE_ADD];
       ALL_TAC] THEN
+     REVERSE_TAC CONJ_TAC THENL
+     [REPEAT STRIP_TAC THEN
+      REWRITE_TAC [GSYM ADD_ASSOC] THEN
+      FIRST_X_ASSUM MATCH_MP_TAC THEN
+      UNDISCH_THEN
+        `l + 1 + (d0 + d1 + d2 + d4 + r + 4) * SUC ms = d`
+        (SUBST1_TAC o SYM) THEN
+      SUBGOAL_THEN
+        `!x.
+           1 + (d0 + d1 + d2 + d4 + r + 4) * mi + d3 + d4 + 1 + x =
+           l + 1 + (d0 + d1 + d2 + d4 + r + 4) * mi + x`
+        (CONV_TAC o LAND_CONV o REWR_CONV) THENL
+      [GEN_TAC THEN
+       REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+       REWRITE_TAC [GSYM ADD_ASSOC] THEN
+       CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+       UNDISCH_THEN
+         `d3 + d4 + 1 = l`
+         (SUBST1_TAC o SYM) THEN
+       REWRITE_TAC [GSYM ADD_ASSOC];
+       ALL_TAC] THEN
+      REWRITE_TAC [LT_ADD_LCANCEL] THEN
+      MATCH_MP_TAC LET_TRANS THEN
+      EXISTS_TAC `(d0 + d1 + d2 + d4 + r + 4) * ms + i` THEN
+      ASM_REWRITE_TAC [LE_ADD_RCANCEL; LE_MULT_LCANCEL] THEN
+      REWRITE_TAC [ONCE_REWRITE_RULE [ADD_SYM] MULT_SUC; LT_ADD_LCANCEL] THEN
+      REWRITE_TAC [LT_SUC_LE; ADD_SUC; SYM (NUM_REDUCE_CONV `SUC 3`)] THEN
+      MATCH_MP_TAC LE_TRANS THEN
+      EXISTS_TAC `d0 + d1 + r + 1` THEN
+      ASM_REWRITE_TAC [LE_ADD_LCANCEL] THEN
+      CONV_TAC (RAND_CONV (REWR_CONV ADD_ASSOC)) THEN
+      CONV_TAC (RAND_CONV (REWR_CONV ADD_SYM)) THEN
+      REWRITE_TAC
+        [GSYM ADD_ASSOC; LE_ADD_LCANCEL; SYM (NUM_REDUCE_CONV `1 + 2`);
+         LE_ADD];
+      ALL_TAC] THEN
+     (***)
 
 
 
