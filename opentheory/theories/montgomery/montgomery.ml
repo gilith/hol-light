@@ -3848,7 +3848,6 @@ let montgomery_repeat_square_bits_to_num = prove
                  i + width mb + l <= (d0 + d1 + d2 + d4 + r + 4) * SUC mi /\
                  signal sa (t + l + 1 + i)} = mi`
     ASSUME_TAC THENL
-  (***)
   [MATCH_MP_TAC num_WF THEN
    GEN_TAC THEN
    STRIP_TAC THEN
@@ -5364,11 +5363,153 @@ let montgomery_repeat_square_bits_to_num = prove
      ALL_TAC] THEN
     ASM_REWRITE_TAC [GSYM NOT_LE];
     ALL_TAC] THEN
-   (***)
-
-(***)
-
-
+   MP_TAC
+     (ISPECL
+        [`{i | 0 < i /\
+               i + width mb + l <= (d0 + d1 + d2 + d4 + r + 4) * SUC mis /\
+               signal sa (t + l + 1 + i)}`;
+         `{i | (d0 + d1 + d2 + d4 + r + 4) * SUC mis < i + width mb + l /\
+               i + width mb + l <= (d0 + d1 + d2 + d4 + r + 4) * SUC (SUC mis) /\
+               signal sa (t + l + 1 + i)}`]
+        CARD_UNION) THEN
+   ANTS_TAC THENL
+   [CONJ_TAC THENL
+    [MATCH_MP_TAC FINITE_SUBSET THEN
+     EXISTS_TAC `{i | i <= (d0 + d1 + d2 + d4 + r + 4) * SUC mis}` THEN
+     REWRITE_TAC [FINITE_NUMSEG_LE] THEN
+     REWRITE_TAC [SUBSET] THEN
+     X_GEN_TAC `i : num` THEN
+     REWRITE_TAC [IN_ELIM] THEN
+     STRIP_TAC THEN
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `i + width mb + l` THEN
+     ASM_REWRITE_TAC [LE_ADD];
+     ALL_TAC] THEN
+    CONJ_TAC THENL
+    [MATCH_MP_TAC FINITE_SUBSET THEN
+     EXISTS_TAC `{i | i <= (d0 + d1 + d2 + d4 + r + 4) * SUC (SUC mis)}` THEN
+     REWRITE_TAC [FINITE_NUMSEG_LE] THEN
+     REWRITE_TAC [SUBSET] THEN
+     X_GEN_TAC `i : num` THEN
+     REWRITE_TAC [IN_ELIM] THEN
+     STRIP_TAC THEN
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `i + width mb + l` THEN
+     ASM_REWRITE_TAC [LE_ADD];
+     ALL_TAC] THEN
+    REWRITE_TAC [DISJOINT; EXTENSION] THEN
+    X_GEN_TAC `i : num` THEN
+    REWRITE_TAC [IN_INTER; IN_ELIM; NOT_IN_EMPTY] THEN
+    STRIP_TAC THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    POP_ASSUM MP_TAC THEN
+    ASM_REWRITE_TAC [NOT_LT];
+    ALL_TAC] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   FIRST_X_ASSUM
+     (fun th ->
+        MP_TAC (SPEC `mis : num` th) THEN
+        ANTS_TAC THENL
+        [MATCH_ACCEPT_TAC SUC_LT;
+         ALL_TAC]) THEN
+   ANTS_TAC THENL
+   [MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `SUC mis` THEN
+    ASM_REWRITE_TAC [SUC_LE];
+    ALL_TAC] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   CONV_TAC (RAND_CONV (REWR_CONV ADD1)) THEN
+   REWRITE_TAC [EQ_ADD_LCANCEL] THEN
+   SUBGOAL_THEN
+     `{i | (d0 + d1 + d2 + d4 + r + 4) * SUC mis < i + width mb + l /\
+           i + width mb + l <= (d0 + d1 + d2 + d4 + r + 4) * SUC (SUC mis) /\
+           signal sa (t + l + 1 + i)} =
+      {(d0 + d1 + d2 + d4 + r + 4) * SUC mis}`
+     (fun th -> REWRITE_TAC [th; CARD_SING]) THEN
+   REWRITE_TAC [EXTENSION] THEN
+   X_GEN_TAC `i : num` THEN
+   REWRITE_TAC [IN_SING; IN_ELIM] THEN
+   REVERSE_TAC EQ_TAC THENL
+   [DISCH_THEN SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [] THEN
+    REWRITE_TAC
+      [LT_ADD; LE_ADD_LCANCEL; GSYM ADD_ASSOC;
+       ONCE_REWRITE_RULE [ADD_SYM] MULT_SUC] THEN
+    ASM_REWRITE_TAC [] THEN
+    UNDISCH_THEN
+      `d3 + d4 + 1 = l`
+      (SUBST1_TAC o SYM) THEN
+    REWRITE_TAC [LT_NZ; ADD_EQ_0; ONE; NOT_SUC];
+    ALL_TAC] THEN
+   STRIP_TAC THEN
+   REWRITE_TAC [GSYM LE_ANTISYM; GSYM NOT_LT; GSYM DE_MORGAN_THM] THEN
+   STRIP_TAC THENL
+   [POP_ASSUM
+      (X_CHOOSE_THEN `id : num` SUBST_VAR_TAC o
+       REWRITE_RULE [LT_EXISTS]) THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [] THEN
+    FIRST_X_ASSUM (K ALL_TAC o SPEC `id : num`) THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `id : num`) THEN
+    ANTS_TAC THENL
+    [POP_ASSUM MP_TAC THEN
+     REWRITE_TAC
+       [LE_ADD_LCANCEL; GSYM ADD_ASSOC;
+        ONCE_REWRITE_RULE [ADD_SYM] MULT_SUC] THEN
+     REWRITE_TAC [SUC_ADD; LE_SUC_LT] THEN
+     REWRITE_TAC [GSYM NOT_LE; CONTRAPOS_THM] THEN
+     STRIP_TAC THEN
+     UNDISCH_THEN
+       `d3 + d4 + 1 = l`
+       (SUBST1_TAC o SYM) THEN
+     REWRITE_TAC
+       [GSYM ADD1; SYM (NUM_REDUCE_CONV `SUC 3`); ADD_SUC; LE_SUC] THEN
+     MATCH_MP_TAC LE_TRANS THEN
+     EXISTS_TAC `id : num` THEN
+     ASM_REWRITE_TAC [LE_ADD];
+     ALL_TAC] THEN
+    REWRITE_TAC [ADD1] THEN
+    STRIP_TAC;
+    ALL_TAC] THEN
+   UNDISCH_THEN
+     `width mb + l <= d0 + d1 + d2 + d4 + r + 4`
+     (X_CHOOSE_THEN `wd : num` (STRIP_ASSUME_TAC o SYM) o
+      REWRITE_RULE [GSYM ADD_ASSOC; LE_EXISTS]) THEN
+   UNDISCH_THEN
+     `(d0 + d1 + d2 + d4 + r + 4) * SUC mis < i + width mb + l`
+     (X_CHOOSE_THEN `id : num` STRIP_ASSUME_TAC o
+      REWRITE_RULE [LT_EXISTS]) THEN
+   UNDISCH_TAC `signal sa (t + l + 1 + i)` THEN
+   REWRITE_TAC [] THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [ONCE_REWRITE_RULE [ADD_SYM] MULT_SUC] THEN
+   FIRST_X_ASSUM
+     (CONV_TAC o LAND_CONV o RAND_CONV o LAND_CONV o RAND_CONV o
+      REWR_CONV o SYM) THEN
+   REWRITE_TAC [GSYM ADD_ASSOC] THEN
+   SUBGOAL_THEN
+     `width mb + l + wd + SUC id = wd + id + 1 + width mb + l`
+     SUBST1_TAC THENL
+   [ONCE_REWRITE_TAC [ADD_ASSOC] THEN
+    CONV_TAC (LAND_CONV (REWR_CONV ADD_SYM)) THEN
+    REWRITE_TAC [ADD_ASSOC; ADD1];
+    ALL_TAC] THEN
+   REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+   REWRITE_TAC [GSYM ADD_ASSOC] THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `wd + id : num`) THEN
+   ANTS_TAC THENL
+   [POP_ASSUM MP_TAC THEN
+    REWRITE_TAC
+      [LT_ADD_LCANCEL; GSYM ADD_ASSOC;
+       ONCE_REWRITE_RULE [ADD_SYM] MULT_SUC] THEN
+    REWRITE_TAC [SYM (NUM_REDUCE_CONV `SUC 3`); GSYM ADD1; ADD_SUC; LT_SUC];
+    ALL_TAC] THEN
+   REWRITE_TAC [GSYM ADD_ASSOC] THEN
+   STRIP_TAC;
+   ALL_TAC] THEN
+  (***)
 
 
 ***)
