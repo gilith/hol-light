@@ -5650,6 +5650,51 @@ let montgomery_double_exp_syn = montgomery_double_exp_syn_gen "dexp2m";;
 (* Automatically synthesizing verified Montgomery multiplication circuits.   *)
 (* ------------------------------------------------------------------------- *)
 
+let montgomery_double_exp_syn_spec = prove
+ (`!n r s k m x ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc
+    t l.
+     width xs = r /\
+     bit_width n <= r /\
+     2 EXP (r + 2) * s = k * n + 1 /\
+     d3 <= d0 + d1 + d2 + r + 1 /\
+     d3 + d4 + 1 = l /\
+     width mb + l <= d0 + d1 + d2 + d4 + r + 4 /\
+     bits_to_num (bsignal mb (t + l + l + 1)) + m = 2 EXP width mb + 1 /\
+     (!i.
+        bits_to_num (bsignal ks (t + l + i)) +
+        2 * bits_to_num (bsignal kc (t + l + i)) = k) /\
+     (!i.
+        bits_to_num (bsignal ns (t + l + i)) +
+        2 * bits_to_num (bsignal nc (t + l + i)) = n) /\
+     (!i.
+        bits_to_num (bsignal jb (t + l + i)) + d0 + d1 + d2 + r + 3 =
+        2 EXP width jb + width jb + d3) /\
+     (!i. bits_to_num (bsignal rx (t + l + i)) = (2 EXP r) MOD n) /\
+     (!i. bits_to_num (bsignal ry (t + l + i)) = (2 * (2 EXP r)) MOD n) /\
+     (!i. bits_to_num (bsignal rz (t + l + i)) = (3 * (2 EXP r)) MOD n) /\
+     montgomery_double_exp
+       ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc ==>
+     ?d. !j.
+       (!i. i <= d + j ==> (signal ld (t + i) <=> i <= l)) /\
+       (bits_to_num (bsignal xs (t + l + l)) +
+        2 * bits_to_num (bsignal xc (t + l + l))) MOD n =
+       (x * 2 EXP (r + 2)) MOD n ==>
+       (!i. i <= d + j ==> (signal dn (t + l + i) <=> d <= i)) /\
+       (bits_to_num (bsignal ys (t + l + d + j)) +
+        2 * bits_to_num (bsignal yc (t + l + d + j))) MOD n =
+       ((x EXP (2 EXP m)) * (2 EXP (r + 2))) MOD n`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC
+    (SPECL
+       [`n : num`; `r : num`; `s : num`; `k : num`; `m : num`; `x : num`;
+        `ld : wire`; `mb : bus`; `xs : bus`; `xc : bus`; `d0 : cycle`;
+        `d1 : cycle`; `ks : bus`; `kc : bus`; `d2 : cycle`; `ns : bus`;
+        `nc : bus`; `jb : bus`; `d3 : cycle`; `d4 : cycle`; `rx : bus`;
+        `ry : bus`; `rz : bus`; `dn : wire`; `ys : bus`; `yc : bus`;
+        `t : cycle`; `l : cycle`]
+       montgomery_double_exp_bits_to_num) THEN
+  ASM_REWRITE_TAC []);;
+
 let mk_montgomery_mult_reduce n =
     let nn = mk_numeral n in
     let r_th = bit_width_conv (mk_comb (`bit_width`,nn)) in
@@ -6036,8 +6081,20 @@ let mk_montgomery_mult n =
     let primary = frees (concl th) in
     instantiate_hardware syn primary th;;
 
-let mk_montgomery_double_exp m n =
+let mk_montgomery_double_exp n m =
+    let QUANT_CONV c = RAND_CONV (ABS_CONV c) in
+    let width_conv =
+        REWRITE_CONV [bnil_width; bwire_width; bappend_width] THENC
+        NUM_REDUCE_CONV in
+    let bits_conv =
+        REWRITE_CONV
+          [bnil_bsignal; bwire_bsignal; bappend_bsignal;
+           ground_signal; power_signal; APPEND_SING;
+           bits_to_num_cons; bits_to_num_nil;
+           bit_cons_true; bit_cons_false] THENC
+        NUM_REDUCE_CONV in
     let nn = mk_numeral n in
+    let mn = mk_numeral m in
     let r_th = bit_width_conv (mk_comb (`bit_width`,nn)) in
     let rn = rand (concl r_th) in
     let r = dest_numeral rn in
@@ -6108,15 +6165,148 @@ let mk_montgomery_double_exp m n =
     let rz =
         let n = dest_numeral (rhs (concl rz_th)) in
         bits_to_bus (num_to_bits_bound r n) in
+    let l_th =
+        let tm =
+            let tm0 = list_mk_comb (`(+) : num -> num -> num`, [d4n; `1`]) in
+            list_mk_comb (`(+) : num -> num -> num`, [d3n; tm0]) in
+        NUM_REDUCE_CONV tm in
+    let ln = rand (concl l_th) in
     let fv_x = `x : num` in
-    let fv_y = `y : num` in
     let fv_t = `t : cycle` in
-    let th0 =
-        (fun tm -> SPEC tm IMP_REFL)
-        (curry list_mk_comb `montgomery_double_exp`
-          [ld; mb; xs; xc; d0n; d1n;
-           ks; kc; d2n; ns; nc; jb; d3n; d4n; rx; ry; rz; dn; ys; yc]) in
-    let (ckt,th) = undisch_bind th0 in
+    let th =
+        SPECL
+          [nn; rn; sn; kn; mn; fv_x; ld; mb; xs; xc; d0n; d1n; ks; kc; d2n;
+           ns; nc; jb; d3n; d4n; rx; ry; rz; dn; ys; yc; fv_t; ln]
+          montgomery_double_exp_syn_spec in
+    let th =
+        let conv =
+            width_conv in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            LAND_CONV (REWR_CONV r_th) THENC
+            REWR_CONV (EQT_INTRO (SPEC_ALL LE_REFL)) in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            REWR_CONV (EQT_INTRO egcd_th) in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            NUM_REDUCE_CONV in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            REWR_CONV (EQT_INTRO l_th) in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            width_conv in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            LAND_CONV (LAND_CONV bits_conv) THENC
+            RAND_CONV (LAND_CONV (RAND_CONV width_conv)) THENC
+            NUM_REDUCE_CONV in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            QUANT_CONV
+              (LAND_CONV
+                 (LAND_CONV bits_conv THENC
+                  RAND_CONV (RAND_CONV bits_conv)) THENC
+               NUM_REDUCE_CONV) THENC
+            REWRITE_CONV [] in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            QUANT_CONV
+              (LAND_CONV
+                 (LAND_CONV bits_conv THENC
+                  RAND_CONV (RAND_CONV bits_conv)) THENC
+               NUM_REDUCE_CONV) THENC
+            REWRITE_CONV [] in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            QUANT_CONV
+              (LAND_CONV (LAND_CONV bits_conv) THENC
+               RAND_CONV
+                 (LAND_CONV (RAND_CONV width_conv) THENC
+                  RAND_CONV (LAND_CONV width_conv)) THENC
+               NUM_REDUCE_CONV) THENC
+            REWRITE_CONV [] in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            QUANT_CONV
+              (LAND_CONV bits_conv THENC
+               NUM_REDUCE_CONV) THENC
+            REWRITE_CONV [] in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            QUANT_CONV
+              (LAND_CONV bits_conv THENC
+               NUM_REDUCE_CONV) THENC
+            REWRITE_CONV [] in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let th =
+        let conv =
+            QUANT_CONV
+              (LAND_CONV bits_conv THENC
+               NUM_REDUCE_CONV) THENC
+            REWRITE_CONV [] in
+        CONV_RULE
+          (LAND_CONV
+             (LAND_CONV conv THENC
+              REWR_CONV TRUE_AND_THM)) th in
+    let (ckt,th) = undisch_bind th in
+    let th =
+        let ll_th =
+            let ll_tm = list_mk_comb (`(+) : num -> num -> num`, [ln; ln]) in
+            NUM_REDUCE_CONV ll_tm in
+        let r_th =
+            let r_tm = list_mk_comb (`(+) : num -> num -> num`, [rn; `2`]) in
+            NUM_REDUCE_CONV r_tm in
+        REWRITE_RULE [ll_th; r_th] th in
+    let th = (GEN fv_x o GEN fv_t) th in
     let syn = montgomery_double_exp_syn_gen "" in
     let primary = frees (concl th) in
     instantiate_hardware syn primary th;;
@@ -6132,7 +6322,7 @@ let primary = `clk : wire` :: frees (concl montgomery_91_thm);;
 output_string stdout (hardware_to_verilog "montgomery_91" primary montgomery_91_thm);;
 hardware_to_verilog_file "montgomery_91" primary montgomery_91_thm;;
 
-let double_exp_91_thm = mk_montgomery_double_exp (dest_numeral `11`) (dest_numeral `91`);;
+let double_exp_91_thm = mk_montgomery_double_exp (dest_numeral `91`) (dest_numeral `11`);;
 let primary = `clk : wire` :: frees (concl double_exp_91_thm);;
 output_string stdout (hardware_to_verilog "double_exp_91" primary double_exp_91_thm);;
 hardware_to_verilog_file "double_exp_91" primary double_exp_91_thm;;
