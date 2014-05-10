@@ -701,10 +701,10 @@ let delete_dead_logic primary_inputs primary_outputs th =
         map mk_def (hyp th) in
     let find_def wire =
         match filter (fun (w,_) -> w = wire) defs with
-          [] -> failwith "delete_dead_logic: no definition found for wire"
+          [] -> failwith ("delete_dead_logic: no definition found for wire " ^ dest_wire_var wire)
         | [(_,ws_asm)] -> ws_asm
         | _ :: _ :: _ ->
-          failwith "delete_dead_logic: multiple definitions found for wire" in
+          failwith ("delete_dead_logic: multiple definitions found for wire " ^ dest_wire_var wire) in
     let rec reachable seen work =
         match work with
           [] -> seen

@@ -6307,9 +6307,9 @@ let mk_montgomery_double_exp n m =
             NUM_REDUCE_CONV r_tm in
         REWRITE_RULE [ll_th; r_th] th in
     let th = (GEN fv_x o GEN fv_t) th in
-    let syn = montgomery_double_exp_syn_gen "" in
+    (***let syn = montgomery_double_exp_syn_gen "" in
     let primary = frees (concl th) in
-    instantiate_hardware syn primary th;;
+    instantiate_hardware syn primary***) th;;
 
 (*** Testing
 let montgomery_reduce_91_thm = mk_montgomery_mult_reduce (dest_numeral `91`);;
@@ -6326,6 +6326,44 @@ let double_exp_91_thm = mk_montgomery_double_exp (dest_numeral `91`) (dest_numer
 let primary = `clk : wire` :: frees (concl double_exp_91_thm);;
 output_string stdout (hardware_to_verilog "double_exp_91" primary double_exp_91_thm);;
 hardware_to_verilog_file "double_exp_91" primary double_exp_91_thm;;
+
+let double_exp_1399742505_thm = mk_montgomery_double_exp (dest_numeral `1399742505`) (dest_numeral `100`);;
+let primary = `clk : wire` :: frees (concl double_exp_1399742505_thm);;
+output_string stdout (hardware_to_verilog "double_exp_1399742505" primary double_exp_1399742505_thm);;
+hardware_to_verilog_file "double_exp_1399742505" primary double_exp_1399742505_thm;;
+
+let timed f x =
+    let t = Sys.time() in
+    let fx = f x in
+    let td = Sys.time() -. t in
+    (fx,td);;
+
+let performance_test () =
+    let random_odd_num w =
+        let f n =
+            let n = mult_num num_2 n in
+            if Random.bool () then add_num n num_1 else n in
+        let n = funpow (w - 2) f num_1 in
+        add_num (mult_num num_2 n) num_1 in
+    let m = dest_numeral `1000` in
+    let rec test w =
+        let n = random_odd_num w in
+        let name = "double_exp_" ^ string_of_num n in
+        let () = output_string stdout
+            ("About to generate " ^ string_of_int w ^ " bit circuit " ^ name ^ "\n") in
+        let (spec,spec_t) = timed (mk_montgomery_double_exp n) m in
+        let spec_t = int_of_float spec_t in
+        let syn = montgomery_double_exp_syn_gen "" in
+        let primary = frees (concl th) in
+        let (ckt,ckt_t) = timed (instantiate_hardware syn primary) spec in
+        let ckt_t = int_of_float ckt_t in
+        let _ = hardware_to_verilog_file name (`clk : wire` :: primary) ckt in
+        let () = output_string stdout
+            ("Generated " ^ string_of_int w ^ " bit circuit " ^ name ^ " in " ^ string_of_int spec_t ^ " + " ^ string_of_int ckt_t ^ " = " ^ string_of_int (spec_t + ckt_t) ^ " seconds\n") in
+        test (2 * w) in
+     test 8;;
+
+performance_test ();;
 ***)
 
 (* ------------------------------------------------------------------------- *)
