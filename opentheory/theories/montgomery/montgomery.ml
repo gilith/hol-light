@@ -25,22 +25,6 @@ let montgomery_reduce_def = new_definition
 
 export_thm montgomery_reduce_def;;
 
-let (montgomery_double_exp_zero,montgomery_double_exp_suc) =
-  let def = new_recursive_definition num_RECURSION
-    `(!n r k a. montgomery_double_exp n r k a 0 = a) /\
-     (!n r k a m.
-        montgomery_double_exp n r k a (SUC m) =
-        let b = montgomery_reduce n r k (a * a) in
-        let c = if r <= b then b - n else b in
-        montgomery_double_exp n r k c m)` in
-  CONJ_PAIR def;;
-
-export_thm montgomery_double_exp_zero;;
-export_thm montgomery_double_exp_suc;;
-
-let montgomery_double_exp_def =
-    CONJ montgomery_double_exp_zero montgomery_double_exp_suc;;
-
 (* ------------------------------------------------------------------------- *)
 (* Properties of Montgomery multiplication.                                  *)
 (* ------------------------------------------------------------------------- *)
@@ -329,137 +313,6 @@ let montgomery_reduce_unnormalized_bound = prove
 
 export_thm montgomery_reduce_unnormalized_bound;;
 
-let montgomery_double_exp_correct = prove
-  (`!n r s k a m.
-      ~(n = 0) /\
-      n <= r /\
-      r * s = k * n + 1 ==>
-      montgomery_double_exp n r k a m MOD n =
-      ((a * s) EXP (2 EXP m) * r) MOD n`,
-   REPEAT STRIP_TAC THEN
-   SPEC_TAC (`a : num`, `a : num`) THEN
-   SPEC_TAC (`m : num`, `m : num`) THEN
-   INDUCT_TAC THENL
-   [GEN_TAC THEN
-    REWRITE_TAC [montgomery_double_exp_zero; EXP_0; EXP_1] THEN
-    REWRITE_TAC [GSYM MULT_ASSOC] THEN
-    MP_TAC (SPEC `n : num` MOD_MULT_RMOD') THEN
-    ASM_REWRITE_TAC [] THEN
-    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th] THEN ASSUME_TAC th) THEN
-    SUBGOAL_THEN `(s * r) MOD n = 1 MOD n` SUBST1_TAC THENL
-    [MATCH_MP_TAC MOD_EQ THEN
-     EXISTS_TAC `k : num` THEN
-     ONCE_REWRITE_TAC [MULT_SYM; ADD_SYM] THEN
-     FIRST_ASSUM ACCEPT_TAC;
-     ASM_REWRITE_TAC [MULT_1]];
-    ALL_TAC] THEN
-   GEN_TAC THEN
-   ASM_REWRITE_TAC
-     [montgomery_double_exp_suc; EXP_SUC; LET_DEF; LET_END_DEF; EXP_MULT;
-      EXP_2] THEN
-   POP_ASSUM (K ALL_TAC) THEN
-   MP_TAC (SPEC `n : num` MOD_EXP_MOD') THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
-   MP_TAC (SPEC `n : num` MOD_MULT_LMOD') THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   MP_TAC (SPEC `n : num` MOD_EXP_MOD') THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   REWRITE_TAC [MULT_ASSOC] THEN
-   MP_TAC (SPEC `n : num` MOD_MULT_LMOD') THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   ONCE_REWRITE_TAC [MULT_SYM] THEN
-   REWRITE_TAC [MULT_ASSOC] THEN
-   COND_CASES_TAC THENL
-   [MATCH_MP_TAC EQ_TRANS THEN
-    EXISTS_TAC `((montgomery_reduce n r k (a * a) - n) + n) MOD n` THEN
-    CONJ_TAC THENL
-    [MATCH_MP_TAC EQ_SYM THEN
-     MP_TAC (SPEC `n : num` MOD_ADD_MOD') THEN
-     ASM_REWRITE_TAC [] THEN
-     DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
-     MP_TAC (SPEC `n : num` MOD_REFL) THEN
-     ASM_REWRITE_TAC [] THEN
-     DISCH_THEN SUBST1_TAC THEN
-     REWRITE_TAC [ADD_0] THEN
-     MATCH_MP_TAC MOD_MOD_REFL THEN
-     FIRST_ASSUM ACCEPT_TAC;
-     MATCH_MP_TAC EQ_TRANS THEN
-     EXISTS_TAC `montgomery_reduce n r k (a * a) MOD n` THEN
-     CONJ_TAC THENL
-     [AP_THM_TAC THEN
-      AP_TERM_TAC THEN
-      MATCH_MP_TAC SUB_ADD THEN
-      MATCH_MP_TAC LE_TRANS THEN
-      EXISTS_TAC `r : num` THEN
-      ASM_REWRITE_TAC [];
-      MATCH_MP_TAC montgomery_reduce_correct THEN
-      ASM_REWRITE_TAC []]];
-    MATCH_MP_TAC montgomery_reduce_correct THEN
-    ASM_REWRITE_TAC []]);;
-
-export_thm montgomery_double_exp_correct;;
-
-let montgomery_double_exp_bound = prove
-  (`!n r k a m.
-      ~(n = 0) /\
-      n <= r /\
-      a < r ==>
-      montgomery_double_exp n r k a m < r`,
-   REPEAT STRIP_TAC THEN
-   POP_ASSUM MP_TAC THEN
-   SPEC_TAC (`a : num`, `a : num`) THEN
-   SPEC_TAC (`m : num`, `m : num`) THEN
-   INDUCT_TAC THENL
-   [REWRITE_TAC [montgomery_double_exp_zero];
-    ALL_TAC] THEN
-   REPEAT STRIP_TAC THEN
-   REWRITE_TAC [montgomery_double_exp_suc; LET_DEF; LET_END_DEF] THEN
-   FIRST_X_ASSUM MATCH_MP_TAC THEN
-   REWRITE_TAC [GSYM NOT_LT] THEN
-   ASM_CASES_TAC `montgomery_reduce n r k (a * a) < r` THENL
-   [ASM_REWRITE_TAC [];
-    ALL_TAC] THEN
-   ASM_REWRITE_TAC [] THEN
-   ONCE_REWRITE_TAC [GSYM (SPEC `n : num` LT_ADD_RCANCEL)] THEN
-   SUBGOAL_THEN
-     `montgomery_reduce n r k (a * a) - n + n =
-      montgomery_reduce n r k (a * a)` SUBST1_TAC THENL
-   [MATCH_MP_TAC SUB_ADD THEN
-    MATCH_MP_TAC LE_TRANS THEN
-    EXISTS_TAC `r : num` THEN
-    ASM_REWRITE_TAC [] THEN
-    ASM_REWRITE_TAC [GSYM NOT_LT];
-    ALL_TAC] THEN
-   POP_ASSUM (K ALL_TAC) THEN
-   MATCH_MP_TAC montgomery_reduce_unnormalized_bound THEN
-   ASM_REWRITE_TAC [] THEN
-   CONJ_TAC THENL
-   [DISCH_THEN SUBST_VAR_TAC THEN
-    POP_ASSUM MP_TAC THEN
-    REWRITE_TAC [NOT_LT; LE_0];
-    POP_ASSUM (STRIP_ASSUME_TAC o REWRITE_RULE [LT_LE]) THEN
-    MATCH_MP_TAC LE_TRANS THEN
-    EXISTS_TAC `a * r : num` THEN
-    ASM_REWRITE_TAC [LE_MULT_LCANCEL; LE_MULT_RCANCEL]]);;
-
-export_thm montgomery_double_exp_bound;;
-
 (* ------------------------------------------------------------------------- *)
 (* Definition of a Montgomery multiplication circuit.                        *)
 (* ------------------------------------------------------------------------- *)
@@ -723,9 +576,9 @@ export_thm montgomery_mult_def;;
 (*          wired to the internal register).                             *)
 (* --------------------------------------------------------------------- *)
 
-let montgomery_repeat_square_def = new_definition
+let montgomery_double_exp_def = new_definition
   `!ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc.
-     montgomery_repeat_square
+     montgomery_double_exp
        ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc <=>
      ?r sa sb jp ps pc qs qc
       sad sadd san sap saq sar sbd sbdd sbp sbq sbr srdd
@@ -780,7 +633,7 @@ let montgomery_repeat_square_def = new_definition
         bdelay psr ps /\
         bdelay pcr pc`;;
 
-export_thm montgomery_repeat_square_def;;
+export_thm montgomery_double_exp_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Correctness of a Montgomery multiplication circuit.                       *)
@@ -3348,7 +3201,7 @@ let montgomery_mult_bits_to_num = prove
 
 export_thm montgomery_mult_bits_to_num;;
 
-let montgomery_repeat_square_bits_to_num = prove
+let montgomery_double_exp_bits_to_num = prove
  (`!n r s k m x ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc
     t l. ?d. !j.
      width xs = r /\
@@ -3383,7 +3236,7 @@ let montgomery_repeat_square_bits_to_num = prove
      (!i.
         i < d ==>
         bits_to_num (bsignal rz (t + l + i)) = (3 * (2 EXP r)) MOD n) /\
-     montgomery_repeat_square
+     montgomery_double_exp
        ld mb xs xc d0 d1 ks kc d2 ns nc jb d3 d4 rx ry rz dn ys yc ==>
      (!i. i <= d + j ==> (signal dn (t + l + i) <=> d <= i)) /\
      (bits_to_num (bsignal ys (t + l + d + j)) +
@@ -3397,7 +3250,7 @@ let montgomery_repeat_square_bits_to_num = prove
    ALL_TAC] THEN
   EXISTS_TAC `d : cycle` THEN
   GEN_TAC THEN
-  REWRITE_TAC [montgomery_repeat_square_def] THEN
+  REWRITE_TAC [montgomery_double_exp_def] THEN
   STRIP_TAC THEN
   ASM_CASES_TAC `n = 0` THENL
   [SUBGOAL_THEN `F` CONTR_TAC THEN
@@ -5744,7 +5597,7 @@ let montgomery_repeat_square_bits_to_num = prove
   FIRST_X_ASSUM MATCH_MP_TAC THEN
   ASM_REWRITE_TAC [ONCE_REWRITE_RULE [ADD_SYM] ADD1]);;
 
-export_thm montgomery_repeat_square_bits_to_num;;
+export_thm montgomery_double_exp_bits_to_num;;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing hardware.                                      *)
@@ -5782,16 +5635,16 @@ let montgomery_mult_syn_gen n =
 
 let montgomery_mult_syn = montgomery_mult_syn_gen "multm";;
 
-let montgomery_repeat_square_syn_gen n =
+let montgomery_double_exp_syn_gen n =
     setify
-      ((n,montgomery_repeat_square_def) ::
+      ((n,montgomery_double_exp_def) ::
        nor2_syn @
        pipe_syn @
        event_counter_syn @
        counter_pulse_syn @
        montgomery_mult_syn);;
 
-let montgomery_repeat_square_syn = montgomery_repeat_square_syn_gen "dexp2m";;
+let montgomery_double_exp_syn = montgomery_double_exp_syn_gen "dexp2m";;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing verified Montgomery multiplication circuits.   *)
@@ -6183,7 +6036,7 @@ let mk_montgomery_mult n =
     let primary = frees (concl th) in
     instantiate_hardware syn primary th;;
 
-let mk_montgomery_repeat_square m n =
+let mk_montgomery_double_exp m n =
     let nn = mk_numeral n in
     let r_th = bit_width_conv (mk_comb (`bit_width`,nn)) in
     let rn = rand (concl r_th) in
@@ -6260,11 +6113,11 @@ let mk_montgomery_repeat_square m n =
     let fv_t = `t : cycle` in
     let th0 =
         (fun tm -> SPEC tm IMP_REFL)
-        (curry list_mk_comb `montgomery_repeat_square`
+        (curry list_mk_comb `montgomery_double_exp`
           [ld; mb; xs; xc; d0n; d1n;
            ks; kc; d2n; ns; nc; jb; d3n; d4n; rx; ry; rz; dn; ys; yc]) in
     let (ckt,th) = undisch_bind th0 in
-    let syn = montgomery_repeat_square_syn_gen "" in
+    let syn = montgomery_double_exp_syn_gen "" in
     let primary = frees (concl th) in
     instantiate_hardware syn primary th;;
 
@@ -6279,7 +6132,7 @@ let primary = `clk : wire` :: frees (concl montgomery_91_thm);;
 output_string stdout (hardware_to_verilog "montgomery_91" primary montgomery_91_thm);;
 hardware_to_verilog_file "montgomery_91" primary montgomery_91_thm;;
 
-let double_exp_91_thm = mk_montgomery_repeat_square (dest_numeral `11`) (dest_numeral `91`);;
+let double_exp_91_thm = mk_montgomery_double_exp (dest_numeral `11`) (dest_numeral `91`);;
 let primary = `clk : wire` :: frees (concl double_exp_91_thm);;
 output_string stdout (hardware_to_verilog "double_exp_91" primary double_exp_91_thm);;
 hardware_to_verilog_file "double_exp_91" primary double_exp_91_thm;;
