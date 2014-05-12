@@ -830,17 +830,15 @@ let instantiate_circuit rule =
         is_xor2 tm or
         is_case1 tm or
         is_delay tm in
-    let check_tm tm =
-        let () = output_string stderr (string_of_term tm ^ "\n") in
-        () in
+    let complain s = output_string stderr (s ^ "\n") in
     let check_instantiation _ tms =
         match filter (not o is_primitive) tms with
           [] -> ()
         | bad ->
           let n = length bad in
           let s = "term" ^ (if n = 1 then "" else "s") in
-          let () = output_string stderr ("\n" ^ string_of_int n ^ " non-primitive " ^ s ^ ":\n") in
-          let () = List.iter check_tm bad in
+          let () = complain ("\n" ^ string_of_int n ^ " non-primitive " ^ s ^ ":\n") in
+          let () = List.iter (complain o string_of_term) bad in
           let () = flush stderr in
           failwith ("couldn't reduce " ^ string_of_int n ^ " " ^ s) in
     fun namer -> fun th ->
