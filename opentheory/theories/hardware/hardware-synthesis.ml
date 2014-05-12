@@ -821,6 +821,34 @@ let rename_wires primary th =
     let sub = deprime_to_sub primary dp in
     INST sub th;;
 
+let instantiate_circuit rule =
+    let is_primitive tm =
+        is_connect tm or
+        is_not tm or
+        is_and2 tm or
+        is_or2 tm or
+        is_xor2 tm or
+        is_case1 tm or
+        is_delay tm in
+    let check_tm tm =
+        let () = output_string stderr (string_of_term tm ^ "\n") in
+        () in
+    let check_instantiation _ tms =
+        match filter (not o is_primitive) tms with
+          [] -> ()
+        | bad ->
+          let n = length bad in
+          let s = "term" ^ (if n = 1 then "" else "s") in
+          let () = output_string stderr ("\n" ^ string_of_int n ^ " non-primitive " ^ s ^ ":\n") in
+          let () = List.iter check_tm bad in
+          let () = flush stderr in
+          failwith ("couldn't reduce " ^ string_of_int n ^ " " ^ s) in
+    fun namer -> fun th ->
+    let (tms,th,_,namer) =
+        repeat_prove_hyp_prolog_rule rule (hyp th) th namer in
+    let () = check_instantiation namer tms in
+    (th,namer);;
+
 let instantiate_hardware =
     let basic_rules =
         [subst_var_prolog_rule;
@@ -851,11 +879,11 @@ let instantiate_hardware =
          case1_middle_power] in
     fun syn ->
     let user_rules = map (uncurry scope_thm_prolog_rule) syn in
-    let rule = first_prolog_rule (basic_rules @ user_rules) in
-    let instantiate = repeat_prove_hyp_prolog_rule (repeat_prolog_rule rule) in
+    let rule =
+        repeat_prolog_rule (first_prolog_rule (basic_rules @ user_rules)) in
     fun primary -> fun th ->
     let namer = new_namer primary in
-    let (_,th,_,namer) = instantiate (hyp th) th namer in
+    let (th,namer) = instantiate_circuit rule namer th in
     let (primary_inputs,primary_outputs) = partition_primary primary th in
     let (th,namer) = rescue_primary_outputs primary_outputs th namer in
     let th = merge_logic th in
