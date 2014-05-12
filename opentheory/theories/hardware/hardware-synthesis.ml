@@ -837,7 +837,7 @@ let instantiate_circuit rule =
         | bad ->
           let n = length bad in
           let s = "term" ^ (if n = 1 then "" else "s") in
-          let () = complain ("\n" ^ string_of_int n ^ " non-primitive " ^ s ^ ":\n") in
+          let () = complain ("\n" ^ string_of_int n ^ " non-primitive " ^ s ^ ":") in
           let () = List.iter (complain o string_of_term) bad in
           let () = flush stderr in
           failwith ("couldn't reduce " ^ string_of_int n ^ " " ^ s) in
