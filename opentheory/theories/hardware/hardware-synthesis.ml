@@ -12,6 +12,19 @@ let complain s =
     let () = flush stderr in
     ();;
 
+let timed f x =
+    let t = Sys.time() in
+    let fx = f x in
+    let td = Sys.time() -. t in
+    (fx,td);;
+
+let random_odd_num w =
+    let f n =
+        let n = mult_num num_2 n in
+        if Random.bool () then add_num n num_1 else n in
+    let n = funpow (w - 2) f num_1 in
+    add_num (mult_num num_2 n) num_1;;
+
 let maps (f : 'a -> 's -> 'b * 's) =
     let rec m xs s =
         match xs with
@@ -149,13 +162,12 @@ let no_prolog_rule =
 
 let apply_prolog_rule (Prolog_rule pr) goal namer =
     let subgoals_th_sub_namer = pr goal namer in
-    let (subgoals,th,sub,_) = subgoals_th_sub_namer in
 (* Debugging
+    let (subgoals,th,sub,_) = subgoals_th_sub_namer in
     let () =
         let n = length subgoals in
         let msg = "apply_prolog_rule: reducing goal\n" ^ string_of_term goal ^ "\nto " ^ string_of_int n ^ " subgoal" ^ (if n = 1 then "" else "s") ^ (if n = 0 then "" else ":\n" ^ String.concat "\n" (map string_of_term subgoals)) ^ "\nusing theorem:\n" ^ string_of_thm th ^ "\n" in
         print_string msg in
-*)
     let () =
         let goal' = vsubst sub goal in
         if aconv goal' (concl th) then () else
@@ -168,6 +180,7 @@ let apply_prolog_rule (Prolog_rule pr) goal namer =
             let () = complain ("subgoal\n" ^ string_of_term tm ^ "\nnot a hypothesis in\n" ^ string_of_thm th ^ "\n") in
             raise (Prolog_bug "apply_prolog_rule: subgoal not a hypothesis") in
         List.iter check tms in
+*)
     subgoals_th_sub_namer;;
 
 let check_prolog_rule f pr =
