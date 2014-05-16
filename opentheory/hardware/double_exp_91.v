@@ -1,65 +1,17 @@
 /*----------------------------------------------------------------------------+
 | module double_exp_91 satisfies the following property:                      |
 |                                                                             |
-| montgomery_repeat_square ld                                                 |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire power) (bappend (bwire ground) bnil))))                     |
-| xs[0:6]                                                                     |
-| xc[0:6]                                                                     |
-| 2                                                                           |
-| 2                                                                           |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire ground) (bappend (bwire ground) bnil))))))))                |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground) (bappend (bwire ground) bnil))))))))                |
-| 2                                                                           |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire power) (bappend (bwire ground) bnil))))))                   |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground) (bappend (bwire power) bnil))))))                   |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire power) (bappend (bwire ground) bnil))))                     |
-| 2                                                                           |
-| 2                                                                           |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire power) (bappend (bwire ground) bnil)))))))                  |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground) (bappend (bwire power) bnil)))))))                  |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire ground)                                                     |
-| (bappend (bwire power)                                                      |
-| (bappend (bwire ground) (bappend (bwire ground) bnil)))))))                 |
-| dn                                                                          |
-| ys[0:6]                                                                     |
-| yc[0:6]                                                                     |
+| !x t.                                                                       |
+|     ?d. !j. (!i. i <= d + j ==> (signal ld (t + i) <=> i <= 5)) /\          |
+|             (bits_to_num (bsignal xs[0:6] (t + 10)) +                       |
+|              2 * bits_to_num (bsignal xc[0:6] (t + 10))) MOD                |
+|             91 =                                                            |
+|             (x * 2 EXP 9) MOD 91                                            |
+|             ==> (!i. i <= d + j ==> (signal dn (t + 5 + i) <=> d <= i)) /\  |
+|                 (bits_to_num (bsignal ys[0:6] (t + 5 + d + j)) +            |
+|                  2 * bits_to_num (bsignal yc[0:6] (t + 5 + d + j))) MOD     |
+|                 91 =                                                        |
+|                 (x EXP (2 EXP 11) * 2 EXP 9) MOD 91                         |
 +----------------------------------------------------------------------------*/
 
 module double_exp_91(clk,ld,xs,xc,dn,ys,yc);

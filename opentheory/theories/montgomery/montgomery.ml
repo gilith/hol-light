@@ -6355,8 +6355,10 @@ let performance_test () =
         let n = random_odd_num w in
         let m = dest_numeral `1000` (***num_of_int w***) in
         let name = "double_exp_" ^ string_of_num n ^ "_" ^ string_of_num m in
+(* Debugging
         let () = output_string stdout
             ("About to generate " ^ string_of_int w ^ " bit circuit " ^ name ^ "\n") in
+*)
         let (spec,spec_t) = timed (mk_montgomery_double_exp n) m in
         let spec_t = int_of_float spec_t in
         let syn = montgomery_double_exp_syn_gen "" in
@@ -6364,10 +6366,10 @@ let performance_test () =
         let (ckt,ckt_t) = timed (instantiate_hardware syn primary) spec in
         let ckt_t = int_of_float ckt_t in
         let _ = hardware_to_verilog_file name (`clk : wire` :: primary) ckt in
-        let () = output_string stdout
-            ("Generated " ^ string_of_int w ^ " bit circuit " ^ name ^ " in " ^ string_of_int spec_t ^ " + " ^ string_of_int ckt_t ^ " = " ^ string_of_int (spec_t + ckt_t) ^ " seconds\n") in
+        let () = complain
+            ("Generated " ^ string_of_int w ^ " bit circuit " ^ name ^ " in " ^ string_of_int spec_t ^ " + " ^ string_of_int ckt_t ^ " = " ^ string_of_int (spec_t + ckt_t) ^ " seconds") in
         test (2 * w) in
-     test 4;;
+     test 8;;
 
 performance_test ();;
 ***)

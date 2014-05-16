@@ -7,6 +7,11 @@
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
+let complain s =
+    let () = output_string stderr (s ^ "\n") in
+    let () = flush stderr in
+    ();;
+
 let maps (f : 'a -> 's -> 'b * 's) =
     let rec m xs s =
         match xs with
@@ -66,6 +71,11 @@ let undisch_bind th =
     let (tm,_) = dest_imp (concl th) in
     (tm, UNDISCH th);;
 
+let string_of_subst =
+    let maplet (t,v) = string_of_term v ^ " |-> " ^ string_of_term t ^ "\n" in
+    fun sub ->
+    "<sub> [" ^ (if length sub = 0 then "" else ("\n  " ^ String.concat "\n  " (map maplet sub))) ^ "]";;
+
 (* ------------------------------------------------------------------------- *)
 (* Name generators.                                                          *)
 (* ------------------------------------------------------------------------- *)
@@ -121,9 +131,15 @@ let narrow_scope s namer =
 (* Prolog rules allow backward reasoning on theorem assumptions.             *)
 (* ------------------------------------------------------------------------- *)
 
+exception Prolog_bug of string;;
+
 type prolog_rule =
      Prolog_rule of
        (term -> namer -> term list * thm * (term * term) list * namer);;
+
+type prolog_object =
+     Goal_prolog_object of term
+   | Sub_prolog_object of (term * term) list;;
 
 let all_prolog_rule =
     Prolog_rule (fun tm -> fun namer -> ([tm], ASSUME tm, [], namer));;
@@ -131,7 +147,28 @@ let all_prolog_rule =
 let no_prolog_rule =
     Prolog_rule (fun _ -> fun _ -> failwith "no_prolog_rule");;
 
-let apply_prolog_rule (Prolog_rule pr) = pr;;
+let apply_prolog_rule (Prolog_rule pr) goal namer =
+    let subgoals_th_sub_namer = pr goal namer in
+    let (subgoals,th,sub,_) = subgoals_th_sub_namer in
+(* Debugging
+    let () =
+        let n = length subgoals in
+        let msg = "apply_prolog_rule: reducing goal\n" ^ string_of_term goal ^ "\nto " ^ string_of_int n ^ " subgoal" ^ (if n = 1 then "" else "s") ^ (if n = 0 then "" else ":\n" ^ String.concat "\n" (map string_of_term subgoals)) ^ "\nusing theorem:\n" ^ string_of_thm th ^ "\n" in
+        print_string msg in
+*)
+    let () =
+        let goal' = vsubst sub goal in
+        if aconv goal' (concl th) then () else
+        let () = complain ("using substitution\n" ^ string_of_subst sub ^ "\nconclusion of\n" ^ string_of_thm th ^ "\ndoesn't match goal[substitution]\n" ^ string_of_term goal' ^ "\n") in
+        raise (Prolog_bug "apply_prolog_rule: conclusion doesn't match goal[substitution]") in
+    let () =
+        let tms = hyp th in
+        let check tm =
+            if mem tm tms then () else
+            let () = complain ("subgoal\n" ^ string_of_term tm ^ "\nnot a hypothesis in\n" ^ string_of_thm th ^ "\n") in
+            raise (Prolog_bug "apply_prolog_rule: subgoal not a hypothesis") in
+        List.iter check tms in
+    subgoals_th_sub_namer;;
 
 let check_prolog_rule f pr =
     Prolog_rule
@@ -188,9 +225,11 @@ let then_prolog_rule pr1 pr2 =
 let repeat_prove_hyp_prolog_rule pr =
     let rec rollback_asms gsub gsubdom asmsl goals =
         match asmsl with
-          [] -> failwith "repeat_prove_hyp_prolog_rule.rollback_asms"
+          [] -> raise (Prolog_bug "repeat_prove_hyp_prolog_rule.rollback_asms")
         | (asms,fvs) :: asmsl ->
-          let goals = map (vsubst gsub) asms @ goals in
+          let goals =
+              map (fun asm -> Goal_prolog_object (vsubst gsub asm)) asms @
+              goals in
           if disjoint gsubdom fvs then (fvs,asmsl,goals) else
           rollback_asms gsub gsubdom asmsl goals in
     let rec finalize_asms acc asmsl =
@@ -202,11 +241,19 @@ let repeat_prove_hyp_prolog_rule pr =
     let rec prolog_asms fvs asmsl th sub namer goals =
         match goals with
           [] -> (finalize_asms [] asmsl, th, sub, namer)
-        | goal :: goals ->
+        | Sub_prolog_object oldsub :: goals ->
+          prolog_asms fvs asmsl th (compose_subst oldsub sub) namer goals
+        | Goal_prolog_object goal :: goals ->
           let goal = vsubst sub goal in
 (* Debugging
             let () =
                 let msg = "goal = " ^ string_of_term goal ^ "\n" in
+                print_string msg in
+            let () =
+                let msg = "sub = " ^ string_of_subst th ^ "\n" in
+                print_string msg in
+            let () =
+                let msg = "th = " ^ string_of_thm th ^ "\n" in
                 print_string msg in
 *)
           let (gasms,gth,gsub,gnamer) = apply_prolog_rule pr goal namer in
@@ -219,10 +266,15 @@ let repeat_prove_hyp_prolog_rule pr =
             let fvs = union fvs (freesl gasms) in
             prolog_asms fvs asmsl th sub namer goals
           else
-            let goals = gasms @ map (vsubst sub) goals in
+            let goals =
+                map (fun gasm -> Goal_prolog_object gasm) gasms @
+                Sub_prolog_object sub ::
+                goals in
             let (fvs,asmsl,goals) = rollback_asms gsub gsubdom asmsl goals in
             prolog_asms fvs asmsl th [] namer goals in
-    fun asms -> fun th -> fun namer -> prolog_asms [] [] th [] namer asms;;
+    fun asms -> fun th -> fun namer ->
+    let goals = map (fun asm -> Goal_prolog_object asm) asms in
+    prolog_asms [] [] th [] namer goals;;
 
 let then_repeat_prolog_rule pr1 pr2 =
     Prolog_rule
@@ -426,6 +478,15 @@ let ckt_fanout th =
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing hardware.                                      *)
 (* ------------------------------------------------------------------------- *)
+
+let is_synthesizable tm =
+    is_connect tm or
+    is_not tm or
+    is_and2 tm or
+    is_or2 tm or
+    is_xor2 tm or
+    is_case1 tm or
+    is_delay tm;;
 
 let num_simp_prolog_rule =
     let push_numeral_conv =
@@ -685,12 +746,12 @@ let merge_logic =
           | h :: _ ->
             let w' = rand h in
 (* Debugging
-*)
             let () =
                 let msg =
                     "Merging wires " ^ string_of_term w ^
                     " and " ^ string_of_term w' ^ "\n" in
                 print_string msg in
+*)
             merge_thm (INST [sort_wires w w'] th)
     and merge_thm th = merge_asms th (hyp th) in
     merge_thm;;
@@ -822,24 +883,14 @@ let rename_wires primary th =
     INST sub th;;
 
 let instantiate_circuit rule =
-    let is_primitive tm =
-        is_connect tm or
-        is_not tm or
-        is_and2 tm or
-        is_or2 tm or
-        is_xor2 tm or
-        is_case1 tm or
-        is_delay tm in
-    let complain s = output_string stderr (s ^ "\n") in
     let check_instantiation _ tms =
-        match filter (not o is_primitive) tms with
+        match filter (not o is_synthesizable) tms with
           [] -> ()
         | bad ->
           let n = length bad in
           let s = "term" ^ (if n = 1 then "" else "s") in
-          let () = complain ("\n" ^ string_of_int n ^ " non-primitive " ^ s ^ ":") in
+          let () = complain ("\n" ^ string_of_int n ^ " unsynthesizable " ^ s ^ ":") in
           let () = List.iter (complain o string_of_term) bad in
-          let () = flush stderr in
           failwith ("couldn't reduce " ^ string_of_int n ^ " " ^ s) in
     fun namer -> fun th ->
     let (tms,th,_,namer) =
@@ -1170,19 +1221,12 @@ let hardware_to_verilog =
     let wire_name w =
         if is_ground w then "1'b0" else
         if is_power w then "1'b1" else
-        if not (is_var w) then
-          failwith ("wire not a var: " ^ string_of_term w)
-        else
-        let (n,ty) = dest_var w in
-        if ty <> wire_ty then
-          failwith ("wire has bad type: " ^ string_of_term w)
-        else
-          n in
+        dest_wire_var w in
     let wire_names = map wire_name in
     let wire_sort =
-        let var_name v = fst (dest_var v) in
-        let var_cmp v1 v2 = String.compare (var_name v1) (var_name v2) < 0 in
-        sort var_cmp in
+        let wire_cmp w1 w2 =
+            String.compare (dest_wire_var w1) (dest_wire_var w2) < 0 in
+        sort wire_cmp in
     let arg_name arg =
         match arg with
           Wire_verilog_arg w -> wire_name w
