@@ -13,9 +13,9 @@ module main;
 
    initial
      begin
-        $display("+---------------------------+");
-        $display("| Test bench for counter_91 |");
-        $display("+---------------------------+");
+        $display("+--------------------+");
+        $display("| Testing counter_91 |");
+        $display("+--------------------+");
         $monitor("ld = %b, dn = %b",
                   root.ld, root.dn);
         clk = 0;

@@ -54,9 +54,9 @@ module main;
    initial
      begin
         seed = `SEED;
-        $display("+--------------------------------------+");
-        $display("| Test bench for double_exp_91 circuit |");
-        $display("+--------------------------------------+");
+        $display("+-----------------------+");
+        $display("| Testing double_exp_91 |");
+        $display("+-----------------------+");
         $display("random seed = %0d", seed);
         $display("");
         $display("+-----+----+-----+-----+-------+----+-----+-----+----+-----+-----+");

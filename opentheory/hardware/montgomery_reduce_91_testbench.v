@@ -32,9 +32,9 @@ module main;
    initial
      begin
         seed = `SEED;
-        $display("+---------------------------------------------+");
-        $display("| Test bench for montgomery_reduce_91 circuit |");
-        $display("+---------------------------------------------+");
+        $display("+------------------------------+");
+        $display("| Testing montgomery_reduce_91 |");
+        $display("+------------------------------+");
         $display("random seed = %0d", seed);
         $display("");
         $display("+----+----+-----+-----+-----+-----+-----+-----+");
