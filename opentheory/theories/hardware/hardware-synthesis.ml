@@ -7,16 +7,22 @@
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-let complain s =
-    let () = output_string stderr (s ^ "\n") in
-    let () = flush stderr in
-    ();;
-
 let timed f x =
     let t = Sys.time() in
     let fx = f x in
     let td = Sys.time() -. t in
     (fx,td);;
+
+let complain s =
+    let () = output_string stderr (s ^ "\n") in
+    let () = flush stderr in
+    ();;
+
+let complain_timed s f x =
+    let (fx,t) = timed f x in
+    let t = int_of_float t in
+    let () = complain ("- " ^ s ^ ": " ^ string_of_int t ^ " second" ^ (if t = 1 then "" else "s")) in
+    fx;;
 
 let random_odd_num w =
     let f n =
@@ -895,8 +901,8 @@ let rename_wires primary th =
     let sub = deprime_to_sub primary dp in
     INST sub th;;
 
-let instantiate_circuit rule =
-    let check_instantiation _ tms =
+let elaborate_modules rule =
+    let check_elaboration tms =
         match filter (not o is_synthesizable) tms with
           [] -> ()
         | bad ->
@@ -908,10 +914,10 @@ let instantiate_circuit rule =
     fun namer -> fun th ->
     let (tms,th,_,namer) =
         repeat_prove_hyp_prolog_rule rule (hyp th) th namer in
-    let () = check_instantiation namer tms in
+    let () = check_elaboration tms in
     (th,namer);;
 
-let instantiate_hardware =
+let synthesize_hardware =
     let basic_rules =
         [subst_var_prolog_rule;
          num_simp_prolog_rule;
@@ -945,17 +951,17 @@ let instantiate_hardware =
         repeat_prolog_rule (first_prolog_rule (basic_rules @ user_rules)) in
     fun primary -> fun th ->
     let namer = new_namer primary in
-    let (th,namer) = instantiate_circuit rule namer th in
+    let (th,namer) = complain_timed "Elaborated modules" (elaborate_modules rule namer) th in
     let (primary_inputs,primary_outputs) = partition_primary primary th in
     let (th,namer) = rescue_primary_outputs primary_outputs th namer in
-    let th = merge_logic th in
-    let th = delete_dead_logic primary_inputs primary_outputs th in
+    let th = complain_timed "Merged identical logic" merge_logic th in
+    let th = complain_timed "Deleted dead logic" (delete_dead_logic primary_inputs primary_outputs) th in
     let th = rename_wires primary th in
     th;;
 
 (*** Testing
-instantiate_hardware counter_syn (frees (concl counter91_thm)) counter91_thm;;
-instantiate_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgomery91_thm;;
+synthesize_hardware counter_syn (frees (concl counter91_thm)) counter91_thm;;
+synthesize_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgomery91_thm;;
 ***)
 
 (* ------------------------------------------------------------------------- *)

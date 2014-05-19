@@ -5840,7 +5840,7 @@ let mk_montgomery_mult_reduce n =
          DISCH ld_cond o DISCH x_cond o DISCH y_cond) th11 in
     let syn = montgomery_mult_reduce_syn_gen "" in
     let primary = frees (concl th) in
-    instantiate_hardware syn primary th;;
+    synthesize_hardware syn primary th;;
 
 let mk_montgomery_mult n =
     let nn = mk_numeral n in
@@ -6079,9 +6079,9 @@ let mk_montgomery_mult n =
          DISCH ld_cond o DISCH x_cond o DISCH y_cond) th16 in
     let syn = montgomery_mult_syn_gen "" in
     let primary = frees (concl th) in
-    instantiate_hardware syn primary th;;
+    synthesize_hardware syn primary th;;
 
-let mk_montgomery_double_exp n m =
+let instantiate_montgomery_double_exp n m =
     let QUANT_CONV c = RAND_CONV (ABS_CONV c) in
     let width_conv =
         REWRITE_CONV [bnil_width; bwire_width; bappend_width] THENC
@@ -6307,9 +6307,157 @@ let mk_montgomery_double_exp n m =
             NUM_REDUCE_CONV r_tm in
         REWRITE_RULE [ll_th; r_th] th in
     let th = (GEN fv_x o GEN fv_t) th in
-    (***let syn = montgomery_double_exp_syn_gen "" in
-    let primary = frees (concl th) in
-    instantiate_hardware syn primary***) th;;
+    th;;
+
+let synthesize_montgomery_double_exp n m =
+    let name = "double_exp_" ^ string_of_num n ^ "_" ^ string_of_num m in
+    let () = complain ("Synthesizing " ^ name ^ ":") in
+    let spec = complain_timed "Instantiated parameters" (instantiate_montgomery_double_exp n) m in
+    let syn = montgomery_double_exp_syn_gen "" in
+    let primary = frees (concl spec) in
+    let ckt = synthesize_hardware syn primary spec in
+    let clk = `clk : wire` in
+    let _ = hardware_to_verilog_file name (clk :: primary) ckt in
+    (name,ckt);;
+
+let testbench_montgomery_double_exp name ckt =
+    let width =
+        let xs =
+            (lhand o rand o lhand o lhand o lhand o rand o lhand o snd o
+             dest_abs o rand o snd o dest_abs o rand o snd o dest_abs o
+             rand o snd o dest_abs o rand o concl) ckt in
+        match dest_variable_bus xs with
+          Bus_wires (_,l) -> num_of_int (length l) in
+    let last_reset_cycle =
+        (dest_numeral o rand o rand o rand o snd o dest_abs o rand o lhand o
+         lhand o snd o dest_abs o rand o snd o dest_abs o rand o snd o
+         dest_abs o rand o snd o dest_abs o rand o concl) ckt in
+    let input_cycle =
+        (dest_numeral o rand o rand o rand o lhand o lhand o lhand o rand o
+         lhand o snd o dest_abs o rand o snd o dest_abs o rand o snd o
+         dest_abs o rand o snd o dest_abs o rand o concl) ckt in
+    let lines =
+        ["`include \"" ^ name ^ ".v\"";
+         "";
+         "module main;";
+         "  reg [0:" ^ string_of_num (sub_num width num_1) ^ "] xs;";
+         "  reg [0:" ^ string_of_num (sub_num width num_1) ^ "] xc;";
+         "  reg [0:" ^ string_of_num (sub_num width num_1) ^ "] ys;";
+         "  reg [0:" ^ string_of_num (sub_num width num_1) ^ "] yc;";
+         "";
+         "  reg clk;";
+         "  reg ld;";
+         "  reg [0:" ^ string_of_num (sub_num width num_1) ^ "] ps;";
+         "  reg [0:" ^ string_of_num (sub_num width num_1) ^ "] pc;";
+         "  wire dn;";
+         "  wire [0:" ^ string_of_num (sub_num width num_1) ^ "] qs;";
+         "  wire [0:" ^ string_of_num (sub_num width num_1) ^ "] qc;";
+         "";
+         "  integer seed;";
+         "";
+         "  " ^ name;
+         "    root";
+         "    (.clk (clk),";
+         "     .ld (ld),";
+         "     .xs (ps),";
+         "     .xc (pc),";
+         "     .dn (dn),";
+         "     .ys (qs),";
+         "     .yc (qc));";
+         "";
+         "  initial";
+         "    begin";
+         "      seed = `SEED;";
+         "      xs = $random(seed);";
+         "      xc = $random(seed);";
+         "      $display(\"+" ^ String.make (String.length name + 10) '-' ^ "+\");";
+         "      $display(\"| Testing " ^ name ^ " |\");";
+         "      $display(\"+" ^ String.make (String.length name + 10) '-' ^ "+\");";
+         "      $display(\"Random seed = %0d\", seed);";
+         "      $display(\"\");";
+         "      clk = 1'b0;";
+         "      @(posedge clk);";
+         "      // Time 0";
+         "      ld = 1'b1;";
+         "      repeat(" ^ string_of_num (add_num last_reset_cycle num_1) ^ ") @(posedge clk);";
+         "      // Time " ^ string_of_num (add_num last_reset_cycle num_1);
+         "      ld = 1'b0;";
+         "      repeat(" ^ string_of_num (sub_num input_cycle (add_num last_reset_cycle num_1)) ^ ") @(posedge clk);";
+         "      // Time " ^ string_of_num input_cycle;
+         "      ps = xs;";
+         "      pc = xc;";
+         "      @(posedge clk);";
+         "      // Time " ^ string_of_num (add_num input_cycle num_1);
+         "      ps = " ^ string_of_num (sub_num width num_1) ^ "'bx;";
+         "      pc = " ^ string_of_num (sub_num width num_1) ^ "'bx;";
+         "      @(posedge dn);";
+         "      #1 ys = qs; yc = qc;";
+         "      $display(\"Inputs: xs = %0d, xc = %0d\", xs, xc);";
+         "      $display(\"Outputs: ys = %0d, yc = %0d\", ys, yc);";
+         "      $display(\"\");";
+         "      $display(\"Test complete at time %0t.\", $time);";
+         "      $finish;";
+         "    end";
+         "";
+         "  always";
+         "    #5 clk = ~clk;";
+         "";
+         "endmodule // main"] in
+    let file = "opentheory/hardware/" ^ name ^ "_testbench.v" in
+    let s = String.concat "\n" lines ^ "\n" in
+    let h = open_out file in
+    let () = output_string h s in
+    let () = close_out h in
+    ();;
+
+unset_jrh_lexer;;
+
+let check_system cmd =
+    match Unix.system cmd with
+      Unix.WEXITED n ->
+      if n = 0 then () else
+      failwith ("couldn't run command (error " ^ string_of_int n ^ ")")
+    | _ -> failwith "couldn't run command";;
+
+set_jrh_lexer;;
+
+let rec two_exp_num n =
+    if eq_num n num_0 then num_1 else
+    mult_num num_2 (two_exp_num (sub_num n num_1));;
+
+let rec double_exp_mod_num n x m =
+    let x = mod_num x n in
+    if eq_num m num_0 then x else
+    double_exp_mod_num n (mult_num x x) (sub_num m num_1);;
+
+let test_montgomery_double_exp n m name ckt =
+    let s =
+        let r =
+            (dest_numeral o rand o rand o lhand o rand o rand o
+             lhand o snd o dest_abs o rand o snd o dest_abs o rand o snd o
+             dest_abs o rand o snd o dest_abs o rand o concl) ckt in
+        let (s,_,_) = egcd_num (two_exp_num r) n in
+        s in
+    let () =
+        let cmd = "make -C opentheory/hardware " ^ name ^ "_testbench.out" in
+        check_system cmd in
+    ();;
+
+let performance_test_montgomery_double_exp w =
+    let n = random_odd_num w in
+    let m = dest_numeral `1000` in
+    let test () =
+        let (name,ckt) = synthesize_montgomery_double_exp n m in
+        let () = complain_timed "Generated verilog testbench" (testbench_montgomery_double_exp name) ckt in
+        let () = complain_timed "Passed a random test" (test_montgomery_double_exp n m name) ckt in
+        () in
+    complain_timed "TOTAL" test ();;
+
+let performance_tests_montgomery_double_exp () =
+    let rec test w =
+        let () = performance_test_montgomery_double_exp w in
+        test (2 * w) in
+     test 8;;
 
 (*** Testing
 let montgomery_reduce_91_thm = mk_montgomery_mult_reduce (dest_numeral `91`);;
@@ -6338,33 +6486,11 @@ let primary = `clk : wire` :: frees (concl double_exp_1399742505_thm);;
 output_string stdout (hardware_to_verilog "double_exp_1399742505" primary double_exp_1399742505_thm);;
 hardware_to_verilog_file "double_exp_1399742505" primary double_exp_1399742505_thm;;
 
-let performance_test w =
-    let n = random_odd_num w in
-    let m = dest_numeral `1000` (***num_of_int w***) in
-    let name = "double_exp_" ^ string_of_num n ^ "_" ^ string_of_num m in
-(* Debugging
-    let () = output_string stdout
-        ("About to generate " ^ string_of_int w ^ " bit circuit " ^ name ^ "\n") in
-*)
-    let (spec,spec_t) = timed (mk_montgomery_double_exp n) m in
-    let spec_t = int_of_float spec_t in
-    let syn = montgomery_double_exp_syn_gen "" in
-    let primary = frees (concl spec) in
-    let (ckt,ckt_t) = timed (instantiate_hardware syn primary) spec in
-    let ckt_t = int_of_float ckt_t in
-    let _ = hardware_to_verilog_file name (`clk : wire` :: primary) ckt in
-    let () = complain
-        ("Generated " ^ string_of_int w ^ " bit circuit " ^ name ^ " in " ^ string_of_int spec_t ^ " + " ^ string_of_int ckt_t ^ " = " ^ string_of_int (spec_t + ckt_t) ^ " seconds") in
-    ();;
+let (name,ckt) = synthesize_montgomery_double_exp (dest_numeral `221`) (dest_numeral `1000`);;
 
-let performance_tests () =
-    let rec test w =
-        let () = performance_test w in
-        test (2 * w) in
-     test 8;;
-
-performance_test 8;;
-performance_tests ();;
+performance_test_montgomery_double_exp 8;;
+performance_test_montgomery_double_exp 12;;
+performance_tests_montgomery_double_exp ();;
 ***)
 
 (* ------------------------------------------------------------------------- *)

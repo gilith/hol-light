@@ -3625,7 +3625,7 @@ let mk_counter n =
               REWR_CONV AND_TRUE_THM)) th1 in
     let th = GENL fvs th2 in
     let primary = frees (concl th) in
-    instantiate_hardware counter_syn primary th;;
+    synthesize_hardware counter_syn primary th;;
 
 (*** Testing
 let counter_91_thm = mk_counter (dest_numeral `91`);;
