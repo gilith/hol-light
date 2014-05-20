@@ -6319,7 +6319,7 @@ let synthesize_montgomery_double_exp n m =
     let primary = frees (concl spec) in
     let ckt = synthesize_hardware syn primary spec in
     let clk = `clk : wire` in
-    let _ = hardware_to_verilog_file name (clk :: primary) ckt in
+    let _ = complain_timed "Generated verilog module" (hardware_to_verilog_file name (clk :: primary)) ckt in
     (name,ckt);;
 
 let testbench_montgomery_double_exp name ckt =
@@ -6441,7 +6441,7 @@ let test_montgomery_double_exp n m name ckt =
         let (s,_,_) = egcd_num (two_exp_num r) n in
         s in
     let () =
-        let cmd = "make -C opentheory/hardware " ^ name ^ "_testbench.out" in
+        let cmd = "make -C opentheory/hardware " ^ name ^ "_testbench.out >/dev/null" in
         check_system cmd in
     let (x,y) =
         let h = open_in ("opentheory/hardware/" ^ name ^ "_testbench.out") in
