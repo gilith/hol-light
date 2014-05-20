@@ -6443,7 +6443,43 @@ let test_montgomery_double_exp n m name ckt =
     let () =
         let cmd = "make -C opentheory/hardware " ^ name ^ "_testbench.out" in
         check_system cmd in
-    ();;
+    let (x,y) =
+        let h = open_in ("opentheory/hardware/" ^ name ^ "_testbench.out") in
+        let inp () =
+            try (Some (input_line h))
+            with End_of_file -> None in
+        let rec f state =
+            match inp () with
+              None -> state
+            | Some l ->
+                let (t,ts) = split ' ' l in
+                let state =
+                    if t = "Inputs:" then
+                      match state with
+                        (None,y) -> (Some ts, y)
+                      | _ -> failwith "multiple input lines"
+                    else if t = "Outputs:" then
+                      match state with
+                        (x,None) -> (x, Some ts)
+                      | _ -> failwith "multiple output lines"
+                    else state in
+                f state in
+        let (x,y) = f (None,None) in
+        let () = close_in h in
+        let parse ts =
+            match ts with
+              [_; _; s; _; _; c] ->
+              let (s,_) = split ',' s in
+              add_num (num_of_string s) (mult_num num_2 (num_of_string c))
+            | _ -> failwith "bad sum/carry format" in
+        match (x,y) with
+          (Some x, Some y) -> (parse x, parse y)
+        | (None,_) -> failwith "no input line found"
+        | (_,None) -> failwith "no output line found" in
+    let spec = double_exp_mod_num n (mult_num x s) m in
+    let ckt = mod_num (mult_num y s) n in
+    if eq_num spec ckt then ()
+    else failwith "TEST FAILED: spec <> ckt";;
 
 let performance_test_montgomery_double_exp w =
     let n = random_odd_num w in
@@ -6458,7 +6494,7 @@ let performance_test_montgomery_double_exp w =
 let performance_tests_montgomery_double_exp () =
     let rec test w =
         let () = performance_test_montgomery_double_exp w in
-        test (2 * w) in
+        test (w + 8) in
      test 8;;
 
 (*** Testing
@@ -6488,7 +6524,10 @@ let primary = `clk : wire` :: frees (concl double_exp_1399742505_thm);;
 output_string stdout (hardware_to_verilog "double_exp_1399742505" primary double_exp_1399742505_thm);;
 hardware_to_verilog_file "double_exp_1399742505" primary double_exp_1399742505_thm;;
 
-let (name,ckt) = synthesize_montgomery_double_exp (dest_numeral `221`) (dest_numeral `1000`);;
+let n = dest_numeral `221`;;
+let m = dest_numeral `1000`;;
+let (name,ckt) = synthesize_montgomery_double_exp n m;;
+test_montgomery_double_exp n m name ckt;;
 
 performance_test_montgomery_double_exp 8;;
 performance_test_montgomery_double_exp 12;;

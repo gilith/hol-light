@@ -953,10 +953,10 @@ let synthesize_hardware =
     let namer = new_namer primary in
     let (th,namer) = complain_timed "Elaborated modules" (elaborate_modules rule namer) th in
     let (primary_inputs,primary_outputs) = partition_primary primary th in
-    let (th,namer) = rescue_primary_outputs primary_outputs th namer in
+    let (th,namer) = complain_timed "Rescued primary outputs" (rescue_primary_outputs primary_outputs th) namer in
     let th = complain_timed "Merged identical logic" merge_logic th in
     let th = complain_timed "Deleted dead logic" (delete_dead_logic primary_inputs primary_outputs) th in
-    let th = rename_wires primary th in
+    let th = complain_timed "Renamed wires" (rename_wires primary) th in
     th;;
 
 (*** Testing
