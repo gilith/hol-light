@@ -249,7 +249,7 @@ let repeat_prove_hyp_prolog_rule pr =
           let goals =
               map (fun asm -> Goal_prolog_object (vsubst gsub asm)) asms @
               goals in
-          if disjoint gsubdom fvs then (fvs,asmsl,goals) else
+          if disjoint fvs gsubdom then (fvs,asmsl,goals) else
           rollback_asms gsub gsubdom asmsl goals in
     let rec finalize_asms acc asmsl =
         match asmsl with
@@ -265,22 +265,22 @@ let repeat_prove_hyp_prolog_rule pr =
         | Goal_prolog_object goal :: goals ->
           let goal = vsubst sub goal in
 (* Debugging
-            let () =
-                let msg = "goal = " ^ string_of_term goal ^ "\n" in
-                print_string msg in
-            let () =
-                let msg = "sub = " ^ string_of_subst th ^ "\n" in
-                print_string msg in
-            let () =
-                let msg = "th = " ^ string_of_thm th ^ "\n" in
-                print_string msg in
+          let () =
+              let msg = "goal = " ^ string_of_term goal ^ "\n" in
+              print_string msg in
+          let () =
+              let msg = "sub = " ^ string_of_subst th ^ "\n" in
+              print_string msg in
+          let () =
+              let msg = "th = " ^ string_of_thm th ^ "\n" in
+              print_string msg in
 *)
           let (gasms,gth,gsub,gnamer) = apply_prolog_rule pr goal namer in
           let th = PROVE_HYP gth (INST gsub th) in
           let sub = compose_subst sub gsub in
           let namer = reset_scope (current_scope namer) gnamer in
           let gsubdom = map snd gsub in
-          if disjoint gsubdom fvs then
+          if disjoint fvs gsubdom then
             let asmsl = (gasms,fvs) :: asmsl in
             let fvs = union fvs (freesl gasms) in
             prolog_asms fvs asmsl th sub namer goals
@@ -289,8 +289,14 @@ let repeat_prove_hyp_prolog_rule pr =
                 map (fun gasm -> Goal_prolog_object gasm) gasms @
                 Sub_prolog_object sub ::
                 goals in
-            let (fvs,asmsl,goals) = rollback_asms gsub gsubdom asmsl goals in
-            prolog_asms fvs asmsl th [] namer goals in
+            let (fvs,asmsl,goals') = rollback_asms gsub gsubdom asmsl goals in
+(* Debugging
+            let () =
+                let n = length goals' - length goals in
+                let msg = "rolling back " ^ string_of_int n ^ " goal" ^ (if n = 1 then "" else "s") ^ "\n" in
+                print_string msg in
+*)
+            prolog_asms fvs asmsl th [] namer goals' in
     fun asms -> fun th -> fun namer ->
     let goals = map (fun asm -> Goal_prolog_object asm) asms in
     prolog_asms [] [] th [] namer goals;;
@@ -743,9 +749,19 @@ let rescue_primary_outputs =
     let (rescue_rule,namer) =
         rescue_primary_outputs_prolog_rule primary_outputs namer in
     let (asms,th,_,namer) =
-        prove_hyp_prolog_rule rescue_rule (hyp th) th namer in
+        complain_timed "- Interposed wires before primary outputs"
+          (prove_hyp_prolog_rule rescue_rule (hyp th) th) namer in
+(* Debugging
+*)
+    let () =
+        let print_asm asm = complain ("  " ^ string_of_term asm) in
+        let n = length asms in
+        let () = complain ("rescue_primary_outputs: " ^ string_of_int n ^ " assumption" ^ (if n = 1 then "" else "s") ^ " to clean up:") in
+        let () = List.iter print_asm asms in
+        () in
     let (_,th,_,namer) =
-        repeat_prove_hyp_prolog_rule cleanup_rule asms th namer in
+        complain_timed "- Cleaned up"
+          (repeat_prove_hyp_prolog_rule cleanup_rule asms th) namer in
     (th,namer);;
 
 let merge_logic =
