@@ -315,6 +315,7 @@ let repeat_prove_hyp_prolog_rule pr =
                 prolog_asms fvs asmsl th [] namer goals'
             | Prolog_unchanged ->
                 let asmsl = ([goal],fvs) :: asmsl in
+                let fvs = union fvs (frees goal) in
                 prolog_asms fvs asmsl th sub namer goals in
     fun asms -> fun th -> fun namer ->
     let goals = map (fun asm -> Goal_prolog_object asm) asms in
