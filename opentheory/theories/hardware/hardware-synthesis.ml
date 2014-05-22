@@ -152,16 +152,18 @@ let narrow_scope s namer =
 
 exception Prolog_bug of string;;
 
-type prolog_rule =
-     Prolog_rule of
-       (term -> namer -> term list * thm * (term * term) list * namer);;
+type prolog_result =
+     Prolog_result of term list * thm * (term * term) list * namer
+   | Prolog_unchanged;;
+
+type prolog_rule = Prolog_rule of (term -> namer -> prolog_result);;
 
 type prolog_object =
      Goal_prolog_object of term
    | Sub_prolog_object of (term * term) list;;
 
 let all_prolog_rule =
-    Prolog_rule (fun tm -> fun namer -> ([tm], ASSUME tm, [], namer));;
+    Prolog_rule (fun _ -> fun _ -> Prolog_unchanged);;
 
 let no_prolog_rule =
     Prolog_rule (fun _ -> fun _ -> failwith "no_prolog_rule");;
@@ -189,17 +191,22 @@ let apply_prolog_rule (Prolog_rule pr) goal namer =
 *)
     subgoals_th_sub_namer;;
 
+let unchanged_apply_prolog_rule (Prolog_rule pr) goal namer =
+    match pr goal namer with
+      Prolog_result (subgoals,th,sub,namer) -> (subgoals,th,sub,namer)
+    | Prolog_unchanged -> ([goal], ASSUME goal, [], namer);;
+
 let check_prolog_rule f pr =
     Prolog_rule
-      (fun tm -> fun namer ->
-       let () = f tm in
-       apply_prolog_rule pr tm namer);;
+      (fun goal -> fun namer ->
+       let () = f goal in
+       apply_prolog_rule pr goal namer);;
 
 let orelse_prolog_rule pr1 pr2 =
     Prolog_rule
-      (fun tm -> fun namer ->
-       try (apply_prolog_rule pr1 tm namer)
-       with Failure _ -> apply_prolog_rule pr2 tm namer);;
+      (fun goal -> fun namer ->
+       try (apply_prolog_rule pr1 goal namer)
+       with Failure _ -> apply_prolog_rule pr2 goal namer);;
 
 let try_prolog_rule pr =
     orelse_prolog_rule pr all_prolog_rule;;
@@ -224,22 +231,30 @@ let prove_hyp_prolog_rule pr =
           [] -> (finalize_asms [] [] asmsl, th, sub, namer)
         | goal :: goals ->
           let goal = vsubst sub goal in
-          let (gasms,gth,gsub,gnamer) = apply_prolog_rule pr goal namer in
-          let asmsl = (gasms,gsub) :: asmsl in
-          let th = PROVE_HYP gth (INST gsub th) in
-          let sub = compose_subst sub gsub in
-          let namer = reset_scope (current_scope namer) gnamer in
-          prolog_asms asmsl th sub namer goals in
-    fun asms -> fun th -> fun namer -> prolog_asms [] th [] namer asms;;
+          match apply_prolog_rule pr goal namer with
+            Prolog_result (gasms,gth,gsub,gnamer) ->
+              let asmsl = (gasms,gsub) :: asmsl in
+              let th = PROVE_HYP gth (INST gsub th) in
+              let sub = compose_subst sub gsub in
+              let namer = reset_scope (current_scope namer) gnamer in
+              prolog_asms asmsl th sub namer goals
+          | Prolog_unchanged ->
+              let asmsl = ([goal],[]) :: asmsl in
+              prolog_asms asmsl th sub namer goals in
+    fun goals -> fun th -> fun namer -> prolog_asms [] th [] namer goals;;
 
 let then_prolog_rule pr1 pr2 =
     Prolog_rule
-      (fun tm -> fun namer0 ->
-       let (asms,th,sub1,namer) = apply_prolog_rule pr1 tm namer0 in
-       let (asms,th,sub2,namer) = prove_hyp_prolog_rule pr2 asms th namer in
-       let sub = compose_subst sub1 sub2 in
-       let namer = reset_scope (current_scope namer0) namer in
-       (asms,th,sub,namer));;
+      (fun goal -> fun namer0 ->
+       match apply_prolog_rule pr1 goal namer0 with
+         Prolog_result (asms,th,sub1,namer) ->
+           let (asms,th,sub2,namer) =
+               prove_hyp_prolog_rule pr2 asms th namer in
+           let sub = compose_subst sub1 sub2 in
+           let namer = reset_scope (current_scope namer0) namer in
+           Prolog_result (asms,th,sub,namer)
+       | Prolog_unchanged ->
+           apply_prolog_rule pr2 goal namer0);;
 
 let repeat_prove_hyp_prolog_rule pr =
     let rec rollback_asms gsub gsubdom asmsl goals =
@@ -275,49 +290,56 @@ let repeat_prove_hyp_prolog_rule pr =
               let msg = "th = " ^ string_of_thm th ^ "\n" in
               print_string msg in
 *)
-          let (gasms,gth,gsub,gnamer) = apply_prolog_rule pr goal namer in
-          let th = PROVE_HYP gth (INST gsub th) in
-          let sub = compose_subst sub gsub in
-          let namer = reset_scope (current_scope namer) gnamer in
-          let gsubdom = map snd gsub in
-          if disjoint fvs gsubdom then
-            let asmsl = (gasms,fvs) :: asmsl in
-            let fvs = union fvs (freesl gasms) in
-            prolog_asms fvs asmsl th sub namer goals
-          else
-            let goals =
-                map (fun gasm -> Goal_prolog_object gasm) gasms @
-                Sub_prolog_object sub ::
-                goals in
-            let (fvs,asmsl,goals') = rollback_asms gsub gsubdom asmsl goals in
+          match apply_prolog_rule pr goal namer with
+            Prolog_result (gasms,gth,gsub,gnamer) ->
+              let th = PROVE_HYP gth (INST gsub th) in
+              let sub = compose_subst sub gsub in
+              let namer = reset_scope (current_scope namer) gnamer in
+              let gsubdom = map snd gsub in
+              if disjoint fvs gsubdom then
+                let asmsl = (gasms,fvs) :: asmsl in
+                let fvs = union fvs (freesl gasms) in
+                prolog_asms fvs asmsl th sub namer goals
+              else
+                let goals =
+                    map (fun gasm -> Goal_prolog_object gasm) gasms @
+                    Sub_prolog_object sub ::
+                    goals in
+                let (fvs,asmsl,goals') = rollback_asms gsub gsubdom asmsl goals in
 (* Debugging
-            let () =
-                let n = length goals' - length goals in
-                let msg = "rolling back " ^ string_of_int n ^ " goal" ^ (if n = 1 then "" else "s") ^ "\n" in
-                print_string msg in
+                let () =
+                    let n = length goals' - length goals in
+                    let msg = "rolling back " ^ string_of_int n ^ " goal" ^ (if n = 1 then "" else "s") ^ "\n" in
+                    print_string msg in
 *)
-            prolog_asms fvs asmsl th [] namer goals' in
+                prolog_asms fvs asmsl th [] namer goals'
+            | Prolog_unchanged ->
+                let asmsl = ([goal],fvs) :: asmsl in
+                prolog_asms fvs asmsl th sub namer goals in
     fun asms -> fun th -> fun namer ->
     let goals = map (fun asm -> Goal_prolog_object asm) asms in
     prolog_asms [] [] th [] namer goals;;
 
 let then_repeat_prolog_rule pr1 pr2 =
     Prolog_rule
-      (fun tm -> fun namer0 ->
-       let (asms,th,sub1,namer) = apply_prolog_rule pr1 tm namer0 in
-       let (asms,th,sub2,namer) =
-           repeat_prove_hyp_prolog_rule pr2 asms th namer in
-       let sub = compose_subst sub1 sub2 in
-       let namer = reset_scope (current_scope namer0) namer in
-       (asms,th,sub,namer));;
+      (fun goal -> fun namer0 ->
+       match apply_prolog_rule pr1 goal namer0 with
+         Prolog_result (asms,th,sub1,namer) ->
+           let (asms,th,sub2,namer) =
+               repeat_prove_hyp_prolog_rule pr2 asms th namer in
+           let sub = compose_subst sub1 sub2 in
+           let namer = reset_scope (current_scope namer0) namer in
+           Prolog_result (asms,th,sub,namer)
+       | Prolog_unchanged ->
+           apply_prolog_rule pr2 goal namer0);;
 
 let rec repeat_prolog_rule pr =
     Prolog_rule
-      (fun tm -> fun namer ->
+      (fun goal -> fun namer ->
        let rule =
            try_prolog_rule
              (then_repeat_prolog_rule pr (repeat_prolog_rule pr)) in
-       apply_prolog_rule rule tm namer);;
+       apply_prolog_rule rule goal namer);;
 
 let (scope_thm_prolog_rule,conv_prolog_rule) =
     let eq_to_imp_thm = MATCH_MP (TAUT `(a <=> b) ==> (b ==> a)`) in
