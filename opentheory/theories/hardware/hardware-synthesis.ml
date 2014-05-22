@@ -380,7 +380,7 @@ let (scope_thm_prolog_rule,conv_prolog_rule) =
            let sub = vs_sub @ sub in
            let asms = map (vsubst sub) asms in
            let th = INST sub th in
-           (asms,th,[],namer)) in
+           Prolog_result (asms,th,[],namer)) in
     let thm_rule s th = prolog_thm_rule s (mk_prolog_thm th) in
     let conv_rule (conv : conv) =
         Prolog_rule
@@ -391,7 +391,7 @@ let (scope_thm_prolog_rule,conv_prolog_rule) =
                with Failure _ ->
                  let (asm,th) = undisch_bind (eq_to_imp_thm eq_th) in
                  ([asm],th) in
-           (asms,th,[],namer)) in
+           Prolog_result (asms,th,[],namer)) in
     (thm_rule,conv_rule);;
 
 let thm_prolog_rule = scope_thm_prolog_rule "";;
@@ -401,7 +401,7 @@ let sym_prolog_rule : prolog_rule =
       (fun tm -> fun namer ->
        let (l,r) = dest_eq tm in
        let stm = mk_eq (r,l) in
-       ([stm], SYM (ASSUME stm), [], namer));;
+       Prolog_result ([stm], SYM (ASSUME stm), [], namer));;
 
 let orelse_sym_prolog_rule pr =
     orelse_prolog_rule pr (then_prolog_rule sym_prolog_rule pr);;
@@ -411,7 +411,8 @@ let subst_var_prolog_rule =
       (Prolog_rule
          (fun tm -> fun namer ->
           let (l,r) = dest_eq tm in
-          if is_unfrozen_var namer l then ([], REFL r, [(r,l)], namer)
+          if is_unfrozen_var namer l then
+            Prolog_result ([], REFL r, [(r,l)], namer)
           else failwith "subst_var_prolog_rule"));;
 
 (* ------------------------------------------------------------------------- *)
@@ -594,7 +595,7 @@ let mk_bus_prolog_rule =
           let (b,namer) = fresh_bus v nn namer in
           let sub = [(b,v)] in
           let asm = vsubst sub tm in
-          ([asm], ASSUME asm, sub, namer)));;
+          Prolog_result ([asm], ASSUME asm, sub, namer)));;
 
 let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
     let zero_suc_conv : conv =
@@ -715,7 +716,7 @@ let connect_wire_prolog_rule =
       (fun tm -> fun namer ->
        let (x,y) = dest_connect tm in
        if is_unfrozen_var namer y then
-         ([], SPEC x connect_refl, [(x,y)], namer)
+         Prolog_result ([], SPEC x connect_refl, [(x,y)], namer)
        else failwith "connect_wire_prolog_rule");;
 
 let wire_connect_prolog_rule =
@@ -723,7 +724,7 @@ let wire_connect_prolog_rule =
       (fun tm -> fun namer ->
        let (x,y) = dest_connect tm in
        if is_unfrozen_var namer x then
-         ([], SPEC y connect_refl, [(y,x)], namer)
+         Prolog_result ([], SPEC y connect_refl, [(y,x)], namer)
        else failwith "wire_connect_prolog_rule");;
 
 let connect_prolog_rule =
@@ -738,8 +739,8 @@ let connect_prolog_rule =
                if String.length sy < String.length sx then (y,x) else (x,y)
              else (y,x)
            else if is_unfrozen_var namer y then (x,y)
-           else  failwith "connect_prolog_rule" in
-       ([], SPEC w2 connect_refl, [(w2,w1)], namer));;
+           else failwith "connect_prolog_rule" in
+       Prolog_result ([], SPEC w2 connect_refl, [(w2,w1)], namer));;
 
 let partition_primary primary th =
     let outputs = map rand (hyp th) in
@@ -774,13 +775,13 @@ let rescue_primary_outputs =
         complain_timed "- Interposed wires before primary outputs"
           (prove_hyp_prolog_rule rescue_rule (hyp th) th) namer in
 (* Debugging
-*)
     let () =
         let print_asm asm = complain ("  " ^ string_of_term asm) in
         let n = length asms in
         let () = complain ("rescue_primary_outputs: " ^ string_of_int n ^ " assumption" ^ (if n = 1 then "" else "s") ^ " to clean up:") in
         let () = List.iter print_asm asms in
         () in
+*)
     let (_,th,_,namer) =
         complain_timed "- Cleaned up"
           (repeat_prove_hyp_prolog_rule cleanup_rule asms th) namer in
