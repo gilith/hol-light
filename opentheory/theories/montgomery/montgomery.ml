@@ -6313,7 +6313,7 @@ let instantiate_montgomery_double_exp n m =
 
 let synthesize_montgomery_double_exp n m =
     let name = "double_exp_" ^ string_of_num n ^ "_" ^ string_of_num m in
-    let () = complain ("Synthesizing " ^ name ^ ":") in
+    let () = complain ("Synthesizing " ^ string_of_num (bit_width_num n) ^ "-bit " ^ name ^ ":") in
     let spec = complain_timed "Instantiated parameters" (instantiate_montgomery_double_exp n) m in
     let syn = montgomery_double_exp_syn_gen "" in
     let primary = frees (concl spec) in
