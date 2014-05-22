@@ -113,6 +113,8 @@ let add_generated_vars vs' (Namer (f,s,vs)) = Namer (f, s, vs' @ vs);;
 
 let reset_scope s (Namer (f,_,vs)) = Namer (f,s,vs);;
 
+let scope_to_string s = if s = "" then "<global>" else s;;
+
 let is_unfrozen_var namer v = is_var v && not (mem v (frozen_vars namer));;
 
 let not_unfrozen_var namer v = not (is_unfrozen_var namer v);;
@@ -257,26 +259,26 @@ let then_prolog_rule pr1 pr2 =
            apply_prolog_rule pr2 goal namer0);;
 
 let repeat_prove_hyp_prolog_rule pr =
-    let rec rollback_asms gsub gsubdom asmsl goals =
+    let rollback_asm gsub asm goals =
+        Goal_prolog_object (vsubst gsub asm) :: goals in
+    let rec rollback_asms gsub gsubdom asms fvs asmsl goals =
+        let goals = rev_itlist (rollback_asm gsub) asms goals in
+        if disjoint fvs gsubdom then (fvs,asmsl,goals) else
         match asmsl with
           [] -> raise (Prolog_bug "repeat_prove_hyp_prolog_rule.rollback_asms")
         | (asms,fvs) :: asmsl ->
-          let goals =
-              map (fun asm -> Goal_prolog_object (vsubst gsub asm)) asms @
-              goals in
-          if disjoint fvs gsubdom then (fvs,asmsl,goals) else
-          rollback_asms gsub gsubdom asmsl goals in
+          rollback_asms gsub gsubdom asms fvs asmsl goals in
     let rec finalize_asms acc asmsl =
         match asmsl with
           [] -> acc
         | (asms,_) :: asmsl ->
-          let acc = asms @ acc in
+          let acc = List.rev_append asms acc in
           finalize_asms acc asmsl in
-    let rec prolog_asms fvs asmsl th sub namer goals =
+    let rec prolog_asms asms fvs asmsl th sub namer goals =
         match goals with
-          [] -> (finalize_asms [] asmsl, th, sub, namer)
+          [] -> (finalize_asms (rev asms) asmsl, th, sub, namer)
         | Sub_prolog_object oldsub :: goals ->
-          prolog_asms fvs asmsl th (compose_subst oldsub sub) namer goals
+          prolog_asms asms fvs asmsl th (compose_subst oldsub sub) namer goals
         | Goal_prolog_object goal :: goals ->
           let goal = vsubst sub goal in
 (* Debugging
@@ -295,31 +297,37 @@ let repeat_prove_hyp_prolog_rule pr =
               let th = PROVE_HYP gth (INST gsub th) in
               let sub = compose_subst sub gsub in
               let namer = reset_scope (current_scope namer) gnamer in
+              let fvs' = union fvs (freesl asms) in
+(* Debugging
+              let () =
+                  let n = length fvs' in
+                  let msg = "processed goals contain " ^ string_of_int n ^ " free variable" ^ (if n = 1 then "" else "s") ^ " in scope " ^ scope_to_string (current_scope namer) in
+                  complain msg in
+*)
               let gsubdom = map snd gsub in
-              if disjoint fvs gsubdom then
-                let asmsl = (gasms,fvs) :: asmsl in
-                let fvs = union fvs (freesl gasms) in
-                prolog_asms fvs asmsl th sub namer goals
+              if disjoint fvs' gsubdom then
+                let asmsl = (asms,fvs) :: asmsl in
+                prolog_asms (rev gasms) fvs' asmsl th sub namer goals
               else
                 let goals =
                     map (fun gasm -> Goal_prolog_object gasm) gasms @
                     Sub_prolog_object sub ::
                     goals in
-                let (fvs,asmsl,goals') = rollback_asms gsub gsubdom asmsl goals in
+                let (fvs,asmsl,goals') =
+                    rollback_asms gsub gsubdom asms fvs asmsl goals in
 (* Debugging
                 let () =
                     let n = length goals' - length goals in
-                    let msg = "rolling back " ^ string_of_int n ^ " goal" ^ (if n = 1 then "" else "s") ^ "\n" in
-                    print_string msg in
+                    let msg = "rolling back " ^ string_of_int n ^ " goal" ^ (if n = 1 then "" else "s") ^ " in scope " ^ scope_to_string (current_scope namer) in
+                    complain msg in
 *)
-                prolog_asms fvs asmsl th [] namer goals'
+                prolog_asms [] fvs asmsl th [] namer goals'
             | Prolog_unchanged ->
-                let asmsl = ([goal],fvs) :: asmsl in
-                let fvs = union fvs (frees goal) in
-                prolog_asms fvs asmsl th sub namer goals in
+                let asms = goal :: asms in
+                prolog_asms asms fvs asmsl th sub namer goals in
     fun asms -> fun th -> fun namer ->
     let goals = map (fun asm -> Goal_prolog_object asm) asms in
-    prolog_asms [] [] th [] namer goals;;
+    prolog_asms [] [] [] th [] namer goals;;
 
 let then_repeat_prolog_rule pr1 pr2 =
     Prolog_rule
