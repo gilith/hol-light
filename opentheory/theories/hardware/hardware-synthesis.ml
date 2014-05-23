@@ -720,6 +720,46 @@ let brev_prolog_rule =
        if is_bappend x then apply_prolog_rule bappend_rule tm namer else
        failwith "brev_prolog_rule");;
 
+let elaboration_rule =
+    let rules =
+        [subst_var_prolog_rule;
+         num_simp_prolog_rule;
+         num_eq_prolog_rule;
+         mk_bus_prolog_rule;
+         wire_prolog_rule;
+         bsub_prolog_rule;
+         brev_prolog_rule;
+         bground_prolog_rule] @
+        map thm_prolog_rule
+        [bconnect_bappend_bwire; bconnect_bnil;
+         bdelay_bappend_bwire; bdelay_bnil;
+         bnot_bappend_bwire; bnot_bnil;
+         band2_bappend_bwire; band2_bnil;
+         bor2_bappend_bwire; bor2_bnil;
+         bxor2_bappend_bwire; bxor2_bnil;
+         bcase1_bappend_bwire; bcase1_bnil] in
+    fun syn ->
+    let user_rules = map (uncurry scope_thm_prolog_rule) syn in
+    repeat_prolog_rule (first_prolog_rule (rules @ user_rules));;
+
+let elaborate_modules =
+    let check_elaboration tms =
+        match filter (not o is_synthesizable) tms with
+          [] -> ()
+        | bad ->
+          let n = length bad in
+          let s = "term" ^ (if n = 1 then "" else "s") in
+          let () = complain ("\n" ^ string_of_int n ^ " unsynthesizable " ^ s ^ ":") in
+          let () = List.iter (complain o string_of_term) bad in
+          failwith ("couldn't reduce " ^ string_of_int n ^ " " ^ s) in
+    fun syn ->
+    let rule = elaboration_rule syn in
+    fun th -> fun namer ->
+    let (tms,th,_,namer) =
+        repeat_prove_hyp_prolog_rule rule (hyp th) th namer in
+    let () = check_elaboration tms in
+    (th,namer);;
+
 let connect_wire_prolog_rule =
     Prolog_rule
       (fun tm -> fun namer ->
@@ -750,6 +790,55 @@ let connect_prolog_rule =
            else if is_unfrozen_var namer y then (x,y)
            else failwith "connect_prolog_rule" in
        Prolog_result ([], SPEC w2 connect_refl, [(w2,w1)], namer));;
+
+(***
+type class_rep =
+     Another_class_rep of int
+   | Wire_class_rep of term
+   | Frozen_class_rep of term
+
+let connect_wires th namer =
+    let add namer goal (cls,wm,cm) =
+***)
+
+let simplify_prolog_rule =
+    let rules =
+        [connect_prolog_rule] @
+        map thm_prolog_rule
+        [not_ground; not_power;
+         and2_left_ground; and2_right_ground;
+         and2_left_power; and2_right_power;
+         and2_refl;
+         or2_left_ground; or2_right_ground;
+         or2_left_power; or2_right_power;
+         or2_refl;
+         xor2_left_ground; xor2_right_ground;
+         xor2_left_power; xor2_right_power;
+         xor2_refl;
+         case1_left_ground; case1_left_power;
+         case1_middle_power;
+         case1_right_ground;
+         case1_refl;
+         case1_middle_ground_right_power;
+         (* The following simplification rules introduce new wires, so *)
+         (* we put them last in the list *)
+         case1_middle_ground;
+         case1_right_power] in
+    repeat_prolog_rule (first_prolog_rule rules);;
+
+let simplify_circuit th namer =
+    let goals = hyp th in
+(* Debugging
+*)
+    let () =
+        let print_goal goal = complain ("  " ^ string_of_term goal) in
+        let n = length goals in
+        let () = complain ("simplify_circuit: " ^ string_of_int n ^ " assumption" ^ (if n = 1 then "" else "s") ^ " to simplify:") in
+        let () = List.iter print_goal goals in
+        () in
+    let (_,th,_,namer) =
+        repeat_prove_hyp_prolog_rule simplify_prolog_rule goals th namer in
+    (th,namer);;
 
 let partition_primary primary th =
     let outputs = map rand (hyp th) in
@@ -949,76 +1038,6 @@ let rename_wires primary th =
     let sub = deprime_to_sub primary dp in
     INST sub th;;
 
-let elaboration_rule =
-    let rules =
-        [subst_var_prolog_rule;
-         num_simp_prolog_rule;
-         num_eq_prolog_rule;
-         mk_bus_prolog_rule;
-         wire_prolog_rule;
-         bsub_prolog_rule;
-         brev_prolog_rule;
-         bground_prolog_rule] @
-        map thm_prolog_rule
-        [bconnect_bappend_bwire; bconnect_bnil;
-         bdelay_bappend_bwire; bdelay_bnil;
-         bnot_bappend_bwire; bnot_bnil;
-         band2_bappend_bwire; band2_bnil;
-         bor2_bappend_bwire; bor2_bnil;
-         bxor2_bappend_bwire; bxor2_bnil;
-         bcase1_bappend_bwire; bcase1_bnil] in
-    fun syn ->
-    let user_rules = map (uncurry scope_thm_prolog_rule) syn in
-    repeat_prolog_rule (first_prolog_rule (rules @ user_rules));;
-
-let elaborate_modules =
-    let check_elaboration tms =
-        match filter (not o is_synthesizable) tms with
-          [] -> ()
-        | bad ->
-          let n = length bad in
-          let s = "term" ^ (if n = 1 then "" else "s") in
-          let () = complain ("\n" ^ string_of_int n ^ " unsynthesizable " ^ s ^ ":") in
-          let () = List.iter (complain o string_of_term) bad in
-          failwith ("couldn't reduce " ^ string_of_int n ^ " " ^ s) in
-    fun syn ->
-    let rule = elaboration_rule syn in
-    fun th -> fun namer ->
-    let (tms,th,_,namer) =
-        repeat_prove_hyp_prolog_rule rule (hyp th) th namer in
-    let () = check_elaboration tms in
-    (th,namer);;
-
-let simplify_prolog_rule =
-    let rules =
-        [connect_prolog_rule] @
-        map thm_prolog_rule
-        [not_ground; not_power;
-         and2_left_ground; and2_right_ground;
-         and2_left_power; and2_right_power;
-         and2_refl;
-         or2_left_ground; or2_right_ground;
-         or2_left_power; or2_right_power;
-         or2_refl;
-         xor2_left_ground; xor2_right_ground;
-         xor2_left_power; xor2_right_power;
-         xor2_refl;
-         case1_left_ground; case1_left_power;
-         case1_middle_power;
-         case1_right_ground;
-         case1_refl;
-         case1_middle_ground_right_power;
-         (* The following simplification rules introduce new wires, so *)
-         (* we put them last in the list *)
-         case1_middle_ground;
-         case1_right_power] in
-    repeat_prolog_rule (first_prolog_rule rules);;
-
-let simplify_circuit th namer =
-    let (_,th,_,namer) =
-        repeat_prove_hyp_prolog_rule simplify_prolog_rule (hyp th) th namer in
-    (th,namer);;
-
 let synthesize_hardware syn primary th =
     let namer = new_namer primary in
     let (th,namer) =
@@ -1027,7 +1046,8 @@ let synthesize_hardware syn primary th =
     let (th,namer) =
         complain_timed "Simplified circuit"
           (simplify_circuit th) namer in
-    let (primary_inputs,primary_outputs) = partition_primary primary th in
+    let (primary_inputs,primary_outputs) =
+        partition_primary primary th in
     let (th,namer) =
         complain_timed "Rescued primary outputs"
           (rescue_primary_outputs primary_outputs th) namer in
