@@ -949,7 +949,29 @@ let rename_wires primary th =
     let sub = deprime_to_sub primary dp in
     INST sub th;;
 
-let elaborate_modules rule =
+let elaboration_rule =
+    let rules =
+        [subst_var_prolog_rule;
+         num_simp_prolog_rule;
+         num_eq_prolog_rule;
+         mk_bus_prolog_rule;
+         wire_prolog_rule;
+         bsub_prolog_rule;
+         brev_prolog_rule;
+         bground_prolog_rule] @
+        map thm_prolog_rule
+        [bconnect_bappend_bwire; bconnect_bnil;
+         bdelay_bappend_bwire; bdelay_bnil;
+         bnot_bappend_bwire; bnot_bnil;
+         band2_bappend_bwire; band2_bnil;
+         bor2_bappend_bwire; bor2_bnil;
+         bxor2_bappend_bwire; bxor2_bnil;
+         bcase1_bappend_bwire; bcase1_bnil] in
+    fun syn ->
+    let user_rules = map (uncurry scope_thm_prolog_rule) syn in
+    repeat_prolog_rule (first_prolog_rule (rules @ user_rules));;
+
+let elaborate_modules =
     let check_elaboration tms =
         match filter (not o is_synthesizable) tms with
           [] -> ()
@@ -959,32 +981,19 @@ let elaborate_modules rule =
           let () = complain ("\n" ^ string_of_int n ^ " unsynthesizable " ^ s ^ ":") in
           let () = List.iter (complain o string_of_term) bad in
           failwith ("couldn't reduce " ^ string_of_int n ^ " " ^ s) in
-    fun namer -> fun th ->
+    fun syn ->
+    let rule = elaboration_rule syn in
+    fun th -> fun namer ->
     let (tms,th,_,namer) =
         repeat_prove_hyp_prolog_rule rule (hyp th) th namer in
     let () = check_elaboration tms in
     (th,namer);;
 
-let synthesize_hardware =
-    let basic_rules =
-        [subst_var_prolog_rule;
-         num_simp_prolog_rule;
-         num_eq_prolog_rule;
-         mk_bus_prolog_rule;
-         wire_prolog_rule;
-         bsub_prolog_rule;
-         brev_prolog_rule;
-         bground_prolog_rule;
-         connect_prolog_rule] @
+let simplify_prolog_rule =
+    let rules =
+        [connect_prolog_rule] @
         map thm_prolog_rule
-        [bconnect_bappend_bwire; bconnect_bnil;
-         bdelay_bappend_bwire; bdelay_bnil;
-         bnot_bappend_bwire; bnot_bnil;
-         band2_bappend_bwire; band2_bnil;
-         bor2_bappend_bwire; bor2_bnil;
-         bxor2_bappend_bwire; bxor2_bnil;
-         bcase1_bappend_bwire; bcase1_bnil;
-         not_ground; not_power;
+        [not_ground; not_power;
          and2_left_ground; and2_right_ground;
          and2_left_power; and2_right_power;
          and2_refl;
@@ -999,21 +1008,38 @@ let synthesize_hardware =
          case1_right_ground;
          case1_refl;
          case1_middle_ground_right_power;
-         (* The following simplification rules introduce new wires *)
+         (* The following simplification rules introduce new wires, so *)
+         (* we put them last in the list *)
          case1_middle_ground;
          case1_right_power] in
-    fun syn ->
-    let user_rules = map (uncurry scope_thm_prolog_rule) syn in
-    let rule =
-        repeat_prolog_rule (first_prolog_rule (basic_rules @ user_rules)) in
-    fun primary -> fun th ->
+    repeat_prolog_rule (first_prolog_rule rules);;
+
+let simplify_circuit th namer =
+    let (_,th,_,namer) =
+        repeat_prove_hyp_prolog_rule simplify_prolog_rule (hyp th) th namer in
+    (th,namer);;
+
+let synthesize_hardware syn primary th =
     let namer = new_namer primary in
-    let (th,namer) = complain_timed "Elaborated modules" (elaborate_modules rule namer) th in
+    let (th,namer) =
+        complain_timed "Elaborated modules"
+          (elaborate_modules syn th) namer in
+    let (th,namer) =
+        complain_timed "Simplified circuit"
+          (simplify_circuit th) namer in
     let (primary_inputs,primary_outputs) = partition_primary primary th in
-    let (th,namer) = complain_timed "Rescued primary outputs" (rescue_primary_outputs primary_outputs th) namer in
-    let th = complain_timed "Merged identical logic" merge_logic th in
-    let th = complain_timed "Deleted dead logic" (delete_dead_logic primary_inputs primary_outputs) th in
-    let th = complain_timed "Renamed wires" (rename_wires primary) th in
+    let (th,namer) =
+        complain_timed "Rescued primary outputs"
+          (rescue_primary_outputs primary_outputs th) namer in
+    let th =
+        complain_timed "Merged identical logic"
+          merge_logic th in
+    let th =
+        complain_timed "Deleted dead logic"
+          (delete_dead_logic primary_inputs primary_outputs) th in
+    let th =
+        complain_timed "Renamed wires"
+          (rename_wires primary) th in
     th;;
 
 (*** Testing
