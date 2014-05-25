@@ -293,7 +293,12 @@ let repeat_prove_hyp_prolog_rule pr =
               print_string msg in
 *)
           match apply_prolog_rule pr goal namer with
-            Prolog_result (gasms,gth,gsub,gnamer) ->
+            Prolog_result (gasms,gth,[],gnamer) ->
+              let th = PROVE_HYP gth th in
+              let namer = reset_scope (current_scope namer) gnamer in
+              let asms = List.rev_append gasms asms in
+              prolog_asms asms fvs asmsl th sub namer goals
+          | Prolog_result (gasms,gth,gsub,gnamer) ->
               let th = PROVE_HYP gth (INST gsub th) in
               let sub = compose_subst sub gsub in
               let namer = reset_scope (current_scope namer) gnamer in
@@ -829,13 +834,13 @@ let simplify_prolog_rule =
 let simplify_circuit th namer =
     let goals = hyp th in
 (* Debugging
-*)
     let () =
         let print_goal goal = complain ("  " ^ string_of_term goal) in
         let n = length goals in
         let () = complain ("simplify_circuit: " ^ string_of_int n ^ " assumption" ^ (if n = 1 then "" else "s") ^ " to simplify:") in
         let () = List.iter print_goal goals in
         () in
+*)
     let (_,th,_,namer) =
         repeat_prove_hyp_prolog_rule simplify_prolog_rule goals th namer in
     (th,namer);;
