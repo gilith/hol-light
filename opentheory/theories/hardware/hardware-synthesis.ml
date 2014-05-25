@@ -221,29 +221,37 @@ let first_prolog_rule =
     first;;
 
 let prove_hyp_prolog_rule pr =
+    let finalize_asm sub asm acc = vsubst sub asm :: acc in
     let rec finalize_asms acc sub asmsl =
         match asmsl with
           [] -> acc
-        | (gasms,gsub) :: asmsl ->
-          let acc = map (vsubst sub) gasms @ acc in
+        | (gsub,asms) :: asmsl ->
           let sub = compose_subst gsub sub in
+          let acc = rev_itlist (finalize_asm sub) asms acc in
           finalize_asms acc sub asmsl in
-    let rec prolog_asms asmsl th sub namer goals =
+    let rec prolog_asms asms asmsl th sub namer goals =
         match goals with
-          [] -> (finalize_asms [] [] asmsl, th, sub, namer)
+          [] -> (finalize_asms (rev asms) [] asmsl, th, sub, namer)
         | goal :: goals ->
           let goal = vsubst sub goal in
           match apply_prolog_rule pr goal namer with
-            Prolog_result (gasms,gth,gsub,gnamer) ->
-              let asmsl = (gasms,gsub) :: asmsl in
+            Prolog_result (gasms,gth,[],gnamer) ->
+              let asms = List.rev_append gasms asms in
+              let th = PROVE_HYP gth th in
+              let namer = reset_scope (current_scope namer) gnamer in
+              prolog_asms asms asmsl th sub namer goals
+          | Prolog_result (gasms,gth,gsub,gnamer) ->
+              let asmsl = (gsub,asms) :: asmsl in
+              let asms = rev gasms in
               let th = PROVE_HYP gth (INST gsub th) in
               let sub = compose_subst sub gsub in
               let namer = reset_scope (current_scope namer) gnamer in
-              prolog_asms asmsl th sub namer goals
+              prolog_asms asms asmsl th sub namer goals
           | Prolog_unchanged ->
-              let asmsl = ([goal],[]) :: asmsl in
-              prolog_asms asmsl th sub namer goals in
-    fun goals -> fun th -> fun namer -> prolog_asms [] th [] namer goals;;
+              let asms = goal :: asms in
+              prolog_asms asms asmsl th sub namer goals in
+    fun goals -> fun th -> fun namer ->
+    prolog_asms [] [] th [] namer goals;;
 
 let then_prolog_rule pr1 pr2 =
     Prolog_rule
