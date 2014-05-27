@@ -807,18 +807,36 @@ let connect_prolog_rule =
        Prolog_result ([], SPEC w2 connect_refl, [(w2,w1)], namer));;
 
 type class_rep =
-     Constant_class_rep of term
-   | Frozen_class_rep of term
-   | Wire_class_rep of term;;
+     Frozen_class_rep of term
+   | Wire_class_rep of string;;
 
 type class_entry =
      Root_class_entry of class_rep
    | Another_class_entry of int;;
 
 type wire_class =
-     Wire_class of int String_map.t * class_entry Int_map.t;;
+     Wire_class of int * int String_map.t * class_entry Int_map.t;;
 
-let empty_wire_class = Wire_class (String_map.empty,Int_map.empty);;
+let sub_class_rep w r =
+    match r with
+      Frozen_class_rep tm -> [(tm, mk_wire_var w)]
+    | Wire_class_rep s ->
+      if s = w then [] else [(mk_wire_var s, mk_wire_var w)];;
+
+let lt_class_rep r1 r2 =
+    match r2 with
+      Frozen_class_rep _ -> false
+    | Wire_class_rep w2 ->
+      match r1 with
+        Frozen_class_rep _ -> true
+      | Wire_class_rep w1 ->
+        String.length w1 < String.length w2;;
+
+let size_wire_class (Wire_class (n,_,_)) = n;;
+
+let null_wire_class wc = size_wire_class wc = 0;;
+
+let empty_wire_class = Wire_class (0,String_map.empty,Int_map.empty);;
 
 let find_wire_class =
     let rec find i cls =
@@ -830,46 +848,66 @@ let find_wire_class =
               if j = k then cls else
               Int_map.add i (Another_class_entry k) cls in
           (k,r,cls) in
-    fun w -> fun (Wire_class (wm,cls)) ->
-    let wn = dest_wire_var w in
-    if String_map.mem wn wm then
-      let i = String_map.find wn wm in
+    fun w -> fun (Wire_class (n,ws,cls)) ->
+    if String_map.mem w ws then
+      let i = String_map.find w ws in
       let (k,r,cls) = find i cls in
-      (k, r, Wire_class (wm,cls))
+      (k, r, Wire_class (n,ws,cls))
     else
-      let k = Int_map.cardinal cls in
-      let wm = String_map.add wn k wm in
+      let ws = String_map.add w n ws in
       let r = Wire_class_rep w in
-      let cls = Int_map.add k (Root_class_entry r) cls in
-      (k, r, Wire_class (wm,cls));;
+      let cls = Int_map.add n (Root_class_entry r) cls in
+      (n, r, Wire_class (n + 1, ws, cls));;
 
-(***
-let find_wire_class =
+let union_wire_class k1 k2 (Wire_class (n,ws,cls)) =
+    let ce = Another_class_entry k2 in
+    Wire_class (n, ws, Int_map.add k1 ce cls);;
 
-let connect_wires th namer =
+let update_wire_class k tm (Wire_class (n,ws,cls)) =
+    let ce = Root_class_entry (Frozen_class_rep tm) in
+    Wire_class (n, ws, Int_map.add k ce cls);;
+
+let sub_wire_class =
+    let add w _ (sub,wc) =
+        let (_,r,wc) = find_wire_class w wc in
+        let sub = sub_class_rep w r @ sub in
+        (sub,wc) in
+    fun wc ->
+    let Wire_class (_,ws,_) = wc in
+    String_map.fold add ws ([],wc);;
+
+let connect_wires namer =
     let add asm wc =
         if not (is_connect asm) then wc else
         let (w1,w2) = dest_connect asm in
         let v1 = is_unfrozen_var namer w1 in
         let v2 = is_unfrozen_var namer w2 in
         if v1 then
-          let (r1,wc) = find_wire_class w1 wc in
+          let (k1,r1,wc) = find_wire_class (dest_wire_var w1) wc in
           if v2 then
-            let (r2,wc) = find_wire_class w2 wc in
-            if compare_class_rep r1 r2 then union_wire_class w1 w2 else
-            union_wire_class w2 w1
+            let (k2,r2,wc) = find_wire_class (dest_wire_var w2) wc in
+            if k1 = k2 then wc else
+            if lt_class_rep r2 r1 then union_wire_class k1 k2 wc else
+            union_wire_class k2 k1 wc
           else
-            
-
-th namer =
-    let add namer goal (cls,wm,cm) =
-***)
+            update_wire_class k1 w2 wc
+        else if v2 then
+          let (k2,r2,wc) = find_wire_class (dest_wire_var w2) wc in
+          update_wire_class k2 w1 wc
+        else
+          wc in
+     fun th ->
+     let wc = rev_itlist add (hyp th) empty_wire_class in
+     let (sub,_) = sub_wire_class wc in
+     match sub with
+       [] -> None
+     | _ -> Some (INST sub th);;
 
 let simplify_prolog_rule =
     let rules =
-        [connect_prolog_rule] @
         map thm_prolog_rule
-        [not_ground; not_power;
+        [connect_refl;
+         not_ground; not_power;
          and2_left_ground; and2_right_ground;
          and2_left_power; and2_right_power;
          and2_refl;
@@ -890,19 +928,27 @@ let simplify_prolog_rule =
          case1_right_power] in
     repeat_prolog_rule (first_prolog_rule rules);;
 
-let simplify_circuit th namer =
-    let goals = hyp th in
+let simplify_circuit =
+    let rec simplify th namer =
+        let (_,th,_,namer) =
+            prove_hyp_prolog_rule simplify_prolog_rule (hyp th) th namer in
+        match connect_wires namer th with
+          None -> (th,namer)
+        | Some th -> simplify th namer in
+    fun th -> fun namer ->
 (* Debugging
     let () =
         let print_goal goal = complain ("  " ^ string_of_term goal) in
         let n = length goals in
         let () = complain ("simplify_circuit: " ^ string_of_int n ^ " assumption" ^ (if n = 1 then "" else "s") ^ " to simplify:") in
-        let () = List.iter print_goal goals in
+        let () = List.iter print_goal (hyp th) in
         () in
 *)
-    let (_,th,_,namer) =
-        repeat_prove_hyp_prolog_rule simplify_prolog_rule goals th namer in
-    (th,namer);;
+    let th =
+        match connect_wires namer th with
+          None -> th
+        | Some th -> th in
+    simplify th namer;;
 
 let partition_primary primary th =
     let outputs = map rand (hyp th) in
