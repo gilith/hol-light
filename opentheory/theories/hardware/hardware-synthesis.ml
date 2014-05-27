@@ -1393,7 +1393,7 @@ let comment_box_text =
             f 0 in
     let top = "/*" ^ String.make (VERILOG_LINE_LENGTH - 3) '-' ^ "+" in
     let middle s =
-        let space = VERILOG_LINE_LENGTH - (String.length s + 3) in
+        let space = max 1 (VERILOG_LINE_LENGTH - (String.length s + 3)) in
         "| " ^ s ^ String.make space ' ' ^ "|" in
     let bottom = "+" ^ String.make (VERILOG_LINE_LENGTH - 3) '-' ^ "*/" in
     fun text ->
