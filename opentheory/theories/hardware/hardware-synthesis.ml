@@ -7,6 +7,8 @@
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
+module String_map = Map.Make(String);;
+
 let timed f x =
     let t = Sys.time() in
     let fx = f x in

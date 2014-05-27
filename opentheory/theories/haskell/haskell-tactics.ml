@@ -3,8 +3,6 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-module String_map = Map.Make(String);;
-
 module Haskell =
 struct
 
