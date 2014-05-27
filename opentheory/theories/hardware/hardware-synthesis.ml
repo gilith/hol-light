@@ -804,13 +804,62 @@ let connect_prolog_rule =
            else failwith "connect_prolog_rule" in
        Prolog_result ([], SPEC w2 connect_refl, [(w2,w1)], namer));;
 
-(***
 type class_rep =
-     Another_class_rep of int
-   | Wire_class_rep of term
+     Constant_class_rep of term
    | Frozen_class_rep of term
+   | Wire_class_rep of term;;
+
+type class_entry =
+     Root_class_entry of class_rep
+   | Another_class_entry of int;;
+
+type wire_class =
+     Wire_class of int String_map.t * class_entry Int_map.t;;
+
+let empty_wire_class = Wire_class (String_map.empty,Int_map.empty);;
+
+let find_wire_class =
+    let rec find i cls =
+        match Int_map.find i cls with
+          Root_class_entry r -> (i,r,cls)
+        | Another_class_entry j ->
+          let (k,r,cls) = find j cls in
+          let cls =
+              if j = k then cls else
+              Int_map.add i (Another_class_entry k) cls in
+          (k,r,cls) in
+    fun w -> fun (Wire_class (wm,cls)) ->
+    let wn = dest_wire_var w in
+    if String_map.mem wn wm then
+      let i = String_map.find wn wm in
+      let (k,r,cls) = find i cls in
+      (k, r, Wire_class (wm,cls))
+    else
+      let k = Int_map.cardinal cls in
+      let wm = String_map.add wn k wm in
+      let r = Wire_class_rep w in
+      let cls = Int_map.add k (Root_class_entry r) cls in
+      (k, r, Wire_class (wm,cls));;
+
+(***
+let find_wire_class =
 
 let connect_wires th namer =
+    let add asm wc =
+        if not (is_connect asm) then wc else
+        let (w1,w2) = dest_connect asm in
+        let v1 = is_unfrozen_var namer w1 in
+        let v2 = is_unfrozen_var namer w2 in
+        if v1 then
+          let (r1,wc) = find_wire_class w1 wc in
+          if v2 then
+            let (r2,wc) = find_wire_class w2 wc in
+            if compare_class_rep r1 r2 then union_wire_class w1 w2 else
+            union_wire_class w2 w1
+          else
+            
+
+th namer =
     let add namer goal (cls,wm,cm) =
 ***)
 
