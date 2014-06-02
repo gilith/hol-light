@@ -548,7 +548,8 @@ let ckt_fanout th =
     ckt_fanout' primary_inputs delays fanin;;
 
 (* ------------------------------------------------------------------------- *)
-(* Automatically synthesizing hardware.                                      *)
+(* Elaborating circuits by expanding module definitions and bit blasting     *)
+(* bus variables once their width is known.                                  *)
 (* ------------------------------------------------------------------------- *)
 
 let is_synthesizable tm =
@@ -757,7 +758,7 @@ let elaboration_rule =
     let user_rules = map (uncurry scope_thm_prolog_rule) syn in
     repeat_prolog_rule (first_prolog_rule (rules @ user_rules));;
 
-let elaborate_modules =
+let elaborate_circuit =
     let check_elaboration tms =
         match filter (not o is_synthesizable) tms with
           [] -> ()
@@ -775,36 +776,10 @@ let elaborate_modules =
     let () = check_elaboration tms in
     (th,namer);;
 
-let connect_wire_prolog_rule =
-    Prolog_rule
-      (fun tm -> fun namer ->
-       let (x,y) = dest_connect tm in
-       if is_unfrozen_var namer y then
-         Prolog_result ([], SPEC x connect_refl, [(x,y)], namer)
-       else failwith "connect_wire_prolog_rule");;
-
-let wire_connect_prolog_rule =
-    Prolog_rule
-      (fun tm -> fun namer ->
-       let (x,y) = dest_connect tm in
-       if is_unfrozen_var namer x then
-         Prolog_result ([], SPEC y connect_refl, [(y,x)], namer)
-       else failwith "wire_connect_prolog_rule");;
-
-let connect_prolog_rule =
-    Prolog_rule
-      (fun tm -> fun namer ->
-       let (x,y) = dest_connect tm in
-       let (w2,w1) =
-           if is_unfrozen_var namer x then
-             if is_unfrozen_var namer y then
-               let sx = dest_wire_var x in
-               let sy = dest_wire_var y in
-               if String.length sy < String.length sx then (y,x) else (x,y)
-             else (y,x)
-           else if is_unfrozen_var namer y then (x,y)
-           else failwith "connect_prolog_rule" in
-       Prolog_result ([], SPEC w2 connect_refl, [(w2,w1)], namer));;
+(* ------------------------------------------------------------------------- *)
+(* Simplifying circuits by merging connecting wires and propagating          *)
+(* constants through the logic.                                              *)
+(* ------------------------------------------------------------------------- *)
 
 type class_rep =
      Frozen_class_rep of term
@@ -950,9 +925,41 @@ let simplify_circuit =
         | Some th -> th in
     simplify th namer;;
 
-let partition_primary primary th =
-    let outputs = map rand (hyp th) in
-    partition (not o C mem outputs) primary;;
+(* ------------------------------------------------------------------------- *)
+(* Rescue a primary output P that is used as an internal wire in the circuit *)
+(* by renaming it to a new internal wire P_o that drives the output P.       *)
+(* ------------------------------------------------------------------------- *)
+
+let connect_wire_prolog_rule =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let (x,y) = dest_connect tm in
+       if is_unfrozen_var namer y then
+         Prolog_result ([], SPEC x connect_refl, [(x,y)], namer)
+       else failwith "connect_wire_prolog_rule");;
+
+let wire_connect_prolog_rule =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let (x,y) = dest_connect tm in
+       if is_unfrozen_var namer x then
+         Prolog_result ([], SPEC y connect_refl, [(y,x)], namer)
+       else failwith "wire_connect_prolog_rule");;
+
+let connect_prolog_rule =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let (x,y) = dest_connect tm in
+       let (w2,w1) =
+           if is_unfrozen_var namer x then
+             if is_unfrozen_var namer y then
+               let sx = dest_wire_var x in
+               let sy = dest_wire_var y in
+               if String.length sy < String.length sx then (y,x) else (x,y)
+             else (y,x)
+           else if is_unfrozen_var namer y then (x,y)
+           else failwith "connect_prolog_rule" in
+       Prolog_result ([], SPEC w2 connect_refl, [(w2,w1)], namer));;
 
 let rescue_primary_outputs_prolog_rule =
     let connect_equal_wires = prove
@@ -995,6 +1002,10 @@ let rescue_primary_outputs =
           (repeat_prove_hyp_prolog_rule cleanup_rule asms th) namer in
     (th,namer);;
 
+(* ------------------------------------------------------------------------- *)
+(* Merging syntactically identical logic.                                    *)
+(* ------------------------------------------------------------------------- *)
+
 let merge_logic =
     let sort_wires w1 w2 =
         let s1 = dest_wire_var w1 in
@@ -1021,6 +1032,10 @@ let merge_logic =
             merge_thm (INST [sort_wires w w'] th)
     and merge_thm th = merge_asms th (hyp th) in
     merge_thm;;
+
+(* ------------------------------------------------------------------------- *)
+(* Deleting dead logic.                                                      *)
+(* ------------------------------------------------------------------------- *)
 
 let delete_dead_logic primary_inputs primary_outputs th =
     let defs =
@@ -1072,6 +1087,10 @@ let delete_dead_logic primary_inputs primary_outputs th =
         warn true msg in
     (*** Delete dead logic ***)
     th;;
+
+(* ------------------------------------------------------------------------- *)
+(* Renaming wires to replace primed variables with numeric variants.         *)
+(* ------------------------------------------------------------------------- *)
 
 type deprime_name =
      Wire_deprime of term
@@ -1148,11 +1167,19 @@ let rename_wires primary th =
     let sub = deprime_to_sub primary dp in
     INST sub th;;
 
+(* ------------------------------------------------------------------------- *)
+(* Synthesizing hardware.                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+let partition_primary primary th =
+    let outputs = map rand (hyp th) in
+    partition (not o C mem outputs) primary;;
+
 let synthesize_hardware syn primary th =
     let namer = new_namer primary in
     let (th,namer) =
         complain_timed "Elaborated modules"
-          (elaborate_modules syn th) namer in
+          (elaborate_circuit syn th) namer in
     let (th,namer) =
         complain_timed "Simplified circuit"
           (simplify_circuit th) namer in
