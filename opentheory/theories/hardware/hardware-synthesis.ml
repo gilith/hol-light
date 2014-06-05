@@ -3,6 +3,8 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
+#load "unix.cma";;
+
 (* ------------------------------------------------------------------------- *)
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
@@ -10,9 +12,9 @@
 module String_map = Map.Make(String);;
 
 let timed f x =
-    let t = Sys.time() in
+    let t = Unix.gettimeofday() in
     let fx = f x in
-    let td = Sys.time() -. t in
+    let td = Unix.gettimeofday() -. t in
     (fx,td);;
 
 let complain s =
@@ -777,8 +779,8 @@ let elaborate_circuit =
     (th,namer);;
 
 (* ------------------------------------------------------------------------- *)
-(* Simplifying circuits by merging connecting wires and propagating          *)
-(* constants through the logic.                                              *)
+(* Simplifying circuits by merging connecting wires (using a union-find      *)
+(* algorithm) and propagating constants through the logic.                   *)
 (* ------------------------------------------------------------------------- *)
 
 type class_rep =
@@ -1003,35 +1005,135 @@ let rescue_primary_outputs =
     (th,namer);;
 
 (* ------------------------------------------------------------------------- *)
-(* Merging syntactically identical logic.                                    *)
+(* Merging syntactically identical logic using Hopcroft's algorithm.         *)
 (* ------------------------------------------------------------------------- *)
 
-let merge_logic =
-    let sort_wires w1 w2 =
-        let s1 = dest_wire_var w1 in
-        let s2 = dest_wire_var w2 in
-        if String.length s2 < String.length s1 then (w2,w1) else (w1,w2) in
-    let rec merge_asms th asms =
-        match asms with
-          [] -> th
-        | asm :: asms ->
-          if is_connect asm then merge_asms th asms else
-          let (f,w) = dest_comb asm in
-          let pred h = rator h = f in
-          match filter pred asms with
-            [] -> merge_asms th asms
-          | h :: _ ->
-            let w' = rand h in
+let merge_logic_initialize =
+    let add_gate asm (wire_inps,wire_cls,clses) =
+        if is_connect asm then (wire_inps,wire_cls,clses) else
+        let (w,inps,cls) =
+            if is_not asm then
+              let (x,w) = dest_not asm in
+              (w,[x],0)
+            else if is_and2 asm then
+              let (x,y,w) = dest_and2 asm in
+              (w,[x;y],1)
+            else if is_or2 asm then
+              let (x,y,w) = dest_or2 asm in
+              (w,[x;y],2)
+            else if is_xor2 asm then
+              let (x,y,w) = dest_xor2 asm in
+              (w,[x;y],3)
+            else if is_case1 asm then
+              let (x,y,z,w) = dest_case1 asm in
+              (w,[x;y;z],4)
+            else if is_delay asm then
+              let (x,w) = dest_delay asm in
+              (w,[x],5)
+            else
+              failwith ("merge_logic: bad gate:\n  " ^ string_of_term asm) in
+        let w = dest_wire_var w in
+        let inps = map dest_wire_var inps in
+        let wire_inps = String_map.add w inps wire_inps in
+        let wire_cls = String_map.add w cls wire_cls in
+        let ws = if Int_map.mem cls clses then Int_map.find cls clses else [] in
+        let clses = Int_map.add cls (w :: ws) clses in
+        (wire_inps,wire_cls,clses) in
+    let init_class _ ws acc =
+        match ws with
+          [_] -> acc
+        | _ -> ws :: acc in
+    let add_primary_input w (nxt_cls,wire_cls) =
+        let w = dest_wire_var w in
+        let wire_cls = String_map.add w nxt_cls wire_cls in
+        (nxt_cls + 1, wire_cls) in
+    fun primary_inputs -> fun ckt ->
+        let wire_inps = String_map.empty in
+        let wire_cls = String_map.empty in
+        let clses = Int_map.empty in
+        let (wire_inps,wire_cls,clses) =
+            rev_itlist add_gate (hyp ckt) (wire_inps,wire_cls,clses) in
+        let clses = Int_map.fold init_class clses [] in
+        let nxt_cls = 6 in
+        let (nxt_cls,wire_cls) =
+            rev_itlist add_primary_input primary_inputs (nxt_cls,wire_cls) in
+        (wire_inps,nxt_cls,wire_cls,clses);;
+
+let merge_logic_refine =
+    let rec lt_category k1 k2 =
+        match (k1,k2) with
+          ([],[]) -> false
+        | (i1 :: k1, i2 :: k2) -> i1 < i2 or (i1 <= i2 && lt_category k1 k2)
+        | _ -> failwith "merge_logic_refine.lt_category" in
+    let compare_category (k1,_) (k2,_) = lt_category k1 k2 in
+    let sort_category kws = mergesort compare_category kws in
+    let rec eq_category k1 k2 =
+        match (k1,k2) with
+          ([],[]) -> true
+        | (i1 :: k1, i2 :: k2) -> i1 = i2 && eq_category k1 k2
+        | _ -> failwith "merge_logic_refine.eq_category" in
+    let group_category =
+        let rec grp acc k ws kws =
+            match kws with
+              [] -> ws :: acc
+            | (k',w) :: kws ->
+              if eq_category k' k then grp acc k (w :: ws) kws
+              else grp (ws :: acc) k' [w] kws in
+        fun kws ->
+        match kws with
+          [] -> []
+        | (k,w) :: kws -> grp [] k [w] kws in
+    fun wire_inps ->
+    let classify wire_cls w = String_map.find w wire_cls in
+    let categorize wire_cls w =
+        let ws = String_map.find w wire_inps in
+        (map (classify wire_cls) ws, w) in
+    let split wire_cls cls =
+        group_category (sort_category (map (categorize wire_cls) cls)) in
+    let add_new cls (nxt_cls,wire_cls,clses) =
+        let update w w_cls = String_map.add w nxt_cls w_cls in
+        let wire_cls = rev_itlist update cls wire_cls in
+        let clses = match cls with [_] -> clses | _ -> cls :: clses in
+        (nxt_cls + 1, wire_cls, clses) in
+    let refine cls (nxt_cls,wire_cls,clses) =
+        match split wire_cls cls with
+          [_] -> (nxt_cls, wire_cls, cls :: clses)
+        | subcls -> rev_itlist add_new subcls (nxt_cls,wire_cls,clses) in
+    fun nxt_cls -> fun wire_cls -> fun clses ->
+    rev_itlist refine clses (nxt_cls,wire_cls,[]);;
+
+let merge_logic_refine_loop wire_inps =
+    let rec loop nxt_cls wire_cls clses =
+        let (nxt_cls',wire_cls',clses') =
+            merge_logic_refine wire_inps nxt_cls wire_cls clses in
+        if nxt_cls' = nxt_cls then clses else loop nxt_cls' wire_cls' clses' in
+    loop;;
+
+let merge_logic_substitution =
+    let lt_wire w1 w2 = String.length w1 < String.length w2 in
+    let add_wire w x sub =
 (* Debugging
-            let () =
-                let msg =
-                    "Merging wires " ^ string_of_term w ^
-                    " and " ^ string_of_term w' ^ "\n" in
-                print_string msg in
+        let () =
+            let msg =
+                "Merging wires " ^ string_of_term w ^
+                " and " ^ string_of_term x in
+            complain msg in
 *)
-            merge_thm (INST [sort_wires w w'] th)
-    and merge_thm th = merge_asms th (hyp th) in
-    merge_thm;;
+        (w,x) :: sub in
+    let add_cls cls sub =
+        match map mk_wire_var (mergesort lt_wire cls) with
+          [] -> failwith "merge_logic_substitution.add_cls.[]"
+        | [_] -> failwith "merge_logic_substitution.add_cls.[_]"
+        | w :: ws -> rev_itlist (add_wire w) ws sub in
+    fun clses ->
+    rev_itlist add_cls clses [];;
+
+let merge_logic primary_inputs ckt =
+    let (wire_inps,nxt_cls,wire_cls,clses) =
+        merge_logic_initialize primary_inputs ckt in
+    match merge_logic_refine_loop wire_inps nxt_cls wire_cls clses with
+      [] -> ckt
+    | clses -> INST (merge_logic_substitution clses) ckt;;
 
 (* ------------------------------------------------------------------------- *)
 (* Deleting dead logic.                                                      *)
@@ -1141,7 +1243,7 @@ let deprime_to_sub =
           let sub = go_dpn (narrow sc m) sub dpn in
           go_ml sc sub ml
         | (m,mpl) :: ml ->
-          let mpl = sort mpl_cmp mpl in
+          let mpl = mergesort mpl_cmp mpl in
           let sub = go_mpl (narrow sc m) 0 sub mpl in
           go_ml sc sub ml
     and go_mpl sc n sub mpl =
@@ -1190,7 +1292,7 @@ let synthesize_hardware syn primary th =
           (rescue_primary_outputs primary_outputs th) namer in
     let th =
         complain_timed "Merged identical logic"
-          merge_logic th in
+          merge_logic primary_inputs th in
     let th =
         complain_timed "Deleted dead logic"
           (delete_dead_logic primary_inputs primary_outputs) th in
@@ -1246,7 +1348,7 @@ let duplicate_logic =
           ((_,(_,_,l1)) : term * (int * int * float))
           ((_,(_,_,l2)) : term * (int * int * float)) =
         l2 < l1 in
-    let sort_load = sort cmp_load in
+    let sort_load = mergesort cmp_load in
     let merge_load = merge cmp_load in
     let reduce_load w d n =
         let find_delta fd fn =
@@ -1322,7 +1424,7 @@ let pp_print_count fmt (title,i) =
     ();;
 
 let pp_print_distribution print_x print_y fmt (title,xys) =
-    let xys = sort (fun (_,y1) -> fun (_,y2) -> y1 < y2) xys in
+    let xys = mergesort (fun (_,y1) -> fun (_,y2) -> y1 < y2) xys in
     let print_iy s i =
         let (_,y) = List.nth xys i in
         let () = Format.pp_print_space fmt () in
@@ -1485,7 +1587,7 @@ let hardware_to_verilog =
     let wire_sort =
         let wire_cmp w1 w2 =
             String.compare (dest_wire_var w1) (dest_wire_var w2) < 0 in
-        sort wire_cmp in
+        mergesort wire_cmp in
     let arg_name arg =
         match arg with
           Wire_verilog_arg w -> wire_name w
