@@ -336,3 +336,121 @@ Synthesizing 56-bit double_exp_40277943742463041_1000:
 - Generated verilog testbench: 0 seconds
 - Passed a random test: 0 seconds
 - TOTAL: 933 seconds
+
+_____________________________________________________________
+EFFICIENTLY MERGING IDENTICAL LOGIC USING HOPCROFT'S ALGORITHM
+
+e9eb61d Using Hopcroft's algorithm to merge identical logic
+
+Synthesizing 8-bit double_exp_221_1000:
+- Instantiated parameters: 0 seconds
+- Elaborated modules: 7 seconds
+- Simplified circuit: 0 seconds
+- - Interposed wires before primary outputs: 0 seconds
+- - Cleaned up: 0 seconds
+- Rescued primary outputs: 0 seconds
+- Merged identical logic: 0 seconds
+- Deleted dead logic: 0 seconds
+- Renamed wires: 0 seconds
+- Generated verilog module: 0 seconds
+- Generated verilog testbench: 0 seconds
+- Passed a random test: 1 second
+- TOTAL: 11 seconds
+Synthesizing 16-bit double_exp_51175_1000:
+- Instantiated parameters: 0 seconds
+- Elaborated modules: 23 seconds
+- Simplified circuit: 1 second
+- - Interposed wires before primary outputs: 2 seconds
+- - Cleaned up: 0 seconds
+- Rescued primary outputs: 2 seconds
+- Merged identical logic: 0 seconds
+- Deleted dead logic: 0 seconds
+- Renamed wires: 0 seconds
+- Generated verilog module: 2 seconds
+- Generated verilog testbench: 0 seconds
+- Passed a random test: 2 seconds
+- TOTAL: 33 seconds
+Synthesizing 24-bit double_exp_16767675_1000:
+- Instantiated parameters: 0 seconds
+- Elaborated modules: 49 seconds
+- Simplified circuit: 3 seconds
+- - Interposed wires before primary outputs: 4 seconds
+- - Cleaned up: 0 seconds
+- Rescued primary outputs: 5 seconds
+- Merged identical logic: 0 seconds
+- Deleted dead logic: 0 seconds
+- Renamed wires: 1 second
+- Generated verilog module: 4 seconds
+- Generated verilog testbench: 0 seconds
+- Passed a random test: 6 seconds
+- TOTAL: 71 seconds
+Synthesizing 32-bit double_exp_4201314911_1000:
+- Instantiated parameters: 0 seconds
+- Elaborated modules: 98 seconds
+- Simplified circuit: 5 seconds
+- - Interposed wires before primary outputs: 8 seconds
+- - Cleaned up: 0 seconds
+- Rescued primary outputs: 8 seconds
+- Merged identical logic: 0 seconds
+- Deleted dead logic: 1 second
+- Renamed wires: 1 second
+- Generated verilog module: 8 seconds
+- Generated verilog testbench: 0 seconds
+- Passed a random test: 9 seconds
+- TOTAL: 134 seconds
+Synthesizing 40-bit double_exp_812584906161_1000:
+- Instantiated parameters: 0 seconds
+- Elaborated modules: 158 seconds
+- Simplified circuit: 9 seconds
+- - Interposed wires before primary outputs: 18 seconds
+- - Cleaned up: 0 seconds
+- Rescued primary outputs: 18 seconds
+- Merged identical logic: 0 seconds
+- Deleted dead logic: 2 seconds
+- Renamed wires: 2 seconds
+- Generated verilog module: 12 seconds
+- Generated verilog testbench: 0 seconds
+- Passed a random test: 13 seconds
+- TOTAL: 219 seconds
+Synthesizing 48-bit double_exp_202718022952341_1000:
+- Instantiated parameters: 0 seconds
+- Elaborated modules: 248 seconds
+- Simplified circuit: 15 seconds
+- - Interposed wires before primary outputs: 18 seconds
+- - Cleaned up: 0 seconds
+- Rescued primary outputs: 19 seconds
+- Merged identical logic: 0 seconds
+- Deleted dead logic: 3 seconds
+- Renamed wires: 3 seconds
+- Generated verilog module: 22 seconds
+- Generated verilog testbench: 0 seconds
+- Passed a random test: 17 seconds
+- TOTAL: 333 seconds
+Synthesizing 56-bit double_exp_50168938772051441_1000:
+- Instantiated parameters: 0 seconds
+- Elaborated modules: 352 seconds
+- Simplified circuit: 16 seconds
+- - Interposed wires before primary outputs: 34 seconds
+- - Cleaned up: 0 seconds
+- Rescued primary outputs: 34 seconds
+- Merged identical logic: 0 seconds
+- Deleted dead logic: 4 seconds
+- Renamed wires: 5 seconds
+- Generated verilog module: 34 seconds
+- Generated verilog testbench: 0 seconds
+- Passed a random test: 24 seconds
+- TOTAL: 475 seconds
+Synthesizing 64-bit double_exp_13962236505266237245_1000:
+- Instantiated parameters: 1 second
+- Elaborated modules: 482 seconds
+- Simplified circuit: 21 seconds
+- - Interposed wires before primary outputs: 47 seconds
+- - Cleaned up: 0 seconds
+- Rescued primary outputs: 47 seconds
+- Merged identical logic: 0 seconds
+- Deleted dead logic: 5 seconds
+- Renamed wires: 7 seconds
+- Generated verilog module: 46 seconds
+- Generated verilog testbench: 0 seconds
+- Passed a random test: 33 seconds
+- TOTAL: 647 seconds
