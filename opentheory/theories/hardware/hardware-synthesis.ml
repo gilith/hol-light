@@ -103,7 +103,36 @@ let string_of_subst =
 (* Name generators.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-type namer = Namer of term list * string * term list;;
+type varset = Varset of hol_type list String_map.t;;
+
+type namer = Namer of varset * string * varset;;
+
+let empty_varset = Varset String_map.empty;;
+
+let mem_varset v (Varset m) =
+    let (s,ty) = dest_var v in
+    String_map.mem s m &&
+    mem ty (String_map.find s m);;
+
+let add_varset v vs =
+    if mem_varset v vs then vs else
+    let Varset m = vs in
+    let (s,ty) = dest_var v in
+    let l = if String_map.mem s m then String_map.find s m else [] in
+    Varset (String_map.add s (ty :: l) m);;
+
+let add_list_varset vl vs = rev_itlist add_varset vl vs;;
+
+let from_list_varset vl = add_list_varset vl empty_varset;;
+
+let variant_varset vs v =
+    if not (mem_varset v vs) then v else
+    let (s,ty) = dest_var v in
+    let rec f s =
+        let s' = s ^ "'" in
+        let v' = mk_var (s',ty) in
+        if mem_varset v' vs then f s' else v' in
+    f s;;
 
 let frozen_vars (Namer (x,_,_)) = x;;
 
@@ -111,20 +140,24 @@ let current_scope (Namer (_,x,_)) = x;;
 
 let generated_vars (Namer (_,_,x)) = x;;
 
-let new_namer frozen = Namer (frozen,"",frozen);;
+let new_namer frozen =
+    let vs = from_list_varset frozen in
+    Namer (vs,"",vs);;
 
-let add_generated_vars vs' (Namer (f,s,vs)) = Namer (f, s, vs' @ vs);;
+let add_generated_vars vl (Namer (f,s,vs)) =
+    Namer (f, s, add_list_varset vl vs);;
 
 let reset_scope s (Namer (f,_,vs)) = Namer (f,s,vs);;
 
 let scope_to_string s = if s = "" then "<global>" else s;;
 
-let is_unfrozen_var namer v = is_var v && not (mem v (frozen_vars namer));;
+let is_unfrozen_var namer v =
+    is_var v && not (mem_varset v (frozen_vars namer));;
 
 let not_unfrozen_var namer v = not (is_unfrozen_var namer v);;
 
 let fresh_variant v namer =
-    let v = variant (generated_vars namer) v in
+    let v = variant_varset (generated_vars namer) v in
     let namer = add_generated_vars [v] namer in
     (v,namer);;
 
@@ -137,13 +170,6 @@ let fresh_var v namer =
 let freshen_vars vs namer =
     let (vs',namer) = maps fresh_var vs namer in
     (zip vs' vs, namer);;
-
-let fresh_bus v n namer =
-    let (s,_) = dest_var v in
-    let tm = variable_bus s n in
-    let vs = frees tm in
-    let (vs',namer) = maps fresh_variant vs namer in
-    (vsubst (zip vs' vs) tm, namer);;
 
 let narrow_scope s namer =
     if String.length s = 0 then namer else
