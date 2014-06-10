@@ -74,6 +74,10 @@ let split c s =
 
 let deprime s = fst (split '\'' s);;
 
+let mk_one_var =
+    let one_ty = `:1` in
+    fun s -> mk_var (s,one_ty);;
+
 let null_subst (sub : (term * term) list) =
     match sub with
       [] -> true
@@ -98,6 +102,12 @@ let string_of_subst =
     let maplet (t,v) = string_of_term v ^ " |-> " ^ string_of_term t ^ "\n" in
     fun sub ->
     "<sub> [" ^ (if length sub = 0 then "" else ("\n  " ^ String.concat "\n  " (map maplet sub))) ^ "]";;
+
+(* ------------------------------------------------------------------------- *)
+(* A special exception for synthesis bugs.                                   *)
+(* ------------------------------------------------------------------------- *)
+
+exception Synthesis_bug of string;;
 
 (* ------------------------------------------------------------------------- *)
 (* Efficiently store sets of variables.                                      *)
@@ -136,24 +146,21 @@ let variant_varset vs v =
 (* Name generators.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-type namer = Namer of varset * string * varset;;
+type scope = string * varset;;
+
+type namer = Namer of varset * scope * scope list;;
+
+let scope_to_string sc = if sc = "" then "<global>" else sc;;
 
 let frozen_vars (Namer (x,_,_)) = x;;
 
-let current_scope (Namer (_,x,_)) = x;;
+let current_scope (Namer (_,(x,_),_)) = x;;
 
-let generated_vars (Namer (_,_,x)) = x;;
+let current_scope_vars (Namer (_,(_,x),_)) = x;;
 
 let new_namer frozen =
     let vs = from_list_varset frozen in
-    Namer (vs,"",vs);;
-
-let add_generated_vars vl (Namer (f,s,vs)) =
-    Namer (f, s, add_list_varset vl vs);;
-
-let reset_scope s (Namer (f,_,vs)) = Namer (f,s,vs);;
-
-let scope_to_string s = if s = "" then "<global>" else s;;
+    Namer (vs,("",vs),[]);;
 
 let is_unfrozen_var namer v =
     is_var v && not (mem_varset v (frozen_vars namer));;
@@ -161,13 +168,14 @@ let is_unfrozen_var namer v =
 let not_unfrozen_var namer v = not (is_unfrozen_var namer v);;
 
 let fresh_var v namer =
-    let sc = current_scope namer in
+    let Namer (f,(sc,vs),sl) = namer in
     let v =
         if String.length sc = 0 then v else
         let (s,ty) = dest_var v in
         mk_var (sc ^ "." ^ s, ty) in
-    let v = variant_varset (generated_vars namer) v in
-    let namer = add_generated_vars [v] namer in
+    let v = variant_varset vs v in
+    let vs = add_varset v vs in
+    let namer = Namer (f,(sc,vs),sl) in
     (v,namer);;
 
 let freshen_vars vs namer =
@@ -176,16 +184,26 @@ let freshen_vars vs namer =
 
 let narrow_scope s namer =
     if String.length s = 0 then namer else
-    let sc = mk_var (s,bool_ty) in
-    let (sc,namer) = fresh_var sc namer in
+    let (sc,namer) = fresh_var (mk_one_var s) namer in
+    let Namer (f,sc_vs,sl) = namer in
     let (sc,_) = dest_var sc in
-    reset_scope sc namer;;
+    let vs = empty_varset in
+    let sl = sc_vs :: sl in
+    Namer (f,(sc,vs),sl);;
+
+let widen_scope s namer =
+    let rec pop sl =
+        match sl with
+          [] -> raise (Synthesis_bug "widen_scope.pop: no match")
+        | (sc,vs) :: sl -> if s = sc then ((sc,vs),sl) else pop sl in
+    let Namer (f,(sc,vs),sl) = namer in
+    if s = sc then namer else
+    let (sc_vs,sl) = pop sl in
+    Namer (f,sc_vs,sl);;
 
 (* ------------------------------------------------------------------------- *)
 (* Prolog rules allow backward reasoning on theorem assumptions.             *)
 (* ------------------------------------------------------------------------- *)
-
-exception Prolog_bug of string;;
 
 type prolog_result =
      Prolog_result of term list * thm * (term * term) list * namer
@@ -215,13 +233,13 @@ let apply_prolog_rule (Prolog_rule pr) goal namer =
         let goal' = vsubst sub goal in
         if aconv goal' (concl th) then () else
         let () = complain ("using substitution\n" ^ string_of_subst sub ^ "\nconclusion of\n" ^ string_of_thm th ^ "\ndoesn't match goal[substitution]\n" ^ string_of_term goal' ^ "\n") in
-        raise (Prolog_bug "apply_prolog_rule: conclusion doesn't match goal[substitution]") in
+        raise (Synthesis_bug "apply_prolog_rule: conclusion doesn't match goal[substitution]") in
     let () =
         let tms = hyp th in
         let check tm =
             if mem tm tms then () else
             let () = complain ("subgoal\n" ^ string_of_term tm ^ "\nnot a hypothesis in\n" ^ string_of_thm th ^ "\n") in
-            raise (Prolog_bug "apply_prolog_rule: subgoal not a hypothesis") in
+            raise (Synthesis_bug "apply_prolog_rule: subgoal not a hypothesis") in
         List.iter check tms in
 *)
     subgoals_th_sub_namer;;
@@ -271,14 +289,14 @@ let prove_hyp_prolog_rule pr =
             Prolog_result (gasms,gth,[],gnamer) ->
               let asms = List.rev_append gasms asms in
               let th = PROVE_HYP gth th in
-              let namer = reset_scope (current_scope namer) gnamer in
+              let namer = widen_scope (current_scope namer) gnamer in
               prolog_asms asms asmsl th sub namer goals
           | Prolog_result (gasms,gth,gsub,gnamer) ->
               let asmsl = (gsub,asms) :: asmsl in
               let asms = rev gasms in
               let th = PROVE_HYP gth (INST gsub th) in
               let sub = compose_subst sub gsub in
-              let namer = reset_scope (current_scope namer) gnamer in
+              let namer = widen_scope (current_scope namer) gnamer in
               prolog_asms asms asmsl th sub namer goals
           | Prolog_unchanged ->
               let asms = goal :: asms in
@@ -294,7 +312,7 @@ let then_prolog_rule pr1 pr2 =
            let (asms,th,sub2,namer) =
                prove_hyp_prolog_rule pr2 asms th namer in
            let sub = compose_subst sub1 sub2 in
-           let namer = reset_scope (current_scope namer0) namer in
+           let namer = widen_scope (current_scope namer0) namer in
            Prolog_result (asms,th,sub,namer)
        | Prolog_unchanged ->
            apply_prolog_rule pr2 goal namer0);;
@@ -306,7 +324,7 @@ let repeat_prove_hyp_prolog_rule pr =
         let goals = rev_itlist (rollback_asm gsub) asms goals in
         if disjoint fvs gsubdom then (fvs,asmsl,goals) else
         match asmsl with
-          [] -> raise (Prolog_bug "repeat_prove_hyp_prolog_rule.rollback_asms")
+          [] -> raise (Synthesis_bug "repeat_prove_hyp_prolog_rule.rollback_asms")
         | (asms,fvs) :: asmsl ->
           rollback_asms gsub gsubdom asms fvs asmsl goals in
     let rec finalize_asms acc asmsl =
@@ -336,13 +354,13 @@ let repeat_prove_hyp_prolog_rule pr =
           match apply_prolog_rule pr goal namer with
             Prolog_result (gasms,gth,[],gnamer) ->
               let th = PROVE_HYP gth th in
-              let namer = reset_scope (current_scope namer) gnamer in
+              let namer = widen_scope (current_scope namer) gnamer in
               let asms = List.rev_append gasms asms in
               prolog_asms asms fvs asmsl th sub namer goals
           | Prolog_result (gasms,gth,gsub,gnamer) ->
               let th = PROVE_HYP gth (INST gsub th) in
               let sub = compose_subst sub gsub in
-              let namer = reset_scope (current_scope namer) gnamer in
+              let namer = widen_scope (current_scope namer) gnamer in
               let fvs' = union fvs (freesl asms) in
 (* Debugging
               let () =
@@ -383,7 +401,7 @@ let then_repeat_prolog_rule pr1 pr2 =
            let (asms,th,sub2,namer) =
                repeat_prove_hyp_prolog_rule pr2 asms th namer in
            let sub = compose_subst sub1 sub2 in
-           let namer = reset_scope (current_scope namer0) namer in
+           let namer = widen_scope (current_scope namer0) namer in
            Prolog_result (asms,th,sub,namer)
        | Prolog_unchanged ->
            apply_prolog_rule pr2 goal namer0);;
@@ -806,8 +824,8 @@ let elaborate_circuit =
         repeat_prove_hyp_prolog_rule rule (hyp th) th namer in
 (* Debugging
     let () =
-        let n = length (generated_vars namer) in
-        let () = complain ("elaborate_circuit: generated " ^ string_of_int n ^ " variable" ^ (if n = 1 then "" else "s")) in
+        let n = length (current_scope_vars namer) in
+        let () = complain ("elaborate_circuit: " ^ string_of_int n ^ " variable" ^ (if n = 1 then "" else "s") ^ " in global scope") in
         () in
 *)
     let () = check_elaboration tms in
