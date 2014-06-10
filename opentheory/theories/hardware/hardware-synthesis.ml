@@ -22,10 +22,18 @@ let complain s =
     let () = flush stderr in
     ();;
 
+let memory_footprint =
+    let mb = float_of_int (Sys.word_size / 8) /. (1024.0 *. 1024.0) in
+    fun () ->
+    let () = Gc.compact () in
+    let {Gc.live_words = m} = Gc.stat () in
+    float_of_int m *. mb;;
+
 let complain_timed s f x =
     let (fx,t) = timed f x in
     let t = int_of_float t in
-    let () = complain ("- " ^ s ^ ": " ^ string_of_int t ^ " second" ^ (if t = 1 then "" else "s")) in
+    let m = int_of_float (memory_footprint ()) in
+    let () = complain ("- " ^ s ^ ": " ^ string_of_int t ^ " second" ^ (if t = 1 then "" else "s") ^ " (" ^ string_of_int m ^ "Mb)") in
     fx;;
 
 let random_odd_num w =
