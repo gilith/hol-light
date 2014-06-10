@@ -100,12 +100,10 @@ let string_of_subst =
     "<sub> [" ^ (if length sub = 0 then "" else ("\n  " ^ String.concat "\n  " (map maplet sub))) ^ "]";;
 
 (* ------------------------------------------------------------------------- *)
-(* Name generators.                                                          *)
+(* Efficiently store sets of variables.                                      *)
 (* ------------------------------------------------------------------------- *)
 
 type varset = Varset of hol_type list String_map.t;;
-
-type namer = Namer of varset * string * varset;;
 
 let empty_varset = Varset String_map.empty;;
 
@@ -134,6 +132,12 @@ let variant_varset vs v =
         if mem_varset v' vs then f s' else v' in
     f s;;
 
+(* ------------------------------------------------------------------------- *)
+(* Name generators.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
+type namer = Namer of varset * string * varset;;
+
 let frozen_vars (Namer (x,_,_)) = x;;
 
 let current_scope (Namer (_,x,_)) = x;;
@@ -156,16 +160,15 @@ let is_unfrozen_var namer v =
 
 let not_unfrozen_var namer v = not (is_unfrozen_var namer v);;
 
-let fresh_variant v namer =
+let fresh_var v namer =
+    let sc = current_scope namer in
+    let v =
+        if String.length sc = 0 then v else
+        let (s,ty) = dest_var v in
+        mk_var (sc ^ "." ^ s, ty) in
     let v = variant_varset (generated_vars namer) v in
     let namer = add_generated_vars [v] namer in
     (v,namer);;
-
-let fresh_var v namer =
-    let (s,ty) = dest_var v in
-    let sc = current_scope namer in
-    let s = if String.length sc = 0 then s else sc ^ "." ^ s in
-    fresh_variant (mk_var (s,ty)) namer;;
 
 let freshen_vars vs namer =
     let (vs',namer) = maps fresh_var vs namer in
