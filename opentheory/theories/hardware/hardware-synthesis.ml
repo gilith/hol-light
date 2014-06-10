@@ -776,11 +776,11 @@ let elaborate_circuit =
     let (tms,th,_,namer) =
         repeat_prove_hyp_prolog_rule rule (hyp th) th namer in
 (* Debugging
-*)
     let () =
         let n = length (generated_vars namer) in
         let () = complain ("elaborate_circuit: generated " ^ string_of_int n ^ " variable" ^ (if n = 1 then "" else "s")) in
         () in
+*)
     let () = check_elaboration tms in
     (th,namer);;
 
@@ -914,8 +914,9 @@ let simplify_prolog_rule =
 let simplify_circuit =
     let rec simplify th namer =
         let (_,th,_,namer) =
-            prove_hyp_prolog_rule simplify_prolog_rule (hyp th) th namer in
-        match connect_wires namer th with
+            complain_timed "- Propagated constant wires"
+              (prove_hyp_prolog_rule simplify_prolog_rule (hyp th) th) namer in
+        match complain_timed "- Connected wires" (connect_wires namer) th with
           None -> (th,namer)
         | Some th -> simplify th namer in
     fun th -> fun namer ->
@@ -928,7 +929,7 @@ let simplify_circuit =
         () in
 *)
     let th =
-        match connect_wires namer th with
+        match complain_timed "- Connected wires" (connect_wires namer) th with
           None -> th
         | Some th -> th in
     simplify th namer;;

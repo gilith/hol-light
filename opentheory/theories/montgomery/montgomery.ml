@@ -6507,21 +6507,10 @@ let primary = `clk : wire` :: frees (concl montgomery_91_thm);;
 output_string stdout (hardware_to_verilog "montgomery_91" primary montgomery_91_thm);;
 hardware_to_verilog_file "montgomery_91" primary montgomery_91_thm;;
 
-let double_exp_13_thm = mk_montgomery_double_exp (dest_numeral `13`) (dest_numeral `1000`);;
-let th = double_exp_13_thm;;
-let syn = montgomery_double_exp_syn_gen "";;
-let primary = `clk : wire` :: frees (concl double_exp_13_thm);;
-output_string stdout (hardware_to_verilog "double_exp_91" primary double_exp_91_thm);;
-
 let double_exp_91_thm = mk_montgomery_double_exp (dest_numeral `91`) (dest_numeral `11`);;
 let primary = `clk : wire` :: frees (concl double_exp_91_thm);;
 output_string stdout (hardware_to_verilog "double_exp_91" primary double_exp_91_thm);;
 hardware_to_verilog_file "double_exp_91" primary double_exp_91_thm;;
-
-let double_exp_1399742505_thm = mk_montgomery_double_exp (dest_numeral `1399742505`) (dest_numeral `100`);;
-let primary = `clk : wire` :: frees (concl double_exp_1399742505_thm);;
-output_string stdout (hardware_to_verilog "double_exp_1399742505" primary double_exp_1399742505_thm);;
-hardware_to_verilog_file "double_exp_1399742505" primary double_exp_1399742505_thm;;
 
 let n = dest_numeral `221`;;
 let m = dest_numeral `1000`;;
