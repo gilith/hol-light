@@ -619,7 +619,7 @@ let mk_bus_prolog_rule =
           let nn = dest_numeral n in
           let v = dest_width t in
           if not_unfrozen_var namer v then failwith "mk_bus_prolog_rule" else
-          let (b,namer) = fresh_bus v nn namer in
+          let b = variable_bus (fst (dest_var v)) nn in
           let sub = [(b,v)] in
           let asm = vsubst sub tm in
           Prolog_result ([asm], ASSUME asm, sub, namer)));;
@@ -775,6 +775,12 @@ let elaborate_circuit =
     fun th -> fun namer ->
     let (tms,th,_,namer) =
         repeat_prove_hyp_prolog_rule rule (hyp th) th namer in
+(* Debugging
+*)
+    let () =
+        let n = length (generated_vars namer) in
+        let () = complain ("elaborate_circuit: generated " ^ string_of_int n ^ " variable" ^ (if n = 1 then "" else "s")) in
+        () in
     let () = check_elaboration tms in
     (th,namer);;
 
