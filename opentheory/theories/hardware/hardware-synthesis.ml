@@ -92,7 +92,9 @@ let null_subst (sub : (term * term) list) =
     | _ -> false;;
 
 let compose_subst old_sub new_sub =
-    new_sub @ map (fun (t,v) -> (vsubst new_sub t, v)) old_sub;;
+    if null_subst new_sub then old_sub else
+    let apply_new_sub (t,v) = (vsubst new_sub t, v) in
+    map apply_new_sub old_sub @ new_sub;;
 
 let simple_conv th =
     let redex = lhs (concl th) in
@@ -294,17 +296,19 @@ let prove_hyp_prolog_rule pr =
         | goal :: goals ->
           let goal = vsubst sub goal in
           match apply_prolog_rule pr goal namer with
-            Prolog_result (gasms,gth,[],gnamer) ->
-              let asms = List.rev_append gasms asms in
-              let th = PROVE_HYP gth th in
+            Prolog_result (gasms,gth,gsub,gnamer) ->
               let namer = widen_scope (current_scope namer) gnamer in
-              prolog_asms asms asmsl th sub namer goals
-          | Prolog_result (gasms,gth,gsub,gnamer) ->
-              let asmsl = (gsub,asms) :: asmsl in
-              let asms = rev gasms in
-              let th = PROVE_HYP gth (INST gsub th) in
-              let sub = compose_subst sub gsub in
-              let namer = widen_scope (current_scope namer) gnamer in
+              let (asms,asmsl,th,sub) =
+                  if null_subst gsub then
+                    let asms = List.rev_append gasms asms in
+                    let th = PROVE_HYP gth th in
+                    (asms,asmsl,th,sub)
+                  else
+                    let asmsl = (gsub,asms) :: asmsl in
+                    let asms = rev gasms in
+                    let th = PROVE_HYP gth (INST gsub th) in
+                    let sub = compose_subst sub gsub in
+                    (asms,asmsl,th,sub) in
               prolog_asms asms asmsl th sub namer goals
           | Prolog_unchanged ->
               let asms = goal :: asms in
