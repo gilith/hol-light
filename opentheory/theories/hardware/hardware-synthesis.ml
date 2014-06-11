@@ -467,12 +467,12 @@ let (scope_thm_prolog_rule,conv_prolog_rule) =
         Prolog_rule
           (fun tm -> fun namer ->
            let eq_th = conv tm in
-           let (asms,th) =
-               try ([], EQT_ELIM eq_th)
-               with Failure _ ->
-                 let (asm,th) = undisch_bind (eq_to_imp_thm eq_th) in
-                 ([asm],th) in
-           Prolog_result (asms,th,[],namer)) in
+           try (let th = EQT_ELIM eq_th in
+                Prolog_result ([],th,[],namer))
+           with Failure _ ->
+               let (asm,th) = undisch_bind (eq_to_imp_thm eq_th) in
+               if asm = tm then Prolog_unchanged else
+               Prolog_result ([asm],th,[],namer)) in
     (thm_rule,conv_rule);;
 
 let thm_prolog_rule = scope_thm_prolog_rule "";;
