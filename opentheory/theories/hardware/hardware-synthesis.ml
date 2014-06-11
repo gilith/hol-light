@@ -1067,7 +1067,7 @@ let rescue_primary_outputs =
     (th,namer);;
 
 (* ------------------------------------------------------------------------- *)
-(* Merging syntactically identical logic using Hopcroft's algorithm.         *)
+(* Merge syntactically identical logic using Hopcroft's algorithm.           *)
 (* ------------------------------------------------------------------------- *)
 
 let merge_logic_initialize =
