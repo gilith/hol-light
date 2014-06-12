@@ -25,15 +25,17 @@ let complain s =
 let memory_footprint =
     let mb = float_of_int (Sys.word_size / 8) /. (1024.0 *. 1024.0) in
     fun () ->
-    let () = Gc.compact () in
-    let {Gc.live_words = m} = Gc.stat () in
-    float_of_int m *. mb;;
+    let () = Gc.full_major () in
+    let {Gc.live_words = m0; Gc.top_heap_words = mx} = Gc.stat () in
+    (float_of_int m0 *. mb, float_of_int mx *. mb);;
 
 let complain_timed s f x =
     let (fx,t) = timed f x in
     let t = int_of_float t in
-    let m = int_of_float (memory_footprint ()) in
-    let () = complain ("- " ^ s ^ ": " ^ string_of_int t ^ " second" ^ (if t = 1 then "" else "s") ^ " (" ^ string_of_int m ^ "Mb)") in
+    let (m0,mx) = memory_footprint () in
+    let m0 = int_of_float m0 in
+    let mx = int_of_float mx in
+    let () = complain ("- " ^ s ^ ": " ^ string_of_int t ^ " second" ^ (if t = 1 then "" else "s") ^ " (" ^ string_of_int m0 ^ "-" ^ string_of_int mx ^ "Mb)") in
     fx;;
 
 let random_odd_num w =
