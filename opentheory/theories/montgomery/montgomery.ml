@@ -6519,6 +6519,7 @@ test_montgomery_double_exp n m name ckt;;
 
 performance_test_montgomery_double_exp 8;;
 performance_test_montgomery_double_exp 12;;
+disable_proof_logging ();;
 performance_tests_montgomery_double_exp ();;
 ***)
 
