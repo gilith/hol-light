@@ -82,6 +82,10 @@ let split c s =
 
 let deprime s = fst (split '\'' s);;
 
+let is_true =
+    let true_tm = `T` in
+    fun tm -> tm = true_tm;;
+
 let mk_one_var =
     let one_ty = `:1` in
     fun s -> mk_var (s,one_ty);;
@@ -426,9 +430,9 @@ let rec repeat_prolog_rule pr =
              (then_repeat_prolog_rule pr (repeat_prolog_rule pr)) in
        apply_prolog_rule rule goal namer);;
 
-let (scope_thm_prolog_rule,conv_prolog_rule) =
-    let eq_to_imp_thm = MATCH_MP (TAUT `(a <=> b) ==> (b ==> a)`) in
+let scope_thm_prolog_rule =
     let mk_prolog_thm =
+        let eq_to_imp_thm = MATCH_MP (TAUT `(a <=> b) ==> (b ==> a)`) in
         let pull_exists =
             let conv = REWR_CONV LEFT_IMP_EXISTS_THM in
             let rec pull tm =
@@ -459,27 +463,31 @@ let (scope_thm_prolog_rule,conv_prolog_rule) =
         let pat = concl th in
         Prolog_rule
           (fun tm -> fun namer ->
-           let namer = narrow_scope s namer in
            let (_,sub,_) = term_match [] pat tm in
+           let namer = narrow_scope s namer in
            let (vs_sub,namer) = freshen_vars vs namer in
            let sub = vs_sub @ sub in
            let asms = map (vsubst sub) asms in
            let th = INST sub th in
            Prolog_result (asms,th,[],namer)) in
-    let thm_rule s th = prolog_thm_rule s (mk_prolog_thm th) in
-    let conv_rule (conv : conv) =
-        Prolog_rule
-          (fun tm -> fun namer ->
-           let eq_th = conv tm in
-           try (let th = EQT_ELIM eq_th in
-                Prolog_result ([],th,[],namer))
-           with Failure _ ->
-               let (asm,th) = undisch_bind (eq_to_imp_thm eq_th) in
-               if asm = tm then Prolog_unchanged else
-               Prolog_result ([asm],th,[],namer)) in
-    (thm_rule,conv_rule);;
+    fun s -> fun th ->
+    prolog_thm_rule s (mk_prolog_thm th);;
 
 let thm_prolog_rule = scope_thm_prolog_rule "";;
+
+let conv_prolog_rule (conv : conv) =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let eq_th = conv tm in
+       let tm' = rhs (concl eq_th) in
+       if is_true tm' then
+         let th = EQT_ELIM eq_th in
+         Prolog_result ([],th,[],namer)
+       else if tm' = tm then
+         Prolog_unchanged
+       else
+         let th = EQ_MP (SYM eq_th) (ASSUME tm') in
+         Prolog_result ([tm'],th,[],namer));;
 
 let sym_prolog_rule : prolog_rule =
     Prolog_rule
@@ -1029,7 +1037,7 @@ let connect_prolog_rule =
            else failwith "connect_prolog_rule" in
        Prolog_result ([], SPEC w2 connect_refl, [(w2,w1)], namer));;
 
-let rescue_primary_outputs_prolog_rule =
+let rescue_primary_outputs_conv =
     let connect_equal_wires = prove
         (`!w x. connect w x ==> x = w`,
          REPEAT STRIP_TAC THEN
@@ -1046,17 +1054,28 @@ let rescue_primary_outputs_prolog_rule =
          (simple_conv (UNDISCH rescue_th), namer) in
      fun primary_outputs -> fun namer ->
      let (convs,namer) = maps connect_conv primary_outputs namer in
-     (conv_prolog_rule (ONCE_DEPTH_CONV (FIRST_CONV convs)), namer);;
+     let conv = ONCE_DEPTH_CONV (FIRST_CONV convs) in
+     (conv,namer);;
+
+let rescue_primary_outputs_prolog_rule primary_outputs namer =
+    let (conv,namer) = rescue_primary_outputs_conv primary_outputs namer in
+    (conv_prolog_rule conv, namer);;
+
+let rescue_primary_outputs_asm conv asm th =
+    let eq_th = conv asm in
+    let asm' = rhs (concl eq_th) in
+    if asm' = asm then th else
+    let mp_th = EQ_MP (SYM eq_th) (ASSUME asm') in
+    PROVE_HYP mp_th th;;
 
 let rescue_primary_outputs =
     let cleanup_rule = try_prolog_rule connect_wire_prolog_rule in
     fun primary_outputs -> fun th -> fun namer ->
-    if length primary_outputs = 0 then (th,namer) else
-    let (rescue_rule,namer) =
-        rescue_primary_outputs_prolog_rule primary_outputs namer in
-    let (asms,th,_,namer) =
+    let (conv,namer) = rescue_primary_outputs_conv primary_outputs namer in
+    let th =
         complain_timed "- Interposed wires before primary outputs"
-          (prove_hyp_prolog_rule rescue_rule (hyp th) th) namer in
+          (rev_itlist (rescue_primary_outputs_asm conv) (hyp th)) th in
+    let asms = filter is_connect (hyp th) in
 (* Debugging
     let () =
         let print_asm asm = complain ("  " ^ string_of_term asm) in
