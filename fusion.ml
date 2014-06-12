@@ -101,6 +101,7 @@ module type Hol_kernel =
       val new_basic_type_definition :
               string -> string * string -> thm -> thm * thm
 
+      val disable_proof_logging : unit -> unit
       val read_proof : thm -> proof
       val replace_proof : thm -> proof -> unit
       val delete_proof : thm -> unit
@@ -524,17 +525,35 @@ module Hol : Hol_kernel = struct
   let concl (Sequent((asl,c),_)) = c
 
 (* ------------------------------------------------------------------------- *)
+(* Proof logging primitives.                                                 *)
+(* ------------------------------------------------------------------------- *)
+
+  let proof_logging_enabled = ref true
+
+  let disable_proof_logging () = let () = proof_logging_enabled := false in ()
+
+  let store_proof =
+      let null_proof = ref Axiom_proof in
+      fun p -> if !proof_logging_enabled then ref p else null_proof
+
+  let read_proof (Sequent (_,rp)) = !rp
+
+  let replace_proof (Sequent (_,rp)) p = let () = rp := p in ()
+
+  let delete_proof th = replace_proof th Axiom_proof
+
+(* ------------------------------------------------------------------------- *)
 (* Basic equality properties; TRANS is derivable but included for efficiency *)
 (* ------------------------------------------------------------------------- *)
 
   let REFL tm =
-    Sequent(([],safe_mk_eq tm tm), ref (Refl_proof tm))
+    Sequent(([],safe_mk_eq tm tm), store_proof (Refl_proof tm))
 
   let TRANS (Sequent((asl1,c1),_) as th1) (Sequent((asl2,c2),_) as th2) =
     match (c1,c2) with
       Comb((Comb(Const("=",_),_) as eql),m1),Comb(Comb(Const("=",_),m2),r)
         when alphaorder m1 m2 = 0 -> Sequent((term_union asl1 asl2,Comb(eql,r)),
-                                             ref (Trans_proof (th1,th2)))
+                                             store_proof (Trans_proof (th1,th2)))
     | _ -> failwith "TRANS"
 
 (* ------------------------------------------------------------------------- *)
@@ -548,7 +567,7 @@ module Hol : Hol_kernel = struct
            Tyapp("fun",[ty;_]) when Pervasives.compare ty (type_of l2) = 0
              -> Sequent((term_union asl1 asl2,
                          safe_mk_eq (Comb(l1,l2)) (Comb(r1,r2))),
-                        ref (Mk_comb_proof (th1,th2)))
+                        store_proof (Mk_comb_proof (th1,th2)))
          | _ -> failwith "MK_COMB: types do not agree")
      | _ -> failwith "MK_COMB: not both equations"
 
@@ -556,7 +575,7 @@ module Hol : Hol_kernel = struct
     match (v,c) with
       Var(_,_),Comb(Comb(Const("=",_),l),r) when not(exists (vfree_in v) asl)
          -> Sequent((asl,safe_mk_eq (Abs(v,l)) (Abs(v,r))),
-                    ref (Abs_proof (v,th)))
+                    store_proof (Abs_proof (v,th)))
     | _ -> failwith "ABS";;
 
 (* ------------------------------------------------------------------------- *)
@@ -566,7 +585,7 @@ module Hol : Hol_kernel = struct
   let BETA tm =
     match tm with
       Comb(Abs(v,bod),arg) when Pervasives.compare arg v = 0
-        -> Sequent(([],safe_mk_eq tm bod), ref (Beta_proof tm))
+        -> Sequent(([],safe_mk_eq tm bod), store_proof (Beta_proof tm))
     | _ -> failwith "BETA: not a trivial beta-redex"
 
 (* ------------------------------------------------------------------------- *)
@@ -575,19 +594,20 @@ module Hol : Hol_kernel = struct
 
   let ASSUME tm =
     if Pervasives.compare (type_of tm) bool_ty = 0 then
-      Sequent(([tm],tm), ref (Assume_proof tm))
+      Sequent(([tm],tm), store_proof (Assume_proof tm))
     else failwith "ASSUME: not a proposition"
 
   let EQ_MP (Sequent((asl1,eq),_) as th1) (Sequent((asl2,c),_) as th2) =
     match eq with
       Comb(Comb(Const("=",_),l),r) when alphaorder l c = 0
-        -> Sequent((term_union asl1 asl2,r), ref (Eq_mp_proof (th1,th2)))
+        -> Sequent((term_union asl1 asl2,r),
+                   store_proof (Eq_mp_proof (th1,th2)))
     | _ -> failwith "EQ_MP"
 
   let DEDUCT_ANTISYM_RULE (Sequent((asl1,c1),_) as th1) (Sequent((asl2,c2),_) as th2) =
     let asl1' = term_remove c2 asl1 and asl2' = term_remove c1 asl2 in
     Sequent((term_union asl1' asl2',safe_mk_eq c1 c2),
-            ref (Deduct_antisym_rule_proof (th1,th2)))
+            store_proof (Deduct_antisym_rule_proof (th1,th2)))
 
 (* ------------------------------------------------------------------------- *)
 (* Type and term instantiation.                                              *)
@@ -596,12 +616,12 @@ module Hol : Hol_kernel = struct
   let INST_TYPE theta (Sequent((asl,c),_) as th) =
     let inst_fn = inst theta in
     Sequent((term_image inst_fn asl,inst_fn c),
-            ref (Inst_type_proof (theta,th)))
+            store_proof (Inst_type_proof (theta,th)))
 
   let INST theta (Sequent((asl,c),_) as th) =
     let inst_fun = vsubst theta in
     Sequent((term_image inst_fun asl,inst_fun c),
-            ref (Inst_proof (theta,th)))
+            store_proof (Inst_proof (theta,th)))
 
 (* ------------------------------------------------------------------------- *)
 (* Handling of axioms.                                                       *)
@@ -613,7 +633,7 @@ module Hol : Hol_kernel = struct
 
   let new_axiom tm =
     if Pervasives.compare (type_of tm) bool_ty = 0 then
-      let th = Sequent(([],tm), ref Axiom_proof) in
+      let th = Sequent(([],tm), store_proof Axiom_proof) in
        (the_axioms := th::(!the_axioms); th)
     else failwith "new_axiom: Not a proposition"
 
@@ -633,7 +653,7 @@ module Hol : Hol_kernel = struct
         then failwith "new_definition: Type variables not reflected in constant"
         else let c = new_constant(cname,ty); Const(cname,ty) in
              let dth = Sequent(([],safe_mk_eq c r),
-                               ref (New_basic_definition_proof cname)) in
+                               store_proof (New_basic_definition_proof cname)) in
              the_definitions := dth::(!the_definitions); dth
     | _ -> failwith "new_basic_definition"
 
@@ -671,16 +691,10 @@ module Hol : Hol_kernel = struct
     and rep = (new_constant(repname,repty); Const(repname,repty)) in
     let a = Var("a",aty) and r = Var("r",rty) in
     Sequent(([],safe_mk_eq (Comb(abs,mk_comb(rep,a))) a),
-            ref (New_basic_type_definition_proof (true,tyname))),
+            store_proof (New_basic_type_definition_proof (true,tyname))),
     Sequent(([],safe_mk_eq (Comb(P,r))
                   (safe_mk_eq (mk_comb(rep,mk_comb(abs,r))) r)),
-            ref (New_basic_type_definition_proof (false,tyname)))
-
-  let read_proof (Sequent (_,rp)) = !rp
-
-  let replace_proof (Sequent (_,rp)) p = let () = rp := p in ()
-
-  let delete_proof th = replace_proof th Axiom_proof
+            store_proof (New_basic_type_definition_proof (false,tyname)))
 
 end;;
 
