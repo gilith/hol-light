@@ -6493,7 +6493,7 @@ let performance_test_montgomery_double_exp w =
 let performance_tests_montgomery_double_exp () =
     let rec test w =
         let () = performance_test_montgomery_double_exp w in
-        test (w + 8) in
+        test (w * 2) in
      test 8;;
 
 (*** Testing

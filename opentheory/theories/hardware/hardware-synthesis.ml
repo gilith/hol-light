@@ -1061,20 +1061,14 @@ let rescue_primary_outputs_prolog_rule primary_outputs namer =
     let (conv,namer) = rescue_primary_outputs_conv primary_outputs namer in
     (conv_prolog_rule conv, namer);;
 
-let rescue_primary_outputs_asm conv asm th =
-    let eq_th = conv asm in
-    let asm' = rhs (concl eq_th) in
-    if asm' = asm then th else
-    let mp_th = EQ_MP (SYM eq_th) (ASSUME asm') in
-    PROVE_HYP mp_th th;;
-
 let rescue_primary_outputs =
     let cleanup_rule = try_prolog_rule connect_wire_prolog_rule in
     fun primary_outputs -> fun th -> fun namer ->
-    let (conv,namer) = rescue_primary_outputs_conv primary_outputs namer in
-    let th =
+    let (rescue_rule,namer) =
+        rescue_primary_outputs_prolog_rule primary_outputs namer in
+    let (_,th,_,namer) =
         complain_timed "- Interposed wires before primary outputs"
-          (rev_itlist (rescue_primary_outputs_asm conv) (hyp th)) th in
+          (prove_hyp_prolog_rule rescue_rule (hyp th) th) namer in
     let asms = filter is_connect (hyp th) in
 (* Debugging
     let () =
