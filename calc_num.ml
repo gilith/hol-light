@@ -851,7 +851,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
       REWRITE_TAC[MULT_CLAUSES; ADD_CLAUSES] THEN
       CONV_TAC(LAND_CONV NUM_CANCEL_CONV) THEN DISCH_THEN SUBST_ALL_TAC THEN
       FIRST_ASSUM(MP_TAC o MATCH_MP (MESON[]
-       `b = b' /\ c = c' /\ d = d'
+       `b = b' /\ (c:num) = c' /\ d = d'
         ==> b + d':num = b' + d /\ 4 * b + d' = 4 * b' + d`)) THEN
       REWRITE_TAC[LEFT_ADD_DISTRIB; MULT_ASSOC] THEN
       REWRITE_TAC(map (fun k ->
