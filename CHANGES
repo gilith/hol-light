@@ -1,3 +1,303 @@
+Mon 12th May 2014       Examples/gcdrecurrence.ml [new file]
+
+Added a new file with the cute result that the gcd operation "commutes" with
+certain integer sequences, with applications to the Mersenne numbers, the
+Fibonacci series, and solutions to the Pell equation.
+
+Sat 10th May 2014       int.ml, real.ml, Library/prime.ml, Library/integer.ml
+
+Added a few miscellaneous trivial theorems:
+
+  DIVIDES_GCD_LEFT =
+    |- !m n. m divides n <=> gcd (m,n) = m
+
+  DIVIDES_GCD_RIGHT =
+    |- !m n. n divides m <=> gcd (m,n) = n
+
+  INT_DIVIDES_ANTISYM_DIVISORS =
+    |- !a b. a divides b /\ b divides a <=> (!d. d divides a <=> d divides b)
+
+  INT_DIVIDES_GCD_LEFT =
+    |- !m n. m divides n <=> gcd (m,n) = abs m
+
+  INT_DIVIDES_GCD_RIGHT =
+    |- !m n. n divides m <=> gcd (m,n) = abs n
+
+  INT_EQ_SGN_ABS =
+    |- !x y. x = y <=> int_sgn x = int_sgn y /\ abs x = abs y
+
+  REAL_EQ_SGN_ABS =
+    |- !x y. x = y <=> real_sgn x = real_sgn y /\ abs x = abs y
+
+Sat 10th May 2014       Examples/dickson.ml
+
+Added a proof of Dickson's Lemma, plus the Nash-Williams minimal bad sequence
+property in a bit more generality (for a "safety property" of sequences in the
+Lamport/Alpern/Schneider sense).
+
+Fri  9th May 2014       Library/card.ml
+
+Added COUNTABLE_SUBSET_NUM = |- !s:num->bool. COUNTABLE s
+
+Sun 27th Apr 2014       Library/permutations.ml
+
+Added
+
+  PERMUTES_BIJECTIONS =
+   |- !p q. (!x. x IN s ==> p x IN s) /\ (!x. ~(x IN s) ==> p x = x) /\
+            (!x. x IN s ==> q x IN s) /\ (!x. ~(x IN s) ==> q x = x) /\
+            (!x. p(q x) = x) /\ (!x. q(p x) = x)
+            ==> p permutes s
+
+Sat 19th Apr 2014       sets.ml
+
+Added another clause to FORALL_IN_GSPEC and EXISTS_IN_GSPEC for the case of 4
+bound variables, so they have now become:
+
+  FORALL_IN_GSPEC =
+   |- (!P f. (!z. z IN {f x | P x} ==> Q z) <=> (!x. P x ==> Q(f x))) /\
+      (!P f. (!z. z IN {f x y | P x y} ==> Q z) <=>
+             (!x y. P x y ==> Q(f x y))) /\
+      (!P f. (!z. z IN {f w x y | P w x y} ==> Q z) <=>
+             (!w x y. P w x y ==> Q(f w x y))) /\
+      (!P f. (!z. z IN {f v w x y | P v w x y} ==> Q z) <=>
+             (!v w x y. P v w x y ==> Q(f v w x y)))
+
+  EXISTS_IN_GSPEC =
+   |- (!P f. (?z. z IN {f x | P x} /\ Q z) <=> (?x. P x /\ Q(f x))) /\
+      (!P f. (?z. z IN {f x y | P x y} /\ Q z) <=>
+             (?x y. P x y /\ Q(f x y))) /\
+      (!P f. (?z. z IN {f w x y | P w x y} /\ Q z) <=>
+             (?w x y. P w x y /\ Q(f w x y))) /\
+      (!P f. (?z. z IN {f v w x y | P v w x y} /\ Q z) <=>
+             (?v w x y. P v w x y /\ Q(f v w x y)))
+
+Sat 19th Apr 2014       pair.ml
+
+Added "unpair" theorems:
+
+  FORALL_UNPAIR_THM =
+    |- (!x y. P x y) <=> (!z. P (FST z) (SND z))
+
+  EXISTS_UNPAIR_THM =
+    |- (?x y. P x y) <=> (?z. P (FST z) (SND z))
+
+Tue 15th Apr 2014       bool.ml
+
+Did a little more rationalization of the Boolean rule, recoding MP so that it
+produces precisely the union of the two assumption lists, as the documentation
+claims.
+
+Mon 14th Apr 2014       Examples/lucas_lehmer.ml, 100/sqrt.ml [new file]
+
+Added a new file containing a formalization of the Lucas-Lehmer test for
+primality of Mersenne numbers, and a derived rule for applying it in particular
+cases. This is quite a bit faster than the usual PRIME_CONV (in this special
+case 2^p-1), and also scales better because it doesn't rely on factorization at
+all. This uses as a lemma the fact that sqrt(3) is not rational, so also added
+a file with a trivial proof that sqrt(p) is irrational for prime p.
+
+Mon 14th Apr 2014       int.ml, Library/prime.ml, Library/iter.ml, Library/pocklington.ml, Library/primitive.ml
+
+Moved this very basic result out of the Library/prime.ml file into the main
+core
+
+  DIVIDES_LE = |- !m n. m divides n ==> m <= n \/ n = 0
+
+Added some theorems to Library/iter.ml about the "order" or "characteristic" in
+a general setting
+
+  val ORDER_EXISTENCE_GEN : thm =
+    |- !P f.
+           P (f 0) /\
+           (!m n. P (f m) /\ ~(m = 0) ==> (P (f (m + n)) <=> P (f n)))
+           ==> ?d. !n. P (f n) <=> d divides n
+
+  val ORDER_EXISTENCE_ITER : thm =
+    |- !R f z.
+           R z z /\
+           (!x y. R x y ==> R y x) /\
+           (!x y z. R x y /\ R y z ==> R x z) /\
+           (!x y. R x y ==> R (f x) (f y))
+           ==> ?d. !n. R (ITER n f z) z <=> d divides n
+
+  val ORDER_EXISTENCE_CARD : thm =
+    |- !R f z k.
+           FINITE {R (ITER n f z) | n IN (:num)} /\
+           CARD {R (ITER n f z) | n IN (:num)} <= k /\
+           R z z /\
+           (!x y. R x y ==> R y x) /\
+           (!x y z. R x y /\ R y z ==> R x z) /\
+           (!x y. R (f x) (f y) <=> R x y)
+           ==> ?d. 0 < d /\ d <= k /\ (!n. R (ITER n f z) z <=> d divides n)
+
+  val ORDER_EXISTENCE_FINITE : thm =
+    |- !R f z.
+           FINITE {R (ITER n f z) | n IN (:num)} /\
+           R z z /\
+           (!x y. R x y ==> R y x) /\
+           (!x y z. R x y /\ R y z ==> R x z) /\
+           (!x y. R (f x) (f y) <=> R x y)
+           ==> ?d. 0 < d /\ (!n. R (ITER n f z) z <=> d divides n)
+
+Changed the definition of "order" in Library/pocklington.ml to use that as the
+basis, as well as adding three basic new theorems:
+
+        EXP_ITER = |- !x n. x EXP n = ITER n (\y. x * y) 1
+
+        PHI_EQ_0 = |- !n. phi n = 0 <=> n = 0
+
+        ORDER_1 = |- !n. order n 1 = 1
+
+Fri 11th Apr 2014       bool.ml
+
+Bill Richter pointed out that IMP_ANTISYM_RULE could sometimes give fewer
+assumptions than its documentation (with a simple union of the two lists)
+suggested. Fixed this, as well as a similar problem with CONJ, and a few
+related documentation issues also uncovered by Bill.
+
+Wed  9th Apr 2014       equal.ml
+
+Made a few minor optimizations to some functions here, using more
+pattern-matching in place of destructors and adding partial evaluation to
+AP_TERM.
+
+Fri  4th Apr 2014       arith.ml
+
+Added MOD_REFL = |- !n. ~(n = 0) ==> n MOD n = 0
+
+Thu  3rd Apr 2014       nums.ml, calc_num.ml
+
+Completely rewrote the conversions NUM_SUC_CONV, NUM_ADD_CONV and NUM_MULT_CONV
+to improve efficiency, as well as the auxiliary syntax function mk_numeral. The
+new versions do addition in larger blocks for a decent constant factor
+improvement and the multiplication routine uses squaring as the core with quite
+tight coding and the use of 2-part and 3-part interpolation. Also rewrote the
+main relational conversions NUM_LT_CONV, NUM_LE_CONV and NUM_EQ_CONV to call
+addition directly, which is (now) much more efficient than what was used
+before, though it could still be optimized a bit more.
+
+Tue  1st Apr 2014       fusion.ml
+
+Made another rather minor optimization, this time making the check for
+type compatibility in the "vsubst" outer wrapper marginally more efficient.
+
+Thu 27th Mar 2014       fusion.ml
+
+Made a small change to the "type_of" function to use an explicit match in the
+Comb case instead of applying "hd" and "tl". Although perhaps marginally
+uglier, it is somewhat more efficient and gets two more library functions (hd
+and tl) out of the core.
+
+Sun 23rd Mar 2014       Examples/harmonicsum.ml [new file]
+
+Added a new file with a rather trivial but nice result that a non-trivial
+contiguous segment of the harmonic series never sums to an integer.
+
+Tue 18th Mar 2014       iterate.ml
+
+Added a definition of a "polynomial function" (R->R) with various basic closure
+properties. This is a sufficiently useful concept that it seems worth having in
+the core, not just in the analytical theories.
+
+ polynomial_function =
+  |- !p. polynomial_function p <=>
+         (?m c. !x. p x = sum (0..m) (\i. c i * x pow i))
+
+ POLYNOMIAL_FUNCTION_ADD =
+  |- !p q.
+         polynomial_function p /\ polynomial_function q
+         ==> polynomial_function (\x. p x + q x)
+
+ POLYNOMIAL_FUNCTION_CONST =
+  |- !c. polynomial_function (\x. c)
+
+ POLYNOMIAL_FUNCTION_FINITE_ROOTS =
+  |- !p a.
+         polynomial_function p ==> (FINITE {x | p x = a} <=> ~(!x. p x = a))
+
+ POLYNOMIAL_FUNCTION_I =
+  |- polynomial_function I
+
+  POLYNOMIAL_FUNCTION_ID =
+   |- polynomial_function (\x. x)
+
+  POLYNOMIAL_FUNCTION_INDUCT =
+   |- !P. P (\x. x) /\
+          (!c. P (\x. c)) /\
+          (!p q. P p /\ P q ==> P (\x. p x + q x)) /\
+          (!p q. P p /\ P q ==> P (\x. p x * q x))
+          ==> (!p. polynomial_function p ==> P p)
+
+  POLYNOMIAL_FUNCTION_LMUL =
+   |- !p c. polynomial_function p ==> polynomial_function (\x. c * p x)
+
+  POLYNOMIAL_FUNCTION_MUL =
+   |- !p q.
+         polynomial_function p /\ polynomial_function q
+         ==> polynomial_function (\x. p x * q x)
+
+  POLYNOMIAL_FUNCTION_NEG =
+   |- !p. polynomial_function (\x. --p x) <=> polynomial_function p
+
+  POLYNOMIAL_FUNCTION_POW =
+    |- !p n. polynomial_function p ==> polynomial_function (\x. p x pow n)
+
+  POLYNOMIAL_FUNCTION_RMUL =
+    |- !p c. polynomial_function p ==> polynomial_function (\x. p x * c)
+
+  POLYNOMIAL_FUNCTION_SUB =
+    |- !p q.
+         polynomial_function p /\ polynomial_function q
+         ==> polynomial_function (\x. p x - q x)
+
+  POLYNOMIAL_FUNCTION_SUM =
+    |- !s p.
+         FINITE s /\ (!i. i IN s ==> polynomial_function (\x. p x i))
+         ==> polynomial_function (\x. sum s (p x))
+
+  POLYNOMIAL_FUNCTION_o =
+    |- !p q.
+         polynomial_function p /\ polynomial_function q
+         ==> polynomial_function (p o q)
+
+Tue 18th Mar 2014       iterate.ml
+
+Added a conversion EXPAND_SUM_CONV to expand "sum (m..n) f" where m and
+n are particular numerals.
+
+Tue 18th Mar 2014       Library/binomial.ml
+
+Added one more lemma about binomial coefficients, a characteristic property of
+Appell sequences:
+
+ APPELL_SEQUENCE =
+  |- !c n x y.
+         sum (0..n)
+         (\k. &(binom (n,k)) *
+              sum (0..k) (\l. &(binom (k,l)) * c l * x pow (k - l)) *
+              y pow (n - k)) =
+         sum (0..n) (\k. &(binom (n,k)) * c k * (x + y) pow (n - k))
+
+Sun 16th Mar 2014       Multivariate/gamma.ml [new file]
+
+Added a new file giving a definition of the complex and real gamma functions
+and proofs of some basic properties.
+
+Mon 10th Mar 2014       Library/binomial.ml
+
+Added a couple more lemmas:
+
+ BINOM_SYM = |- !n k. binom(n,n - k) = (if k <= n then binom(n,k) else 1)
+
+ BINOM_MUL_SHIFT =
+  |- !m n k.
+         k <= m
+         ==> binom(n,m) * binom(m,k) = binom(n,k) * binom(n - k,m - k)
+
+as well as putting a simple symmetry optimization into NUM_BINOM_CONV for
+the case of NUM_BINOM_CONV `binom(n,k)` where k is small.
+
 Sat  8th Mar 2014       printer.ml
 
 Added two improvements from Joe Hurd to the treatment of printing.
@@ -792,7 +1092,6 @@ Added an extra line from Hendrik Tews to make things work more smoothly
 with OCaml 4.xx:
 
 #directory "+compiler-libs";;
-
 
 Fri 24th May 2013       Library/iter.ml
 

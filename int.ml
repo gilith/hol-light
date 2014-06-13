@@ -334,6 +334,7 @@ let INT_EQ_IMP_LE = INT_OF_REAL_THM REAL_EQ_IMP_LE;;
 let INT_EQ_MUL_LCANCEL = INT_OF_REAL_THM REAL_EQ_MUL_LCANCEL;;
 let INT_EQ_MUL_RCANCEL = INT_OF_REAL_THM REAL_EQ_MUL_RCANCEL;;
 let INT_EQ_NEG2 = INT_OF_REAL_THM REAL_EQ_NEG2;;
+let INT_EQ_SGN_ABS = INT_OF_REAL_THM REAL_EQ_SGN_ABS;;
 let INT_EQ_SQUARE_ABS = INT_OF_REAL_THM REAL_EQ_SQUARE_ABS;;
 let INT_EQ_SUB_LADD = INT_OF_REAL_THM REAL_EQ_SUB_LADD;;
 let INT_EQ_SUB_RADD = INT_OF_REAL_THM REAL_EQ_SUB_RADD;;
@@ -1429,6 +1430,14 @@ let divides = prove
            INT_ARITH `&m:int = &n <=> abs(&m :int) = abs(&n)`] THEN
   ASM_REWRITE_TAC[GSYM INT_OF_NUM_MUL; INT_ABS_MUL] THEN
   SIMP_TAC[INT_OF_NUM_OF_INT; INT_ABS_POS; INT_ABS_ABS]);;
+
+let DIVIDES_LE = prove
+ (`!m n. m divides n ==> m <= n \/ n = 0`,
+  SUBGOAL_THEN `!m n. m <= m * n \/ m * n = 0`
+    (fun th -> MESON_TAC[divides; th]) THEN
+  REWRITE_TAC[LE_MULT_LCANCEL; MULT_EQ_0; ARITH_RULE
+   `m <= m * n <=> m * 1 <= m * n`] THEN
+  ASM_ARITH_TAC);;
 
 (* ------------------------------------------------------------------------- *)
 (* Make sure we give priority to N.                                          *)

@@ -390,6 +390,20 @@ let EXISTS_CURRY = prove
 
 export_thm EXISTS_CURRY;;
 
+let FORALL_UNPAIR_THM = prove
+ (`!(p : A -> B -> bool). (!x y. p x y) <=> !z. p (FST z) (SND z)`,
+  REWRITE_TAC [FORALL_PAIR_THM; FST; SND] THEN
+  MESON_TAC[]);;
+
+export_thm FORALL_UNPAIR_THM;;
+
+let EXISTS_UNPAIR_THM = prove
+ (`!(p : A -> B -> bool). (?x y. p x y) <=> ?z. p (FST z) (SND z)`,
+  REWRITE_TAC [EXISTS_PAIR_THM; FST; SND] THEN
+  MESON_TAC[]);;
+
+export_thm EXISTS_UNPAIR_THM;;
+
 (* ------------------------------------------------------------------------- *)
 (* Related theorems for explicitly paired quantifiers.                       *)
 (* ------------------------------------------------------------------------- *)

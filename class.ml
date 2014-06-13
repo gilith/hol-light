@@ -245,7 +245,8 @@ let new_type_definition tyname (absname,repname) th =
     tth;;
 
 (* ------------------------------------------------------------------------- *)
-(* Derive excluded middle (the proof is from Beeson's book).                 *)
+(* Derive excluded middle. The proof is an optimization due to Mark Adams of *)
+(* the original Diaconescu proof as presented in Beeson's book.              *)
 (* ------------------------------------------------------------------------- *)
 
 logfile "bool-class";;

@@ -2620,6 +2620,12 @@ let LIM_POSINFINITY_SEQUENTIALLY = prove
   REPEAT STRIP_TAC THEN FIRST_X_ASSUM MATCH_MP_TAC THEN
   RULE_ASSUM_TAC(REWRITE_RULE[GSYM REAL_OF_NUM_LE]) THEN ASM_REAL_ARITH_TAC);;
 
+let LIM_INFINITY_POSINFINITY_LIFT = prove
+ (`!f l:real^N. (f --> l) at_infinity ==> ((f o lift) --> l) at_posinfinity`,
+  REWRITE_TAC[LIM_AT_INFINITY; LIM_AT_POSINFINITY; o_THM] THEN
+  REWRITE_TAC[FORALL_DROP; NORM_REAL; GSYM drop; LIFT_DROP] THEN
+  MESON_TAC[REAL_ARITH `x >= b ==> abs(x) >= b`]);;
+
 (* ------------------------------------------------------------------------- *)
 (* The expected monotonicity property.                                       *)
 (* ------------------------------------------------------------------------- *)
@@ -2984,6 +2990,22 @@ let LIM_NULL_CMUL = prove
  (`!net f c. (f --> vec 0) net ==> ((\x. c % f x) --> vec 0) net`,
   REPEAT GEN_TAC THEN ASM_CASES_TAC `c = &0` THEN
   ASM_SIMP_TAC[LIM_NULL_CMUL_EQ; VECTOR_MUL_LZERO; LIM_CONST]);;
+
+let LIM_NULL_ADD = prove
+ (`!net f g:A->real^N.
+        (f --> vec 0) net /\ (g --> vec 0) net
+        ==> ((\x. f x + g x) --> vec 0) net`,
+  REPEAT GEN_TAC THEN
+  DISCH_THEN(MP_TAC o MATCH_MP LIM_ADD) THEN
+  REWRITE_TAC[VECTOR_ADD_LID]);;
+
+let LIM_NULL_SUB = prove
+ (`!net f g:A->real^N.
+        (f --> vec 0) net /\ (g --> vec 0) net
+        ==> ((\x. f x - g x) --> vec 0) net`,
+  REPEAT GEN_TAC THEN
+  DISCH_THEN(MP_TAC o MATCH_MP LIM_SUB) THEN
+  REWRITE_TAC[VECTOR_SUB_RZERO]);;
 
 let LIM_NULL_COMPARISON = prove
  (`!net f g. eventually (\x. norm(f x) <= g x) net /\
@@ -7670,8 +7692,7 @@ let CONTINUOUS_ON_LIFT_DOT = prove
 
 let CLOSED_INTERVAL_LEFT = prove
  (`!b:real^N.
-     closed
-        {x:real^N | !i. 1 <= i /\ i <= dimindex(:N) ==> x$i <= b$i}`,
+     closed {x:real^N | !i. 1 <= i /\ i <= dimindex(:N) ==> x$i <= b$i}`,
   REWRITE_TAC[CLOSED_LIMPT; LIMPT_APPROACHABLE; IN_ELIM_THM] THEN
   REPEAT STRIP_TAC THEN REWRITE_TAC[GSYM REAL_NOT_LT] THEN DISCH_TAC THEN
   FIRST_X_ASSUM(MP_TAC o SPEC `(x:real^N)$i - (b:real^N)$i`) THEN
@@ -7686,8 +7707,7 @@ let CLOSED_INTERVAL_LEFT = prove
 
 let CLOSED_INTERVAL_RIGHT = prove
  (`!a:real^N.
-     closed
-        {x:real^N | !i. 1 <= i /\ i <= dimindex(:N) ==> a$i <= x$i}`,
+     closed {x:real^N | !i. 1 <= i /\ i <= dimindex(:N) ==> a$i <= x$i}`,
   REWRITE_TAC[CLOSED_LIMPT; LIMPT_APPROACHABLE; IN_ELIM_THM] THEN
   REPEAT STRIP_TAC THEN REWRITE_TAC[GSYM REAL_NOT_LT] THEN DISCH_TAC THEN
   FIRST_X_ASSUM(MP_TAC o SPEC `(a:real^N)$i - (x:real^N)$i`) THEN
@@ -7814,6 +7834,35 @@ let OPEN_POSITIVE_MULTIPLES = prove
     EXISTS_TAC `c:real` THEN EXISTS_TAC `inv(c) % y:real^N` THEN
     ASM_SIMP_TAC[VECTOR_MUL_ASSOC; REAL_MUL_RINV; REAL_LT_IMP_NZ] THEN
     VECTOR_ARITH_TAC]);;
+
+let OPEN_INTERVAL_LEFT = prove
+ (`!b:real^N. open {x:real^N | !i. 1 <= i /\ i <= dimindex(:N) ==> x$i < b$i}`,
+  GEN_TAC THEN
+  SUBGOAL_THEN
+   `{x:real^N | !i. 1 <= i /\ i <= dimindex(:N) ==> x$i < b$i} =
+    INTERS{{x | x$i < (b:real^N)$i} | i IN 1..dimindex(:N)}`
+  SUBST1_TAC THENL
+   [REWRITE_TAC[INTERS_GSPEC; IN_NUMSEG] THEN SET_TAC[];
+    MATCH_MP_TAC OPEN_INTERS THEN
+    SIMP_TAC[SIMPLE_IMAGE; FINITE_IMAGE; FINITE_NUMSEG] THEN
+    REWRITE_TAC[FORALL_IN_IMAGE; OPEN_HALFSPACE_COMPONENT_LT]]);;
+
+let OPEN_INTERVAL_RIGHT = prove
+ (`!a:real^N. open {x:real^N | !i. 1 <= i /\ i <= dimindex(:N) ==> a$i < x$i}`,
+  GEN_TAC THEN
+  SUBGOAL_THEN
+   `{x:real^N | !i. 1 <= i /\ i <= dimindex(:N) ==> a$i < x$i} =
+    INTERS{{x | (a:real^N)$i < x$i} | i IN 1..dimindex(:N)}`
+  SUBST1_TAC THENL
+   [REWRITE_TAC[INTERS_GSPEC; IN_NUMSEG] THEN SET_TAC[];
+    MATCH_MP_TAC OPEN_INTERS THEN
+    SIMP_TAC[SIMPLE_IMAGE; FINITE_IMAGE; FINITE_NUMSEG] THEN
+    REWRITE_TAC[FORALL_IN_IMAGE; GSYM real_gt; OPEN_HALFSPACE_COMPONENT_GT]]);;
+
+let OPEN_POSITIVE_ORTHANT = prove
+ (`open {x:real^N | !i. 1 <= i /\ i <= dimindex(:N) ==> &0 < x$i}`,
+  MP_TAC(ISPEC `vec 0:real^N` OPEN_INTERVAL_RIGHT) THEN
+  REWRITE_TAC[VEC_COMPONENT]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Closures and interiors of halfspaces.                                     *)
@@ -11582,6 +11631,21 @@ let DIAMETER_INTERVAL = prove
     SUBGOAL_THEN `interval[a:real^N,b] = closure(interval(a,b))`
     SUBST_ALL_TAC THEN ASM_REWRITE_TAC[CLOSURE_INTERVAL] THEN
     ASM_MESON_TAC[DIAMETER_CLOSURE; BOUNDED_INTERVAL]]);;
+
+let IMAGE_TWIZZLE_INTERVAL = prove
+ (`!p a b. dimindex(:M) = dimindex(:N) /\ p permutes 1..dimindex(:N)
+           ==> IMAGE ((\x. lambda i. x$(p i)):real^M->real^N) (interval[a,b]) =
+               interval[(lambda i. a$(p i)),(lambda i. b$(p i))]`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC SURJECTIVE_IMAGE_EQ THEN
+  SIMP_TAC[IN_INTERVAL; CART_EQ; LAMBDA_BETA] THEN CONJ_TAC THENL
+   [X_GEN_TAC `y:real^N` THEN DISCH_TAC THEN
+    EXISTS_TAC `(lambda i. (y:real^N)$(inverse p i)):real^M` THEN
+    IMP_REWRITE_TAC[LAMBDA_BETA] THEN
+    ASM_REWRITE_TAC[GSYM IN_NUMSEG] THEN
+    ASM_MESON_TAC[PERMUTES_INVERSE_EQ; PERMUTES_IN_IMAGE];
+    REWRITE_TAC[GSYM IN_NUMSEG] THEN
+    ASM_MESON_TAC[PERMUTES_INVERSES; PERMUTES_IN_IMAGE]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Some special cases for intervals in R^1.                                  *)
@@ -16202,7 +16266,7 @@ let SUMS_0 = prove
 
 let SERIES_FINITE_SUPPORT = prove
  (`!f:num->real^N s k.
-     FINITE (s INTER k) /\ (!x. ~(x IN s INTER k) ==> f x = vec 0)
+     FINITE (s INTER k) /\ (!x. x IN k /\ ~(x IN s) ==> f x = vec 0)
      ==> (f sums vsum (s INTER k) f) k`,
   REWRITE_TAC[sums; LIM_SEQUENTIALLY] THEN REPEAT STRIP_TAC THEN
   FIRST_ASSUM(MP_TAC o ISPEC `\x:num. x` o MATCH_MP UPPER_BOUND_FINITE_SET) THEN
@@ -16261,12 +16325,32 @@ let SERIES_VSUM = prove
    [ASM SET_TAC []; ASM_MESON_TAC [SERIES_FINITE_SUPPORT]]);;
 
 let SUMS_REINDEX = prove
- (`!k a l n. ((\x. a(x + k)) sums l) (from n) <=> (a sums l) (from(n + k))`,
+ (`!k a l:real^N n.
+   ((\x. a(x + k)) sums l) (from n) <=> (a sums l) (from(n + k))`,
   REPEAT GEN_TAC THEN REWRITE_TAC[sums; FROM_INTER_NUMSEG] THEN
   REPEAT GEN_TAC THEN REWRITE_TAC[GSYM VSUM_OFFSET] THEN
   REWRITE_TAC[LIM_SEQUENTIALLY] THEN
   ASM_MESON_TAC[ARITH_RULE `N + k:num <= n ==> n = (n - k) + k /\ N <= n - k`;
                 ARITH_RULE `N + k:num <= n ==> N <= n + k`]);;
+
+let SUMS_REINDEX_GEN = prove
+ (`!k a l:real^N s.
+     ((\x. a(x + k)) sums l) s <=> (a sums l) (IMAGE (\i. i + k) s)`,
+  REPEAT GEN_TAC THEN ONCE_REWRITE_TAC[GSYM SERIES_RESTRICT] THEN
+  MP_TAC(ISPECL
+   [`k:num`;
+    `\i. if i IN IMAGE (\i. i + k) s then (a:num->real^N) i else vec 0`;
+    `l:real^N`; `0`] SUMS_REINDEX) THEN
+  REWRITE_TAC[FROM_0] THEN
+  SIMP_TAC[EQ_ADD_RCANCEL; SET_RULE
+   `(!x y:num. x + k = y + k <=> x = y)
+         ==> ((x + k) IN IMAGE (\i. i + k) s <=> x IN s)`] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  GEN_REWRITE_TAC LAND_CONV [GSYM SERIES_RESTRICT] THEN
+  AP_THM_TAC THEN AP_THM_TAC THEN AP_TERM_TAC THEN
+  REWRITE_TAC[FUN_EQ_THM; IN_FROM; ADD_CLAUSES] THEN
+  SUBGOAL_THEN `!x:num. x IN IMAGE (\i. i + k) s ==> k <= x` MP_TAC THENL
+   [REWRITE_TAC[FORALL_IN_IMAGE] THEN ARITH_TAC; SET_TAC[]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Similar combining theorems just for summability.                          *)

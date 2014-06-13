@@ -10,9 +10,12 @@ STANDALONE_EXAMPLES:=\
 	Examples/combin \
 	Examples/cong \
 	Examples/cooper \
+	Examples/dickson \
 	Examples/dlo \
 	Library/floor \
 	Examples/forster \
+	Examples/gcdrecurrence \
+	Examples/harmonicsum \
 	Examples/hol88 \
 	Examples/holby \
 	Library/integer \
@@ -22,6 +25,7 @@ STANDALONE_EXAMPLES:=\
 	Library/isum \
 	Examples/kb \
 	Examples/lagrange_lemma \
+	Examples/lucas_lehmer \
 	Examples/mangoldt \
 	Examples/mccarthy \
 	Examples/mizar \
@@ -39,6 +43,7 @@ STANDALONE_EXAMPLES:=\
 	Examples/sos \
 	Examples/ste \
 	Examples/sylvester_gallai \
+	Examples/vitali \
 	Library/wo \
 	Library/analysis-transc \
 	Library/prime-pratt \
@@ -67,7 +72,8 @@ EXTENDED_EXAMPLES:=\
 	Multivariate/geom \
 	Multivariate/tarski \
 	Multivariate/cross \
-	Multivariate/flyspeck
+	Multivariate/flyspeck \
+	Multivariate/gamma
 
 GREAT_100_THEOREMS:= \
 	100/arithmetic_geometric_mean \
