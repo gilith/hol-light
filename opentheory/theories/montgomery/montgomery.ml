@@ -6492,6 +6492,7 @@ let performance_test_montgomery_double_exp w =
 
 let performance_tests_montgomery_double_exp () =
     let rec test w =
+        if w = 512 then () else
         let () = performance_test_montgomery_double_exp w in
         test (w * 2) in
      test 8;;
