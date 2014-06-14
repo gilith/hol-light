@@ -983,8 +983,8 @@ let simplify_prolog_rule =
          case1_middle_power_right_ground;
          case1_middle_power;
          case1_right_ground;
-         (* The following simplification rules introduce new wires, so *)
-         (* we put them last in the list *)
+         (* The following simplification rules introduce new internal wires, *)
+         (* so we put them last in the list *)
          case1_middle_ground;
          case1_right_power] in
     repeat_prolog_rule (first_prolog_rule rules);;
