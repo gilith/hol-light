@@ -529,6 +529,15 @@ let case1_middle_ground_right_power = prove
 
 export_thm case1_middle_ground_right_power;;
 
+let case1_middle_power_right_ground = prove
+ (`!x y. connect x y ==> case1 x power ground y`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC case1_middle_power THEN
+  MATCH_MP_TAC or2_right_ground THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm case1_middle_power_right_ground;;
+
 let case1_refl = prove
  (`!x y z. connect y z ==> case1 x y y z`,
   REPEAT STRIP_TAC THEN

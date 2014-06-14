@@ -960,29 +960,29 @@ let connect_wires namer =
      fun th ->
      let wc = rev_itlist add (hyp th) empty_wire_class in
      let (sub,_) = sub_wire_class wc in
-     match sub with
-       [] -> None
-     | _ -> Some (INST sub th);;
+     if null_subst sub then None else
+     Some (INST sub th);;
 
 let simplify_prolog_rule =
     let rules =
         map thm_prolog_rule
         [connect_refl;
          not_ground; not_power;
+         and2_refl;
          and2_left_ground; and2_right_ground;
          and2_left_power; and2_right_power;
-         and2_refl;
+         or2_refl;
          or2_left_ground; or2_right_ground;
          or2_left_power; or2_right_power;
-         or2_refl;
+         xor2_refl;
          xor2_left_ground; xor2_right_ground;
          xor2_left_power; xor2_right_power;
-         xor2_refl;
+         case1_refl;
          case1_left_ground; case1_left_power;
+         case1_middle_ground_right_power;
+         case1_middle_power_right_ground;
          case1_middle_power;
          case1_right_ground;
-         case1_refl;
-         case1_middle_ground_right_power;
          (* The following simplification rules introduce new wires, so *)
          (* we put them last in the list *)
          case1_middle_ground;
