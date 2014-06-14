@@ -6422,6 +6422,13 @@ let check_system cmd =
 
 set_jrh_lexer;;
 
+let run_test_montgomery_double_exp name =
+    let () =
+        let cmd =
+            "make -C opentheory/hardware " ^ name ^ "_testbench.out >/dev/null" in
+        check_system cmd in
+    ();;
+
 let rec two_exp_num n =
     if eq_num n num_0 then num_1 else
     mult_num num_2 (two_exp_num (sub_num n num_1));;
@@ -6431,7 +6438,7 @@ let rec double_exp_mod_num n x m =
     if eq_num m num_0 then x else
     double_exp_mod_num n (mult_num x x) (sub_num m num_1);;
 
-let test_montgomery_double_exp n m name ckt =
+let check_test_montgomery_double_exp n m name ckt =
     let s =
         let r =
             (dest_numeral o rand o rand o lhand o rand o rand o
@@ -6439,9 +6446,6 @@ let test_montgomery_double_exp n m name ckt =
              dest_abs o rand o snd o dest_abs o rand o concl) ckt in
         let (s,_,_) = egcd_num (two_exp_num r) n in
         s in
-    let () =
-        let cmd = "make -C opentheory/hardware " ^ name ^ "_testbench.out >/dev/null" in
-        check_system cmd in
     let (x,y) =
         let h = open_in ("opentheory/hardware/" ^ name ^ "_testbench.out") in
         let inp () =
@@ -6480,13 +6484,26 @@ let test_montgomery_double_exp n m name ckt =
     if eq_num spec ckt then ()
     else failwith "TEST FAILED: spec <> ckt";;
 
+let test_montgomery_double_exp n m name ckt =
+    let () =
+        complain_timed "- Generated verilog testbench"
+          (testbench_montgomery_double_exp name) ckt in
+    let () =
+        complain_timed "- Ran a random test"
+          run_test_montgomery_double_exp name in
+    let () =
+        complain_timed "- Checked the test result"
+          (check_test_montgomery_double_exp n m name) ckt in
+    ();;
+
 let performance_test_montgomery_double_exp w =
     let n = random_odd_num w in
     let m = dest_numeral `1000` in
     let test () =
         let (name,ckt) = synthesize_montgomery_double_exp n m in
-        let () = complain_timed "Generated verilog testbench" (testbench_montgomery_double_exp name) ckt in
-        let () = complain_timed "Passed a random test" (test_montgomery_double_exp n m name) ckt in
+        let () =
+            complain_timed "Tested the verilog module"
+              (test_montgomery_double_exp n m name) ckt in
         () in
     complain_timed "TOTAL" test ();;
 
