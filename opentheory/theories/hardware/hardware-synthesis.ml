@@ -223,6 +223,7 @@ let widen_scope s namer =
 
 type prolog_result =
      Prolog_result of term list * thm * (term * term) list * namer
+   | Prolog_accept
    | Prolog_unchanged;;
 
 type prolog_rule = Prolog_rule of (term -> namer -> prolog_result);;
@@ -259,11 +260,6 @@ let apply_prolog_rule (Prolog_rule pr) goal namer =
         List.iter check tms in
 *)
     subgoals_th_sub_namer;;
-
-let unchanged_apply_prolog_rule (Prolog_rule pr) goal namer =
-    match pr goal namer with
-      Prolog_result (subgoals,th,sub,namer) -> (subgoals,th,sub,namer)
-    | Prolog_unchanged -> ([goal], ASSUME goal, [], namer);;
 
 let check_prolog_rule f pr =
     Prolog_rule
@@ -303,22 +299,24 @@ let prove_hyp_prolog_rule pr =
           let goal = vsubst sub goal in
           match apply_prolog_rule pr goal namer with
             Prolog_result (gasms,gth,gsub,gnamer) ->
-              let namer = widen_scope (current_scope namer) gnamer in
-              let (asms,asmsl,th,sub) =
-                  if null_subst gsub then
-                    let asms = List.rev_append gasms asms in
-                    let th = PROVE_HYP gth th in
-                    (asms,asmsl,th,sub)
-                  else
-                    let asmsl = (gsub,asms) :: asmsl in
-                    let asms = rev gasms in
-                    let th = PROVE_HYP gth (INST gsub th) in
-                    let sub = compose_subst sub gsub in
-                    (asms,asmsl,th,sub) in
-              prolog_asms asms asmsl th sub namer goals
+            let namer = widen_scope (current_scope namer) gnamer in
+            let (asms,asmsl,th,sub) =
+                if null_subst gsub then
+                  let asms = List.rev_append gasms asms in
+                  let th = PROVE_HYP gth th in
+                  (asms,asmsl,th,sub)
+                else
+                  let asmsl = (gsub,asms) :: asmsl in
+                  let asms = rev gasms in
+                  let th = PROVE_HYP gth (INST gsub th) in
+                  let sub = compose_subst sub gsub in
+                  (asms,asmsl,th,sub) in
+            prolog_asms asms asmsl th sub namer goals
+          | Prolog_accept ->
+            prolog_asms asms asmsl th sub namer goals
           | Prolog_unchanged ->
-              let asms = goal :: asms in
-              prolog_asms asms asmsl th sub namer goals in
+            let asms = goal :: asms in
+            prolog_asms asms asmsl th sub namer goals in
     fun goals -> fun th -> fun namer ->
     prolog_asms [] [] th [] namer goals;;
 
@@ -327,13 +325,13 @@ let then_prolog_rule pr1 pr2 =
       (fun goal -> fun namer0 ->
        match apply_prolog_rule pr1 goal namer0 with
          Prolog_result (asms,th,sub1,namer) ->
-           let (asms,th,sub2,namer) =
-               prove_hyp_prolog_rule pr2 asms th namer in
-           let sub = compose_subst sub1 sub2 in
-           let namer = widen_scope (current_scope namer0) namer in
-           Prolog_result (asms,th,sub,namer)
-       | Prolog_unchanged ->
-           apply_prolog_rule pr2 goal namer0);;
+         let (asms,th,sub2,namer) =
+             prove_hyp_prolog_rule pr2 asms th namer in
+         let sub = compose_subst sub1 sub2 in
+         let namer = widen_scope (current_scope namer0) namer in
+         Prolog_result (asms,th,sub,namer)
+       | Prolog_accept -> Prolog_accept
+       | Prolog_unchanged -> apply_prolog_rule pr2 goal namer0);;
 
 let repeat_prove_hyp_prolog_rule pr =
     let rollback_asm gsub asm goals =
@@ -342,7 +340,8 @@ let repeat_prove_hyp_prolog_rule pr =
         let goals = rev_itlist (rollback_asm gsub) asms goals in
         if disjoint fvs gsubdom then (fvs,asmsl,goals) else
         match asmsl with
-          [] -> raise (Synthesis_bug "repeat_prove_hyp_prolog_rule.rollback_asms")
+          [] ->
+          raise (Synthesis_bug "repeat_prove_hyp_prolog_rule.rollback_asms")
         | (asms,fvs) :: asmsl ->
           rollback_asms gsub gsubdom asms fvs asmsl goals in
     let rec finalize_asms acc asmsl =
@@ -370,12 +369,13 @@ let repeat_prove_hyp_prolog_rule pr =
               print_string msg in
 *)
           match apply_prolog_rule pr goal namer with
-            Prolog_result (gasms,gth,[],gnamer) ->
+            Prolog_result (gasms,gth,gsub,gnamer) ->
+            let namer = widen_scope (current_scope namer) gnamer in
+            if null_subst gsub then
               let th = PROVE_HYP gth th in
-              let namer = widen_scope (current_scope namer) gnamer in
               let asms = List.rev_append gasms asms in
               prolog_asms asms fvs asmsl th sub namer goals
-          | Prolog_result (gasms,gth,gsub,gnamer) ->
+            else
               let th = PROVE_HYP gth (INST gsub th) in
               let sub = compose_subst sub gsub in
               let namer = widen_scope (current_scope namer) gnamer in
@@ -404,9 +404,11 @@ let repeat_prove_hyp_prolog_rule pr =
                     complain msg in
 *)
                 prolog_asms [] fvs asmsl th [] namer goals'
-            | Prolog_unchanged ->
-                let asms = goal :: asms in
-                prolog_asms asms fvs asmsl th sub namer goals in
+          | Prolog_accept ->
+            prolog_asms asms fvs asmsl th sub namer goals
+          | Prolog_unchanged ->
+            let asms = goal :: asms in
+            prolog_asms asms fvs asmsl th sub namer goals in
     fun asms -> fun th -> fun namer ->
     let goals = map (fun asm -> Goal_prolog_object asm) asms in
     prolog_asms [] [] [] th [] namer goals;;
@@ -416,13 +418,13 @@ let then_repeat_prolog_rule pr1 pr2 =
       (fun goal -> fun namer0 ->
        match apply_prolog_rule pr1 goal namer0 with
          Prolog_result (asms,th,sub1,namer) ->
-           let (asms,th,sub2,namer) =
-               repeat_prove_hyp_prolog_rule pr2 asms th namer in
-           let sub = compose_subst sub1 sub2 in
-           let namer = widen_scope (current_scope namer0) namer in
-           Prolog_result (asms,th,sub,namer)
-       | Prolog_unchanged ->
-           apply_prolog_rule pr2 goal namer0);;
+         let (asms,th,sub2,namer) =
+             repeat_prove_hyp_prolog_rule pr2 asms th namer in
+         let sub = compose_subst sub1 sub2 in
+         let namer = widen_scope (current_scope namer0) namer in
+         Prolog_result (asms,th,sub,namer)
+       | Prolog_accept -> Prolog_accept
+       | Prolog_unchanged -> apply_prolog_rule pr2 goal namer0);;
 
 let rec repeat_prolog_rule pr =
     Prolog_rule
@@ -632,6 +634,12 @@ let is_synthesizable tm =
     is_case1 tm or
     is_delay tm;;
 
+let is_synthesizable_prolog_rule =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       if is_synthesizable tm then Prolog_accept else
+       failwith "is_synthesizable_prolog_rule");;
+
 let num_simp_prolog_rule =
     let push_numeral_conv =
         let dest_add = dest_binop `(+) : num -> num -> num` in
@@ -809,7 +817,8 @@ let brev_prolog_rule =
 
 let elaboration_rule =
     let rules =
-        [subst_var_prolog_rule;
+        [is_synthesizable_prolog_rule;
+         subst_var_prolog_rule;
          num_simp_prolog_rule;
          num_eq_prolog_rule;
          mk_bus_prolog_rule;
