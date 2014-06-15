@@ -174,6 +174,12 @@ let bappend_width = prove
 
 export_thm bappend_width;;
 
+let bappend_bwire_width = prove
+ (`!w x. width (bappend (bwire w) x) = SUC (width x)`,
+  REWRITE_TAC [bappend_width; bwire_width; ONCE_REWRITE_RULE [ADD_SYM] ADD1]);;
+
+export_thm bappend_bwire_width;;
+
 let width_zero = prove
  (`!x. width x = 0 <=> x = bnil`,
   GEN_TAC THEN

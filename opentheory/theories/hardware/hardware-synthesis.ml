@@ -102,6 +102,10 @@ let compose_subst old_sub new_sub =
     let apply_new_sub (t,v) = (vsubst new_sub t, v) in
     map apply_new_sub old_sub @ new_sub;;
 
+let refl_conv tm =
+    let (l,r) = dest_eq tm in
+    if aconv l r then EQT_INTRO (ALPHA l r) else failwith "refl_conv";;
+
 let simple_conv th =
     let redex = lhs (concl th) in
     fun tm -> if tm = redex then th else failwith "simple_conv";;
@@ -264,7 +268,13 @@ let apply_prolog_rule (Prolog_rule pr) goal namer =
 let check_prolog_rule f pr =
     Prolog_rule
       (fun goal -> fun namer ->
-       let () = f goal in
+       let () = f goal namer in
+       apply_prolog_rule pr goal namer);;
+
+let cond_prolog_rule f pr1 pr2 =
+    Prolog_rule
+      (fun goal -> fun namer ->
+       let pr = if f goal namer then pr1 else pr2 in
        apply_prolog_rule pr goal namer);;
 
 let orelse_prolog_rule pr1 pr2 =
@@ -332,6 +342,14 @@ let then_prolog_rule pr1 pr2 =
          Prolog_result (asms,th,sub,namer)
        | Prolog_accept -> Prolog_accept
        | Prolog_unchanged -> apply_prolog_rule pr2 goal namer0);;
+
+let rec fold_prolog_rule pr =
+    Prolog_rule
+      (fun goal -> fun namer ->
+       let rule =
+           try_prolog_rule
+             (then_prolog_rule pr (fold_prolog_rule pr)) in
+       apply_prolog_rule rule goal namer);;
 
 let repeat_prove_hyp_prolog_rule pr =
     let rollback_asm gsub asm goals =
@@ -640,6 +658,7 @@ let is_synthesizable_prolog_rule =
        if is_synthesizable tm then Prolog_accept else
        failwith "is_synthesizable_prolog_rule");;
 
+(***
 let num_simp_prolog_rule =
     let push_numeral_conv =
         let dest_add = dest_binop `(+) : num -> num -> num` in
@@ -700,6 +719,82 @@ let mk_bus_prolog_rule =
           let sub = [(b,v)] in
           let asm = vsubst sub tm in
           Prolog_result ([asm], ASSUME asm, sub, namer)));;
+***)
+
+let rec width_conv tm =
+    (REWR_CONV bnil_width ORELSEC
+     (REWR_CONV bappend_bwire_width THENC
+      RAND_CONV width_conv THENC
+      NUM_SUC_CONV)) tm;;
+
+let num_simp_conv =
+    let push_numeral_conv =
+        let dest_add = dest_binop `(+) : num -> num -> num` in
+        let th = prove
+          (`!m n p : num. m + (n + p) = n + (m + p)`,
+           REPEAT GEN_TAC THEN
+           REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+           MATCH_ACCEPT_TAC ADD_SYM) in
+        let rewr1 = REWR_CONV ADD_SYM in
+        let rewr2 = REWR_CONV th in
+        let conv tm =
+            let (x,y) = dest_add tm in
+            if not (is_numeral x) then failwith "push_numeral_conv" else
+            try (rewr2 tm) with Failure _ ->
+            if is_numeral y then NUM_REDUCE_CONV tm else
+            rewr1 tm in
+        REDEPTH_CONV conv in
+    REWRITE_CONV [ZERO_ADD; ADD_0; GSYM ADD_ASSOC] THENC
+    push_numeral_conv THENC
+    NUM_REDUCE_CONV;;
+
+let num_eq_conv =
+    let add_tm = `(+) : num -> num -> num` in
+    let mk_add = mk_binop add_tm in
+    let dest_add = dest_binop add_tm in
+    let numeral_eq_add_numeral_conv tm =
+        let (m,t) = dest_eq tm in
+        let mn = dest_numeral m in
+        let (t,n) = dest_add t in
+        let nn = dest_numeral n in
+        let th = NUM_REDUCE_CONV (mk_add (mk_numeral (mn -/ nn)) n) in
+        let conv = LAND_CONV (K (SYM th)) THENC REWR_CONV EQ_ADD_RCANCEL in
+        conv tm in
+    FIRST_CONV
+      [refl_conv;
+       numeral_eq_add_numeral_conv];;
+
+let expand_bus_prolog_rule =
+    Prolog_rule
+      (fun tm -> fun namer ->
+       let (t,n) = dest_eq tm in
+       let n = dest_numeral n in
+       let v = dest_width t in
+       if not_unfrozen_var namer v then failwith "expand_bus_prolog_rule" else
+       let b = variable_bus (fst (dest_var v)) n in
+       let sub = [(b,v)] in
+       let asm = vsubst sub tm in
+       Prolog_result ([asm], ASSUME asm, sub, namer));;
+
+let width_prolog_rule =
+    let is_var goal namer =
+        let (t,_) = dest_eq goal in
+        let v = dest_width t in
+        is_unfrozen_var namer v in
+    let var_rule =
+        let conv = RAND_CONV num_simp_conv in
+        then_prolog_rule
+          (conv_prolog_rule conv)
+          expand_bus_prolog_rule in
+    let nonvar_rule =
+        let conv =
+            LAND_CONV width_conv THENC
+            RAND_CONV num_simp_conv THENC
+            num_eq_conv in
+        then_prolog_rule
+          (conv_prolog_rule conv)
+          subst_var_prolog_rule in
+    cond_prolog_rule is_var var_rule nonvar_rule;;
 
 let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
     let zero_suc_conv : conv =
@@ -818,10 +913,13 @@ let brev_prolog_rule =
 let elaboration_rule =
     let rules =
         [is_synthesizable_prolog_rule;
+(***
          subst_var_prolog_rule;
          num_simp_prolog_rule;
          num_eq_prolog_rule;
          mk_bus_prolog_rule;
+***)
+         width_prolog_rule;
          wire_prolog_rule;
          bsub_prolog_rule;
          brev_prolog_rule;
@@ -836,23 +934,20 @@ let elaboration_rule =
          bcase1_bappend_bwire; bcase1_bnil] in
     fun syn ->
     let user_rules = map (uncurry scope_thm_prolog_rule) syn in
-    repeat_prolog_rule (first_prolog_rule (rules @ user_rules));;
+    fold_prolog_rule (first_prolog_rule (rules @ user_rules));;
 
 let elaborate_circuit =
-    let check_elaboration tms =
-        match filter (not o is_synthesizable) tms with
-          [] -> ()
-        | bad ->
-          let n = length bad in
-          let s = "term" ^ (if n = 1 then "" else "s") in
-          let () = complain ("\n" ^ string_of_int n ^ " unsynthesizable " ^ s ^ ":") in
-          let () = List.iter (complain o string_of_term) bad in
-          failwith ("couldn't reduce " ^ string_of_int n ^ " " ^ s) in
+    let check_elaboration bad =
+        let n = length bad in
+        if n = 0 then () else
+        let s = "term" ^ (if n = 1 then "" else "s") in
+        let () = complain ("\n" ^ string_of_int n ^ " unsynthesizable " ^ s ^ ":") in
+        let () = List.iter (complain o string_of_term) bad in
+        failwith ("couldn't reduce " ^ string_of_int n ^ " " ^ s) in
     fun syn ->
     let rule = elaboration_rule syn in
     fun th -> fun namer ->
-    let (tms,th,_,namer) =
-        repeat_prove_hyp_prolog_rule rule (hyp th) th namer in
+    let (tms,th,_,namer) = prove_hyp_prolog_rule rule (hyp th) th namer in
 (* Debugging
     let () =
         let n = length (current_scope_vars namer) in
