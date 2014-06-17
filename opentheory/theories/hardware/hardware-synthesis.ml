@@ -714,12 +714,13 @@ let bus_reduce_conv tm =
 let width_conv =
     let nil_conv = REWR_CONV bnil_width in
     let cons_conv = REWR_CONV bappend_bwire_width in
-    let rec conv tm =
+    let rec reduce_conv tm =
         (nil_conv ORELSEC
          (cons_conv THENC
-          RAND_CONV conv THENC
+          RAND_CONV reduce_conv THENC
           suc_num_conv)) tm in
-    conv;;
+    RAND_CONV bus_reduce_conv THENC
+    reduce_conv;;
 
 let num_simp_conv =
     let push_numeral_conv =
@@ -789,16 +790,6 @@ let width_prolog_rule =
           subst_var_prolog_rule in
     cond_prolog_rule is_var var_rule nonvar_rule;;
 
-(*** Testing
-width_conv `width (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil)))))`;;
-
-num_simp_conv `n : num`;;
-
-num_eq_conv `5 = n`;;
-
-apply_prolog_rule width_prolog_rule `width (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) = n` (new_namer []);;
-*)
-
 let wire_prolog_rule =
     let is_wire_goal goal namer =
         let (_,_,w) = dest_wire goal in
@@ -812,17 +803,15 @@ let wire_prolog_rule =
         LAND_CONV num_suc_conv THENC
         REWR_CONV wire_suc in
     let conv =
-        LAND_CONV NUM_REDUCE_CONV THENC
+        RATOR_CONV
+          (LAND_CONV bus_reduce_conv THENC
+           RAND_CONV NUM_REDUCE_CONV) THENC
         REPEATC suc_conv in
     check_prolog_rule
       is_wire_goal
       (then_prolog_rule
          (conv_prolog_rule conv)
          zero_rule);;
-
-(*** Testing
-apply_prolog_rule wire_prolog_rule `wire (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) (1 + 1) w` (new_namer []);;
-*)
 
 let bsub_prolog_rule =
     let is_bsub_goal goal namer =
@@ -842,7 +831,9 @@ let bsub_prolog_rule =
             RATOR_CONV (LAND_CONV num_suc_conv) THENC
             REWR_CONV suc_thm in
         RATOR_CONV
-          (LAND_CONV NUM_REDUCE_CONV THENC
+          (RATOR_CONV
+             (LAND_CONV bus_reduce_conv THENC
+              RAND_CONV NUM_REDUCE_CONV) THENC
            RAND_CONV NUM_REDUCE_CONV) THENC
         REPEATC suc_conv in
     let take_rule =
@@ -876,19 +867,12 @@ let bsub_prolog_rule =
          (conv_prolog_rule drop_conv)
          take_rule);;
 
-(*** Testing
-drop_prefix_conv `bsub (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) (1 + 1) (1 + 1) y`
-
-take_bus `bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))` (dest_numeral `3`);;
-
-apply_prolog_rule bsub_prolog_rule `bsub (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) (1 + 1) 2 x` (new_namer []);;
-*)
-
 let brev_prolog_rule =
     let is_brev_goal goal namer =
         let (_,y) = dest_brev goal in
         if is_unfrozen_var namer y then () else
         failwith "brev_prolog_rule.is_brev_goal" in
+    let init_conv = LAND_CONV bus_reduce_conv in
     let subst_rule =
         let rec rev_bus acc xs =
             if is_bnil xs then acc else
@@ -900,7 +884,7 @@ let brev_prolog_rule =
            let (x,y) = dest_brev goal in
            let b = rev_bus mk_bnil x in
            [(b,y)]) in
-    let conv =
+    let reduce_conv =
         RAND_CONV
           (REWR_CONV (GSYM bnil_bappend) THENC
            REWRITE_CONV [GSYM bappend_assoc; bappend_bnil]) THENC
@@ -909,12 +893,9 @@ let brev_prolog_rule =
     check_prolog_rule
       is_brev_goal
       (every_prolog_rule
-         [subst_rule;
-          conv_prolog_rule conv]);;
-
-(*** Testing
-apply_prolog_rule brev_prolog_rule `brev (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) x` (new_namer []);;
-*)
+         [conv_prolog_rule init_conv;
+          subst_rule;
+          conv_prolog_rule reduce_conv]);;
 
 let bconnect_prolog_rule =
     let is_bconnect_goal goal _ =
@@ -932,14 +913,6 @@ let bconnect_prolog_rule =
       (every_prolog_rule
          [conv_prolog_rule init_conv;
           reduce_rule]);;
-
-(*** Testing
-apply_prolog_rule bconnect_prolog_rule `bconnect (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) (bappend (bwire y0) (bappend (bwire y1) (bappend (bwire y2) (bappend (bwire y3) (bappend (bwire y4) bnil)))))` (new_namer []);;
-
-apply_prolog_rule bconnect_prolog_rule `bconnect bnil bnil` (new_namer []);;
-
-apply_prolog_rule bconnect_prolog_rule `bconnect (bground (3 + 2)) (bappend (bwire y0) (bappend (bwire y1) (bappend (bwire y2) (bappend (bwire y3) (bappend (bwire y4) bnil)))))` (new_namer []);;
-*)
 
 let bdelay_prolog_rule =
     let is_bdelay_goal goal _ =
