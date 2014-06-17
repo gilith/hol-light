@@ -123,17 +123,37 @@ let string_of_subst =
     fun sub ->
     "<sub> [" ^ (if length sub = 0 then "" else ("\n  " ^ String.concat "\n  " (map maplet sub))) ^ "]";;
 
-(*** TODO: Cache this result for width-like numbers ***)
-let suc_num_conv = NUM_SUC_CONV;;
+let cache_numerals d =
+    let int_of_term tm =
+        try (Some (int_of_num (dest_numeral (d tm))))
+        with Failure _ -> None in
+    fun f ->
+    let m = ref Int_map.empty in
+    fun tm ->
+    match int_of_term tm with
+      None -> f tm
+    | Some n ->
+      if Int_map.mem n (!m) then Int_map.find n (!m) else
+      let res = f tm in
+      let () = m := Int_map.add n res (!m) in
+      res;;
+
+let suc_num_conv =
+    let suc_tm = `SUC` in
+    let dest_suc tm =
+        let (tm,n) = dest_comb tm in
+        if tm = suc_tm then n else failwith "suc_num_conv.dest_suc" in
+    cache_numerals dest_suc NUM_SUC_CONV;;
 
 let num_suc_conv =
     let suc_tm = `SUC` in
     let mk_suc tm = mk_comb (suc_tm,tm) in
-    fun tm ->
-    let n = dest_numeral tm in
-    if eq_num n num_0 then failwith "num_suc_conv" else
-    let m = mk_suc (mk_numeral (n -/ num_1)) in
-    SYM (suc_num_conv m);;
+    let f tm =
+        let n = dest_numeral tm in
+        if eq_num n num_0 then failwith "num_suc_conv" else
+        let m = mk_suc (mk_numeral (n -/ num_1)) in
+        SYM (suc_num_conv m) in
+     cache_numerals I f;;
 
 (* ------------------------------------------------------------------------- *)
 (* A special exception for synthesis bugs.                                   *)
