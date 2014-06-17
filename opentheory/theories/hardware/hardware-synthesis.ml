@@ -363,6 +363,12 @@ let then_prolog_rule pr1 pr2 =
        | Prolog_accept -> Prolog_accept
        | Prolog_unchanged -> apply_prolog_rule pr2 goal namer0);;
 
+let rec every_prolog_rule prl =
+    match prl with
+      [] -> all_prolog_rule
+    | [pr] -> pr
+    | pr :: prl -> then_prolog_rule pr (every_prolog_rule prl);;
+
 let rec fold_prolog_rule pr =
     Prolog_rule
       (fun goal -> fun namer ->
@@ -1017,6 +1023,38 @@ take_bus `bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (b
 apply_prolog_rule bsub_prolog_rule `bsub (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) (1 + 1) 2 x` (new_namer []);;
 *)
 
+let brev_prolog_rule =
+    let is_brev_goal goal namer =
+        let (_,y) = dest_brev goal in
+        if is_unfrozen_var namer y then () else
+        failwith "brev_prolog_rule.is_brev_goal" in
+    let subst_rule =
+        let rec rev_bus acc xs =
+            if is_bnil xs then acc else
+            let (x,xs) = dest_bappend xs in
+            let acc = mk_bappend x acc in
+            rev_bus acc xs in
+        subst_prolog_rule
+          (fun goal -> fun namer ->
+           let (x,y) = dest_brev goal in
+           let b = rev_bus mk_bnil x in
+           [(b,y)]) in
+    let conv =
+        RAND_CONV
+          (REWR_CONV (GSYM bnil_bappend) THENC
+           REWRITE_CONV [GSYM bappend_assoc; bappend_bnil]) THENC
+        REPEATC (REWR_CONV brev_bappend_bwire) THENC
+        REWR_CONV (EQT_INTRO brev_bnil) in
+    check_prolog_rule
+      is_brev_goal
+      (every_prolog_rule
+         [subst_rule;
+          conv_prolog_rule conv]);;
+
+(*** Testing
+apply_prolog_rule brev_prolog_rule `brev (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) x` (new_namer []);;
+*)
+
 let elaboration_rule =
     let rules =
         [is_synthesizable_prolog_rule;
@@ -1029,8 +1067,8 @@ let elaboration_rule =
          width_prolog_rule;
          wire_prolog_rule;
          bsub_prolog_rule;
-(***
          brev_prolog_rule;
+(***
          bground_prolog_rule
 ***)
 ] @

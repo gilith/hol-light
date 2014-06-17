@@ -486,7 +486,6 @@ let brev_bappend = prove
    UNDISCH_THEN `width x1 = i + SUC d` SUBST1_TAC THEN
    ASM_REWRITE_TAC [ADD1];
    ALL_TAC] THEN
-
   UNDISCH_TAC `i + j + 1 = width x1 + width x2` THEN
   POP_ASSUM
     (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
@@ -517,6 +516,38 @@ let brev_bappend = prove
   ASM_REWRITE_TAC []);;
 
 export_thm brev_bappend;;
+
+let brev_bappend_bwire = prove
+ (`!w x y. brev (bappend (bwire w) x) (bappend y (bwire w)) <=> brev x y`,
+  REPEAT GEN_TAC THEN
+  REVERSE_TAC EQ_TAC THENL
+  [STRIP_TAC THEN
+   MATCH_MP_TAC brev_bappend THEN
+   ASM_REWRITE_TAC [brev_bwire];
+   ALL_TAC] THEN
+  REWRITE_TAC [brev_def; bappend_width; bwire_width] THEN
+  REWRITE_TAC [SPECL [`1`; `width x`] ADD_SYM] THEN
+  REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  REWRITE_TAC [ADD_ASSOC] THEN
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  EXISTS_TAC `1 + i` THEN
+  EXISTS_TAC `j : num` THEN
+  ASM_REWRITE_TAC [] THEN
+  ASM_REWRITE_TAC [wire_suc; GSYM (ONCE_REWRITE_RULE [ADD_SYM] ADD1)] THEN
+  MP_TAC
+    (SPECL [`y : bus`; `bwire w`; `j : num`; `yj : wire`] wire_in_prefix) THEN
+  REVERSE_TAC ANTS_TAC THENL
+  [DISCH_THEN SUBST1_TAC THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  FIRST_X_ASSUM (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
+  REWRITE_TAC [ONE; SUC_ADD; LT_SUC_LE; ZERO_ADD; LE_ADDR]);;
+
+export_thm brev_bappend_bwire;;
 
 (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 (* Lifting relations between wires *)
