@@ -678,188 +678,38 @@ let is_synthesizable tm =
     is_case1 tm or
     is_delay tm;;
 
-let is_synthesizable_prolog_rule =
+let synthesizable_prolog_rule =
     Prolog_rule
       (fun tm -> fun namer ->
        if is_synthesizable tm then Prolog_accept else
-       failwith "is_synthesizable_prolog_rule");;
+       failwith "synthesizable_prolog_rule");;
 
-(***
-let num_simp_prolog_rule =
-    let push_numeral_conv =
-        let dest_add = dest_binop `(+) : num -> num -> num` in
-        let th = prove
-          (`!m n p : num. m + (n + p) = n + (m + p)`,
-           REPEAT GEN_TAC THEN
-           REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
-           MATCH_ACCEPT_TAC ADD_SYM) in
-        let rewr1 = REWR_CONV ADD_SYM in
-        let rewr2 = REWR_CONV th in
-        let conv tm =
-            let (x,y) = dest_add tm in
-            if not (is_numeral x) then failwith "push_numeral_conv" else
-            try (rewr2 tm) with Failure _ ->
-            if is_numeral y then NUM_REDUCE_CONV tm else
-            rewr1 tm in
-        REDEPTH_CONV conv in
-    let simp_conv =
-        REWRITE_CONV
-          [ZERO_ADD; ADD_0; GSYM ADD_ASSOC;
-           bnil_width; bwire_width; bappend_width] THENC
-        push_numeral_conv THENC
-        NUM_REDUCE_CONV in
-    conv_prolog_rule (CHANGED_CONV simp_conv);;
+let bground_conv =
+    let zero_conv = REWR_CONV bground_zero in
+    let suc_conv = REWR_CONV bground_suc in
+    let rec reduce_conv tm =
+        (zero_conv ORELSEC
+         (RAND_CONV num_suc_conv THENC
+          suc_conv THENC
+          RAND_CONV reduce_conv)) tm in
+    RAND_CONV NUM_REDUCE_CONV THENC
+    reduce_conv;;
 
-let num_eq_prolog_rule =
-    let is_num_type = (=) `:num` in
-    let add_tm = `(+) : num -> num -> num` in
-    let mk_add = mk_binop add_tm in
-    let dest_add = dest_binop add_tm in
-    let numeral_eq_add_numeral_conv tm =
-        let (m,t) = dest_eq tm in
-        let mn = dest_numeral m in
-        let (t,n) = dest_add t in
-        let nn = dest_numeral n in
-        let th = NUM_REDUCE_CONV (mk_add (mk_numeral (mn -/ nn)) n) in
-        let conv = LAND_CONV (K (SYM th)) THENC REWR_CONV EQ_ADD_RCANCEL in
-        conv tm in
-    let reduce_conv =
-        FIRST_CONV
-          [numeral_eq_add_numeral_conv] in
-    let check tm =
-       let (l,r) = dest_eq tm in
-       if is_num_type (type_of l) then () else
-       failwith "num_eq_prolog_rule" in
-    check_prolog_rule check
-      (orelse_sym_prolog_rule (conv_prolog_rule reduce_conv));;
+let bpower_conv =
+    let zero_conv = REWR_CONV bpower_zero in
+    let suc_conv = REWR_CONV bpower_suc in
+    let rec reduce_conv tm =
+        (zero_conv ORELSEC
+         (RAND_CONV num_suc_conv THENC
+          suc_conv THENC
+          RAND_CONV reduce_conv)) tm in
+    RAND_CONV NUM_REDUCE_CONV THENC
+    reduce_conv;;
 
-let mk_bus_prolog_rule =
-    orelse_sym_prolog_rule
-      (Prolog_rule
-         (fun tm -> fun namer ->
-          let (t,n) = dest_eq tm in
-          let nn = dest_numeral n in
-          let v = dest_width t in
-          if not_unfrozen_var namer v then failwith "mk_bus_prolog_rule" else
-          let b = variable_bus (fst (dest_var v)) nn in
-          let sub = [(b,v)] in
-          let asm = vsubst sub tm in
-          Prolog_result ([asm], ASSUME asm, sub, namer)));;
-
-let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
-    let zero_suc_conv : conv =
-        let suc_tm = `SUC` in
-        let mk_suc tm = mk_comb (suc_tm,tm) in
-        fun tm ->
-        let n = dest_numeral tm in
-        if eq_num n num_0 then REFL tm else
-        let m = mk_suc (mk_numeral (n -/ num_1)) in
-        SYM (NUM_SUC_CONV m) in
-    let wire_prolog_rule =
-        let zero_rule = thm_prolog_rule wire_zero in
-        let suc_rule = thm_prolog_rule wire_suc in
-        let conv tm =
-            let (x,_,_) = dest_wire tm in
-            let (w,_) = dest_bappend x in
-            let _ = dest_bwire w in
-            LAND_CONV (zero_suc_conv) tm in
-        then_prolog_rule
-          (conv_prolog_rule conv)
-          (orelse_prolog_rule zero_rule suc_rule) in
-    let bsub_prolog_rule =
-        let suc_thm = prove
-          (`!w x k n y.
-              bsub x k n y ==>
-              bsub (bappend (bwire w) x) (SUC k) n y`,
-           REPEAT STRIP_TAC THEN
-           SUBGOAL_THEN `SUC k = width (bwire w) + k` SUBST1_TAC THENL
-           [REWRITE_TAC [bwire_width; ONE; SUC_ADD; ZERO_ADD];
-            ASM_REWRITE_TAC [bsub_in_suffix]]) in
-        let zero_zero_thm = prove
-          (`!x y.
-              y = bnil ==>
-              bsub x 0 0 y`,
-           REPEAT STRIP_TAC THEN
-           ASM_REWRITE_TAC [bsub_zero; LE_0]) in
-        let zero_suc_thm = prove
-          (`!w x n y.
-              (?z. y = bappend (bwire w) z /\ bsub x 0 n z) ==>
-              bsub (bappend (bwire w) x) 0 (SUC n) y`,
-           REPEAT STRIP_TAC THEN
-           FIRST_X_ASSUM SUBST_VAR_TAC THEN
-           MATCH_MP_TAC bsub_suc THEN
-           REWRITE_TAC [wire_zero] THEN
-           MATCH_MP_TAC suc_thm THEN
-           ASM_REWRITE_TAC []) in
-        let suc_rule = thm_prolog_rule suc_thm in
-        let zero_zero_rule = thm_prolog_rule zero_zero_thm in
-        let zero_suc_rule = thm_prolog_rule zero_suc_thm in
-        let conv tm =
-            let _ = dest_bsub tm in
-            RATOR_CONV
-              (LAND_CONV zero_suc_conv THENC
-               RAND_CONV zero_suc_conv) tm in
-        then_prolog_rule
-          (conv_prolog_rule conv)
-          (orelse_prolog_rule
-             suc_rule
-             (orelse_prolog_rule zero_zero_rule zero_suc_rule)) in
-    let bground_prolog_rule =
-        let zero_conv = REWR_CONV bground_zero in
-        let suc_conv = REWR_CONV bground_suc in
-        let rec expand_conv tm =
-            (RAND_CONV zero_suc_conv THENC
-             (zero_conv ORELSEC
-              (suc_conv THENC
-               RAND_CONV expand_conv))) tm in
-        let conv tm =
-            let _ = dest_bground tm in
-            expand_conv tm in
-        conv_prolog_rule (CHANGED_CONV (DEPTH_CONV conv)) in
-    (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule);;
-
-let brev_prolog_rule =
-    let bnil_thm = prove
-      (`!y. y = bnil ==> brev bnil y`,
-       REPEAT STRIP_TAC THEN
-       ASM_REWRITE_TAC [brev_bnil]) in
-    let bwire_thm = prove
-      (`!w y. y = bwire w ==> brev (bwire w) y`,
-       REPEAT STRIP_TAC THEN
-       ASM_REWRITE_TAC [brev_bwire]) in
-    let bappend_thm = prove
-      (`!x1 x2 y1 y2 y.
-          y = bappend y1 y2 /\ brev x1 y2 /\ brev x2 y1 ==>
-          brev (bappend x1 x2) y`,
-       REPEAT STRIP_TAC THEN
-       ASM_REWRITE_TAC [] THEN
-       MATCH_MP_TAC brev_bappend THEN
-       ASM_REWRITE_TAC []) in
-    let bappend_conv =
-        let rewr0 = (REWR_CONV o prove)
-          (`!x. bappend x bnil = bappend bnil x`,
-           REWRITE_TAC [bappend_bnil; bnil_bappend]) in
-        let rewr1 = REWR_CONV (GSYM bappend_assoc) in
-        let rec conv tm =
-            (let (x,y) = dest_bappend tm in
-             if is_bnil y then rewr0 else
-             if is_bappend y then RAND_CONV conv THENC rewr1 else
-             failwith "brev_prolog_rule.bappend_conv") tm in
-        LAND_CONV conv in
-    let bnil_rule = thm_prolog_rule bnil_thm in
-    let bwire_rule = thm_prolog_rule bwire_thm in
-    let bappend_rule =
-        then_prolog_rule
-          (conv_prolog_rule bappend_conv)
-          (thm_prolog_rule bappend_thm) in
-    Prolog_rule
-      (fun tm -> fun namer ->
-       let (x,_) = dest_brev tm in
-       if is_bnil x then apply_prolog_rule bnil_rule tm namer else
-       if is_bwire x then apply_prolog_rule bwire_rule tm namer else
-       if is_bappend x then apply_prolog_rule bappend_rule tm namer else
-       failwith "brev_prolog_rule");;
-***)
+let bus_reduce_conv tm =
+    if is_bground tm then bground_conv tm else
+    if is_bpower tm then bpower_conv tm else
+    ALL_CONV tm;;
 
 let width_conv =
     let nil_conv = REWR_CONV bnil_width in
@@ -904,9 +754,10 @@ let num_eq_conv =
         let th = NUM_REDUCE_CONV (mk_add (mk_numeral (mn -/ nn)) n) in
         let conv = LAND_CONV (K (SYM th)) THENC REWR_CONV EQ_ADD_RCANCEL in
         conv tm in
-    FIRST_CONV
-      [refl_conv;
-       numeral_eq_add_numeral_conv];;
+    TRY_CONV
+      (FIRST_CONV
+         [refl_conv;
+          numeral_eq_add_numeral_conv]);;
 
 let expand_bus_prolog_rule =
     subst_prolog_rule
@@ -937,6 +788,16 @@ let width_prolog_rule =
           (conv_prolog_rule conv)
           subst_var_prolog_rule in
     cond_prolog_rule is_var var_rule nonvar_rule;;
+
+(*** Testing
+width_conv `width (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil)))))`;;
+
+num_simp_conv `n : num`;;
+
+num_eq_conv `5 = n`;;
+
+apply_prolog_rule width_prolog_rule `width (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) = n` (new_namer []);;
+*)
 
 let wire_prolog_rule =
     let is_wire_goal goal namer =
@@ -1055,31 +916,157 @@ let brev_prolog_rule =
 apply_prolog_rule brev_prolog_rule `brev (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) x` (new_namer []);;
 *)
 
+let bconnect_prolog_rule =
+    let is_bconnect_goal goal _ =
+        if is_bconnect goal then () else
+        failwith "bconnect_prolog_rule.is_bconnect_goal" in
+    let init_conv =
+        LAND_CONV bus_reduce_conv in
+    let reduce_rule =
+        fold_prolog_rule
+          (orelse_prolog_rule
+             (thm_prolog_rule bconnect_bappend_bwire)
+             (thm_prolog_rule bconnect_bnil)) in
+    check_prolog_rule
+      is_bconnect_goal
+      (every_prolog_rule
+         [conv_prolog_rule init_conv;
+          reduce_rule]);;
+
+(*** Testing
+apply_prolog_rule bconnect_prolog_rule `bconnect (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) (bappend (bwire y0) (bappend (bwire y1) (bappend (bwire y2) (bappend (bwire y3) (bappend (bwire y4) bnil)))))` (new_namer []);;
+
+apply_prolog_rule bconnect_prolog_rule `bconnect bnil bnil` (new_namer []);;
+
+apply_prolog_rule bconnect_prolog_rule `bconnect (bground (3 + 2)) (bappend (bwire y0) (bappend (bwire y1) (bappend (bwire y2) (bappend (bwire y3) (bappend (bwire y4) bnil)))))` (new_namer []);;
+*)
+
+let bdelay_prolog_rule =
+    let is_bdelay_goal goal _ =
+        if is_bdelay goal then () else
+        failwith "bdelay_prolog_rule.is_bdelay_goal" in
+    let init_conv =
+        LAND_CONV bus_reduce_conv in
+    let reduce_rule =
+        fold_prolog_rule
+          (orelse_prolog_rule
+             (thm_prolog_rule bdelay_bappend_bwire)
+             (thm_prolog_rule bdelay_bnil)) in
+    check_prolog_rule
+      is_bdelay_goal
+      (every_prolog_rule
+         [conv_prolog_rule init_conv;
+          reduce_rule]);;
+
+let bnot_prolog_rule =
+    let is_bnot_goal goal _ =
+        if is_bnot goal then () else
+        failwith "bnot_prolog_rule.is_bnot_goal" in
+    let init_conv =
+        LAND_CONV bus_reduce_conv in
+    let reduce_rule =
+        fold_prolog_rule
+          (orelse_prolog_rule
+             (thm_prolog_rule bnot_bappend_bwire)
+             (thm_prolog_rule bnot_bnil)) in
+    check_prolog_rule
+      is_bnot_goal
+      (every_prolog_rule
+         [conv_prolog_rule init_conv;
+          reduce_rule]);;
+
+let band2_prolog_rule =
+    let is_band2_goal goal _ =
+        if is_band2 goal then () else
+        failwith "band2_prolog_rule.is_band2_goal" in
+    let init_conv =
+        RATOR_CONV
+          (LAND_CONV bus_reduce_conv THENC
+           RAND_CONV bus_reduce_conv) in
+    let reduce_rule =
+        fold_prolog_rule
+          (orelse_prolog_rule
+             (thm_prolog_rule band2_bappend_bwire)
+             (thm_prolog_rule band2_bnil)) in
+    check_prolog_rule
+      is_band2_goal
+      (every_prolog_rule
+         [conv_prolog_rule init_conv;
+          reduce_rule]);;
+
+let bor2_prolog_rule =
+    let is_bor2_goal goal _ =
+        if is_bor2 goal then () else
+        failwith "bor2_prolog_rule.is_bor2_goal" in
+    let init_conv =
+        RATOR_CONV
+          (LAND_CONV bus_reduce_conv THENC
+           RAND_CONV bus_reduce_conv) in
+    let reduce_rule =
+        fold_prolog_rule
+          (orelse_prolog_rule
+             (thm_prolog_rule bor2_bappend_bwire)
+             (thm_prolog_rule bor2_bnil)) in
+    check_prolog_rule
+      is_bor2_goal
+      (every_prolog_rule
+         [conv_prolog_rule init_conv;
+          reduce_rule]);;
+
+let bxor2_prolog_rule =
+    let is_bxor2_goal goal _ =
+        if is_bxor2 goal then () else
+        failwith "bxor2_prolog_rule.is_bxor2_goal" in
+    let init_conv =
+        RATOR_CONV
+          (LAND_CONV bus_reduce_conv THENC
+           RAND_CONV bus_reduce_conv) in
+    let reduce_rule =
+        fold_prolog_rule
+          (orelse_prolog_rule
+             (thm_prolog_rule bxor2_bappend_bwire)
+             (thm_prolog_rule bxor2_bnil)) in
+    check_prolog_rule
+      is_bxor2_goal
+      (every_prolog_rule
+         [conv_prolog_rule init_conv;
+          reduce_rule]);;
+
+let bcase1_prolog_rule =
+    let is_bcase1_goal goal _ =
+        if is_bcase1 goal then () else
+        failwith "bcase1_prolog_rule.is_bcase1_goal" in
+    let init_conv =
+        RATOR_CONV
+          (RATOR_CONV
+             (LAND_CONV bus_reduce_conv THENC
+              RAND_CONV bus_reduce_conv) THENC
+           RAND_CONV bus_reduce_conv) in
+    let reduce_rule =
+        fold_prolog_rule
+          (orelse_prolog_rule
+             (thm_prolog_rule bcase1_bappend_bwire)
+             (thm_prolog_rule bcase1_bnil)) in
+    check_prolog_rule
+      is_bcase1_goal
+      (every_prolog_rule
+         [conv_prolog_rule init_conv;
+          reduce_rule]);;
+
 let elaboration_rule =
     let rules =
-        [is_synthesizable_prolog_rule;
-(***
-         subst_var_prolog_rule;
-         num_simp_prolog_rule;
-         num_eq_prolog_rule;
-         mk_bus_prolog_rule;
-***)
+        [synthesizable_prolog_rule;
          width_prolog_rule;
          wire_prolog_rule;
          bsub_prolog_rule;
          brev_prolog_rule;
-(***
-         bground_prolog_rule
-***)
-] @
-        map thm_prolog_rule
-        [bconnect_bappend_bwire; bconnect_bnil;
-         bdelay_bappend_bwire; bdelay_bnil;
-         bnot_bappend_bwire; bnot_bnil;
-         band2_bappend_bwire; band2_bnil;
-         bor2_bappend_bwire; bor2_bnil;
-         bxor2_bappend_bwire; bxor2_bnil;
-         bcase1_bappend_bwire; bcase1_bnil] in
+         bconnect_prolog_rule;
+         bdelay_prolog_rule;
+         bnot_prolog_rule;
+         band2_prolog_rule;
+         bor2_prolog_rule;
+         bxor2_prolog_rule;
+         bcase1_prolog_rule] in
     fun syn ->
     let user_rules = map (uncurry scope_thm_prolog_rule) syn in
     fold_prolog_rule (first_prolog_rule (rules @ user_rules));;

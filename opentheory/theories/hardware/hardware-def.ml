@@ -210,11 +210,15 @@ let dest_bground =
     let (tm,n) = dest_comb tm in
     if tm = bground_tm then n else failwith "dest_bground";;
 
+let is_bground = can dest_bground;;
+
 let dest_bpower =
     let bpower_tm = `bpower` in
     fun tm ->
     let (tm,n) = dest_comb tm in
     if tm = bpower_tm then n else failwith "dest_bpower";;
+
+let is_bpower = can dest_bpower;;
 
 let bits_to_bus l =
     let f h t = mk_bappend (mk_bwire (bit_to_wire h)) t in
