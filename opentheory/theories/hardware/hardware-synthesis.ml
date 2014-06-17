@@ -66,6 +66,8 @@ let disjoint xs =
     let notmem x = not (mem x xs) in
     forall notmem;;
 
+let is_digit = String.contains "0123456789";;
+
 let translate f s =
     let rec tr acc i =
         if i = 0 then String.concat "" acc else
@@ -162,6 +164,52 @@ let num_suc_conv =
 exception Synthesis_bug of string;;
 
 (* ------------------------------------------------------------------------- *)
+(* Sort wires respecting numbers in their name.                              *)
+(* ------------------------------------------------------------------------- *)
+
+type chunk =
+     Num_chunk of int
+   | Other_chunk of string;;
+
+let string_to_chunks s =
+    let n = String.length s in
+    let rec mk_chunk b i =
+        let i = i + 1 in
+        if i = n then i else
+        let c = String.get s i in
+        if is_digit c = b then mk_chunk b i else i in
+    let rec chunk_from xs i =
+        if i = n then rev xs else
+        let c = String.get s i in
+        let b = is_digit c in
+        let j = mk_chunk b i in
+        let x = String.sub s i (j - i) in
+        let x = if b then Num_chunk (int_of_string x) else Other_chunk x in
+        chunk_from (x :: xs) j in
+    chunk_from [] 0;;
+
+let lt_chunk c1 c2 =
+    match (c1,c2) with
+      (Num_chunk i1, Num_chunk i2) -> i1 < i2
+    | (Num_chunk _, Other_chunk _) -> true
+    | (Other_chunk _, Num_chunk _) -> false
+    | (Other_chunk s1, Other_chunk s2) -> String.compare s1 s2 < 0;;
+
+let rec lt_chunks cs1 cs2 =
+    match cs2 with
+      [] -> false
+    | c2 :: cs2 ->
+      match cs1 with
+        [] -> true
+      | c1 :: cs1 ->
+        lt_chunk c1 c2 or (not (lt_chunk c2 c1) && lt_chunks cs1 cs2);;
+
+let wire_sort =
+    let mk w = (string_to_chunks (dest_wire_var w), w) in
+    let cmp (c1,_) (c2,_) = lt_chunks c1 c2 in
+    fun ws -> map snd (mergesort cmp (map mk ws));;
+
+(* ------------------------------------------------------------------------- *)
 (* Efficiently store sets of variables.                                      *)
 (* ------------------------------------------------------------------------- *)
 
@@ -254,7 +302,7 @@ let widen_scope s namer =
     Namer (f,sc_vs,sl);;
 
 (* ------------------------------------------------------------------------- *)
-(* Synthesis rules allow backward reasoning on theorem assumptions.             *)
+(* Synthesis rules allow backward reasoning on theorem assumptions.          *)
 (* ------------------------------------------------------------------------- *)
 
 type synthesis_result =
@@ -1902,10 +1950,6 @@ let hardware_to_verilog =
         if is_power w then "1'b1" else
         dest_wire_var w in
     let wire_names = map wire_name in
-    let wire_sort =
-        let wire_cmp w1 w2 =
-            String.compare (dest_wire_var w1) (dest_wire_var w2) < 0 in
-        mergesort wire_cmp in
     let arg_name arg =
         match arg with
           Wire_verilog_arg w -> wire_name w
