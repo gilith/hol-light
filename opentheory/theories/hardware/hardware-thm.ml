@@ -395,6 +395,47 @@ let bsub_add = prove
 
 export_thm bsub_add;;
 
+let bsub_bappend_cancel = prove
+ (`!x y n z.
+     bsub (bappend x y) 0 (width x + n) (bappend x z) <=>
+     bsub y 0 n z`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC
+    [bsub_def; drop_zero; ZERO_ADD; bappend_def; bus_tybij; width_def;
+     LENGTH_APPEND; LE_ADD_LCANCEL; mk_bus_inj] THEN
+  REVERSE_TAC (ASM_CASES_TAC `n <= LENGTH (dest_bus y)`) THENL
+  [ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  MP_TAC
+    (ISPECL
+       [`LENGTH (dest_bus x)`;
+        `n : num`;
+        `APPEND (dest_bus x) (dest_bus y)`]
+     take_add) THEN
+  ANTS_TAC THENL
+  [ASM_REWRITE_TAC [LENGTH_APPEND; LE_ADD_LCANCEL];
+   ALL_TAC] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [take_append; APPEND_LCANCEL; drop_append] THEN
+  CONV_TAC (RAND_CONV (LAND_CONV (REWR_CONV (GSYM mk_dest_bus)))) THEN
+  REWRITE_TAC [mk_bus_inj]);;
+
+export_thm bsub_bappend_cancel;;
+
+let bsub_bappend_bwire_cancel = prove
+ (`!w x n y.
+     bsub (bappend (bwire w) x) 0 (SUC n) (bappend (bwire w) y) <=>
+     bsub x 0 n y`,
+  REPEAT GEN_TAC THEN
+  MP_TAC
+    (SPECL
+       [`bwire w`; `x : bus`; `n : num`; `y : bus`]
+       bsub_bappend_cancel) THEN
+  REWRITE_TAC [ONCE_REWRITE_RULE [ADD_SYM] ADD1; bwire_width]);;
+
+export_thm bsub_bappend_bwire_cancel;;
+
 let bsub_bappend_exists = prove
  (`!x k n y.
      bsub x k n y ==>

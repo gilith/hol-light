@@ -123,6 +123,18 @@ let string_of_subst =
     fun sub ->
     "<sub> [" ^ (if length sub = 0 then "" else ("\n  " ^ String.concat "\n  " (map maplet sub))) ^ "]";;
 
+(*** TODO: Cache this result for width-like numbers ***)
+let suc_num_conv = NUM_SUC_CONV;;
+
+let num_suc_conv =
+    let suc_tm = `SUC` in
+    let mk_suc tm = mk_comb (suc_tm,tm) in
+    fun tm ->
+    let n = dest_numeral tm in
+    if eq_num n num_0 then failwith "num_suc_conv" else
+    let m = mk_suc (mk_numeral (n -/ num_1)) in
+    SYM (suc_num_conv m);;
+
 (* ------------------------------------------------------------------------- *)
 (* A special exception for synthesis bugs.                                   *)
 (* ------------------------------------------------------------------------- *)
@@ -276,6 +288,14 @@ let cond_prolog_rule f pr1 pr2 =
       (fun goal -> fun namer ->
        let pr = if f goal namer then pr1 else pr2 in
        apply_prolog_rule pr goal namer);;
+
+let subst_prolog_rule f =
+    Prolog_rule
+      (fun goal -> fun namer ->
+       let sub = f goal namer in
+       if null_subst sub then Prolog_unchanged else
+       let goal = vsubst sub goal in
+       Prolog_result ([goal], ASSUME goal, sub, namer));;
 
 let orelse_prolog_rule pr1 pr2 =
     Prolog_rule
@@ -719,82 +739,6 @@ let mk_bus_prolog_rule =
           let sub = [(b,v)] in
           let asm = vsubst sub tm in
           Prolog_result ([asm], ASSUME asm, sub, namer)));;
-***)
-
-let rec width_conv tm =
-    (REWR_CONV bnil_width ORELSEC
-     (REWR_CONV bappend_bwire_width THENC
-      RAND_CONV width_conv THENC
-      NUM_SUC_CONV)) tm;;
-
-let num_simp_conv =
-    let push_numeral_conv =
-        let dest_add = dest_binop `(+) : num -> num -> num` in
-        let th = prove
-          (`!m n p : num. m + (n + p) = n + (m + p)`,
-           REPEAT GEN_TAC THEN
-           REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
-           MATCH_ACCEPT_TAC ADD_SYM) in
-        let rewr1 = REWR_CONV ADD_SYM in
-        let rewr2 = REWR_CONV th in
-        let conv tm =
-            let (x,y) = dest_add tm in
-            if not (is_numeral x) then failwith "push_numeral_conv" else
-            try (rewr2 tm) with Failure _ ->
-            if is_numeral y then NUM_REDUCE_CONV tm else
-            rewr1 tm in
-        REDEPTH_CONV conv in
-    REWRITE_CONV [ZERO_ADD; ADD_0; GSYM ADD_ASSOC] THENC
-    push_numeral_conv THENC
-    NUM_REDUCE_CONV;;
-
-let num_eq_conv =
-    let add_tm = `(+) : num -> num -> num` in
-    let mk_add = mk_binop add_tm in
-    let dest_add = dest_binop add_tm in
-    let numeral_eq_add_numeral_conv tm =
-        let (m,t) = dest_eq tm in
-        let mn = dest_numeral m in
-        let (t,n) = dest_add t in
-        let nn = dest_numeral n in
-        let th = NUM_REDUCE_CONV (mk_add (mk_numeral (mn -/ nn)) n) in
-        let conv = LAND_CONV (K (SYM th)) THENC REWR_CONV EQ_ADD_RCANCEL in
-        conv tm in
-    FIRST_CONV
-      [refl_conv;
-       numeral_eq_add_numeral_conv];;
-
-let expand_bus_prolog_rule =
-    Prolog_rule
-      (fun tm -> fun namer ->
-       let (t,n) = dest_eq tm in
-       let n = dest_numeral n in
-       let v = dest_width t in
-       if not_unfrozen_var namer v then failwith "expand_bus_prolog_rule" else
-       let b = variable_bus (fst (dest_var v)) n in
-       let sub = [(b,v)] in
-       let asm = vsubst sub tm in
-       Prolog_result ([asm], ASSUME asm, sub, namer));;
-
-let width_prolog_rule =
-    let is_var goal namer =
-        let (t,_) = dest_eq goal in
-        let v = dest_width t in
-        is_unfrozen_var namer v in
-    let var_rule =
-        let conv = RAND_CONV num_simp_conv in
-        then_prolog_rule
-          (conv_prolog_rule conv)
-          expand_bus_prolog_rule in
-    let nonvar_rule =
-        let conv =
-            LAND_CONV width_conv THENC
-            RAND_CONV num_simp_conv THENC
-            num_eq_conv in
-        then_prolog_rule
-          (conv_prolog_rule conv)
-          subst_var_prolog_rule in
-    cond_prolog_rule is_var var_rule nonvar_rule;;
 
 let (wire_prolog_rule,bsub_prolog_rule,bground_prolog_rule) =
     let zero_suc_conv : conv =
@@ -909,6 +853,169 @@ let brev_prolog_rule =
        if is_bwire x then apply_prolog_rule bwire_rule tm namer else
        if is_bappend x then apply_prolog_rule bappend_rule tm namer else
        failwith "brev_prolog_rule");;
+***)
+
+let width_conv =
+    let nil_conv = REWR_CONV bnil_width in
+    let cons_conv = REWR_CONV bappend_bwire_width in
+    let rec conv tm =
+        (nil_conv ORELSEC
+         (cons_conv THENC
+          RAND_CONV conv THENC
+          suc_num_conv)) tm in
+    conv;;
+
+let num_simp_conv =
+    let push_numeral_conv =
+        let dest_add = dest_binop `(+) : num -> num -> num` in
+        let th = prove
+          (`!m n p : num. m + (n + p) = n + (m + p)`,
+           REPEAT GEN_TAC THEN
+           REWRITE_TAC [ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+           MATCH_ACCEPT_TAC ADD_SYM) in
+        let rewr1 = REWR_CONV ADD_SYM in
+        let rewr2 = REWR_CONV th in
+        let conv tm =
+            let (x,y) = dest_add tm in
+            if not (is_numeral x) then failwith "push_numeral_conv" else
+            try (rewr2 tm) with Failure _ ->
+            if is_numeral y then NUM_REDUCE_CONV tm else
+            rewr1 tm in
+        REDEPTH_CONV conv in
+    REWRITE_CONV [ZERO_ADD; ADD_0; GSYM ADD_ASSOC] THENC
+    push_numeral_conv THENC
+    NUM_REDUCE_CONV;;
+
+let num_eq_conv =
+    let add_tm = `(+) : num -> num -> num` in
+    let mk_add = mk_binop add_tm in
+    let dest_add = dest_binop add_tm in
+    let numeral_eq_add_numeral_conv tm =
+        let (m,t) = dest_eq tm in
+        let mn = dest_numeral m in
+        let (t,n) = dest_add t in
+        let nn = dest_numeral n in
+        let th = NUM_REDUCE_CONV (mk_add (mk_numeral (mn -/ nn)) n) in
+        let conv = LAND_CONV (K (SYM th)) THENC REWR_CONV EQ_ADD_RCANCEL in
+        conv tm in
+    FIRST_CONV
+      [refl_conv;
+       numeral_eq_add_numeral_conv];;
+
+let expand_bus_prolog_rule =
+    subst_prolog_rule
+      (fun tm -> fun namer ->
+       let (t,n) = dest_eq tm in
+       let n = dest_numeral n in
+       let v = dest_width t in
+       if not_unfrozen_var namer v then failwith "expand_bus_prolog_rule" else
+       let b = variable_bus (fst (dest_var v)) n in
+       [(b,v)]);;
+
+let width_prolog_rule =
+    let is_var goal namer =
+        let (t,_) = dest_eq goal in
+        let v = dest_width t in
+        is_unfrozen_var namer v in
+    let var_rule =
+        let conv = RAND_CONV num_simp_conv in
+        then_prolog_rule
+          (conv_prolog_rule conv)
+          expand_bus_prolog_rule in
+    let nonvar_rule =
+        let conv =
+            LAND_CONV width_conv THENC
+            RAND_CONV num_simp_conv THENC
+            num_eq_conv in
+        then_prolog_rule
+          (conv_prolog_rule conv)
+          subst_var_prolog_rule in
+    cond_prolog_rule is_var var_rule nonvar_rule;;
+
+let wire_prolog_rule =
+    let is_wire_goal goal namer =
+        let (_,_,w) = dest_wire goal in
+        if is_unfrozen_var namer w then () else
+        failwith "wire_prolog_rule.is_wire_goal" in
+    let zero_rule =
+        then_prolog_rule
+          (thm_prolog_rule wire_zero)
+          subst_var_prolog_rule in
+    let suc_conv =
+        LAND_CONV num_suc_conv THENC
+        REWR_CONV wire_suc in
+    let conv =
+        LAND_CONV NUM_REDUCE_CONV THENC
+        REPEATC suc_conv in
+    check_prolog_rule
+      is_wire_goal
+      (then_prolog_rule
+         (conv_prolog_rule conv)
+         zero_rule);;
+
+(*** Testing
+apply_prolog_rule wire_prolog_rule `wire (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) (1 + 1) w` (new_namer []);;
+*)
+
+let bsub_prolog_rule =
+    let is_bsub_goal goal namer =
+        let (_,_,_,y) = dest_bsub goal in
+        if is_unfrozen_var namer y then () else
+        failwith "bsub_prolog_rule.is_bsub_goal" in
+    let drop_conv =
+        let suc_thm = prove
+            (`!w x k n y.
+                bsub (bappend (bwire w) x) (SUC k) n y <=>
+                bsub x k n y`,
+             REPEAT GEN_TAC THEN
+             SUBGOAL_THEN `SUC k = width (bwire w) + k` SUBST1_TAC THENL
+             [REWRITE_TAC [bwire_width; ONE; SUC_ADD; ZERO_ADD];
+              REWRITE_TAC [bsub_in_suffix]]) in
+        let suc_conv =
+            RATOR_CONV (LAND_CONV num_suc_conv) THENC
+            REWR_CONV suc_thm in
+        RATOR_CONV
+          (LAND_CONV NUM_REDUCE_CONV THENC
+           RAND_CONV NUM_REDUCE_CONV) THENC
+        REPEATC suc_conv in
+    let take_rule =
+        let rec take_bus xs n =
+            if eq_num n num_0 then mk_bnil else
+            let (x,xs) = dest_bappend xs in
+            let n = sub_num n num_1 in
+            let xs = take_bus xs n in
+            mk_bappend x xs in
+        let subst_rule =
+            subst_prolog_rule
+              (fun goal -> fun namer ->
+               let (x,_,n,y) = dest_bsub goal in
+               let n = dest_numeral n in
+               let b = take_bus x n in
+               [(b,y)]) in
+        let zero_thm = prove
+            (`!x. bsub x 0 0 bnil`,
+             REWRITE_TAC [bsub_zero; LE_0]) in
+        let suc_conv =
+            LAND_CONV num_suc_conv THENC
+            REWR_CONV bsub_bappend_bwire_cancel in
+        then_prolog_rule
+          subst_rule
+          (then_prolog_rule
+             (conv_prolog_rule (REPEATC suc_conv))
+             (thm_prolog_rule zero_thm)) in
+    check_prolog_rule
+      is_bsub_goal
+      (then_prolog_rule
+         (conv_prolog_rule drop_conv)
+         take_rule);;
+
+(*** Testing
+drop_prefix_conv `bsub (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) (1 + 1) (1 + 1) y`
+
+take_bus `bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))` (dest_numeral `3`);;
+
+apply_prolog_rule bsub_prolog_rule `bsub (bappend (bwire x0) (bappend (bwire x1) (bappend (bwire x2) (bappend (bwire x3) (bappend (bwire x4) bnil))))) (1 + 1) 2 x` (new_namer []);;
+*)
 
 let elaboration_rule =
     let rules =
@@ -922,8 +1029,11 @@ let elaboration_rule =
          width_prolog_rule;
          wire_prolog_rule;
          bsub_prolog_rule;
+(***
          brev_prolog_rule;
-         bground_prolog_rule] @
+         bground_prolog_rule
+***)
+] @
         map thm_prolog_rule
         [bconnect_bappend_bwire; bconnect_bnil;
          bdelay_bappend_bwire; bdelay_bnil;
