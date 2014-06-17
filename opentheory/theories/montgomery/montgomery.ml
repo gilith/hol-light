@@ -6373,13 +6373,13 @@ let testbench_montgomery_double_exp name ckt =
          "  initial";
          "    begin";
          "      seed = `SEED;";
-         "      xs = $random(seed);";
-         "      xc = $random(seed);";
          "      $display(\"+" ^ String.make (String.length name + 10) '-' ^ "+\");";
          "      $display(\"| Testing " ^ name ^ " |\");";
          "      $display(\"+" ^ String.make (String.length name + 10) '-' ^ "+\");";
          "      $display(\"Random seed = %0d\", seed);";
          "      $display(\"\");";
+         "      xs = $random(seed);";
+         "      xc = $random(seed);";
          "      clk = 1'b0;";
          "      @(posedge clk);";
          "      // Time 0";

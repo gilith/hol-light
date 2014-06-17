@@ -254,86 +254,89 @@ let widen_scope s namer =
     Namer (f,sc_vs,sl);;
 
 (* ------------------------------------------------------------------------- *)
-(* Prolog rules allow backward reasoning on theorem assumptions.             *)
+(* Synthesis rules allow backward reasoning on theorem assumptions.             *)
 (* ------------------------------------------------------------------------- *)
 
-type prolog_result =
-     Prolog_result of term list * thm * (term * term) list * namer
-   | Prolog_accept
-   | Prolog_unchanged;;
+type synthesis_result =
+     Synthesis_result of term list * thm * (term * term) list * namer
+   | Synthesis_accept
+   | Synthesis_unchanged;;
 
-type prolog_rule = Prolog_rule of (term -> namer -> prolog_result);;
+type synthesis_rule = Synthesis_rule of (term -> namer -> synthesis_result);;
 
-type prolog_object =
-     Goal_prolog_object of term
-   | Sub_prolog_object of (term * term) list;;
+type synthesis_object =
+     Goal_synthesis_object of term
+   | Sub_synthesis_object of (term * term) list;;
 
-let all_prolog_rule =
-    Prolog_rule (fun _ -> fun _ -> Prolog_unchanged);;
+let accept_synthesis_rule =
+    Synthesis_rule (fun _ -> fun _ -> Synthesis_accept);;
 
-let no_prolog_rule =
-    Prolog_rule (fun _ -> fun _ -> failwith "no_prolog_rule");;
+let all_synthesis_rule =
+    Synthesis_rule (fun _ -> fun _ -> Synthesis_unchanged);;
 
-let apply_prolog_rule (Prolog_rule pr) goal namer =
+let no_synthesis_rule =
+    Synthesis_rule (fun _ -> fun _ -> failwith "no_synthesis_rule");;
+
+let apply_synthesis_rule (Synthesis_rule pr) goal namer =
     let subgoals_th_sub_namer = pr goal namer in
 (* Debugging
     let (subgoals,th,sub,_) = subgoals_th_sub_namer in
     let () =
         let n = length subgoals in
-        let msg = "apply_prolog_rule: reducing goal\n" ^ string_of_term goal ^ "\nto " ^ string_of_int n ^ " subgoal" ^ (if n = 1 then "" else "s") ^ (if n = 0 then "" else ":\n" ^ String.concat "\n" (map string_of_term subgoals)) ^ "\nusing theorem:\n" ^ string_of_thm th ^ "\n" in
+        let msg = "apply_synthesis_rule: reducing goal\n" ^ string_of_term goal ^ "\nto " ^ string_of_int n ^ " subgoal" ^ (if n = 1 then "" else "s") ^ (if n = 0 then "" else ":\n" ^ String.concat "\n" (map string_of_term subgoals)) ^ "\nusing theorem:\n" ^ string_of_thm th ^ "\n" in
         print_string msg in
     let () =
         let goal' = vsubst sub goal in
         if aconv goal' (concl th) then () else
         let () = complain ("using substitution\n" ^ string_of_subst sub ^ "\nconclusion of\n" ^ string_of_thm th ^ "\ndoesn't match goal[substitution]\n" ^ string_of_term goal' ^ "\n") in
-        raise (Synthesis_bug "apply_prolog_rule: conclusion doesn't match goal[substitution]") in
+        raise (Synthesis_bug "apply_synthesis_rule: conclusion doesn't match goal[substitution]") in
     let () =
         let tms = hyp th in
         let check tm =
             if mem tm tms then () else
             let () = complain ("subgoal\n" ^ string_of_term tm ^ "\nnot a hypothesis in\n" ^ string_of_thm th ^ "\n") in
-            raise (Synthesis_bug "apply_prolog_rule: subgoal not a hypothesis") in
+            raise (Synthesis_bug "apply_synthesis_rule: subgoal not a hypothesis") in
         List.iter check tms in
 *)
     subgoals_th_sub_namer;;
 
-let check_prolog_rule f pr =
-    Prolog_rule
+let check_synthesis_rule f pr =
+    Synthesis_rule
       (fun goal -> fun namer ->
        let () = f goal namer in
-       apply_prolog_rule pr goal namer);;
+       apply_synthesis_rule pr goal namer);;
 
-let cond_prolog_rule f pr1 pr2 =
-    Prolog_rule
+let cond_synthesis_rule f pr1 pr2 =
+    Synthesis_rule
       (fun goal -> fun namer ->
        let pr = if f goal namer then pr1 else pr2 in
-       apply_prolog_rule pr goal namer);;
+       apply_synthesis_rule pr goal namer);;
 
-let subst_prolog_rule f =
-    Prolog_rule
+let subst_synthesis_rule f =
+    Synthesis_rule
       (fun goal -> fun namer ->
        let sub = f goal namer in
-       if null_subst sub then Prolog_unchanged else
+       if null_subst sub then Synthesis_unchanged else
        let goal = vsubst sub goal in
-       Prolog_result ([goal], ASSUME goal, sub, namer));;
+       Synthesis_result ([goal], ASSUME goal, sub, namer));;
 
-let orelse_prolog_rule pr1 pr2 =
-    Prolog_rule
+let orelse_synthesis_rule pr1 pr2 =
+    Synthesis_rule
       (fun goal -> fun namer ->
-       try (apply_prolog_rule pr1 goal namer)
-       with Failure _ -> apply_prolog_rule pr2 goal namer);;
+       try (apply_synthesis_rule pr1 goal namer)
+       with Failure _ -> apply_synthesis_rule pr2 goal namer);;
 
-let try_prolog_rule pr =
-    orelse_prolog_rule pr all_prolog_rule;;
+let try_synthesis_rule pr =
+    orelse_synthesis_rule pr all_synthesis_rule;;
 
-let first_prolog_rule =
+let first_synthesis_rule =
     let rec first prs =
         match prs with
-          [] -> no_prolog_rule
-        | pr :: prs -> orelse_prolog_rule pr (first prs) in
+          [] -> no_synthesis_rule
+        | pr :: prs -> orelse_synthesis_rule pr (first prs) in
     first;;
 
-let prove_hyp_prolog_rule pr =
+let prove_hyp_synthesis_rule pr =
     let finalize_asm sub asm acc = vsubst sub asm :: acc in
     let rec finalize_asms acc sub asmsl =
         match asmsl with
@@ -342,13 +345,13 @@ let prove_hyp_prolog_rule pr =
           let sub = compose_subst gsub sub in
           let acc = rev_itlist (finalize_asm sub) asms acc in
           finalize_asms acc sub asmsl in
-    let rec prolog_asms asms asmsl th sub namer goals =
+    let rec synthesis_asms asms asmsl th sub namer goals =
         match goals with
           [] -> (finalize_asms (rev asms) [] asmsl, th, sub, namer)
         | goal :: goals ->
           let goal = vsubst sub goal in
-          match apply_prolog_rule pr goal namer with
-            Prolog_result (gasms,gth,gsub,gnamer) ->
+          match apply_synthesis_rule pr goal namer with
+            Synthesis_result (gasms,gth,gsub,gnamer) ->
             let namer = widen_scope (current_scope namer) gnamer in
             let (asms,asmsl,th,sub) =
                 if null_subst gsub then
@@ -361,51 +364,51 @@ let prove_hyp_prolog_rule pr =
                   let th = PROVE_HYP gth (INST gsub th) in
                   let sub = compose_subst sub gsub in
                   (asms,asmsl,th,sub) in
-            prolog_asms asms asmsl th sub namer goals
-          | Prolog_accept ->
-            prolog_asms asms asmsl th sub namer goals
-          | Prolog_unchanged ->
+            synthesis_asms asms asmsl th sub namer goals
+          | Synthesis_accept ->
+            synthesis_asms asms asmsl th sub namer goals
+          | Synthesis_unchanged ->
             let asms = goal :: asms in
-            prolog_asms asms asmsl th sub namer goals in
+            synthesis_asms asms asmsl th sub namer goals in
     fun goals -> fun th -> fun namer ->
-    prolog_asms [] [] th [] namer goals;;
+    synthesis_asms [] [] th [] namer goals;;
 
-let then_prolog_rule pr1 pr2 =
-    Prolog_rule
+let then_synthesis_rule pr1 pr2 =
+    Synthesis_rule
       (fun goal -> fun namer0 ->
-       match apply_prolog_rule pr1 goal namer0 with
-         Prolog_result (asms,th,sub1,namer) ->
+       match apply_synthesis_rule pr1 goal namer0 with
+         Synthesis_result (asms,th,sub1,namer) ->
          let (asms,th,sub2,namer) =
-             prove_hyp_prolog_rule pr2 asms th namer in
+             prove_hyp_synthesis_rule pr2 asms th namer in
          let sub = compose_subst sub1 sub2 in
          let namer = widen_scope (current_scope namer0) namer in
-         Prolog_result (asms,th,sub,namer)
-       | Prolog_accept -> Prolog_accept
-       | Prolog_unchanged -> apply_prolog_rule pr2 goal namer0);;
+         Synthesis_result (asms,th,sub,namer)
+       | Synthesis_accept -> Synthesis_accept
+       | Synthesis_unchanged -> apply_synthesis_rule pr2 goal namer0);;
 
-let rec every_prolog_rule prl =
+let rec every_synthesis_rule prl =
     match prl with
-      [] -> all_prolog_rule
+      [] -> all_synthesis_rule
     | [pr] -> pr
-    | pr :: prl -> then_prolog_rule pr (every_prolog_rule prl);;
+    | pr :: prl -> then_synthesis_rule pr (every_synthesis_rule prl);;
 
-let rec fold_prolog_rule pr =
-    Prolog_rule
+let rec fold_synthesis_rule pr =
+    Synthesis_rule
       (fun goal -> fun namer ->
        let rule =
-           try_prolog_rule
-             (then_prolog_rule pr (fold_prolog_rule pr)) in
-       apply_prolog_rule rule goal namer);;
+           try_synthesis_rule
+             (then_synthesis_rule pr (fold_synthesis_rule pr)) in
+       apply_synthesis_rule rule goal namer);;
 
-let repeat_prove_hyp_prolog_rule pr =
+let repeat_prove_hyp_synthesis_rule pr =
     let rollback_asm gsub asm goals =
-        Goal_prolog_object (vsubst gsub asm) :: goals in
+        Goal_synthesis_object (vsubst gsub asm) :: goals in
     let rec rollback_asms gsub gsubdom asms fvs asmsl goals =
         let goals = rev_itlist (rollback_asm gsub) asms goals in
         if disjoint fvs gsubdom then (fvs,asmsl,goals) else
         match asmsl with
           [] ->
-          raise (Synthesis_bug "repeat_prove_hyp_prolog_rule.rollback_asms")
+          raise (Synthesis_bug "repeat_prove_hyp_synthesis_rule.rollback_asms")
         | (asms,fvs) :: asmsl ->
           rollback_asms gsub gsubdom asms fvs asmsl goals in
     let rec finalize_asms acc asmsl =
@@ -414,12 +417,13 @@ let repeat_prove_hyp_prolog_rule pr =
         | (asms,_) :: asmsl ->
           let acc = List.rev_append asms acc in
           finalize_asms acc asmsl in
-    let rec prolog_asms asms fvs asmsl th sub namer goals =
+    let rec synthesis_asms asms fvs asmsl th sub namer goals =
         match goals with
           [] -> (finalize_asms (rev asms) asmsl, th, sub, namer)
-        | Sub_prolog_object oldsub :: goals ->
-          prolog_asms asms fvs asmsl th (compose_subst oldsub sub) namer goals
-        | Goal_prolog_object goal :: goals ->
+        | Sub_synthesis_object oldsub :: goals ->
+          let sub = compose_subst oldsub sub in
+          synthesis_asms asms fvs asmsl th sub namer goals
+        | Goal_synthesis_object goal :: goals ->
           let goal = vsubst sub goal in
 (* Debugging
           let () =
@@ -432,13 +436,13 @@ let repeat_prove_hyp_prolog_rule pr =
               let msg = "th = " ^ string_of_thm th ^ "\n" in
               print_string msg in
 *)
-          match apply_prolog_rule pr goal namer with
-            Prolog_result (gasms,gth,gsub,gnamer) ->
+          match apply_synthesis_rule pr goal namer with
+            Synthesis_result (gasms,gth,gsub,gnamer) ->
             let namer = widen_scope (current_scope namer) gnamer in
             if null_subst gsub then
               let th = PROVE_HYP gth th in
               let asms = List.rev_append gasms asms in
-              prolog_asms asms fvs asmsl th sub namer goals
+              synthesis_asms asms fvs asmsl th sub namer goals
             else
               let th = PROVE_HYP gth (INST gsub th) in
               let sub = compose_subst sub gsub in
@@ -453,11 +457,11 @@ let repeat_prove_hyp_prolog_rule pr =
               let gsubdom = map snd gsub in
               if disjoint fvs' gsubdom then
                 let asmsl = (asms,fvs) :: asmsl in
-                prolog_asms (rev gasms) fvs' asmsl th sub namer goals
+                synthesis_asms (rev gasms) fvs' asmsl th sub namer goals
               else
                 let goals =
-                    map (fun gasm -> Goal_prolog_object gasm) gasms @
-                    Sub_prolog_object sub ::
+                    map (fun gasm -> Goal_synthesis_object gasm) gasms @
+                    Sub_synthesis_object sub ::
                     goals in
                 let (fvs,asmsl,goals') =
                     rollback_asms gsub gsubdom asms fvs asmsl goals in
@@ -467,39 +471,39 @@ let repeat_prove_hyp_prolog_rule pr =
                     let msg = "rolling back " ^ string_of_int n ^ " goal" ^ (if n = 1 then "" else "s") ^ " in scope " ^ scope_to_string (current_scope namer) in
                     complain msg in
 *)
-                prolog_asms [] fvs asmsl th [] namer goals'
-          | Prolog_accept ->
-            prolog_asms asms fvs asmsl th sub namer goals
-          | Prolog_unchanged ->
+                synthesis_asms [] fvs asmsl th [] namer goals'
+          | Synthesis_accept ->
+            synthesis_asms asms fvs asmsl th sub namer goals
+          | Synthesis_unchanged ->
             let asms = goal :: asms in
-            prolog_asms asms fvs asmsl th sub namer goals in
+            synthesis_asms asms fvs asmsl th sub namer goals in
     fun asms -> fun th -> fun namer ->
-    let goals = map (fun asm -> Goal_prolog_object asm) asms in
-    prolog_asms [] [] [] th [] namer goals;;
+    let goals = map (fun asm -> Goal_synthesis_object asm) asms in
+    synthesis_asms [] [] [] th [] namer goals;;
 
-let then_repeat_prolog_rule pr1 pr2 =
-    Prolog_rule
+let then_repeat_synthesis_rule pr1 pr2 =
+    Synthesis_rule
       (fun goal -> fun namer0 ->
-       match apply_prolog_rule pr1 goal namer0 with
-         Prolog_result (asms,th,sub1,namer) ->
+       match apply_synthesis_rule pr1 goal namer0 with
+         Synthesis_result (asms,th,sub1,namer) ->
          let (asms,th,sub2,namer) =
-             repeat_prove_hyp_prolog_rule pr2 asms th namer in
+             repeat_prove_hyp_synthesis_rule pr2 asms th namer in
          let sub = compose_subst sub1 sub2 in
          let namer = widen_scope (current_scope namer0) namer in
-         Prolog_result (asms,th,sub,namer)
-       | Prolog_accept -> Prolog_accept
-       | Prolog_unchanged -> apply_prolog_rule pr2 goal namer0);;
+         Synthesis_result (asms,th,sub,namer)
+       | Synthesis_accept -> Synthesis_accept
+       | Synthesis_unchanged -> apply_synthesis_rule pr2 goal namer0);;
 
-let rec repeat_prolog_rule pr =
-    Prolog_rule
+let rec repeat_synthesis_rule pr =
+    Synthesis_rule
       (fun goal -> fun namer ->
        let rule =
-           try_prolog_rule
-             (then_repeat_prolog_rule pr (repeat_prolog_rule pr)) in
-       apply_prolog_rule rule goal namer);;
+           try_synthesis_rule
+             (then_repeat_synthesis_rule pr (repeat_synthesis_rule pr)) in
+       apply_synthesis_rule rule goal namer);;
 
-let scope_thm_prolog_rule =
-    let mk_prolog_thm =
+let scope_thm_synthesis_rule =
+    let mk_synthesis_thm =
         let eq_to_imp_thm = MATCH_MP (TAUT `(a <=> b) ==> (b ==> a)`) in
         let pull_exists =
             let conv = REWR_CONV LEFT_IMP_EXISTS_THM in
@@ -527,9 +531,9 @@ let scope_thm_prolog_rule =
         let th = SPEC_ALL th in
         let th = if is_iff (concl th) then eq_to_imp_thm th else th in
         if is_imp (concl th) then norm_imp_thm th else ([],[],th) in
-    let prolog_thm_rule s (vs,asms,th) =
+    let synthesis_thm_rule s (vs,asms,th) =
         let pat = concl th in
-        Prolog_rule
+        Synthesis_rule
           (fun tm -> fun namer ->
            let (_,sub,_) = term_match [] pat tm in
            let namer = narrow_scope s namer in
@@ -537,44 +541,44 @@ let scope_thm_prolog_rule =
            let sub = vs_sub @ sub in
            let asms = map (vsubst sub) asms in
            let th = INST sub th in
-           Prolog_result (asms,th,[],namer)) in
+           Synthesis_result (asms,th,[],namer)) in
     fun s -> fun th ->
-    prolog_thm_rule s (mk_prolog_thm th);;
+    synthesis_thm_rule s (mk_synthesis_thm th);;
 
-let thm_prolog_rule = scope_thm_prolog_rule "";;
+let thm_synthesis_rule = scope_thm_synthesis_rule "";;
 
-let conv_prolog_rule (conv : conv) =
-    Prolog_rule
+let conv_synthesis_rule (conv : conv) =
+    Synthesis_rule
       (fun tm -> fun namer ->
        let eq_th = conv tm in
        let tm' = rhs (concl eq_th) in
        if is_true tm' then
          let th = EQT_ELIM eq_th in
-         Prolog_result ([],th,[],namer)
+         Synthesis_result ([],th,[],namer)
        else if tm' = tm then
-         Prolog_unchanged
+         Synthesis_unchanged
        else
          let th = EQ_MP (SYM eq_th) (ASSUME tm') in
-         Prolog_result ([tm'],th,[],namer));;
+         Synthesis_result ([tm'],th,[],namer));;
 
-let sym_prolog_rule : prolog_rule =
-    Prolog_rule
+let sym_synthesis_rule : synthesis_rule =
+    Synthesis_rule
       (fun tm -> fun namer ->
        let (l,r) = dest_eq tm in
        let stm = mk_eq (r,l) in
-       Prolog_result ([stm], SYM (ASSUME stm), [], namer));;
+       Synthesis_result ([stm], SYM (ASSUME stm), [], namer));;
 
-let orelse_sym_prolog_rule pr =
-    orelse_prolog_rule pr (then_prolog_rule sym_prolog_rule pr);;
+let orelse_sym_synthesis_rule pr =
+    orelse_synthesis_rule pr (then_synthesis_rule sym_synthesis_rule pr);;
 
-let subst_var_prolog_rule =
-    orelse_sym_prolog_rule
-      (Prolog_rule
+let subst_var_synthesis_rule =
+    orelse_sym_synthesis_rule
+      (Synthesis_rule
          (fun tm -> fun namer ->
           let (l,r) = dest_eq tm in
           if is_unfrozen_var namer l then
-            Prolog_result ([], REFL r, [(r,l)], namer)
-          else failwith "subst_var_prolog_rule"));;
+            Synthesis_result ([], REFL r, [(r,l)], namer)
+          else failwith "subst_var_synthesis_rule"));;
 
 (* ------------------------------------------------------------------------- *)
 (* Extracting information from a synthesized circuit.                        *)
@@ -698,11 +702,11 @@ let is_synthesizable tm =
     is_case1 tm or
     is_delay tm;;
 
-let synthesizable_prolog_rule =
-    Prolog_rule
+let synthesizable_synthesis_rule =
+    Synthesis_rule
       (fun tm -> fun namer ->
-       if is_synthesizable tm then Prolog_accept else
-       failwith "synthesizable_prolog_rule");;
+       if is_synthesizable tm then Synthesis_accept else
+       failwith "synthesizable_synthesis_rule");;
 
 let bground_conv =
     let zero_conv = REWR_CONV bground_zero in
@@ -780,45 +784,45 @@ let num_eq_conv =
          [refl_conv;
           numeral_eq_add_numeral_conv]);;
 
-let expand_bus_prolog_rule =
-    subst_prolog_rule
+let expand_bus_synthesis_rule =
+    subst_synthesis_rule
       (fun tm -> fun namer ->
        let (t,n) = dest_eq tm in
        let n = dest_numeral n in
        let v = dest_width t in
-       if not_unfrozen_var namer v then failwith "expand_bus_prolog_rule" else
+       if not_unfrozen_var namer v then failwith "expand_bus_synthesis_rule" else
        let b = variable_bus (fst (dest_var v)) n in
        [(b,v)]);;
 
-let width_prolog_rule =
+let width_synthesis_rule =
     let is_var goal namer =
         let (t,_) = dest_eq goal in
         let v = dest_width t in
         is_unfrozen_var namer v in
     let var_rule =
         let conv = RAND_CONV num_simp_conv in
-        then_prolog_rule
-          (conv_prolog_rule conv)
-          expand_bus_prolog_rule in
+        then_synthesis_rule
+          (conv_synthesis_rule conv)
+          expand_bus_synthesis_rule in
     let nonvar_rule =
         let conv =
             LAND_CONV width_conv THENC
             RAND_CONV num_simp_conv THENC
             num_eq_conv in
-        then_prolog_rule
-          (conv_prolog_rule conv)
-          subst_var_prolog_rule in
-    cond_prolog_rule is_var var_rule nonvar_rule;;
+        then_synthesis_rule
+          (conv_synthesis_rule conv)
+          subst_var_synthesis_rule in
+    cond_synthesis_rule is_var var_rule nonvar_rule;;
 
-let wire_prolog_rule =
+let wire_synthesis_rule =
     let is_wire_goal goal namer =
         let (_,_,w) = dest_wire goal in
         if is_unfrozen_var namer w then () else
-        failwith "wire_prolog_rule.is_wire_goal" in
+        failwith "wire_synthesis_rule.is_wire_goal" in
     let zero_rule =
-        then_prolog_rule
-          (thm_prolog_rule wire_zero)
-          subst_var_prolog_rule in
+        then_synthesis_rule
+          (thm_synthesis_rule wire_zero)
+          subst_var_synthesis_rule in
     let suc_conv =
         LAND_CONV num_suc_conv THENC
         REWR_CONV wire_suc in
@@ -827,17 +831,17 @@ let wire_prolog_rule =
           (LAND_CONV bus_reduce_conv THENC
            RAND_CONV NUM_REDUCE_CONV) THENC
         REPEATC suc_conv in
-    check_prolog_rule
+    check_synthesis_rule
       is_wire_goal
-      (then_prolog_rule
-         (conv_prolog_rule conv)
+      (then_synthesis_rule
+         (conv_synthesis_rule conv)
          zero_rule);;
 
-let bsub_prolog_rule =
+let bsub_synthesis_rule =
     let is_bsub_goal goal namer =
         let (_,_,_,y) = dest_bsub goal in
         if is_unfrozen_var namer y then () else
-        failwith "bsub_prolog_rule.is_bsub_goal" in
+        failwith "bsub_synthesis_rule.is_bsub_goal" in
     let drop_conv =
         let suc_thm = prove
             (`!w x k n y.
@@ -864,7 +868,7 @@ let bsub_prolog_rule =
             let xs = take_bus xs n in
             mk_bappend x xs in
         let subst_rule =
-            subst_prolog_rule
+            subst_synthesis_rule
               (fun goal -> fun namer ->
                let (x,_,n,y) = dest_bsub goal in
                let n = dest_numeral n in
@@ -876,22 +880,22 @@ let bsub_prolog_rule =
         let suc_conv =
             LAND_CONV num_suc_conv THENC
             REWR_CONV bsub_bappend_bwire_cancel in
-        then_prolog_rule
+        then_synthesis_rule
           subst_rule
-          (then_prolog_rule
-             (conv_prolog_rule (REPEATC suc_conv))
-             (thm_prolog_rule zero_thm)) in
-    check_prolog_rule
+          (then_synthesis_rule
+             (conv_synthesis_rule (REPEATC suc_conv))
+             (thm_synthesis_rule zero_thm)) in
+    check_synthesis_rule
       is_bsub_goal
-      (then_prolog_rule
-         (conv_prolog_rule drop_conv)
+      (then_synthesis_rule
+         (conv_synthesis_rule drop_conv)
          take_rule);;
 
-let brev_prolog_rule =
+let brev_synthesis_rule =
     let is_brev_goal goal namer =
         let (_,y) = dest_brev goal in
         if is_unfrozen_var namer y then () else
-        failwith "brev_prolog_rule.is_brev_goal" in
+        failwith "brev_synthesis_rule.is_brev_goal" in
     let init_conv = LAND_CONV bus_reduce_conv in
     let subst_rule =
         let rec rev_bus acc xs =
@@ -899,7 +903,7 @@ let brev_prolog_rule =
             let (x,xs) = dest_bappend xs in
             let acc = mk_bappend x acc in
             rev_bus acc xs in
-        subst_prolog_rule
+        subst_synthesis_rule
           (fun goal -> fun namer ->
            let (x,y) = dest_brev goal in
            let b = rev_bus mk_bnil x in
@@ -910,125 +914,125 @@ let brev_prolog_rule =
            REWRITE_CONV [GSYM bappend_assoc; bappend_bnil]) THENC
         REPEATC (REWR_CONV brev_bappend_bwire) THENC
         REWR_CONV (EQT_INTRO brev_bnil) in
-    check_prolog_rule
+    check_synthesis_rule
       is_brev_goal
-      (every_prolog_rule
-         [conv_prolog_rule init_conv;
+      (every_synthesis_rule
+         [conv_synthesis_rule init_conv;
           subst_rule;
-          conv_prolog_rule reduce_conv]);;
+          conv_synthesis_rule reduce_conv]);;
 
-let bconnect_prolog_rule =
+let bconnect_synthesis_rule =
     let is_bconnect_goal goal _ =
         if is_bconnect goal then () else
-        failwith "bconnect_prolog_rule.is_bconnect_goal" in
+        failwith "bconnect_synthesis_rule.is_bconnect_goal" in
     let init_conv =
         LAND_CONV bus_reduce_conv in
     let reduce_rule =
-        fold_prolog_rule
-          (orelse_prolog_rule
-             (thm_prolog_rule bconnect_bappend_bwire)
-             (thm_prolog_rule bconnect_bnil)) in
-    check_prolog_rule
+        fold_synthesis_rule
+          (orelse_synthesis_rule
+             (thm_synthesis_rule bconnect_bappend_bwire)
+             (thm_synthesis_rule bconnect_bnil)) in
+    check_synthesis_rule
       is_bconnect_goal
-      (every_prolog_rule
-         [conv_prolog_rule init_conv;
+      (every_synthesis_rule
+         [conv_synthesis_rule init_conv;
           reduce_rule]);;
 
-let bdelay_prolog_rule =
+let bdelay_synthesis_rule =
     let is_bdelay_goal goal _ =
         if is_bdelay goal then () else
-        failwith "bdelay_prolog_rule.is_bdelay_goal" in
+        failwith "bdelay_synthesis_rule.is_bdelay_goal" in
     let init_conv =
         LAND_CONV bus_reduce_conv in
     let reduce_rule =
-        fold_prolog_rule
-          (orelse_prolog_rule
-             (thm_prolog_rule bdelay_bappend_bwire)
-             (thm_prolog_rule bdelay_bnil)) in
-    check_prolog_rule
+        fold_synthesis_rule
+          (orelse_synthesis_rule
+             (thm_synthesis_rule bdelay_bappend_bwire)
+             (thm_synthesis_rule bdelay_bnil)) in
+    check_synthesis_rule
       is_bdelay_goal
-      (every_prolog_rule
-         [conv_prolog_rule init_conv;
+      (every_synthesis_rule
+         [conv_synthesis_rule init_conv;
           reduce_rule]);;
 
-let bnot_prolog_rule =
+let bnot_synthesis_rule =
     let is_bnot_goal goal _ =
         if is_bnot goal then () else
-        failwith "bnot_prolog_rule.is_bnot_goal" in
+        failwith "bnot_synthesis_rule.is_bnot_goal" in
     let init_conv =
         LAND_CONV bus_reduce_conv in
     let reduce_rule =
-        fold_prolog_rule
-          (orelse_prolog_rule
-             (thm_prolog_rule bnot_bappend_bwire)
-             (thm_prolog_rule bnot_bnil)) in
-    check_prolog_rule
+        fold_synthesis_rule
+          (orelse_synthesis_rule
+             (thm_synthesis_rule bnot_bappend_bwire)
+             (thm_synthesis_rule bnot_bnil)) in
+    check_synthesis_rule
       is_bnot_goal
-      (every_prolog_rule
-         [conv_prolog_rule init_conv;
+      (every_synthesis_rule
+         [conv_synthesis_rule init_conv;
           reduce_rule]);;
 
-let band2_prolog_rule =
+let band2_synthesis_rule =
     let is_band2_goal goal _ =
         if is_band2 goal then () else
-        failwith "band2_prolog_rule.is_band2_goal" in
+        failwith "band2_synthesis_rule.is_band2_goal" in
     let init_conv =
         RATOR_CONV
           (LAND_CONV bus_reduce_conv THENC
            RAND_CONV bus_reduce_conv) in
     let reduce_rule =
-        fold_prolog_rule
-          (orelse_prolog_rule
-             (thm_prolog_rule band2_bappend_bwire)
-             (thm_prolog_rule band2_bnil)) in
-    check_prolog_rule
+        fold_synthesis_rule
+          (orelse_synthesis_rule
+             (thm_synthesis_rule band2_bappend_bwire)
+             (thm_synthesis_rule band2_bnil)) in
+    check_synthesis_rule
       is_band2_goal
-      (every_prolog_rule
-         [conv_prolog_rule init_conv;
+      (every_synthesis_rule
+         [conv_synthesis_rule init_conv;
           reduce_rule]);;
 
-let bor2_prolog_rule =
+let bor2_synthesis_rule =
     let is_bor2_goal goal _ =
         if is_bor2 goal then () else
-        failwith "bor2_prolog_rule.is_bor2_goal" in
+        failwith "bor2_synthesis_rule.is_bor2_goal" in
     let init_conv =
         RATOR_CONV
           (LAND_CONV bus_reduce_conv THENC
            RAND_CONV bus_reduce_conv) in
     let reduce_rule =
-        fold_prolog_rule
-          (orelse_prolog_rule
-             (thm_prolog_rule bor2_bappend_bwire)
-             (thm_prolog_rule bor2_bnil)) in
-    check_prolog_rule
+        fold_synthesis_rule
+          (orelse_synthesis_rule
+             (thm_synthesis_rule bor2_bappend_bwire)
+             (thm_synthesis_rule bor2_bnil)) in
+    check_synthesis_rule
       is_bor2_goal
-      (every_prolog_rule
-         [conv_prolog_rule init_conv;
+      (every_synthesis_rule
+         [conv_synthesis_rule init_conv;
           reduce_rule]);;
 
-let bxor2_prolog_rule =
+let bxor2_synthesis_rule =
     let is_bxor2_goal goal _ =
         if is_bxor2 goal then () else
-        failwith "bxor2_prolog_rule.is_bxor2_goal" in
+        failwith "bxor2_synthesis_rule.is_bxor2_goal" in
     let init_conv =
         RATOR_CONV
           (LAND_CONV bus_reduce_conv THENC
            RAND_CONV bus_reduce_conv) in
     let reduce_rule =
-        fold_prolog_rule
-          (orelse_prolog_rule
-             (thm_prolog_rule bxor2_bappend_bwire)
-             (thm_prolog_rule bxor2_bnil)) in
-    check_prolog_rule
+        fold_synthesis_rule
+          (orelse_synthesis_rule
+             (thm_synthesis_rule bxor2_bappend_bwire)
+             (thm_synthesis_rule bxor2_bnil)) in
+    check_synthesis_rule
       is_bxor2_goal
-      (every_prolog_rule
-         [conv_prolog_rule init_conv;
+      (every_synthesis_rule
+         [conv_synthesis_rule init_conv;
           reduce_rule]);;
 
-let bcase1_prolog_rule =
+let bcase1_synthesis_rule =
     let is_bcase1_goal goal _ =
         if is_bcase1 goal then () else
-        failwith "bcase1_prolog_rule.is_bcase1_goal" in
+        failwith "bcase1_synthesis_rule.is_bcase1_goal" in
     let init_conv =
         RATOR_CONV
           (RATOR_CONV
@@ -1036,33 +1040,33 @@ let bcase1_prolog_rule =
               RAND_CONV bus_reduce_conv) THENC
            RAND_CONV bus_reduce_conv) in
     let reduce_rule =
-        fold_prolog_rule
-          (orelse_prolog_rule
-             (thm_prolog_rule bcase1_bappend_bwire)
-             (thm_prolog_rule bcase1_bnil)) in
-    check_prolog_rule
+        fold_synthesis_rule
+          (orelse_synthesis_rule
+             (thm_synthesis_rule bcase1_bappend_bwire)
+             (thm_synthesis_rule bcase1_bnil)) in
+    check_synthesis_rule
       is_bcase1_goal
-      (every_prolog_rule
-         [conv_prolog_rule init_conv;
+      (every_synthesis_rule
+         [conv_synthesis_rule init_conv;
           reduce_rule]);;
 
 let elaboration_rule =
     let rules =
-        [synthesizable_prolog_rule;
-         width_prolog_rule;
-         wire_prolog_rule;
-         bsub_prolog_rule;
-         brev_prolog_rule;
-         bconnect_prolog_rule;
-         bdelay_prolog_rule;
-         bnot_prolog_rule;
-         band2_prolog_rule;
-         bor2_prolog_rule;
-         bxor2_prolog_rule;
-         bcase1_prolog_rule] in
+        [synthesizable_synthesis_rule;
+         width_synthesis_rule;
+         wire_synthesis_rule;
+         bsub_synthesis_rule;
+         brev_synthesis_rule;
+         bconnect_synthesis_rule;
+         bdelay_synthesis_rule;
+         bnot_synthesis_rule;
+         band2_synthesis_rule;
+         bor2_synthesis_rule;
+         bxor2_synthesis_rule;
+         bcase1_synthesis_rule] in
     fun syn ->
-    let user_rules = map (uncurry scope_thm_prolog_rule) syn in
-    fold_prolog_rule (first_prolog_rule (rules @ user_rules));;
+    let user_rules = map (uncurry scope_thm_synthesis_rule) syn in
+    fold_synthesis_rule (first_synthesis_rule (rules @ user_rules));;
 
 let elaborate_circuit =
     let check_elaboration bad =
@@ -1075,7 +1079,7 @@ let elaborate_circuit =
     fun syn ->
     let rule = elaboration_rule syn in
     fun th -> fun namer ->
-    let (tms,th,_,namer) = prove_hyp_prolog_rule rule (hyp th) th namer in
+    let (tms,th,_,namer) = prove_hyp_synthesis_rule rule (hyp th) th namer in
 (* Debugging
     let () =
         let n = length (current_scope_vars namer) in
@@ -1186,9 +1190,9 @@ let connect_wires namer =
      if null_subst sub then None else
      Some (INST sub th);;
 
-let simplify_prolog_rule =
+let simplify_synthesis_rule =
     let rules =
-        map thm_prolog_rule
+        map thm_synthesis_rule
         [connect_refl;
          not_ground; not_power;
          and2_refl;
@@ -1210,13 +1214,14 @@ let simplify_prolog_rule =
          (* so we put them last in the list *)
          case1_middle_ground;
          case1_right_power] in
-    repeat_prolog_rule (first_prolog_rule rules);;
+    first_synthesis_rule rules;;
 
 let simplify_circuit =
     let rec simplify th namer =
         let (_,th,_,namer) =
-            complain_timed "- Propagated constant wires"
-              (prove_hyp_prolog_rule simplify_prolog_rule (hyp th) th) namer in
+            let rule = try_synthesis_rule simplify_synthesis_rule in
+            complain_timed "- Simplified gates"
+              (prove_hyp_synthesis_rule rule (hyp th) th) namer in
         match complain_timed "- Connected wires" (connect_wires namer) th with
           None -> (th,namer)
         | Some th -> simplify th namer in
@@ -1240,24 +1245,24 @@ let simplify_circuit =
 (* by renaming it to a new internal wire P_o that drives the output P.       *)
 (* ------------------------------------------------------------------------- *)
 
-let connect_wire_prolog_rule =
-    Prolog_rule
+let connect_wire_synthesis_rule =
+    Synthesis_rule
       (fun tm -> fun namer ->
        let (x,y) = dest_connect tm in
        if is_unfrozen_var namer y then
-         Prolog_result ([], SPEC x connect_refl, [(x,y)], namer)
-       else failwith "connect_wire_prolog_rule");;
+         Synthesis_result ([], SPEC x connect_refl, [(x,y)], namer)
+       else failwith "connect_wire_synthesis_rule");;
 
-let wire_connect_prolog_rule =
-    Prolog_rule
+let wire_connect_synthesis_rule =
+    Synthesis_rule
       (fun tm -> fun namer ->
        let (x,y) = dest_connect tm in
        if is_unfrozen_var namer x then
-         Prolog_result ([], SPEC y connect_refl, [(y,x)], namer)
-       else failwith "wire_connect_prolog_rule");;
+         Synthesis_result ([], SPEC y connect_refl, [(y,x)], namer)
+       else failwith "wire_connect_synthesis_rule");;
 
-let connect_prolog_rule =
-    Prolog_rule
+let connect_synthesis_rule =
+    Synthesis_rule
       (fun tm -> fun namer ->
        let (x,y) = dest_connect tm in
        let (w2,w1) =
@@ -1268,8 +1273,8 @@ let connect_prolog_rule =
                if String.length sy < String.length sx then (y,x) else (x,y)
              else (y,x)
            else if is_unfrozen_var namer y then (x,y)
-           else failwith "connect_prolog_rule" in
-       Prolog_result ([], SPEC w2 connect_refl, [(w2,w1)], namer));;
+           else failwith "connect_synthesis_rule" in
+       Synthesis_result ([], SPEC w2 connect_refl, [(w2,w1)], namer));;
 
 let rescue_primary_outputs_conv =
     let connect_equal_wires = prove
@@ -1291,18 +1296,18 @@ let rescue_primary_outputs_conv =
      let conv = ONCE_DEPTH_CONV (FIRST_CONV convs) in
      (conv,namer);;
 
-let rescue_primary_outputs_prolog_rule primary_outputs namer =
+let rescue_primary_outputs_synthesis_rule primary_outputs namer =
     let (conv,namer) = rescue_primary_outputs_conv primary_outputs namer in
-    (conv_prolog_rule conv, namer);;
+    (conv_synthesis_rule conv, namer);;
 
 let rescue_primary_outputs =
-    let cleanup_rule = try_prolog_rule connect_wire_prolog_rule in
+    let cleanup_rule = try_synthesis_rule connect_wire_synthesis_rule in
     fun primary_outputs -> fun th -> fun namer ->
     let (rescue_rule,namer) =
-        rescue_primary_outputs_prolog_rule primary_outputs namer in
+        rescue_primary_outputs_synthesis_rule primary_outputs namer in
     let (_,th,_,namer) =
         complain_timed "- Interposed wires before primary outputs"
-          (prove_hyp_prolog_rule rescue_rule (hyp th) th) namer in
+          (prove_hyp_synthesis_rule rescue_rule (hyp th) th) namer in
     let asms = filter is_connect (hyp th) in
 (* Debugging
     let () =
@@ -1314,7 +1319,7 @@ let rescue_primary_outputs =
 *)
     let (_,th,_,namer) =
         complain_timed "- Cleaned up"
-          (repeat_prove_hyp_prolog_rule cleanup_rule asms th) namer in
+          (repeat_prove_hyp_synthesis_rule cleanup_rule asms th) namer in
     (th,namer);;
 
 (* ------------------------------------------------------------------------- *)
