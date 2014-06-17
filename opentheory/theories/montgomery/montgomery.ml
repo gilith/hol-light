@@ -6313,12 +6313,16 @@ let synthesize_montgomery_double_exp n m =
     let w = bit_width_num n in
     let name = "double_exp_" ^ string_of_num w in
     let () = complain ("Synthesizing " ^ name ^ ":") in
-    let spec = complain_timed "Instantiated parameters" (instantiate_montgomery_double_exp n) m in
+    let spec =
+        complain_timed "Instantiated parameters"
+          (instantiate_montgomery_double_exp n) m in
     let syn = montgomery_double_exp_syn_gen "" in
     let primary = frees (concl spec) in
     let ckt = synthesize_hardware syn primary spec in
     let clk = `clk : wire` in
-    let _ = complain_timed "Generated verilog module" (hardware_to_verilog_file name (clk :: primary)) ckt in
+    let _ =
+        complain_timed "Generated verilog module"
+          (hardware_to_verilog_file name (clk :: primary)) ckt in
     (name,ckt);;
 
 let testbench_montgomery_double_exp name ckt =

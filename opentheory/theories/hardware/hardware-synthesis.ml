@@ -2005,25 +2005,39 @@ let hardware_to_verilog =
             let () = set_margin n in
             s in
         "\n" ^ comment_box_text prof in
+    let verilog_header name th = verilog_comment name (concl th) in
+    let verilog_body name primary th =
+        let (delays,combs) = partition is_delay (hyp th) in
+        let registers = wire_sort (map rand delays) in
+        let wires = map rand combs in
+        let (primary_outputs,primary_inputs) =
+            partition (C mem wires) primary in
+        let wires = wire_sort (filter (not o C mem primary_outputs) wires) in
+        let primary_input_args = collect_verilog_args primary_inputs in
+        let primary_output_args = collect_verilog_args primary_outputs in
+        verilog_module_begin name (primary_input_args @ primary_output_args) ^
+        verilog_arg_declarations "input" primary_input_args ^
+        verilog_arg_declarations "output" primary_output_args ^
+        verilog_wire_declarations "reg" registers ^
+        verilog_wire_declarations "wire" wires ^
+        verilog_combinational combs (wires @ primary_outputs) ^
+        verilog_delays (hd primary) delays registers ^
+        verilog_module_end name in
+    let verilog_footer th = verilog_profile th in
     fun name -> fun primary -> fun th ->
-    let th = verilog_wire_names primary th in
-    let (delays,combs) = partition is_delay (hyp th) in
-    let registers = wire_sort (map rand delays) in
-    let wires = map rand combs in
-    let (primary_outputs,primary_inputs) = partition (C mem wires) primary in
-    let wires = wire_sort (filter (not o C mem primary_outputs) wires) in
-    let primary_input_args = collect_verilog_args primary_inputs in
-    let primary_output_args = collect_verilog_args primary_outputs in
-    verilog_comment name (concl th) ^
-    verilog_module_begin name (primary_input_args @ primary_output_args) ^
-    verilog_arg_declarations "input" primary_input_args ^
-    verilog_arg_declarations "output" primary_output_args ^
-    verilog_wire_declarations "reg" registers ^
-    verilog_wire_declarations "wire" wires ^
-    verilog_combinational combs (wires @ primary_outputs) ^
-    verilog_delays (hd primary) delays registers ^
-    verilog_module_end name ^
-    verilog_profile th;;
+    let th =
+        complain_timed "- Renamed wires"
+          (verilog_wire_names primary) th in
+    let header =
+        complain_timed "- Generated spec"
+          (verilog_header name) th in
+    let body =
+        complain_timed "- Generated module"
+          (verilog_body name primary) th in
+    let footer =
+        complain_timed "- Generated profile"
+          verilog_footer th in
+    header ^ body ^ footer;;
 
 (*** Testing
 let name = "montgomery91";;
