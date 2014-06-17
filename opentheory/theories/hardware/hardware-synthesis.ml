@@ -1830,7 +1830,9 @@ let pp_print_hardware_profile fmt th =
     let gates = ckt_gates' logic in
     let fanin = ckt_fanin' logic primary_inputs primary_outputs delays in
     let fanout = ckt_fanout' primary_inputs delays fanin in
-    let fanout_load = duplicate_logic primary_inputs fanin fanout in
+    let fanout_load =
+        complain_timed "- - Duplicated logic"
+          (duplicate_logic primary_inputs fanin) fanout in
     let (fanin,fanin_cone) =
         let fc (w,(f,c)) = ((w, length f), (w, length c)) in
         unzip (map fc fanin) in

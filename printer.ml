@@ -233,10 +233,24 @@ let pp_print_term =
     if name_of s = "_SEQPATTERN" & length args = 2 then
       dest_clause (hd args)::dest_clauses(hd(tl args))
     else [dest_clause tm] in
+  let pp_numeral fmt tm =
+      let s = string_of_num (dest_numeral tm) in
+      let n = String.length s in
+      let rec pp_digit i =
+          let c = String.get s i in
+          let () = Format.pp_print_char fmt c in
+          let i = i + 1 in
+          if i = n then () else
+          let () = Format.pp_print_cut fmt () in
+          pp_digit i in
+      let () = Format.pp_open_box fmt 0 in
+      let () = pp_digit 0 in
+      let () = Format.pp_close_box fmt () in
+      () in
   fun fmt ->
     let rec print_term prec tm =
       try try_user_printer fmt tm with Failure _ ->
-      try pp_print_string fmt (string_of_num(dest_numeral tm)) with Failure _ ->
+      try pp_numeral fmt tm with Failure _ ->
       try (let tms = dest_list tm in
            try if fst(dest_type(hd(snd(dest_type(type_of tm))))) <> "char"
                then fail() else
