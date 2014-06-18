@@ -9,6 +9,8 @@
 (* Helper functions.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
+module String_set = Set.Make(String);;
+
 module String_map = Map.Make(String);;
 
 let timed f x =
@@ -241,6 +243,66 @@ let variant_varset vs v =
         let v' = mk_var (s',ty) in
         if mem_varset v' vs then f s' else v' in
     f s;;
+
+(* ------------------------------------------------------------------------- *)
+(* Efficiently store sets of wire variables.                                 *)
+(* ------------------------------------------------------------------------- *)
+
+type wireset = Wireset of String_set.t;;
+
+let empty_wireset = Wireset String_set.empty;;
+
+let size_wireset (Wireset s) = String_set.cardinal s;;
+
+let mem_wireset w (Wireset s) = String_set.mem (dest_wire_var w) s;;
+
+let union_wireset (Wireset s1) (Wireset s2) =
+    Wireset (String_set.union s1 s2);;
+
+let add_wireset w ws =
+    if mem_wireset w ws then ws else
+    let Wireset s = ws in
+    let s = String_set.add (dest_wire_var w) s in
+    Wireset s;;
+
+let add_list_wireset = rev_itlist add_wireset;;
+
+let from_list_wireset wl = add_list_wireset wl empty_wireset;;
+
+let fold_wireset f (Wireset s) =
+    let g s x = f (mk_wire_var s) x in
+    String_set.fold g s;;
+
+let to_list_wireset =
+    let add w acc = w :: acc in
+    fun ws -> fold_wireset add ws [];;
+
+(* ------------------------------------------------------------------------- *)
+(* Efficient finite maps from wire variables.                                *)
+(* ------------------------------------------------------------------------- *)
+
+type 'a wiremap = Wiremap of 'a String_map.t;;
+
+let empty_wiremap = Wiremap String_map.empty;;
+
+let mem_wiremap w (Wiremap m) = String_map.mem (dest_wire_var w) m;;
+
+let find_wiremap w (Wiremap m) = String_map.find (dest_wire_var w) m;;
+
+let peek_wiremap w (Wiremap m) =
+    let s = dest_wire_var w in
+    if String_map.mem s m then Some (String_map.find s m) else None;;
+
+let add_wiremap w x (Wiremap m) =
+    Wiremap (String_map.add (dest_wire_var w) x m);;
+
+let fold_wiremap f (Wiremap m) =
+    let g s x z = f (mk_wire_var s) x z in
+    String_map.fold g m;;
+
+let map_wiremap f (Wiremap m) =
+    let g s x = f (mk_wire_var s) x in
+    Wiremap (String_map.mapi g m);;
 
 (* ------------------------------------------------------------------------- *)
 (* Name generators.                                                          *)
@@ -632,109 +694,172 @@ let subst_var_synthesis_rule =
 (* Extracting information from a synthesized circuit.                        *)
 (* ------------------------------------------------------------------------- *)
 
-let ckt_logic' th = hyp th;;
+type circuit_logic = Circuit_logic of term list;;
 
-let wire_defn' logic w =
-    match filter (fun g -> rand g = w) logic with
-      [] -> failwith "wire_defn: no definition"
-    | [g] -> g
-    | _ :: _ :: _ -> failwith "wire_defn: multiple definitions";;
+type circuit_wires = Circuit_wires of wireset;;
 
-let wire_fanin1' logic w = frees (rator (wire_defn' logic w));;
+type circuit_defs = Circuit_defs of term wiremap;;
 
-let ckt_wires' logic = freesl logic;;
+type circuit_primary_inputs = Circuit_primary_inputs of wireset;;
 
-let ckt_primary_inputs' logic wires =
-    subtract wires (map rand logic);;
+type circuit_primary_outputs = Circuit_primary_outputs of wireset;;
 
-let ckt_primary_outputs' logic =
-    map (snd o dest_connect) (filter is_connect logic);;
+type circuit_registers = Circuit_registers of wireset;;
 
-let ckt_delays' logic =
-    map (snd o dest_delay) (filter is_delay logic);;
+type circuit_gates = Circuit_gates of term list;;
 
-let ckt_gates' logic =
-    let pred g = not (is_delay g) && not (is_connect g) in
-    filter pred logic;;
+type circuit_fanins = Circuit_fanins of (wireset * wireset) wiremap;;
 
-let wire_fanin' logic primary_inputs =
+type circuit_fanouts = Circuit_fanouts of wireset wiremap;;
+
+let circuit_logic ckt = Circuit_logic (hyp ckt);;
+
+let circuit_defs (Circuit_logic logic) =
+    let add gate defs =
+        let wire = rand gate in
+        if not (mem_wiremap wire defs) then add_wiremap wire gate defs else
+        failwith ("multiple definitions of wire " ^ dest_wire_var wire) in
+    Circuit_defs (rev_itlist add logic empty_wiremap);;
+
+let circuit_def (Circuit_defs defs) wire =
+    match peek_wiremap wire defs with
+      Some gate -> gate
+    | None -> failwith ("no definition found for wire " ^ dest_wire_var wire);;
+
+let circuit_wires (Circuit_logic logic) =
+    let add gate ws = add_list_wireset (frees gate) ws in
+    Circuit_wires (rev_itlist add logic empty_wireset);;
+
+let circuit_primary_inputs (Circuit_defs defs) (Circuit_wires wires) =
+    let add wire acc =
+        if mem_wiremap wire defs then acc else
+        add_wireset wire acc in
+    Circuit_primary_inputs (fold_wireset add wires empty_wireset);;
+
+let circuit_primary_outputs (Circuit_logic logic) =
+    let add gate acc =
+        if not (is_connect gate) then acc else
+        add_wireset (rand gate) acc in
+    Circuit_primary_outputs (rev_itlist add logic empty_wireset);;
+
+let circuit_registers (Circuit_logic logic) =
+    let add gate acc =
+        if not (is_delay gate) then acc else
+        add_wireset (rand gate) acc in
+    Circuit_registers (rev_itlist add logic empty_wireset);;
+
+let circuit_gates (Circuit_logic logic) =
+    let pred gate = not (is_delay gate) && not (is_connect gate) in
+    Circuit_gates (filter pred logic);;
+
+let wire_fanin defs (Circuit_primary_inputs primary_inputs) wire =
+    let fanin1 gate = frees (rator gate) in
     let rec f fringe cone ws =
         match ws with
           [] -> (fringe,cone)
         | w :: ws ->
-          if mem w fringe then f fringe cone ws else
-          if mem w cone then f fringe cone ws else
-          if mem w primary_inputs then f (w :: fringe) cone ws else
-          let g = wire_defn' logic w in
-          if is_delay g then f (w :: fringe) cone ws else
-          f fringe (w :: cone) (frees (rator g) @ ws) in
-    fun w -> f [] [] (wire_fanin1' logic w);;
+          if mem_wireset w fringe then f fringe cone ws else
+          if mem_wireset w cone then f fringe cone ws else
+          if mem_wireset w primary_inputs then
+            f (add_wireset w fringe) cone ws else
+          let g = circuit_def defs w in
+          if is_delay g then f (add_wireset w fringe) cone ws else
+          f fringe (add_wireset w cone) (fanin1 g @ ws) in
+    let fringe = empty_wireset in
+    let cone = empty_wireset in
+    let ws = fanin1 (circuit_def defs wire) in
+    f fringe cone ws;;
 
-let ckt_fanin' logic primary_inputs primary_outputs delays =
-    let fanin w = (w, wire_fanin' logic primary_inputs w) in
-    map fanin (primary_outputs @ delays);;
+let circuit_fanins defs primary_inputs
+      (Circuit_primary_outputs primary_outputs) (Circuit_registers registers) =
+    let add wire wm =
+        let fanin = wire_fanin defs primary_inputs wire in
+        add_wiremap wire fanin wm in
+    let wm = empty_wiremap in
+    let wm = fold_wireset add primary_outputs wm in
+    let wm = fold_wireset add registers wm in
+    Circuit_fanins wm;;
 
-let wire_fanout' (fanin : (term * (term list * term list)) list) w =
-    let add (v,(f,_)) z = if mem w f then v :: z else z in
-    itlist add fanin [];;
+let circuit_fanin (Circuit_fanins fanins) wire =
+    match peek_wiremap wire fanins with
+      Some fringe_cone -> fringe_cone
+    | None -> failwith ("no fan-in found for wire " ^ dest_wire_var wire);;
 
-let ckt_fanout' (primary_inputs : term list) delays fanin =
-    map (fun w -> (w, wire_fanout' fanin w)) (primary_inputs @ delays);;
+let circuit_fanouts (Circuit_fanins fanins)
+      (Circuit_primary_inputs primary_inputs) (Circuit_registers registers) =
+    let init w wm = add_wiremap w empty_wireset wm in
+    let add wire (fringe,_) =
+        let add1 w wm =
+            let ws = find_wiremap w wm in
+            add_wiremap w (add_wireset wire ws) wm in
+        fold_wireset add1 fringe in
+    let wm = empty_wiremap in
+    let wm = fold_wireset init primary_inputs wm in
+    let wm = fold_wireset init registers wm in
+    Circuit_fanouts (fold_wiremap add fanins wm);;
 
-let ckt_logic = ckt_logic';;
+let circuit_fanout (Circuit_fanouts fanouts) wire =
+    match peek_wiremap wire fanouts with
+      Some fringe -> fringe
+    | None -> failwith ("no fan-out found for wire " ^ dest_wire_var wire);;
 
-let ckt_wires th =
-    let logic = ckt_logic' th in
-    ckt_wires' logic;;
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* Debug functions to compute these quantities *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
-let ckt_primary_inputs th =
-    let logic = ckt_logic' th in
-    let wires = ckt_wires' logic in
-    ckt_primary_inputs' logic wires;;
+let debug_circuit_logic = circuit_logic;;
 
-let ckt_delays th =
-    let logic = ckt_logic' th in
-    ckt_delays' logic;;
+let debug_circuit_defs ckt =
+    let logic = circuit_logic ckt in
+    circuit_defs logic;;
 
-let ckt_primary_outputs th =
-    let logic = ckt_logic' th in
-    ckt_primary_outputs' logic;;
+let debug_circuit_wires ckt =
+    let logic = circuit_logic ckt in
+    circuit_wires logic;;
 
-let ckt_gates th =
-    let logic = ckt_logic' th in
-    ckt_gates' logic;;
+let debug_circuit_primary_inputs ckt =
+    let logic = circuit_logic ckt in
+    let defs = circuit_defs logic in
+    let wires = circuit_wires logic in
+    circuit_primary_inputs defs wires;;
 
-let wire_fanin th =
-    let logic = ckt_logic' th in
-    let wires = ckt_wires' logic in
-    let primary_inputs = ckt_primary_inputs' logic wires in
-    wire_fanin' logic primary_inputs;;
+let debug_circuit_primary_outputs ckt =
+    let logic = circuit_logic ckt in
+    circuit_primary_outputs logic;;
 
-let ckt_fanin th =
-    let logic = ckt_logic' th in
-    let wires = ckt_wires' logic in
-    let primary_inputs = ckt_primary_inputs' logic wires in
-    let primary_outputs = ckt_primary_outputs' logic in
-    let delays = ckt_delays' logic in
-    ckt_fanin' logic primary_inputs primary_outputs delays;;
+let debug_circuit_registers ckt =
+    let logic = circuit_logic ckt in
+    circuit_registers logic;;
 
-let wire_fanout th =
-    let logic = ckt_logic' th in
-    let wires = ckt_wires' logic in
-    let primary_inputs = ckt_primary_inputs' logic wires in
-    let primary_outputs = ckt_primary_outputs' logic in
-    let delays = ckt_delays' logic in
-    let fanin = ckt_fanin' logic primary_inputs primary_outputs delays in
-    wire_fanout' fanin;;
+let debug_circuit_gates ckt =
+    let logic = circuit_logic ckt in
+    circuit_gates logic;;
 
-let ckt_fanout th =
-    let logic = ckt_logic' th in
-    let wires = ckt_wires' logic in
-    let primary_inputs = ckt_primary_inputs' logic wires in
-    let primary_outputs = ckt_primary_outputs' logic in
-    let delays = ckt_delays' logic in
-    let fanin = ckt_fanin' logic primary_inputs primary_outputs delays in
-    ckt_fanout' primary_inputs delays fanin;;
+let debug_wire_fanin ckt =
+    let logic = circuit_logic ckt in
+    let defs = circuit_defs logic in
+    let wires = circuit_wires logic in
+    let primary_inputs = circuit_primary_inputs defs wires in
+    wire_fanin defs primary_inputs;;
+
+let debug_circuit_fanins ckt =
+    let logic = circuit_logic ckt in
+    let defs = circuit_defs logic in
+    let wires = circuit_wires logic in
+    let primary_inputs = circuit_primary_inputs defs wires in
+    let primary_outputs = circuit_primary_outputs logic in
+    let registers = circuit_registers logic in
+    circuit_fanins defs primary_inputs primary_outputs registers;;
+
+let debug_circuit_fanouts ckt =
+    let logic = circuit_logic ckt in
+    let defs = circuit_defs logic in
+    let wires = circuit_wires logic in
+    let primary_inputs = circuit_primary_inputs defs wires in
+    let primary_outputs = circuit_primary_outputs logic in
+    let registers = circuit_registers logic in
+    let fanins = circuit_fanins defs primary_inputs primary_outputs registers in
+    circuit_fanouts fanins primary_inputs registers;;
 
 (* ------------------------------------------------------------------------- *)
 (* Elaborating circuits by expanding module definitions and bit blasting     *)
@@ -838,9 +963,11 @@ let expand_bus_synthesis_rule =
        let (t,n) = dest_eq tm in
        let n = dest_numeral n in
        let v = dest_width t in
-       if not_unfrozen_var namer v then failwith "expand_bus_synthesis_rule" else
-       let b = variable_bus (fst (dest_var v)) n in
-       [(b,v)]);;
+       if not_unfrozen_var namer v then
+         failwith "expand_bus_synthesis_rule"
+       else
+         let b = variable_bus (fst (dest_var v)) n in
+         [(b,v)]);;
 
 let width_synthesis_rule =
     let is_var goal namer =
@@ -1746,33 +1873,35 @@ let duplicate_logic =
             print_string msg in
 *)
         Some ((w,(d,n)) :: fds) in
-    fun primary_inputs ->
-    fun (fanin : (term * (term list * term list)) list) ->
+    fun (Circuit_primary_inputs primary_inputs) ->
+    fun fanins ->
     let rec balance seen wds =
         match wds with
           [] -> seen
         | wd :: wds ->
           let (w,(d,n,l)) = wd in
-          let fs = if mem w primary_inputs then [] else fst (assoc w fanin) in
-          let pred (f,_) = mem f fs in
+          let fs =
+              if mem_wireset w primary_inputs then empty_wireset else
+              fst (circuit_fanin fanins w) in
+          let pred (f,_) = mem_wireset f fs in
           let (fds1,seen') = partition pred seen in
           let (fds2,wds') = partition pred wds in
-          match reduce_load w d n (mem w fs) (fds1 @ fds2) with
+          match reduce_load w d n (mem_wireset w fs) (fds1 @ fds2) with
             None -> balance (wd :: seen) wds
           | Some fds ->
             let fds = sort_load (map ann_load fds) in
             balance [] (merge_load fds (List.rev_append seen' wds')) in
-    fun fanout ->
-    let init (w, (ws : term list)) = ann_load (w, (1, length ws)) in
-    balance [] (sort_load (map init fanout));;
+    fun (Circuit_fanouts fanouts) ->
+    let init w ws acc = ann_load (w, (1, size_wireset ws)) :: acc in
+    balance [] (sort_load (fold_wiremap init fanouts []));;
 
 (* Testing
 let ckt = counter91_thm;;
 let ckt = montgomery91_thm;;
-let fanin = ckt_fanin ckt;;
-let primary_inputs = ckt_primary_inputs ckt;;
-let fanout = ckt_fanout ckt;;
-duplicate_logic primary_inputs fanin fanout;;
+let primary_inputs = debug_circuit_primary_inputs ckt;;
+let fanins = debug_circuit_fanins ckt;;
+let fanouts = debug_circuit_fanouts ckt;;
+duplicate_logic primary_inputs fanins fanouts;;
 *)
 
 (* ------------------------------------------------------------------------- *)
@@ -1821,42 +1950,59 @@ let pp_print_distribution print_x print_y fmt (title,xys) =
     let () = Format.pp_close_box fmt () in
     ();;
 
-let pp_print_hardware_profile fmt th =
-    let logic = ckt_logic' th in
-    let wires = ckt_wires' logic in
-    let primary_inputs = ckt_primary_inputs' logic wires in
-    let primary_outputs = ckt_primary_outputs' logic in
-    let delays = ckt_delays' logic in
-    let gates = ckt_gates' logic in
-    let fanin = ckt_fanin' logic primary_inputs primary_outputs delays in
-    let fanout = ckt_fanout' primary_inputs delays fanin in
-    let fanout_load =
+let pp_print_hardware_profile fmt ckt =
+    let logic = circuit_logic ckt in
+    let wires = circuit_wires logic in
+    let defs = circuit_defs logic in
+    let primary_inputs = circuit_primary_inputs defs wires in
+    let primary_outputs = circuit_primary_outputs logic in
+    let registers = circuit_registers logic in
+    let gates = circuit_gates logic in
+    let fanins = circuit_fanins defs primary_inputs primary_outputs registers in
+    let fanouts = circuit_fanouts fanins primary_inputs registers in
+    let fanout_loads =
         complain_timed "- - Duplicated logic"
-          (duplicate_logic primary_inputs fanin) fanout in
-    let (fanin,fanin_cone) =
-        let fc (w,(f,c)) = ((w, length f), (w, length c)) in
-        unzip (map fc fanin) in
-    let fanout = map (fun (w,f) -> (w, length f)) fanout in
-    let duplication = map (fun (w,(d,_,_)) -> (w,d)) fanout_load in
-    let fanout_load = map (fun (w,(_,_,l)) -> (w, truncate l)) fanout_load in
+          (duplicate_logic primary_inputs fanins) fanouts in
+    let primary_inputs =
+        let Circuit_primary_inputs ws = primary_inputs in
+        size_wireset ws in
+    let primary_outputs =
+        let Circuit_primary_outputs ws = primary_outputs in
+        size_wireset ws in
+    let registers =
+        let Circuit_registers ws = registers in
+        size_wireset ws in
+    let gates =
+        let Circuit_gates tms = gates in
+        length tms in
+    let (fanins,fanin_cones) =
+        let fc w (f,c) z = ((w, size_wireset f), (w, size_wireset c)) :: z in
+        let Circuit_fanins wm = fanins in
+        unzip (fold_wiremap fc wm []) in
+    let fanouts =
+        let fc w f z = (w, size_wireset f) :: z in
+        let Circuit_fanouts wm = fanouts in
+        fold_wiremap fc wm [] in
+    let duplication = map (fun (w,(d,_,_)) -> (w,d)) fanout_loads in
+    let fanout_loads = map (fun (w,(_,_,l)) -> (w, truncate l)) fanout_loads in
     let pp_print_wire_dist =
         pp_print_distribution pp_print_term Format.pp_print_int in
     let () = Format.pp_open_box fmt 0 in
-    let () = pp_print_count fmt ("Primary inputs", length primary_inputs) in
+    let () = pp_print_count fmt ("Primary inputs",primary_inputs) in
     let () = Format.pp_print_newline fmt () in
-    let () = pp_print_count fmt ("Primary outputs", length primary_outputs) in
+    let () = pp_print_count fmt ("Primary outputs",primary_outputs) in
     let () = Format.pp_print_newline fmt () in
-    let () = pp_print_count fmt ("Delays", length delays) in
+    let () = pp_print_count fmt ("Registers",registers) in
     let () = Format.pp_print_newline fmt () in
-    let () = pp_print_count fmt ("Gates", length gates) in
+    let () = pp_print_count fmt ("Gates",gates) in
     let () = Format.pp_print_newline fmt () in
-    let () = pp_print_wire_dist fmt ("Fan-in",fanin) in
+    let () = pp_print_wire_dist fmt ("Fan-in",fanins) in
     let () = Format.pp_print_newline fmt () in
-    let () = pp_print_wire_dist fmt ("Fan-in cone",fanin_cone) in
+    let () = pp_print_wire_dist fmt ("Fan-in cone",fanin_cones) in
     let () = Format.pp_print_newline fmt () in
-    let () = pp_print_wire_dist fmt ("Fan-out",fanout) in
+    let () = pp_print_wire_dist fmt ("Fan-out",fanouts) in
     let () = Format.pp_print_newline fmt () in
-    let () = pp_print_wire_dist fmt ("Fan-out load",fanout_load) in
+    let () = pp_print_wire_dist fmt ("Fan-out load",fanout_loads) in
     let () = Format.pp_print_newline fmt () in
     let () = pp_print_wire_dist fmt ("Duplication",duplication) in
     let () = Format.pp_close_box fmt () in
