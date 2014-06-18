@@ -1896,8 +1896,8 @@ let duplicate_logic =
     balance [] (sort_load (fold_wiremap init fanouts []));;
 
 (* Testing
-let ckt = counter91_thm;;
-let ckt = montgomery91_thm;;
+let ckt = counter_91_thm;;
+let ckt = montgomery_91_thm;;
 let primary_inputs = debug_circuit_primary_inputs ckt;;
 let fanins = debug_circuit_fanins ckt;;
 let fanouts = debug_circuit_fanouts ckt;;
