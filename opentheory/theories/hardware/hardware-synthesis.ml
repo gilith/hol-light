@@ -1373,6 +1373,7 @@ let simplify_synthesis_rule =
     let rules =
         map thm_synthesis_rule
         [connect_refl;
+         delay_ground; delay_power;
          not_ground; not_power;
          and2_refl;
          and2_left_ground; and2_right_ground;

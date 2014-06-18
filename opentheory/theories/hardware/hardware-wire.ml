@@ -174,6 +174,26 @@ let delay_exists = prove
 
 export_thm delay_exists;;
 
+let delay_ground = prove
+ (`!x. connect ground x ==> delay ground x`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [delay_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`ground`; `x : wire`; `t + 1`] connect_signal) THEN
+  ASM_REWRITE_TAC [ground_signal]);;
+
+export_thm delay_ground;;
+
+let delay_power = prove
+ (`!x. connect power x ==> delay power x`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [delay_def] THEN
+  GEN_TAC THEN
+  MP_TAC (SPECL [`power`; `x : wire`; `t + 1`] connect_signal) THEN
+  ASM_REWRITE_TAC [power_signal]);;
+
+export_thm delay_power;;
+
 let not_signal = prove
  (`!x y t.
      not x y ==>
