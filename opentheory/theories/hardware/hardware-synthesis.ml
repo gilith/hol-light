@@ -101,6 +101,10 @@ let null_subst (sub : (term * term) list) =
       [] -> true
     | _ -> false;;
 
+let norm_sub =
+    let pred ((tm : term), v) = tm <> v in
+    filter pred;;
+
 let compose_subst old_sub new_sub =
     if null_subst new_sub then old_sub else
     let apply_new_sub (t,v) = (vsubst new_sub t, v) in
@@ -2066,31 +2070,38 @@ let verilog_wire_names =
             if String.contains spacer c then "_" else
             String.make 1 c in
         translate tr in
-    fun primary ->
-    let verilog_wire w =
-        if mem w primary then w else
-        let s = dest_wire_var w in
-        mk_wire_var (verilog_name s) in
-    fun th ->
-    let ws = freesl (hyp th) in
-    let ws' = map verilog_wire ws in
-    let () =
-        if length (setify ws') = length ws' then () else
-        let f w ws =
-            let w' = verilog_wire w in
-            match filter (fun (_,y) -> y = w') ws with
-              [] -> (w,w') :: ws
-            | (x,_) :: _ ->
+    let check_distinct =
+        let add (w',w) wm =
+            match peek_wiremap w' wm with
+              None -> add_wiremap w' w wm
+            | Some w2 ->
               let msg =
                   "verilog_wire_names: different wire names:\n  " ^
-                  dest_wire_var x ^ "\n  " ^ dest_wire_var w ^
+                  dest_wire_var w ^ "\n  " ^ dest_wire_var w2 ^
                   "map to the same verilog wire name:\n  " ^
                   dest_wire_var w' in
               failwith msg in
-        let _ = itlist f ws [] in
-        failwith "verilog_wire_names: bug" in
-    let sub = filter (fun (w',w) -> w' <> w) (zip ws' ws) in
-    INST sub th;;
+        fun sub ->
+        let _ = rev_itlist add sub empty_wiremap in
+        () in
+    fun primary ->
+    let is_primary =
+        let ws = from_list_wireset primary in
+        fun w ->
+        mem_wireset w ws in
+    let verilog_wire w acc =
+        let w' =
+            if is_primary w then w else
+            let s = dest_wire_var w in
+            mk_wire_var (verilog_name s) in
+        (w',w) :: acc in
+    fun ckt ->
+    let (Circuit_wires ws) =
+        let logic = circuit_logic ckt in
+        circuit_wires logic in
+    let sub = fold_wireset verilog_wire ws [] in
+    let () = check_distinct sub in
+    INST (norm_sub sub) ckt;;
 
 let hardware_to_verilog =
     let wire_name w =
