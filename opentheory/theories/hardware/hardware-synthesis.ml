@@ -13,6 +13,52 @@ module String_set = Set.Make(String);;
 
 module String_map = Map.Make(String);;
 
+let random_odd_num w =
+    let f n =
+        let n = mult_num num_2 n in
+        if Random.bool () then add_num n num_1 else n in
+    let n = funpow (w - 2) f num_1 in
+    add_num (mult_num num_2 n) num_1;;
+
+let maps (f : 'a -> 's -> 'b * 's) =
+    let rec m xs s =
+        match xs with
+          [] -> ([],s)
+        | x :: xs ->
+          let (y,s) = f x s in
+          let (ys,s) = m xs s in
+          (y :: ys, s) in
+     m;;
+
+let find_max lt =
+    let f x m = if lt m x then x else m in
+    fun xs ->
+    match xs with
+      [] -> failwith "find_max: empty list"
+    | x :: xs -> rev_itlist f xs x;;
+
+let disjoint xs =
+    let notmem x = not (mem x xs) in
+    forall notmem;;
+
+let deprime s = fst (split '\'' s);;
+
+let is_true =
+    let true_tm = `T` in
+    fun tm -> tm = true_tm;;
+
+let mk_one_var =
+    let one_ty = `:1` in
+    fun s -> mk_var (s,one_ty);;
+
+let undisch_bind th =
+    let (tm,_) = dest_imp (concl th) in
+    (tm, UNDISCH th);;
+
+(* ------------------------------------------------------------------------- *)
+(* Profiling functions.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
 let timed f x =
     let t = Unix.gettimeofday() in
     let fx = f x in
@@ -40,33 +86,9 @@ let complain_timed s f x =
     let () = complain ("- " ^ s ^ ": " ^ string_of_int t ^ " second" ^ (if t = 1 then "" else "s") ^ " (" ^ string_of_int m0 ^ "-" ^ string_of_int mx ^ "Mb)") in
     fx;;
 
-let random_odd_num w =
-    let f n =
-        let n = mult_num num_2 n in
-        if Random.bool () then add_num n num_1 else n in
-    let n = funpow (w - 2) f num_1 in
-    add_num (mult_num num_2 n) num_1;;
-
-let maps (f : 'a -> 's -> 'b * 's) =
-    let rec m xs s =
-        match xs with
-          [] -> ([],s)
-        | x :: xs ->
-          let (y,s) = f x s in
-          let (ys,s) = m xs s in
-          (y :: ys, s) in
-     m;;
-
-let find_max cmp =
-    let f x m = if cmp m x then x else m in
-    fun xs ->
-    match rev xs with
-      [] -> failwith "find_max: empty list"
-    | x :: xs -> itlist f xs x;;
-
-let disjoint xs =
-    let notmem x = not (mem x xs) in
-    forall notmem;;
+(* ------------------------------------------------------------------------- *)
+(* String operations.                                                        *)
+(* ------------------------------------------------------------------------- *)
 
 let is_digit = String.contains "0123456789";;
 
@@ -86,15 +108,65 @@ let split c s =
     with Not_found -> (String.sub s i (String.length s - i), []) in
     split_from 0;;
 
-let deprime s = fst (split '\'' s);;
+(* ------------------------------------------------------------------------- *)
+(* A simple priority queue implementation derived from leftist heaps         *)
+(* described in "Purely Functional Data Structures", Chris Okasaki.          *)
+(* ------------------------------------------------------------------------- *)
 
-let is_true =
-    let true_tm = `T` in
-    fun tm -> tm = true_tm;;
+type 'a priority_node =
+     Empty_priority_node
+   | Priority_node of int * 'a * 'a priority_node * 'a priority_node;;
 
-let mk_one_var =
-    let one_ty = `:1` in
-    fun s -> mk_var (s,one_ty);;
+type 'a priority_queue =
+     Priority_queue of ('a -> 'a -> bool) * int * 'a priority_node;;
+
+let rank_priority_node n =
+    match n with
+      Empty_priority_node -> 0
+    | Priority_node (r,_,_,_) -> r;;
+
+let mk_priority_node x a b =
+    let ra = rank_priority_node a in
+    let rb = rank_priority_node b in
+    if rb <= ra then
+      Priority_node (rb + 1, x, a, b)
+    else
+      Priority_node (ra + 1, x, b, a);;
+
+let single_priority_node x =
+    Priority_node (1,x,Empty_priority_node,Empty_priority_node);;
+
+let merge_priority_node lt =
+    let rec merge n1 n2 =
+        match (n1,n2) with
+          (Empty_priority_node,_) -> n2
+        | (_,Empty_priority_node) -> n1
+        | (Priority_node (r1,x1,a1,b1), Priority_node (r2,x2,a2,b2)) ->
+          if lt x1 x2 then
+            mk_priority_node x2 a2 (merge n1 b2)
+          else
+            mk_priority_node x1 a1 (merge b1 n2) in
+    merge;;
+
+let new_priority_queue lt = Priority_queue (lt,0,Empty_priority_node);;
+
+let size_priority_queue (Priority_queue (_,sz,_)) = sz;;
+
+let null_priority_queue pq = size_priority_queue pq = 0;;
+
+let add_priority_queue x (Priority_queue (lt,sz,node)) =
+    let node = merge_priority_node lt (single_priority_node x) node in
+    Priority_queue (lt, sz + 1, node);;
+
+let remove_priority_queue (Priority_queue (lt,sz,node)) =
+    match node with
+      Empty_priority_node -> failwith "remove_priority_queue: empty"
+    | Priority_node (_,x,a,b) ->
+      (x, Priority_queue (lt, sz - 1, merge_priority_node lt a b));;
+
+(* ------------------------------------------------------------------------- *)
+(* Substitution operations.                                                  *)
+(* ------------------------------------------------------------------------- *)
 
 let null_subst (sub : (term * term) list) =
     match sub with
@@ -110,6 +182,19 @@ let compose_subst old_sub new_sub =
     let apply_new_sub (t,v) = (vsubst new_sub t, v) in
     map apply_new_sub old_sub @ new_sub;;
 
+let string_of_subst =
+    let maplet (t,v) =
+        string_of_term v ^ " |-> " ^ string_of_term t ^ "\n" in
+    fun sub ->
+    "<sub> [" ^
+    (if length sub = 0 then "" else
+     ("\n  " ^ String.concat "\n  " (map maplet sub))) ^
+    "]";;
+
+(* ------------------------------------------------------------------------- *)
+(* Extra conversions.                                                        *)
+(* ------------------------------------------------------------------------- *)
+
 let refl_conv tm =
     let (l,r) = dest_eq tm in
     if aconv l r then EQT_INTRO (ALPHA l r) else failwith "refl_conv";;
@@ -122,14 +207,9 @@ let orelse_sym_conv : conv -> conv =
     let rewr = REWR_CONV EQ_SYM_EQ in
     fun c -> c ORELSEC (rewr THENC c);;
 
-let undisch_bind th =
-    let (tm,_) = dest_imp (concl th) in
-    (tm, UNDISCH th);;
-
-let string_of_subst =
-    let maplet (t,v) = string_of_term v ^ " |-> " ^ string_of_term t ^ "\n" in
-    fun sub ->
-    "<sub> [" ^ (if length sub = 0 then "" else ("\n  " ^ String.concat "\n  " (map maplet sub))) ^ "]";;
+(* ------------------------------------------------------------------------- *)
+(* Caching frequently-called numeral conversions.                            *)
+(* ------------------------------------------------------------------------- *)
 
 let cache_numerals d =
     let int_of_term tm =
@@ -1839,8 +1919,18 @@ synthesize_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgom
 (* terminates.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
+(***
+type fanout_load = Fanout_load of int * int * float;;
+
+let mk_fanout_load d n = Fanout_load (d, n, float n /. float d);;
+
+let add_fanout_load x (Fanout_load (d,n,_)) = mk_fanout_load d (n + x);;
+
+let lt_fanout_load
+***)
+
 let duplicate_logic =
-    let load d n = float n /. float d in
+    let load d n =  in
     let ann_load ((w : term), (d,n)) = (w, (d, n, load d n)) in
     let cmp_load
           ((_,(_,_,l1)) : term * (int * int * float))
