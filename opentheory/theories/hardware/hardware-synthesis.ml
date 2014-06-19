@@ -2047,13 +2047,13 @@ let duplicate_logic =
           let fls = rev_itlist (add_fanout_load_map x) fi fls in
           let work = add_fanout_load_priority_queue fls fio work in
 (* Debugging
-*)
           let () =
               let msg =
                   "Raising duplication of wire " ^ string_of_term w ^
                   " to " ^ string_of_int d in
               complain msg in
           balance fls work in
+*)
     let fls = new_fanout_load_map fanouts in
     let work = new_fanout_load_priority_queue fls in
     balance fls work;;
