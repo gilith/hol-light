@@ -41,8 +41,6 @@ let disjoint xs =
     let notmem x = not (mem x xs) in
     forall notmem;;
 
-let deprime s = fst (split '\'' s);;
-
 let is_true =
     let true_tm = `T` in
     fun tm -> tm = true_tm;;
@@ -107,6 +105,8 @@ let split c s =
          (String.sub s i (j - i), x :: xs))
     with Not_found -> (String.sub s i (String.length s - i), []) in
     split_from 0;;
+
+let deprime s = fst (split '\'' s);;
 
 (* ------------------------------------------------------------------------- *)
 (* A simple priority queue implementation derived from leftist heaps         *)
@@ -340,14 +340,20 @@ let size_wireset (Wireset s) = String_set.cardinal s;;
 
 let mem_wireset w (Wireset s) = String_set.mem (dest_wire_var w) s;;
 
-let union_wireset (Wireset s1) (Wireset s2) =
-    Wireset (String_set.union s1 s2);;
-
 let add_wireset w ws =
     if mem_wireset w ws then ws else
     let Wireset s = ws in
     let s = String_set.add (dest_wire_var w) s in
     Wireset s;;
+
+let remove_wireset w ws =
+    if mem_wireset w ws then ws else
+    let Wireset s = ws in
+    let s = String_set.remove (dest_wire_var w) s in
+    Wireset s;;
+
+let union_wireset (Wireset s1) (Wireset s2) =
+    Wireset (String_set.union s1 s2);;
 
 let add_list_wireset = rev_itlist add_wireset;;
 
@@ -365,28 +371,41 @@ let to_list_wireset =
 (* Efficient finite maps from wire variables.                                *)
 (* ------------------------------------------------------------------------- *)
 
-type 'a wiremap = Wiremap of 'a String_map.t;;
+type 'a wiremap = Wiremap of int * 'a String_map.t;;
 
-let empty_wiremap = Wiremap String_map.empty;;
+let empty_wiremap = Wiremap (0,String_map.empty);;
 
-let mem_wiremap w (Wiremap m) = String_map.mem (dest_wire_var w) m;;
+let size_wiremap (Wiremap (sz,_)) = sz;;
 
-let find_wiremap w (Wiremap m) = String_map.find (dest_wire_var w) m;;
+let mem_wiremap w (Wiremap (_,m)) = String_map.mem (dest_wire_var w) m;;
 
-let peek_wiremap w (Wiremap m) =
+let peek_wiremap w (Wiremap (_,m)) =
     let s = dest_wire_var w in
     if String_map.mem s m then Some (String_map.find s m) else None;;
 
-let add_wiremap w x (Wiremap m) =
-    Wiremap (String_map.add (dest_wire_var w) x m);;
+let find_wiremap w wm =
+    match peek_wiremap w wm with
+      Some x -> x
+    | None -> failwith "find_wiremap: not found";;
 
-let fold_wiremap f (Wiremap m) =
+let add_wiremap w x (Wiremap (sz,m)) =
+    let s = dest_wire_var w in
+    let sz = if String_map.mem s m then sz else sz + 1 in
+    let m = String_map.add s x m in
+    Wiremap (sz,m);;
+
+let fold_wiremap f (Wiremap (_,m)) =
     let g s x z = f (mk_wire_var s) x z in
     String_map.fold g m;;
 
-let map_wiremap f (Wiremap m) =
+let map_wiremap f (Wiremap (sz,m)) =
     let g s x = f (mk_wire_var s) x in
-    Wiremap (String_map.mapi g m);;
+    Wiremap (sz, String_map.mapi g m);;
+
+let to_list_wiremap =
+    let add w x acc = (w,x) :: acc in
+    fun wm ->
+    rev (fold_wiremap add wm []);;
 
 (* ------------------------------------------------------------------------- *)
 (* Name generators.                                                          *)
@@ -1919,27 +1938,68 @@ synthesize_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgom
 (* terminates.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 type fanout_load = Fanout_load of int * int * float;;
+
+type fanout_load_map = Fanout_load_map of fanout_load wiremap;;
+
+type fanout_load_priority_queue =
+     Fanout_load_priority_queue of (term * fanout_load) priority_queue;;
 
 let mk_fanout_load d n = Fanout_load (d, n, float n /. float d);;
 
 let add_fanout_load x (Fanout_load (d,n,_)) = mk_fanout_load d (n + x);;
 
-let lt_fanout_load
-***)
+let eq_fanout_load (Fanout_load (d1,n1,_)) (Fanout_load (d2,n2,_)) =
+    d1 = d2 && n1 = n2;;
+
+let lt_fanout_load (Fanout_load (_,_,l1)) (Fanout_load (_,_,l2)) = l1 < l2;;
+
+let new_fanout_load_map =
+    let mk w ws = mk_fanout_load 1 (size_wireset ws) in
+    fun (Circuit_fanouts wm) ->
+    Fanout_load_map (map_wiremap mk wm);;
+
+let find_fanout_load_map (Fanout_load_map wm) w = find_wiremap w wm;;
+
+let update_fanout_load_map w fl (Fanout_load_map wm) =
+    Fanout_load_map (add_wiremap w fl wm);;
+
+let add_fanout_load_map x w fls =
+    let fl = find_fanout_load_map fls w in
+    let fl = add_fanout_load x fl in
+    update_fanout_load_map w fl fls;;
+
+let new_fanout_load_priority_queue =
+    let add w fl pq = add_priority_queue (w,fl) pq in
+    let lt (_,fl1) (_,fl2) = lt_fanout_load fl1 fl2 in
+    let empty = new_priority_queue lt in
+    fun (Fanout_load_map wm) ->
+    Fanout_load_priority_queue (fold_wiremap add wm empty);;
+
+let add_fanout_load_priority_queue flm =
+    let Fanout_load_map wm = flm in
+    let add w pq =
+        let fl = find_wiremap w wm in
+        add_priority_queue (w,fl) pq in
+    fun ws -> fun (Fanout_load_priority_queue pq) ->
+    if size_priority_queue pq > 3 * size_wiremap wm then
+      new_fanout_load_priority_queue flm
+    else
+      Fanout_load_priority_queue (fold_wireset add ws pq);;
+
+let remove_fanout_load_priority_queue (Fanout_load_map wm) =
+    let rec remove pq =
+        if null_priority_queue pq then None else
+        let ((w,fl),pq) = remove_priority_queue pq in
+        let fl' = find_wiremap w wm in
+        if not (eq_fanout_load fl fl') then remove pq else
+        Some ((w,fl), Fanout_load_priority_queue pq) in
+    fun (Fanout_load_priority_queue pq) ->
+    remove pq;;
 
 let duplicate_logic =
-    let load d n =  in
-    let ann_load ((w : term), (d,n)) = (w, (d, n, load d n)) in
-    let cmp_load
-          ((_,(_,_,l1)) : term * (int * int * float))
-          ((_,(_,_,l2)) : term * (int * int * float)) =
-        l2 < l1 in
-    let sort_load = mergesort cmp_load in
-    let merge_load = merge cmp_load in
-    let reduce_load w d n =
-        let find_delta fd fn =
+    let increase_duplication d n =
+        let find_balance fd fn =
             let a = 1.0 in
             let b = float (fn + d) in
             let c = float (fn * d - fd * n) in
@@ -1948,47 +2008,55 @@ let duplicate_logic =
             if b2 < ac4 then failwith "negative discriminant" else
             let x = (sqrt (b2 -. ac4) -. b) /. (2.0 *. a) in
             if x < 0.0 then 0 else truncate x in
-        let min_delta (_,(fd,fn,_)) x = min (find_delta fd fn) x in
-        fun self -> fun fds ->
-        let x =
-            if self then find_delta d n else
-            match fds with
-              [] -> find_delta 1 d
-            | (_,(fd,fn,_)) :: fds ->
-              itlist min_delta fds (find_delta fd fn) in
-        if x = 0 then None else
-        let d = d + x in
-        let n = if self then n + x else n in
-        let fds = map (fun (f,(fd,fn,_)) -> (f, (fd, fn + x))) fds in
-(* Debugging
-        let () =
-            let msg =
-                "Raising duplication of wire " ^ string_of_term w ^
-                " to " ^ string_of_int d ^ "\n" in
-            print_string msg in
-*)
-        Some ((w,(d,n)) :: fds) in
-    fun (Circuit_primary_inputs primary_inputs) ->
+        let load_balance (Fanout_load (fd,fn,_)) = find_balance fd fn in
+        let min_balance fl x = min (load_balance fl) x in
+        fun fls ->
+        match fls with
+          [] -> find_balance 1 d
+        | fl :: fls -> rev_itlist min_balance fls (load_balance fl) in
+    fun primary_inputs ->
     fun fanins ->
-    let rec balance seen wds =
-        match wds with
-          [] -> seen
-        | wd :: wds ->
-          let (w,(d,n,l)) = wd in
-          let fs =
-              if mem_wireset w primary_inputs then empty_wireset else
-              fst (circuit_fanin fanins w) in
-          let pred (f,_) = mem_wireset f fs in
-          let (fds1,seen') = partition pred seen in
-          let (fds2,wds') = partition pred wds in
-          match reduce_load w d n (mem_wireset w fs) (fds1 @ fds2) with
-            None -> balance (wd :: seen) wds
-          | Some fds ->
-            let fds = sort_load (map ann_load fds) in
-            balance [] (merge_load fds (List.rev_append seen' wds')) in
-    fun (Circuit_fanouts fanouts) ->
-    let init w ws acc = ann_load (w, (1, size_wireset ws)) :: acc in
-    balance [] (sort_load (fold_wiremap init fanouts []));;
+    fun fanouts ->
+    let fan_in_out =
+        let Circuit_primary_inputs pis = primary_inputs in
+        let Circuit_fanouts fos = fanouts in
+        let add wire w fo =
+            if w = wire or not (mem_wiremap w fos) then fo
+            else add_wireset w fo in
+        let mk w fo =
+            let fi =
+                if mem_wireset w pis then empty_wireset else
+                fst (circuit_fanin fanins w) in
+            let self = mem_wireset w fi in
+            let fi = if self then remove_wireset w fi else fi in
+            let fio = fold_wireset (add w) fo fi in
+            (to_list_wireset fi, self, fio) in
+        map_wiremap mk fos in
+    let rec balance fls work =
+        match remove_fanout_load_priority_queue fls work with
+          None -> fls
+        | Some ((w, Fanout_load (d,n,_)), work) ->
+          let (fi,self,fio) = find_wiremap w fan_in_out in
+          let fil = map (find_fanout_load_map fls) fi in
+          let x = increase_duplication d n fil in
+          if x = 0 then balance fls work else
+          let d = d + x in
+          let n = if self then n + x else n in
+          let fl = mk_fanout_load d n in
+          let fls = update_fanout_load_map w fl fls in
+          let fls = rev_itlist (add_fanout_load_map x) fi fls in
+          let work = add_fanout_load_priority_queue fls fio work in
+(* Debugging
+*)
+          let () =
+              let msg =
+                  "Raising duplication of wire " ^ string_of_term w ^
+                  " to " ^ string_of_int d in
+              complain msg in
+          balance fls work in
+    let fls = new_fanout_load_map fanouts in
+    let work = new_fanout_load_priority_queue fls in
+    balance fls work;;
 
 (* Testing
 let ckt = counter_91_thm;;
@@ -2078,8 +2146,14 @@ let pp_print_hardware_profile fmt ckt =
         let fc w f z = (w, size_wireset f) :: z in
         let Circuit_fanouts wm = fanouts in
         fold_wiremap fc wm [] in
-    let duplication = map (fun (w,(d,_,_)) -> (w,d)) fanout_loads in
-    let fanout_loads = map (fun (w,(_,_,l)) -> (w, truncate l)) fanout_loads in
+    let duplication =
+        let add w (Fanout_load (d,_,_)) acc = (w,d) :: acc in
+        let Fanout_load_map wm = fanout_loads in
+        rev (fold_wiremap add wm []) in
+    let fanout_loads =
+        let add w (Fanout_load (_,_,l)) acc = (w, truncate l) :: acc in
+        let Fanout_load_map wm = fanout_loads in
+        rev (fold_wiremap add wm []) in
     let pp_print_wire_dist =
         pp_print_distribution pp_print_term Format.pp_print_int in
     let () = Format.pp_open_box fmt 0 in
@@ -2106,8 +2180,8 @@ let pp_print_hardware_profile fmt ckt =
 let hardware_profile_to_string = print_to_string pp_print_hardware_profile;;
 
 (*** Testing
-print_string ("\n" ^ hardware_profile_to_string counter91_thm ^ "\n");;
-print_string ("\n" ^ hardware_profile_to_string montgomery91_thm ^ "\n");;
+print_string ("\n" ^ hardware_profile_to_string counter_91_thm ^ "\n");;
+print_string ("\n" ^ hardware_profile_to_string montgomery_91_thm ^ "\n");;
 ***)
 
 (* ------------------------------------------------------------------------- *)
