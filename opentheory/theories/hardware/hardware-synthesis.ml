@@ -2052,8 +2052,8 @@ let duplicate_logic =
                   "Raising duplication of wire " ^ string_of_term w ^
                   " to " ^ string_of_int d in
               complain msg in
-          balance fls work in
 *)
+          balance fls work in
     let fls = new_fanout_load_map fanouts in
     let work = new_fanout_load_priority_queue fls in
     balance fls work;;
