@@ -30,12 +30,16 @@ let maps (f : 'a -> 's -> 'b * 's) =
           (y :: ys, s) in
      m;;
 
-let find_max lt =
-    let f x m = if lt m x then x else m in
+let find_min lt =
+    let f x m = if lt x m then x else m in
     fun xs ->
     match xs with
-      [] -> failwith "find_max: empty list"
+      [] -> failwith "find_min: empty list"
     | x :: xs -> rev_itlist f xs x;;
+
+let find_max lt =
+    let gt x y = lt y x in
+    find_min gt;;
 
 let disjoint xs =
     let notmem x = not (mem x xs) in
@@ -337,6 +341,8 @@ type wireset = Wireset of String_set.t;;
 let empty_wireset = Wireset String_set.empty;;
 
 let size_wireset (Wireset s) = String_set.cardinal s;;
+
+let null_wireset ws = size_wireset ws = 0;;
 
 let mem_wireset w (Wireset s) = String_set.mem (dest_wire_var w) s;;
 
@@ -1904,46 +1910,45 @@ synthesize_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgom
 ***)
 
 (* ------------------------------------------------------------------------- *)
-(* Duplicating delays to reduce fanout load.                                 *)
+(* Duplicating registers to reduce fanout load.                              *)
 (*                                                                           *)
-(* If a given delay (or primary input) has been duplicated d times and       *)
-(* has n delays (or primary outputs), then we define the fanout load to      *)
-(* be n / d.                                                                 *)
+(* If a given register has been duplicated d times and drives n registers    *)
+(* (or primary outputs), then we define the fanout load to be n / d.         *)
 (*                                                                           *)
-(* Suppose a given delay with parameters (d,n) is driven by a delay with     *)
-(* parameters (fd,fn). Then duplicating the given delay fx more times        *)
-(* would decrease its fanout load to n / (d + fx), but increase the fanout   *)
-(* load of the driving delay to (fn + fx) / fd. We find the fx that          *)
-(* balances these by solving                                                 *)
+(* Suppose a given register with parameters (d,n) is driven by a register    *)
+(* (or primary input) with parameters (d_i,n_i). Then duplicating the given  *)
+(* register x_i more times would decrease its fanout load to n / (d + x_i),  *)
+(* but increase the fanout load of the driving register (or primary input)   *)
+(* to (n_i + x_i) / d_i. We find the x_i that balances these by solving      *)
 (*                                                                           *)
-(*   (fn + fx) / fd = n / (d + fx)                                           *)
+(*   (n_i + x_i) / d_i = n / (d + x_i)                                       *)
 (*   <=>                                                                     *)
-(*   fx^2 + (fn + d) * fx + (fn * d - fd * n) = 0                            *)
+(*   x_i^2 + (n_i + d) * x_i + (n_i * d - d_i * n) = 0                       *)
 (*   <=>                                                                     *)
-(*   fx = (-(fn + d) +/- sqrt{(fn + d)^2 - 4 * (fn * d - fd * n)}) / 2       *)
+(*   x_i = (-(n_i + d) +/- sqrt{(n_i + d)^2 - 4 * (n_i * d - d_i * n)}) / 2  *)
 (*                                                                           *)
 (* Note that we always choose + in the +/- above, because choosing - is      *)
-(* guaranteed to result in a negative x. We are only interested in increases *)
-(* to the duplication because our algorithm initializes all duplications to  *)
-(* 1 and finds a fixed point by increasing duplication where it would reduce *)
-(* overall fanout load.                                                      *)
+(* guaranteed to result in a negative x_i. We are only interested in         *)
+(* increases to the duplication because our algorithm initializes all        *)
+(* duplications to 1 and finds a fixed point by increasing duplication where *)
+(* it would reduce overall fanout load.                                      *)
 (*                                                                           *)
-(* In detail, the algorithm checks every delay in descending order of        *)
-(* fanout load, and for a given delay finds the fx that would balance the    *)
-(* fanout load with every driving delay. It then sets x to be the minimum    *)
-(* of all the fx, rounded down to the nearest integer. If x is less than     *)
-(* 1 then nothing changes, otherwise we increase the duplication of the      *)
-(* delay (and increase the fn values for the driving delays by x). When      *)
-(* there are no more fanout load reductions possible, the algorithm          *)
-(* terminates.                                                               *)
+(* In detail, the algorithm checks every register in descending order of     *)
+(* fanout load, and for a given register finds the x_i that would balance    *)
+(* the fanout load with every driving register (or primary input). It then   *)
+(* sets x to be the minimum of all the x_i, rounded down to the nearest      *)
+(* integer. If x is less than 1 then nothing changes, otherwise we increase  *)
+(* the duplication of the delay (and increase the n_i values for the driving *)
+(* registers and primary inputs by x). When there are no more fanout load    *)
+(* reductions possible, the algorithm terminates.                            *)
 (* ------------------------------------------------------------------------- *)
 
 type fanout_load = Fanout_load of int * int * float;;
 
-type fanout_load_map = Fanout_load_map of fanout_load wiremap;;
-
 type fanout_load_priority_queue =
      Fanout_load_priority_queue of (term * fanout_load) priority_queue;;
+
+type circuit_fanout_loads = Circuit_fanout_loads of fanout_load wiremap;;
 
 let mk_fanout_load d n = Fanout_load (d, n, float n /. float d);;
 
@@ -1954,40 +1959,27 @@ let eq_fanout_load (Fanout_load (d1,n1,_)) (Fanout_load (d2,n2,_)) =
 
 let lt_fanout_load (Fanout_load (_,_,l1)) (Fanout_load (_,_,l2)) = l1 < l2;;
 
-let new_fanout_load_map =
-    let mk w ws = mk_fanout_load 1 (size_wireset ws) in
-    fun (Circuit_fanouts wm) ->
-    Fanout_load_map (map_wiremap mk wm);;
-
-let find_fanout_load_map (Fanout_load_map wm) w = find_wiremap w wm;;
-
-let update_fanout_load_map w fl (Fanout_load_map wm) =
-    Fanout_load_map (add_wiremap w fl wm);;
-
-let add_fanout_load_map x w fls =
-    let fl = find_fanout_load_map fls w in
-    let fl = add_fanout_load x fl in
-    update_fanout_load_map w fl fls;;
-
-let new_fanout_load_priority_queue =
-    let add w fl pq = add_priority_queue (w,fl) pq in
+let new_fanout_load_priority_queue (Circuit_primary_inputs pis) =
+    let add w fl pq =
+        if mem_wireset w pis then pq else
+        add_priority_queue (w,fl) pq in
     let lt (_,fl1) (_,fl2) = lt_fanout_load fl1 fl2 in
     let empty = new_priority_queue lt in
-    fun (Fanout_load_map wm) ->
+    fun (Circuit_fanout_loads wm) ->
     Fanout_load_priority_queue (fold_wiremap add wm empty);;
 
-let add_fanout_load_priority_queue flm =
-    let Fanout_load_map wm = flm in
+let add_fanout_load_priority_queue primary_inputs flm =
+    let Circuit_fanout_loads wm = flm in
     let add w pq =
         let fl = find_wiremap w wm in
         add_priority_queue (w,fl) pq in
     fun ws -> fun (Fanout_load_priority_queue pq) ->
     if size_priority_queue pq > 3 * size_wiremap wm then
-      new_fanout_load_priority_queue flm
+      new_fanout_load_priority_queue primary_inputs flm
     else
       Fanout_load_priority_queue (fold_wireset add ws pq);;
 
-let remove_fanout_load_priority_queue (Fanout_load_map wm) =
+let remove_fanout_load_priority_queue (Circuit_fanout_loads wm) =
     let rec remove pq =
         if null_priority_queue pq then None else
         let ((w,fl),pq) = remove_priority_queue pq in
@@ -1997,7 +1989,22 @@ let remove_fanout_load_priority_queue (Fanout_load_map wm) =
     fun (Fanout_load_priority_queue pq) ->
     remove pq;;
 
-let duplicate_logic =
+let new_circuit_fanout_loads =
+    let mk w ws = mk_fanout_load 1 (size_wireset ws) in
+    fun (Circuit_fanouts wm) ->
+    Circuit_fanout_loads (map_wiremap mk wm);;
+
+let circuit_fanout_load (Circuit_fanout_loads wm) w = find_wiremap w wm;;
+
+let update_circuit_fanout_loads w fl (Circuit_fanout_loads wm) =
+    Circuit_fanout_loads (add_wiremap w fl wm);;
+
+let add_circuit_fanout_loads x w fls =
+    let fl = circuit_fanout_load fls w in
+    let fl = add_fanout_load x fl in
+    update_circuit_fanout_loads w fl fls;;
+
+let circuit_fanout_loads =
     let increase_duplication d n =
         let find_balance fd fn =
             let a = 1.0 in
@@ -2009,43 +2016,43 @@ let duplicate_logic =
             let x = (sqrt (b2 -. ac4) -. b) /. (2.0 *. a) in
             if x < 0.0 then 0 else truncate x in
         let load_balance (Fanout_load (fd,fn,_)) = find_balance fd fn in
-        let min_balance fl x = min (load_balance fl) x in
         fun fls ->
-        match fls with
-          [] -> find_balance 1 d
-        | fl :: fls -> rev_itlist min_balance fls (load_balance fl) in
+        find_min (<) (map load_balance fls) in
     fun primary_inputs ->
     fun fanins ->
     fun fanouts ->
     let fan_in_out =
         let Circuit_primary_inputs pis = primary_inputs in
         let Circuit_fanouts fos = fanouts in
-        let add wire w fo =
-            if w = wire or not (mem_wiremap w fos) then fo
-            else add_wireset w fo in
-        let mk w fo =
-            let fi =
-                if mem_wireset w pis then empty_wireset else
-                fst (circuit_fanin fanins w) in
+        let not_reg w = mem_wireset w pis or not (mem_wiremap w fos) in
+        let add_blk wire w fio =
+            if w = wire or not_reg w then fio
+            else add_wireset w fio in
+        let add_fio w fo fios =
+            if mem_wireset w pis then fios else
+            let (fi,_) = circuit_fanin fanins w in
             let self = mem_wireset w fi in
             let fi = if self then remove_wireset w fi else fi in
-            let fio = fold_wireset (add w) fo fi in
-            (to_list_wireset fi, self, fio) in
-        map_wiremap mk fos in
+            let () =
+                if not (null_wireset fi) then ()
+                else failwith ("register " ^ dest_wire_var w ^ " has no fan-in") in
+            let blk = fold_wireset (add_blk w) (union_wireset fi fo) empty_wireset in
+            add_wiremap w (to_list_wireset fi, self, blk) fios in
+        fold_wiremap add_fio fos empty_wiremap in
     let rec balance fls work =
         match remove_fanout_load_priority_queue fls work with
           None -> fls
         | Some ((w, Fanout_load (d,n,_)), work) ->
-          let (fi,self,fio) = find_wiremap w fan_in_out in
-          let fil = map (find_fanout_load_map fls) fi in
+          let (fi,self,blk) = find_wiremap w fan_in_out in
+          let fil = map (circuit_fanout_load fls) fi in
           let x = increase_duplication d n fil in
           if x = 0 then balance fls work else
           let d = d + x in
           let n = if self then n + x else n in
           let fl = mk_fanout_load d n in
-          let fls = update_fanout_load_map w fl fls in
-          let fls = rev_itlist (add_fanout_load_map x) fi fls in
-          let work = add_fanout_load_priority_queue fls fio work in
+          let fls = update_circuit_fanout_loads w fl fls in
+          let fls = rev_itlist (add_circuit_fanout_loads x) fi fls in
+          let work = add_fanout_load_priority_queue primary_inputs fls blk work in
 (* Debugging
           let () =
               let msg =
@@ -2054,8 +2061,8 @@ let duplicate_logic =
               complain msg in
 *)
           balance fls work in
-    let fls = new_fanout_load_map fanouts in
-    let work = new_fanout_load_priority_queue fls in
+    let fls = new_circuit_fanout_loads fanouts in
+    let work = new_fanout_load_priority_queue primary_inputs fls in
     balance fls work;;
 
 (* Testing
@@ -2064,7 +2071,7 @@ let ckt = montgomery_91_thm;;
 let primary_inputs = debug_circuit_primary_inputs ckt;;
 let fanins = debug_circuit_fanins ckt;;
 let fanouts = debug_circuit_fanouts ckt;;
-duplicate_logic primary_inputs fanins fanouts;;
+circuit_fanout_loads primary_inputs fanins fanouts;;
 *)
 
 (* ------------------------------------------------------------------------- *)
@@ -2116,6 +2123,12 @@ let pp_print_distribution print_x print_y fmt (title,xys) =
 let pp_print_hardware_profile fmt ckt_info =
     let (primary_inputs,primary_outputs,registers,gates,fanins,fanouts,
          fanout_loads) = ckt_info in
+    let duplication =
+        let Circuit_primary_inputs ws = primary_inputs in
+        let add w (Fanout_load (d,_,_)) acc =
+            if mem_wireset w ws then acc else (w,d) :: acc in
+        let Circuit_fanout_loads wm = fanout_loads in
+        rev (fold_wiremap add wm []) in
     let primary_inputs =
         let Circuit_primary_inputs ws = primary_inputs in
         size_wireset ws in
@@ -2136,13 +2149,9 @@ let pp_print_hardware_profile fmt ckt_info =
         let fc w f z = (w, size_wireset f) :: z in
         let Circuit_fanouts wm = fanouts in
         fold_wiremap fc wm [] in
-    let duplication =
-        let add w (Fanout_load (d,_,_)) acc = (w,d) :: acc in
-        let Fanout_load_map wm = fanout_loads in
-        rev (fold_wiremap add wm []) in
     let fanout_loads =
         let add w (Fanout_load (_,_,l)) acc = (w, truncate l) :: acc in
-        let Fanout_load_map wm = fanout_loads in
+        let Circuit_fanout_loads wm = fanout_loads in
         rev (fold_wiremap add wm []) in
     let pp_print_wire_dist =
         pp_print_distribution pp_print_term Format.pp_print_int in
@@ -2369,7 +2378,14 @@ let hardware_to_verilog =
         () in
     let verilog_header name ckt = print (verilog_comment name (concl ckt)) in
     let verilog_body name primary ckt_info =
-        let (defs,registers,gates) = ckt_info in
+        let (defs,registers,gates,fanins,fanouts,fanout_loads) = ckt_info in
+        let register_comment r =
+            let fi = size_wireset (fst (circuit_fanin fanins r)) in
+            let fo = size_wireset (circuit_fanout fanouts r) in
+            let Fanout_load (d,l,_) = circuit_fanout_load fanout_loads r in
+            Some
+              (string_of_int fi ^ ":" ^ string_of_int fo ^ ":" ^
+               string_of_int l ^ ":" ^ string_of_int d) in
         let registers =
             let Circuit_registers regs = registers in
             wire_sort (to_list_wireset regs) in
@@ -2386,7 +2402,7 @@ let hardware_to_verilog =
         let () = print (verilog_module_begin name primary_args) in
         let () = verilog_arg_declarations "input" primary_input_args in
         let () = verilog_arg_declarations "output" primary_output_args in
-        let () = verilog_wire_declarations "reg" no_comment registers in
+        let () = verilog_wire_declarations "reg" register_comment registers in
         let () = verilog_wire_declarations "wire" no_comment wires in
         let () = verilog_combinational defs (wires @ primary_outputs) in
         let () = verilog_delays (hd primary) defs registers in
@@ -2408,12 +2424,12 @@ let hardware_to_verilog =
     let fanouts = circuit_fanouts fanins primary_inputs registers in
     let fanout_loads =
         complain_timed "- Duplicated logic"
-          (duplicate_logic primary_inputs fanins) fanouts in
+          (circuit_fanout_loads primary_inputs fanins) fanouts in
     let () =
         complain_timed "- Generated spec"
           (verilog_header name) ckt in
     let () =
-        let ckt_info = (defs,registers,gates) in
+        let ckt_info = (defs,registers,gates,fanins,fanouts,fanout_loads) in
         complain_timed "- Generated module"
           (verilog_body name primary) ckt_info in
     let () =
