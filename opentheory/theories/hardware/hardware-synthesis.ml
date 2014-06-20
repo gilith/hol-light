@@ -2113,19 +2113,9 @@ let pp_print_distribution print_x print_y fmt (title,xys) =
     let () = Format.pp_close_box fmt () in
     ();;
 
-let pp_print_hardware_profile fmt ckt =
-    let logic = circuit_logic ckt in
-    let wires = circuit_wires logic in
-    let defs = circuit_defs logic in
-    let primary_inputs = circuit_primary_inputs defs wires in
-    let primary_outputs = circuit_primary_outputs logic in
-    let registers = circuit_registers logic in
-    let gates = circuit_gates logic in
-    let fanins = circuit_fanins defs primary_inputs primary_outputs registers in
-    let fanouts = circuit_fanouts fanins primary_inputs registers in
-    let fanout_loads =
-        complain_timed "- - Duplicated logic"
-          (duplicate_logic primary_inputs fanins) fanouts in
+let pp_print_hardware_profile fmt ckt_info =
+    let (primary_inputs,primary_outputs,registers,gates,fanins,fanouts,
+         fanout_loads) = ckt_info in
     let primary_inputs =
         let Circuit_primary_inputs ws = primary_inputs in
         size_wireset ws in
@@ -2269,11 +2259,11 @@ let verilog_wire_names =
     INST (norm_sub sub) ckt;;
 
 let hardware_to_verilog =
+    let no_comment _ = None in
     let wire_name w =
         if is_ground w then "1'b0" else
         if is_power w then "1'b1" else
         dest_wire_var w in
-    let wire_names = map wire_name in
     let arg_name arg =
         match arg with
           Wire_verilog_arg w -> wire_name w
@@ -2284,18 +2274,6 @@ let hardware_to_verilog =
           Wire_verilog_arg w -> wire_name w
         | Bus_verilog_arg (Bus_wires (b,is)) ->
           range_to_string (rev is) ^ " " ^ b in
-    let arg_decls = map arg_decl in
-    let find_gate g w =
-        let add gate m =
-            let s = dest_wire_var (rand gate) in
-            if not (String_map.mem s m) then String_map.add s gate m else
-            failwith ("multiple " ^ g ^ "s for " ^ w ^ " " ^ s) in
-        fun gates ->
-        let gate_map = rev_itlist add gates String_map.empty in
-        fun wire ->
-        let s = dest_wire_var wire in
-        if String_map.mem s gate_map then String_map.find s gate_map else
-        failwith ("no " ^ g ^ " found for " ^ w ^ " " ^ s) in
     let verilog_comment name property =
         let prop =
             let n = get_margin () in
@@ -2344,40 +2322,44 @@ let hardware_to_verilog =
         else if is_case1 comb then verilog_case1 comb
         else failwith ("weird assumption: " ^ string_of_term comb) in
     let verilog_module_end name = "\nendmodule // " ^ name ^ "\n" in
-    let verilog_profile th =
+    let verilog_profile ckt_info =
         let prof =
             let n = get_margin () in
             let () = set_margin (VERILOG_LINE_LENGTH - 4) in
-            let s = hardware_profile_to_string th in
+            let s = hardware_profile_to_string ckt_info in
             let () = set_margin n in
             s in
         "\n" ^ comment_box_text prof in
     fun h ->
     let print = output_string h in
-    let verilog_declarations kind xs =
+    let verilog_declarations kind name comment xs =
         if length xs = 0 then () else
-        let print_decl x = print ("  " ^ kind ^ " " ^ x ^ ";\n") in
+        let print_decl x =
+            let n = name x in
+            let c =
+                match comment x with
+                  None -> ""
+                | Some s -> "  /* " ^ s ^ " */" in
+            print ("  " ^ kind ^ " " ^ n ^ ";" ^ c ^ "\n") in
         let () = print "\n" in
         let () = List.iter print_decl xs in
         () in
-    let verilog_wire_declarations kind wires =
-        verilog_declarations kind (wire_names wires) in
+    let verilog_wire_declarations kind comment wires =
+        verilog_declarations kind wire_name comment wires in
     let verilog_arg_declarations kind args =
-        verilog_declarations kind (arg_decls args) in
-    let verilog_combinational combs wires =
-        if length combs = 0 then () else
-        let find_comb = find_gate "assignment" "wire" combs in
+        verilog_declarations kind arg_decl no_comment args in
+    let verilog_combinational defs wires =
+        if length wires = 0 then () else
         let print_comb w =
-            let s = verilog_comb (find_comb w) in
+            let s = verilog_comb (circuit_def defs w) in
             print ("  " ^ s ^ "\n") in
         let () = print "\n" in
         let () = List.iter print_comb wires in
         () in
-    let verilog_delays clk delays registers =
-        if length delays = 0 then () else
-        let find_delay = find_gate "delay" "register" delays in
+    let verilog_delays clk defs registers =
+        if length registers = 0 then () else
         let print_delay r =
-            let s = verilog_delay (find_delay r) in
+            let s = verilog_delay (circuit_def defs r) in
             print ("      " ^ s ^ "\n") in
         let () = print "\n" in
         let () = print ("  always @(posedge " ^ wire_name clk ^ ")\n") in
@@ -2385,40 +2367,61 @@ let hardware_to_verilog =
         let () = List.iter print_delay registers in
         let () = print "    end\n" in
         () in
-    let verilog_header name th = print (verilog_comment name (concl th)) in
-    let verilog_body name primary th =
-        let (delays,combs) = partition is_delay (hyp th) in
-        let registers = wire_sort (map rand delays) in
-        let wires = map rand combs in
-        let is_wire w = mem w wires in
-        let (primary_outputs,primary_inputs) = partition is_wire primary in
-        let wires = wire_sort (filter (not o C mem primary_outputs) wires) in
+    let verilog_header name ckt = print (verilog_comment name (concl ckt)) in
+    let verilog_body name primary ckt_info =
+        let (defs,registers,gates) = ckt_info in
+        let registers =
+            let Circuit_registers regs = registers in
+            wire_sort (to_list_wireset regs) in
+        let wires =
+            let Circuit_gates gs = gates in
+            wire_sort (map rand gs) in
+        let (primary_outputs,primary_inputs) =
+            let Circuit_defs wm = defs in
+            let has_def w = mem_wiremap w wm in
+            partition has_def primary in
         let primary_input_args = collect_verilog_args primary_inputs in
         let primary_output_args = collect_verilog_args primary_outputs in
         let primary_args = primary_input_args @ primary_output_args in
         let () = print (verilog_module_begin name primary_args) in
         let () = verilog_arg_declarations "input" primary_input_args in
         let () = verilog_arg_declarations "output" primary_output_args in
-        let () = verilog_wire_declarations "reg" registers in
-        let () = verilog_wire_declarations "wire" wires in
-        let () = verilog_combinational combs (wires @ primary_outputs) in
-        let () = verilog_delays (hd primary) delays registers in
+        let () = verilog_wire_declarations "reg" no_comment registers in
+        let () = verilog_wire_declarations "wire" no_comment wires in
+        let () = verilog_combinational defs (wires @ primary_outputs) in
+        let () = verilog_delays (hd primary) defs registers in
         let () = print (verilog_module_end name) in
         () in
-    let verilog_footer th = print (verilog_profile th) in
-    fun name -> fun primary -> fun th ->
-    let th =
+    let verilog_footer ckt_info = print (verilog_profile ckt_info) in
+    fun name -> fun primary -> fun ckt ->
+    let ckt =
         complain_timed "- Renamed wires"
-          (verilog_wire_names primary) th in
+          (verilog_wire_names primary) ckt in
+    let logic = circuit_logic ckt in
+    let wires = circuit_wires logic in
+    let defs = circuit_defs logic in
+    let primary_inputs = circuit_primary_inputs defs wires in
+    let primary_outputs = circuit_primary_outputs logic in
+    let registers = circuit_registers logic in
+    let gates = circuit_gates logic in
+    let fanins = circuit_fanins defs primary_inputs primary_outputs registers in
+    let fanouts = circuit_fanouts fanins primary_inputs registers in
+    let fanout_loads =
+        complain_timed "- Duplicated logic"
+          (duplicate_logic primary_inputs fanins) fanouts in
     let () =
         complain_timed "- Generated spec"
-          (verilog_header name) th in
+          (verilog_header name) ckt in
     let () =
+        let ckt_info = (defs,registers,gates) in
         complain_timed "- Generated module"
-          (verilog_body name primary) th in
+          (verilog_body name primary) ckt_info in
     let () =
+        let ckt_info =
+            (primary_inputs,primary_outputs,registers,gates,fanins,fanouts,
+             fanout_loads) in
         complain_timed "- Generated profile"
-          verilog_footer th in
+          verilog_footer ckt_info in
     ();;
 
 (*** Testing
