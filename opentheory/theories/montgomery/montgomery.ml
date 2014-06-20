@@ -6488,10 +6488,49 @@ let check_test_montgomery_double_exp n m name ckt =
     if eq_num spec ckt then ()
     else failwith "TEST FAILED: spec <> ckt";;
 
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+(* To estimate the time required to run a random test, we assume *)
+(* the running time is a quadratic polynomial of (bit_width n)   *)
+(* multiplied by m.                                              *)
+(*                                                               *)
+(* Solve for best fit coefficients using                         *)
+(*                                                               *)
+(*   http://www.arachnoid.com/polysolve/                         *)
+(*                                                               *)
+(* and entering the following performance results (m = 1000):    *)
+(*                                                               *)
+(*   64,35                                                       *)
+(*   128,182                                                     *)
+(*   256,907                                                     *)
+(*   512,4453                                                    *)
+(* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+
+let test_montgomery_double_exp_estimate_run =
+    let c2 =  2.07112e-5 in
+    let c1 = -2.09218e-3 in
+    let c0 =  9.36666e-2 in
+    fun n -> fun m ->
+    let n = float_of_num (bit_width_num n) in
+    let m = float_of_num m in
+    ((c2 *. n +. c1) *. n +. c0) *. m;;
+
+let test_montgomery_double_exp_max_test_run = 1000;;
+
 let test_montgomery_double_exp n m name ckt =
     let () =
         complain_timed "- Generated verilog testbench"
           (testbench_montgomery_double_exp name) ckt in
+    let continue =
+        let run = truncate (test_montgomery_double_exp_estimate_run n m) in
+        let go = run <= test_montgomery_double_exp_max_test_run in
+        let () =
+            complain
+              ("- Estimate random test run will take " ^
+               string_of_int run ^ " second" ^
+               (if run = 1 then "" else "s") ^ " (" ^
+               (if go then "continuing" else "skipping") ^ ")") in
+        go in
+    if not continue then () else
     let () =
         complain_timed "- Ran a random test"
           run_test_montgomery_double_exp name in
@@ -6511,9 +6550,11 @@ let performance_test_montgomery_double_exp w =
         () in
     complain_timed "TOTAL" test ();;
 
+let performance_test_max_size = 1024;;
+
 let performance_tests_montgomery_double_exp () =
     let rec test w =
-        if w = 1024 then () else
+        if w > performance_test_max_size then () else
         let () = performance_test_montgomery_double_exp w in
         test (w * 2) in
      test 8;;
@@ -6537,6 +6578,7 @@ hardware_to_verilog_file "double_exp_91" primary double_exp_91_thm;;
 let n = dest_numeral `221`;;
 let m = dest_numeral `1000`;;
 let (name,ckt) = synthesize_montgomery_double_exp n m;;
+test_montgomery_double_exp_estimate_run n m;;
 test_montgomery_double_exp n m name ckt;;
 
 performance_test_montgomery_double_exp 8;;
