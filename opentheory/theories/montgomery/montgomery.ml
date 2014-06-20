@@ -6525,7 +6525,7 @@ let test_montgomery_double_exp n m name ckt =
         let go = run <= test_montgomery_double_exp_max_test_run in
         let () =
             complain
-              ("- Estimate random test run will take " ^
+              ("- - Estimate random test run will take " ^
                string_of_int run ^ " second" ^
                (if run = 1 then "" else "s") ^ " (" ^
                (if go then "continuing" else "skipping") ^ ")") in
