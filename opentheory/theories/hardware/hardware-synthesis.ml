@@ -1977,7 +1977,7 @@ let add_fanout_load_priority_queue primary_inputs flm =
     if size_priority_queue pq > 3 * size_wiremap wm then
       new_fanout_load_priority_queue primary_inputs flm
     else
-      Fanout_load_priority_queue (fold_wireset add ws pq);;
+      Fanout_load_priority_queue (rev_itlist add ws pq);;
 
 let remove_fanout_load_priority_queue (Circuit_fanout_loads wm) =
     let rec remove pq =
@@ -2024,10 +2024,8 @@ let circuit_fanout_loads =
     let fan_in_out =
         let Circuit_primary_inputs pis = primary_inputs in
         let Circuit_fanouts fos = fanouts in
-        let not_reg w = mem_wireset w pis or not (mem_wiremap w fos) in
-        let add_blk wire w fio =
-            if w = wire or not_reg w then fio
-            else add_wireset w fio in
+        let is_reg w = not (mem_wireset w pis) && mem_wiremap w fos in
+        let is_blk wire w = w <> wire && is_reg w in
         let add_fio w fo fios =
             if mem_wireset w pis then fios else
             let (fi,_) = circuit_fanin fanins w in
@@ -2036,7 +2034,9 @@ let circuit_fanout_loads =
             let () =
                 if not (null_wireset fi) then ()
                 else failwith ("register " ^ dest_wire_var w ^ " has no fan-in") in
-            let blk = fold_wireset (add_blk w) (union_wireset fi fo) empty_wireset in
+            let blk =
+                let ws = union_wireset fi fo in
+                filter (is_blk w) (to_list_wireset ws) in
             add_wiremap w (to_list_wireset fi, self, blk) fios in
         fold_wiremap add_fio fos empty_wiremap in
     let rec balance fls work =
@@ -2124,35 +2124,35 @@ let pp_print_hardware_profile fmt ckt_info =
     let (primary_inputs,primary_outputs,registers,gates,fanins,fanouts,
          fanout_loads) = ckt_info in
     let duplication =
-        let Circuit_primary_inputs ws = primary_inputs in
+        let Circuit_primary_inputs pis = primary_inputs in
         let add w (Fanout_load (d,_,_)) acc =
-            if mem_wireset w ws then acc else (w,d) :: acc in
-        let Circuit_fanout_loads wm = fanout_loads in
-        rev (fold_wiremap add wm []) in
+            if mem_wireset w pis then acc else (w,d) :: acc in
+        let Circuit_fanout_loads fols = fanout_loads in
+        rev (fold_wiremap add fols []) in
     let primary_inputs =
-        let Circuit_primary_inputs ws = primary_inputs in
-        size_wireset ws in
+        let Circuit_primary_inputs pis = primary_inputs in
+        size_wireset pis in
     let primary_outputs =
-        let Circuit_primary_outputs ws = primary_outputs in
-        size_wireset ws in
+        let Circuit_primary_outputs pos = primary_outputs in
+        size_wireset pos in
     let registers =
-        let Circuit_registers ws = registers in
-        size_wireset ws in
+        let Circuit_registers regs = registers in
+        size_wireset regs in
     let gates =
         let Circuit_gates tms = gates in
         length tms in
     let (fanins,fanin_cones) =
         let fc w (f,c) z = ((w, size_wireset f), (w, size_wireset c)) :: z in
-        let Circuit_fanins wm = fanins in
-        unzip (fold_wiremap fc wm []) in
+        let Circuit_fanins fis = fanins in
+        unzip (fold_wiremap fc fis []) in
     let fanouts =
         let fc w f z = (w, size_wireset f) :: z in
-        let Circuit_fanouts wm = fanouts in
-        fold_wiremap fc wm [] in
+        let Circuit_fanouts fos = fanouts in
+        fold_wiremap fc fos [] in
     let fanout_loads =
         let add w (Fanout_load (_,_,l)) acc = (w, truncate l) :: acc in
-        let Circuit_fanout_loads wm = fanout_loads in
-        rev (fold_wiremap add wm []) in
+        let Circuit_fanout_loads fols = fanout_loads in
+        rev (fold_wiremap add fols []) in
     let pp_print_wire_dist =
         pp_print_distribution pp_print_term Format.pp_print_int in
     let () = Format.pp_open_box fmt 0 in
@@ -2170,9 +2170,9 @@ let pp_print_hardware_profile fmt ckt_info =
     let () = Format.pp_print_newline fmt () in
     let () = pp_print_wire_dist fmt ("Fan-out",fanouts) in
     let () = Format.pp_print_newline fmt () in
-    let () = pp_print_wire_dist fmt ("Fan-out load",fanout_loads) in
-    let () = Format.pp_print_newline fmt () in
     let () = pp_print_wire_dist fmt ("Duplication",duplication) in
+    let () = Format.pp_print_newline fmt () in
+    let () = pp_print_wire_dist fmt ("Fan-out load",fanout_loads) in
     let () = Format.pp_close_box fmt () in
     ();;
 
@@ -2380,12 +2380,15 @@ let hardware_to_verilog =
     let verilog_body name primary ckt_info =
         let (defs,registers,gates,fanins,fanouts,fanout_loads) = ckt_info in
         let register_comment r =
-            let fi = size_wireset (fst (circuit_fanin fanins r)) in
+            let (fi,fic) = circuit_fanin fanins r in
+            let fi = size_wireset fi in
+            let fic = size_wireset fic in
             let fo = size_wireset (circuit_fanout fanouts r) in
-            let Fanout_load (d,l,_) = circuit_fanout_load fanout_loads r in
+            let Fanout_load (d,_,fol) = circuit_fanout_load fanout_loads r in
             Some
-              (string_of_int fi ^ ":" ^ string_of_int fo ^ ":" ^
-               string_of_int l ^ ":" ^ string_of_int d) in
+              (string_of_int fi ^ ":" ^ string_of_int fic ^ "|" ^
+               string_of_int fo ^ "/" ^ string_of_int d ^ "=" ^
+               string_of_int (truncate fol)) in
         let registers =
             let Circuit_registers regs = registers in
             wire_sort (to_list_wireset regs) in
