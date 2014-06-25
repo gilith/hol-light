@@ -6708,7 +6708,7 @@ let () =
 
 let synthesize_timelock =
     let mk_rw () =
-        let def = checksum_prime_def in
+        let def = timelock_modulus_def in
         let conv =
             LAND_CONV (REWR_CONV def) THENC
             RAND_CONV (REWR_CONV checksum_prime_def) THENC
