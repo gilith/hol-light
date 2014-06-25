@@ -6624,7 +6624,7 @@ let miller_rabin t n =
     if eq_num n num_2 then true else
     if eq_num n num_1 or not (bit_hd_num n) then false else
     let composite_witness =
-        let (r,s) = factor_twos (sub_num n num_1) in
+        let (r,s) = factor_twos_num (sub_num n num_1) in
         fun a -> witness (modexp_num n a s) r in
     let random_range =
         let m = sub_num n (num_of_int 3) in
@@ -6730,7 +6730,7 @@ let synthesize_timelock =
 
 (***
 disable_proof_logging ();;
-synthesize_timelock 6;;
+synthesize_timelock 8;;
 ***)
 
 logfile_end ();;
