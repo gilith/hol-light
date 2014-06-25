@@ -1,3 +1,4 @@
 *.o
 *.out
 double_exp_*.v
+timelock_*.v
