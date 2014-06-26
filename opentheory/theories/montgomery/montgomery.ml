@@ -6712,7 +6712,7 @@ let test_prime_one_num = dest_numeral `9990113051209019899`;;
 
 let test_prime_two_num = dest_numeral `9999011305120901971`;;
 
-let test_modulus_num = mult_num test_prime_one_num test_prime_two_num;
+let test_modulus_num = mult_num test_prime_one_num test_prime_two_num;;
 
 (***
 bit_width_num test_prime_one_num;;
