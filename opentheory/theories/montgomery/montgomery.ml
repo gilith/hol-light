@@ -6687,15 +6687,17 @@ let time_capsule_z_def = new_definition
 ***)
 
 let checksum_prime_def = new_definition
-  `checksum_prime = 9990113051209019899`;;
+  `checksum_prime = 201301130512090183`;;
 
 let checksum_prime_num = dest_numeral (rhs (concl checksum_prime_def));;
 
 (***
 bit_width_num checksum_prime_num;;
+bit_width_num (mult_num timelock_modulus_num checksum_prime_num);;
+mod_num (bit_width_num (mult_num timelock_modulus_num checksum_prime_num)) (num_of_int 8);;
 is_prime checksum_prime_num;;
-let () =
-    let s = String.sub (string_of_num checksum_prime_num) 3 12 in
+let secret =
+    let s = String.sub (string_of_num checksum_prime_num) 4 12 in
     let rec decode ds =
         match ds with
           [] -> []
@@ -6703,12 +6705,28 @@ let () =
         | d1 :: d2 :: ds ->
           let c = Char.chr (int_of_string (d1 ^ d2) + 64) in
           String.make 1 c :: decode ds in
-    complain ("\n" ^ implode (decode (explode s)));;
+    implode (decode (explode s));;
+***)
+
+let test_prime_one_num = dest_numeral `9990113051209019899`;;
+
+let test_prime_two_num = dest_numeral `9999011305120901971`;;
+
+let test_modulus_num = mult_num test_prime_one_num test_prime_two_num;
+
+(***
+bit_width_num test_prime_one_num;;
+bit_width_num test_prime_two_num;;
+bit_width_num test_modulus_num;;
+bit_width_num (mult_num test_modulus_num checksum_prime_num);;
+mod_num (bit_width_num (mult_num test_modulus_num checksum_prime_num)) (num_of_int 8);;
+is_prime test_prime_one_num;;
+is_prime test_prime_two_num;;
+is_prime test_modulus_num;;
 ***)
 
 let synthesize_timelock =
-    let mk_rw () =
-        let def = timelock_modulus_def in
+    let mk_rw def =
         let conv =
             LAND_CONV (REWR_CONV def) THENC
             RAND_CONV (REWR_CONV checksum_prime_def) THENC
@@ -6718,10 +6736,10 @@ let synthesize_timelock =
               (`( * ) : num -> num -> num`,
                [lhs (concl def); `checksum_prime`]) in
         SYM (conv tm) in
-    let mk_ckt d =
-        let name = "timelock_" ^ string_of_int d in
+    let mk_ckt prefix def d =
+        let name = prefix ^ "timelock_" ^ string_of_int d in
         let () = complain ("Synthesizing " ^ name ^ ":") in
-        let rw = complain_timed "Multiplied modulus and checksum" mk_rw () in
+        let rw = complain_timed "Multiplied modulus and checksum" mk_rw def in
         let n = dest_numeral (lhs (concl rw)) in
         let m = funpow d (fun x -> mult_num x (num_of_int 10)) num_1 in
         let ckt = synthesize_montgomery_double_exp name [rw] n m in
@@ -6730,7 +6748,9 @@ let synthesize_timelock =
 
 (***
 disable_proof_logging ();;
-synthesize_timelock 8;;
+synthesize_timelock "test_" (REFL (mk_numeral test_modulus_num)) 3;;
+synthesize_timelock "" timelock_modulus_def 8;;
+synthesize_timelock "" timelock_modulus_def 9;;
 ***)
 
 logfile_end ();;
