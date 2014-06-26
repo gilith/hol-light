@@ -24,141 +24,141 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   output [6:0] ys;
   output [6:0] yc;
 
-  reg ctre_cp0;
-  reg ctre_cp1;
-  reg ctre_cp2;
-  reg ctre_cp3;
-  reg ctre_dp;
-  reg ctre_sp0;
-  reg ctre_sp1;
-  reg ctre_sp2;
-  reg ctre_sp3;
-  reg multm_compress_ncd;
-  reg multm_compress_nsd;
-  reg multm_compress_pipe0_x1;
-  reg multm_compress_pipe1_x1;
-  reg multm_ctrp_ctr_cp0;
-  reg multm_ctrp_ctr_cp1;
-  reg multm_ctrp_ctr_cp2;
-  reg multm_ctrp_ctr_cp3;
-  reg multm_ctrp_ctr_dp;
-  reg multm_ctrp_ctr_sp0;
-  reg multm_ctrp_ctr_sp1;
-  reg multm_ctrp_ctr_sp2;
-  reg multm_jpd;
-  reg multm_pipe_x1;
-  reg multm_qcp0;
-  reg multm_qcp1;
-  reg multm_qcp2;
-  reg multm_qcp3;
-  reg multm_qcp4;
-  reg multm_qcp5;
-  reg multm_qcp6;
-  reg multm_qcp7;
-  reg multm_qsp0;
-  reg multm_qsp1;
-  reg multm_qsp2;
-  reg multm_qsp3;
-  reg multm_qsp4;
-  reg multm_qsp5;
-  reg multm_qsp6;
-  reg multm_qsp7;
-  reg multm_reduce_ld1;
-  reg multm_reduce_ld2;
-  reg multm_reduce_mulb0_cp0;
-  reg multm_reduce_mulb0_cp1;
-  reg multm_reduce_mulb0_cp2;
-  reg multm_reduce_mulb0_cp3;
-  reg multm_reduce_mulb0_cp4;
-  reg multm_reduce_mulb0_cp5;
-  reg multm_reduce_mulb0_cp6;
-  reg multm_reduce_mulb0_cp7;
-  reg multm_reduce_mulb0_sp0;
-  reg multm_reduce_mulb0_sp1;
-  reg multm_reduce_mulb0_sp2;
-  reg multm_reduce_mulb0_sp3;
-  reg multm_reduce_mulb0_sp4;
-  reg multm_reduce_mulb0_sp5;
-  reg multm_reduce_mulb0_sp6;
-  reg multm_reduce_mulb0_sp7;
-  reg multm_reduce_mulsc_ldd;
-  reg multm_reduce_mulsc_mulb_cp4;
-  reg multm_reduce_mulsc_mulb_cp5;
-  reg multm_reduce_mulsc_mulb_cp6;
-  reg multm_reduce_mulsc_mulb_sp5;
-  reg multm_reduce_mulsc_mulb_sp6;
-  reg multm_reduce_mulsc_pipe_x1;
-  reg multm_reduce_mulsc_shrsc_cp0;
-  reg multm_reduce_mulsc_shrsc_cp1;
-  reg multm_reduce_mulsc_shrsc_cp2;
-  reg multm_reduce_mulsc_shrsc_cp3;
-  reg multm_reduce_mulsc_shrsc_cp4;
-  reg multm_reduce_mulsc_shrsc_cp5;
-  reg multm_reduce_mulsc_shrsc_cp6;
-  reg multm_reduce_mulsc_shrsc_sp0;
-  reg multm_reduce_mulsc_shrsc_sp1;
-  reg multm_reduce_mulsc_shrsc_sp2;
-  reg multm_reduce_mulsc_shrsc_sp3;
-  reg multm_reduce_mulsc_shrsc_sp4;
-  reg multm_reduce_mulsc_shrsc_sp5;
-  reg multm_reduce_mulsc_xbd;
-  reg multm_reduce_pipe0_x1;
-  reg multm_reduce_pipe0_x3;
-  reg multm_reduce_pipe1_x1;
-  reg multm_reduce_pipe2_x1;
-  reg multm_reduce_qb2;
-  reg multm_reduce_sa0;
-  reg multm_reduce_sa1;
-  reg multm_reduce_sa2;
-  reg multm_reduce_sa3;
-  reg multm_reduce_sa4;
-  reg multm_reduce_sa5;
-  reg multm_reduce_sa6;
-  reg multm_reduce_sa7;
-  reg multm_reduce_sa8;
-  reg multm_reduce_sb0;
-  reg multm_reduce_sb1;
-  reg multm_reduce_sb2;
-  reg multm_reduce_sb3;
-  reg multm_reduce_sc0;
-  reg multm_reduce_sc1;
-  reg multm_reduce_sc2;
-  reg multm_reduce_sc3;
-  reg multm_reduce_sc4;
-  reg multm_reduce_sc5;
-  reg multm_reduce_sd0;
-  reg multm_reduce_sd1;
-  reg multm_reduce_sd2;
-  reg multm_reduce_sd3;
-  reg multm_reduce_sd4;
-  reg multm_reduce_sd5;
-  reg multm_reduce_sd6;
-  reg pipe0_x1;
-  reg pipe0_x2;
-  reg pipe0_x3;
-  reg pipe1_x1;
-  reg pipe1_x2;
-  reg pipe1_x3;
-  reg sa;
-  reg sad;
-  reg sadd;
-  reg sb;
-  reg sbd;
-  reg sbdd;
-  reg yc0_o;
-  reg yc1_o;
-  reg yc2_o;
-  reg yc3_o;
-  reg yc4_o;
-  reg yc5_o;
-  reg yc6_o;
-  reg ys0_o;
-  reg ys1_o;
-  reg ys2_o;
-  reg ys3_o;
-  reg ys4_o;
-  reg ys5_o;
-  reg ys6_o;
+  reg ctre_cp0;  /* 3:4|2/1=2 */
+  reg ctre_cp1;  /* 4:4|2/1=2 */
+  reg ctre_cp2;  /* 4:4|2/1=2 */
+  reg ctre_cp3;  /* 4:4|2/1=2 */
+  reg ctre_dp;  /* 4:4|2/1=2 */
+  reg ctre_sp0;  /* 3:4|2/1=2 */
+  reg ctre_sp1;  /* 4:3|2/1=2 */
+  reg ctre_sp2;  /* 4:3|2/1=2 */
+  reg ctre_sp3;  /* 4:4|2/1=2 */
+  reg multm_compress_ncd;  /* 1:0|12/3=4 */
+  reg multm_compress_nsd;  /* 1:0|14/3=4 */
+  reg multm_compress_pipe0_x1;  /* 2:1|1/1=3 */
+  reg multm_compress_pipe1_x1;  /* 3:2|1/1=3 */
+  reg multm_ctrp_ctr_cp0;  /* 2:3|3/1=3 */
+  reg multm_ctrp_ctr_cp1;  /* 3:3|2/1=2 */
+  reg multm_ctrp_ctr_cp2;  /* 3:3|2/1=2 */
+  reg multm_ctrp_ctr_cp3;  /* 3:3|4/1=4 */
+  reg multm_ctrp_ctr_dp;  /* 3:3|4/1=4 */
+  reg multm_ctrp_ctr_sp0;  /* 3:2|2/1=2 */
+  reg multm_ctrp_ctr_sp1;  /* 3:2|2/1=2 */
+  reg multm_ctrp_ctr_sp2;  /* 3:3|2/1=2 */
+  reg multm_jpd;  /* 1:0|16/4=4 */
+  reg multm_pipe_x1;  /* 3:5|1/1=4 */
+  reg multm_qcp0;  /* 5:6|3/1=3 */
+  reg multm_qcp1;  /* 5:6|3/1=3 */
+  reg multm_qcp2;  /* 5:6|3/1=3 */
+  reg multm_qcp3;  /* 5:6|3/1=3 */
+  reg multm_qcp4;  /* 2:2|3/1=3 */
+  reg multm_qcp5;  /* 9:13|3/1=3 */
+  reg multm_qcp6;  /* 8:12|3/1=3 */
+  reg multm_qcp7;  /* 8:9|2/1=2 */
+  reg multm_qsp0;  /* 5:3|3/1=3 */
+  reg multm_qsp1;  /* 5:3|3/1=3 */
+  reg multm_qsp2;  /* 5:3|3/1=3 */
+  reg multm_qsp3;  /* 5:3|3/1=3 */
+  reg multm_qsp4;  /* 5:3|3/1=3 */
+  reg multm_qsp5;  /* 9:10|3/1=3 */
+  reg multm_qsp6;  /* 8:9|3/1=3 */
+  reg multm_qsp7;  /* 6:4|3/1=3 */
+  reg multm_reduce_ld1;  /* 1:0|18/4=4 */
+  reg multm_reduce_ld2;  /* 1:0|13/3=4 */
+  reg multm_reduce_mulb0_cp0;  /* 5:7|4/1=4 */
+  reg multm_reduce_mulb0_cp1;  /* 6:9|4/1=4 */
+  reg multm_reduce_mulb0_cp2;  /* 6:13|4/1=4 */
+  reg multm_reduce_mulb0_cp3;  /* 6:12|4/1=4 */
+  reg multm_reduce_mulb0_cp4;  /* 6:9|4/1=4 */
+  reg multm_reduce_mulb0_cp5;  /* 6:12|4/1=4 */
+  reg multm_reduce_mulb0_cp6;  /* 5:8|4/1=4 */
+  reg multm_reduce_mulb0_cp7;  /* 4:6|2/1=2 */
+  reg multm_reduce_mulb0_sp0;  /* 5:7|3/1=3 */
+  reg multm_reduce_mulb0_sp1;  /* 6:9|4/1=4 */
+  reg multm_reduce_mulb0_sp2;  /* 6:13|4/1=4 */
+  reg multm_reduce_mulb0_sp3;  /* 6:12|4/1=4 */
+  reg multm_reduce_mulb0_sp4;  /* 6:9|4/1=4 */
+  reg multm_reduce_mulb0_sp5;  /* 6:12|4/1=4 */
+  reg multm_reduce_mulb0_sp6;  /* 5:8|4/1=4 */
+  reg multm_reduce_mulb0_sp7;  /* 4:6|4/1=4 */
+  reg multm_reduce_mulsc_mulb_cp4;  /* 9:20|4/1=4 */
+  reg multm_reduce_mulsc_mulb_cp5;  /* 9:20|4/1=4 */
+  reg multm_reduce_mulsc_mulb_cp6;  /* 7:16|2/1=2 */
+  reg multm_reduce_mulsc_mulb_sp5;  /* 9:17|4/1=4 */
+  reg multm_reduce_mulsc_mulb_sp6;  /* 7:13|4/1=4 */
+  reg multm_reduce_mulsc_pipe_x1;  /* 4:2|1/1=3 */
+  reg multm_reduce_mulsc_shrsc_cp0;  /* 4:2|2/1=2 */
+  reg multm_reduce_mulsc_shrsc_cp1;  /* 4:2|2/1=2 */
+  reg multm_reduce_mulsc_shrsc_cp2;  /* 4:2|2/1=2 */
+  reg multm_reduce_mulsc_shrsc_cp3;  /* 4:2|2/1=2 */
+  reg multm_reduce_mulsc_shrsc_cp4;  /* 4:2|2/1=2 */
+  reg multm_reduce_mulsc_shrsc_cp5;  /* 4:2|2/1=2 */
+  reg multm_reduce_mulsc_shrsc_cp6;  /* 2:1|1/1=1 */
+  reg multm_reduce_mulsc_shrsc_sp0;  /* 4:2|2/1=2 */
+  reg multm_reduce_mulsc_shrsc_sp1;  /* 4:2|2/1=2 */
+  reg multm_reduce_mulsc_shrsc_sp2;  /* 4:2|2/1=2 */
+  reg multm_reduce_mulsc_shrsc_sp3;  /* 4:2|2/1=2 */
+  reg multm_reduce_mulsc_shrsc_sp4;  /* 4:2|2/1=2 */
+  reg multm_reduce_mulsc_shrsc_sp5;  /* 3:1|2/1=2 */
+  reg multm_reduce_mulsc_xbd;  /* 1:0|15/3=5 */
+  reg multm_reduce_pipe0_x1;  /* 1:0|1/1=4 */
+  reg multm_reduce_pipe0_x2;  /* 1:0|16/4=4 */
+  reg multm_reduce_pipe0_x3;  /* 1:0|1/1=4 */
+  reg multm_reduce_pipe1_x1;  /* 1:0|1/1=3 */
+  reg multm_reduce_pipe2_x1;  /* 3:3|1/1=3 */
+  reg multm_reduce_qb2;  /* 1:0|13/3=4 */
+  reg multm_reduce_sa0;  /* 1:0|2/1=2 */
+  reg multm_reduce_sa1;  /* 1:0|3/1=3 */
+  reg multm_reduce_sa2;  /* 1:0|16/3=5 */
+  reg multm_reduce_sa3;  /* 4:4|3/1=5 */
+  reg multm_reduce_sa4;  /* 8:12|6/1=6 */
+  reg multm_reduce_sa5;  /* 9:17|8/1=8 */
+  reg multm_reduce_sa6;  /* 9:17|8/1=8 */
+  reg multm_reduce_sa7;  /* 9:17|6/1=6 */
+  reg multm_reduce_sa8;  /* 9:17|5/1=5 */
+  reg multm_reduce_sb0;  /* 8:15|6/1=6 */
+  reg multm_reduce_sb1;  /* 9:20|6/1=6 */
+  reg multm_reduce_sb2;  /* 9:20|6/1=6 */
+  reg multm_reduce_sb3;  /* 9:20|5/1=5 */
+  reg multm_reduce_sc0;  /* 5:8|5/1=5 */
+  reg multm_reduce_sc1;  /* 6:12|6/1=6 */
+  reg multm_reduce_sc2;  /* 6:9|6/1=6 */
+  reg multm_reduce_sc3;  /* 6:13|6/1=6 */
+  reg multm_reduce_sc4;  /* 6:12|7/1=7 */
+  reg multm_reduce_sc5;  /* 5:7|8/1=8 */
+  reg multm_reduce_sd0;  /* 4:5|3/1=3 */
+  reg multm_reduce_sd1;  /* 5:8|6/1=6 */
+  reg multm_reduce_sd2;  /* 6:12|6/1=6 */
+  reg multm_reduce_sd3;  /* 6:9|6/1=6 */
+  reg multm_reduce_sd4;  /* 6:13|7/1=7 */
+  reg multm_reduce_sd5;  /* 6:12|8/1=8 */
+  reg multm_reduce_sd6;  /* 5:10|6/1=6 */
+  reg pipe0_x1;  /* 1:0|1/1=1 */
+  reg pipe0_x2;  /* 1:0|1/1=2 */
+  reg pipe0_x3;  /* 1:0|1/2=3 */
+  reg pipe1_x1;  /* 1:0|1/1=1 */
+  reg pipe1_x2;  /* 1:0|1/1=2 */
+  reg pipe1_x3;  /* 1:0|1/2=2 */
+  reg sa;  /* 6:9|3/1=3 */
+  reg sad;  /* 1:0|16/6=3 */
+  reg sadd;  /* 1:0|35/8=4 */
+  reg sb;  /* 9:14|3/1=3 */
+  reg sbd;  /* 1:0|16/5=3 */
+  reg sbdd;  /* 1:0|10/2=5 */
+  reg yc0_o;  /* 7:5|5/1=5 */
+  reg yc1_o;  /* 8:9|5/1=5 */
+  reg yc2_o;  /* 7:7|5/1=5 */
+  reg yc3_o;  /* 8:9|5/1=5 */
+  reg yc4_o;  /* 8:8|5/1=5 */
+  reg yc5_o;  /* 8:9|5/1=5 */
+  reg yc6_o;  /* 8:9|5/1=5 */
+  reg ys0_o;  /* 7:5|6/1=6 */
+  reg ys1_o;  /* 8:6|7/1=7 */
+  reg ys2_o;  /* 7:4|7/1=7 */
+  reg ys3_o;  /* 8:6|7/1=7 */
+  reg ys4_o;  /* 8:5|7/1=7 */
+  reg ys5_o;  /* 8:6|7/1=7 */
+  reg ys6_o;  /* 8:6|7/1=7 */
 
   wire ctre_cq0;
   wire ctre_cq1;
@@ -177,7 +177,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire ctre_sr1;
   wire ctre_sr2;
   wire ctre_sr3;
-  wire ctre_xn;
   wire dn_o;
   wire jp;
   wire jpn;
@@ -218,10 +217,8 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire multm_compress_ns;
   wire multm_compress_rn0;
   wire multm_compress_rn1;
-  wire multm_compress_rn2;
   wire multm_compress_rn4;
-  wire multm_compress_xn0;
-  wire multm_compress_xn1;
+  wire multm_compress_rnh3;
   wire multm_ctrp_ctr_cq0;
   wire multm_ctrp_ctr_cq1;
   wire multm_ctrp_ctr_cq2;
@@ -237,7 +234,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire multm_ctrp_ctr_sr0;
   wire multm_ctrp_ctr_sr1;
   wire multm_ctrp_ctr_sr2;
-  wire multm_ctrp_ctr_xn;
   wire multm_ctrp_ds;
   wire multm_ctrp_pulse_xn;
   wire multm_pc0;
@@ -367,8 +363,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire multm_reduce_mulb0_sq5;
   wire multm_reduce_mulb0_sq6;
   wire multm_reduce_mulb0_sq7;
-  wire multm_reduce_mulb0_xn0;
-  wire multm_reduce_mulb0_xn1;
   wire multm_reduce_mulb1_add3_maj3_or3_wx;
   wire multm_reduce_mulb1_add3_maj3_wx;
   wire multm_reduce_mulb1_add3_maj3_wy;
@@ -412,8 +406,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire multm_reduce_mulb1_sq3;
   wire multm_reduce_mulb1_sq4;
   wire multm_reduce_mulb1_sq5;
-  wire multm_reduce_mulb1_xn0;
-  wire multm_reduce_mulb1_xn1;
   wire multm_reduce_mulsc_mulb_add3_maj3_or3_wx;
   wire multm_reduce_mulsc_mulb_add3_maj3_wx;
   wire multm_reduce_mulsc_mulb_add3_maj3_wy;
@@ -506,7 +498,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire multm_reduce_mulsc_mulb_sq4;
   wire multm_reduce_mulsc_mulb_sq5;
   wire multm_reduce_mulsc_mulb_sq6;
-  wire multm_reduce_mulsc_mulb_xn;
   wire multm_reduce_mulsc_mulb_yoc0;
   wire multm_reduce_mulsc_mulb_yoc1;
   wire multm_reduce_mulsc_mulb_yoc2;
@@ -596,7 +587,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire multm_reduce_vs4;
   wire multm_reduce_vs5;
   wire multm_reduce_vt;
-  wire multm_xn;
   wire nor2_zn;
   wire pcq0;
   wire pcq1;
@@ -648,29 +638,35 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   wire sbq;
   wire sbr;
   wire srdd;
+  wire xn0;
+  wire xn1;
+  wire xn2;
+  wire xn3;
+  wire xn4;
+  wire xn5;
+  wire xn6;
 
   assign ctre_cq0 = sadd & ctre_sp0;
   assign ctre_cq1 = ctre_sp1 & ctre_cp0;
   assign ctre_cq2 = ctre_sp2 & ctre_cp1;
   assign ctre_cq3 = ctre_sp3 & ctre_cp2;
-  assign ctre_cr0 = ctre_xn & ctre_cq0;
-  assign ctre_cr1 = ctre_xn & ctre_cq1;
-  assign ctre_cr2 = ctre_xn & ctre_cq2;
-  assign ctre_cr3 = ctre_xn & ctre_cq3;
+  assign ctre_cr0 = xn5 & ctre_cq0;
+  assign ctre_cr1 = xn5 & ctre_cq1;
+  assign ctre_cr2 = xn5 & ctre_cq2;
+  assign ctre_cr3 = xn5 & ctre_cq3;
   assign ctre_dq = ctre_dp | ctre_cp3;
   assign ctre_sq0 = sadd ^ ctre_sp0;
   assign ctre_sq1 = ctre_sp1 ^ ctre_cp0;
   assign ctre_sq2 = ctre_sp2 ^ ctre_cp1;
   assign ctre_sq3 = ctre_sp3 ^ ctre_cp2;
-  assign ctre_sr0 = ctre_xn & ctre_sq0;
+  assign ctre_sr0 = xn5 & ctre_sq0;
   assign ctre_sr1 = srdd | ctre_sq1;
   assign ctre_sr2 = srdd | ctre_sq2;
-  assign ctre_sr3 = ctre_xn & ctre_sq3;
-  assign ctre_xn = ~srdd;
+  assign ctre_sr3 = xn5 & ctre_sq3;
   assign dn_o = ~nor2_zn;
   assign jp = multm_ctrp_ds & multm_ctrp_pulse_xn;
   assign jpn = ~jp;
-  assign md = ctre_xn & ctre_dq;
+  assign md = xn5 & ctre_dq;
   assign mdn = ~md;
   assign multm_compress_add3b_maj3b_or3b_wx0 = multm_compress_add3b_maj3b_wx0 | multm_compress_add3b_maj3b_wy0;
   assign multm_compress_add3b_maj3b_or3b_wx1 = multm_compress_add3b_maj3b_wx1 | multm_compress_add3b_maj3b_wy1;
@@ -685,13 +681,13 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_compress_add3b_maj3b_wx4 = multm_qsp5 & multm_qcp4;
   assign multm_compress_add3b_maj3b_wx5 = multm_qsp6 & multm_qcp5;
   assign multm_compress_add3b_maj3b_wy0 = multm_qsp1 & multm_compress_rn1;
-  assign multm_compress_add3b_maj3b_wy1 = multm_qsp2 & multm_compress_rn2;
+  assign multm_compress_add3b_maj3b_wy1 = multm_qsp2 & multm_compress_nsd;
   assign multm_compress_add3b_maj3b_wy2 = multm_qsp3 & multm_compress_rn1;
   assign multm_compress_add3b_maj3b_wy3 = multm_qsp4 & multm_compress_rn4;
   assign multm_compress_add3b_maj3b_wy4 = multm_qsp5 & multm_compress_rn0;
   assign multm_compress_add3b_maj3b_wy5 = multm_qsp6 & multm_compress_rn1;
   assign multm_compress_add3b_maj3b_xy0 = multm_qcp0 & multm_compress_rn1;
-  assign multm_compress_add3b_maj3b_xy1 = multm_qcp1 & multm_compress_rn2;
+  assign multm_compress_add3b_maj3b_xy1 = multm_qcp1 & multm_compress_nsd;
   assign multm_compress_add3b_maj3b_xy2 = multm_qcp2 & multm_compress_rn1;
   assign multm_compress_add3b_maj3b_xy3 = multm_qcp3 & multm_compress_rn4;
   assign multm_compress_add3b_maj3b_xy4 = multm_qcp4 & multm_compress_rn0;
@@ -705,29 +701,26 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_compress_nc = multm_compress_nct | multm_qcp7;
   assign multm_compress_nct = multm_qsp7 & multm_qcp6;
   assign multm_compress_ns = multm_qsp7 ^ multm_qcp6;
-  assign multm_compress_rn0 = multm_compress_xn1 & multm_compress_nsd;
-  assign multm_compress_rn1 = multm_compress_ncd & multm_compress_xn0;
-  assign multm_compress_rn2 = multm_compress_ncd ? multm_compress_nsd : multm_compress_nsd;
+  assign multm_compress_rn0 = xn6 & multm_compress_nsd;
+  assign multm_compress_rn1 = multm_compress_ncd & multm_compress_rnh3;
   assign multm_compress_rn4 = multm_compress_ncd & multm_compress_nsd;
-  assign multm_compress_xn0 = ~multm_compress_nsd;
-  assign multm_compress_xn1 = ~multm_compress_ncd;
+  assign multm_compress_rnh3 = ~multm_compress_nsd;
   assign multm_ctrp_ctr_cq0 = ~multm_ctrp_ctr_cp0;
   assign multm_ctrp_ctr_cq1 = multm_ctrp_ctr_sp0 & multm_ctrp_ctr_cp0;
   assign multm_ctrp_ctr_cq2 = multm_ctrp_ctr_sp1 & multm_ctrp_ctr_cp1;
   assign multm_ctrp_ctr_cq3 = multm_ctrp_ctr_sp2 & multm_ctrp_ctr_cp2;
-  assign multm_ctrp_ctr_cr0 = multm_ctrp_ctr_xn & multm_ctrp_ctr_cq0;
-  assign multm_ctrp_ctr_cr1 = multm_ctrp_ctr_xn & multm_ctrp_ctr_cq1;
-  assign multm_ctrp_ctr_cr2 = multm_ctrp_ctr_xn & multm_ctrp_ctr_cq2;
-  assign multm_ctrp_ctr_cr3 = multm_ctrp_ctr_xn & multm_ctrp_ctr_cq3;
+  assign multm_ctrp_ctr_cr0 = xn4 & multm_ctrp_ctr_cq0;
+  assign multm_ctrp_ctr_cr1 = xn4 & multm_ctrp_ctr_cq1;
+  assign multm_ctrp_ctr_cr2 = xn4 & multm_ctrp_ctr_cq2;
+  assign multm_ctrp_ctr_cr3 = xn4 & multm_ctrp_ctr_cq3;
   assign multm_ctrp_ctr_dq = multm_ctrp_ctr_dp | multm_ctrp_ctr_cp3;
   assign multm_ctrp_ctr_sq0 = multm_ctrp_ctr_sp0 ^ multm_ctrp_ctr_cp0;
   assign multm_ctrp_ctr_sq1 = multm_ctrp_ctr_sp1 ^ multm_ctrp_ctr_cp1;
   assign multm_ctrp_ctr_sq2 = multm_ctrp_ctr_sp2 ^ multm_ctrp_ctr_cp2;
   assign multm_ctrp_ctr_sr0 = sadd | multm_ctrp_ctr_sq0;
   assign multm_ctrp_ctr_sr1 = sadd | multm_ctrp_ctr_sq1;
-  assign multm_ctrp_ctr_sr2 = multm_ctrp_ctr_xn & multm_ctrp_ctr_sq2;
-  assign multm_ctrp_ctr_xn = ~sadd;
-  assign multm_ctrp_ds = multm_ctrp_ctr_xn & multm_ctrp_ctr_dq;
+  assign multm_ctrp_ctr_sr2 = xn4 & multm_ctrp_ctr_sq2;
+  assign multm_ctrp_ds = xn4 & multm_ctrp_ctr_dq;
   assign multm_ctrp_pulse_xn = ~multm_ctrp_ctr_dp;
   assign multm_pc0 = multm_reduce_add3b0_maj3b_or3b_wx0 | multm_reduce_add3b0_maj3b_xy0;
   assign multm_pc1 = multm_reduce_add3b0_maj3b_or3b_wx1 | multm_reduce_add3b0_maj3b_xy1;
@@ -748,7 +741,7 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_qcr1 = multm_jpd ? multm_pc1 : multm_qcp1;
   assign multm_qcr2 = multm_jpd ? multm_pc2 : multm_qcp2;
   assign multm_qcr3 = multm_jpd ? multm_pc3 : multm_qcp3;
-  assign multm_qcr4 = multm_xn & multm_qcp4;
+  assign multm_qcr4 = xn0 & multm_qcp4;
   assign multm_qcr5 = multm_jpd ? multm_pc5 : multm_qcp5;
   assign multm_qcr6 = multm_jpd ? multm_pc6 : multm_qcp6;
   assign multm_qcr7 = multm_jpd ? multm_pc7 : multm_qcp7;
@@ -825,14 +818,14 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_reduce_mulb0_add3b_xor3b_wx1 = multm_reduce_mulb0_sq2 ^ multm_reduce_mulb0_cq1;
   assign multm_reduce_mulb0_add3b_xor3b_wx2 = multm_reduce_mulb0_sq3 ^ multm_reduce_mulb0_cq2;
   assign multm_reduce_mulb0_add3b_xor3b_wx4 = multm_reduce_mulb0_sq5 ^ multm_reduce_mulb0_cq4;
-  assign multm_reduce_mulb0_cq0 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_cp0;
-  assign multm_reduce_mulb0_cq1 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_cp1;
-  assign multm_reduce_mulb0_cq2 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_cp2;
-  assign multm_reduce_mulb0_cq3 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_cp3;
-  assign multm_reduce_mulb0_cq4 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_cp4;
-  assign multm_reduce_mulb0_cq5 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_cp5;
-  assign multm_reduce_mulb0_cq6 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_cp6;
-  assign multm_reduce_mulb0_cq7 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_cp7;
+  assign multm_reduce_mulb0_cq0 = xn1 & multm_reduce_mulb0_cp0;
+  assign multm_reduce_mulb0_cq1 = xn1 & multm_reduce_mulb0_cp1;
+  assign multm_reduce_mulb0_cq2 = xn1 & multm_reduce_mulb0_cp2;
+  assign multm_reduce_mulb0_cq3 = xn1 & multm_reduce_mulb0_cp3;
+  assign multm_reduce_mulb0_cq4 = xn1 & multm_reduce_mulb0_cp4;
+  assign multm_reduce_mulb0_cq5 = xn1 & multm_reduce_mulb0_cp5;
+  assign multm_reduce_mulb0_cq6 = xn1 & multm_reduce_mulb0_cp6;
+  assign multm_reduce_mulb0_cq7 = xn1 & multm_reduce_mulb0_cp7;
   assign multm_reduce_mulb0_pc0 = multm_reduce_mulb0_sq0 & multm_reduce_sa2;
   assign multm_reduce_mulb0_pc1 = multm_reduce_mulb0_sq1 & multm_reduce_mulb0_cq0;
   assign multm_reduce_mulb0_pc2 = multm_reduce_mulb0_add3b_maj3b_or3b_wx1 | multm_reduce_mulb0_add3b_maj3b_xy1;
@@ -848,16 +841,14 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_reduce_mulb0_ps4 = multm_reduce_mulb0_add3b_xor3b_wx4 ^ multm_reduce_sa2;
   assign multm_reduce_mulb0_ps5 = multm_reduce_mulb0_sq6 ^ multm_reduce_mulb0_cq5;
   assign multm_reduce_mulb0_ps6 = multm_reduce_mulb0_sq7 ^ multm_reduce_mulb0_cq6;
-  assign multm_reduce_mulb0_sq0 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_sp0;
-  assign multm_reduce_mulb0_sq1 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_sp1;
-  assign multm_reduce_mulb0_sq2 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_sp2;
-  assign multm_reduce_mulb0_sq3 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_sp3;
-  assign multm_reduce_mulb0_sq4 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_sp4;
-  assign multm_reduce_mulb0_sq5 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_sp5;
-  assign multm_reduce_mulb0_sq6 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_sp6;
-  assign multm_reduce_mulb0_sq7 = multm_reduce_mulb0_xn0 & multm_reduce_mulb0_sp7;
-  assign multm_reduce_mulb0_xn0 = ~multm_reduce_ld1;
-  assign multm_reduce_mulb0_xn1 = ~multm_reduce_sa2;
+  assign multm_reduce_mulb0_sq0 = xn1 & multm_reduce_mulb0_sp0;
+  assign multm_reduce_mulb0_sq1 = xn1 & multm_reduce_mulb0_sp1;
+  assign multm_reduce_mulb0_sq2 = xn1 & multm_reduce_mulb0_sp2;
+  assign multm_reduce_mulb0_sq3 = xn1 & multm_reduce_mulb0_sp3;
+  assign multm_reduce_mulb0_sq4 = xn1 & multm_reduce_mulb0_sp4;
+  assign multm_reduce_mulb0_sq5 = xn1 & multm_reduce_mulb0_sp5;
+  assign multm_reduce_mulb0_sq6 = xn1 & multm_reduce_mulb0_sp6;
+  assign multm_reduce_mulb0_sq7 = xn1 & multm_reduce_mulb0_sp7;
   assign multm_reduce_mulb1_add3_maj3_or3_wx = multm_reduce_mulb1_add3_maj3_wx | multm_reduce_mulb1_add3_maj3_wy;
   assign multm_reduce_mulb1_add3_maj3_wx = multm_reduce_qb2 & multm_reduce_mulb1_cq5;
   assign multm_reduce_mulb1_add3_maj3_wy = multm_reduce_qb2 & multm_reduce_mulb1_pc5;
@@ -878,12 +869,12 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_reduce_mulb1_add3b_xor3b_wx0 = multm_reduce_mulb1_sq1 ^ multm_reduce_mulb1_cq0;
   assign multm_reduce_mulb1_add3b_xor3b_wx2 = multm_reduce_mulb1_sq3 ^ multm_reduce_mulb1_cq2;
   assign multm_reduce_mulb1_add3b_xor3b_wx3 = multm_reduce_mulb1_sq4 ^ multm_reduce_mulb1_cq3;
-  assign multm_reduce_mulb1_cq0 = multm_reduce_mulb1_xn0 & multm_reduce_sd1;
-  assign multm_reduce_mulb1_cq1 = multm_reduce_mulb1_xn0 & multm_reduce_sd2;
-  assign multm_reduce_mulb1_cq2 = multm_reduce_mulb1_xn0 & multm_reduce_sd3;
-  assign multm_reduce_mulb1_cq3 = multm_reduce_mulb1_xn0 & multm_reduce_sd4;
-  assign multm_reduce_mulb1_cq4 = multm_reduce_mulb1_xn0 & multm_reduce_sd5;
-  assign multm_reduce_mulb1_cq5 = multm_reduce_mulb1_xn0 & multm_reduce_sd6;
+  assign multm_reduce_mulb1_cq0 = xn2 & multm_reduce_sd1;
+  assign multm_reduce_mulb1_cq1 = xn2 & multm_reduce_sd2;
+  assign multm_reduce_mulb1_cq2 = xn2 & multm_reduce_sd3;
+  assign multm_reduce_mulb1_cq3 = xn2 & multm_reduce_sd4;
+  assign multm_reduce_mulb1_cq4 = xn2 & multm_reduce_sd5;
+  assign multm_reduce_mulb1_cq5 = xn2 & multm_reduce_sd6;
   assign multm_reduce_mulb1_pc0 = multm_reduce_mulb1_sq0 & multm_reduce_qb2;
   assign multm_reduce_mulb1_pc1 = multm_reduce_mulb1_add3b_maj3b_or3b_wx0 | multm_reduce_mulb1_add3b_maj3b_xy0;
   assign multm_reduce_mulb1_pc2 = multm_reduce_mulb1_sq2 & multm_reduce_mulb1_cq1;
@@ -895,14 +886,12 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_reduce_mulb1_ps2 = multm_reduce_mulb1_add3b_xor3b_wx2 ^ multm_reduce_qb2;
   assign multm_reduce_mulb1_ps3 = multm_reduce_mulb1_add3b_xor3b_wx3 ^ multm_reduce_qb2;
   assign multm_reduce_mulb1_ps4 = multm_reduce_mulb1_sq5 ^ multm_reduce_mulb1_cq4;
-  assign multm_reduce_mulb1_sq0 = multm_reduce_mulb1_xn0 & multm_reduce_sc0;
-  assign multm_reduce_mulb1_sq1 = multm_reduce_mulb1_xn0 & multm_reduce_sc1;
-  assign multm_reduce_mulb1_sq2 = multm_reduce_mulb1_xn0 & multm_reduce_sc2;
-  assign multm_reduce_mulb1_sq3 = multm_reduce_mulb1_xn0 & multm_reduce_sc3;
-  assign multm_reduce_mulb1_sq4 = multm_reduce_mulb1_xn0 & multm_reduce_sc4;
-  assign multm_reduce_mulb1_sq5 = multm_reduce_mulb1_xn0 & multm_reduce_sc5;
-  assign multm_reduce_mulb1_xn0 = ~multm_reduce_ld2;
-  assign multm_reduce_mulb1_xn1 = ~multm_reduce_qb2;
+  assign multm_reduce_mulb1_sq0 = xn2 & multm_reduce_sc0;
+  assign multm_reduce_mulb1_sq1 = xn2 & multm_reduce_sc1;
+  assign multm_reduce_mulb1_sq2 = xn2 & multm_reduce_sc2;
+  assign multm_reduce_mulb1_sq3 = xn2 & multm_reduce_sc3;
+  assign multm_reduce_mulb1_sq4 = xn2 & multm_reduce_sc4;
+  assign multm_reduce_mulb1_sq5 = xn2 & multm_reduce_sc5;
   assign multm_reduce_mulsc_mulb_add3_maj3_or3_wx = multm_reduce_mulsc_mulb_add3_maj3_wx | multm_reduce_mulsc_mulb_add3_maj3_wy;
   assign multm_reduce_mulsc_mulb_add3_maj3_wx = multm_reduce_mulsc_mulb_yoc6 & multm_reduce_mulsc_mulb_cq6;
   assign multm_reduce_mulsc_mulb_add3_maj3_wy = multm_reduce_mulsc_mulb_yoc6 & multm_reduce_mulsc_mulb_pc6;
@@ -968,13 +957,13 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_reduce_mulsc_mulb_add3b1_xor3b_wx3 = multm_reduce_mulsc_mulb_yoc3 ^ multm_reduce_mulsc_mulb_ps3;
   assign multm_reduce_mulsc_mulb_add3b1_xor3b_wx4 = multm_reduce_mulsc_mulb_yoc4 ^ multm_reduce_mulsc_mulb_ps4;
   assign multm_reduce_mulsc_mulb_add3b1_xor3b_wx5 = multm_reduce_mulsc_mulb_yoc5 ^ multm_reduce_mulsc_mulb_ps5;
-  assign multm_reduce_mulsc_mulb_cq0 = multm_reduce_mulsc_mulb_xn & multm_reduce_sb0;
-  assign multm_reduce_mulsc_mulb_cq1 = multm_reduce_mulsc_mulb_xn & multm_reduce_sb1;
-  assign multm_reduce_mulsc_mulb_cq2 = multm_reduce_mulsc_mulb_xn & multm_reduce_sb2;
-  assign multm_reduce_mulsc_mulb_cq3 = multm_reduce_mulsc_mulb_xn & multm_reduce_sb3;
-  assign multm_reduce_mulsc_mulb_cq4 = multm_reduce_mulsc_mulb_xn & multm_reduce_mulsc_mulb_cp4;
-  assign multm_reduce_mulsc_mulb_cq5 = multm_reduce_mulsc_mulb_xn & multm_reduce_mulsc_mulb_cp5;
-  assign multm_reduce_mulsc_mulb_cq6 = multm_reduce_mulsc_mulb_xn & multm_reduce_mulsc_mulb_cp6;
+  assign multm_reduce_mulsc_mulb_cq0 = xn3 & multm_reduce_sb0;
+  assign multm_reduce_mulsc_mulb_cq1 = xn3 & multm_reduce_sb1;
+  assign multm_reduce_mulsc_mulb_cq2 = xn3 & multm_reduce_sb2;
+  assign multm_reduce_mulsc_mulb_cq3 = xn3 & multm_reduce_sb3;
+  assign multm_reduce_mulsc_mulb_cq4 = xn3 & multm_reduce_mulsc_mulb_cp4;
+  assign multm_reduce_mulsc_mulb_cq5 = xn3 & multm_reduce_mulsc_mulb_cp5;
+  assign multm_reduce_mulsc_mulb_cq6 = xn3 & multm_reduce_mulsc_mulb_cp6;
   assign multm_reduce_mulsc_mulb_pc0 = multm_reduce_mulsc_mulb_sq0 & multm_reduce_mulsc_mulb_yos0;
   assign multm_reduce_mulsc_mulb_pc1 = multm_reduce_mulsc_mulb_add3b0_maj3b_or3b_wx0 | multm_reduce_mulsc_mulb_add3b0_maj3b_xy0;
   assign multm_reduce_mulsc_mulb_pc2 = multm_reduce_mulsc_mulb_add3b0_maj3b_or3b_wx1 | multm_reduce_mulsc_mulb_add3b0_maj3b_xy1;
@@ -988,14 +977,13 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_reduce_mulsc_mulb_ps3 = multm_reduce_mulsc_mulb_add3b0_xor3b_wx3 ^ multm_reduce_mulsc_mulb_yos4;
   assign multm_reduce_mulsc_mulb_ps4 = multm_reduce_mulsc_mulb_add3b0_xor3b_wx4 ^ multm_reduce_mulsc_mulb_yos5;
   assign multm_reduce_mulsc_mulb_ps5 = multm_reduce_mulsc_mulb_add3b0_xor3b_wx5 ^ multm_reduce_mulsc_mulb_yos6;
-  assign multm_reduce_mulsc_mulb_sq0 = multm_reduce_mulsc_mulb_xn & multm_reduce_sa4;
-  assign multm_reduce_mulsc_mulb_sq1 = multm_reduce_mulsc_mulb_xn & multm_reduce_sa5;
-  assign multm_reduce_mulsc_mulb_sq2 = multm_reduce_mulsc_mulb_xn & multm_reduce_sa6;
-  assign multm_reduce_mulsc_mulb_sq3 = multm_reduce_mulsc_mulb_xn & multm_reduce_sa7;
-  assign multm_reduce_mulsc_mulb_sq4 = multm_reduce_mulsc_mulb_xn & multm_reduce_sa8;
-  assign multm_reduce_mulsc_mulb_sq5 = multm_reduce_mulsc_mulb_xn & multm_reduce_mulsc_mulb_sp5;
-  assign multm_reduce_mulsc_mulb_sq6 = multm_reduce_mulsc_mulb_xn & multm_reduce_mulsc_mulb_sp6;
-  assign multm_reduce_mulsc_mulb_xn = ~multm_reduce_mulsc_ldd;
+  assign multm_reduce_mulsc_mulb_sq0 = xn3 & multm_reduce_sa4;
+  assign multm_reduce_mulsc_mulb_sq1 = xn3 & multm_reduce_sa5;
+  assign multm_reduce_mulsc_mulb_sq2 = xn3 & multm_reduce_sa6;
+  assign multm_reduce_mulsc_mulb_sq3 = xn3 & multm_reduce_sa7;
+  assign multm_reduce_mulsc_mulb_sq4 = xn3 & multm_reduce_sa8;
+  assign multm_reduce_mulsc_mulb_sq5 = xn3 & multm_reduce_mulsc_mulb_sp5;
+  assign multm_reduce_mulsc_mulb_sq6 = xn3 & multm_reduce_mulsc_mulb_sp6;
   assign multm_reduce_mulsc_mulb_yoc0 = multm_reduce_mulsc_xbd & yc0_o;
   assign multm_reduce_mulsc_mulb_yoc1 = multm_reduce_mulsc_xbd & yc1_o;
   assign multm_reduce_mulsc_mulb_yoc2 = multm_reduce_mulsc_xbd & yc2_o;
@@ -1070,7 +1058,7 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_reduce_qs5 = multm_reduce_mulb0_ps5 ^ multm_reduce_mulb0_pc5;
   assign multm_reduce_qs6 = multm_reduce_mulb0_ps6 ^ multm_reduce_mulb0_pc6;
   assign multm_reduce_qs7 = multm_reduce_mulb0_cq7 ^ multm_reduce_mulb0_pc7;
-  assign multm_reduce_sticky_q = multm_reduce_mulb1_xn0 & multm_reduce_sd0;
+  assign multm_reduce_sticky_q = xn2 & multm_reduce_sd0;
   assign multm_reduce_vb = multm_reduce_mulb1_sq0 ^ multm_reduce_qb2;
   assign multm_reduce_vc0 = multm_reduce_mulb1_ps0 & multm_reduce_mulb1_pc0;
   assign multm_reduce_vc1 = multm_reduce_mulb1_ps1 & multm_reduce_mulb1_pc1;
@@ -1085,7 +1073,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign multm_reduce_vs4 = multm_reduce_mulb1_ps4 ^ multm_reduce_mulb1_pc4;
   assign multm_reduce_vs5 = multm_reduce_mulb1_add3_xor3_wx ^ multm_reduce_mulb1_pc5;
   assign multm_reduce_vt = multm_reduce_vb | multm_reduce_sticky_q;
-  assign multm_xn = ~multm_jpd;
   assign nor2_zn = sad | sbd;
   assign pcq0 = sbd ? xc[0] : qc0;
   assign pcq1 = sbd ? xc[1] : qc1;
@@ -1124,7 +1111,7 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign qc6 = multm_compress_add3b_maj3b_or3b_wx5 | multm_compress_add3b_maj3b_xy5;
   assign qs0 = multm_qsp0 ^ multm_compress_rn0;
   assign qs1 = multm_compress_add3b_xor3b_wx0 ^ multm_compress_rn1;
-  assign qs2 = multm_compress_add3b_xor3b_wx1 ^ multm_compress_rn2;
+  assign qs2 = multm_compress_add3b_xor3b_wx1 ^ multm_compress_nsd;
   assign qs3 = multm_compress_add3b_xor3b_wx2 ^ multm_compress_rn1;
   assign qs4 = multm_compress_add3b_xor3b_wx3 ^ multm_compress_rn4;
   assign qs5 = multm_compress_add3b_xor3b_wx4 ^ multm_compress_rn0;
@@ -1137,6 +1124,13 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
   assign sbq = sb ? jpn : sbp;
   assign sbr = ld | sbq;
   assign srdd = sadd & sbdd;
+  assign xn0 = ~multm_jpd;
+  assign xn1 = ~multm_reduce_ld1;
+  assign xn2 = ~multm_reduce_ld2;
+  assign xn3 = ~multm_reduce_pipe0_x2;
+  assign xn4 = ~sadd;
+  assign xn5 = ~srdd;
+  assign xn6 = ~multm_compress_ncd;
   assign dn = dn_o;
   assign ys[0] = ys0_o;
   assign ys[1] = ys1_o;
@@ -1212,7 +1206,6 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
       multm_reduce_mulb0_sp5 <= multm_reduce_qs5;
       multm_reduce_mulb0_sp6 <= multm_reduce_qs6;
       multm_reduce_mulb0_sp7 <= multm_reduce_qs7;
-      multm_reduce_mulsc_ldd <= multm_reduce_pipe0_x1;
       multm_reduce_mulsc_mulb_cp4 <= multm_reduce_pc4;
       multm_reduce_mulsc_mulb_cp5 <= multm_reduce_pc5;
       multm_reduce_mulsc_mulb_cp6 <= multm_reduce_pc6;
@@ -1234,7 +1227,8 @@ module double_exp_91(clk,ld,xs,xc,dn,ys,yc);
       multm_reduce_mulsc_shrsc_sp5 <= multm_reduce_mulsc_shrsc_sr5;
       multm_reduce_mulsc_xbd <= multm_reduce_mulsc_pipe_x1;
       multm_reduce_pipe0_x1 <= sadd;
-      multm_reduce_pipe0_x3 <= multm_reduce_mulsc_ldd;
+      multm_reduce_pipe0_x2 <= multm_reduce_pipe0_x1;
+      multm_reduce_pipe0_x3 <= multm_reduce_pipe0_x2;
       multm_reduce_pipe1_x1 <= multm_reduce_ld1;
       multm_reduce_pipe2_x1 <= multm_reduce_qb;
       multm_reduce_qb2 <= multm_reduce_pipe2_x1;
@@ -1297,12 +1291,12 @@ endmodule // double_exp_91
 /*----------------------------------------------------------------------------+
 | Primary inputs: 15                                                          |
 | Primary outputs: 15                                                         |
-| Delays: 135                                                                 |
-| Gates: 488                                                                  |
+| Registers: 135                                                              |
+| Gates: 485                                                                  |
 | Fan-in: 25%=1 50%=4 75%=6 90%=8 95%=9 99%=9 max=9 (multm_qcp5)              |
 | Fan-in cone: 25%=0 50%=4 75%=9 90%=13 95%=17 99%=20                         |
-|   max=20 (multm_reduce_sb1)                                                 |
+|   max=20 (multm_reduce_mulsc_mulb_cp5)                                      |
 | Fan-out: 25%=2 50%=3 75%=5 90%=8 95%=14 99%=16 max=35 (sadd)                |
+| Duplication: 25%=1 50%=1 75%=1 90%=2 95%=3 99%=5 max=8 (sadd)               |
 | Fan-out load: 25%=2 50%=3 75%=5 90%=6 95%=7 99%=8 max=8 (multm_reduce_sa5)  |
-| Duplication: 25%=1 50%=1 75%=1 90%=1 95%=3 99%=5 max=8 (sadd)               |
 +----------------------------------------------------------------------------*/

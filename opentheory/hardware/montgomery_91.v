@@ -26,106 +26,106 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   output [6:0] zs;
   output [6:0] zc;
 
-  reg compress_ncd;
-  reg compress_nsd;
-  reg compress_pipe0_x1;
-  reg compress_pipe1_x1;
-  reg ctrp_ctr_cp0;
-  reg ctrp_ctr_cp1;
-  reg ctrp_ctr_cp2;
-  reg ctrp_ctr_cp3;
-  reg ctrp_ctr_dp;
-  reg ctrp_ctr_sp0;
-  reg ctrp_ctr_sp1;
-  reg ctrp_ctr_sp2;
-  reg jpd;
-  reg pipe_x1;
-  reg qcp0;
-  reg qcp1;
-  reg qcp2;
-  reg qcp3;
-  reg qcp4;
-  reg qcp5;
-  reg qcp6;
-  reg qcp7;
-  reg qsp0;
-  reg qsp1;
-  reg qsp2;
-  reg qsp3;
-  reg qsp4;
-  reg qsp5;
-  reg qsp6;
-  reg qsp7;
-  reg reduce_ld1;
-  reg reduce_ld2;
-  reg reduce_mulb0_cp0;
-  reg reduce_mulb0_cp1;
-  reg reduce_mulb0_cp2;
-  reg reduce_mulb0_cp3;
-  reg reduce_mulb0_cp4;
-  reg reduce_mulb0_cp5;
-  reg reduce_mulb0_cp6;
-  reg reduce_mulb0_cp7;
-  reg reduce_mulb0_sp0;
-  reg reduce_mulb0_sp1;
-  reg reduce_mulb0_sp2;
-  reg reduce_mulb0_sp3;
-  reg reduce_mulb0_sp4;
-  reg reduce_mulb0_sp5;
-  reg reduce_mulb0_sp6;
-  reg reduce_mulb0_sp7;
-  reg reduce_mulsc_ldd;
-  reg reduce_mulsc_mulb_cp4;
-  reg reduce_mulsc_mulb_cp5;
-  reg reduce_mulsc_mulb_cp6;
-  reg reduce_mulsc_mulb_sp5;
-  reg reduce_mulsc_mulb_sp6;
-  reg reduce_mulsc_pipe_x1;
-  reg reduce_mulsc_shrsc_cp0;
-  reg reduce_mulsc_shrsc_cp1;
-  reg reduce_mulsc_shrsc_cp2;
-  reg reduce_mulsc_shrsc_cp3;
-  reg reduce_mulsc_shrsc_cp4;
-  reg reduce_mulsc_shrsc_cp5;
-  reg reduce_mulsc_shrsc_cp6;
-  reg reduce_mulsc_shrsc_sp0;
-  reg reduce_mulsc_shrsc_sp1;
-  reg reduce_mulsc_shrsc_sp2;
-  reg reduce_mulsc_shrsc_sp3;
-  reg reduce_mulsc_shrsc_sp4;
-  reg reduce_mulsc_shrsc_sp5;
-  reg reduce_mulsc_xbd;
-  reg reduce_pipe0_x1;
-  reg reduce_pipe0_x3;
-  reg reduce_pipe1_x1;
-  reg reduce_pipe2_x1;
-  reg reduce_qb2;
-  reg reduce_sa0;
-  reg reduce_sa1;
-  reg reduce_sa2;
-  reg reduce_sa3;
-  reg reduce_sa4;
-  reg reduce_sa5;
-  reg reduce_sa6;
-  reg reduce_sa7;
-  reg reduce_sa8;
-  reg reduce_sb0;
-  reg reduce_sb1;
-  reg reduce_sb2;
-  reg reduce_sb3;
-  reg reduce_sc0;
-  reg reduce_sc1;
-  reg reduce_sc2;
-  reg reduce_sc3;
-  reg reduce_sc4;
-  reg reduce_sc5;
-  reg reduce_sd0;
-  reg reduce_sd1;
-  reg reduce_sd2;
-  reg reduce_sd3;
-  reg reduce_sd4;
-  reg reduce_sd5;
-  reg reduce_sd6;
+  reg compress_ncd;  /* 1:0|12/3=4 */
+  reg compress_nsd;  /* 1:0|14/3=4 */
+  reg compress_pipe0_x1;  /* 2:1|1/1=3 */
+  reg compress_pipe1_x1;  /* 3:2|1/1=3 */
+  reg ctrp_ctr_cp0;  /* 2:3|3/1=3 */
+  reg ctrp_ctr_cp1;  /* 3:3|2/1=2 */
+  reg ctrp_ctr_cp2;  /* 3:3|2/1=2 */
+  reg ctrp_ctr_cp3;  /* 3:3|2/1=2 */
+  reg ctrp_ctr_dp;  /* 3:3|2/1=2 */
+  reg ctrp_ctr_sp0;  /* 3:2|2/1=2 */
+  reg ctrp_ctr_sp1;  /* 3:2|2/1=2 */
+  reg ctrp_ctr_sp2;  /* 3:3|2/1=2 */
+  reg jpd;  /* 1:0|16/4=4 */
+  reg pipe_x1;  /* 3:5|1/1=4 */
+  reg qcp0;  /* 5:6|3/1=3 */
+  reg qcp1;  /* 5:6|3/1=3 */
+  reg qcp2;  /* 5:6|3/1=3 */
+  reg qcp3;  /* 5:6|3/1=3 */
+  reg qcp4;  /* 2:2|3/1=3 */
+  reg qcp5;  /* 9:13|3/1=3 */
+  reg qcp6;  /* 8:12|3/1=3 */
+  reg qcp7;  /* 8:9|2/1=2 */
+  reg qsp0;  /* 5:3|3/1=3 */
+  reg qsp1;  /* 5:3|3/1=3 */
+  reg qsp2;  /* 5:3|3/1=3 */
+  reg qsp3;  /* 5:3|3/1=3 */
+  reg qsp4;  /* 5:3|3/1=3 */
+  reg qsp5;  /* 9:10|3/1=3 */
+  reg qsp6;  /* 8:9|3/1=3 */
+  reg qsp7;  /* 6:4|3/1=3 */
+  reg reduce_ld1;  /* 1:0|18/4=4 */
+  reg reduce_ld2;  /* 1:0|13/3=4 */
+  reg reduce_mulb0_cp0;  /* 5:7|4/1=4 */
+  reg reduce_mulb0_cp1;  /* 6:9|4/1=4 */
+  reg reduce_mulb0_cp2;  /* 6:13|4/1=4 */
+  reg reduce_mulb0_cp3;  /* 6:12|4/1=4 */
+  reg reduce_mulb0_cp4;  /* 6:9|4/1=4 */
+  reg reduce_mulb0_cp5;  /* 6:12|4/1=4 */
+  reg reduce_mulb0_cp6;  /* 5:8|4/1=4 */
+  reg reduce_mulb0_cp7;  /* 4:6|2/1=2 */
+  reg reduce_mulb0_sp0;  /* 5:7|3/1=3 */
+  reg reduce_mulb0_sp1;  /* 6:9|4/1=4 */
+  reg reduce_mulb0_sp2;  /* 6:13|4/1=4 */
+  reg reduce_mulb0_sp3;  /* 6:12|4/1=4 */
+  reg reduce_mulb0_sp4;  /* 6:9|4/1=4 */
+  reg reduce_mulb0_sp5;  /* 6:12|4/1=4 */
+  reg reduce_mulb0_sp6;  /* 5:8|4/1=4 */
+  reg reduce_mulb0_sp7;  /* 4:6|4/1=4 */
+  reg reduce_mulsc_mulb_cp4;  /* 9:20|4/1=4 */
+  reg reduce_mulsc_mulb_cp5;  /* 9:20|4/1=4 */
+  reg reduce_mulsc_mulb_cp6;  /* 7:16|2/1=2 */
+  reg reduce_mulsc_mulb_sp5;  /* 9:17|4/1=4 */
+  reg reduce_mulsc_mulb_sp6;  /* 7:13|4/1=4 */
+  reg reduce_mulsc_pipe_x1;  /* 4:2|1/1=3 */
+  reg reduce_mulsc_shrsc_cp0;  /* 4:2|2/1=2 */
+  reg reduce_mulsc_shrsc_cp1;  /* 4:2|2/1=2 */
+  reg reduce_mulsc_shrsc_cp2;  /* 4:2|2/1=2 */
+  reg reduce_mulsc_shrsc_cp3;  /* 4:2|2/1=2 */
+  reg reduce_mulsc_shrsc_cp4;  /* 4:2|2/1=2 */
+  reg reduce_mulsc_shrsc_cp5;  /* 4:2|2/1=2 */
+  reg reduce_mulsc_shrsc_cp6;  /* 2:1|1/1=1 */
+  reg reduce_mulsc_shrsc_sp0;  /* 4:2|2/1=2 */
+  reg reduce_mulsc_shrsc_sp1;  /* 4:2|2/1=2 */
+  reg reduce_mulsc_shrsc_sp2;  /* 4:2|2/1=2 */
+  reg reduce_mulsc_shrsc_sp3;  /* 4:2|2/1=2 */
+  reg reduce_mulsc_shrsc_sp4;  /* 4:2|2/1=2 */
+  reg reduce_mulsc_shrsc_sp5;  /* 3:1|2/1=2 */
+  reg reduce_mulsc_xbd;  /* 1:0|15/3=5 */
+  reg reduce_pipe0_x1;  /* 1:0|1/1=4 */
+  reg reduce_pipe0_x2;  /* 1:0|16/4=4 */
+  reg reduce_pipe0_x3;  /* 1:0|1/1=4 */
+  reg reduce_pipe1_x1;  /* 1:0|1/1=3 */
+  reg reduce_pipe2_x1;  /* 3:3|1/1=3 */
+  reg reduce_qb2;  /* 1:0|13/3=4 */
+  reg reduce_sa0;  /* 1:0|2/1=2 */
+  reg reduce_sa1;  /* 1:0|3/1=3 */
+  reg reduce_sa2;  /* 1:0|16/3=5 */
+  reg reduce_sa3;  /* 4:4|3/1=5 */
+  reg reduce_sa4;  /* 8:12|6/1=6 */
+  reg reduce_sa5;  /* 9:17|8/1=8 */
+  reg reduce_sa6;  /* 9:17|8/1=8 */
+  reg reduce_sa7;  /* 9:17|6/1=6 */
+  reg reduce_sa8;  /* 9:17|5/1=5 */
+  reg reduce_sb0;  /* 8:15|6/1=6 */
+  reg reduce_sb1;  /* 9:20|6/1=6 */
+  reg reduce_sb2;  /* 9:20|6/1=6 */
+  reg reduce_sb3;  /* 9:20|5/1=5 */
+  reg reduce_sc0;  /* 5:8|5/1=5 */
+  reg reduce_sc1;  /* 6:12|6/1=6 */
+  reg reduce_sc2;  /* 6:9|6/1=6 */
+  reg reduce_sc3;  /* 6:13|6/1=6 */
+  reg reduce_sc4;  /* 6:12|7/1=7 */
+  reg reduce_sc5;  /* 5:7|8/1=8 */
+  reg reduce_sd0;  /* 4:5|3/1=3 */
+  reg reduce_sd1;  /* 5:8|6/1=6 */
+  reg reduce_sd2;  /* 6:12|6/1=6 */
+  reg reduce_sd3;  /* 6:9|6/1=6 */
+  reg reduce_sd4;  /* 6:13|7/1=7 */
+  reg reduce_sd5;  /* 6:12|8/1=8 */
+  reg reduce_sd6;  /* 5:10|6/1=6 */
 
   wire compress_add3b_maj3b_or3b_wx0;
   wire compress_add3b_maj3b_or3b_wx1;
@@ -162,10 +162,8 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   wire compress_ns;
   wire compress_rn0;
   wire compress_rn1;
-  wire compress_rn2;
   wire compress_rn4;
-  wire compress_xn0;
-  wire compress_xn1;
+  wire compress_rnh1;
   wire ctrp_ctr_cq0;
   wire ctrp_ctr_cq1;
   wire ctrp_ctr_cq2;
@@ -181,7 +179,6 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   wire ctrp_ctr_sr0;
   wire ctrp_ctr_sr1;
   wire ctrp_ctr_sr2;
-  wire ctrp_ctr_xn;
   wire ctrp_ds;
   wire ctrp_pulse_xn;
   wire jp;
@@ -312,8 +309,6 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   wire reduce_mulb0_sq5;
   wire reduce_mulb0_sq6;
   wire reduce_mulb0_sq7;
-  wire reduce_mulb0_xn0;
-  wire reduce_mulb0_xn1;
   wire reduce_mulb1_add3_maj3_or3_wx;
   wire reduce_mulb1_add3_maj3_wx;
   wire reduce_mulb1_add3_maj3_wy;
@@ -357,8 +352,6 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   wire reduce_mulb1_sq3;
   wire reduce_mulb1_sq4;
   wire reduce_mulb1_sq5;
-  wire reduce_mulb1_xn0;
-  wire reduce_mulb1_xn1;
   wire reduce_mulsc_mulb_add3_maj3_or3_wx;
   wire reduce_mulsc_mulb_add3_maj3_wx;
   wire reduce_mulsc_mulb_add3_maj3_wy;
@@ -451,7 +444,6 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   wire reduce_mulsc_mulb_sq4;
   wire reduce_mulsc_mulb_sq5;
   wire reduce_mulsc_mulb_sq6;
-  wire reduce_mulsc_mulb_xn;
   wire reduce_mulsc_mulb_yoc0;
   wire reduce_mulsc_mulb_yoc1;
   wire reduce_mulsc_mulb_yoc2;
@@ -541,7 +533,12 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   wire reduce_vs4;
   wire reduce_vs5;
   wire reduce_vt;
-  wire xn;
+  wire xn0;
+  wire xn1;
+  wire xn2;
+  wire xn3;
+  wire xn4;
+  wire xn5;
   wire zc0_o;
   wire zc1_o;
   wire zc2_o;
@@ -570,13 +567,13 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign compress_add3b_maj3b_wx4 = qsp5 & qcp4;
   assign compress_add3b_maj3b_wx5 = qsp6 & qcp5;
   assign compress_add3b_maj3b_wy0 = qsp1 & compress_rn1;
-  assign compress_add3b_maj3b_wy1 = qsp2 & compress_rn2;
+  assign compress_add3b_maj3b_wy1 = qsp2 & compress_nsd;
   assign compress_add3b_maj3b_wy2 = qsp3 & compress_rn1;
   assign compress_add3b_maj3b_wy3 = qsp4 & compress_rn4;
   assign compress_add3b_maj3b_wy4 = qsp5 & compress_rn0;
   assign compress_add3b_maj3b_wy5 = qsp6 & compress_rn1;
   assign compress_add3b_maj3b_xy0 = qcp0 & compress_rn1;
-  assign compress_add3b_maj3b_xy1 = qcp1 & compress_rn2;
+  assign compress_add3b_maj3b_xy1 = qcp1 & compress_nsd;
   assign compress_add3b_maj3b_xy2 = qcp2 & compress_rn1;
   assign compress_add3b_maj3b_xy3 = qcp3 & compress_rn4;
   assign compress_add3b_maj3b_xy4 = qcp4 & compress_rn0;
@@ -590,29 +587,26 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign compress_nc = compress_nct | qcp7;
   assign compress_nct = qsp7 & qcp6;
   assign compress_ns = qsp7 ^ qcp6;
-  assign compress_rn0 = compress_xn1 & compress_nsd;
-  assign compress_rn1 = compress_ncd & compress_xn0;
-  assign compress_rn2 = compress_ncd ? compress_nsd : compress_nsd;
+  assign compress_rn0 = xn5 & compress_nsd;
+  assign compress_rn1 = compress_ncd & compress_rnh1;
   assign compress_rn4 = compress_ncd & compress_nsd;
-  assign compress_xn0 = ~compress_nsd;
-  assign compress_xn1 = ~compress_ncd;
+  assign compress_rnh1 = ~compress_nsd;
   assign ctrp_ctr_cq0 = ~ctrp_ctr_cp0;
   assign ctrp_ctr_cq1 = ctrp_ctr_sp0 & ctrp_ctr_cp0;
   assign ctrp_ctr_cq2 = ctrp_ctr_sp1 & ctrp_ctr_cp1;
   assign ctrp_ctr_cq3 = ctrp_ctr_sp2 & ctrp_ctr_cp2;
-  assign ctrp_ctr_cr0 = ctrp_ctr_xn & ctrp_ctr_cq0;
-  assign ctrp_ctr_cr1 = ctrp_ctr_xn & ctrp_ctr_cq1;
-  assign ctrp_ctr_cr2 = ctrp_ctr_xn & ctrp_ctr_cq2;
-  assign ctrp_ctr_cr3 = ctrp_ctr_xn & ctrp_ctr_cq3;
+  assign ctrp_ctr_cr0 = xn1 & ctrp_ctr_cq0;
+  assign ctrp_ctr_cr1 = xn1 & ctrp_ctr_cq1;
+  assign ctrp_ctr_cr2 = xn1 & ctrp_ctr_cq2;
+  assign ctrp_ctr_cr3 = xn1 & ctrp_ctr_cq3;
   assign ctrp_ctr_dq = ctrp_ctr_dp | ctrp_ctr_cp3;
   assign ctrp_ctr_sq0 = ctrp_ctr_sp0 ^ ctrp_ctr_cp0;
   assign ctrp_ctr_sq1 = ctrp_ctr_sp1 ^ ctrp_ctr_cp1;
   assign ctrp_ctr_sq2 = ctrp_ctr_sp2 ^ ctrp_ctr_cp2;
   assign ctrp_ctr_sr0 = ld | ctrp_ctr_sq0;
   assign ctrp_ctr_sr1 = ld | ctrp_ctr_sq1;
-  assign ctrp_ctr_sr2 = ctrp_ctr_xn & ctrp_ctr_sq2;
-  assign ctrp_ctr_xn = ~ld;
-  assign ctrp_ds = ctrp_ctr_xn & ctrp_ctr_dq;
+  assign ctrp_ctr_sr2 = xn1 & ctrp_ctr_sq2;
+  assign ctrp_ds = xn1 & ctrp_ctr_dq;
   assign ctrp_pulse_xn = ~ctrp_ctr_dp;
   assign jp = ctrp_ds & ctrp_pulse_xn;
   assign pc0 = reduce_add3b0_maj3b_or3b_wx0 | reduce_add3b0_maj3b_xy0;
@@ -634,7 +628,7 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign qcr1 = jpd ? pc1 : qcp1;
   assign qcr2 = jpd ? pc2 : qcp2;
   assign qcr3 = jpd ? pc3 : qcp3;
-  assign qcr4 = xn & qcp4;
+  assign qcr4 = xn0 & qcp4;
   assign qcr5 = jpd ? pc5 : qcp5;
   assign qcr6 = jpd ? pc6 : qcp6;
   assign qcr7 = jpd ? pc7 : qcp7;
@@ -711,14 +705,14 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign reduce_mulb0_add3b_xor3b_wx1 = reduce_mulb0_sq2 ^ reduce_mulb0_cq1;
   assign reduce_mulb0_add3b_xor3b_wx2 = reduce_mulb0_sq3 ^ reduce_mulb0_cq2;
   assign reduce_mulb0_add3b_xor3b_wx4 = reduce_mulb0_sq5 ^ reduce_mulb0_cq4;
-  assign reduce_mulb0_cq0 = reduce_mulb0_xn0 & reduce_mulb0_cp0;
-  assign reduce_mulb0_cq1 = reduce_mulb0_xn0 & reduce_mulb0_cp1;
-  assign reduce_mulb0_cq2 = reduce_mulb0_xn0 & reduce_mulb0_cp2;
-  assign reduce_mulb0_cq3 = reduce_mulb0_xn0 & reduce_mulb0_cp3;
-  assign reduce_mulb0_cq4 = reduce_mulb0_xn0 & reduce_mulb0_cp4;
-  assign reduce_mulb0_cq5 = reduce_mulb0_xn0 & reduce_mulb0_cp5;
-  assign reduce_mulb0_cq6 = reduce_mulb0_xn0 & reduce_mulb0_cp6;
-  assign reduce_mulb0_cq7 = reduce_mulb0_xn0 & reduce_mulb0_cp7;
+  assign reduce_mulb0_cq0 = xn2 & reduce_mulb0_cp0;
+  assign reduce_mulb0_cq1 = xn2 & reduce_mulb0_cp1;
+  assign reduce_mulb0_cq2 = xn2 & reduce_mulb0_cp2;
+  assign reduce_mulb0_cq3 = xn2 & reduce_mulb0_cp3;
+  assign reduce_mulb0_cq4 = xn2 & reduce_mulb0_cp4;
+  assign reduce_mulb0_cq5 = xn2 & reduce_mulb0_cp5;
+  assign reduce_mulb0_cq6 = xn2 & reduce_mulb0_cp6;
+  assign reduce_mulb0_cq7 = xn2 & reduce_mulb0_cp7;
   assign reduce_mulb0_pc0 = reduce_mulb0_sq0 & reduce_sa2;
   assign reduce_mulb0_pc1 = reduce_mulb0_sq1 & reduce_mulb0_cq0;
   assign reduce_mulb0_pc2 = reduce_mulb0_add3b_maj3b_or3b_wx1 | reduce_mulb0_add3b_maj3b_xy1;
@@ -734,16 +728,14 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign reduce_mulb0_ps4 = reduce_mulb0_add3b_xor3b_wx4 ^ reduce_sa2;
   assign reduce_mulb0_ps5 = reduce_mulb0_sq6 ^ reduce_mulb0_cq5;
   assign reduce_mulb0_ps6 = reduce_mulb0_sq7 ^ reduce_mulb0_cq6;
-  assign reduce_mulb0_sq0 = reduce_mulb0_xn0 & reduce_mulb0_sp0;
-  assign reduce_mulb0_sq1 = reduce_mulb0_xn0 & reduce_mulb0_sp1;
-  assign reduce_mulb0_sq2 = reduce_mulb0_xn0 & reduce_mulb0_sp2;
-  assign reduce_mulb0_sq3 = reduce_mulb0_xn0 & reduce_mulb0_sp3;
-  assign reduce_mulb0_sq4 = reduce_mulb0_xn0 & reduce_mulb0_sp4;
-  assign reduce_mulb0_sq5 = reduce_mulb0_xn0 & reduce_mulb0_sp5;
-  assign reduce_mulb0_sq6 = reduce_mulb0_xn0 & reduce_mulb0_sp6;
-  assign reduce_mulb0_sq7 = reduce_mulb0_xn0 & reduce_mulb0_sp7;
-  assign reduce_mulb0_xn0 = ~reduce_ld1;
-  assign reduce_mulb0_xn1 = ~reduce_sa2;
+  assign reduce_mulb0_sq0 = xn2 & reduce_mulb0_sp0;
+  assign reduce_mulb0_sq1 = xn2 & reduce_mulb0_sp1;
+  assign reduce_mulb0_sq2 = xn2 & reduce_mulb0_sp2;
+  assign reduce_mulb0_sq3 = xn2 & reduce_mulb0_sp3;
+  assign reduce_mulb0_sq4 = xn2 & reduce_mulb0_sp4;
+  assign reduce_mulb0_sq5 = xn2 & reduce_mulb0_sp5;
+  assign reduce_mulb0_sq6 = xn2 & reduce_mulb0_sp6;
+  assign reduce_mulb0_sq7 = xn2 & reduce_mulb0_sp7;
   assign reduce_mulb1_add3_maj3_or3_wx = reduce_mulb1_add3_maj3_wx | reduce_mulb1_add3_maj3_wy;
   assign reduce_mulb1_add3_maj3_wx = reduce_qb2 & reduce_mulb1_cq5;
   assign reduce_mulb1_add3_maj3_wy = reduce_qb2 & reduce_mulb1_pc5;
@@ -764,12 +756,12 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign reduce_mulb1_add3b_xor3b_wx0 = reduce_mulb1_sq1 ^ reduce_mulb1_cq0;
   assign reduce_mulb1_add3b_xor3b_wx2 = reduce_mulb1_sq3 ^ reduce_mulb1_cq2;
   assign reduce_mulb1_add3b_xor3b_wx3 = reduce_mulb1_sq4 ^ reduce_mulb1_cq3;
-  assign reduce_mulb1_cq0 = reduce_mulb1_xn0 & reduce_sd1;
-  assign reduce_mulb1_cq1 = reduce_mulb1_xn0 & reduce_sd2;
-  assign reduce_mulb1_cq2 = reduce_mulb1_xn0 & reduce_sd3;
-  assign reduce_mulb1_cq3 = reduce_mulb1_xn0 & reduce_sd4;
-  assign reduce_mulb1_cq4 = reduce_mulb1_xn0 & reduce_sd5;
-  assign reduce_mulb1_cq5 = reduce_mulb1_xn0 & reduce_sd6;
+  assign reduce_mulb1_cq0 = xn3 & reduce_sd1;
+  assign reduce_mulb1_cq1 = xn3 & reduce_sd2;
+  assign reduce_mulb1_cq2 = xn3 & reduce_sd3;
+  assign reduce_mulb1_cq3 = xn3 & reduce_sd4;
+  assign reduce_mulb1_cq4 = xn3 & reduce_sd5;
+  assign reduce_mulb1_cq5 = xn3 & reduce_sd6;
   assign reduce_mulb1_pc0 = reduce_mulb1_sq0 & reduce_qb2;
   assign reduce_mulb1_pc1 = reduce_mulb1_add3b_maj3b_or3b_wx0 | reduce_mulb1_add3b_maj3b_xy0;
   assign reduce_mulb1_pc2 = reduce_mulb1_sq2 & reduce_mulb1_cq1;
@@ -781,14 +773,12 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign reduce_mulb1_ps2 = reduce_mulb1_add3b_xor3b_wx2 ^ reduce_qb2;
   assign reduce_mulb1_ps3 = reduce_mulb1_add3b_xor3b_wx3 ^ reduce_qb2;
   assign reduce_mulb1_ps4 = reduce_mulb1_sq5 ^ reduce_mulb1_cq4;
-  assign reduce_mulb1_sq0 = reduce_mulb1_xn0 & reduce_sc0;
-  assign reduce_mulb1_sq1 = reduce_mulb1_xn0 & reduce_sc1;
-  assign reduce_mulb1_sq2 = reduce_mulb1_xn0 & reduce_sc2;
-  assign reduce_mulb1_sq3 = reduce_mulb1_xn0 & reduce_sc3;
-  assign reduce_mulb1_sq4 = reduce_mulb1_xn0 & reduce_sc4;
-  assign reduce_mulb1_sq5 = reduce_mulb1_xn0 & reduce_sc5;
-  assign reduce_mulb1_xn0 = ~reduce_ld2;
-  assign reduce_mulb1_xn1 = ~reduce_qb2;
+  assign reduce_mulb1_sq0 = xn3 & reduce_sc0;
+  assign reduce_mulb1_sq1 = xn3 & reduce_sc1;
+  assign reduce_mulb1_sq2 = xn3 & reduce_sc2;
+  assign reduce_mulb1_sq3 = xn3 & reduce_sc3;
+  assign reduce_mulb1_sq4 = xn3 & reduce_sc4;
+  assign reduce_mulb1_sq5 = xn3 & reduce_sc5;
   assign reduce_mulsc_mulb_add3_maj3_or3_wx = reduce_mulsc_mulb_add3_maj3_wx | reduce_mulsc_mulb_add3_maj3_wy;
   assign reduce_mulsc_mulb_add3_maj3_wx = reduce_mulsc_mulb_yoc6 & reduce_mulsc_mulb_cq6;
   assign reduce_mulsc_mulb_add3_maj3_wy = reduce_mulsc_mulb_yoc6 & reduce_mulsc_mulb_pc6;
@@ -854,13 +844,13 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign reduce_mulsc_mulb_add3b1_xor3b_wx3 = reduce_mulsc_mulb_yoc3 ^ reduce_mulsc_mulb_ps3;
   assign reduce_mulsc_mulb_add3b1_xor3b_wx4 = reduce_mulsc_mulb_yoc4 ^ reduce_mulsc_mulb_ps4;
   assign reduce_mulsc_mulb_add3b1_xor3b_wx5 = reduce_mulsc_mulb_yoc5 ^ reduce_mulsc_mulb_ps5;
-  assign reduce_mulsc_mulb_cq0 = reduce_mulsc_mulb_xn & reduce_sb0;
-  assign reduce_mulsc_mulb_cq1 = reduce_mulsc_mulb_xn & reduce_sb1;
-  assign reduce_mulsc_mulb_cq2 = reduce_mulsc_mulb_xn & reduce_sb2;
-  assign reduce_mulsc_mulb_cq3 = reduce_mulsc_mulb_xn & reduce_sb3;
-  assign reduce_mulsc_mulb_cq4 = reduce_mulsc_mulb_xn & reduce_mulsc_mulb_cp4;
-  assign reduce_mulsc_mulb_cq5 = reduce_mulsc_mulb_xn & reduce_mulsc_mulb_cp5;
-  assign reduce_mulsc_mulb_cq6 = reduce_mulsc_mulb_xn & reduce_mulsc_mulb_cp6;
+  assign reduce_mulsc_mulb_cq0 = xn4 & reduce_sb0;
+  assign reduce_mulsc_mulb_cq1 = xn4 & reduce_sb1;
+  assign reduce_mulsc_mulb_cq2 = xn4 & reduce_sb2;
+  assign reduce_mulsc_mulb_cq3 = xn4 & reduce_sb3;
+  assign reduce_mulsc_mulb_cq4 = xn4 & reduce_mulsc_mulb_cp4;
+  assign reduce_mulsc_mulb_cq5 = xn4 & reduce_mulsc_mulb_cp5;
+  assign reduce_mulsc_mulb_cq6 = xn4 & reduce_mulsc_mulb_cp6;
   assign reduce_mulsc_mulb_pc0 = reduce_mulsc_mulb_sq0 & reduce_mulsc_mulb_yos0;
   assign reduce_mulsc_mulb_pc1 = reduce_mulsc_mulb_add3b0_maj3b_or3b_wx0 | reduce_mulsc_mulb_add3b0_maj3b_xy0;
   assign reduce_mulsc_mulb_pc2 = reduce_mulsc_mulb_add3b0_maj3b_or3b_wx1 | reduce_mulsc_mulb_add3b0_maj3b_xy1;
@@ -874,14 +864,13 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign reduce_mulsc_mulb_ps3 = reduce_mulsc_mulb_add3b0_xor3b_wx3 ^ reduce_mulsc_mulb_yos4;
   assign reduce_mulsc_mulb_ps4 = reduce_mulsc_mulb_add3b0_xor3b_wx4 ^ reduce_mulsc_mulb_yos5;
   assign reduce_mulsc_mulb_ps5 = reduce_mulsc_mulb_add3b0_xor3b_wx5 ^ reduce_mulsc_mulb_yos6;
-  assign reduce_mulsc_mulb_sq0 = reduce_mulsc_mulb_xn & reduce_sa4;
-  assign reduce_mulsc_mulb_sq1 = reduce_mulsc_mulb_xn & reduce_sa5;
-  assign reduce_mulsc_mulb_sq2 = reduce_mulsc_mulb_xn & reduce_sa6;
-  assign reduce_mulsc_mulb_sq3 = reduce_mulsc_mulb_xn & reduce_sa7;
-  assign reduce_mulsc_mulb_sq4 = reduce_mulsc_mulb_xn & reduce_sa8;
-  assign reduce_mulsc_mulb_sq5 = reduce_mulsc_mulb_xn & reduce_mulsc_mulb_sp5;
-  assign reduce_mulsc_mulb_sq6 = reduce_mulsc_mulb_xn & reduce_mulsc_mulb_sp6;
-  assign reduce_mulsc_mulb_xn = ~reduce_mulsc_ldd;
+  assign reduce_mulsc_mulb_sq0 = xn4 & reduce_sa4;
+  assign reduce_mulsc_mulb_sq1 = xn4 & reduce_sa5;
+  assign reduce_mulsc_mulb_sq2 = xn4 & reduce_sa6;
+  assign reduce_mulsc_mulb_sq3 = xn4 & reduce_sa7;
+  assign reduce_mulsc_mulb_sq4 = xn4 & reduce_sa8;
+  assign reduce_mulsc_mulb_sq5 = xn4 & reduce_mulsc_mulb_sp5;
+  assign reduce_mulsc_mulb_sq6 = xn4 & reduce_mulsc_mulb_sp6;
   assign reduce_mulsc_mulb_yoc0 = reduce_mulsc_xbd & yc[0];
   assign reduce_mulsc_mulb_yoc1 = reduce_mulsc_xbd & yc[1];
   assign reduce_mulsc_mulb_yoc2 = reduce_mulsc_xbd & yc[2];
@@ -956,7 +945,7 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign reduce_qs5 = reduce_mulb0_ps5 ^ reduce_mulb0_pc5;
   assign reduce_qs6 = reduce_mulb0_ps6 ^ reduce_mulb0_pc6;
   assign reduce_qs7 = reduce_mulb0_cq7 ^ reduce_mulb0_pc7;
-  assign reduce_sticky_q = reduce_mulb1_xn0 & reduce_sd0;
+  assign reduce_sticky_q = xn3 & reduce_sd0;
   assign reduce_vb = reduce_mulb1_sq0 ^ reduce_qb2;
   assign reduce_vc0 = reduce_mulb1_ps0 & reduce_mulb1_pc0;
   assign reduce_vc1 = reduce_mulb1_ps1 & reduce_mulb1_pc1;
@@ -971,7 +960,12 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign reduce_vs4 = reduce_mulb1_ps4 ^ reduce_mulb1_pc4;
   assign reduce_vs5 = reduce_mulb1_add3_xor3_wx ^ reduce_mulb1_pc5;
   assign reduce_vt = reduce_vb | reduce_sticky_q;
-  assign xn = ~jpd;
+  assign xn0 = ~jpd;
+  assign xn1 = ~ld;
+  assign xn2 = ~reduce_ld1;
+  assign xn3 = ~reduce_ld2;
+  assign xn4 = ~reduce_pipe0_x2;
+  assign xn5 = ~compress_ncd;
   assign zc0_o = qsp0 & compress_rn0;
   assign zc1_o = compress_add3b_maj3b_or3b_wx0 | compress_add3b_maj3b_xy0;
   assign zc2_o = compress_add3b_maj3b_or3b_wx1 | compress_add3b_maj3b_xy1;
@@ -981,7 +975,7 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign zc6_o = compress_add3b_maj3b_or3b_wx5 | compress_add3b_maj3b_xy5;
   assign zs0_o = qsp0 ^ compress_rn0;
   assign zs1_o = compress_add3b_xor3b_wx0 ^ compress_rn1;
-  assign zs2_o = compress_add3b_xor3b_wx1 ^ compress_rn2;
+  assign zs2_o = compress_add3b_xor3b_wx1 ^ compress_nsd;
   assign zs3_o = compress_add3b_xor3b_wx2 ^ compress_rn1;
   assign zs4_o = compress_add3b_xor3b_wx3 ^ compress_rn4;
   assign zs5_o = compress_add3b_xor3b_wx4 ^ compress_rn0;
@@ -1051,7 +1045,6 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
       reduce_mulb0_sp5 <= reduce_qs5;
       reduce_mulb0_sp6 <= reduce_qs6;
       reduce_mulb0_sp7 <= reduce_qs7;
-      reduce_mulsc_ldd <= reduce_pipe0_x1;
       reduce_mulsc_mulb_cp4 <= reduce_pc4;
       reduce_mulsc_mulb_cp5 <= reduce_pc5;
       reduce_mulsc_mulb_cp6 <= reduce_pc6;
@@ -1073,7 +1066,8 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
       reduce_mulsc_shrsc_sp5 <= reduce_mulsc_shrsc_sr5;
       reduce_mulsc_xbd <= reduce_mulsc_pipe_x1;
       reduce_pipe0_x1 <= ld;
-      reduce_pipe0_x3 <= reduce_mulsc_ldd;
+      reduce_pipe0_x2 <= reduce_pipe0_x1;
+      reduce_pipe0_x3 <= reduce_pipe0_x2;
       reduce_pipe1_x1 <= reduce_ld1;
       reduce_pipe2_x1 <= reduce_qb;
       reduce_qb2 <= reduce_pipe2_x1;
@@ -1110,12 +1104,11 @@ endmodule // montgomery_91
 /*----------------------------------------------------------------------------+
 | Primary inputs: 29                                                          |
 | Primary outputs: 14                                                         |
-| Delays: 100                                                                 |
-| Gates: 429                                                                  |
-| Fan-in: 25%=3 50%=4 75%=6 90%=8 95%=9 99%=9 max=9 (qcp5)                    |
-| Fan-in cone: 25%=2 50%=5 75%=10 90%=13 95%=17 99%=20 max=20 (reduce_sb1)    |
-| Fan-out: 25%=2 50%=3 75%=4 90%=8 95%=14 99%=16 max=24 (ld)                  |
-| Fan-out load: 25%=2 50%=3 75%=4 90%=6 95%=6 99%=8 max=8 (reduce_sa5)        |
-| Duplication: 25%=1 50%=1 75%=1 90%=2 95%=3 99%=4 max=4 (jpd)                |
+| Registers: 100                                                              |
+| Gates: 426                                                                  |
+| Fan-in: 25%=3 50%=4 75%=6 90%=8 95%=9 99%=9 max=9 (reduce_sa7)              |
+| Fan-in cone: 25%=2 50%=5 75%=10 90%=13 95%=17 99%=20 max=20 (reduce_sb2)    |
+| Fan-out: 25%=2 50%=3 75%=4 90%=8 95%=13 99%=16 max=24 (ld)                  |
+| Duplication: 25%=1 50%=1 75%=1 90%=1 95%=3 99%=4 max=4 (reduce_ld1)         |
+| Fan-out load: 25%=2 50%=3 75%=4 90%=6 95%=6 99%=8 max=24 (ld)               |
 +----------------------------------------------------------------------------*/
-

@@ -25,76 +25,76 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   output [7:0] zs;
   output [7:0] zc;
 
-  reg ld1;
-  reg ld2;
-  reg mulb0_cp0;
-  reg mulb0_cp1;
-  reg mulb0_cp2;
-  reg mulb0_cp3;
-  reg mulb0_cp4;
-  reg mulb0_cp5;
-  reg mulb0_cp6;
-  reg mulb0_cp7;
-  reg mulb0_sp0;
-  reg mulb0_sp1;
-  reg mulb0_sp2;
-  reg mulb0_sp3;
-  reg mulb0_sp4;
-  reg mulb0_sp5;
-  reg mulb0_sp6;
-  reg mulb0_sp7;
-  reg mulsc_ldd;
-  reg mulsc_mulb_cp4;
-  reg mulsc_mulb_cp5;
-  reg mulsc_mulb_cp6;
-  reg mulsc_mulb_sp5;
-  reg mulsc_mulb_sp6;
-  reg mulsc_pipe_x1;
-  reg mulsc_shrsc_cp0;
-  reg mulsc_shrsc_cp1;
-  reg mulsc_shrsc_cp2;
-  reg mulsc_shrsc_cp3;
-  reg mulsc_shrsc_cp4;
-  reg mulsc_shrsc_cp5;
-  reg mulsc_shrsc_cp6;
-  reg mulsc_shrsc_sp0;
-  reg mulsc_shrsc_sp1;
-  reg mulsc_shrsc_sp2;
-  reg mulsc_shrsc_sp3;
-  reg mulsc_shrsc_sp4;
-  reg mulsc_shrsc_sp5;
-  reg mulsc_xbd;
-  reg pipe0_x1;
-  reg pipe0_x3;
-  reg pipe1_x1;
-  reg pipe2_x1;
-  reg qb2;
-  reg sa0;
-  reg sa1;
-  reg sa2;
-  reg sa3;
-  reg sa4;
-  reg sa5;
-  reg sa6;
-  reg sa7;
-  reg sa8;
-  reg sb0;
-  reg sb1;
-  reg sb2;
-  reg sb3;
-  reg sc0;
-  reg sc1;
-  reg sc2;
-  reg sc3;
-  reg sc4;
-  reg sc5;
-  reg sd0;
-  reg sd1;
-  reg sd2;
-  reg sd3;
-  reg sd4;
-  reg sd5;
-  reg sd6;
+  reg ld1;  /* 1:0|18/4=4 */
+  reg ld2;  /* 1:0|13/3=4 */
+  reg mulb0_cp0;  /* 5:7|4/1=4 */
+  reg mulb0_cp1;  /* 6:9|4/1=4 */
+  reg mulb0_cp2;  /* 6:13|4/1=4 */
+  reg mulb0_cp3;  /* 6:12|4/1=4 */
+  reg mulb0_cp4;  /* 6:9|4/1=4 */
+  reg mulb0_cp5;  /* 6:12|4/1=4 */
+  reg mulb0_cp6;  /* 5:8|4/1=4 */
+  reg mulb0_cp7;  /* 4:6|2/1=2 */
+  reg mulb0_sp0;  /* 5:7|3/1=3 */
+  reg mulb0_sp1;  /* 6:9|4/1=4 */
+  reg mulb0_sp2;  /* 6:13|4/1=4 */
+  reg mulb0_sp3;  /* 6:12|4/1=4 */
+  reg mulb0_sp4;  /* 6:9|4/1=4 */
+  reg mulb0_sp5;  /* 6:12|4/1=4 */
+  reg mulb0_sp6;  /* 5:8|4/1=4 */
+  reg mulb0_sp7;  /* 4:6|4/1=4 */
+  reg mulsc_ldd;  /* 1:0|16/4=4 */
+  reg mulsc_mulb_cp4;  /* 9:20|4/1=4 */
+  reg mulsc_mulb_cp5;  /* 9:20|4/1=4 */
+  reg mulsc_mulb_cp6;  /* 7:16|2/1=2 */
+  reg mulsc_mulb_sp5;  /* 9:17|4/1=4 */
+  reg mulsc_mulb_sp6;  /* 7:13|4/1=4 */
+  reg mulsc_pipe_x1;  /* 4:2|1/1=3 */
+  reg mulsc_shrsc_cp0;  /* 4:2|2/1=2 */
+  reg mulsc_shrsc_cp1;  /* 4:2|2/1=2 */
+  reg mulsc_shrsc_cp2;  /* 4:2|2/1=2 */
+  reg mulsc_shrsc_cp3;  /* 4:2|2/1=2 */
+  reg mulsc_shrsc_cp4;  /* 4:2|2/1=2 */
+  reg mulsc_shrsc_cp5;  /* 4:2|2/1=2 */
+  reg mulsc_shrsc_cp6;  /* 2:1|1/1=1 */
+  reg mulsc_shrsc_sp0;  /* 4:2|2/1=2 */
+  reg mulsc_shrsc_sp1;  /* 4:2|2/1=2 */
+  reg mulsc_shrsc_sp2;  /* 4:2|2/1=2 */
+  reg mulsc_shrsc_sp3;  /* 4:2|2/1=2 */
+  reg mulsc_shrsc_sp4;  /* 4:2|2/1=2 */
+  reg mulsc_shrsc_sp5;  /* 3:1|2/1=2 */
+  reg mulsc_xbd;  /* 1:0|15/3=5 */
+  reg pipe0_x1;  /* 1:0|1/1=4 */
+  reg pipe0_x3;  /* 1:0|1/1=4 */
+  reg pipe1_x1;  /* 1:0|1/1=3 */
+  reg pipe2_x1;  /* 3:3|1/1=3 */
+  reg qb2;  /* 1:0|13/3=4 */
+  reg sa0;  /* 1:0|2/1=2 */
+  reg sa1;  /* 1:0|3/1=3 */
+  reg sa2;  /* 1:0|16/3=5 */
+  reg sa3;  /* 4:4|3/1=5 */
+  reg sa4;  /* 8:12|6/1=6 */
+  reg sa5;  /* 9:17|8/1=8 */
+  reg sa6;  /* 9:17|8/1=8 */
+  reg sa7;  /* 9:17|6/1=6 */
+  reg sa8;  /* 9:17|5/1=5 */
+  reg sb0;  /* 8:15|6/1=6 */
+  reg sb1;  /* 9:20|6/1=6 */
+  reg sb2;  /* 9:20|6/1=6 */
+  reg sb3;  /* 9:20|5/1=5 */
+  reg sc0;  /* 5:8|5/1=5 */
+  reg sc1;  /* 6:12|6/1=6 */
+  reg sc2;  /* 6:9|6/1=6 */
+  reg sc3;  /* 6:13|6/1=6 */
+  reg sc4;  /* 6:12|7/1=7 */
+  reg sc5;  /* 5:7|8/1=8 */
+  reg sd0;  /* 4:5|3/1=3 */
+  reg sd1;  /* 5:8|6/1=6 */
+  reg sd2;  /* 6:12|6/1=6 */
+  reg sd3;  /* 6:9|6/1=6 */
+  reg sd4;  /* 6:13|7/1=7 */
+  reg sd5;  /* 6:12|8/1=8 */
+  reg sd6;  /* 5:10|6/1=6 */
 
   wire add3_maj3_or3_wx;
   wire add3_maj3_wx;
@@ -192,8 +192,6 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   wire mulb0_sq5;
   wire mulb0_sq6;
   wire mulb0_sq7;
-  wire mulb0_xn0;
-  wire mulb0_xn1;
   wire mulb1_add3_maj3_or3_wx;
   wire mulb1_add3_maj3_wx;
   wire mulb1_add3_maj3_wy;
@@ -237,8 +235,6 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   wire mulb1_sq3;
   wire mulb1_sq4;
   wire mulb1_sq5;
-  wire mulb1_xn0;
-  wire mulb1_xn1;
   wire mulsc_mulb_add3_maj3_or3_wx;
   wire mulsc_mulb_add3_maj3_wx;
   wire mulsc_mulb_add3_maj3_wy;
@@ -331,7 +327,6 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   wire mulsc_mulb_sq4;
   wire mulsc_mulb_sq5;
   wire mulsc_mulb_sq6;
-  wire mulsc_mulb_xn;
   wire mulsc_mulb_yoc0;
   wire mulsc_mulb_yoc1;
   wire mulsc_mulb_yoc2;
@@ -421,6 +416,9 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   wire vs4;
   wire vs5;
   wire vt;
+  wire xn0;
+  wire xn1;
+  wire xn2;
   wire zc0_o;
   wire zc1_o;
   wire zc2_o;
@@ -502,14 +500,14 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign mulb0_add3b_xor3b_wx1 = mulb0_sq2 ^ mulb0_cq1;
   assign mulb0_add3b_xor3b_wx2 = mulb0_sq3 ^ mulb0_cq2;
   assign mulb0_add3b_xor3b_wx4 = mulb0_sq5 ^ mulb0_cq4;
-  assign mulb0_cq0 = mulb0_xn0 & mulb0_cp0;
-  assign mulb0_cq1 = mulb0_xn0 & mulb0_cp1;
-  assign mulb0_cq2 = mulb0_xn0 & mulb0_cp2;
-  assign mulb0_cq3 = mulb0_xn0 & mulb0_cp3;
-  assign mulb0_cq4 = mulb0_xn0 & mulb0_cp4;
-  assign mulb0_cq5 = mulb0_xn0 & mulb0_cp5;
-  assign mulb0_cq6 = mulb0_xn0 & mulb0_cp6;
-  assign mulb0_cq7 = mulb0_xn0 & mulb0_cp7;
+  assign mulb0_cq0 = xn0 & mulb0_cp0;
+  assign mulb0_cq1 = xn0 & mulb0_cp1;
+  assign mulb0_cq2 = xn0 & mulb0_cp2;
+  assign mulb0_cq3 = xn0 & mulb0_cp3;
+  assign mulb0_cq4 = xn0 & mulb0_cp4;
+  assign mulb0_cq5 = xn0 & mulb0_cp5;
+  assign mulb0_cq6 = xn0 & mulb0_cp6;
+  assign mulb0_cq7 = xn0 & mulb0_cp7;
   assign mulb0_pc0 = mulb0_sq0 & sa2;
   assign mulb0_pc1 = mulb0_sq1 & mulb0_cq0;
   assign mulb0_pc2 = mulb0_add3b_maj3b_or3b_wx1 | mulb0_add3b_maj3b_xy1;
@@ -525,16 +523,14 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign mulb0_ps4 = mulb0_add3b_xor3b_wx4 ^ sa2;
   assign mulb0_ps5 = mulb0_sq6 ^ mulb0_cq5;
   assign mulb0_ps6 = mulb0_sq7 ^ mulb0_cq6;
-  assign mulb0_sq0 = mulb0_xn0 & mulb0_sp0;
-  assign mulb0_sq1 = mulb0_xn0 & mulb0_sp1;
-  assign mulb0_sq2 = mulb0_xn0 & mulb0_sp2;
-  assign mulb0_sq3 = mulb0_xn0 & mulb0_sp3;
-  assign mulb0_sq4 = mulb0_xn0 & mulb0_sp4;
-  assign mulb0_sq5 = mulb0_xn0 & mulb0_sp5;
-  assign mulb0_sq6 = mulb0_xn0 & mulb0_sp6;
-  assign mulb0_sq7 = mulb0_xn0 & mulb0_sp7;
-  assign mulb0_xn0 = ~ld1;
-  assign mulb0_xn1 = ~sa2;
+  assign mulb0_sq0 = xn0 & mulb0_sp0;
+  assign mulb0_sq1 = xn0 & mulb0_sp1;
+  assign mulb0_sq2 = xn0 & mulb0_sp2;
+  assign mulb0_sq3 = xn0 & mulb0_sp3;
+  assign mulb0_sq4 = xn0 & mulb0_sp4;
+  assign mulb0_sq5 = xn0 & mulb0_sp5;
+  assign mulb0_sq6 = xn0 & mulb0_sp6;
+  assign mulb0_sq7 = xn0 & mulb0_sp7;
   assign mulb1_add3_maj3_or3_wx = mulb1_add3_maj3_wx | mulb1_add3_maj3_wy;
   assign mulb1_add3_maj3_wx = qb2 & mulb1_cq5;
   assign mulb1_add3_maj3_wy = qb2 & mulb1_pc5;
@@ -555,12 +551,12 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign mulb1_add3b_xor3b_wx0 = mulb1_sq1 ^ mulb1_cq0;
   assign mulb1_add3b_xor3b_wx2 = mulb1_sq3 ^ mulb1_cq2;
   assign mulb1_add3b_xor3b_wx3 = mulb1_sq4 ^ mulb1_cq3;
-  assign mulb1_cq0 = mulb1_xn0 & sd1;
-  assign mulb1_cq1 = mulb1_xn0 & sd2;
-  assign mulb1_cq2 = mulb1_xn0 & sd3;
-  assign mulb1_cq3 = mulb1_xn0 & sd4;
-  assign mulb1_cq4 = mulb1_xn0 & sd5;
-  assign mulb1_cq5 = mulb1_xn0 & sd6;
+  assign mulb1_cq0 = xn1 & sd1;
+  assign mulb1_cq1 = xn1 & sd2;
+  assign mulb1_cq2 = xn1 & sd3;
+  assign mulb1_cq3 = xn1 & sd4;
+  assign mulb1_cq4 = xn1 & sd5;
+  assign mulb1_cq5 = xn1 & sd6;
   assign mulb1_pc0 = mulb1_sq0 & qb2;
   assign mulb1_pc1 = mulb1_add3b_maj3b_or3b_wx0 | mulb1_add3b_maj3b_xy0;
   assign mulb1_pc2 = mulb1_sq2 & mulb1_cq1;
@@ -572,14 +568,12 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign mulb1_ps2 = mulb1_add3b_xor3b_wx2 ^ qb2;
   assign mulb1_ps3 = mulb1_add3b_xor3b_wx3 ^ qb2;
   assign mulb1_ps4 = mulb1_sq5 ^ mulb1_cq4;
-  assign mulb1_sq0 = mulb1_xn0 & sc0;
-  assign mulb1_sq1 = mulb1_xn0 & sc1;
-  assign mulb1_sq2 = mulb1_xn0 & sc2;
-  assign mulb1_sq3 = mulb1_xn0 & sc3;
-  assign mulb1_sq4 = mulb1_xn0 & sc4;
-  assign mulb1_sq5 = mulb1_xn0 & sc5;
-  assign mulb1_xn0 = ~ld2;
-  assign mulb1_xn1 = ~qb2;
+  assign mulb1_sq0 = xn1 & sc0;
+  assign mulb1_sq1 = xn1 & sc1;
+  assign mulb1_sq2 = xn1 & sc2;
+  assign mulb1_sq3 = xn1 & sc3;
+  assign mulb1_sq4 = xn1 & sc4;
+  assign mulb1_sq5 = xn1 & sc5;
   assign mulsc_mulb_add3_maj3_or3_wx = mulsc_mulb_add3_maj3_wx | mulsc_mulb_add3_maj3_wy;
   assign mulsc_mulb_add3_maj3_wx = mulsc_mulb_yoc6 & mulsc_mulb_cq6;
   assign mulsc_mulb_add3_maj3_wy = mulsc_mulb_yoc6 & mulsc_mulb_pc6;
@@ -645,13 +639,13 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign mulsc_mulb_add3b1_xor3b_wx3 = mulsc_mulb_yoc3 ^ mulsc_mulb_ps3;
   assign mulsc_mulb_add3b1_xor3b_wx4 = mulsc_mulb_yoc4 ^ mulsc_mulb_ps4;
   assign mulsc_mulb_add3b1_xor3b_wx5 = mulsc_mulb_yoc5 ^ mulsc_mulb_ps5;
-  assign mulsc_mulb_cq0 = mulsc_mulb_xn & sb0;
-  assign mulsc_mulb_cq1 = mulsc_mulb_xn & sb1;
-  assign mulsc_mulb_cq2 = mulsc_mulb_xn & sb2;
-  assign mulsc_mulb_cq3 = mulsc_mulb_xn & sb3;
-  assign mulsc_mulb_cq4 = mulsc_mulb_xn & mulsc_mulb_cp4;
-  assign mulsc_mulb_cq5 = mulsc_mulb_xn & mulsc_mulb_cp5;
-  assign mulsc_mulb_cq6 = mulsc_mulb_xn & mulsc_mulb_cp6;
+  assign mulsc_mulb_cq0 = xn2 & sb0;
+  assign mulsc_mulb_cq1 = xn2 & sb1;
+  assign mulsc_mulb_cq2 = xn2 & sb2;
+  assign mulsc_mulb_cq3 = xn2 & sb3;
+  assign mulsc_mulb_cq4 = xn2 & mulsc_mulb_cp4;
+  assign mulsc_mulb_cq5 = xn2 & mulsc_mulb_cp5;
+  assign mulsc_mulb_cq6 = xn2 & mulsc_mulb_cp6;
   assign mulsc_mulb_pc0 = mulsc_mulb_sq0 & mulsc_mulb_yos0;
   assign mulsc_mulb_pc1 = mulsc_mulb_add3b0_maj3b_or3b_wx0 | mulsc_mulb_add3b0_maj3b_xy0;
   assign mulsc_mulb_pc2 = mulsc_mulb_add3b0_maj3b_or3b_wx1 | mulsc_mulb_add3b0_maj3b_xy1;
@@ -665,14 +659,13 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign mulsc_mulb_ps3 = mulsc_mulb_add3b0_xor3b_wx3 ^ mulsc_mulb_yos4;
   assign mulsc_mulb_ps4 = mulsc_mulb_add3b0_xor3b_wx4 ^ mulsc_mulb_yos5;
   assign mulsc_mulb_ps5 = mulsc_mulb_add3b0_xor3b_wx5 ^ mulsc_mulb_yos6;
-  assign mulsc_mulb_sq0 = mulsc_mulb_xn & sa4;
-  assign mulsc_mulb_sq1 = mulsc_mulb_xn & sa5;
-  assign mulsc_mulb_sq2 = mulsc_mulb_xn & sa6;
-  assign mulsc_mulb_sq3 = mulsc_mulb_xn & sa7;
-  assign mulsc_mulb_sq4 = mulsc_mulb_xn & sa8;
-  assign mulsc_mulb_sq5 = mulsc_mulb_xn & mulsc_mulb_sp5;
-  assign mulsc_mulb_sq6 = mulsc_mulb_xn & mulsc_mulb_sp6;
-  assign mulsc_mulb_xn = ~mulsc_ldd;
+  assign mulsc_mulb_sq0 = xn2 & sa4;
+  assign mulsc_mulb_sq1 = xn2 & sa5;
+  assign mulsc_mulb_sq2 = xn2 & sa6;
+  assign mulsc_mulb_sq3 = xn2 & sa7;
+  assign mulsc_mulb_sq4 = xn2 & sa8;
+  assign mulsc_mulb_sq5 = xn2 & mulsc_mulb_sp5;
+  assign mulsc_mulb_sq6 = xn2 & mulsc_mulb_sp6;
   assign mulsc_mulb_yoc0 = mulsc_xbd & yc[0];
   assign mulsc_mulb_yoc1 = mulsc_xbd & yc[1];
   assign mulsc_mulb_yoc2 = mulsc_xbd & yc[2];
@@ -747,7 +740,7 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign qs5 = mulb0_ps5 ^ mulb0_pc5;
   assign qs6 = mulb0_ps6 ^ mulb0_pc6;
   assign qs7 = mulb0_cq7 ^ mulb0_pc7;
-  assign sticky_q = mulb1_xn0 & sd0;
+  assign sticky_q = xn1 & sd0;
   assign vb = mulb1_sq0 ^ qb2;
   assign vc0 = mulb1_ps0 & mulb1_pc0;
   assign vc1 = mulb1_ps1 & mulb1_pc1;
@@ -762,6 +755,9 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   assign vs4 = mulb1_ps4 ^ mulb1_pc4;
   assign vs5 = mulb1_add3_xor3_wx ^ mulb1_pc5;
   assign vt = vb | sticky_q;
+  assign xn0 = ~ld1;
+  assign xn1 = ~ld2;
+  assign xn2 = ~mulsc_ldd;
   assign zc0_o = add3b0_maj3b_or3b_wx0 | add3b0_maj3b_xy0;
   assign zc1_o = add3b0_maj3b_or3b_wx1 | add3b0_maj3b_xy1;
   assign zc2_o = add3b0_maj3b_or3b_wx2 | add3b0_maj3b_xy2;
@@ -873,12 +869,12 @@ endmodule // montgomery_reduce_91
 /*----------------------------------------------------------------------------+
 | Primary inputs: 29                                                          |
 | Primary outputs: 16                                                         |
-| Delays: 70                                                                  |
-| Gates: 340                                                                  |
-| Fan-in: 25%=3 50%=5 75%=6 90%=9 95%=9 99%=9 max=9 (sb1)                     |
-| Fan-in cone: 25%=2 50%=7 75%=12 90%=17 95%=17 99%=20 max=20 (sb1)           |
+| Registers: 70                                                               |
+| Gates: 338                                                                  |
+| Fan-in: 25%=3 50%=5 75%=6 90%=9 95%=9 99%=9 max=9 (mulsc_mulb_cp5)          |
+| Fan-in cone: 25%=2 50%=7 75%=12 90%=17 95%=17 99%=20                        |
+|   max=20 (mulsc_mulb_cp5)                                                   |
 | Fan-out: 25%=2 50%=4 75%=5 90%=8 95%=13 99%=16 max=18 (ld1)                 |
-| Fan-out load: 25%=2 50%=3 75%=4 90%=6 95%=7 99%=8 max=8 (sa5)               |
-| Duplication: 25%=1 50%=1 75%=1 90%=2 95%=3 99%=4 max=4 (mulsc_ldd)          |
+| Duplication: 25%=1 50%=1 75%=1 90%=1 95%=3 99%=4 max=4 (ld1)                |
+| Fan-out load: 25%=2 50%=4 75%=4 90%=6 95%=7 99%=8 max=15 (ld)               |
 +----------------------------------------------------------------------------*/
-

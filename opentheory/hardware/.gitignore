@@ -1,4 +1,5 @@
 *.o
 *.out
 double_exp_*.v
+test_timelock_*.v
 timelock_*.v
