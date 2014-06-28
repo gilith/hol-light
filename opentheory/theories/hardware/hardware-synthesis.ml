@@ -1904,10 +1904,10 @@ let synthesize_hardware syn primary th =
           (rename_wires primary) th in
     th;;
 
-(*** Testing
+(* Testing
 synthesize_hardware counter_syn (frees (concl counter91_thm)) counter91_thm;;
 synthesize_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgomery91_thm;;
-***)
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* Duplicating registers to reduce fanout load.                              *)
@@ -2178,10 +2178,10 @@ let pp_print_hardware_profile fmt ckt_info =
 
 let hardware_profile_to_string = print_to_string pp_print_hardware_profile;;
 
-(*** Testing
+(* Testing
 print_string ("\n" ^ hardware_profile_to_string counter_91_thm ^ "\n");;
 print_string ("\n" ^ hardware_profile_to_string montgomery_91_thm ^ "\n");;
-***)
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* Pretty-printing synthesized hardware in Verilog.                          *)
@@ -2283,7 +2283,7 @@ let hardware_to_verilog =
           Wire_verilog_arg w -> wire_name w
         | Bus_verilog_arg (Bus_wires (b,is)) ->
           range_to_string (rev is) ^ " " ^ b in
-    let verilog_comment name property =
+    let verilog_comment name property footer =
         let prop =
             let n = get_margin () in
             let () = set_margin (VERILOG_LINE_LENGTH - 4) in
@@ -2292,7 +2292,8 @@ let hardware_to_verilog =
             s in
         comment_box_text
           ("module " ^ name ^ " satisfies the following property:\n\n" ^
-           prop) ^ "\n" in
+           prop ^
+           footer) ^ "\n" in
     let verilog_module_begin name args =
         "module " ^ name ^ "(" ^
         String.concat "," (arg_names args) ^
@@ -2376,7 +2377,8 @@ let hardware_to_verilog =
         let () = List.iter print_delay registers in
         let () = print "    end\n" in
         () in
-    let verilog_header name ckt = print (verilog_comment name (concl ckt)) in
+    let verilog_header comment name ckt =
+        print (verilog_comment name (concl ckt) comment) in
     let verilog_body name primary ckt_info =
         let (defs,registers,gates,fanins,fanouts,fanout_loads) = ckt_info in
         let register_comment r =
@@ -2412,7 +2414,7 @@ let hardware_to_verilog =
         let () = print (verilog_module_end name) in
         () in
     let verilog_footer ckt_info = print (verilog_profile ckt_info) in
-    fun name -> fun primary -> fun ckt ->
+    fun comment -> fun name -> fun primary -> fun ckt ->
     let ckt =
         complain_timed "- Renamed wires"
           (verilog_wire_names primary) ckt in
@@ -2430,7 +2432,7 @@ let hardware_to_verilog =
           (circuit_fanout_loads primary_inputs fanins) fanouts in
     let () =
         complain_timed "- Generated spec"
-          (verilog_header name) ckt in
+          (verilog_header comment name) ckt in
     let () =
         let ckt_info = (defs,registers,gates,fanins,fanouts,fanout_loads) in
         complain_timed "- Generated module"
@@ -2443,15 +2445,15 @@ let hardware_to_verilog =
           verilog_footer ckt_info in
     ();;
 
-(*** Testing
-let name = "montgomery91";;
-let primary = `clk : wire` :: frees (concl montgomery91_thm);;
-output_string stdout (hardware_to_verilog name primary montgomery91_thm);;
-***)
-
-let hardware_to_verilog_file name wires th =
+let hardware_to_verilog_file comment name primary ckt =
     let file = "opentheory/hardware/" ^ name ^ ".v" in
     let h = open_out file in
-    let () = hardware_to_verilog h name wires th in
+    let () = hardware_to_verilog h comment name primary ckt in
     let () = close_out h in
     file;;
+
+(* Testing
+let name = "montgomery_91";;
+let primary = `clk : wire` :: frees (concl montgomery_91_thm);;
+hardware_to_verilog stdout "" name primary montgomery_91_thm;;
+*)

@@ -3558,21 +3558,6 @@ let counter_pulse_signal = prove
 export_thm counter_pulse_signal;;
 
 (* ------------------------------------------------------------------------- *)
-(* Automatically synthesizing hardware.                                      *)
-(* ------------------------------------------------------------------------- *)
-
-let bpipe_syn = [("pipeb",bpipe_def)];;
-
-let pipe_syn = setify (("pipe",pipe_def) :: bpipe_syn);;
-
-let event_counter_syn = setify (("ctre",event_counter_def) :: badder2_syn);;
-
-let counter_syn = setify (("ctr",counter_def) :: badder2_syn);;
-
-let counter_pulse_syn =
-    setify (("ctrp",counter_pulse_def) :: pulse_syn @ counter_syn);;
-
-(* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing verified counter circuits.                     *)
 (* ------------------------------------------------------------------------- *)
 
@@ -3591,7 +3576,18 @@ let mk_counter_arg n =
         (bit_shl_num num_1 rs +/ rs, rs) in
     bits_to_bus (num_to_bits_bound r (m -/ n2));;
 
-let mk_counter n =
+let bpipe_syn = [("pipeb",bpipe_def)];;
+
+let pipe_syn = setify (("pipe",pipe_def) :: bpipe_syn);;
+
+let event_counter_syn = setify (("ctre",event_counter_def) :: badder2_syn);;
+
+let counter_syn = setify (("ctr",counter_def) :: badder2_syn);;
+
+let counter_pulse_syn =
+    setify (("ctrp",counter_pulse_def) :: pulse_syn @ counter_syn);;
+
+let synthesize_counter n =
     let ld = `ld : wire` in
     let nb = mk_counter_arg n in
     let dn = `dn : wire` in
@@ -3627,11 +3623,10 @@ let mk_counter n =
     let primary = frees (concl th) in
     synthesize_hardware counter_syn primary th;;
 
-(*** Testing
+(* Testing
 let counter_91_thm = mk_counter (dest_numeral `91`);;
 let primary = [`clk : wire`; `ld : wire`; `dn : wire`];;
-output_string stdout (hardware_to_verilog "counter_91" primary counter_91_thm);;
-hardware_to_verilog_file "counter_91" primary counter_91_thm;;
-***)
+hardware_to_verilog stdout "" "counter_91" primary counter_91_thm;;
+*)
 
 logfile_end ();;

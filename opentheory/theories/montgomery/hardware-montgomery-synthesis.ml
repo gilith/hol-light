@@ -172,7 +172,7 @@ let mk_montgomery_mult_reduce n =
 (* Testing
 let montgomery_reduce_91_thm = mk_montgomery_mult_reduce (dest_numeral `91`);;
 let primary = `clk : wire` :: frees (concl montgomery_reduce_91_thm);;
-hardware_to_verilog_file "montgomery_reduce_91" primary montgomery_reduce_91_thm;;
+hardware_to_verilog_file "" "montgomery_reduce_91" primary montgomery_reduce_91_thm;;
 *)
 
 (* ------------------------------------------------------------------------- *)
@@ -442,7 +442,7 @@ let mk_montgomery_mult n =
 (* Testing
 let montgomery_91_thm = mk_montgomery_mult (dest_numeral `91`);;
 let primary = `clk : wire` :: frees (concl montgomery_91_thm);;
-hardware_to_verilog_file "montgomery_91" primary montgomery_91_thm;;
+hardware_to_verilog_file "" "montgomery_91" primary montgomery_91_thm;;
 *)
 
 (* ------------------------------------------------------------------------- *)
@@ -733,7 +733,7 @@ let instantiate_montgomery_double_exp n m =
     let th = (GEN fv_x o GEN fv_t) th in
     th;;
 
-let synthesize_montgomery_double_exp name rws n m =
+let synthesize_montgomery_double_exp comment name rws n m =
     let spec =
         complain_timed "Instantiated parameters"
           (REWRITE_RULE rws o instantiate_montgomery_double_exp n) m in
@@ -743,7 +743,7 @@ let synthesize_montgomery_double_exp name rws n m =
     let clk = `clk : wire` in
     let _ =
         complain_timed "Generated verilog module"
-          (hardware_to_verilog_file name (clk :: primary)) ckt in
+          (hardware_to_verilog_file comment name (clk :: primary)) ckt in
     ckt;;
 
 let testbench_montgomery_double_exp name ckt =
@@ -967,7 +967,7 @@ let performance_test_montgomery_double_exp w =
     let test () =
         let name = "double_exp_" ^ string_of_int w in
         let () = complain ("Synthesizing " ^ name ^ ":") in
-        let ckt = synthesize_montgomery_double_exp name [] n m in
+        let ckt = synthesize_montgomery_double_exp "" name [] n m in
         let () =
             complain_timed "Tested the verilog module"
               (test_montgomery_double_exp n m name) ckt in
@@ -984,12 +984,12 @@ let performance_tests_montgomery_double_exp () =
      test 8;;
 
 (* Testing
-synthesize_montgomery_double_exp "double_exp_91" [] (dest_numeral `91`) (dest_numeral `11`);;
+synthesize_montgomery_double_exp "" "double_exp_91" [] (dest_numeral `91`) (dest_numeral `11`);;
 
 let n = dest_numeral `221`;;
 let m = dest_numeral `1000`;;
 let name = "double_exp_" ^ string_of_num (bit_width_num n);;
-let ckt = synthesize_montgomery_double_exp name [] n m;;
+let ckt = synthesize_montgomery_double_exp "" name [] n m;;
 test_montgomery_double_exp_estimate_run n m;;
 test_montgomery_double_exp n m name ckt;;
 

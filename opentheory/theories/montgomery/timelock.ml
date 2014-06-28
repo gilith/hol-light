@@ -156,7 +156,7 @@ is_prime test_modulus_num;;
 (* ------------------------------------------------------------------------- *)
 
 let (synthesize_test_timelock,synthesize_timelock) =
-    let mk_rw def =
+    let mk_n_rw def =
         let conv =
             LAND_CONV (REWR_CONV def) THENC
             RAND_CONV (REWR_CONV checksum_prime_def) THENC
@@ -166,13 +166,32 @@ let (synthesize_test_timelock,synthesize_timelock) =
               (`( * ) : num -> num -> num`,
                [lhs (concl def); `checksum_prime`]) in
         SYM (conv tm) in
+    let mk_m_rw d =
+        let conv =
+            NUM_REDUCE_CONV in
+        let tm =
+            list_mk_comb
+              (`( EXP ) : num -> num -> num`,
+               [`10`; mk_numeral (num_of_int d)]) in
+        SYM (conv tm) in
+    let mk_rws def d =
+        let n_rw =
+            complain_timed "- Multiplied modulus and checksum"
+              mk_n_rw def in
+        let m_rw =
+            complain_timed "- Computed power of ten"
+              mk_m_rw d in
+        let rws = [n_rw; m_rw] in
+        let n = dest_numeral (lhs (concl n_rw)) in
+        let m = dest_numeral (lhs (concl m_rw)) in
+        (rws,n,m) in
     let mk_ckt prefix def d =
         let name = prefix ^ "timelock_" ^ string_of_int d in
         let () = complain ("Synthesizing " ^ name ^ ":") in
-        let rw = complain_timed "Multiplied modulus and checksum" mk_rw def in
-        let n = dest_numeral (lhs (concl rw)) in
-        let m = funpow d (fun x -> mult_num x (num_of_int 10)) num_1 in
-        let ckt = synthesize_montgomery_double_exp name [rw] n m in
+        let (rws,n,m) =
+            complain_timed "Calculated spec rewrites"
+              (mk_rws def) d in
+        let ckt = synthesize_montgomery_double_exp "" name rws n m in
         (name,ckt) in
     let synthesize prefix def d =
         complain_timed "TOTAL" (mk_ckt prefix def) d in
