@@ -2189,6 +2189,12 @@ print_string ("\n" ^ hardware_profile_to_string montgomery_91_thm ^ "\n");;
 
 let VERILOG_LINE_LENGTH = 79;;
 
+type verilog_module = Verilog_module of string;;
+
+type verilog_comment = Verilog_comment of string;;
+
+type verilog_primary = Verilog_primary of term list;;
+
 type verilog_arg =
      Wire_verilog_arg of term
    | Bus_verilog_arg of bus_wires;;
