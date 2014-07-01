@@ -13,6 +13,10 @@ module String_set = Set.Make(String);;
 
 module String_map = Map.Make(String);;
 
+let current_year () =
+    let {Unix.tm_year = y} = Unix.localtime (Unix.time ()) in
+    y + 1900;;
+
 let random_odd_num w =
     let f n =
         let n = mult_num num_2 n in
@@ -1895,7 +1899,7 @@ let synthesize_hardware syn primary th =
           (rescue_primary_outputs primary_outputs th) namer in
     let th =
         complain_timed "Merged identical logic"
-          merge_logic primary_inputs th in
+          (merge_logic primary_inputs) th in
     let th =
         complain_timed "Deleted dead logic"
           (delete_dead_logic primary_inputs primary_outputs) th in
@@ -1903,11 +1907,6 @@ let synthesize_hardware syn primary th =
         complain_timed "Renamed wires"
           (rename_wires primary) th in
     th;;
-
-(* Testing
-synthesize_hardware counter_syn (frees (concl counter91_thm)) counter91_thm;;
-synthesize_hardware montgomery_mult_syn (frees (concl montgomery91_thm)) montgomery91_thm;;
-*)
 
 (* ------------------------------------------------------------------------- *)
 (* Duplicating registers to reduce fanout load.                              *)
@@ -2066,8 +2065,8 @@ let circuit_fanout_loads =
     balance fls work;;
 
 (* Testing
-let ckt = counter_91_thm;;
-let ckt = montgomery_91_thm;;
+let ckt = counter_91_ckt;;
+let ckt = montgomery_91_ckt;;
 let primary_inputs = debug_circuit_primary_inputs ckt;;
 let fanins = debug_circuit_fanins ckt;;
 let fanouts = debug_circuit_fanouts ckt;;
@@ -2179,8 +2178,8 @@ let pp_print_hardware_profile fmt ckt_info =
 let hardware_profile_to_string = print_to_string pp_print_hardware_profile;;
 
 (* Testing
-print_string ("\n" ^ hardware_profile_to_string counter_91_thm ^ "\n");;
-print_string ("\n" ^ hardware_profile_to_string montgomery_91_thm ^ "\n");;
+print_string ("\n" ^ hardware_profile_to_string counter_91_ckt ^ "\n");;
+print_string ("\n" ^ hardware_profile_to_string montgomery_91_ckt ^ "\n");;
 *)
 
 (* ------------------------------------------------------------------------- *)
@@ -2198,6 +2197,14 @@ type verilog_primary = Verilog_primary of term list;;
 type verilog_arg =
      Wire_verilog_arg of term
    | Bus_verilog_arg of bus_wires;;
+
+let default_verilog_comment () =
+    let y = string_of_int (current_year ()) in
+    let a = "Joe Leslie-Hurd" in
+    let l = "MIT" in
+    Verilog_comment
+      ("\n\nCopyright (c) " ^ y ^ " " ^ a ^
+       ", distributed under the " ^ l ^ " license");;
 
 let comment_box_text =
     let split s =
@@ -2256,7 +2263,8 @@ let verilog_wire_names =
         () in
     fun primary ->
     let is_primary =
-        let ws = from_list_wireset primary in
+        let Verilog_primary wl = primary in
+        let ws = from_list_wireset wl in
         fun w ->
         mem_wireset w ws in
     let verilog_wire w acc =
@@ -2289,46 +2297,44 @@ let hardware_to_verilog =
           Wire_verilog_arg w -> wire_name w
         | Bus_verilog_arg (Bus_wires (b,is)) ->
           range_to_string (rev is) ^ " " ^ b in
-    let verilog_comment name property footer =
+    let verilog_comment_line s = "  // " ^ s in
+    let verilog_comment_box (Verilog_module name) comment property =
+        let Verilog_comment footer = comment in
         let prop =
-            let n = get_margin () in
+            let k = get_margin () in
             let () = set_margin (VERILOG_LINE_LENGTH - 4) in
             let s = string_of_term property in
-            let () = set_margin n in
+            let () = set_margin k in
             s in
         comment_box_text
           ("module " ^ name ^ " satisfies the following property:\n\n" ^
            prop ^
            footer) ^ "\n" in
-    let verilog_module_begin name args =
+    let verilog_assign w s =
+        "assign " ^ wire_name w ^ " = " ^ s ^ ";" in
+    let verilog_module_begin (Verilog_module name) args =
         "module " ^ name ^ "(" ^
         String.concat "," (arg_names args) ^
         ");" in
     let verilog_connect tm =
         let (x,y) = dest_connect tm in
-        "assign " ^ wire_name y ^ " = " ^ wire_name x ^ ";" in
-    let verilog_delay tm =
-        let (w,r) = dest_delay tm in
-        wire_name r ^ " <= " ^ wire_name w ^ ";" in
+        verilog_assign y (wire_name x) in
     let verilog_not tm =
         let (x,y) = dest_not tm in
-        "assign " ^ wire_name y ^ " = ~" ^ wire_name x ^ ";" in
+        verilog_assign y ("~" ^ wire_name x) in
     let verilog_and2 tm =
         let (x,y,z) = dest_and2 tm in
-        "assign " ^ wire_name z ^
-        " = " ^ wire_name x ^ " & " ^ wire_name y ^ ";" in
+        verilog_assign z (wire_name x ^ " & " ^ wire_name y) in
     let verilog_or2 tm =
         let (x,y,z) = dest_or2 tm in
-        "assign " ^ wire_name z ^
-        " = " ^ wire_name x ^ " | " ^ wire_name y ^ ";" in
+        verilog_assign z (wire_name x ^ " | " ^ wire_name y) in
     let verilog_xor2 tm =
         let (x,y,z) = dest_xor2 tm in
-        "assign " ^ wire_name z ^
-        " = " ^ wire_name x ^ " ^ " ^ wire_name y ^ ";" in
+        verilog_assign z (wire_name x ^ " ^ " ^ wire_name y) in
     let verilog_case1 tm =
         let (w,x,y,z) = dest_case1 tm in
-        "assign " ^ wire_name z ^
-        " = " ^ wire_name w ^ " ? " ^ wire_name x ^ " : " ^ wire_name y ^ ";" in
+        verilog_assign z
+          (wire_name w ^ " ? " ^ wire_name x ^ " : " ^ wire_name y) in
     let verilog_comb comb =
         if is_connect comb then verilog_connect comb
         else if is_not comb then verilog_not comb
@@ -2337,7 +2343,11 @@ let hardware_to_verilog =
         else if is_xor2 comb then verilog_xor2 comb
         else if is_case1 comb then verilog_case1 comb
         else failwith ("weird assumption: " ^ string_of_term comb) in
-    let verilog_module_end name = "\nendmodule // " ^ name ^ "\n" in
+    let verilog_delay tm =
+        let (w,r) = dest_delay tm in
+        wire_name r ^ " <= " ^ wire_name w ^ ";" in
+    let verilog_module_end (Verilog_module name) =
+        "\nendmodule" ^ verilog_comment_line name ^ "\n" in
     let verilog_profile ckt_info =
         let prof =
             let n = get_margin () in
@@ -2355,7 +2365,7 @@ let hardware_to_verilog =
             let c =
                 match comment x with
                   None -> ""
-                | Some s -> "  /* " ^ s ^ " */" in
+                | Some s -> verilog_comment_line s in
             print ("  " ^ kind ^ " " ^ n ^ ";" ^ c ^ "\n") in
         let () = print "\n" in
         let () = List.iter print_decl xs in
@@ -2383,8 +2393,8 @@ let hardware_to_verilog =
         let () = List.iter print_delay registers in
         let () = print "    end\n" in
         () in
-    let verilog_header comment name ckt =
-        print (verilog_comment name (concl ckt) comment) in
+    let verilog_header name comment ckt =
+        print (verilog_comment_box name comment (concl ckt)) in
     let verilog_body name primary ckt_info =
         let (defs,registers,gates,fanins,fanouts,fanout_loads) = ckt_info in
         let register_comment r =
@@ -2403,10 +2413,11 @@ let hardware_to_verilog =
         let wires =
             let Circuit_gates gs = gates in
             wire_sort (map rand gs) in
-        let (primary_outputs,primary_inputs) =
+        let (clk,(primary_outputs,primary_inputs)) =
             let Circuit_defs wm = defs in
             let has_def w = mem_wiremap w wm in
-            partition has_def primary in
+            let Verilog_primary ws = primary in
+            (hd ws, partition has_def ws) in
         let primary_input_args = collect_verilog_args primary_inputs in
         let primary_output_args = collect_verilog_args primary_outputs in
         let primary_args = primary_input_args @ primary_output_args in
@@ -2416,11 +2427,11 @@ let hardware_to_verilog =
         let () = verilog_wire_declarations "reg" register_comment registers in
         let () = verilog_wire_declarations "wire" no_comment wires in
         let () = verilog_combinational defs (wires @ primary_outputs) in
-        let () = verilog_delays (hd primary) defs registers in
+        let () = verilog_delays clk defs registers in
         let () = print (verilog_module_end name) in
         () in
     let verilog_footer ckt_info = print (verilog_profile ckt_info) in
-    fun comment -> fun name -> fun primary -> fun ckt ->
+    fun name -> fun comment -> fun primary -> fun ckt ->
     let ckt =
         complain_timed "- Renamed wires"
           (verilog_wire_names primary) ckt in
@@ -2438,7 +2449,7 @@ let hardware_to_verilog =
           (circuit_fanout_loads primary_inputs fanins) fanouts in
     let () =
         complain_timed "- Generated spec"
-          (verilog_header comment name) ckt in
+          (verilog_header name comment) ckt in
     let () =
         let ckt_info = (defs,registers,gates,fanins,fanouts,fanout_loads) in
         complain_timed "- Generated module"
@@ -2451,15 +2462,11 @@ let hardware_to_verilog =
           verilog_footer ckt_info in
     ();;
 
-let hardware_to_verilog_file comment name primary ckt =
-    let file = "opentheory/hardware/" ^ name ^ ".v" in
+let hardware_to_verilog_file name comment primary ckt =
+    let file =
+        let Verilog_module n = name in
+        "opentheory/hardware/" ^ n ^ ".v" in
     let h = open_out file in
-    let () = hardware_to_verilog h comment name primary ckt in
+    let () = hardware_to_verilog h name comment primary ckt in
     let () = close_out h in
     file;;
-
-(* Testing
-let name = "montgomery_91";;
-let primary = `clk : wire` :: frees (concl montgomery_91_thm);;
-hardware_to_verilog stdout "" name primary montgomery_91_thm;;
-*)

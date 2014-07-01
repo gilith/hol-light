@@ -13,6 +13,8 @@
 |          2 * bits_to_num (bsignal zc[0:6] (t + 18))) MOD                    |
 |         91 =                                                                |
 |         ((x * y) * 8) MOD 91                                                |
+|                                                                             |
+| Copyright (c) 2014 Joe Leslie-Hurd, distributed under the MIT license       |
 +----------------------------------------------------------------------------*/
 
 module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
@@ -26,106 +28,106 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
   output [6:0] zs;
   output [6:0] zc;
 
-  reg compress_ncd;  /* 1:0|12/3=4 */
-  reg compress_nsd;  /* 1:0|14/3=4 */
-  reg compress_pipe0_x1;  /* 2:1|1/1=3 */
-  reg compress_pipe1_x1;  /* 3:2|1/1=3 */
-  reg ctrp_ctr_cp0;  /* 2:3|3/1=3 */
-  reg ctrp_ctr_cp1;  /* 3:3|2/1=2 */
-  reg ctrp_ctr_cp2;  /* 3:3|2/1=2 */
-  reg ctrp_ctr_cp3;  /* 3:3|2/1=2 */
-  reg ctrp_ctr_dp;  /* 3:3|2/1=2 */
-  reg ctrp_ctr_sp0;  /* 3:2|2/1=2 */
-  reg ctrp_ctr_sp1;  /* 3:2|2/1=2 */
-  reg ctrp_ctr_sp2;  /* 3:3|2/1=2 */
-  reg jpd;  /* 1:0|16/4=4 */
-  reg pipe_x1;  /* 3:5|1/1=4 */
-  reg qcp0;  /* 5:6|3/1=3 */
-  reg qcp1;  /* 5:6|3/1=3 */
-  reg qcp2;  /* 5:6|3/1=3 */
-  reg qcp3;  /* 5:6|3/1=3 */
-  reg qcp4;  /* 2:2|3/1=3 */
-  reg qcp5;  /* 9:13|3/1=3 */
-  reg qcp6;  /* 8:12|3/1=3 */
-  reg qcp7;  /* 8:9|2/1=2 */
-  reg qsp0;  /* 5:3|3/1=3 */
-  reg qsp1;  /* 5:3|3/1=3 */
-  reg qsp2;  /* 5:3|3/1=3 */
-  reg qsp3;  /* 5:3|3/1=3 */
-  reg qsp4;  /* 5:3|3/1=3 */
-  reg qsp5;  /* 9:10|3/1=3 */
-  reg qsp6;  /* 8:9|3/1=3 */
-  reg qsp7;  /* 6:4|3/1=3 */
-  reg reduce_ld1;  /* 1:0|18/4=4 */
-  reg reduce_ld2;  /* 1:0|13/3=4 */
-  reg reduce_mulb0_cp0;  /* 5:7|4/1=4 */
-  reg reduce_mulb0_cp1;  /* 6:9|4/1=4 */
-  reg reduce_mulb0_cp2;  /* 6:13|4/1=4 */
-  reg reduce_mulb0_cp3;  /* 6:12|4/1=4 */
-  reg reduce_mulb0_cp4;  /* 6:9|4/1=4 */
-  reg reduce_mulb0_cp5;  /* 6:12|4/1=4 */
-  reg reduce_mulb0_cp6;  /* 5:8|4/1=4 */
-  reg reduce_mulb0_cp7;  /* 4:6|2/1=2 */
-  reg reduce_mulb0_sp0;  /* 5:7|3/1=3 */
-  reg reduce_mulb0_sp1;  /* 6:9|4/1=4 */
-  reg reduce_mulb0_sp2;  /* 6:13|4/1=4 */
-  reg reduce_mulb0_sp3;  /* 6:12|4/1=4 */
-  reg reduce_mulb0_sp4;  /* 6:9|4/1=4 */
-  reg reduce_mulb0_sp5;  /* 6:12|4/1=4 */
-  reg reduce_mulb0_sp6;  /* 5:8|4/1=4 */
-  reg reduce_mulb0_sp7;  /* 4:6|4/1=4 */
-  reg reduce_mulsc_mulb_cp4;  /* 9:20|4/1=4 */
-  reg reduce_mulsc_mulb_cp5;  /* 9:20|4/1=4 */
-  reg reduce_mulsc_mulb_cp6;  /* 7:16|2/1=2 */
-  reg reduce_mulsc_mulb_sp5;  /* 9:17|4/1=4 */
-  reg reduce_mulsc_mulb_sp6;  /* 7:13|4/1=4 */
-  reg reduce_mulsc_pipe_x1;  /* 4:2|1/1=3 */
-  reg reduce_mulsc_shrsc_cp0;  /* 4:2|2/1=2 */
-  reg reduce_mulsc_shrsc_cp1;  /* 4:2|2/1=2 */
-  reg reduce_mulsc_shrsc_cp2;  /* 4:2|2/1=2 */
-  reg reduce_mulsc_shrsc_cp3;  /* 4:2|2/1=2 */
-  reg reduce_mulsc_shrsc_cp4;  /* 4:2|2/1=2 */
-  reg reduce_mulsc_shrsc_cp5;  /* 4:2|2/1=2 */
-  reg reduce_mulsc_shrsc_cp6;  /* 2:1|1/1=1 */
-  reg reduce_mulsc_shrsc_sp0;  /* 4:2|2/1=2 */
-  reg reduce_mulsc_shrsc_sp1;  /* 4:2|2/1=2 */
-  reg reduce_mulsc_shrsc_sp2;  /* 4:2|2/1=2 */
-  reg reduce_mulsc_shrsc_sp3;  /* 4:2|2/1=2 */
-  reg reduce_mulsc_shrsc_sp4;  /* 4:2|2/1=2 */
-  reg reduce_mulsc_shrsc_sp5;  /* 3:1|2/1=2 */
-  reg reduce_mulsc_xbd;  /* 1:0|15/3=5 */
-  reg reduce_pipe0_x1;  /* 1:0|1/1=4 */
-  reg reduce_pipe0_x2;  /* 1:0|16/4=4 */
-  reg reduce_pipe0_x3;  /* 1:0|1/1=4 */
-  reg reduce_pipe1_x1;  /* 1:0|1/1=3 */
-  reg reduce_pipe2_x1;  /* 3:3|1/1=3 */
-  reg reduce_qb2;  /* 1:0|13/3=4 */
-  reg reduce_sa0;  /* 1:0|2/1=2 */
-  reg reduce_sa1;  /* 1:0|3/1=3 */
-  reg reduce_sa2;  /* 1:0|16/3=5 */
-  reg reduce_sa3;  /* 4:4|3/1=5 */
-  reg reduce_sa4;  /* 8:12|6/1=6 */
-  reg reduce_sa5;  /* 9:17|8/1=8 */
-  reg reduce_sa6;  /* 9:17|8/1=8 */
-  reg reduce_sa7;  /* 9:17|6/1=6 */
-  reg reduce_sa8;  /* 9:17|5/1=5 */
-  reg reduce_sb0;  /* 8:15|6/1=6 */
-  reg reduce_sb1;  /* 9:20|6/1=6 */
-  reg reduce_sb2;  /* 9:20|6/1=6 */
-  reg reduce_sb3;  /* 9:20|5/1=5 */
-  reg reduce_sc0;  /* 5:8|5/1=5 */
-  reg reduce_sc1;  /* 6:12|6/1=6 */
-  reg reduce_sc2;  /* 6:9|6/1=6 */
-  reg reduce_sc3;  /* 6:13|6/1=6 */
-  reg reduce_sc4;  /* 6:12|7/1=7 */
-  reg reduce_sc5;  /* 5:7|8/1=8 */
-  reg reduce_sd0;  /* 4:5|3/1=3 */
-  reg reduce_sd1;  /* 5:8|6/1=6 */
-  reg reduce_sd2;  /* 6:12|6/1=6 */
-  reg reduce_sd3;  /* 6:9|6/1=6 */
-  reg reduce_sd4;  /* 6:13|7/1=7 */
-  reg reduce_sd5;  /* 6:12|8/1=8 */
-  reg reduce_sd6;  /* 5:10|6/1=6 */
+  reg compress_ncd;  // 1:0|12/3=4
+  reg compress_nsd;  // 1:0|14/3=4
+  reg compress_pipe0_x1;  // 2:1|1/1=3
+  reg compress_pipe1_x1;  // 3:2|1/1=3
+  reg ctrp_ctr_cp0;  // 2:3|3/1=3
+  reg ctrp_ctr_cp1;  // 3:3|2/1=2
+  reg ctrp_ctr_cp2;  // 3:3|2/1=2
+  reg ctrp_ctr_cp3;  // 3:3|2/1=2
+  reg ctrp_ctr_dp;  // 3:3|2/1=2
+  reg ctrp_ctr_sp0;  // 3:2|2/1=2
+  reg ctrp_ctr_sp1;  // 3:2|2/1=2
+  reg ctrp_ctr_sp2;  // 3:3|2/1=2
+  reg jpd;  // 1:0|16/4=4
+  reg pipe_x1;  // 3:5|1/1=4
+  reg qcp0;  // 5:6|3/1=3
+  reg qcp1;  // 5:6|3/1=3
+  reg qcp2;  // 5:6|3/1=3
+  reg qcp3;  // 5:6|3/1=3
+  reg qcp4;  // 2:2|3/1=3
+  reg qcp5;  // 9:13|3/1=3
+  reg qcp6;  // 8:12|3/1=3
+  reg qcp7;  // 8:9|2/1=2
+  reg qsp0;  // 5:3|3/1=3
+  reg qsp1;  // 5:3|3/1=3
+  reg qsp2;  // 5:3|3/1=3
+  reg qsp3;  // 5:3|3/1=3
+  reg qsp4;  // 5:3|3/1=3
+  reg qsp5;  // 9:10|3/1=3
+  reg qsp6;  // 8:9|3/1=3
+  reg qsp7;  // 6:4|3/1=3
+  reg reduce_ld1;  // 1:0|18/4=4
+  reg reduce_ld2;  // 1:0|13/3=4
+  reg reduce_mulb0_cp0;  // 5:7|4/1=4
+  reg reduce_mulb0_cp1;  // 6:9|4/1=4
+  reg reduce_mulb0_cp2;  // 6:13|4/1=4
+  reg reduce_mulb0_cp3;  // 6:12|4/1=4
+  reg reduce_mulb0_cp4;  // 6:9|4/1=4
+  reg reduce_mulb0_cp5;  // 6:12|4/1=4
+  reg reduce_mulb0_cp6;  // 5:8|4/1=4
+  reg reduce_mulb0_cp7;  // 4:6|2/1=2
+  reg reduce_mulb0_sp0;  // 5:7|3/1=3
+  reg reduce_mulb0_sp1;  // 6:9|4/1=4
+  reg reduce_mulb0_sp2;  // 6:13|4/1=4
+  reg reduce_mulb0_sp3;  // 6:12|4/1=4
+  reg reduce_mulb0_sp4;  // 6:9|4/1=4
+  reg reduce_mulb0_sp5;  // 6:12|4/1=4
+  reg reduce_mulb0_sp6;  // 5:8|4/1=4
+  reg reduce_mulb0_sp7;  // 4:6|4/1=4
+  reg reduce_mulsc_mulb_cp4;  // 9:20|4/1=4
+  reg reduce_mulsc_mulb_cp5;  // 9:20|4/1=4
+  reg reduce_mulsc_mulb_cp6;  // 7:16|2/1=2
+  reg reduce_mulsc_mulb_sp5;  // 9:17|4/1=4
+  reg reduce_mulsc_mulb_sp6;  // 7:13|4/1=4
+  reg reduce_mulsc_pipe_x1;  // 4:2|1/1=3
+  reg reduce_mulsc_shrsc_cp0;  // 4:2|2/1=2
+  reg reduce_mulsc_shrsc_cp1;  // 4:2|2/1=2
+  reg reduce_mulsc_shrsc_cp2;  // 4:2|2/1=2
+  reg reduce_mulsc_shrsc_cp3;  // 4:2|2/1=2
+  reg reduce_mulsc_shrsc_cp4;  // 4:2|2/1=2
+  reg reduce_mulsc_shrsc_cp5;  // 4:2|2/1=2
+  reg reduce_mulsc_shrsc_cp6;  // 2:1|1/1=1
+  reg reduce_mulsc_shrsc_sp0;  // 4:2|2/1=2
+  reg reduce_mulsc_shrsc_sp1;  // 4:2|2/1=2
+  reg reduce_mulsc_shrsc_sp2;  // 4:2|2/1=2
+  reg reduce_mulsc_shrsc_sp3;  // 4:2|2/1=2
+  reg reduce_mulsc_shrsc_sp4;  // 4:2|2/1=2
+  reg reduce_mulsc_shrsc_sp5;  // 3:1|2/1=2
+  reg reduce_mulsc_xbd;  // 1:0|15/3=5
+  reg reduce_pipe0_x1;  // 1:0|1/1=4
+  reg reduce_pipe0_x2;  // 1:0|16/4=4
+  reg reduce_pipe0_x3;  // 1:0|1/1=4
+  reg reduce_pipe1_x1;  // 1:0|1/1=3
+  reg reduce_pipe2_x1;  // 3:3|1/1=3
+  reg reduce_qb2;  // 1:0|13/3=4
+  reg reduce_sa0;  // 1:0|2/1=2
+  reg reduce_sa1;  // 1:0|3/1=3
+  reg reduce_sa2;  // 1:0|16/3=5
+  reg reduce_sa3;  // 4:4|3/1=5
+  reg reduce_sa4;  // 8:12|6/1=6
+  reg reduce_sa5;  // 9:17|8/1=8
+  reg reduce_sa6;  // 9:17|8/1=8
+  reg reduce_sa7;  // 9:17|6/1=6
+  reg reduce_sa8;  // 9:17|5/1=5
+  reg reduce_sb0;  // 8:15|6/1=6
+  reg reduce_sb1;  // 9:20|6/1=6
+  reg reduce_sb2;  // 9:20|6/1=6
+  reg reduce_sb3;  // 9:20|5/1=5
+  reg reduce_sc0;  // 5:8|5/1=5
+  reg reduce_sc1;  // 6:12|6/1=6
+  reg reduce_sc2;  // 6:9|6/1=6
+  reg reduce_sc3;  // 6:13|6/1=6
+  reg reduce_sc4;  // 6:12|7/1=7
+  reg reduce_sc5;  // 5:7|8/1=8
+  reg reduce_sd0;  // 4:5|3/1=3
+  reg reduce_sd1;  // 5:8|6/1=6
+  reg reduce_sd2;  // 6:12|6/1=6
+  reg reduce_sd3;  // 6:9|6/1=6
+  reg reduce_sd4;  // 6:13|7/1=7
+  reg reduce_sd5;  // 6:12|8/1=8
+  reg reduce_sd6;  // 5:10|6/1=6
 
   wire compress_add3b_maj3b_or3b_wx0;
   wire compress_add3b_maj3b_or3b_wx1;
@@ -1099,7 +1101,7 @@ module montgomery_91(clk,ld,xs,xc,ys,yc,zs,zc);
       reduce_sd6 <= reduce_vc5;
     end
 
-endmodule // montgomery_91
+endmodule  // montgomery_91
 
 /*----------------------------------------------------------------------------+
 | Primary inputs: 29                                                          |

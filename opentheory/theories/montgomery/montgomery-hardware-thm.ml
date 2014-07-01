@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "hardware-montgomery-thm";;
+logfile "montgomery-hardware-thm";;
 
 (* ------------------------------------------------------------------------- *)
 (* Correctness of the Montgomery multiplication circuit.                     *)

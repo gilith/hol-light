@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "hardware-montgomery-def";;
+logfile "montgomery-hardware-def";;
 
 (* -------------------------------------------------------------- *)
 (* Montgomery multiplication modulo 2^(r+2), where d = d1 + d2    *)

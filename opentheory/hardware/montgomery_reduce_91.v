@@ -12,6 +12,8 @@
 |     ==> bits_to_num (bsignal zs[0:7] (t + 15)) +                            |
 |         2 * bits_to_num (bsignal zc[0:7] (t + 15)) =                        |
 |         montgomery_reduce 91 (2 EXP 9) 45 (x * y)                           |
+|                                                                             |
+| Copyright (c) 2014 Joe Leslie-Hurd, distributed under the MIT license       |
 +----------------------------------------------------------------------------*/
 
 module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
@@ -25,76 +27,76 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
   output [7:0] zs;
   output [7:0] zc;
 
-  reg ld1;  /* 1:0|18/4=4 */
-  reg ld2;  /* 1:0|13/3=4 */
-  reg mulb0_cp0;  /* 5:7|4/1=4 */
-  reg mulb0_cp1;  /* 6:9|4/1=4 */
-  reg mulb0_cp2;  /* 6:13|4/1=4 */
-  reg mulb0_cp3;  /* 6:12|4/1=4 */
-  reg mulb0_cp4;  /* 6:9|4/1=4 */
-  reg mulb0_cp5;  /* 6:12|4/1=4 */
-  reg mulb0_cp6;  /* 5:8|4/1=4 */
-  reg mulb0_cp7;  /* 4:6|2/1=2 */
-  reg mulb0_sp0;  /* 5:7|3/1=3 */
-  reg mulb0_sp1;  /* 6:9|4/1=4 */
-  reg mulb0_sp2;  /* 6:13|4/1=4 */
-  reg mulb0_sp3;  /* 6:12|4/1=4 */
-  reg mulb0_sp4;  /* 6:9|4/1=4 */
-  reg mulb0_sp5;  /* 6:12|4/1=4 */
-  reg mulb0_sp6;  /* 5:8|4/1=4 */
-  reg mulb0_sp7;  /* 4:6|4/1=4 */
-  reg mulsc_ldd;  /* 1:0|16/4=4 */
-  reg mulsc_mulb_cp4;  /* 9:20|4/1=4 */
-  reg mulsc_mulb_cp5;  /* 9:20|4/1=4 */
-  reg mulsc_mulb_cp6;  /* 7:16|2/1=2 */
-  reg mulsc_mulb_sp5;  /* 9:17|4/1=4 */
-  reg mulsc_mulb_sp6;  /* 7:13|4/1=4 */
-  reg mulsc_pipe_x1;  /* 4:2|1/1=3 */
-  reg mulsc_shrsc_cp0;  /* 4:2|2/1=2 */
-  reg mulsc_shrsc_cp1;  /* 4:2|2/1=2 */
-  reg mulsc_shrsc_cp2;  /* 4:2|2/1=2 */
-  reg mulsc_shrsc_cp3;  /* 4:2|2/1=2 */
-  reg mulsc_shrsc_cp4;  /* 4:2|2/1=2 */
-  reg mulsc_shrsc_cp5;  /* 4:2|2/1=2 */
-  reg mulsc_shrsc_cp6;  /* 2:1|1/1=1 */
-  reg mulsc_shrsc_sp0;  /* 4:2|2/1=2 */
-  reg mulsc_shrsc_sp1;  /* 4:2|2/1=2 */
-  reg mulsc_shrsc_sp2;  /* 4:2|2/1=2 */
-  reg mulsc_shrsc_sp3;  /* 4:2|2/1=2 */
-  reg mulsc_shrsc_sp4;  /* 4:2|2/1=2 */
-  reg mulsc_shrsc_sp5;  /* 3:1|2/1=2 */
-  reg mulsc_xbd;  /* 1:0|15/3=5 */
-  reg pipe0_x1;  /* 1:0|1/1=4 */
-  reg pipe0_x3;  /* 1:0|1/1=4 */
-  reg pipe1_x1;  /* 1:0|1/1=3 */
-  reg pipe2_x1;  /* 3:3|1/1=3 */
-  reg qb2;  /* 1:0|13/3=4 */
-  reg sa0;  /* 1:0|2/1=2 */
-  reg sa1;  /* 1:0|3/1=3 */
-  reg sa2;  /* 1:0|16/3=5 */
-  reg sa3;  /* 4:4|3/1=5 */
-  reg sa4;  /* 8:12|6/1=6 */
-  reg sa5;  /* 9:17|8/1=8 */
-  reg sa6;  /* 9:17|8/1=8 */
-  reg sa7;  /* 9:17|6/1=6 */
-  reg sa8;  /* 9:17|5/1=5 */
-  reg sb0;  /* 8:15|6/1=6 */
-  reg sb1;  /* 9:20|6/1=6 */
-  reg sb2;  /* 9:20|6/1=6 */
-  reg sb3;  /* 9:20|5/1=5 */
-  reg sc0;  /* 5:8|5/1=5 */
-  reg sc1;  /* 6:12|6/1=6 */
-  reg sc2;  /* 6:9|6/1=6 */
-  reg sc3;  /* 6:13|6/1=6 */
-  reg sc4;  /* 6:12|7/1=7 */
-  reg sc5;  /* 5:7|8/1=8 */
-  reg sd0;  /* 4:5|3/1=3 */
-  reg sd1;  /* 5:8|6/1=6 */
-  reg sd2;  /* 6:12|6/1=6 */
-  reg sd3;  /* 6:9|6/1=6 */
-  reg sd4;  /* 6:13|7/1=7 */
-  reg sd5;  /* 6:12|8/1=8 */
-  reg sd6;  /* 5:10|6/1=6 */
+  reg ld1;  // 1:0|18/4=4
+  reg ld2;  // 1:0|13/3=4
+  reg mulb0_cp0;  // 5:7|4/1=4
+  reg mulb0_cp1;  // 6:9|4/1=4
+  reg mulb0_cp2;  // 6:13|4/1=4
+  reg mulb0_cp3;  // 6:12|4/1=4
+  reg mulb0_cp4;  // 6:9|4/1=4
+  reg mulb0_cp5;  // 6:12|4/1=4
+  reg mulb0_cp6;  // 5:8|4/1=4
+  reg mulb0_cp7;  // 4:6|2/1=2
+  reg mulb0_sp0;  // 5:7|3/1=3
+  reg mulb0_sp1;  // 6:9|4/1=4
+  reg mulb0_sp2;  // 6:13|4/1=4
+  reg mulb0_sp3;  // 6:12|4/1=4
+  reg mulb0_sp4;  // 6:9|4/1=4
+  reg mulb0_sp5;  // 6:12|4/1=4
+  reg mulb0_sp6;  // 5:8|4/1=4
+  reg mulb0_sp7;  // 4:6|4/1=4
+  reg mulsc_ldd;  // 1:0|16/4=4
+  reg mulsc_mulb_cp4;  // 9:20|4/1=4
+  reg mulsc_mulb_cp5;  // 9:20|4/1=4
+  reg mulsc_mulb_cp6;  // 7:16|2/1=2
+  reg mulsc_mulb_sp5;  // 9:17|4/1=4
+  reg mulsc_mulb_sp6;  // 7:13|4/1=4
+  reg mulsc_pipe_x1;  // 4:2|1/1=3
+  reg mulsc_shrsc_cp0;  // 4:2|2/1=2
+  reg mulsc_shrsc_cp1;  // 4:2|2/1=2
+  reg mulsc_shrsc_cp2;  // 4:2|2/1=2
+  reg mulsc_shrsc_cp3;  // 4:2|2/1=2
+  reg mulsc_shrsc_cp4;  // 4:2|2/1=2
+  reg mulsc_shrsc_cp5;  // 4:2|2/1=2
+  reg mulsc_shrsc_cp6;  // 2:1|1/1=1
+  reg mulsc_shrsc_sp0;  // 4:2|2/1=2
+  reg mulsc_shrsc_sp1;  // 4:2|2/1=2
+  reg mulsc_shrsc_sp2;  // 4:2|2/1=2
+  reg mulsc_shrsc_sp3;  // 4:2|2/1=2
+  reg mulsc_shrsc_sp4;  // 4:2|2/1=2
+  reg mulsc_shrsc_sp5;  // 3:1|2/1=2
+  reg mulsc_xbd;  // 1:0|15/3=5
+  reg pipe0_x1;  // 1:0|1/1=4
+  reg pipe0_x3;  // 1:0|1/1=4
+  reg pipe1_x1;  // 1:0|1/1=3
+  reg pipe2_x1;  // 3:3|1/1=3
+  reg qb2;  // 1:0|13/3=4
+  reg sa0;  // 1:0|2/1=2
+  reg sa1;  // 1:0|3/1=3
+  reg sa2;  // 1:0|16/3=5
+  reg sa3;  // 4:4|3/1=5
+  reg sa4;  // 8:12|6/1=6
+  reg sa5;  // 9:17|8/1=8
+  reg sa6;  // 9:17|8/1=8
+  reg sa7;  // 9:17|6/1=6
+  reg sa8;  // 9:17|5/1=5
+  reg sb0;  // 8:15|6/1=6
+  reg sb1;  // 9:20|6/1=6
+  reg sb2;  // 9:20|6/1=6
+  reg sb3;  // 9:20|5/1=5
+  reg sc0;  // 5:8|5/1=5
+  reg sc1;  // 6:12|6/1=6
+  reg sc2;  // 6:9|6/1=6
+  reg sc3;  // 6:13|6/1=6
+  reg sc4;  // 6:12|7/1=7
+  reg sc5;  // 5:7|8/1=8
+  reg sd0;  // 4:5|3/1=3
+  reg sd1;  // 5:8|6/1=6
+  reg sd2;  // 6:12|6/1=6
+  reg sd3;  // 6:9|6/1=6
+  reg sd4;  // 6:13|7/1=7
+  reg sd5;  // 6:12|8/1=8
+  reg sd6;  // 5:10|6/1=6
 
   wire add3_maj3_or3_wx;
   wire add3_maj3_wx;
@@ -864,7 +866,7 @@ module montgomery_reduce_91(clk,ld,xs,xc,ys,yc,zs,zc);
       sd6 <= vc5;
     end
 
-endmodule // montgomery_reduce_91
+endmodule  // montgomery_reduce_91
 
 /*----------------------------------------------------------------------------+
 | Primary inputs: 29                                                          |

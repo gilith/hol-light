@@ -22,7 +22,7 @@ let montgomery_mult_reduce_syn_gen n =
 
 let montgomery_mult_reduce_syn = montgomery_mult_reduce_syn_gen "reduce";;
 
-let mk_montgomery_mult_reduce n =
+let synthesize_montgomery_mult_reduce n =
     let nn = mk_numeral n in
     let r_th = bit_width_conv (mk_comb (`bit_width`,nn)) in
     let rn = rand (concl r_th) in
@@ -170,9 +170,11 @@ let mk_montgomery_mult_reduce n =
     synthesize_hardware syn primary th;;
 
 (* Testing
-let montgomery_reduce_91_thm = mk_montgomery_mult_reduce (dest_numeral `91`);;
-let primary = `clk : wire` :: frees (concl montgomery_reduce_91_thm);;
-hardware_to_verilog_file "" "montgomery_reduce_91" primary montgomery_reduce_91_thm;;
+let montgomery_reduce_91_ckt = synthesize_montgomery_mult_reduce (dest_numeral `91`);;
+let name = Verilog_module "montgomery_reduce_91";;
+let comment = default_verilog_comment ();;
+let primary = Verilog_primary (`clk : wire` :: frees (concl montgomery_reduce_91_ckt));;
+hardware_to_verilog_file name comment primary montgomery_reduce_91_ckt;;
 *)
 
 (* ------------------------------------------------------------------------- *)
@@ -200,7 +202,7 @@ let montgomery_mult_syn_gen n =
 
 let montgomery_mult_syn = montgomery_mult_syn_gen "multm";;
 
-let mk_montgomery_mult n =
+let synthesize_montgomery_mult n =
     let nn = mk_numeral n in
     let r_th = bit_width_conv (mk_comb (`bit_width`,nn)) in
     let rn = rand (concl r_th) in
@@ -440,9 +442,11 @@ let mk_montgomery_mult n =
     synthesize_hardware syn primary th;;
 
 (* Testing
-let montgomery_91_thm = mk_montgomery_mult (dest_numeral `91`);;
-let primary = `clk : wire` :: frees (concl montgomery_91_thm);;
-hardware_to_verilog_file "" "montgomery_91" primary montgomery_91_thm;;
+let montgomery_91_ckt = synthesize_montgomery_mult (dest_numeral `91`);;
+let name = Verilog_module "montgomery_91";;
+let comment = default_verilog_comment ();;
+let primary = Verilog_primary (`clk : wire` :: frees (concl montgomery_91_ckt));;
+hardware_to_verilog_file name comment primary montgomery_91_ckt;;
 *)
 
 (* ------------------------------------------------------------------------- *)
@@ -733,7 +737,7 @@ let instantiate_montgomery_double_exp n m =
     let th = (GEN fv_x o GEN fv_t) th in
     th;;
 
-let synthesize_montgomery_double_exp comment name rws n m =
+let synthesize_montgomery_double_exp name comment rws n m =
     let spec =
         complain_timed "Instantiated parameters"
           (REWRITE_RULE rws o instantiate_montgomery_double_exp n) m in
@@ -741,12 +745,13 @@ let synthesize_montgomery_double_exp comment name rws n m =
     let primary = frees (concl spec) in
     let ckt = synthesize_hardware syn primary spec in
     let clk = `clk : wire` in
+    let primary = Verilog_primary (clk :: primary) in
     let _ =
         complain_timed "Generated verilog module"
-          (hardware_to_verilog_file comment name (clk :: primary)) ckt in
+          (hardware_to_verilog_file name comment primary) ckt in
     ckt;;
 
-let testbench_montgomery_double_exp name ckt =
+let testbench_montgomery_double_exp (Verilog_module name) ckt =
     let width =
         let xs =
             (lhand o rand o lhand o lhand o lhand o rand o lhand o snd o
@@ -847,11 +852,10 @@ let check_system cmd =
 
 set_jrh_lexer;;
 
-let run_test_montgomery_double_exp name =
-    let () =
-        let cmd =
-            "make -C opentheory/hardware " ^ name ^ "_testbench.out >/dev/null" in
-        check_system cmd in
+let run_test_montgomery_double_exp (Verilog_module name) =
+    let file = name ^ "_testbench.out" in
+    let cmd = "make -C opentheory/hardware " ^ file ^ " >/dev/null" in
+    let () = check_system cmd in
     ();;
 
 let rec two_exp_num n =
@@ -872,7 +876,10 @@ let check_test_montgomery_double_exp n m name ckt =
         let (s,_,_) = egcd_num (two_exp_num r) n in
         s in
     let (x,y) =
-        let h = open_in ("opentheory/hardware/" ^ name ^ "_testbench.out") in
+        let h =
+            let Verilog_module s = name in
+            let f = "opentheory/hardware/" ^ s ^ "_testbench.out" in
+            open_in f in
         let inp () =
             try (Some (input_line h))
             with End_of_file -> None in
@@ -967,7 +974,9 @@ let performance_test_montgomery_double_exp w =
     let test () =
         let name = "double_exp_" ^ string_of_int w in
         let () = complain ("Synthesizing " ^ name ^ ":") in
-        let ckt = synthesize_montgomery_double_exp "" name [] n m in
+        let name = Verilog_module name in
+        let comment = Verilog_comment "" in
+        let ckt = synthesize_montgomery_double_exp name comment [] n m in
         let () =
             complain_timed "Tested the verilog module"
               (test_montgomery_double_exp n m name) ckt in
@@ -984,12 +993,15 @@ let performance_tests_montgomery_double_exp () =
      test 8;;
 
 (* Testing
-synthesize_montgomery_double_exp "" "double_exp_91" [] (dest_numeral `91`) (dest_numeral `11`);;
+let name = Verilog_module "double_exp_91";;
+let comment = default_verilog_comment ();;
+synthesize_montgomery_double_exp name comment [] (dest_numeral `91`) (dest_numeral `11`);;
 
 let n = dest_numeral `221`;;
 let m = dest_numeral `1000`;;
-let name = "double_exp_" ^ string_of_num (bit_width_num n);;
-let ckt = synthesize_montgomery_double_exp "" name [] n m;;
+let name = Verilog_module ("double_exp_" ^ string_of_num (bit_width_num n));;
+let comment = default_verilog_comment ();;
+let ckt = synthesize_montgomery_double_exp name comment [] n m;;
 test_montgomery_double_exp_estimate_run n m;;
 test_montgomery_double_exp n m name ckt;;
 

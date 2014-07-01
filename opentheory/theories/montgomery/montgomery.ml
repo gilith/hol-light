@@ -26,19 +26,19 @@ loads "opentheory/theories/montgomery/montgomery-thm.ml";;
 (* Definition of a Montgomery multiplication circuit.                        *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/montgomery/hardware-montgomery-def.ml";;
+loads "opentheory/theories/montgomery/montgomery-hardware-def.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Correctness of the Montgomery multiplication circuit.                     *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/montgomery/hardware-montgomery-thm.ml";;
+loads "opentheory/theories/montgomery/montgomery-hardware-thm.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing Montgomery multiplication circuits.            *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/montgomery/hardware-montgomery-synthesis.ml";;
+loads "opentheory/theories/montgomery/montgomery-hardware-synthesis.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* A Montgomery multiplication circuit to open a crypto timelock.            *)

@@ -3624,9 +3624,11 @@ let synthesize_counter n =
     synthesize_hardware counter_syn primary th;;
 
 (* Testing
-let counter_91_thm = mk_counter (dest_numeral `91`);;
-let primary = [`clk : wire`; `ld : wire`; `dn : wire`];;
-hardware_to_verilog stdout "" "counter_91" primary counter_91_thm;;
+let counter_91_ckt = synthesize_counter (dest_numeral `91`);;
+let name = Verilog_module "counter_91";;
+let comment = default_verilog_comment ();;
+let primary = Verilog_primary [`clk : wire`; `ld : wire`; `dn : wire`];;
+hardware_to_verilog_file name comment primary counter_91_ckt;;
 *)
 
 logfile_end ();;

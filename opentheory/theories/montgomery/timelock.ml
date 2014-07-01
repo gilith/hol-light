@@ -118,7 +118,7 @@ bit_width_num checksum_prime_num;;
 bit_width_num (mult_num timelock_modulus_num checksum_prime_num);;
 mod_num (bit_width_num (mult_num timelock_modulus_num checksum_prime_num)) (num_of_int 8);;
 is_prime checksum_prime_num;;
-let secret_substring =
+let secret =
     let s = String.sub (string_of_num checksum_prime_num) 4 12 in
     let rec decode ds =
         match ds with
@@ -188,10 +188,12 @@ let (synthesize_test_timelock,synthesize_timelock) =
     let mk_ckt prefix def d =
         let name = prefix ^ "timelock_" ^ string_of_int d in
         let () = complain ("Synthesizing " ^ name ^ ":") in
+        let name = Verilog_module name in
+        let comment = default_verilog_comment () in
         let (rws,n,m) =
             complain_timed "Calculated spec rewrites"
               (mk_rws def) d in
-        let ckt = synthesize_montgomery_double_exp "" name rws n m in
+        let ckt = synthesize_montgomery_double_exp name comment rws n m in
         (name,ckt) in
     let synthesize prefix def d =
         complain_timed "TOTAL" (mk_ckt prefix def) d in
