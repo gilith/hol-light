@@ -3627,7 +3627,7 @@ let synthesize_counter n =
 let counter_91_ckt = synthesize_counter (dest_numeral `91`);;
 let name = Verilog_module "counter_91";;
 let comment = default_verilog_comment ();;
-let primary = Verilog_primary [`clk : wire`; `ld : wire`; `dn : wire`];;
+let primary = Verilog_primary (`clk : wire` :: frees_circuit counter_91_ckt);;
 hardware_to_verilog_file name comment primary counter_91_ckt;;
 *)
 

@@ -185,24 +185,45 @@ let (synthesize_test_timelock,synthesize_timelock) =
         let n = dest_numeral (lhs (concl n_rw)) in
         let m = dest_numeral (lhs (concl m_rw)) in
         (rws,n,m) in
-    let mk_ckt prefix def d =
+    let synthesize prefix def d =
         let name = prefix ^ "timelock_" ^ string_of_int d in
         let () = complain ("Synthesizing " ^ name ^ ":") in
-        let name = Verilog_module name in
-        let comment = default_verilog_comment () in
         let (rws,n,m) =
             complain_timed "Calculated spec rewrites"
               (mk_rws def) d in
-        let ckt = synthesize_montgomery_double_exp name comment rws n m in
+        let ckt = synthesize_montgomery_double_exp rws n m in
         (name,ckt) in
-    let synthesize prefix def d =
-        complain_timed "TOTAL" (mk_ckt prefix def) d in
     (synthesize "test_" (REFL (mk_numeral test_modulus_num)),
      synthesize "" timelock_modulus_def);;
 
 (* Testing
 disable_proof_logging ();;
-let (_,test_timelock_3_ckt) = synthesize_test_timelock 3;;
-let (_,timelock_8_ckt) = synthesize_timelock 8;;
-let (_,timelock_9_ckt) = synthesize_timelock 9;;
+let (name,test_timelock_3_ckt) = synthesize_test_timelock 3;;
+let (name,timelock_8_ckt) = synthesize_timelock 8;;
+let (name,timelock_9_ckt) = synthesize_timelock 9;;
+*)
+
+(* ------------------------------------------------------------------------- *)
+(* Generating Verilog time capsule crypto-puzzle circuits.                   *)
+(* ------------------------------------------------------------------------- *)
+
+let (synthesize_test_timelock_verilog_file,
+     synthesize_timelock_verilog_file) =
+    let verilog syn d =
+        let (name,ckt) = syn d in
+        let name = Verilog_module name in
+        let comment = default_verilog_comment () in
+        let primary = Verilog_primary (`clk : wire` :: frees_circuit ckt) in
+        complain_timed "Generated Verilog module"
+          (hardware_to_verilog_file name comment primary) ckt in
+    let timed_verilog syn d =
+        complain_timed "TOTAL" (verilog syn) d in
+    (timed_verilog synthesize_test_timelock,
+     timed_verilog synthesize_timelock);;
+
+(* Testing
+disable_proof_logging ();;
+synthesize_test_timelock_verilog_file 3;;
+synthesize_timelock_verilog_file 8;;
+synthesize_timelock_verilog_file 9;;
 *)

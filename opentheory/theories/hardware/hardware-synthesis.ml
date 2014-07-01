@@ -804,6 +804,40 @@ let subst_var_synthesis_rule =
           else failwith "subst_var_synthesis_rule"));;
 
 (* ------------------------------------------------------------------------- *)
+(* A type of synthesized circuit.                                            *)
+(* ------------------------------------------------------------------------- *)
+
+type circuit = Circuit of thm;;
+
+let spec_circuit (Circuit th) = concl th;;
+
+let frees_circuit ckt = frees (spec_circuit ckt);;
+
+let pp_print_circuit =
+    let count x n = if is_delay x then n + 1 else n in
+    let count_delays gates = rev_itlist count gates 0 in
+    fun fmt -> fun (Circuit th) ->
+    let (gates,spec) = dest_thm th in
+    let n = count_delays gates in
+    let kind =
+        if n = 0 then "combinational circuit" else
+        "circuit with " ^ string_of_int n ^ " register" ^
+        (if n = 1 then "" else "s") in
+    let () = pp_open_box fmt 0 in
+    let () = pp_print_string fmt ("[" ^ kind ^ "]") in
+    let () = pp_print_space fmt () in
+    let () = pp_open_hbox fmt() in
+    let () = pp_print_string fmt "|- " in
+    let () = pp_print_term fmt spec in
+    let () = pp_close_box fmt () in
+    let () = pp_close_box fmt () in
+    ();;
+
+let print_circuit = pp_print_circuit std_formatter;;
+
+#install_printer print_circuit;;
+
+(* ------------------------------------------------------------------------- *)
 (* Extracting information from a synthesized circuit.                        *)
 (* ------------------------------------------------------------------------- *)
 
@@ -825,7 +859,7 @@ type circuit_fanins = Circuit_fanins of (wireset * wireset) wiremap;;
 
 type circuit_fanouts = Circuit_fanouts of wireset wiremap;;
 
-let circuit_logic ckt = Circuit_logic (hyp ckt);;
+let circuit_logic (Circuit th) = Circuit_logic (hyp th);;
 
 let circuit_defs (Circuit_logic logic) =
     let add gate defs =
@@ -1906,7 +1940,7 @@ let synthesize_hardware syn primary th =
     let th =
         complain_timed "Renamed wires"
           (rename_wires primary) th in
-    th;;
+    Circuit th;;
 
 (* ------------------------------------------------------------------------- *)
 (* Duplicating registers to reduce fanout load.                              *)
@@ -2279,7 +2313,8 @@ let verilog_wire_names =
         circuit_wires logic in
     let sub = fold_wireset verilog_wire ws [] in
     let () = check_distinct sub in
-    INST (norm_sub sub) ckt;;
+    let Circuit th = ckt in
+    Circuit (INST (norm_sub sub) th);;
 
 let hardware_to_verilog =
     let no_comment _ = None in
@@ -2298,12 +2333,12 @@ let hardware_to_verilog =
         | Bus_verilog_arg (Bus_wires (b,is)) ->
           range_to_string (rev is) ^ " " ^ b in
     let verilog_comment_line s = "  // " ^ s in
-    let verilog_comment_box (Verilog_module name) comment property =
+    let verilog_comment_box (Verilog_module name) comment ckt =
         let Verilog_comment footer = comment in
         let prop =
             let k = get_margin () in
             let () = set_margin (VERILOG_LINE_LENGTH - 4) in
-            let s = string_of_term property in
+            let s = string_of_term (spec_circuit ckt) in
             let () = set_margin k in
             s in
         comment_box_text
@@ -2394,7 +2429,7 @@ let hardware_to_verilog =
         let () = print "    end\n" in
         () in
     let verilog_header name comment ckt =
-        print (verilog_comment_box name comment (concl ckt)) in
+        print (verilog_comment_box name comment ckt) in
     let verilog_body name primary ckt_info =
         let (defs,registers,gates,fanins,fanouts,fanout_loads) = ckt_info in
         let register_comment r =
