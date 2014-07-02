@@ -62,6 +62,63 @@ let undisch_bind th =
     (tm, UNDISCH th);;
 
 (* ------------------------------------------------------------------------- *)
+(* String operations.                                                        *)
+(* ------------------------------------------------------------------------- *)
+
+let is_digit = String.contains "0123456789";;
+
+let translate f s =
+    let rec tr acc i =
+        if i = 0 then String.concat "" acc else
+        let i = i - 1 in
+        let c = String.get s i in
+        tr (f c :: acc) i in
+    tr [] (String.length s);;
+
+let split c s =
+    let rec split_from i =
+    try (let j = String.index_from s i c in
+         let (x,xs) = split_from (j + 1) in
+         (String.sub s i (j - i), x :: xs))
+    with Not_found -> (String.sub s i (String.length s - i), []) in
+    split_from 0;;
+
+let deprime s = fst (split '\'' s);;
+
+let pp_print_float fmt x = Format.fprintf fmt "%.0g" x;;
+
+let prettify_int s =
+    let n = String.length s in
+    let rec f acc i =
+        let j = i - 3 in
+        if j < 0 then String.concat "," (String.sub s 0 (i + 1) :: acc) else
+        f (String.sub s (j + 1) 3 :: acc) j in
+    if n <= 3 then s else f [] (n - 1);;
+
+let string_of_pretty_int i = prettify_int (string_of_int i);;
+
+let string_of_pretty_num n = prettify_int (string_of_num n);;
+
+let pp_print_pretty_int fmt i =
+    Format.pp_print_string fmt (string_of_pretty_int i);;
+
+let string_of_pretty_duration =
+    let pr t u =
+        let n = truncate t in
+        string_of_int n ^ " " ^ u ^ (if n = 1 then "" else "s") in
+    fun t ->
+    if t < 1.0 then sprintf "%.0g" t ^ " seconds" else
+    if t < 200.0 then pr t "second" else
+    let t = t /. 60.0 in
+    if t < 200.0 then pr t "minute" else
+    let t = t /. 60.0 in
+    if t < 100.0 then pr t "hour" else
+    let t = t /. 24.0 in
+    if t < 30.0 then pr t "day" else
+    let t = t /. 7.0 in
+    pr t "week";;
+
+(* ------------------------------------------------------------------------- *)
 (* Profiling functions.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
@@ -89,32 +146,8 @@ let complain_timed s f x =
     let (m0,mx) = memory_footprint () in
     let m0 = int_of_float m0 in
     let mx = int_of_float mx in
-    let () = complain ("- " ^ s ^ ": " ^ string_of_int t ^ " second" ^ (if t = 1 then "" else "s") ^ " (" ^ string_of_int m0 ^ "-" ^ string_of_int mx ^ "Mb)") in
+    let () = complain ("- " ^ s ^ ": " ^ string_of_pretty_int t ^ " second" ^ (if t = 1 then "" else "s") ^ " (" ^ string_of_pretty_int m0 ^ "-" ^ string_of_pretty_int mx ^ "Mb)") in
     fx;;
-
-(* ------------------------------------------------------------------------- *)
-(* String operations.                                                        *)
-(* ------------------------------------------------------------------------- *)
-
-let is_digit = String.contains "0123456789";;
-
-let translate f s =
-    let rec tr acc i =
-        if i = 0 then String.concat "" acc else
-        let i = i - 1 in
-        let c = String.get s i in
-        tr (f c :: acc) i in
-    tr [] (String.length s);;
-
-let split c s =
-    let rec split_from i =
-    try (let j = String.index_from s i c in
-         let (x,xs) = split_from (j + 1) in
-         (String.sub s i (j - i), x :: xs))
-    with Not_found -> (String.sub s i (String.length s - i), []) in
-    split_from 0;;
-
-let deprime s = fst (split '\'' s);;
 
 (* ------------------------------------------------------------------------- *)
 (* A simple priority queue implementation derived from leftist heaps         *)
@@ -821,7 +854,7 @@ let pp_print_circuit =
     let n = count_delays gates in
     let kind =
         if n = 0 then "combinational circuit" else
-        "circuit with " ^ string_of_int n ^ " register" ^
+        "circuit with " ^ string_of_pretty_int n ^ " register" ^
         (if n = 1 then "" else "s") in
     let () = pp_open_box fmt 0 in
     let () = pp_print_string fmt ("[" ^ kind ^ "]") in
@@ -2111,13 +2144,11 @@ circuit_fanout_loads primary_inputs fanins fanouts;;
 (* Profiling synthesized hardware.                                           *)
 (* ------------------------------------------------------------------------- *)
 
-let pp_print_float fmt f = Format.fprintf fmt "%.1f" f;;
-
 let pp_print_count fmt (title,i) =
     let () = Format.pp_open_box fmt 2 in
     let () = Format.pp_print_string fmt (title ^ ":") in
     let () = Format.pp_print_space fmt () in
-    let () = Format.pp_print_int fmt i in
+    let () = pp_print_pretty_int fmt i in
     let () = Format.pp_close_box fmt () in
     ();;
 
@@ -2187,7 +2218,7 @@ let pp_print_hardware_profile fmt ckt_info =
         let Circuit_fanout_loads fols = fanout_loads in
         rev (fold_wiremap add fols []) in
     let pp_print_wire_dist =
-        pp_print_distribution pp_print_term Format.pp_print_int in
+        pp_print_distribution pp_print_term pp_print_pretty_int in
     let () = Format.pp_open_box fmt 0 in
     let () = pp_print_count fmt ("Primary inputs",primary_inputs) in
     let () = Format.pp_print_newline fmt () in
@@ -2439,9 +2470,11 @@ let hardware_to_verilog =
             let fo = size_wireset (circuit_fanout fanouts r) in
             let Fanout_load (d,_,fol) = circuit_fanout_load fanout_loads r in
             Some
-              (string_of_int fi ^ ":" ^ string_of_int fic ^ "|" ^
-               string_of_int fo ^ "/" ^ string_of_int d ^ "=" ^
-               string_of_int (truncate fol)) in
+              (string_of_pretty_int fi ^ ":" ^
+               string_of_pretty_int fic ^ "|" ^
+               string_of_pretty_int fo ^ "/" ^
+               string_of_pretty_int d ^ "=" ^
+               string_of_pretty_int (truncate fol)) in
         let registers =
             let Circuit_registers regs = registers in
             wire_sort (to_list_wireset regs) in

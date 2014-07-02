@@ -94,12 +94,6 @@ let timelock_z_def = new_definition
    4273385266812394147070994861525419078076239304748427595531276995752128020213613672254516516003537339494956807602382848752586901990223796385882918398855224985458519974818490745795238804226283637519132355620865854807750610249277739682050363696697850022630763190035330004501577720670871722527280166278354004638073890333421755189887803390706693131249675969620871735333181071167574435841870740398493890811235683625826527602500294010908702312885095784549814408886297505226010693375643169403606313753753943664426620220505295457067077583219793772829893613745614142047193712972117251792879310395477535810302267611143659071382`;;
 
 (* Testing
-let () =
-    let n = get_margin () in
-    let () = set_margin 61 in
-    let s = string_of_term (mk_numeral timelock_modulus_num) in
-    let () = set_margin n in
-    complain ("\n" ^ s);;
 bit_width_num timelock_modulus_num;;
 is_prime timelock_modulus_num;;
 *)
@@ -113,7 +107,7 @@ let checksum_prime_def = new_definition
 
 let checksum_prime_num = dest_numeral (rhs (concl checksum_prime_def));;
 
-(***
+(* Testing
 bit_width_num checksum_prime_num;;
 bit_width_num (mult_num timelock_modulus_num checksum_prime_num);;
 mod_num (bit_width_num (mult_num timelock_modulus_num checksum_prime_num)) (num_of_int 8);;
@@ -128,7 +122,7 @@ let secret =
           let c = Char.chr (int_of_string (d1 ^ d2) + 64) in
           String.make 1 c :: decode ds in
     implode (decode (explode s));;
-***)
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* A 127-bit modulus to use for testing.                                     *)
@@ -140,7 +134,7 @@ let test_prime_two_num = dest_numeral `9999011305120901971`;;
 
 let test_modulus_num = mult_num test_prime_one_num test_prime_two_num;;
 
-(***
+(* Testing
 bit_width_num test_prime_one_num;;
 bit_width_num test_prime_two_num;;
 bit_width_num test_modulus_num;;
@@ -149,7 +143,7 @@ mod_num (bit_width_num (mult_num test_modulus_num checksum_prime_num)) (num_of_i
 is_prime test_prime_one_num;;
 is_prime test_prime_two_num;;
 is_prime test_modulus_num;;
-***)
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* Synthesizing a circuit to open the time capsule crypto-puzzle.            *)
@@ -199,37 +193,12 @@ let (synthesize_test_timelock,synthesize_timelock) =
 (* Testing
 disable_proof_logging ();;
 let (name,test_timelock_3_ckt) = synthesize_test_timelock 3;;
-let (name,timelock_8_ckt) = synthesize_timelock 8;;
 let (name,timelock_9_ckt) = synthesize_timelock 9;;
 *)
 
 (* ------------------------------------------------------------------------- *)
 (* Generating Verilog time capsule crypto-puzzle circuits.                   *)
 (* ------------------------------------------------------------------------- *)
-
-let prettify_int s =
-    let n = String.length s in
-    let rec f acc i =
-        let j = i - 3 in
-        if j < 0 then String.concat "," (String.sub s 0 (i + 1) :: acc) else
-        f (String.sub s (j + 1) 3 :: acc) j in
-    if n <= 3 then s else f [] (n - 1);;
-
-let prettify_duration =
-    let f t u =
-        let n = truncate t in
-        string_of_int n ^ " " ^ u ^ (if n = 1 then "" else "s") in
-    fun t ->
-    if t < 1.0 then sprintf "%.0g" t ^ " seconds" else
-    if t < 200.0 then f t "second" else
-    let t = t /. 60.0 in
-    if t < 200.0 then f t "minute" else
-    let t = t /. 60.0 in
-    if t < 100.0 then f t "hour" else
-    let t = t /. 24.0 in
-    if t < 30.0 then f t "day" else
-    let t = t /. 7.0 in
-    f t "week";;
 
 let (synthesize_test_timelock_verilog_file,
      synthesize_timelock_verilog_file) =
@@ -248,14 +217,14 @@ let (synthesize_test_timelock_verilog_file,
             let l = add_num d3 (add_num d4 num_1) in
             let reset = add_num l num_1 in  (* l + 1 *)
             let compute =  (* l + 1 + (d0 + d1 + d2 + d4 + r + 4) * m *)
-                add_num (add_num l num_1)
+                add_num l
                   (mult_num m
                      (add_num (add_num d0 (add_num d1 (add_num d2 d4)))
                         (add_num r (num_of_int 4)))) in
             (reset,compute) in
         let time =
             let cycles = add_num reset_cycles compute_cycles in
-            prettify_duration (float_of_num cycles /. 1e9) in
+            string_of_pretty_duration (float_of_num cycles /. 1e9) in
         let lines =
 ["where " ^
  (if test then "" else
@@ -269,10 +238,10 @@ let (synthesize_test_timelock_verilog_file,
  "";
  "How to use the module:";
  "";
- "  1. Hold the ld signal high for at least " ^ prettify_int (string_of_num reset_cycles) ^ " cycles.";
+ "  1. Hold the ld signal high for at least " ^ string_of_pretty_num reset_cycles ^ " cycles.";
  "     Load the input into the xs and xc buses.";
  "  2. Drop the ld signal low.";
- "  3. Wait " ^ prettify_int (string_of_num compute_cycles) ^ " cycles for the dn signal to go high.";
+ "  3. Wait " ^ string_of_pretty_num compute_cycles ^ " cycles for the dn signal to go high.";
  "  4. Read the result from the ys and yc buses.";
  "";
  "Assuming the circuit is clocked at 1GHz, the above computation will take";
