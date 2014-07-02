@@ -215,10 +215,26 @@ let prettify_int s =
         f (String.sub s (j + 1) 3 :: acc) j in
     if n <= 3 then s else f [] (n - 1);;
 
+let prettify_duration =
+    let f t u =
+        let n = truncate t in
+        string_of_int n ^ " " ^ u ^ (if n = 1 then "" else "s") in
+    fun t ->
+    if t < 1.0 then sprintf "%.0g" t ^ " seconds" else
+    if t < 200.0 then f t "second" else
+    let t = t /. 60.0 in
+    if t < 200.0 then f t "minute" else
+    let t = t /. 60.0 in
+    if t < 100.0 then f t "hour" else
+    let t = t /. 24.0 in
+    if t < 30.0 then f t "day" else
+    let t = t /. 7.0 in
+    f t "week";;
+
 let (synthesize_test_timelock_verilog_file,
      synthesize_timelock_verilog_file) =
     let mk_comment test d =
-        let cycles =
+        let (reset_cycles,compute_cycles) =
             let r =
                 bit_width_num
                   (mult_num
@@ -230,25 +246,16 @@ let (synthesize_test_timelock_verilog_file,
                 let d = add_num (quo_num (bit_width_num r) num_2) num_1 in
                 (d,d,d,d,d) in
             let l = add_num d3 (add_num d4 num_1) in
-            add_num (add_num l num_1)
-              (mult_num m
-                 (add_num (add_num d0 (add_num d1 (add_num d2 d4)))
-                    (add_num r (num_of_int 4)))) in
+            let reset = add_num l num_1 in  (* l + 1 *)
+            let compute =  (* l + 1 + (d0 + d1 + d2 + d4 + r + 4) * m *)
+                add_num (add_num l num_1)
+                  (mult_num m
+                     (add_num (add_num d0 (add_num d1 (add_num d2 d4)))
+                        (add_num r (num_of_int 4)))) in
+            (reset,compute) in
         let time =
-            let f t u =
-                let n = truncate t in
-                string_of_int n ^ " " ^ u ^ (if n = 1 then "" else "s") in
-            let t = float_of_num cycles /. 1e9 in
-            if t < 1.0 then sprintf "%.0g" t ^ " seconds" else
-            if t < 200.0 then f t "second" else
-            let t = t /. 60.0 in
-            if t < 200.0 then f t "minute" else
-            let t = t /. 60.0 in
-            if t < 100.0 then f t "hour" else
-            let t = t /. 24.0 in
-            if t < 30.0 then f t "day" else
-            let t = t /. 7.0 in
-            f t "week" in
+            let cycles = add_num reset_cycles compute_cycles in
+            prettify_duration (float_of_num cycles /. 1e9) in
         let lines =
 ["where " ^
  (if test then "" else
@@ -262,14 +269,14 @@ let (synthesize_test_timelock_verilog_file,
  "";
  "How to use the module:";
  "";
- "  1. Hold the ld signal high.";
- "  2. Load the input into the xs and xc buses.";
- "  3. Drop the ld signal low.";
- "  4. Wait for the dn signal to go high.";
- "  5. Read the result from the ys and yc buses.";
+ "  1. Hold the ld signal high for at least " ^ prettify_int (string_of_num reset_cycles) ^ " cycles.";
+ "     Load the input into the xs and xc buses.";
+ "  2. Drop the ld signal low.";
+ "  3. Wait " ^ prettify_int (string_of_num compute_cycles) ^ " cycles for the dn signal to go high.";
+ "  4. Read the result from the ys and yc buses.";
  "";
- "Computing the result requires " ^ prettify_int (string_of_num cycles) ^ " cycles.";
- "If the circuit is clocked at 1GHz this will take " ^ time ^ "."] in
+ "Assuming the circuit is clocked at 1GHz, the above computation will take";
+ "~" ^ time ^ "."] in
         let Verilog_comment footer = default_verilog_comment () in
         Verilog_comment ("\n\n" ^ String.concat "\n" lines ^ footer) in
     let verilog test d =
@@ -289,6 +296,5 @@ let (synthesize_test_timelock_verilog_file,
 (* Testing
 disable_proof_logging ();;
 synthesize_test_timelock_verilog_file 3;;
-synthesize_timelock_verilog_file 8;;
 synthesize_timelock_verilog_file 9;;
 *)
