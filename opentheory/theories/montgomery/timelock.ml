@@ -207,19 +207,84 @@ let (name,timelock_9_ckt) = synthesize_timelock 9;;
 (* Generating Verilog time capsule crypto-puzzle circuits.                   *)
 (* ------------------------------------------------------------------------- *)
 
+let prettify_int s =
+    let n = String.length s in
+    let rec f acc i =
+        let j = i - 3 in
+        if j < 0 then String.concat "," (String.sub s 0 (i + 1) :: acc) else
+        f (String.sub s (j + 1) 3 :: acc) j in
+    if n <= 3 then s else f [] (n - 1);;
+
 let (synthesize_test_timelock_verilog_file,
      synthesize_timelock_verilog_file) =
-    let verilog syn d =
-        let (name,ckt) = syn d in
+    let mk_comment test d =
+        let cycles =
+            let r =
+                bit_width_num
+                  (mult_num
+                     (if test then test_modulus_num
+                      else timelock_modulus_num)
+                     checksum_prime_num) in
+            let m = funpow d (mult_num (num_of_int 10)) num_1 in
+            let (d0,d1,d2,d3,d4) =
+                let d = add_num (quo_num (bit_width_num r) num_2) num_1 in
+                (d,d,d,d,d) in
+            let l = add_num d3 (add_num d4 num_1) in
+            add_num (add_num l num_1)
+              (mult_num m
+                 (add_num (add_num d0 (add_num d1 (add_num d2 d4)))
+                    (add_num r (num_of_int 4)))) in
+        let time =
+            let f t u =
+                let n = truncate t in
+                string_of_int n ^ " " ^ u ^ (if n = 1 then "" else "s") in
+            let t = float_of_num cycles /. 1e9 in
+            if t < 1.0 then sprintf "%.0g" t ^ " seconds" else
+            if t < 200.0 then f t "second" else
+            let t = t /. 60.0 in
+            if t < 200.0 then f t "minute" else
+            let t = t /. 60.0 in
+            if t < 100.0 then f t "hour" else
+            let t = t /. 24.0 in
+            if t < 30.0 then f t "day" else
+            let t = t /. 7.0 in
+            f t "week" in
+        let lines =
+["where " ^
+ (if test then "" else
+  let f c = if c = '\n' then "\n  " else String.make 1 c in
+  let k = get_margin () in
+  let () = set_margin 61 in
+  let s = string_of_term (mk_numeral timelock_modulus_num) in
+  let () = set_margin k in
+  "timelock_modulus =\n  " ^ translate f s ^ "\n\nand ") ^
+  string_of_term (concl checksum_prime_def) ^ ".";
+ "";
+ "How to use the module:";
+ "";
+ "  1. Hold the ld signal high.";
+ "  2. Load the input into the xs and xc buses.";
+ "  3. Drop the ld signal low.";
+ "  4. Wait for the dn signal to go high.";
+ "  5. Read the result from the ys and yc buses.";
+ "";
+ "Computing the result requires " ^ prettify_int (string_of_num cycles) ^ " cycles.";
+ "If the circuit is clocked at 1GHz this will take " ^ time ^ "."] in
+        let Verilog_comment footer = default_verilog_comment () in
+        Verilog_comment ("\n\n" ^ String.concat "\n" lines ^ footer) in
+    let verilog test d =
+        let (name,ckt) =
+            if test then synthesize_test_timelock d
+            else synthesize_timelock d in
         let name = Verilog_module name in
-        let comment = default_verilog_comment () in
+        let comment = mk_comment test d in
         let primary = Verilog_primary (`clk : wire` :: frees_circuit ckt) in
         complain_timed "Generated Verilog module"
           (hardware_to_verilog_file name comment primary) ckt in
-    let timed_verilog syn d =
-        complain_timed "TOTAL" (verilog syn) d in
-    (timed_verilog synthesize_test_timelock,
-     timed_verilog synthesize_timelock);;
+    let timed_verilog test d =
+        complain_timed "TOTAL" (verilog test) d in
+    (timed_verilog true,
+     timed_verilog false);;
 
 (* Testing
 disable_proof_logging ();;
