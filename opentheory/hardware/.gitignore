@@ -1,5 +1,12 @@
 *.o
 *.out
-double_exp_*.v
-test_timelock_*.v
-timelock_*.v
+double_exp_8*.v
+double_exp_16*.v
+double_exp_32*.v
+double_exp_64*.v
+double_exp_128*.v
+double_exp_256*.v
+double_exp_512*.v
+double_exp_1024*.v
+test_timelock_3.v
+timelock_9.v
