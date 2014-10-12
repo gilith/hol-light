@@ -60,7 +60,8 @@ let CleanMathFontsForHOL_Light s =
       "α","alpha"; "β","beta"; "γ","gamma"; "λ","\\ "; "θ","theta"; "μ","mu";
       "⊂","SUBSET"; "∩","INTER"; "∪","UNION"; "∅","{}"; "━","DIFF";
       "≡","==="; "≅","cong"; "∡","angle"; "∥","parallel";
-      "∏","prod"; "∘","_o_"; "→","--->"; "╪","INSERT"];;
+      "∏","prod"; "∘","_o_"; "→","--->"; "╪","INSERT";
+      "≃", "TarskiCong"; "≊", "TarskiTriangleCong"; "ℬ", "TarskiBetween"];;
 
 (* printReadExn prints uncluttered error messages via Readable_fail.  This   *)
 (* is due to Mark Adams, who also explained Roland Zumkeller's exec below.   *)
@@ -210,11 +211,11 @@ let subgoal_THEN stm ttac gl =
 (* assume statement lab tac                                                  *)
 (* turns the string statement into a term t, with the tactic tac a proof of  *)
 (* ¬t ⇒ w, where w is the goal. There is a new assumption t labeled lab, and *)
-(* the new goal is the result of applying the tactic SIMP_TAC [t] to w.	     *)
+(* the new goal is the result of applying the tactic SIMP_TAC [t] to w.      *)
 (* It's recommended to only use assume with a short proof tac.  Three uses   *)
 (* of assume arise when t = ¬w or t = ¬α, with w = α ∨ β or w = β ∨ α.       *)
-(* In all three cases write						     *)
-(*      assume statement     [lab] by fol;  				     *)
+(* In all three cases write                                                  *)
+(*      assume statement     [lab] by fol;                                   *)
 (* and the new goal will be F (false) or β respectively, as a result of the  *)
 (* SIMP_TAC [t].  So do not use assume if SIMP_TAC [t] is disadvantageous.   *)
 
@@ -504,8 +505,12 @@ let CombThmlisttactic_Thmlist step =
 (*                                                                           *)
 (* theorem is a version of prove based on the miz3.ml thm, with argument     *)
 (* statement ByProofQed                                                      *)
+(*                                                                           *)
+(* Miz3-style comments are supported.  If a line contains ::, then the       *)
+(* substring of the line beginning with :: is ignored by StringToTactic.     *)
 
 let rec StringToTactic s =
+  let s = Str.global_replace (Str.regexp "::[^\n]*") "" s in
   if StringRegexpEqual (Str.regexp ws0) s then ALL_TAC
   else
     try makeCaseSplit s

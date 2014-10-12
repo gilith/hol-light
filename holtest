@@ -66,6 +66,7 @@ echo '### Loading Library/primitive.ml'; echo 'loadt "Library/primitive.ml";;' |
 echo '### Loading Library/products.ml'; echo 'loadt "Library/products.ml";;' | (time $hollight)
 echo '### Loading Examples/prog.ml'; echo 'loadt "Examples/prog.ml";;' | (time $hollight)
 echo '### Loading Examples/prover9.ml'; echo 'loadt "Examples/prover9.ml";;' | (time $hollight)
+echo '### Loading Library/q.ml'; echo 'loadt "Library/q.ml";;' | (time $hollight)
 echo '### Loading Examples/rectypes.ml'; echo 'loadt "Examples/rectypes.ml";;' | (time $hollight)
 echo '### Loading Examples/schnirelmann.ml'; echo 'loadt "Examples/schnirelmann.ml";;' | (time $hollight)
 echo '### Loading Examples/solovay.ml'; echo 'loadt "Examples/solovay.ml";;' | (time $hollight)
@@ -115,6 +116,14 @@ echo '### Loading Multivariate/tarski.ml'; echo 'loadt "Multivariate/tarski.ml";
 echo '### Loading Multivariate/cross.ml'; echo 'loadt "Multivariate/cross.ml";;' | (time $hollight)
 echo '### Loading Multivariate/flyspeck.ml'; echo 'loadt "Multivariate/flyspeck.ml";;' | (time $hollight)
 echo '### Loading Multivariate/gamma.ml'; echo 'loadt "Multivariate/gamma.ml";;' | (time $hollight)
+echo '### Loading RichterHilbertAxiomGeometry/Topology.ml'; echo 'loadt "RichterHilbertAxiomGeometry/Topology.ml";;' | (time $hollight)
+echo '### Loading RichterHilbertAxiomGeometry/TarskiAxiomGeometry_read.ml'; echo 'loadt "RichterHilbertAxiomGeometry/TarskiAxiomGeometry_read.ml";;' | (time $hollight)
+echo '### Loading Functionspaces/make.ml'; echo 'loadt "Functionspaces/make.ml";;' | (time $hollight)
+echo '### Loading Formal_ineqs/make.ml,examples.hl,examples_poly.hl,examples_flyspeck.hl';
+(echo 'loadt "Formal_ineqs/make.ml";;';
+ echo 'loadt "Formal_ineqs/examples.hl";;';
+ echo 'loadt "Formal_ineqs/examples_poly.hl";;';
+ echo 'loadt "Formal_ineqs/examples_flyspeck.hl";;') | (time $hollight)
 
 # Some of the "Great 100 theorems"
 

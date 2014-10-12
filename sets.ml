@@ -701,6 +701,21 @@ let UNION_SUBSET = prove
 
 export_thm UNION_SUBSET;;
 
+let FORALL_SUBSET_INSERT = prove
+ (`!a:A t. (!s. s SUBSET a INSERT t ==> P s) <=>
+           (!s. s SUBSET t ==> P s /\ P (a INSERT s))`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC[SET_RULE `a INSERT s = {a} UNION s`] THEN
+  REWRITE_TAC[FORALL_SUBSET_UNION; SET_RULE
+   `s SUBSET {a} <=> s = {} \/ s = {a}`] THEN
+  MESON_TAC[UNION_EMPTY]);;
+
+let EXISTS_SUBSET_INSERT = prove
+ (`!a:A t. (?s. s SUBSET a INSERT t /\ P s) <=>
+           (?s. s SUBSET t /\ (P s \/ P (a INSERT s)))`,
+  REWRITE_TAC[MESON[] `(?x. P x /\ Q x) <=> ~(!x. P x ==> ~Q x)`] THEN
+  REWRITE_TAC[FORALL_SUBSET_INSERT] THEN MESON_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Intersection.                                                             *)
 (* ------------------------------------------------------------------------- *)
@@ -2506,6 +2521,12 @@ export_thm INTERS_GSPEC3;;
 
 let INTERS_GSPEC =
     CONJ INTERS_GSPEC1 (CONJ INTERS_GSPEC2 INTERS_GSPEC3);;
+
+let IMAGE_INTERS = prove
+ (`!f s. ~(s = {}) /\
+         (!x y. x IN UNIONS s /\ y IN UNIONS s /\ f x = f y ==> x = y)
+         ==> IMAGE f (INTERS s) = INTERS(IMAGE (IMAGE f) s)`,
+  REWRITE_TAC[INTERS_IMAGE] THEN SET_TAC[]);;
 
 let DIFF_INTERS = prove
  (`!(u : A set) s. u DIFF INTERS s = UNIONS {u DIFF t | t IN s}`,
@@ -4665,6 +4686,10 @@ let CROSS_EQ_EMPTY = prove
   REWRITE_TAC [DE_MORGAN_THM; LEFT_FORALL_OR_THM; RIGHT_FORALL_OR_THM]);;
 
 export_thm CROSS_EQ_EMPTY;;
+
+let CROSS_UNIV = prove
+ (`(:A) CROSS (:B) = (:A#B)`,
+  REWRITE_TAC[CROSS; EXTENSION; IN_ELIM_PAIR_THM; FORALL_PAIR_THM; IN_UNIV]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Cardinality of functions with bounded domain (support) and range.         *)

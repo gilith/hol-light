@@ -117,6 +117,13 @@ let NPRODUCT_EQ_1_NUMSEG = prove
  (`!f m n. (!i. m <= i /\ i <= n ==> (f(i) = 1)) ==> (nproduct(m..n) f = 1)`,
   SIMP_TAC[NPRODUCT_EQ_1; IN_NUMSEG]);;
 
+let NPRODUCT_MUL_GEN = prove
+ (`!f g s.
+       FINITE {x | x IN s /\ ~(f x = 1)} /\ FINITE {x | x IN s /\ ~(g x = 1)}
+       ==> nproduct s (\x. f x * g x) = nproduct s f * nproduct s g`,
+  REWRITE_TAC[GSYM NEUTRAL_MUL; GSYM support; nproduct] THEN
+  MATCH_MP_TAC ITERATE_OP_GEN THEN ACCEPT_TAC MONOIDAL_MUL);;
+
 let NPRODUCT_MUL = prove
  (`!f g s. FINITE s
            ==> nproduct s (\x. f x * g x) = nproduct s f * nproduct s g`,
@@ -183,6 +190,12 @@ let NPRODUCT_FACT = prove
  (`!n. nproduct(1..n) (\m. m) = FACT n`,
   INDUCT_TAC THEN REWRITE_TAC[NPRODUCT_CLAUSES_NUMSEG; FACT; ARITH] THEN
   ASM_REWRITE_TAC[ARITH_RULE `1 <= SUC n`; MULT_SYM]);;
+
+let NPRODUCT_DELTA = prove
+ (`!s a. nproduct s (\x. if x = a then b else 1) =
+         (if a IN s then b else 1)`,
+  REWRITE_TAC[nproduct; GSYM NEUTRAL_MUL] THEN
+  SIMP_TAC[ITERATE_DELTA; MONOIDAL_MUL]);;
 
 let th = prove
    (`(!f g s.   (!x. x IN s ==> f(x) = g(x))
@@ -321,6 +334,13 @@ let PRODUCT_EQ_1_NUMSEG = prove
  (`!f m n. (!i. m <= i /\ i <= n ==> (f(i) = &1)) ==> (product(m..n) f = &1)`,
   SIMP_TAC[PRODUCT_EQ_1; IN_NUMSEG]);;
 
+let PRODUCT_MUL_GEN = prove
+ (`!f g s.
+       FINITE {x | x IN s /\ ~(f x = &1)} /\ FINITE {x | x IN s /\ ~(g x = &1)}
+       ==> product s (\x. f x * g x) = product s f * product s g`,
+  REWRITE_TAC[GSYM NEUTRAL_REAL_MUL; GSYM support; product] THEN
+  MATCH_MP_TAC ITERATE_OP_GEN THEN ACCEPT_TAC MONOIDAL_REAL_MUL);;
+
 let PRODUCT_MUL = prove
  (`!f g s. FINITE s ==> product s (\x. f x * g x) = product s f * product s g`,
   GEN_TAC THEN GEN_TAC THEN MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
@@ -429,6 +449,12 @@ let PRODUCT_PAIR = prove
 let PRODUCT_DELETE = prove
  (`!f s a. FINITE s /\ a IN s ==> f(a) * product(s DELETE a) f = product s f`,
   SIMP_TAC[product; ITERATE_DELETE; MONOIDAL_REAL_MUL]);;
+
+let PRODUCT_DELTA = prove
+ (`!s a. product s (\x. if x = a then b else &1) =
+         (if a IN s then b else &1)`,
+  REWRITE_TAC[product; GSYM NEUTRAL_REAL_MUL] THEN
+  SIMP_TAC[ITERATE_DELTA; MONOIDAL_REAL_MUL]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Extend congruences.                                                       *)

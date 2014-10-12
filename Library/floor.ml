@@ -27,13 +27,17 @@ let INTEGER_CLOSED = prove
    (!x y. integer(x) /\ integer(y) ==> integer(x * y)) /\
    (!x r. integer(x) ==> integer(x pow r)) /\
    (!x. integer(x) ==> integer(--x)) /\
-   (!x. integer(x) ==> integer(abs x))`,
+   (!x. integer(x) ==> integer(abs x)) /\
+   (!x y. integer(x) /\ integer(y) ==> integer(max x y)) /\
+   (!x y. integer(x) /\ integer(y) ==> integer(min x y))`,
   REWRITE_TAC[integer] THEN
   MATCH_MP_TAC(TAUT
-   `x /\ c /\ d /\ e /\ f /\ (a /\ e ==> b) /\ a
-    ==> x /\ a /\ b /\ c /\ d /\ e /\ f`) THEN
+   `g /\ h /\ x /\ c /\ d /\ e /\ f /\ (a /\ e ==> b) /\ a
+    ==> x /\ a /\ b /\ c /\ d /\ e /\ f /\ g /\ h`) THEN
   REPEAT CONJ_TAC THENL
-   [REWRITE_TAC[REAL_ABS_NUM] THEN MESON_TAC[];
+   [REWRITE_TAC[real_max] THEN MESON_TAC[];
+    REWRITE_TAC[real_min] THEN MESON_TAC[];
+    REWRITE_TAC[REAL_ABS_NUM] THEN MESON_TAC[];
     REWRITE_TAC[REAL_ABS_MUL] THEN MESON_TAC[REAL_OF_NUM_MUL];
     REWRITE_TAC[REAL_ABS_POW] THEN MESON_TAC[REAL_OF_NUM_POW];
     REWRITE_TAC[REAL_ABS_NEG]; REWRITE_TAC[REAL_ABS_ABS];
@@ -107,6 +111,21 @@ let INTEGER_POS = prove
  (`!x. &0 <= x ==> (integer(x) <=> ?n. x = &n)`,
   SIMP_TAC[integer; real_abs]);;
 
+let NONNEGATIVE_INTEGER = prove
+ (`!x. integer x /\ &0 <= x <=> ?n. x = &n`,
+  MESON_TAC[INTEGER_POS; INTEGER_CLOSED; REAL_POS]);;
+
+let NONPOSITIVE_INTEGER = prove
+ (`!x. integer x /\ x <= &0 <=> ?n. x = -- &n`,
+  GEN_TAC THEN REWRITE_TAC[is_int] THEN
+  REWRITE_TAC[LEFT_AND_EXISTS_THM; REAL_ARITH `a + b = &0 <=> a = --b`] THEN
+  AP_TERM_TAC THEN ABS_TAC THEN REAL_ARITH_TAC);;
+
+let NONPOSITIVE_INTEGER_ALT = prove
+ (`!x. integer x /\ x <= &0 <=> ?n. x + &n = &0`,
+  GEN_TAC THEN REWRITE_TAC[NONPOSITIVE_INTEGER] THEN
+  AP_TERM_TAC THEN ABS_TAC THEN REAL_ARITH_TAC);;
+
 let INTEGER_ADD_EQ = prove
  (`(!x y. integer(x) ==> (integer(x + y) <=> integer(y))) /\
    (!x y. integer(y) ==> (integer(x + y) <=> integer(x)))`,
@@ -133,14 +152,14 @@ let INTEGER_ABS_MUL_EQ_1 = prove
   REPEAT STRIP_TAC THEN ASM_REWRITE_TAC[REAL_ABS_MUL] THEN
   REWRITE_TAC[REAL_OF_NUM_EQ; REAL_OF_NUM_MUL; MULT_EQ_1]);;
 
-let INTEGER_DIV = prove                                                    
- (`!m n. integer(&m / &n) <=> n = 0 \/ n divides m`,                           
-  REPEAT GEN_TAC THEN ASM_CASES_TAC `n = 0` THENL                            
+let INTEGER_DIV = prove
+ (`!m n. integer(&m / &n) <=> n = 0 \/ n divides m`,
+  REPEAT GEN_TAC THEN ASM_CASES_TAC `n = 0` THENL
    [ASM_REWRITE_TAC[real_div; REAL_INV_0; REAL_MUL_RZERO; INTEGER_CLOSED];
-    ASM_SIMP_TAC[INTEGER_POS; REAL_POS; REAL_LE_DIV; divides] THEN             
-    ASM_SIMP_TAC[REAL_OF_NUM_EQ; REAL_FIELD                                    
-     `~(n = &0) ==> (x / n = y <=> x = n * y)`] THEN                           
-    REWRITE_TAC[REAL_OF_NUM_MUL; REAL_OF_NUM_EQ]]);;                           
+    ASM_SIMP_TAC[INTEGER_POS; REAL_POS; REAL_LE_DIV; divides] THEN
+    ASM_SIMP_TAC[REAL_OF_NUM_EQ; REAL_FIELD
+     `~(n = &0) ==> (x / n = y <=> x = n * y)`] THEN
+    REWRITE_TAC[REAL_OF_NUM_MUL; REAL_OF_NUM_EQ]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Similar theorems for rational-valued reals.                               *)
@@ -406,6 +425,13 @@ let REAL_FLOOR_ADD = prove
   MAP_EVERY (MP_TAC o C SPEC FLOOR_FRAC)[`x:real`; `y:real`; `x + y:real`] THEN
   REAL_ARITH_TAC);;
 
+let REAL_FLOOR_NEG = prove
+ (`!x. floor(--x) = if integer x then --x else --(floor x + &1)`,
+  GEN_TAC THEN COND_CASES_TAC THEN REWRITE_TAC[GSYM FLOOR_UNIQUE] THEN
+  MP_TAC(SPEC `x:real` FLOOR) THEN
+  MP_TAC(SPEC `x:real` REAL_FLOOR_EQ) THEN
+  ASM_SIMP_TAC[INTEGER_CLOSED] THEN REAL_ARITH_TAC);;
+
 let REAL_FRAC_ADD = prove
  (`!x y. frac(x + y) = if frac x + frac y < &1 then frac(x) + frac(y)
                        else (frac(x) + frac(y)) - &1`,
@@ -430,6 +456,25 @@ let INTEGER_ROUND = prove
   GEN_TAC THEN MATCH_MP_TAC(MESON[] `!a. P a \/ P(a + &1) ==> ?x. P x`) THEN
   EXISTS_TAC `floor x` THEN MP_TAC(ISPEC `x:real` FLOOR) THEN
   SIMP_TAC[INTEGER_CLOSED] THEN REAL_ARITH_TAC);;
+
+let FRAC_DIV_MOD = prove
+ (`!m n. ~(n = 0) ==> frac(&m / &n) = &(m MOD n) / &n`,
+  REPEAT STRIP_TAC THEN REWRITE_TAC[GSYM FRAC_UNIQUE] THEN
+  ASM_SIMP_TAC[REAL_LE_DIV; REAL_POS; REAL_LT_LDIV_EQ; REAL_OF_NUM_LT; LE_1;
+               REAL_ARITH `x / a - y / a:real = (x - y) / a`] THEN
+  MP_TAC(SPECL [`m:num`; `n:num`] DIVISION) THEN
+  ASM_SIMP_TAC[REAL_OF_NUM_LT; REAL_MUL_LID] THEN
+  DISCH_THEN(fun th ->
+    GEN_REWRITE_TAC (RAND_CONV o LAND_CONV o LAND_CONV o RAND_CONV)
+                    [CONJUNCT1 th]) THEN
+  SIMP_TAC[REAL_OF_NUM_SUB; ONCE_REWRITE_RULE[ADD_SYM] LE_ADD; ADD_SUB] THEN
+  ASM_SIMP_TAC[GSYM REAL_OF_NUM_MUL; REAL_OF_NUM_EQ; INTEGER_CLOSED;
+               REAL_FIELD `~(n:real = &0) ==> (x * n) / n = x`]);;
+
+let FRAC_NEG = prove
+ (`!x. frac(--x) = if integer x then &0 else &1 - frac x`,
+  GEN_TAC THEN REWRITE_TAC[FRAC_FLOOR; REAL_FLOOR_NEG] THEN
+  COND_CASES_TAC THEN REAL_ARITH_TAC);;
 
 (* ------------------------------------------------------------------------- *)
 (* Assertions that there are integers between well-spaced reals.             *)

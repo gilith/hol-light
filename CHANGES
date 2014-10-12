@@ -1,3 +1,273 @@
+Sat  4th Oct 2014       Functionspaces/README, Functionspaces/make.ml, Functionspaces/utils.ml, Functionspaces/cfunspace.ml [new files], Jordan/float.ml
+
+Added a new library by Mohamed Yousri Mahmoud and Vincent Aravantinos of vector
+spaces of complex functions, building on top of the Multivariate theories.
+
+Sat  4th Oct 2014       system.ml
+
+Added another form to the quotation expander so that any quotation ending
+in a colon, i.e. of the form `....:`, will just be parsed as an (escaped)
+string. This is convenient for use with the new Library/q.ml file so that
+potential issues with capturing backslashes in plain strings can be
+avoided. It seems quite an intuitive syntax since one is then expecting
+the system to infer the type from context.
+
+Tweaked cases in Jordan/float.ml where there was already a colon at
+the end of a quotation, just adding spaces around the body.
+
+Fri 26th Sep 2014       sets.ml
+
+Added the following, a natural complement to IMAGE_UNIONS and IMAGE_INTER:
+
+  IMAGE_INTERS =
+    |- !f s. ~(s = {}) /\
+             (!x y. x IN UNIONS s /\ y IN UNIONS s /\ f x = f y ==> x = y)
+             ==> IMAGE f (INTERS s) = INTERS(IMAGE (IMAGE f) s)
+
+Fri 19th Sep 2014       Library/q.ml [new file]
+
+Added a file from Vincent Aravantinos with Pa.xxx variants of many standard
+HOL Light functions, taking strings instead of terms and inferring types
+appropriately. This is similar to the Q module in HOL4.
+
+Thu 18th Sep 2014       sets.ml
+
+Added a couple more set theory rewrites:
+
+        FORALL_SUBSET_INSERT =
+         |- !a t. (!s. s SUBSET a INSERT t ==> P s) <=>
+                  (!s. s SUBSET t ==> P s /\ P (a INSERT s))
+
+        EXISTS_SUBSET_INSERT =
+         |- !a t. (?s. s SUBSET a INSERT t /\ P s) <=>
+                  (?s. s SUBSET t /\ (P s \/ P (a INSERT s)))
+
+Tue 16th Sep 2014       Library/permutations.ml
+
+Added a couple more theorems about permutations:
+
+ PERMUTES_ID = |- !s. (\x. x) permutes s
+
+ REAL_SGN_SIGN = |- !p. real_sgn (sign p) = sign p
+
+Tue  9th Sep 2014       Library/card.ml
+
+Added a few more general lemma about cardinal operations
+
+        CARD_EMPTY_LE =
+              |- !s. {} <=_c s
+
+        CARD_EQ_REFL_IMP =
+              |- !s t. s = t ==> s =_c t
+
+        CARD_LE_FINITE_INFINITE =
+              |- !s t. FINITE s /\ INFINITE t ==> s <=_c t
+
+        CARD_MUL_C =
+          |- !s t. FINITE s /\ FINITE t ==> CARD (s *_c t) = CARD s * CARD t
+
+        CARD_SING_LE =
+              |- !a s. {a} <=_c s <=> ~(s = {})
+
+        LE_C_IMAGE =
+              |- !s t. s <=_c t <=> s = {} \/ (?f. IMAGE f t = s)
+
+together with a definition of cardinal exponentiation and its
+basic properties:
+
+        exp_c =
+          |- !s t.
+                 s ^_c t =
+                 {f | (!x. x IN t ==> f x IN s) /\
+                      (!x. ~(x IN t) ==> f x = (@y. F))}
+
+       CARD_EQ_COUNTABLE_SUBSETS_SUBREAL =
+         |- !s. INFINITE s /\ s <=_c (:real)
+                ==> {t | t SUBSET s /\ COUNTABLE t} =_c (:real)
+
+        CARD_EQ_FULLSIZE_POWERSET =
+          |- !s. INFINITE s ==> {t | t SUBSET s /\ t =_c s} =_c {t | t SUBSET s}
+
+        CARD_EQ_LIMITED_POWERSET =
+          |- !s t.
+                 INFINITE s
+                 ==> (if t <=_c s
+                      then {k | k SUBSET s /\ k <=_c t} =_c s ^_c t
+                      else {k | k SUBSET s /\ k <=_c t} =_c (:bool) ^_c s)
+
+        CARD_EQ_RESTRICTED_POWERSET =
+          |- !s t.
+                 INFINITE s
+                 ==> {k | k SUBSET s /\ k =_c t} =_c
+                     (if t <=_c s then s ^_c t else {})
+
+        CARD_EXP_0 =
+              |- !s c. s ^_c {} =_c {c};
+
+        CARD_EXP_ABSORB =
+              |- !s t.
+                    INFINITE t /\ (:bool) <=_c s /\ s <=_c (:bool) ^_c t
+                    ==> s ^_c t =_c (:bool) ^_c t
+
+        CARD_EXP_ADD =
+              |- !s t u. s ^_c (t +_c u) =_c s ^_c t *_c s ^_c u
+
+        CARD_EXP_C =
+          |- !s t. FINITE s /\ FINITE t ==> CARD (s ^_c t) = CARD s EXP CARD t
+
+        CARD_EXP_CANTOR =
+              |- !s. s <_c (:bool) ^_c s
+
+        CARD_EXP_CONG =
+              |- !s s' t t'. s =_c s' /\ t =_c t' ==> s ^_c t =_c s' ^_c t'
+
+        CARD_EXP_FINITE =
+              |- !s t. FINITE s /\ FINITE t ==> FINITE (s ^_c t)
+
+        CARD_EXP_GRAPH =
+          |- !s t.
+                 s ^_c t =_c
+                 {R | (!x y. R x y ==> x IN t /\ y IN s) /\
+                      (!x. x IN t ==> (?!y. R x y))}
+
+        CARD_EXP_GRAPH_PAIRED =
+          |- !s t.
+                 s ^_c t =_c
+                 {R | (!x y. R (x,y) ==> x IN t /\ y IN s) /\
+                      (!x. x IN t ==> (?!y. R (x,y)))}
+
+        CARD_EXP_MUL =
+              |- !s t u. s ^_c (t *_c u) =_c s ^_c t ^_c u
+
+        CARD_EXP_POWERSET =
+              |- !s. (:bool) ^_c s =_c {t | t SUBSET s}
+
+        CARD_EXP_SING =
+              |- !s b. s ^_c {b} =_c s
+
+        CARD_EXP_UNIV =
+              |- (:A) ^_c (:B) = (:B->A)
+
+        CARD_EXP_ZERO =
+              |- !s c. {} ^_c s =_c (if s = {} then {c} else {})
+
+        CARD_LE_EXP =
+              |- !s s' t t'.
+                 ~(s = {}) /\ s <=_c s' /\ t <=_c t' ==> s ^_c t <=_c s' ^_c t'
+
+        CARD_LE_EXP_LEFT =
+              |- !s s' t. s <=_c s' ==> s ^_c t <=_c s' ^_c t
+
+        CARD_LE_EXP_RIGHT =
+              |- !s t t'. ~(s = {}) /\ t <=_c t' ==> s ^_c t <=_c s ^_c t'
+
+        CARD_MUL_EXP =
+              |- !s t u. (s *_c t) ^_c u =_c s ^_c u *_c t ^_c u
+
+Tue  9th Sep 2014       Library/products.ml
+
+Added two straightforward "finite support" generalizations of existing theorems
+about products:
+
+NPRODUCT_MUL_GEN =
+ |- !f g s.
+       FINITE {x | x IN s /\ ~(f x = 1)} /\ FINITE {x | x IN s /\ ~(g x = 1)}
+       ==> nproduct s (\x. f x * g x) = nproduct s f * nproduct s g
+
+PRODUCT_MUL_GEN =
+ |- !f g s.
+       FINITE {x | x IN s /\ ~(f x = &1)} /\ FINITE {x | x IN s /\ ~(g x = &1)}
+       ==> product s (\x. f x * g x) = product s f * product s g
+
+Tue 19th Aug 2014       Library/floor.ml
+
+Added
+
+        NONNEGATIVE_INTEGER =
+         |- !x. integer x /\ &0 <= x <=> ?n. x = &n
+
+        NONPOSITIVE_INTEGER =
+         |- !x. integer x /\ x <= &0 <=> ?n. x = -- &n
+
+        NONPOSITIVE_INTEGER_ALT =
+         |- !x. integer x /\ x <= &0 <=> ?n. x + &n = &0
+
+        REAL_FLOOR_NEG =
+         |- !x. floor(--x) = if integer x then --x else --(floor x + &1)
+
+        FRAC_NEG =
+         |- !x. frac(--x) = if integer x then &0 else &1 - frac x
+
+Tue 19th Aug 2014       iterate.ml
+
+Added REAL_OF_NUM_SUM_GEN =
+   |- !f s. FINITE {i | i IN s /\ ~(f i = 0)}
+            ==> &(nsum s f) = sum s (\x. &(f x))`,
+
+Tue 19th Aug 2014       real.ml
+
+Added REAL_OF_NUM_SUB_CASES =
+        |- `!m n. &m - &n = if n <= m then &(m - n) else -- &(n - m)
+
+Sun 13th Jul 2014       Formal_ineqs/* [new files]
+
+Added Alexey Solovyev's formal inequality prover (used extensively
+in the Flyspeck project) to the HOL Light distribution.
+
+Thu 10th Jul 2014       Library/products.ml
+
+Added a couple more trivial theorems about products:
+
+  NPRODUCT_DELTA =
+    |- !s a.
+         nproduct s (\x. if x = a then b else 1) = (if a IN s then b else 1)
+
+  PRODUCT_DELTA =
+    |- !s a.
+         product s (\x. if x = a then b else &1) = (if a IN s then b else &1)
+
+Tue  1st Jul 2014       Library/floor.ml
+
+Added clauses for "max" and "min" to INTEGER_CLOSED, so it is now:
+
+  INTEGER_CLOSED =
+  |- (!n. integer (&n)) /\
+     (!x y. integer x /\ integer y ==> integer (x + y)) /\
+     (!x y. integer x /\ integer y ==> integer (x - y)) /\
+     (!x y. integer x /\ integer y ==> integer (x * y)) /\
+     (!x r. integer x ==> integer (x pow r)) /\
+     (!x. integer x ==> integer (--x)) /\
+     (!x. integer x ==> integer (abs x)) /\
+     (!x y. integer x /\ integer y ==> integer (max x y)) /\
+     (!x y. integer x /\ integer y ==> integer (min x y))
+
+Tue  1st Jul 2014       sets.ml
+
+Added CROSS_UNIV = |- (:A) CROSS (:B) = (:A#B)
+
+Tue 27th May 2014       Library/permutations.ml
+
+Added three more lemmas about permutations:
+
+  CARD_EVEN_PERMUTATIONS =
+    |- !s. FINITE s /\ 2 <= CARD s
+           ==> 2 * CARD {p | p permutes s /\ evenperm p} = FACT (CARD s)
+
+  PERMUTES_INVOLUTION =
+    |- !p s. (!x. p (p x) = x) /\ (!x. ~(x IN s) ==> p x = x) ==> p permutes s
+
+  SIGN_INVOLUTION =
+    |- !p s.
+         FINITE s /\ (!x. p (p x) = x) /\ (!x. ~(x IN s) ==> p x = x)
+         ==> sign p = -- &1 pow (CARD {x | ~(p x = x)} DIV 2)
+
+Tue 27th May 2014       Library/floor.ml
+
+Added the following theorem, a natural counterpart for FLOOR_DIV_DIV
+
+  FRAC_DIV_MOD =
+   |- !m n. ~(n = 0) ==> frac(&m / &n) = &(m MOD n) / &n
+
 Mon 12th May 2014       Examples/gcdrecurrence.ml [new file]
 
 Added a new file with the cute result that the gcd operation "commutes" with
