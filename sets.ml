@@ -481,6 +481,34 @@ let SING_SUBSET = prove
 
 export_thm SING_SUBSET;;
 
+let SUBSET_SING = prove
+ (`!s (x:A). s SUBSET {x} <=> s = {} \/ s = {x}`,
+  REPEAT GEN_TAC THEN
+  ASM_CASES_TAC `(s : A set) = EMPTY` THENL
+  [POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [EMPTY_SUBSET];
+   ASM_REWRITE_TAC [SUBSET; IN_SING] THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    REWRITE_TAC [EXTENSION; IN_SING] THEN
+    X_GEN_TAC `z : A` THEN
+    EQ_TAC THENL
+    [STRIP_TAC THEN
+     FIRST_X_ASSUM MATCH_MP_TAC THEN
+     ASM_REWRITE_TAC [];
+     DISCH_THEN SUBST_VAR_TAC THEN
+     MP_TAC (ISPEC `s : A set` MEMBER_NOT_EMPTY) THEN
+     ASM_REWRITE_TAC [] THEN
+     DISCH_THEN (X_CHOOSE_THEN `y : A` STRIP_ASSUME_TAC) THEN
+     FIRST_X_ASSUM (MP_TAC o SPEC `y : A`) THEN
+     ASM_REWRITE_TAC [] THEN
+     DISCH_THEN (SUBST1_TAC o SYM) THEN
+     ASM_REWRITE_TAC []];
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [IN_SING]]]);;
+
+export_thm SUBSET_SING;;
+
 let SUBSET_RESTRICT = prove
  (`!s p. {x | (x:A) IN s /\ p x} SUBSET s`,
   REWRITE_TAC [SUBSET; IN_ELIM] THEN
@@ -701,20 +729,18 @@ let UNION_SUBSET = prove
 
 export_thm UNION_SUBSET;;
 
-let FORALL_SUBSET_INSERT = prove
- (`!a:A t. (!s. s SUBSET a INSERT t ==> P s) <=>
-           (!s. s SUBSET t ==> P s /\ P (a INSERT s))`,
+let UNION_ACI = prove
+ (`!(p : A set) q r.
+     (p UNION q = q UNION p) /\
+     ((p UNION q) UNION r = p UNION q UNION r) /\
+     (p UNION q UNION r = q UNION p UNION r) /\
+     (p UNION p = p) /\
+     (p UNION p UNION q = p UNION q)`,
+  PURE_REWRITE_TAC [EXTENSION; IN_UNION; GSYM FORALL_AND_THM] THEN
   REPEAT GEN_TAC THEN
-  ONCE_REWRITE_TAC[SET_RULE `a INSERT s = {a} UNION s`] THEN
-  REWRITE_TAC[FORALL_SUBSET_UNION; SET_RULE
-   `s SUBSET {a} <=> s = {} \/ s = {a}`] THEN
-  MESON_TAC[UNION_EMPTY]);;
+  MATCH_ACCEPT_TAC DISJ_ACI);;
 
-let EXISTS_SUBSET_INSERT = prove
- (`!a:A t. (?s. s SUBSET a INSERT t /\ P s) <=>
-           (?s. s SUBSET t /\ (P s \/ P (a INSERT s)))`,
-  REWRITE_TAC[MESON[] `(?x. P x /\ Q x) <=> ~(!x. P x ==> ~Q x)`] THEN
-  REWRITE_TAC[FORALL_SUBSET_INSERT] THEN MESON_TAC[]);;
+export_thm UNION_ACI;;
 
 (* ------------------------------------------------------------------------- *)
 (* Intersection.                                                             *)
@@ -819,6 +845,19 @@ let SUBSET_INTER = prove
    FIRST_ASSUM ACCEPT_TAC]);;
 
 export_thm SUBSET_INTER;;
+
+let INTER_ACI = prove
+ (`!(p : A set) q r.
+     (p INTER q = q INTER p) /\
+     ((p INTER q) INTER r = p INTER q INTER r) /\
+     (p INTER q INTER r = q INTER p INTER r) /\
+     (p INTER p = p) /\
+     (p INTER p INTER q = p INTER q)`,
+  PURE_REWRITE_TAC [EXTENSION; IN_INTER; GSYM FORALL_AND_THM] THEN
+  REPEAT GEN_TAC THEN
+  MATCH_ACCEPT_TAC CONJ_ACI);;
+
+export_thm INTER_ACI;;
 
 (* ------------------------------------------------------------------------- *)
 (* Distributivity.                                                           *)
@@ -1358,39 +1397,42 @@ let INSERT_DIFF = prove
 
 export_thm INSERT_DIFF;;
 
-let INSERT_AC = prove
- (`!(x:A) y s.
-     (x INSERT (y INSERT s) = y INSERT (x INSERT s)) /\
-     (x INSERT (x INSERT s) = x INSERT s)`,
-  REWRITE_TAC[INSERT_COMM; INSERT_INSERT]);;
-
-export_thm INSERT_AC;;
-
-let INTER_ACI = prove
- (`!(p : A set) q r.
-     (p INTER q = q INTER p) /\
-     ((p INTER q) INTER r = p INTER q INTER r) /\
-     (p INTER q INTER r = q INTER p INTER r) /\
-     (p INTER p = p) /\
-     (p INTER p INTER q = p INTER q)`,
-  PURE_REWRITE_TAC [EXTENSION; IN_INTER; GSYM FORALL_AND_THM] THEN
+let FORALL_SUBSET_INSERT = prove
+ (`!p (x:A) t.
+     (!s. s SUBSET x INSERT t ==> p s) <=>
+     (!s. s SUBSET t ==> p s /\ p (x INSERT s))`,
   REPEAT GEN_TAC THEN
-  MATCH_ACCEPT_TAC CONJ_ACI);;
+  ONCE_REWRITE_TAC [GSYM INSERT_UNION_SING] THEN
+  REWRITE_TAC [FORALL_SUBSET_UNION; SUBSET_SING] THEN
+  EQ_TAC THENL
+  [REPEAT STRIP_TAC THENL
+   [FIRST_X_ASSUM (MP_TAC o SPECL [`{} : A set`; `s : A set`]) THEN
+    ASM_REWRITE_TAC [UNION_EMPTY];
+    FIRST_X_ASSUM (MP_TAC o SPECL [`{x} : A set`; `s : A set`]) THEN
+    ASM_REWRITE_TAC []];
+   STRIP_TAC THEN
+   X_GEN_TAC `v : A set` THEN
+   X_GEN_TAC `u : A set` THEN
+   STRIP_TAC THENL
+   [FIRST_X_ASSUM (MP_TAC o SPEC `u : A set`) THEN
+    ASM_REWRITE_TAC [UNION_EMPTY] THEN
+    STRIP_TAC;
+    FIRST_X_ASSUM (MP_TAC o SPEC `u : A set`) THEN
+    ASM_REWRITE_TAC [] THEN
+    STRIP_TAC]]);;
 
-export_thm INTER_ACI;;
+export_thm FORALL_SUBSET_INSERT;;
 
-let UNION_ACI = prove
- (`!(p : A set) q r.
-     (p UNION q = q UNION p) /\
-     ((p UNION q) UNION r = p UNION q UNION r) /\
-     (p UNION q UNION r = q UNION p UNION r) /\
-     (p UNION p = p) /\
-     (p UNION p UNION q = p UNION q)`,
-  PURE_REWRITE_TAC [EXTENSION; IN_UNION; GSYM FORALL_AND_THM] THEN
+let EXISTS_SUBSET_INSERT = prove
+ (`!p (x:A) t.
+     (?s. s SUBSET x INSERT t /\ p s) <=>
+     (?s. s SUBSET t /\ (p s \/ p (x INSERT s)))`,
   REPEAT GEN_TAC THEN
-  MATCH_ACCEPT_TAC DISJ_ACI);;
+  MATCH_MP_TAC (TAUT `!x y. (~x <=> ~y) ==> (x <=> y)`) THEN
+  REWRITE_TAC [NOT_EXISTS_THM; TAUT `!x y. ~(x /\ y) <=> (x ==> ~y)`] THEN
+  REWRITE_TAC [FORALL_SUBSET_INSERT; DE_MORGAN_THM]);;
 
-export_thm UNION_ACI;;
+export_thm EXISTS_SUBSET_INSERT;;
 
 let DELETE_DIFF_SING = prove
  (`!x:A. !s. s DIFF (x INSERT EMPTY) = s DELETE x`,
@@ -1552,6 +1594,14 @@ let DISJOINT_DELETE_SYM = prove
   ASM_REWRITE_TAC []);;
 
 export_thm DISJOINT_DELETE_SYM;;
+
+let INSERT_AC = prove
+ (`!(x:A) y s.
+     (x INSERT (y INSERT s) = y INSERT (x INSERT s)) /\
+     (x INSERT (x INSERT s) = x INSERT s)`,
+  REWRITE_TAC[INSERT_COMM; INSERT_INSERT]);;
+
+export_thm INSERT_AC;;
 
 (* ------------------------------------------------------------------------- *)
 (* Big union.                                                                *)
@@ -2523,10 +2573,48 @@ let INTERS_GSPEC =
     CONJ INTERS_GSPEC1 (CONJ INTERS_GSPEC2 INTERS_GSPEC3);;
 
 let IMAGE_INTERS = prove
- (`!f s. ~(s = {}) /\
-         (!x y. x IN UNIONS s /\ y IN UNIONS s /\ f x = f y ==> x = y)
-         ==> IMAGE f (INTERS s) = INTERS(IMAGE (IMAGE f) s)`,
-  REWRITE_TAC[INTERS_IMAGE] THEN SET_TAC[]);;
+ (`!(f : A -> B) s.
+     ~(s = {}) /\
+     (!x y. x IN UNIONS s /\ y IN UNIONS s /\ f x = f y ==> x = y) ==>
+     IMAGE f (INTERS s) = INTERS (IMAGE (IMAGE f) s)`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [INTERS_IMAGE; EXTENSION] THEN
+  X_GEN_TAC `z : B` THEN
+  REWRITE_TAC [IN_IMAGE; IN_ELIM; IN_INTERS] THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   X_GEN_TAC `t : A set` THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `x : A` THEN
+   ASM_REWRITE_TAC [] THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [];
+   MP_TAC (ISPEC `s : (A set) set` MEMBER_NOT_EMPTY) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (X_CHOOSE_THEN `t : A set` STRIP_ASSUME_TAC) THEN
+   DISCH_THEN
+     (fun th ->
+        MP_TAC (SPEC `t : A set` th) THEN
+        ASM_REWRITE_TAC [] THEN
+        ASSUME_TAC th) THEN
+   DISCH_THEN (X_CHOOSE_THEN `x : A` STRIP_ASSUME_TAC) THEN
+   EXISTS_TAC `x : A` THEN
+   ASM_REWRITE_TAC [] THEN
+   X_GEN_TAC `u : A set` THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `u : A set`) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (X_CHOOSE_THEN `y : A` STRIP_ASSUME_TAC) THEN
+   SUBGOAL_THEN `(x : A) = y` (fun th -> ASM_REWRITE_TAC [th]) THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [IN_UNIONS] THEN
+   CONJ_TAC THENL
+   [EXISTS_TAC `t : A set` THEN
+    ASM_REWRITE_TAC [];
+    EXISTS_TAC `u : A set` THEN
+    ASM_REWRITE_TAC []]]);;
+
+export_thm IMAGE_INTERS;;
 
 let DIFF_INTERS = prove
  (`!(u : A set) s. u DIFF INTERS s = UNIONS {u DIFF t | t IN s}`,
@@ -4688,8 +4776,11 @@ let CROSS_EQ_EMPTY = prove
 export_thm CROSS_EQ_EMPTY;;
 
 let CROSS_UNIV = prove
- (`(:A) CROSS (:B) = (:A#B)`,
-  REWRITE_TAC[CROSS; EXTENSION; IN_ELIM_PAIR_THM; FORALL_PAIR_THM; IN_UNIV]);;
+ (`(UNIV : A set) CROSS (UNIV : B set) = (UNIV : (A # B) set)`,
+  REWRITE_TAC [CROSS; EXTENSION; FORALL_PAIR_THM; IN_ELIM_PAIR_THM] THEN
+  REWRITE_TAC [IN_UNIV]);;
+
+export_thm CROSS_UNIV;;
 
 (* ------------------------------------------------------------------------- *)
 (* Cardinality of functions with bounded domain (support) and range.         *)
