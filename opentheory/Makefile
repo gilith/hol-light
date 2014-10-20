@@ -196,3 +196,27 @@ theories:
 	@$(MAKE) info-theory-interpretations
 	@$(MAKE) info-extract-theories
 	@$(MAKE) info-check-theories
+
+###############################################################################
+# Extract the tiny set of theories used to test the opentheory tool.
+###############################################################################
+
+.PHONY: extract-tiny-theories
+extract-tiny-theories:
+	perl -ne 'BEGIN: { my $$found = 0; } if (!$$found) { chomp; if ($$_ =~ /bool[.]ml/) { $$found = 1; print "loads \"opentheory/tiny/bool.ml\";;\n" } else { print "$$_\n"; } }' < ../hol.ml > tiny/hol.ml
+	cd .. && echo '#use "opentheory/tiny/hol.ml";;' | OPENTHEORY_LOGGING=1 ocaml >opentheory/tiny/log 2>&1
+	if grep '^Exception:\|^Error:\|^Error in included file\|Warning: inventing type variables' tiny/log ; then cat tiny/log ; exit 1 ; fi
+
+.PHONY: info-extract-tiny-theories
+info-extract-tiny-theories:
+	@echo
+	@echo '+-----------------------+'
+	@echo '| Extract tiny theories |'
+	@echo '+-----------------------+'
+	@echo
+	@$(MAKE) extract-tiny-theories
+
+.PHONY: tiny-theories
+tiny-theories:
+	@$(MAKE) info-clean
+	@$(MAKE) info-extract-tiny-theories

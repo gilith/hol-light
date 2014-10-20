@@ -608,7 +608,10 @@ let thm_consts =
             consts_in_terms acc (b :: tms) in
     fun th -> consts_in_terms [] (concl th :: hyp th);;
 
+let debug_export_thm_enable = ref true;;
+
 let export_thm th =
+    if not (!debug_export_thm_enable) then () else
     let () =
         if not_logging () then () else
         let () = log_thm th in

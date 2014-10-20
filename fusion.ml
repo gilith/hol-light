@@ -539,7 +539,9 @@ module Hol : Hol_kernel = struct
 
   let read_proof (Sequent (_,rp)) = !rp
 
-  let replace_proof (Sequent (_,rp)) p = let () = rp := p in ()
+  let replace_proof (Sequent (_,rp)) p =
+      if not (!proof_logging_enabled) then () else
+      let () = rp := p in ()
 
   let delete_proof th = replace_proof th Axiom_proof
 
