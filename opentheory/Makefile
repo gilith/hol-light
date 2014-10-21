@@ -201,10 +201,22 @@ theories:
 # Extract the tiny set of theories used to test the opentheory tool.
 ###############################################################################
 
+.PHONY: prepare-tiny-theories
+prepare-tiny-theories:
+	perl -ne 'BEGIN: { my $$done = 0; } if (!$$done) { print "$$_"; chomp; if ($$_ =~ /opentheory[.]ml/) { print "Export.debug_export_thm_enable := false;;\n"; } elsif ($$_ =~ /drule[.]ml/) { print "loads \"opentheory/tiny/tiny.ml\";;\n"; $$done = 1; } }' < ../hol.ml > tiny/hol.ml
+
+.PHONY: info-prepare-tiny-theories
+info-prepare-tiny-theories:
+	@echo
+	@echo '+-----------------------+'
+	@echo '| Prepare tiny theories |'
+	@echo '+-----------------------+'
+	@echo
+	@$(MAKE) prepare-tiny-theories
+
 .PHONY: extract-tiny-theories
 extract-tiny-theories:
-	perl -ne 'BEGIN: { my $$found = 0; } if (!$$found) { chomp; if ($$_ =~ /bool[.]ml/) { $$found = 1; print "loads \"opentheory/tiny/bool.ml\";;\n" } else { print "$$_\n"; } }' < ../hol.ml > tiny/hol.ml
-	cd .. && echo '#use "opentheory/tiny/hol.ml";;' | OPENTHEORY_LOGGING=1 ocaml >opentheory/tiny/log 2>&1
+	cd .. && echo '#use "opentheory/tiny/hol.ml";;' | ocaml >opentheory/tiny/log 2>&1
 	if grep '^Exception:\|^Error:\|^Error in included file\|Warning: inventing type variables' tiny/log ; then cat tiny/log ; exit 1 ; fi
 
 .PHONY: info-extract-tiny-theories
@@ -219,4 +231,5 @@ info-extract-tiny-theories:
 .PHONY: tiny-theories
 tiny-theories:
 	@$(MAKE) info-clean
+	@$(MAKE) info-prepare-tiny-theories
 	@$(MAKE) info-extract-tiny-theories
