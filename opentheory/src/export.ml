@@ -314,8 +314,6 @@ let (log_term,log_thm,log_clear) =
         let _ = save ob in
         ()
     and log_subst ins = log_object (Object.mk_subst ins)
-    and log_type_subst tyins = log_subst (tyins,[])
-    and log_term_subst tmins = log_subst ([],tmins)
     and log_thm th =
         let ob = Object.Thm_object th in
         if saved ob then () else
@@ -349,7 +347,7 @@ let (log_term,log_thm,log_clear) =
                 let () = log_thm th2 in
                 let () = log_command "absThm" in
                 ()
-            | Beta_proof tm ->
+            | Beta_conv_proof tm ->
                 let () = log_term tm in
                 let () = log_command "betaConv" in
                 ()
@@ -367,13 +365,8 @@ let (log_term,log_thm,log_clear) =
                 let () = log_thm th2 in
                 let () = log_command "deductAntisym" in
                 ()
-            | Inst_type_proof (i1,th2) ->
-                let () = log_type_subst i1 in
-                let () = log_thm th2 in
-                let () = log_command "subst" in
-                ()
-            | Inst_proof (i1,th2) ->
-                let () = log_term_subst i1 in
+            | Subst_proof (i1,th2) ->
+                let () = log_subst i1 in
                 let () = log_thm th2 in
                 let () = log_command "subst" in
                 ()

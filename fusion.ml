@@ -29,12 +29,11 @@ module type Hol_kernel =
             | Trans_proof of thm * thm
             | Mk_comb_proof of thm * thm
             | Abs_proof of term * thm
-            | Beta_proof of term
+            | Beta_conv_proof of term
             | Assume_proof of term
             | Eq_mp_proof of thm * thm
             | Deduct_antisym_rule_proof of thm * thm
-            | Inst_type_proof of (hol_type * hol_type) list * thm
-            | Inst_proof of (term * term) list * thm
+            | Subst_proof of ((hol_type * hol_type) list * (term * term) list) * thm
             | New_basic_definition_proof of string
             | New_basic_type_definition_proof of bool * string
 
@@ -128,12 +127,11 @@ module Hol : Hol_kernel = struct
             | Trans_proof of thm * thm
             | Mk_comb_proof of thm * thm
             | Abs_proof of term * thm
-            | Beta_proof of term
+            | Beta_conv_proof of term
             | Assume_proof of term
             | Eq_mp_proof of thm * thm
             | Deduct_antisym_rule_proof of thm * thm
-            | Inst_type_proof of (hol_type * hol_type) list * thm
-            | Inst_proof of (term * term) list * thm
+            | Subst_proof of ((hol_type * hol_type) list * (term * term) list) * thm
             | New_basic_definition_proof of string
             | New_basic_type_definition_proof of bool * string
 
@@ -588,7 +586,7 @@ module Hol : Hol_kernel = struct
   let BETA tm =
     match tm with
       Comb(Abs(v,bod),arg) when Pervasives.compare arg v = 0
-        -> Sequent(([],safe_mk_eq tm bod), store_proof (Beta_proof tm))
+        -> Sequent(([],safe_mk_eq tm bod), store_proof (Beta_conv_proof tm))
     | _ -> failwith "BETA: not a trivial beta-redex"
 
 (* ------------------------------------------------------------------------- *)
@@ -619,12 +617,12 @@ module Hol : Hol_kernel = struct
   let INST_TYPE theta (Sequent((asl,c),_) as th) =
     let inst_fn = inst theta in
     Sequent((term_image inst_fn asl,inst_fn c),
-            store_proof (Inst_type_proof (theta,th)))
+            store_proof (Subst_proof ((theta,[]),th)))
 
   let INST theta (Sequent((asl,c),_) as th) =
     let inst_fun = vsubst theta in
     Sequent((term_image inst_fun asl,inst_fun c),
-            store_proof (Inst_proof (theta,th)))
+            store_proof (Subst_proof (([],theta),th)))
 
 (* ------------------------------------------------------------------------- *)
 (* Handling of axioms.                                                       *)

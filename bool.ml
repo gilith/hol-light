@@ -55,9 +55,12 @@ let mk_iff =
 (* ------------------------------------------------------------------------- *)
 
 let PINST tyin tmin =
-  let iterm_fn = INST (map (I F_F (inst tyin)) tmin)
+  let tmin' = map (I F_F (inst tyin)) tmin in
+  let iterm_fn = INST tmin'
   and itype_fn = INST_TYPE tyin in
-  fun th -> try iterm_fn (itype_fn th)
+  fun th -> try let res = iterm_fn (itype_fn th) in
+                let () = replace_proof res (Subst_proof ((tyin,tmin'),th)) in
+                res
             with Failure _ -> failwith "PINST";;
 
 (* ------------------------------------------------------------------------- *)

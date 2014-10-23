@@ -47,7 +47,9 @@ let BETA_CONV tm =
   try BETA tm with Failure _ ->
   try let f,arg = dest_comb tm in
       let v = bndvar f in
-      INST [arg,v] (BETA (mk_comb(f,v)))
+      let th = INST [arg,v] (BETA (mk_comb(f,v))) in
+      let () = replace_proof th (Beta_conv_proof tm) in
+      th
   with Failure _ -> failwith "BETA_CONV: Not a beta-redex";;
 
 (* ------------------------------------------------------------------------- *)
