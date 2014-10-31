@@ -365,6 +365,11 @@ let (log_term,log_thm,log_clear) =
                 let () = log_thm th2 in
                 let () = log_command "deductAntisym" in
                 ()
+            | Prove_hyp_proof (th1,th2) ->
+                let () = log_thm th1 in
+                let () = log_thm th2 in
+                let () = log_command "proveHyp" in
+                ()
             | Subst_proof (i1,th2) ->
                 let () = log_subst i1 in
                 let () = log_thm th2 in
