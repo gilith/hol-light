@@ -69,7 +69,9 @@ let PINST tyin tmin =
 
 let PROVE_HYP ath bth =
   if exists (aconv (concl ath)) (hyp bth)
-  then EQ_MP (DEDUCT_ANTISYM_RULE ath bth) ath
+  then let res = EQ_MP (DEDUCT_ANTISYM_RULE ath bth) ath in
+       let () = replace_proof res (Prove_hyp_proof (ath,bth)) in
+       res
   else bth;;
 
 (* ------------------------------------------------------------------------- *)

@@ -33,6 +33,7 @@ module type Hol_kernel =
             | Assume_proof of term
             | Eq_mp_proof of thm * thm
             | Deduct_antisym_rule_proof of thm * thm
+            | Prove_hyp_proof of thm * thm
             | Subst_proof of ((hol_type * hol_type) list * (term * term) list) * thm
             | New_basic_definition_proof of string
             | New_basic_type_definition_proof of bool * string
@@ -131,6 +132,7 @@ module Hol : Hol_kernel = struct
             | Assume_proof of term
             | Eq_mp_proof of thm * thm
             | Deduct_antisym_rule_proof of thm * thm
+            | Prove_hyp_proof of thm * thm
             | Subst_proof of ((hol_type * hol_type) list * (term * term) list) * thm
             | New_basic_definition_proof of string
             | New_basic_type_definition_proof of bool * string
