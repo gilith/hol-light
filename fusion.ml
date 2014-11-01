@@ -26,6 +26,7 @@ module type Hol_kernel =
       type proof =
               Axiom_proof
             | Refl_proof of term
+            | Sym_proof of thm
             | Trans_proof of thm * thm
             | Mk_comb_proof of thm * thm
             | Abs_proof of term * thm
@@ -125,6 +126,7 @@ module Hol : Hol_kernel = struct
 
   and proof = Axiom_proof
             | Refl_proof of term
+            | Sym_proof of thm
             | Trans_proof of thm * thm
             | Mk_comb_proof of thm * thm
             | Abs_proof of term * thm

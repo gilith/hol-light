@@ -69,7 +69,9 @@ let SYM th =
   let tm = concl th in
   let l,r = dest_eq tm in
   let lth = REFL l in
-  EQ_MP (MK_COMB(AP_TERM (rator (rator tm)) th,lth)) lth;;
+  let res = EQ_MP (MK_COMB(AP_TERM (rator (rator tm)) th,lth)) lth in
+  let () = replace_proof res (Sym_proof th) in
+  res;;
 
 let ALPHA tm1 tm2 =
   try TRANS (REFL tm1) (REFL tm2)

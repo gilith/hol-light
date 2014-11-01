@@ -123,7 +123,7 @@ let log_pair (log_a : 'a -> unit) (log_b : 'b -> unit) (a,b) =
 let log_type_var s = log_type_var_name s;;
 
 (* ------------------------------------------------------------------------- *)
-(* The dictionary.                                                           *)
+(* Logging terms and theorems.                                               *)
 (* ------------------------------------------------------------------------- *)
 
 let (log_term,log_thm,log_clear) =
@@ -145,7 +145,7 @@ let (log_term,log_thm,log_clear) =
         match !log_state with
           Active_logging (_,ld) -> peek_log_dict ld obj
         | _ -> failwith "Export.peek: not actively logging" in
-    let save obj =
+    let save_top_obj obj =
         match !log_state with
           Active_logging (_,ld) ->
           (match peek obj with
@@ -156,7 +156,16 @@ let (log_term,log_thm,log_clear) =
              let () = log_num k in
              let () = log_command "def" in
              k)
-        | _ -> failwith "Export.save: not actively logging" in
+        | _ -> failwith "Export.save_top_obj: not actively logging" in
+    let save_top () =
+        let () =
+            match !log_state with
+              Active_logging _ -> ()
+            | _ -> failwith "Export.save_top: not actively logging" in
+         let k = next_key () in
+         let () = log_num k in
+         let () = log_command "def" in
+         k in
     let log_clear () =
         let rec clear_up_to k =
             if k = 0 then () else
@@ -167,18 +176,25 @@ let (log_term,log_thm,log_clear) =
             clear_up_to k in
         let () = clear_up_to (next_key ()) in
         () in
+    let get_saved k =
+        let () = log_num k in
+        let () = log_command "ref" in
+        () in
     let saved obj =
         match (peek obj) with
           Some k ->
-            let () = log_num k in
-            let () = log_command "ref" in
+            let () = get_saved k in
             true
         | None ->
             false in
     let rec log_type_op_def (exists_th,(ar,ra)) =
-        let lhs tm = fst (dest_eq tm) in
         let range ty = hd (tl (snd (dest_type ty))) in
-        let (absTm,repTm) = dest_comb (lhs (concl ar)) in
+        let (predTm,repAbsREqRTm) = dest_comb (concl ra) in
+        let (iffTm,predTm) = dest_comb predTm in
+        let (predTm,rTm) = dest_comb predTm in
+        let (absRepATm,aTm) = dest_comb (concl ar) in
+        let (eqTm,absRepATm) = dest_comb absRepATm in
+        let (absTm,repTm) = dest_comb absRepATm in
         let (repTm,_) = dest_const (rator repTm) in
         let (absTm,newTy) = dest_const absTm in
         let newTy = range newTy in
@@ -190,15 +206,48 @@ let (log_term,log_thm,log_clear) =
         let () = log_list log_type_var tyVars in
         let () = log_thm exists_th in
         let () = log_command "defineTypeOp" in
-        let ra_k = save (Object.Thm_object ra) in
+        let rap_k = save_top () in
         let () = log_command "pop" in
-        let ar_k = save (Object.Thm_object ar) in
+        let arp_k = save_top () in
         let () = log_command "pop" in
-        let rep_k = save (Object.Const_object repTm) in
+        let rep_k = save_top_obj (Object.Const_object repTm) in
         let () = log_command "pop" in
-        let abs_k = save (Object.Const_object absTm) in
+        let abs_k = save_top_obj (Object.Const_object absTm) in
         let () = log_command "pop" in
-        let ty_k = save (Object.Type_op_object newTy) in
+        let ty_k = save_top_obj (Object.Type_op_object newTy) in
+        let () = log_command "pop" in
+        (* Derive HOL Light absRepTh from OpenTheory absRepTh *)
+        let () = log_term eqTm in
+        let () = log_command "refl" in
+        let () = log_term (mk_comb (mk_abs (aTm,absRepATm), aTm)) in
+        let () = log_command "betaConv" in
+        let () = log_command "appThm" in
+        let () = log_term (mk_comb (mk_abs (aTm,aTm), aTm)) in
+        let () = log_command "betaConv" in
+        let () = log_command "appThm" in
+        let () = get_saved arp_k in
+        let () = log_term aTm in
+        let () = log_command "refl" in
+        let () = log_command "appThm" in
+        let () = log_command "eqMp" in
+        let ar_k = save_top_obj (Object.Thm_object ar) in
+        let () = log_command "pop" in
+        (* Derive HOL Light repAbsTh from OpenTheory repAbsTh *)
+        let () = log_term iffTm in
+        let () = log_command "refl" in
+        let () = log_term (mk_comb (mk_abs (rTm,predTm), rTm)) in
+        let () = log_command "betaConv" in
+        let () = log_command "appThm" in
+        let () = log_term (mk_comb (mk_abs (rTm,repAbsREqRTm), rTm)) in
+        let () = log_command "betaConv" in
+        let () = log_command "appThm" in
+        let () = get_saved rap_k in
+        let () = log_term rTm in
+        let () = log_command "refl" in
+        let () = log_command "appThm" in
+        let () = log_command "eqMp" in
+        let () = log_command "sym" in
+        let ra_k = save_top_obj (Object.Thm_object ra) in
         let () = log_command "pop" in
         (ty_k,abs_k,rep_k,ar_k,ra_k)
     and log_type_op ty =
@@ -213,7 +262,7 @@ let (log_term,log_thm,log_clear) =
         | None ->
             let () = log_type_op_name ty in
             let () = log_command "typeOp" in
-            let _ = save ob in
+            let _ = save_top_obj ob in
             ()
     and log_type ty =
         let ob = Object.Type_object ty in
@@ -229,7 +278,7 @@ let (log_term,log_thm,log_clear) =
               let () = log_type_var (dest_vartype ty) in
               let () = log_command "varType" in
               () in
-        let _ = save ob in
+        let _ = save_top_obj ob in
         ()
     and log_const_def th =
         let (c,tm) = dest_eq (concl th) in
@@ -237,9 +286,9 @@ let (log_term,log_thm,log_clear) =
         let () = log_const_name c in
         let () = log_term tm in
         let () = log_command "defineConst" in
-        let th_k = save (Object.Thm_object th) in
+        let th_k = save_top_obj (Object.Thm_object th) in
         let () = log_command "pop" in
-        let c_k = save (Object.Const_object c) in
+        let c_k = save_top_obj (Object.Const_object c) in
         let () = log_command "pop" in
         (c_k,th_k)
     and log_const c =
@@ -249,7 +298,7 @@ let (log_term,log_thm,log_clear) =
           None ->
             let () = log_const_name c in
             let () = log_command "const" in
-            let _ = save ob in
+            let _ = save_top_obj ob in
             ()
         | Some def ->
             match def with
@@ -283,7 +332,7 @@ let (log_term,log_thm,log_clear) =
         let () = log_var_name n in
         let () = log_type ty in
         let () = log_command "var" in
-        let _ = save ob in
+        let _ = save_top_obj ob in
         ()
     and log_term tm =
         let ob = Object.Term_object tm in
@@ -311,7 +360,7 @@ let (log_term,log_thm,log_clear) =
               let () = log_term b in
               let () = log_command "absTerm" in
               () in
-        let _ = save ob in
+        let _ = save_top_obj ob in
         ()
     and log_subst ins = log_object (Object.mk_subst ins)
     and log_thm th =
@@ -328,14 +377,14 @@ let (log_term,log_thm,log_clear) =
                 let () = log_term tm in
                 let () = log_command "refl" in
                 ()
+            | Sym_proof th ->
+                let () = log_thm th in
+                let () = log_command "sym" in
+                ()
             | Trans_proof (th1,th2) ->
-                let tm = rator (concl th1) in
-                let () = log_term tm in
-                let () = log_command "refl" in
-                let () = log_thm th2 in
-                let () = log_command "appThm" in
                 let () = log_thm th1 in
-                let () = log_command "eqMp" in
+                let () = log_thm th2 in
+                let () = log_command "trans" in
                 ()
             | Mk_comb_proof (th1,th2) ->
                 let () = log_thm th1 in
@@ -393,7 +442,7 @@ let (log_term,log_thm,log_clear) =
                      ()
                  | _ ->
                    failwith ("thm out of type op definition scope: " ^ ty)) in
-        let _ = save ob in
+        let _ = save_top_obj ob in
         ()
     and log_object obj =
         if saved obj then () else
@@ -513,6 +562,8 @@ let logfile thy =
         let h = open_out file in
         let ld = new_log_dict true in
         let () = log_state := Active_logging (h,ld) in
+        let () = log_num 6 in
+        let () = log_command "version" in
         ()
     | _ -> ();;
 
