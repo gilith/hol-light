@@ -4,10 +4,11 @@
 (* ========================================================================= *)
 
 type type_op_definition =
-     Type_op_definition of (thm * (thm * thm));;
+     Type_op_definition of thm * (thm * thm);;
 
 type const_definition =
      Const_definition of thm
+   | Const_list_definition of thm * int
    | Abs_type_definition of string
    | Rep_type_definition of string;;
 
@@ -32,6 +33,7 @@ let (peek_type_op_definition,
 let (peek_const_definition,
      add_const_definition,
      delete_const_definition,
+     replace_const_definition,
      list_const_definition) =
     let the_defs = ref ([] : (string * const_definition) list) in
     let mem c = List.mem_assoc c (!the_defs) in
@@ -44,8 +46,13 @@ let (peek_const_definition,
         let pred (c,_) = not (List.mem c cs) in
         let () = the_defs := List.filter pred (!the_defs) in
         () in
+    let replace c def =
+        if not (mem c) then failwith "no definition of const" else
+        let () = delete [c] in
+        let () = add c def in
+        () in
     let list () = !the_defs in
-    (peek,add,delete,list);;
+    (peek,add,delete,replace,list);;
 
 let new_basic_definition tm =
     let th = new_basic_definition tm in

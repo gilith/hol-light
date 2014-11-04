@@ -38,6 +38,7 @@ module type Hol_kernel =
             | Subst_proof of ((hol_type * hol_type) list * (term * term) list) * thm
             | New_basic_definition_proof of string
             | New_basic_type_definition_proof of bool * string
+            | Define_const_list_proof of (string * term) list * thm
 
       val types: unit -> (string * int)list
       val get_type_arity : string -> int
@@ -138,6 +139,7 @@ module Hol : Hol_kernel = struct
             | Subst_proof of ((hol_type * hol_type) list * (term * term) list) * thm
             | New_basic_definition_proof of string
             | New_basic_type_definition_proof of bool * string
+            | Define_const_list_proof of (string * term) list * thm
 
 (* ------------------------------------------------------------------------- *)
 (* List of current type constants with their arities.                        *)

@@ -456,4 +456,48 @@ let new_specification =
           the_specifications := ((names,th),sth)::(!the_specifications);
           sth;;
 
+(* ------------------------------------------------------------------------- *)
+(* The new principle of constant definition.                                 *)
+(* ------------------------------------------------------------------------- *)
+
+let define_const_list =
+    let vassoc (v : term) =
+        let pred (u, (_ : term)) = u = v in
+        fun vm ->
+        match partition pred vm with
+          ([],vm) -> (None,vm)
+        | ([(_,tm)],vm) -> (Some tm, vm)
+        | (_ :: _ :: _, _) -> failwith "repeated vars" in
+    let add tm vm =
+        let (v,tm) = dest_eq tm in
+        let () =
+            match vassoc v vm with
+              (None,_) -> ()
+            | (Some _, _) -> failwith "repeated vars in assumptions" in
+        (v,tm) :: vm in
+    let del (n,v) vm =
+        let (tm,vm) =
+            match vassoc v vm with
+              (None,_) -> failwith "given var not in assumptions"
+            | (Some tm, vm) -> (tm,vm) in
+        let def = new_basic_definition (mk_eq (mk_var (n, type_of v), tm)) in
+        let (c,_) = dest_eq (concl def) in
+        (((c,v),def),vm) in
+    fun nvs -> fun th ->
+    let vm = rev_itlist add (hyp th) [] in
+    let () =
+        if subset (frees (concl th)) (map snd nvs) then () else
+        failwith "additional free vars in definition theorem" in
+    let (sub,defs) =
+        let (sub_defs,vm) = maps del nvs vm in
+        let () =
+            match vm with
+              [] -> ()
+            | _ :: _ ->
+              failwith "additional assumptions in definition theorem" in
+        unzip sub_defs in
+    let res = rev_itlist PROVE_HYP defs (INST sub th) in
+    let () = replace_proof res (Define_const_list_proof (nvs,th)) in
+    res;;
+
 logfile_end ();;
