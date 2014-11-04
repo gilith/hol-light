@@ -460,17 +460,16 @@ let new_specification =
 (* The new principle of constant definition.                                 *)
 (* ------------------------------------------------------------------------- *)
 
-let maps (f : 'a -> 's -> 'b * 's) =
-    let rec m xs s =
-        match xs with
-          [] -> ([],s)
-        | x :: xs ->
-          let (y,s) = f x s in
-          let (ys,s) = m xs s in
-          (y :: ys, s) in
-     m;;
-
 let define_const_list =
+    let maps (f : 'a -> 's -> 'b * 's) =
+        let rec m xs s =
+            match xs with
+              [] -> ([],s)
+            | x :: xs ->
+              let (y,s) = f x s in
+              let (ys,s) = m xs s in
+              (y :: ys, s) in
+         m in
     let vassoc (v : term) =
         let pred (u, (_ : term)) = u = v in
         fun vm ->
@@ -517,7 +516,7 @@ let define_const_list =
         replace_proof res (Define_const_list_proof c) in
     let () =
         let f c i =
-            let cdef = Const_list_definition ((nvs,th),(res,i)) in
+            let cdef = Const_list_definition (((nvs,th),res),i) in
             let () = replace_const_definition c cdef in
             i + 1 in
         let _ = rev_itlist f cs 0 in

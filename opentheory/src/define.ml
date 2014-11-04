@@ -8,7 +8,7 @@ type type_op_definition =
 
 type const_definition =
      Const_definition of thm
-   | Const_list_definition of (((string * term) list * thm) * (thm * int))
+   | Const_list_definition of ((((string * term) list * thm) * thm) * int)
    | Abs_type_definition of string
    | Rep_type_definition of string;;
 

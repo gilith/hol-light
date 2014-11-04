@@ -291,6 +291,25 @@ let (log_term,log_thm,log_clear) =
         let c_k = save_top_obj (Object.Const_object c) in
         let () = log_command "pop" in
         (c_k,th_k)
+    and log_const_list_def (((nvs,th),def),i) =
+        let () = log_list (log_pair log_const_name log_var) nvs in
+        let () = log_thm th in
+        let () = log_command "defineConstList" in
+        let def_k = save_top_obj (Object.Thm_object def) in
+        let () = log_command "pop" in
+        let c_ks =
+            let rec f l =
+                match l with
+                  [] -> let () = log_command "pop" in []
+                | (c,_) :: l ->
+                  let () = log_command "hdTl" in
+                  let c_ks = f l in
+                  let c_k = save_top_obj (Object.Const_object c) in
+                  let () = log_command "pop" in
+                  c_k :: c_ks in
+            f nvs in
+        let c_k = el i c_ks in
+        (c_k,def_k)
     and log_const c =
         let ob = Object.Const_object c in
         if saved ob then () else
@@ -304,6 +323,11 @@ let (log_term,log_thm,log_clear) =
             match def with
               Const_definition cdef ->
                 let (k,_) = log_const_def cdef in
+                let () = log_num k in
+                let () = log_command "ref" in
+                ()
+            | Const_list_definition cdef ->
+                let (k,_) = log_const_list_def cdef in
                 let () = log_num k in
                 let () = log_command "ref" in
                 ()
@@ -441,7 +465,16 @@ let (log_term,log_thm,log_clear) =
                      let () = log_command "ref" in
                      ()
                  | _ ->
-                   failwith ("thm out of type op definition scope: " ^ ty)) in
+                   failwith ("thm out of type op definition scope: " ^ ty))
+            | Define_const_list_proof c ->
+                (match (peek_const_def c) with
+                   Some (Const_list_definition cdef) ->
+                     let (_,k) = log_const_list_def cdef in
+                     let () = log_num k in
+                     let () = log_command "ref" in
+                     ()
+                 | _ ->
+                   failwith ("thm out of const list definition scope: " ^ c)) in
         let _ = save_top_obj ob in
         ()
     and log_object obj =
