@@ -4,11 +4,11 @@
 (* ========================================================================= *)
 
 type type_op_definition =
-     Type_op_definition of thm * (thm * thm);;
+     Type_op_definition of (thm * (thm * thm));;
 
 type const_definition =
      Const_definition of thm
-   | Const_list_definition of thm * int
+   | Const_list_definition of (((string * term) list * thm) * (thm * int))
    | Abs_type_definition of string
    | Rep_type_definition of string;;
 

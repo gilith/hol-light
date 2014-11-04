@@ -460,6 +460,16 @@ let new_specification =
 (* The new principle of constant definition.                                 *)
 (* ------------------------------------------------------------------------- *)
 
+let maps (f : 'a -> 's -> 'b * 's) =
+    let rec m xs s =
+        match xs with
+          [] -> ([],s)
+        | x :: xs ->
+          let (y,s) = f x s in
+          let (ys,s) = m xs s in
+          (y :: ys, s) in
+     m;;
+
 let define_const_list =
     let vassoc (v : term) =
         let pred (u, (_ : term)) = u = v in
@@ -482,22 +492,46 @@ let define_const_list =
             | (Some tm, vm) -> (tm,vm) in
         let def = new_basic_definition (mk_eq (mk_var (n, type_of v), tm)) in
         let (c,_) = dest_eq (concl def) in
-        (((c,v),def),vm) in
+        (((n,(c,v)),def),vm) in
     fun nvs -> fun th ->
     let vm = rev_itlist add (hyp th) [] in
     let () =
         if subset (frees (concl th)) (map snd nvs) then () else
         failwith "additional free vars in definition theorem" in
-    let (sub,defs) =
-        let (sub_defs,vm) = maps del nvs vm in
+    let (cs,sub,defs) =
+        let (cs_sub_defs,vm) = maps del nvs vm in
         let () =
             match vm with
               [] -> ()
             | _ :: _ ->
               failwith "additional assumptions in definition theorem" in
-        unzip sub_defs in
+        let (cs_sub,defs) = unzip cs_sub_defs in
+        let (cs,sub) = unzip cs_sub in
+        (cs,sub,defs) in
     let res = rev_itlist PROVE_HYP defs (INST sub th) in
-    let () = replace_proof res (Define_const_list_proof (nvs,th)) in
+    let () =
+        let c =
+            match cs with
+              [] -> failwith "no constants being defined"
+            | c :: _ -> c in
+        replace_proof res (Define_const_list_proof c) in
+    let () =
+        let f c i =
+            let cdef = Const_list_definition ((nvs,th),(res,i)) in
+            let () = replace_const_definition c cdef in
+            i + 1 in
+        let _ = rev_itlist f cs 0 in
+        () in
     res;;
+
+let new_specification =
+    let exists_conv = RATOR_CONV (REWR_CONV EXISTS_THM) THENC BETA_CONV in
+    let f n th =
+        let (v,_) = dest_exists (concl th) in
+        let th = CONV_RULE exists_conv th in
+        let rth = SYM (ASSUME (mk_eq (v, rand (concl th)))) in
+        let th = CONV_RULE (RAND_CONV (K rth) THENC BETA_CONV) th in
+        define_const_list [(n,v)] th in
+    rev_itlist f;;
 
 logfile_end ();;
