@@ -82,10 +82,13 @@ const "HOLLight.SND" as "Data.Pair.snd"
 
 type "HOLLight.sum" as "Data.Sum.+"
 
+const "HOLLight.case_sum" as "Data.Sum.case.left.right"
 const "HOLLight.OUTL" as "Data.Sum.destLeft"
 const "HOLLight.OUTR" as "Data.Sum.destRight"
 const "HOLLight.INL" as "Data.Sum.left"
 const "HOLLight.INR" as "Data.Sum.right"
+const "HOLLight.ISL" as "Data.Sum.isLeft"
+const "HOLLight.ISR" as "Data.Sum.isRight"
 
 # Data.Unit
 

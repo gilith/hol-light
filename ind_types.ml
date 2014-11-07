@@ -767,7 +767,7 @@ let parse_inductive_type_specification =
 
 logfile "sum-def";;
 
-let sum_INDUCT,sum_RECURSION =
+let (sum_INDUCT,sum_RECURSION) =
   let (induct,recursion) =
     define_type_raw
       (parse_inductive_type_specification "sum = INL A | INR B") in
@@ -793,6 +793,81 @@ let OUTR = new_recursive_definition sum_RECURSION
   `!b. OUTR ((INR b) : A + B) = b`;;
 
 export_thm OUTR;;
+
+let (ISL_INL,ISL_INR) =
+    let def = new_recursive_definition sum_RECURSION
+        `(!a. ISL ((INL a) : A + B) = T) /\
+         (!b. ISL ((INR b) : A + B) = F)` in
+    CONJ_PAIR (REWRITE_RULE [] def);;
+
+export_thm ISL_INL;;
+export_thm ISL_INR;;
+
+let ISL_def = CONJ ISL_INL ISL_INR;;
+
+let (ISR_INL,ISR_INR) =
+    let def = new_recursive_definition sum_RECURSION
+        `(!a. ISR ((INL a) : A + B) = F) /\
+         (!b. ISR ((INR b) : A + B) = T)` in
+    CONJ_PAIR (REWRITE_RULE [] def);;
+
+export_thm ISR_INL;;
+export_thm ISR_INR;;
+
+let ISR_def = CONJ ISR_INL ISR_INR;;
+
+let (case_sum_left,case_sum_right) =
+  let def = new_recursive_definition sum_RECURSION
+    `(!(f : A -> C) (g : B -> C) a. case_sum f g ((INL a) : A + B) = f a) /\
+     (!(f : A -> C) (g : B -> C) b. case_sum f g ((INR b) : A + B) = g b)` in
+  CONJ_PAIR def;;
+
+export_thm case_sum_left;;
+export_thm case_sum_right;;
+
+let case_sum_def = CONJ case_sum_left case_sum_right;;
+
+logfile "sum-thm";;
+
+let sum_CASES = prove
+ (`!x : A + B. (?a. x = INL a) \/ (?b. x = INR b)`,
+  MATCH_MP_TAC sum_INDUCT THEN
+  REPEAT STRIP_TAC THENL
+  [DISJ1_TAC THEN
+   EXISTS_TAC `a : A` THEN
+   REFL_TAC;
+   DISJ2_TAC THEN
+   EXISTS_TAC `b : B` THEN
+   REFL_TAC]);;
+
+export_thm sum_CASES;;
+
+let case_sum_id = prove
+ (`!(x : A + B). case_sum INL INR x = x`,
+  GEN_TAC THEN
+  MP_TAC (SPEC `x : A + B` sum_CASES) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [case_sum_def]);;
+
+export_thm case_sum_id;;
+
+let ISL_case_sum = prove
+ (`!(f : A -> C) (g : B -> C) x. ISL x ==> case_sum f g x = f (OUTL x)`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPEC `x : A + B` sum_CASES) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [case_sum_def; ISL_def; OUTL]);;
+
+export_thm ISL_case_sum;;
+
+let ISR_case_sum = prove
+ (`!(f : A -> C) (g : B -> C) x. ISR x ==> case_sum f g x = g (OUTR x)`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPEC `x : A + B` sum_CASES) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [case_sum_def; ISR_def; OUTR]);;
+
+export_thm ISR_case_sum;;
 
 (* ------------------------------------------------------------------------- *)
 (* Generalize the recursion theorem to multiple domain types.                *)
