@@ -509,11 +509,9 @@ let define_const_list =
         (cs,sub,defs) in
     let res = rev_itlist PROVE_HYP defs (INST sub th) in
     let () =
-        let c =
-            match cs with
-              [] -> failwith "no constants being defined"
-            | c :: _ -> c in
-        replace_proof res (Define_const_list_proof c) in
+        match cs with
+          [] -> ()
+        | c :: _ -> replace_proof res (Define_const_list_proof c) in
     let () =
         let f c i =
             let cdef = Const_list_definition (((nvs,th),res),i) in
