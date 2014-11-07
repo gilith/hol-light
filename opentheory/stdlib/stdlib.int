@@ -95,15 +95,18 @@ const "HOLLight.one" as "Data.Unit.()"
 
 # Function
 
-const "HOLLight.C" as "Function.C"
+const "HOLLight.C" as "Function.flip"
 const "HOLLight.funpow" as "Function.^"
 const "HOLLight.I" as "Function.id"
 const "HOLLight.ONE_ONE" as "Function.injective"
-const "HOLLight.K" as "Function.K"
+const "HOLLight.K" as "Function.const"
 const "HOLLight.o" as "Function.o"
-const "HOLLight.S" as "Function.S"
 const "HOLLight.ONTO" as "Function.surjective"
-const "HOLLight.W" as "Function.W"
+
+# Function.Combinator
+
+const "HOLLight.S" as "Function.Combinator.s"
+const "HOLLight.W" as "Function.Combinator.w"
 
 # Number
 
