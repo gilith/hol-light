@@ -43,18 +43,6 @@ export_thm test_th;;
 logfile_end ();;
 
 (* ------------------------------------------------------------------------- *)
-(* Testing the QBF cloud tactic                                              *)
-(* ------------------------------------------------------------------------- *)
-
-logfile "qbf";;
-
-let qbf_query = new_axiom `?x. !y. ?z. (~x \/ ~y) /\ (~z \/ ~y)`;;
-
-export_thm qbf_query;;
-
-logfile_end ();;
-
-(* ------------------------------------------------------------------------- *)
 (* Testing removal of Unwanted.id constants                                  *)
 (* ------------------------------------------------------------------------- *)
 
@@ -147,7 +135,7 @@ logfile_end ();;
 (* Testing generation of theory theorems.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "example10";;
+logfile "theorems1";;
 
 let def1 = new_basic_definition `c1 = \f x. (f : A -> B) x`;;
 
@@ -170,6 +158,18 @@ let (abs_rep2,rep_abs2) =
 
 export_thm abs_rep2;;
 export_thm rep_abs2;;
+
+logfile_end ();;
+
+(* ------------------------------------------------------------------------- *)
+(* Testing the QBF cloud tactic                                              *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "qbf1";;
+
+let qbf_query = new_axiom `?x. !y. ?z. (~x \/ ~y) /\ (~z \/ ~y)`;;
+
+export_thm qbf_query;;
 
 logfile_end ();;
 
