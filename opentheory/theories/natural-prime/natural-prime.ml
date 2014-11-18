@@ -334,13 +334,13 @@ let primes_mono_le_imp = prove
   (`!i j. i <= j ==> snth primes i <= snth primes j`,
    REWRITE_TAC [primes_mono_le]);;
 
-export_thm primes_mono_le;;
+export_thm primes_mono_le_imp;;
 
 let primes_mono_lt_imp = prove
   (`!i j. i < j ==> snth primes i < snth primes j`,
    REWRITE_TAC [primes_mono_lt]);;
 
-export_thm primes_mono_le;;
+export_thm primes_mono_lt_imp;;
 
 let snth_primes_zero = prove
   (`snth primes 0 = 2`,

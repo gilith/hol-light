@@ -476,7 +476,7 @@ let bit_tl_zero = prove
    MATCH_MP_TAC DIV_LT THEN
    REWRITE_TAC [LT_NZ; two_nonzero]);;
 
-export_thm bit_hd_zero;;
+export_thm bit_tl_zero;;
 
 let bit_tl_one = prove
   (`bit_tl 1 = 0`,

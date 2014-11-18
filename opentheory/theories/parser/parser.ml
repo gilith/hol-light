@@ -627,7 +627,7 @@ let dest_parse_all = prove
    REWRITE_TAC
      [parse_all_def; GSYM (CONJUNCT2 parser_tybij); is_parser_all]);;
 
-export_thm dest_parse_none;;
+export_thm dest_parse_all;;
 
 let parse_parse_all_cons = prove
   (`!(x : A) s. parse parse_all (ConsPstream x s) = SOME (x,s)`,

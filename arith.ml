@@ -917,7 +917,7 @@ let SUB_SUB = prove
   REWRITE_TAC [ADD_SUB2] THEN
   REWRITE_TAC [GSYM ADD_ASSOC; ADD_SUB2]);;
 
-export_thm SUB_ADD;;
+export_thm SUB_SUB;;
 
 let SUB_REFL = prove
  (`!n. n - n = 0`,
