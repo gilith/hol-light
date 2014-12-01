@@ -2710,9 +2710,17 @@ export_thm INTERS_OVER_UNIONS;;
 logfile "set-finite-def";;
 
 let FINITE_RULES,FINITE_INDUCT,FINITE_CASES =
-  new_inductive_definition
-    `FINITE (EMPTY : A set) /\
-     !(x:A) s. FINITE s ==> FINITE (x INSERT s)`;;
+    let (rules,induct,cases) =
+        new_inductive_definition
+          `FINITE (EMPTY : A set) /\
+           !(x:A) s. FINITE s ==> FINITE (x INSERT s)` in
+    let induct =
+        let (v,b) = dest_forall (concl induct) in
+        let (s,ty) = dest_var v in
+        let w = mk_var ("p",ty) in
+        let tm = mk_forall (w, subst [(w,v)] b) in
+        prove (tm, ACCEPT_TAC induct) in
+    (rules,induct,cases);;
 
 export_thm FINITE_INDUCT;;
 export_thm FINITE_CASES;;
@@ -2927,8 +2935,9 @@ let FINITE_IMAGE = prove
 export_thm FINITE_IMAGE;;
 
 let FINITE_IMAGE_INJ_GENERAL = prove
- (`!(f:A->B) A s. (!x y. x IN s /\ y IN s /\ (f(x) = f(y)) ==> (x = y)) /\
-                  FINITE A ==> FINITE {x | x IN s /\ f(x) IN A}`,
+ (`!(f:A->B) t s.
+     (!x y. x IN s /\ y IN s /\ (f(x) = f(y)) ==> (x = y)) /\ FINITE t ==>
+     FINITE {x | x IN s /\ f(x) IN t}`,
   GEN_TAC THEN
   ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
   GEN_TAC THEN
