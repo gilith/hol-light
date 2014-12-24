@@ -179,6 +179,7 @@ loads "opentheory/theories/h/h.ml";;
 loads "opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.ml";;
 *)
 
+(***
 (* ------------------------------------------------------------------------- *)
 (* The Haskell base.                                                         *)
 (* ------------------------------------------------------------------------- *)
@@ -202,3 +203,4 @@ loads "opentheory/theories/haskell-char/haskell-char.ml";;
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/haskell-prime/haskell-prime.ml";;
+***)

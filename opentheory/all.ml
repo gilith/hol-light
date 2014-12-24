@@ -16,6 +16,17 @@
 loads "opentheory/theories/all.ml";;
 
 (* ------------------------------------------------------------------------- *)
+(* Output the loaded files.                                                  *)
+(* ------------------------------------------------------------------------- *)
+
+let () =
+    let h = open_out ("opentheory/files") in
+    let output_filename f = output_string h (f ^ "\n") in
+    let () = List.iter output_filename (rev (!loaded_filenames)) in
+    let () = close_out h in
+    ();;
+
+(* ------------------------------------------------------------------------- *)
 (* Create a theorem database.                                                *)
 (* ------------------------------------------------------------------------- *)
 

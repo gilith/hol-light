@@ -115,9 +115,11 @@ info-theory-interpretations:
 # Extract the theories.
 ###############################################################################
 
+.PHONY: extract-theories
 extract-theories:
 	cd .. && OPENTHEORY_LOGGING=1 opentheory/scripts/capture
 
+.PHONY: info-extract-theories
 info-extract-theories:
 	@echo
 	@echo '+------------------+'
@@ -130,54 +132,16 @@ info-extract-theories:
 # Check the theory sources.
 ###############################################################################
 
-THEORY_SOURCES = \
-  pair.ml \
-  nums.ml \
-  recursion.ml \
-  arith.ml \
-  calc_num.ml \
-  sets.ml \
-  relations.ml \
-  wf.ml \
-  normalizer.ml \
-  grobner.ml \
-  ind_types.ml \
-  lists.ml \
-  realax.ml \
-  opentheory/theories/tactics.ml \
-  opentheory/theories/option/option.ml \
-  opentheory/theories/list/list.ml \
-  opentheory/theories/stream/stream.ml \
-  opentheory/theories/probability/probability.ml \
-  opentheory/theories/natural-bits/natural-bits.ml \
-  opentheory/theories/natural-divides/natural-divides.ml \
-  opentheory/theories/natural-gcd/natural-gcd.ml \
-  opentheory/theories/natural-prime/natural-prime.ml \
-  opentheory/theories/natural-fibonacci/natural-fibonacci.ml \
-  opentheory/theories/monoid/monoid.ml \
-  opentheory/theories/group/group.ml \
-  opentheory/theories/ring.ml \
-  opentheory/theories/field.ml \
-  opentheory/theories/modular/modular.ml \
-  opentheory/theories/gfp/gfp.ml \
-  opentheory/theories/word/word.ml \
-  opentheory/theories/byte/byte.ml \
-  opentheory/theories/word10/word10.ml \
-  opentheory/theories/word12/word12.ml \
-  opentheory/theories/word16/word16.ml \
-  opentheory/theories/parser/parser.ml \
-  opentheory/theories/char/char.ml \
-  opentheory/theories/montgomery/montgomery.ml \
-  opentheory/theories/h/h.ml \
-  opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.ml \
-  opentheory/theories/haskell-parser/haskell-parser.ml \
-  opentheory/theories/haskell-char/haskell-char.ml \
-  opentheory/theories/haskell-prime/haskell-prime.ml
-
-check-theories:
+.PHONY: check-theories
+check-theories: files
 	@echo Looking for duplicate let bindings:
-	@cd .. && cat $(THEORY_SOURCES) | grep '^let ' | sort | uniq -d
+	@cd .. && (for f in $$(cat opentheory/files) ; do cat $$f ; done) | grep '^let ' | sort | uniq -d
+	@echo
+	@echo Looking for duplicate theorem exports:
+	@cd .. && (for f in $$(cat opentheory/files) ; do cat $$f ; done) | grep '^export_thm ' | sort | uniq -d
+	@echo
 
+.PHONY: info-check-theories
 info-check-theories:
 	@echo
 	@echo '+----------------------+'

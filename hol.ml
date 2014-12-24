@@ -61,6 +61,8 @@ let load_path = ref ["."; "$"];;
 
 let loaded_files = ref [];;
 
+let loaded_filenames = ref [];;
+
 let file_on_path p s =
   if not (Filename.is_relative s) then s else
   let p' = List.map hol_expand_directory p in
@@ -70,6 +72,7 @@ let file_on_path p s =
 let load_on_path p s =
   let s' = file_on_path p s in
   let fileid = (Filename.basename s',Digest.file s') in
+  let () = loaded_filenames := s' :: !loaded_filenames in
   (use_file s'; loaded_files := fileid::(!loaded_files));;
 
 let loads s = load_on_path ["$"] s;;
