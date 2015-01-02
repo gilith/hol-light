@@ -131,6 +131,17 @@ export_thm test_th;;
 
 logfile_end ();;
 
+(* Simple example exporting a theorem with hypotheses *)
+
+logfile "example11";;
+
+let test_th =
+    ASSUME `a`;;
+
+export_thm test_th;;
+
+logfile_end ();;
+
 (* ------------------------------------------------------------------------- *)
 (* Testing generation of theory theorems.                                    *)
 (* ------------------------------------------------------------------------- *)
