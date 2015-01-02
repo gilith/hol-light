@@ -812,9 +812,6 @@ let (inc_counters_sieve_nil,inc_counters_sieve_cons) =
 export_thm inc_counters_sieve_nil;;
 export_thm inc_counters_sieve_cons;;
 
-let inc_counters_sieve_def =
-    CONJ inc_counters_sieve_nil inc_counters_sieve_cons;;
-
 let inc_sieve_def = new_definition
   `!s.
      inc_sieve s =
@@ -867,6 +864,24 @@ export_thm next_sieve_def;;
 (* ------------------------------------------------------------------------- *)
 
 logfile "natural-prime-sieve-thm";;
+
+let inc_counters_sieve_def =
+    CONJ inc_counters_sieve_nil inc_counters_sieve_cons;;
+
+export_thm inc_counters_sieve_def;;
+
+let inc_sieve_src = prove
+ (`inc_sieve =
+   \s.
+     let (n,ps) = dest_sieve s in
+     let n' = n + 1 in
+     let (b,ps') = inc_counters_sieve n' 1 ps in
+     (b, mk_sieve (n',ps'))`,
+  ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+  X_GEN_TAC `s : sieve` THEN
+  REWRITE_TAC [inc_sieve_def]);;
+
+export_thm inc_sieve_src;;
 
 let sieve_cases = prove
   (`!s. ?n ps. is_sieve (n,ps) /\ s = mk_sieve (n,ps)`,
@@ -1254,5 +1269,29 @@ let correct_sieve = prove
    ASM_REWRITE_TAC []);;
 
 export_thm correct_sieve;;
+
+let primes_src = GSYM correct_sieve;;
+
+export_thm primes_src;;
+
+(* ------------------------------------------------------------------------- *)
+(* Haskell source for prime numbers.                                         *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "natural-prime-haskell-src";;
+
+export_thm mk_dest_sieve;;
+
+export_thm max_sieve_def;;
+
+export_thm init_sieve_def;;
+
+export_thm inc_counters_sieve_def;;
+
+export_thm inc_sieve_src;;
+
+export_thm next_sieve_def;;
+
+export_thm primes_src;;
 
 logfile_end ();;
