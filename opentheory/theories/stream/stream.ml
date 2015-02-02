@@ -613,4 +613,36 @@ let snth_sreplicate = prove
 
 export_thm snth_sreplicate;;
 
+let snth_src = prove
+ (`!(s : A stream) n.
+     snth s n = if n = 0 then shd s else snth (stl s) (n - 1)`,
+  GEN_TAC THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [shd_def];
+   REWRITE_TAC [NOT_SUC; SUC_SUB1; snth_suc]]);;
+
+export_thm snth_src;;
+
+let stake_src = prove
+ (`!(s : A stream) n.
+     stake s n = if n = 0 then [] else CONS (shd s) (stake (stl s) (n - 1))`,
+  GEN_TAC THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [stake_zero];
+   REWRITE_TAC [NOT_SUC; SUC_SUB1; stake_suc]]);;
+
+export_thm stake_src;;
+
+(* ------------------------------------------------------------------------- *)
+(* Haskell source for stream types.                                          *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "stream-haskell-src";;
+
+export_thm snth_src;;
+
+export_thm stake_src;;
+
+export_thm sunfold;;
+
 logfile_end ();;
