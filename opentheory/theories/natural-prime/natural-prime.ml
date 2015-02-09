@@ -574,6 +574,49 @@ let primes_equiv = prove
 
 export_thm primes_equiv;;
 
+let snth_primes_zero_test = prove
+  (`~(snth primes 0 = 0)`,
+   REWRITE_TAC [snth_primes_zero; TWO; NOT_SUC]);;
+
+export_thm snth_primes_zero_test;;
+
+let primes_divides_inj_test = prove
+  (`!i j. ~divides (snth primes i) (snth primes (i + j + 1))`,
+   REPEAT GEN_TAC THEN
+   REWRITE_TAC [primes_divides_inj] THEN
+   ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+   REWRITE_TAC [EQ_ADD_LCANCEL_0; ADD_EQ_0; ONE; NOT_SUC]);;
+
+export_thm primes_divides_inj_test;;
+
+let primes_below_prime_test = prove
+  (`!n i.
+      EX (\p. divides p (n + 2)) (stake primes i) \/
+      snth primes i <= n + 2`,
+   REPEAT GEN_TAC THEN
+   ASM_REWRITE_TAC
+     [GSYM primes_below_prime; GSYM EX_MEM; mem_primes_below] THEN
+   ASM_CASES_TAC `snth primes i <= n + 2` THENL
+   [ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   MP_TAC (SPEC `n + 2` prime_divisor) THEN
+   ANTS_TAC THENL
+   [REWRITE_TAC [TWO; ONE; ADD_SUC; SUC_INJ; NOT_SUC];
+    ALL_TAC] THEN
+   STRIP_TAC THEN
+   EXISTS_TAC `p : num` THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC LET_TRANS THEN
+   EXISTS_TAC `n + 2` THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC divides_le THEN
+    ASM_REWRITE_TAC [ADD_EQ_0] THEN
+    REWRITE_TAC [TWO; NOT_SUC];
+    ASM_REWRITE_TAC [GSYM NOT_LE]]);;
+
+export_thm primes_below_prime_test;;
+
 let primes_equiv_test = prove
   (`!ps.
       ps = primes <=>
@@ -585,33 +628,10 @@ let primes_equiv_test = prove
    EQ_TAC THENL
    [DISCH_THEN SUBST1_TAC THEN
     REPEAT CONJ_TAC THENL
-    [REWRITE_TAC [snth_primes_zero; TWO; NOT_SUC];
+    [ACCEPT_TAC snth_primes_zero_test;
      ACCEPT_TAC primes_mono_le;
-     REPEAT GEN_TAC THEN
-     REWRITE_TAC [primes_divides_inj] THEN
-     ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
-     REWRITE_TAC [EQ_ADD_LCANCEL_0; ADD_EQ_0; ONE; NOT_SUC];
-     REPEAT GEN_TAC THEN
-     ASM_REWRITE_TAC
-       [GSYM primes_below_prime; GSYM EX_MEM; mem_primes_below] THEN
-     ASM_CASES_TAC `snth primes i <= n + 2` THENL
-     [ASM_REWRITE_TAC [];
-      ALL_TAC] THEN
-     ASM_REWRITE_TAC [] THEN
-     MP_TAC (SPEC `n + 2` prime_divisor) THEN
-     ANTS_TAC THENL
-     [REWRITE_TAC [TWO; ONE; ADD_SUC; SUC_INJ; NOT_SUC];
-      ALL_TAC] THEN
-     STRIP_TAC THEN
-     EXISTS_TAC `p : num` THEN
-     ASM_REWRITE_TAC [] THEN
-     MATCH_MP_TAC LET_TRANS THEN
-     EXISTS_TAC `n + 2` THEN
-     CONJ_TAC THENL
-     [MATCH_MP_TAC divides_le THEN
-      ASM_REWRITE_TAC [ADD_EQ_0] THEN
-      REWRITE_TAC [TWO; NOT_SUC];
-      ASM_REWRITE_TAC [GSYM NOT_LE]]];
+     ACCEPT_TAC primes_divides_inj_test;
+     ACCEPT_TAC primes_below_prime_test];
     ALL_TAC] THEN
    REPEAT STRIP_TAC THEN
    REWRITE_TAC [primes_equiv] THEN
@@ -1293,5 +1313,19 @@ export_thm inc_sieve_src;;
 export_thm next_sieve_def;;
 
 export_thm primes_src;;
+
+(* ------------------------------------------------------------------------- *)
+(* Haskell tests for prime numbers.                                          *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "natural-prime-haskell-test";;
+
+export_thm snth_primes_zero_test;;
+
+export_thm primes_mono_le;;
+
+export_thm primes_divides_inj_test;;
+
+export_thm primes_below_prime_test;;
 
 logfile_end ();;
