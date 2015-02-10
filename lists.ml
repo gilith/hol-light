@@ -164,13 +164,6 @@ let LENGTH_TL = prove
 
 export_thm LENGTH_TL;;
 
-let length_src = prove
- (`(LENGTH ([] : A list) = 0) /\
-   (!(h : A) t. LENGTH (CONS h t) = LENGTH t + 1)`,
-  REWRITE_TAC [LENGTH_NIL; LENGTH_CONS; ADD1]);;
-
-export_thm length_src;;
-
 (* ------------------------------------------------------------------------- *)
 (* Mapping between finite sets and lists.                                    *)
 (* ------------------------------------------------------------------------- *)

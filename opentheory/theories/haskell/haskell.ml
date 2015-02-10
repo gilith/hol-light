@@ -34,6 +34,11 @@ let () = (export_haskell_thm o prove)
   ACCEPT_TAC equal_listH_def);;
 ***)
 
+let length_src = prove
+ (`(LENGTH ([] : A list) = 0) /\
+   (!(h : A) t. LENGTH (CONS h t) = LENGTH t + 1)`,
+  REWRITE_TAC [LENGTH_NIL; LENGTH_CONS; ADD1]);;
+
 export_thm length_src;;
 
 (***
