@@ -457,4 +457,12 @@ let divides_factorial = prove
 
 export_thm divides_factorial;;
 
+(* ------------------------------------------------------------------------- *)
+(* Haskell source for the divides relation on natural numbers.               *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "natural-divides-haskell-src";;
+
+export_thm divides_mod_cond;;
+
 logfile_end ();;
