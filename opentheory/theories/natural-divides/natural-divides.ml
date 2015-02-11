@@ -463,6 +463,6 @@ export_thm divides_factorial;;
 
 logfile "natural-divides-haskell-src";;
 
-export_thm divides_mod_cond;;
+export_thm divides_mod_cond;;  (* Haskell *)
 
 logfile_end ();;

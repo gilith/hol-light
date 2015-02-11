@@ -1300,19 +1300,13 @@ export_thm primes_src;;
 
 logfile "natural-prime-haskell-src";;
 
-export_thm mk_dest_sieve;;
-
-export_thm max_sieve_def;;
-
-export_thm init_sieve_def;;
-
-export_thm inc_counters_sieve_def;;
-
-export_thm inc_sieve_src;;
-
-export_thm next_sieve_def;;
-
-export_thm primes_src;;
+export_thm mk_dest_sieve;;  (* Haskell *)
+export_thm max_sieve_def;;  (* Haskell *)
+export_thm init_sieve_def;;  (* Haskell *)
+export_thm inc_counters_sieve_def;;  (* Haskell *)
+export_thm inc_sieve_src;;  (* Haskell *)
+export_thm next_sieve_def;;  (* Haskell *)
+export_thm primes_src;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
 (* Haskell tests for prime numbers.                                          *)
@@ -1320,12 +1314,9 @@ export_thm primes_src;;
 
 logfile "natural-prime-haskell-test";;
 
-export_thm snth_primes_zero_test;;
-
-export_thm primes_mono_le;;
-
-export_thm primes_divides_inj_test;;
-
-export_thm primes_below_prime_test;;
+export_thm snth_primes_zero_test;;  (* Haskell *)
+export_thm primes_mono_le;;  (* Haskell *)
+export_thm primes_divides_inj_test;;  (* Haskell *)
+export_thm primes_below_prime_test;;  (* Haskell *)
 
 logfile_end ();;

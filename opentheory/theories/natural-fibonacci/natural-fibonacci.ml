@@ -298,9 +298,8 @@ export_thm rdecode_fib_def;;
 
 logfile "natural-fibonacci-thm";;
 
-export_thm fibonacci_induction;;
-
-export_thm fibonacci_recursion;;
+export_thm fibonacci_induction;;  (* Re-export *)
+export_thm fibonacci_recursion;;  (* Re-export *)
 
 let fibonacci_suc_suc = prove
  (`!k. fibonacci (SUC (SUC k)) = fibonacci (SUC k) + fibonacci k`,

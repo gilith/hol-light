@@ -639,10 +639,8 @@ export_thm stake_src;;
 
 logfile "stream-haskell-src";;
 
-export_thm snth_src;;
-
-export_thm stake_src;;
-
-export_thm sunfold;;
+export_thm snth_src;;  (* Haskell *)
+export_thm stake_src;;  (* Haskell *)
+export_thm sunfold;;  (* Haskell *)
 
 logfile_end ();;
