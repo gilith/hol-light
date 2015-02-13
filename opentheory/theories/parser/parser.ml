@@ -34,9 +34,6 @@ export_thm case_pstream_error;;
 export_thm case_pstream_eof;;
 export_thm case_pstream_cons;;
 
-let case_pstream_def =
-    CONJ case_pstream_error (CONJ case_pstream_eof case_pstream_cons);;
-
 let (map_pstream_error,map_pstream_eof,map_pstream_cons) =
   let def = new_recursive_definition pstream_recursion
     `(!(f : A -> B). map_pstream f ErrorPstream = ErrorPstream) /\
@@ -143,6 +140,11 @@ export_thm rdecode_pstream_def;;
 (* ------------------------------------------------------------------------- *)
 
 logfile "parser-stream-thm";;
+
+let case_pstream_def =
+    CONJ case_pstream_error (CONJ case_pstream_eof case_pstream_cons);;
+
+export_thm case_pstream_def;;
 
 let pstream_cases = prove_cases_thm pstream_induct;;
 
@@ -1259,5 +1261,13 @@ let parse_pstream_length = prove
     FIRST_ASSUM ACCEPT_TAC]);;
 
 export_thm parse_pstream_length;;
+
+(* ------------------------------------------------------------------------- *)
+(* Haskell source for stream parsers.                                        *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "parser-haskell-src";;
+
+export_thm case_pstream_def;;  (* Haskell *)
 
 logfile_end ();;
