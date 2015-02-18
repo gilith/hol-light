@@ -146,7 +146,6 @@ logfile "parser-stream-thm";;
 
 export_thm case_pstream_def;;
 export_thm map_pstream_def;;
-export_thm length_pstream_def;;
 export_thm pstream_to_list_def;;
 export_thm append_pstream_def;;
 
@@ -360,6 +359,14 @@ let pstream_to_list_map = prove
 
 export_thm pstream_to_list_map;;
 
+let length_pstream_src = prove
+ (`(length_pstream (ErrorPstream : A pstream) = 0) /\
+   (length_pstream (EofPstream : A pstream) = 0) /\
+   (!(a : A) s. length_pstream (ConsPstream a s) = length_pstream s + 1)`,
+  REWRITE_TAC [length_pstream_def; ADD1]);;
+
+export_thm length_pstream_src;;
+
 (* ------------------------------------------------------------------------- *)
 (* Definition of stream parser combinators.                                  *)
 (* ------------------------------------------------------------------------- *)
@@ -470,23 +477,23 @@ let parse_map_def = new_definition
 export_thm parse_map_def;;
 
 let parser_pair_def = new_definition
-  `!pb pc a s.
-     parser_pair (pb : (A,B) parser) (pc : (A,C) parser) a s =
+  `!p0 p1 a s.
+     parser_pair (p0 : (A,B) parser) (p1 : (A,C) parser) a s =
      case_option
        NONE
        (\ (b,s').
           case_option
             NONE
             (\ (c,s''). SOME ((b,c),s''))
-            (parse pc s'))
-       (dest_parser pb a s)`;;
+            (parse p1 s'))
+       (dest_parser p0 a s)`;;
 
 export_thm parser_pair_def;;
 
 let parse_pair_def = new_definition
-  `!pb pc.
-     parse_pair (pb : (A,B) parser) (pc : (A,C) parser) =
-     mk_parser (parser_pair pb pc)`;;
+  `!p0 p1.
+     parse_pair (p0 : (A,B) parser) (p1 : (A,C) parser) =
+     mk_parser (parser_pair p0 p1)`;;
 
 export_thm parse_pair_def;;
 
@@ -806,15 +813,15 @@ let parse_map_strong_inverse = prove
 export_thm parse_map_strong_inverse;;
 
 let is_parser_pair = prove
-  (`!pb pc. is_parser (parser_pair (pb : (A,B) parser) (pc : (A,C) parser))`,
+  (`!p0 p1. is_parser (parser_pair (p0 : (A,B) parser) (p1 : (A,C) parser))`,
    REPEAT GEN_TAC THEN
    REWRITE_TAC [is_parser_def; parser_pair_def] THEN
    REPEAT GEN_TAC THEN
-   MP_TAC (SPECL [`pb : (A,B) parser`; `x : A`; `xs : A pstream`]
+   MP_TAC (SPECL [`p0 : (A,B) parser`; `x : A`; `xs : A pstream`]
              dest_parser_cases) THEN
    STRIP_TAC THEN
    ASM_REWRITE_TAC [case_option_def] THEN
-   MP_TAC (ISPECL [`pc : (A,C) parser`; `s' : A pstream`]
+   MP_TAC (ISPECL [`p1 : (A,C) parser`; `s' : A pstream`]
              parse_cases) THEN
    STRIP_TAC THEN
    ASM_REWRITE_TAC [case_option_def] THEN
@@ -823,9 +830,9 @@ let is_parser_pair = prove
 export_thm is_parser_pair;;
 
 let dest_parse_pair = prove
-  (`!pb pc.
-      dest_parser (parse_pair (pb : (A,B) parser) (pc : (A,C) parser)) =
-      parser_pair pb pc`,
+  (`!p0 p1.
+      dest_parser (parse_pair (p0 : (A,B) parser) (p1 : (A,C) parser)) =
+      parser_pair p0 p1`,
    REPEAT GEN_TAC THEN
    REWRITE_TAC
      [parse_pair_def; GSYM (CONJUNCT2 parser_tybij); is_parser_pair]);;
@@ -833,16 +840,16 @@ let dest_parse_pair = prove
 export_thm dest_parse_pair;;
 
 let parse_parse_pair = prove
-  (`!pb pc s.
-      parse (parse_pair pb pc : (A, B # C) parser) s =
+  (`!p0 p1 s.
+      parse (parse_pair p0 p1 : (A, B # C) parser) s =
       case_option
         NONE
         (\ (b,s').
            case_option
              NONE
              (\ (c,s''). SOME ((b,c),s''))
-             (parse pc s'))
-        (parse pb s)`,
+             (parse p1 s'))
+        (parse p0 s)`,
     REPEAT STRIP_TAC THEN
     MP_TAC (ISPEC `s : A pstream` pstream_cases) THEN
     REPEAT STRIP_TAC THEN
@@ -852,11 +859,11 @@ let parse_parse_pair = prove
 export_thm parse_parse_pair;;
 
 let parse_pair_inverse = prove
-  (`!pb pc eb ec.
-      parse_inverse pb eb /\ parse_inverse pc ec ==>
+  (`!p0 p1 e0 e1.
+      parse_inverse p0 e0 /\ parse_inverse p1 e1 ==>
       parse_inverse
-        (parse_pair pb pc : (A, B # C) parser)
-        (\ (b,c). APPEND (eb b) (ec c))`,
+        (parse_pair p0 p1 : (A, B # C) parser)
+        (\ (b,c). APPEND (e0 b) (e1 c))`,
    REWRITE_TAC [parse_inverse_def] THEN
    REPEAT STRIP_TAC THEN
    REWRITE_TAC [parse_parse_pair] THEN
@@ -867,11 +874,11 @@ let parse_pair_inverse = prove
 export_thm parse_pair_inverse;;
 
 let parse_pair_strong_inverse = prove
-  (`!pb pc eb ec.
-      parse_strong_inverse pb eb /\ parse_strong_inverse pc ec ==>
+  (`!p0 p1 e0 e1.
+      parse_strong_inverse p0 e0 /\ parse_strong_inverse p1 e1 ==>
       parse_strong_inverse
-        (parse_pair pb pc : (A, B # C) parser)
-        (\ (b,c). APPEND (eb b) (ec c))`,
+        (parse_pair p0 p1 : (A, B # C) parser)
+        (\ (b,c). APPEND (e0 b) (e1 c))`,
    REWRITE_TAC [parse_strong_inverse_def] THEN
    REPEAT STRIP_TAC THENL
    [MATCH_MP_TAC parse_pair_inverse THEN
@@ -880,7 +887,7 @@ let parse_pair_strong_inverse = prove
     MP_TAC (ISPEC `x : B # C` PAIR_SURJECTIVE) THEN
     STRIP_TAC THEN
     ASM_REWRITE_TAC [parse_parse_pair; append_pstream_assoc] THEN
-    MP_TAC (ISPEC `parse (pb : (A,B) parser) s` option_cases) THEN
+    MP_TAC (ISPEC `parse (p0 : (A,B) parser) s` option_cases) THEN
     STRIP_TAC THEN
     ASM_REWRITE_TAC [case_option_def; option_distinct] THEN
     POP_ASSUM MP_TAC THEN
@@ -888,7 +895,7 @@ let parse_pair_strong_inverse = prove
     STRIP_TAC THEN
     ASM_REWRITE_TAC [] THEN
     STRIP_TAC THEN
-    MP_TAC (ISPEC `parse (pc : (A,C) parser) b'` option_cases) THEN
+    MP_TAC (ISPEC `parse (p1 : (A,C) parser) b'` option_cases) THEN
     STRIP_TAC THEN
     ASM_REWRITE_TAC [case_option_def; option_distinct] THEN
     POP_ASSUM MP_TAC THEN
@@ -897,8 +904,8 @@ let parse_pair_strong_inverse = prove
     ASM_REWRITE_TAC [] THEN
     REWRITE_TAC [option_inj; PAIR_EQ] THEN
     REPEAT STRIP_TAC THEN
-    UNDISCH_TAC `parse (pc : (A,C) parser) b' = SOME (a'''',b'')` THEN
-    UNDISCH_TAC `parse (pb : (A,B) parser) s = SOME (a'',b')` THEN
+    UNDISCH_TAC `parse (p1 : (A,C) parser) b' = SOME (a'''',b'')` THEN
+    UNDISCH_TAC `parse (p0 : (A,B) parser) s = SOME (a'',b')` THEN
     ASM_REWRITE_TAC [] THEN
     REPEAT STRIP_TAC THEN
     FIRST_X_ASSUM MATCH_MP_TAC THEN
@@ -999,6 +1006,15 @@ let parse_parse_some = prove
    ASM_REWRITE_TAC [parse_def; case_pstream_def; dest_parse_some]);;
 
 export_thm parse_parse_some;;
+
+let parse_src = prove
+ (`(!p : (A,B) parser. parse p ErrorPstream = NONE) /\
+   (!p : (A,B) parser. parse p EofPstream = NONE) /\
+   (!p : (A,B) parser. !a s.
+      parse p (ConsPstream a s) = dest_parser p a s)`,
+  REWRITE_TAC [parse_def]);;
+
+export_thm parse_src;;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of the whole stream parser.                                    *)
@@ -1250,6 +1266,19 @@ let parse_pstream_length = prove
 
 export_thm parse_pstream_length;;
 
+let parse_pstream_src = prove
+ (`(!p : (A,B) parser. parse_pstream p ErrorPstream = ErrorPstream) /\
+   (!p : (A,B) parser. parse_pstream p EofPstream = EofPstream) /\
+   (!p : (A,B) parser. !a s.
+      parse_pstream p (ConsPstream a s) =
+      case_option
+        ErrorPstream
+        (\(b,s'). ConsPstream b (parse_pstream p s'))
+        (dest_parser p a s))`,
+  REWRITE_TAC [parse_pstream_def]);;
+
+export_thm parse_pstream_src;;
+
 (* ------------------------------------------------------------------------- *)
 (* Haskell source for stream parsers.                                        *)
 (* ------------------------------------------------------------------------- *)
@@ -1258,9 +1287,23 @@ logfile "parser-haskell-src";;
 
 export_thm case_pstream_def;;  (* Haskell *)
 export_thm map_pstream_def;;  (* Haskell *)
-export_thm length_pstream_def;;  (* Haskell *)
+export_thm length_pstream_src;;  (* Haskell *)
 export_thm pstream_to_list_def;;  (* Haskell *)
 export_thm append_pstream_def;;  (* Haskell *)
 export_thm list_to_pstream_def;;  (* Haskell *)
+export_thm parser_abs_rep;;  (* Haskell *)
+export_thm parse_src;;  (* Haskell *)
+export_thm parser_none_def;;  (* Haskell *)
+export_thm parse_none_def;;  (* Haskell *)
+export_thm parser_any_def;;  (* Haskell *)
+export_thm parse_any_def;;  (* Haskell *)
+export_thm parser_map_partial_def;;  (* Haskell *)
+export_thm parse_map_partial_def;;  (* Haskell *)
+export_thm parse_map_def;;  (* Haskell *)
+export_thm parser_pair_def;;  (* Haskell *)
+export_thm parse_pair_def;;  (* Haskell *)
+export_thm parse_option_def;;  (* Haskell *)
+export_thm parse_some_def;;  (* Haskell *)
+export_thm parse_pstream_src;;  (* Haskell *)
 
 logfile_end ();;
