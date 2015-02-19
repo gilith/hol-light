@@ -7,11 +7,11 @@
 
 # Data.List
 
-const "HOLLight.rdecode_vector" as "Data.List.fromRandom"
+const "HOLLight.random_vector" as "Data.List.fromRandom"
 
 # Data.List.Geometric
 
-const "HOLLight.rdecode_list" as "Data.List.Geometric.fromRandom"
+const "HOLLight.random_geometric_list" as "Data.List.Geometric.fromRandom"
 
 # Number
 
@@ -19,8 +19,8 @@ const "HOLLight.rdecode_list" as "Data.List.Geometric.fromRandom"
 
 # Number.Natural.Geometric
 
-const "HOLLight.rdecode_geometric" as "Number.Natural.Geometric.fromRandom"
-const "HOLLight.rdecode_geometric_loop" as "Number.Natural.Geometric.fromRandom.loop"
+const "HOLLight.random_geometric" as "Number.Natural.Geometric.fromRandom"
+const "HOLLight.random_geometric_loop" as "Number.Natural.Geometric.fromRandom.loop"
 
 # Probability
 
@@ -28,8 +28,8 @@ const "HOLLight.rdecode_geometric_loop" as "Number.Natural.Geometric.fromRandom.
 
 type "HOLLight.random" as "Probability.Random.random"
 
-const "HOLLight.rbit" as "Probability.Random.bit"
-const "HOLLight.rbits" as "Probability.Random.bits"
+const "HOLLight.random_bit" as "Probability.Random.bit"
+const "HOLLight.random_bits" as "Probability.Random.bits"
 const "HOLLight.mk_random" as "Probability.Random.fromStream"
-const "HOLLight.rsplit" as "Probability.Random.split"
+const "HOLLight.split_random" as "Probability.Random.split"
 const "HOLLight.dest_random" as "Probability.Random.toStream"

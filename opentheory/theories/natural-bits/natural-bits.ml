@@ -243,26 +243,30 @@ let is_bits_def = new_definition
 
 export_thm is_bits_def;;
 
-let rdecode_uniform_loop_exists = prove
+let random_uniform_loop_exists = prove
  (`!n w. ?loop. !r.
      loop r =
-     let (l,r') = rbits w r in
+     let (r1,r2) = split_random r in
+     let l = random_bits w r1 in
      let m = bits_to_num l in
      if m < n then m else
-     loop r'`,
+     loop r2`,
   REPEAT GEN_TAC THEN
   MP_TAC
    (ISPECL
       [`\ (r : random).
-          let (l,r') = rbits w r in
+          let (r1,r2) = split_random r in
+          let l = random_bits w r1 in
           let m = bits_to_num l in
           ~(m < n)`;
        `\ (r : random).
-          let (l,r') = rbits w r in
+          let (r1,r2) = split_random r in
+          let l = random_bits w r1 in
           let m = bits_to_num l in
-          r'`;
+          r2`;
        `\ (r : random).
-          let (l,r') = rbits w r in
+          let (r1,r2) = split_random r in
+          let l = random_bits w r1 in
           let m = bits_to_num l in
           m`] WF_REC_TAIL) THEN
   DISCH_THEN
@@ -273,30 +277,30 @@ let rdecode_uniform_loop_exists = prove
   REWRITE_TAC [] THEN
   FIRST_X_ASSUM (fun th -> CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [th]))) THEN
   REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-  PAIR_CASES_TAC `rbits w r` THEN
+  PAIR_CASES_TAC `split_random r` THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `l : bool list`
-       (X_CHOOSE_THEN `r' : random` SUBST1_TAC)) THEN
+    (X_CHOOSE_THEN `r1 : random`
+       (X_CHOOSE_THEN `r2 : random` SUBST1_TAC)) THEN
   REWRITE_TAC [] THEN
-  BOOL_CASES_TAC `bits_to_num l < n` THEN
+  BOOL_CASES_TAC `bits_to_num (random_bits w r1) < n` THEN
   REWRITE_TAC []);;
 
-let rdecode_uniform_loop_def =
-  new_specification ["rdecode_uniform_loop"]
+let random_uniform_loop_def =
+  new_specification ["random_uniform_loop"]
     (ONCE_REWRITE_RULE [SKOLEM_THM]
       (ONCE_REWRITE_RULE [SKOLEM_THM]
-        rdecode_uniform_loop_exists));;
+        random_uniform_loop_exists));;
 
-export_thm rdecode_uniform_loop_def;;
+export_thm random_uniform_loop_def;;
 
-let rdecode_uniform_def = new_definition
+let random_uniform_def = new_definition
   `!n r.
-     rdecode_uniform n r =
+     random_uniform n r =
      let w = bit_width (n - 1) in
-     let (r1,r2) = rsplit r in
-     (rdecode_uniform_loop n w r1 MOD n, r2)`;;
+     let m = random_uniform_loop n w r in
+     if m < n then m else 0`;;
 
-export_thm rdecode_uniform_def;;
+export_thm random_uniform_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of natural number to bit-list conversions.                     *)

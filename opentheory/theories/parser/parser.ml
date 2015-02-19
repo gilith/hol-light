@@ -27,7 +27,7 @@ let (case_pstream_error,case_pstream_eof,case_pstream_cons) =
   let def = new_recursive_definition pstream_recursion
     `(!e b f. case_pstream e b f ErrorPstream = (e:B)) /\
      (!e b f. case_pstream e b f EofPstream = b) /\
-     (!e b f a s. case_pstream e b f (ConsPstream a s) = f (a:A) s)` in
+     (!e b f x xs. case_pstream e b f (ConsPstream x xs) = f (x : A) xs)` in
   CONJ_TRIPLE def;;
 
 export_thm case_pstream_error;;
@@ -41,9 +41,9 @@ let (map_pstream_error,map_pstream_eof,map_pstream_cons) =
   let def = new_recursive_definition pstream_recursion
     `(!(f : A -> B). map_pstream f ErrorPstream = ErrorPstream) /\
      (!f. map_pstream f EofPstream = EofPstream) /\
-     (!f a s.
-        map_pstream f (ConsPstream a s) =
-        ConsPstream (f a) (map_pstream f s))` in
+     (!f x xs.
+        map_pstream f (ConsPstream x xs) =
+        ConsPstream (f x) (map_pstream f xs))` in
   CONJ_TRIPLE def;;
 
 export_thm map_pstream_error;;
@@ -57,7 +57,8 @@ let (length_pstream_error,length_pstream_eof,length_pstream_cons) =
   let def = new_recursive_definition pstream_recursion
     `(length_pstream ErrorPstream = 0) /\
      (length_pstream EofPstream = 0) /\
-     (!(a:A) s. length_pstream (ConsPstream a s) = SUC (length_pstream s))` in
+     (!(x : A) xs.
+        length_pstream (ConsPstream x xs) = SUC (length_pstream xs))` in
   CONJ_TRIPLE def;;
 
 export_thm length_pstream_error;;
@@ -71,10 +72,10 @@ let (is_proper_suffix_pstream_error,
      is_proper_suffix_pstream_eof,
      is_proper_suffix_pstream_cons) =
   let def = new_recursive_definition pstream_recursion
-  `(!s. is_proper_suffix_pstream s ErrorPstream = F) /\
-   (!s. is_proper_suffix_pstream s EofPstream = F) /\
-   (!s a s'. is_proper_suffix_pstream s (ConsPstream (a:A) s') =
-      ((s = s') \/ is_proper_suffix_pstream s s'))` in
+  `(!xs. is_proper_suffix_pstream xs ErrorPstream = F) /\
+   (!xs. is_proper_suffix_pstream xs EofPstream = F) /\
+   (!xs x xs'. is_proper_suffix_pstream xs (ConsPstream (x : A) xs') =
+      ((xs = xs') \/ is_proper_suffix_pstream xs xs'))` in
    CONJ_TRIPLE (REWRITE_RULE [] def);;
 
 export_thm is_proper_suffix_pstream_error;;
@@ -86,9 +87,9 @@ let is_proper_suffix_pstream_def =
     (CONJ is_proper_suffix_pstream_eof is_proper_suffix_pstream_cons);;
 
 let is_suffix_pstream_def = new_definition
-  `!s s'.
-     is_suffix_pstream s s' =
-     (((s : A pstream) = s') \/ is_proper_suffix_pstream s s')`;;
+  `!xs xs'.
+     is_suffix_pstream xs xs' =
+     (((xs : A pstream) = xs') \/ is_proper_suffix_pstream xs xs')`;;
 
 export_thm is_suffix_pstream_def;;
 
@@ -96,13 +97,11 @@ let (pstream_to_list_error,
      pstream_to_list_eof,
      pstream_to_list_cons) =
   let def = new_recursive_definition pstream_recursion
-    `(pstream_to_list ErrorPstream = NONE) /\
-     (pstream_to_list EofPstream = SOME []) /\
-     (!a s. pstream_to_list (ConsPstream a s) =
-        case_option
-          NONE
-          (\l. SOME (CONS (a:A) l))
-          (pstream_to_list s))` in
+    `(pstream_to_list ErrorPstream = ([],T)) /\
+     (pstream_to_list EofPstream = ([],F)) /\
+     (!(x : A) xs. pstream_to_list (ConsPstream x xs) =
+        let (l,e) = pstream_to_list xs in
+        (CONS x l, e))` in
   CONJ_TRIPLE def;;
 
 export_thm pstream_to_list_error;;
@@ -115,8 +114,9 @@ let pstream_to_list_def =
 
 let (append_pstream_nil,append_pstream_cons) =
   let def = new_recursive_definition list_RECURSION
-    `(!s. append_pstream [] s = s) /\
-     (!h t s. append_pstream (CONS h t) s = ConsPstream (h:A) (append_pstream t s))` in
+    `(!xs. append_pstream [] xs = xs) /\
+     (!(h : A) t xs.
+        append_pstream (CONS h t) xs = ConsPstream h (append_pstream t xs))` in
   CONJ_PAIR def;;
 
 export_thm append_pstream_nil;;
