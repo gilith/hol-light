@@ -64,9 +64,17 @@ let () = (export_haskell_thm o prove)
      rdecode_vectorH d n r'`,
   HASKELL_TAC [] THEN
   ACCEPT_TAC rdecode_list_def);;
+***)
 
 (* Natural numbers *)
 
+let odd_src = prove
+ (`!n. ODD n <=> n MOD 2 = 1`,
+  ACCEPT_TAC ODD_MOD);;
+
+export_thm odd_src;;
+
+(***
 let () = (export_haskell_thm o prove)
  (`!b n f p r.
      rdecode_fib_destH b n f p r =

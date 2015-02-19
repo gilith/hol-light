@@ -49,6 +49,7 @@ loads "opentheory/theories/natural-bits/natural-bits.ml";;
 (* The divides relation on natural numbers.                                  *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 loads "opentheory/theories/natural-divides/natural-divides.ml";;
 
 (* ------------------------------------------------------------------------- *)
@@ -213,4 +214,5 @@ loads "opentheory/theories/haskell-char/haskell-char.ml";;
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/haskell-prime/haskell-prime.ml";;
+***)
 ***)

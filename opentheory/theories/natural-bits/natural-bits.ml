@@ -331,7 +331,7 @@ let bit_width_one = prove
 
 export_thm bit_width_one;;
 
-let bit_width_recursion = prove
+let bit_width_src = prove
   (`!n. bit_width n = if n = 0 then 0 else bit_width (bit_tl n) + 1`,
    GEN_TAC THEN
    REWRITE_TAC [bit_width_def; bit_tl_def] THEN
@@ -349,7 +349,7 @@ let bit_width_recursion = prove
      MATCH_MP_TAC DIV_EQ_0 THEN
      REWRITE_TAC [TWO; NOT_SUC]]]);;
 
-export_thm bit_width_recursion;;
+export_thm bit_width_src;;
 
 let bit_width_mono = prove
   (`!n1 n2. n1 <= n2 ==> bit_width n1 <= bit_width n2`,
@@ -972,7 +972,7 @@ let num_to_bits_recursion = prove
    ASM_CASES_TAC `n = 0` THENL
    [ASM_REWRITE_TAC [bit_width_def; interval_zero; MAP];
     ASM_REWRITE_TAC [] THEN
-    CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [bit_width_recursion])) THEN
+    CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [bit_width_src])) THEN
     ASM_REWRITE_TAC [interval_suc; GSYM ADD1; MAP; bit_nth_zero] THEN
     REWRITE_TAC [bit_tl_nth; MAP_o; map_suc_interval]]);;
 
@@ -1035,7 +1035,7 @@ let bit_width_bits_to_num = prove
   (`!l. bit_width (bits_to_num l) <= LENGTH l`,
    LIST_INDUCT_TAC THENL
    [REWRITE_TAC [bits_to_num_nil; bit_width_zero; LE_0];
-    ONCE_REWRITE_TAC [bit_width_recursion] THEN
+    ONCE_REWRITE_TAC [bit_width_src] THEN
     BOOL_CASES_TAC `bits_to_num (CONS h t) = 0` THENL
     [REWRITE_TAC [LE_0];
      ASM_REWRITE_TAC
@@ -1107,7 +1107,7 @@ let is_bits_width = prove
   (`!l. is_bits l <=> bit_width (bits_to_num l) = LENGTH l`,
    LIST_INDUCT_TAC THENL
    [REWRITE_TAC [is_bits_nil; bits_to_num_nil; bit_width_zero; LENGTH];
-    ONCE_REWRITE_TAC [bit_width_recursion] THEN
+    ONCE_REWRITE_TAC [bit_width_src] THEN
     ASM_REWRITE_TAC [is_bits_cons; LENGTH; bits_to_num_cons_eq_zero] THEN
     POP_ASSUM (K ALL_TAC) THEN
     REWRITE_TAC [bits_to_num_cons; bit_tl_cons; GSYM ADD1] THEN
@@ -1199,7 +1199,7 @@ export_thm bit_nth_width;;
 let bit_width_cons = prove
   (`!h t. ~(t = 0) ==> bit_width (bit_cons h t) = SUC (bit_width t)`,
    REPEAT STRIP_TAC THEN
-   CONV_TAC (LAND_CONV (REWR_CONV bit_width_recursion)) THEN
+   CONV_TAC (LAND_CONV (REWR_CONV bit_width_src)) THEN
    ASM_REWRITE_TAC [bit_cons_eq_zero; bit_tl_cons; ADD1]);;
 
 export_thm bit_width_cons;;
@@ -1587,7 +1587,17 @@ let bit_bound_le = prove
 export_thm bit_bound_le;;
 
 (* ------------------------------------------------------------------------- *)
-(* Bitlist functions operating on ML numerals.                               *)
+(* Haskell source for natural number to bit-list conversions.                *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "natural-bits-haskell-src";;
+
+export_thm bit_hd_def;;  (* Haskell *)
+export_thm bit_tl_def;;  (* Haskell *)
+export_thm bit_width_src;;  (* Haskell *)
+
+(* ------------------------------------------------------------------------- *)
+(* Bit-list functions operating on ML numerals.                              *)
 (* ------------------------------------------------------------------------- *)
 
 let bit_hd_num n = eq_num (mod_num n num_2) num_1;;
@@ -1625,13 +1635,13 @@ let rec num_to_bits_bound k n =
 let num_to_bits n = num_to_bits_bound (bit_width_num n) n;;
 
 (* ------------------------------------------------------------------------- *)
-(* Bitlist conversions.                                                      *)
+(* Bit-list conversions.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
 let bit_tl_conv = REWR_CONV bit_tl_def THENC NUM_REDUCE_CONV;;
 
 let rec bit_width_conv tm =
-    (REWR_CONV bit_width_recursion THENC
+    (REWR_CONV bit_width_src THENC
      RATOR_CONV (LAND_CONV NUM_REDUCE_CONV) THENC
      (REWR_CONV COND_TRUE ORELSEC
       (REWR_CONV COND_FALSE THENC
