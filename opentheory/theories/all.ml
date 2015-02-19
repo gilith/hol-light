@@ -151,7 +151,9 @@ loads "opentheory/theories/word16/word16.ml";;
 (* Stream parsers.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 loads "opentheory/theories/parser/parser.ml";;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Unicode characters.                                                       *)

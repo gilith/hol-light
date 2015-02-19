@@ -142,7 +142,7 @@ export_thm rdecode_unicode_def;;
 (* Strings *)
 (* ~~~~~~~ *)
 
-new_type_abbrev("string",`:char list`);;
+new_type_abbrev("string",`:unicode list`);;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of Unicode characters.                                         *)
@@ -159,7 +159,9 @@ let unicode_plane_cases = prove
 export_thm unicode_plane_cases;;
 
 let dest_unicode_plane_cases = prove
-  (`!pl. ?b. is_unicode_plane b /\ pl = mk_unicode_plane b /\ dest_unicode_plane pl = b`,
+  (`!pl. ?b.
+      is_unicode_plane b /\ pl = mk_unicode_plane b /\
+      dest_unicode_plane pl = b`,
    GEN_TAC THEN
    MP_TAC (SPEC `pl : unicode_plane` unicode_plane_cases) THEN
    REWRITE_TAC [unicode_plane_tybij] THEN
@@ -200,7 +202,8 @@ let dest_unicode_position_cases = prove
 export_thm dest_unicode_position_cases;;
 
 let dest_unicode_position_inj = prove
-  (`!pos1 pos2. dest_unicode_position pos1 = dest_unicode_position pos2 <=> pos1 = pos2`,
+  (`!pos1 pos2.
+      dest_unicode_position pos1 = dest_unicode_position pos2 <=> pos1 = pos2`,
    REPEAT GEN_TAC THEN
    EQ_TAC THENL
    [STRIP_TAC THEN
@@ -250,6 +253,7 @@ export_thm dest_unicode_inj;;
 (* Definition of the UTF-8 encoding of Unicode characters.                   *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 logfile "char-utf8-def";;
 
 let is_cont_def = new_definition
@@ -1247,5 +1251,6 @@ let encode_length = prove
    REWRITE_TAC [decode_encode; case_option_def]);;
 
 export_thm encode_length;;
+***)
 
 logfile_end ();;
