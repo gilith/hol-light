@@ -963,7 +963,7 @@ let bits_to_num_append = prove
 
 export_thm bits_to_num_append;;
 
-let num_to_bits_recursion = prove
+let num_to_bits_src = prove
   (`!n.
       num_to_bits n =
       if n = 0 then [] else CONS (bit_hd n) (num_to_bits (bit_tl n))`,
@@ -976,12 +976,12 @@ let num_to_bits_recursion = prove
     ASM_REWRITE_TAC [interval_suc; GSYM ADD1; MAP; bit_nth_zero] THEN
     REWRITE_TAC [bit_tl_nth; MAP_o; map_suc_interval]]);;
 
-export_thm num_to_bits_recursion;;
+export_thm num_to_bits_src;;
 
 let num_to_bits_eq_nil = prove
   (`!n. num_to_bits n = [] <=> n = 0`,
    GEN_TAC THEN
-   ONCE_REWRITE_TAC [num_to_bits_recursion] THEN
+   ONCE_REWRITE_TAC [num_to_bits_src] THEN
    BOOL_CASES_TAC `n = 0` THEN
    REWRITE_TAC [NOT_CONS_NIL]);;
 
@@ -995,7 +995,7 @@ export_thm num_to_bits_zero;;
 
 let num_to_bits_one = prove
   (`num_to_bits 1 = [T]`,
-   ONCE_REWRITE_TAC [num_to_bits_recursion] THEN
+   ONCE_REWRITE_TAC [num_to_bits_src] THEN
    REWRITE_TAC [num_to_bits_zero; bit_hd_one; bit_tl_one] THEN
    REWRITE_TAC [ONE; NOT_SUC]);;
 
@@ -1006,7 +1006,7 @@ let num_to_bits_to_num = prove
    MATCH_MP_TAC bit_tl_induction THEN
    REPEAT STRIP_TAC THENL
    [REWRITE_TAC [num_to_bits_zero; bits_to_num_nil];
-    ONCE_REWRITE_TAC [num_to_bits_recursion] THEN
+    ONCE_REWRITE_TAC [num_to_bits_src] THEN
     ASM_REWRITE_TAC [bits_to_num_cons; bit_cons_hd_tl]]);;
 
 export_thm num_to_bits_to_num;;
@@ -1595,6 +1595,15 @@ logfile "natural-bits-haskell-src";;
 export_thm bit_hd_def;;  (* Haskell *)
 export_thm bit_tl_def;;  (* Haskell *)
 export_thm bit_width_src;;  (* Haskell *)
+export_thm bit_to_num_def;;  (* Haskell *)
+export_thm bit_cons_def;;  (* Haskell *)
+export_thm bit_shl_def;;  (* Haskell *)
+export_thm bit_shr_def;;  (* Haskell *)
+export_thm bit_nth_def;;  (* Haskell *)
+export_thm bit_bound_def;;  (* Haskell *)
+export_thm bit_append_def;;  (* Haskell *)
+export_thm bits_to_num_def;;  (* Haskell *)
+export_thm num_to_bits_src;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
 (* Bit-list functions operating on ML numerals.                              *)
