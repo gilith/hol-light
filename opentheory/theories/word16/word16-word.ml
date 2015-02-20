@@ -449,13 +449,6 @@ let word16_lt_list = new_axiom
    `!w1 w2.
       word16_bits_lte F (word16_to_list w1) (word16_to_list w2) <=> word16_lt w1 w2`;;
 
-let random_word16 = new_axiom
-   `!r.
-      random_word16 r =
-      let (r1,r2) = rsplit r in
-      let (l,r1') = rbits word16_width r1 in
-      (list_to_word16 l, r2)`;;
-
 let word16_reduce_conv =
     REWRITE_CONV
       [word16_to_num_to_word16;

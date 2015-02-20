@@ -449,13 +449,6 @@ let byte_lt_list = new_axiom
    `!w1 w2.
       byte_bits_lte F (byte_to_list w1) (byte_to_list w2) <=> byte_lt w1 w2`;;
 
-let random_byte = new_axiom
-   `!r.
-      random_byte r =
-      let (r1,r2) = rsplit r in
-      let (l,r1') = rbits byte_width r1 in
-      (list_to_byte l, r2)`;;
-
 let byte_reduce_conv =
     REWRITE_CONV
       [byte_to_num_to_byte;

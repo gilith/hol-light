@@ -293,6 +293,14 @@ let random_fib_def = new_definition
 
 export_thm random_fib_def;;
 
+let random_fib_list_def = new_definition
+  `!f r.
+     random_fib_list (f : random -> A) r =
+     let (r1,r2) = split_random r in
+     random_vector f (random_fib r1) r2`;;
+
+export_thm random_fib_list_def;;
+
 (* ------------------------------------------------------------------------- *)
 (* Properties of Fibonacci numbers.                                          *)
 (* ------------------------------------------------------------------------- *)

@@ -121,7 +121,6 @@ loads "opentheory/theories/gfp/gfp.ml";;
 (* Parametric theory of words.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 loads "opentheory/theories/word/word.ml";;
 
 (* ------------------------------------------------------------------------- *)
@@ -189,30 +188,3 @@ loads "opentheory/theories/h/h.ml";;
 (* Requires MiniSat to be hooked up to HOL Light
 loads "opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.ml";;
 *)
-
-(***
-(* ------------------------------------------------------------------------- *)
-(* The Haskell base.                                                         *)
-(* ------------------------------------------------------------------------- *)
-
-loads "opentheory/theories/haskell/haskell.ml";;
-
-(* ------------------------------------------------------------------------- *)
-(* Stream parsers.                                                           *)
-(* ------------------------------------------------------------------------- *)
-
-loads "opentheory/theories/haskell-parser/haskell-parser.ml";;
-
-(* ------------------------------------------------------------------------- *)
-(* Unicode characters.                                                       *)
-(* ------------------------------------------------------------------------- *)
-
-loads "opentheory/theories/haskell-char/haskell-char.ml";;
-
-(* ------------------------------------------------------------------------- *)
-(* Prime numbers.                                                            *)
-(* ------------------------------------------------------------------------- *)
-
-loads "opentheory/theories/haskell-prime/haskell-prime.ml";;
-***)
-***)

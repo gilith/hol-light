@@ -3,6 +3,14 @@
 # Joe Leslie-Hurd
 ###############################################################################
 
+# Data
+
+# Data.List
+
+# Data.List.Fibonacci
+
+const "HOLLight.random_fib_list" as "Data.List.Fibonacci.fromRandom"
+
 # Number
 
 # Number.Natural

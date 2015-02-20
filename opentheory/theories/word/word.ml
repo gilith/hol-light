@@ -1217,48 +1217,6 @@ let word_lt_list = new_axiom
       word_bits_lte F (word_to_list w1) (word_to_list w2) <=> word_lt w1 w2`;;
 *)
 
-let random_word = prove
-  (`!r.
-      random_word r =
-      let (r1,r2) = rsplit r in
-      let (l,r1') = rbits word_width r1 in
-      (list_to_word l, r2)`,
-   GEN_TAC THEN
-   REWRITE_TAC
-     [random_word_def; random_uniform_def;
-      word_size_def; bit_width_ones] THEN
-   ONCE_REWRITE_TAC [random_uniform_loop_def] THEN
-   PAIR_CASES_TAC `rsplit r` THEN
-   DISCH_THEN
-     (X_CHOOSE_THEN `r1 : random`
-       (X_CHOOSE_THEN `r2 : random` STRIP_ASSUME_TAC)) THEN
-   PAIR_CASES_TAC `rbits word_width r1` THEN
-   DISCH_THEN
-     (X_CHOOSE_THEN `l : bool list`
-       (X_CHOOSE_THEN `r1' : random` STRIP_ASSUME_TAC)) THEN
-   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   REWRITE_TAC [list_to_word_def] THEN
-   AP_TERM_TAC THEN
-   SUBGOAL_THEN `LENGTH (l : bool list) = word_width` (SUBST1_TAC o SYM) THENL
-   [MP_TAC (SPECL [`word_width`; `r1 : random`] length_rbits) THEN
-    ASM_REWRITE_TAC [];
-    REWRITE_TAC [bits_to_num_bound] THEN
-    MATCH_MP_TAC MOD_LT THEN
-    REWRITE_TAC [bits_to_num_bound]]);;
-
-export_thm random_word;;
-
-(*PARAMETRIC
-let random_word = new_axiom
-   `!r.
-      random_word r =
-      let (r1,r2) = rsplit r in
-      let (l,r1') = rbits word_width r1 in
-      (list_to_word l, r2)`;;
-*)
-
 (* ------------------------------------------------------------------------- *)
 (* Proof tools for words after width parameter is instantiated to a numeral. *)
 (* ------------------------------------------------------------------------- *)
