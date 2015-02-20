@@ -67,7 +67,6 @@ loads "opentheory/theories/natural-prime/natural-prime.ml";;
 (* Fibonacci numbers.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 loads "opentheory/theories/natural-fibonacci/natural-fibonacci.ml";;
 
 (* ------------------------------------------------------------------------- *)
@@ -122,6 +121,7 @@ loads "opentheory/theories/gfp/gfp.ml";;
 (* Parametric theory of words.                                               *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 loads "opentheory/theories/word/word.ml";;
 
 (* ------------------------------------------------------------------------- *)

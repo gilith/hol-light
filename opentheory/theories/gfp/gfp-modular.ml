@@ -90,13 +90,10 @@ new_constant ("gfp_lt", `:gfp -> gfp -> bool`);;
 let gfp_lt_def = new_axiom
   `!x y. gfp_lt x y <=> gfp_to_num x < gfp_to_num y`;;
 
-new_constant ("rdecode_gfp", `:random -> gfp # random`);;
+new_constant ("random_gfp", `:random -> gfp`);;
 
-let rdecode_gfp_def = new_axiom
-  `!r.
-     rdecode_gfp r =
-     let (n,r') = rdecode_uniform oddprime r in
-     (num_to_gfp n, r')`;;
+let random_gfp_def = new_axiom
+  `!r. random_gfp r = num_to_gfp (random_uniform oddprime r)`;;
 
 let gfp_to_num_inj = new_axiom
   `!x y. gfp_to_num x = gfp_to_num y ==> x = y`;;

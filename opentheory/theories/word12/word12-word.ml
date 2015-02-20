@@ -98,13 +98,10 @@ new_constant ("word12_lt", `:word12 -> word12 -> bool`);;
 let word12_lt_def = new_axiom
   `!x y. word12_lt x y <=> word12_to_num x < word12_to_num y`;;
 
-new_constant ("rdecode_word12", `:random -> word12 # random`);;
+new_constant ("random_word12", `:random -> word12`);;
 
-let rdecode_word12_def = new_axiom
-  `!r.
-     rdecode_word12 r =
-     let (n,r') = rdecode_uniform word12_size r in
-     (num_to_word12 n, r')`;;
+let random_word12_def = new_axiom
+  `!r. random_word12 r = num_to_word12 (random_uniform word12_size r)`;;
 
 let word12_to_num_inj = new_axiom
   `!x y. word12_to_num x = word12_to_num y ==> x = y`;;
@@ -452,9 +449,9 @@ let word12_lt_list = new_axiom
    `!w1 w2.
       word12_bits_lte F (word12_to_list w1) (word12_to_list w2) <=> word12_lt w1 w2`;;
 
-let rdecode_word12 = new_axiom
+let random_word12 = new_axiom
    `!r.
-      rdecode_word12 r =
+      random_word12 r =
       let (r1,r2) = rsplit r in
       let (l,r1') = rbits word12_width r1 in
       (list_to_word12 l, r2)`;;

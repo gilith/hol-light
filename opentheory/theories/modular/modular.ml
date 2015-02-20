@@ -442,24 +442,18 @@ let modular_lt_def = new_axiom
   `!x y. modular_lt x y <=> modular_to_num x < modular_to_num y`;;
 *)
 
-let rdecode_modular_def = new_definition
-  `!r.
-     rdecode_modular r =
-     let (n,r') = rdecode_uniform modulus r in
-     (num_to_modular n, r')`;;
+let random_modular_def = new_definition
+  `!r. random_modular r = num_to_modular (random_uniform modulus r)`;;
 
 (*PARAMETRIC
-new_constant ("rdecode_modular", `:random -> modular # random`);;
+new_constant ("random_modular", `:random -> modular`);;
 *)
 
-export_thm rdecode_modular_def;;
+export_thm random_modular_def;;
 
 (*PARAMETRIC
-let rdecode_modular_def = new_axiom
-  `!r.
-     rdecode_modular r =
-     let (n,r') = rdecode_uniform modulus r in
-     (num_to_modular n, r')`;;
+let random_modular_def = new_axiom
+  `!r. random_modular r = num_to_modular (random_uniform modulus r)`;;
 *)
 
 (* ------------------------------------------------------------------------- *)

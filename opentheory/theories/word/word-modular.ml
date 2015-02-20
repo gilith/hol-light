@@ -90,13 +90,10 @@ new_constant ("word_lt", `:word -> word -> bool`);;
 let word_lt_def = new_axiom
   `!x y. word_lt x y <=> word_to_num x < word_to_num y`;;
 
-new_constant ("rdecode_word", `:random -> word # random`);;
+new_constant ("random_word", `:random -> word`);;
 
-let rdecode_word_def = new_axiom
-  `!r.
-     rdecode_word r =
-     let (n,r') = rdecode_uniform word_size r in
-     (num_to_word n, r')`;;
+let random_word_def = new_axiom
+  `!r. random_word r = num_to_word (random_uniform word_size r)`;;
 
 let word_to_num_inj = new_axiom
   `!x y. word_to_num x = word_to_num y ==> x = y`;;

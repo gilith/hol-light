@@ -1217,17 +1217,17 @@ let word_lt_list = new_axiom
       word_bits_lte F (word_to_list w1) (word_to_list w2) <=> word_lt w1 w2`;;
 *)
 
-let rdecode_word = prove
+let random_word = prove
   (`!r.
-      rdecode_word r =
+      random_word r =
       let (r1,r2) = rsplit r in
       let (l,r1') = rbits word_width r1 in
       (list_to_word l, r2)`,
    GEN_TAC THEN
    REWRITE_TAC
-     [rdecode_word_def; rdecode_uniform_def;
+     [random_word_def; random_uniform_def;
       word_size_def; bit_width_ones] THEN
-   ONCE_REWRITE_TAC [rdecode_uniform_loop_def] THEN
+   ONCE_REWRITE_TAC [random_uniform_loop_def] THEN
    PAIR_CASES_TAC `rsplit r` THEN
    DISCH_THEN
      (X_CHOOSE_THEN `r1 : random`
@@ -1248,12 +1248,12 @@ let rdecode_word = prove
     MATCH_MP_TAC MOD_LT THEN
     REWRITE_TAC [bits_to_num_bound]]);;
 
-export_thm rdecode_word;;
+export_thm random_word;;
 
 (*PARAMETRIC
-let rdecode_word = new_axiom
+let random_word = new_axiom
    `!r.
-      rdecode_word r =
+      random_word r =
       let (r1,r2) = rsplit r in
       let (l,r1') = rbits word_width r1 in
       (list_to_word l, r2)`;;

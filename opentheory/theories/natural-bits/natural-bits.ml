@@ -1653,6 +1653,16 @@ let bit_bound_le = prove
 
 export_thm bit_bound_le;;
 
+let random_uniform_src = prove
+ (`!n.
+     random_uniform n =
+     \r.
+       let w = bit_width (n - 1) in
+       random_uniform_loop n w r`,
+  REWRITE_TAC [FUN_EQ_THM; random_uniform_def]);;
+
+export_thm random_uniform_src;;
+
 (* ------------------------------------------------------------------------- *)
 (* Haskell source for natural number to bit-list conversions.                *)
 (* ------------------------------------------------------------------------- *)
@@ -1673,7 +1683,7 @@ export_thm bits_to_num_def;;  (* Haskell *)
 export_thm num_to_bitvec_src;;  (* Haskell *)
 export_thm num_to_bits_src;;  (* Haskell *)
 export_thm random_uniform_loop_def;;  (* Haskell *)
-export_thm random_uniform_def;;  (* Haskell *)
+export_thm random_uniform_src;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
 (* Bit-list functions operating on ML numerals.                              *)

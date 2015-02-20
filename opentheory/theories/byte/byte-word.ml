@@ -98,13 +98,10 @@ new_constant ("byte_lt", `:byte -> byte -> bool`);;
 let byte_lt_def = new_axiom
   `!x y. byte_lt x y <=> byte_to_num x < byte_to_num y`;;
 
-new_constant ("rdecode_byte", `:random -> byte # random`);;
+new_constant ("random_byte", `:random -> byte`);;
 
-let rdecode_byte_def = new_axiom
-  `!r.
-     rdecode_byte r =
-     let (n,r') = rdecode_uniform byte_size r in
-     (num_to_byte n, r')`;;
+let random_byte_def = new_axiom
+  `!r. random_byte r = num_to_byte (random_uniform byte_size r)`;;
 
 let byte_to_num_inj = new_axiom
   `!x y. byte_to_num x = byte_to_num y ==> x = y`;;
@@ -452,9 +449,9 @@ let byte_lt_list = new_axiom
    `!w1 w2.
       byte_bits_lte F (byte_to_list w1) (byte_to_list w2) <=> byte_lt w1 w2`;;
 
-let rdecode_byte = new_axiom
+let random_byte = new_axiom
    `!r.
-      rdecode_byte r =
+      random_byte r =
       let (r1,r2) = rsplit r in
       let (l,r1') = rbits byte_width r1 in
       (list_to_byte l, r2)`;;
