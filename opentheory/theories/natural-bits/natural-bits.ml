@@ -233,8 +233,21 @@ let bits_to_num_def = new_definition
 
 export_thm bits_to_num_def;;
 
+let (num_to_bitvec_zero,num_to_bitvec_suc) =
+  let def = new_recursive_definition num_RECURSION
+    `(!n. num_to_bitvec n 0 = []) /\
+     (!n k.
+        num_to_bitvec n (SUC k) =
+        CONS (bit_hd n) (num_to_bitvec (bit_tl n) k))` in
+  CONJ_PAIR def;;
+
+export_thm num_to_bitvec_zero;;
+export_thm num_to_bitvec_suc;;
+
+let num_to_bitvec_def = CONJ num_to_bitvec_zero num_to_bitvec_suc;;
+
 let num_to_bits_def = new_definition
-  `!n. num_to_bits n = MAP (bit_nth n) (interval 0 (bit_width n))`;;
+  `!n. num_to_bits n = num_to_bitvec n (bit_width n)`;;
 
 export_thm num_to_bits_def;;
 
@@ -297,8 +310,7 @@ let random_uniform_def = new_definition
   `!n r.
      random_uniform n r =
      let w = bit_width (n - 1) in
-     let m = random_uniform_loop n w r in
-     if m < n then m else 0`;;
+     random_uniform_loop n w r`;;
 
 export_thm random_uniform_def;;
 
@@ -308,17 +320,19 @@ export_thm random_uniform_def;;
 
 logfile "natural-bits-thm";;
 
-let length_num_to_bits = prove
-  (`!n. LENGTH (num_to_bits n) = bit_width n`,
-   REWRITE_TAC [num_to_bits_def; LENGTH_MAP; length_interval]);;
-
-export_thm length_num_to_bits;;
-
 let bit_width_zero = prove
   (`bit_width 0 = 0`,
    REWRITE_TAC [bit_width_def]);;
 
 export_thm bit_width_zero;;
+
+let bit_width_eq_zero = prove
+  (`!n. bit_width n = 0 <=> n = 0`,
+   INDUCT_TAC THENL
+   [REWRITE_TAC [bit_width_zero];
+    REWRITE_TAC [bit_width_def; NOT_SUC; GSYM ADD1]]);;
+
+export_thm bit_width_eq_zero;;
 
 let bit_width_one = prove
   (`bit_width 1 = 1`,
@@ -912,6 +926,16 @@ let bit_bound_one = prove
 
 export_thm bit_bound_one;;
 
+let bit_bound_width = prove
+  (`!n. bit_bound n (bit_width n) = n`,
+   MATCH_MP_TAC bit_tl_induction THEN
+   REWRITE_TAC [bit_width_zero; bit_bound_zero] THEN
+   REPEAT STRIP_TAC THEN
+   ONCE_REWRITE_TAC [bit_width_src] THEN
+   ASM_REWRITE_TAC [GSYM ADD1; bit_bound_suc; bit_cons_hd_tl]);;
+
+export_thm bit_bound_width;;
+
 let bit_append_nil = prove
   (`!n. bit_append [] n = n`,
    REWRITE_TAC [bit_append_def; foldr_nil]);;
@@ -963,18 +987,55 @@ let bits_to_num_append = prove
 
 export_thm bits_to_num_append;;
 
+let num_to_bitvec = prove
+ (`!n k. num_to_bitvec n k = MAP (bit_nth n) (interval 0 k)`,
+  ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [interval_zero; MAP; num_to_bitvec_zero];
+   ASM_REWRITE_TAC [interval_suc; MAP; num_to_bitvec_suc] THEN
+   REWRITE_TAC
+     [GSYM map_suc_interval; GSYM MAP_o; bit_nth_zero; bit_tl_nth]]);;
+
+export_thm num_to_bitvec;;
+
+let length_num_to_bitvec = prove
+  (`!n k. LENGTH (num_to_bitvec n k) = k`,
+   REWRITE_TAC [num_to_bitvec; LENGTH_MAP; length_interval]);;
+
+export_thm length_num_to_bitvec;;
+
+let length_num_to_bits = prove
+  (`!n. LENGTH (num_to_bits n) = bit_width n`,
+   REWRITE_TAC [num_to_bits_def; length_num_to_bitvec]);;
+
+export_thm length_num_to_bits;;
+
+let num_to_bitvec_src = prove
+  (`!n k.
+      num_to_bitvec n k =
+      if k = 0 then [] else
+      CONS (bit_hd n) (num_to_bitvec (bit_tl n) (k - 1))`,
+   GEN_TAC THEN
+   INDUCT_TAC THEN
+   REWRITE_TAC [num_to_bitvec_def; NOT_SUC; SUC_SUB1]);;
+
+export_thm num_to_bitvec_src;;
+
 let num_to_bits_src = prove
   (`!n.
       num_to_bits n =
       if n = 0 then [] else CONS (bit_hd n) (num_to_bits (bit_tl n))`,
    GEN_TAC THEN
    REWRITE_TAC [num_to_bits_def] THEN
+   CONV_TAC (LAND_CONV (REWR_CONV num_to_bitvec_src)) THEN
+   REWRITE_TAC [bit_width_eq_zero] THEN
    ASM_CASES_TAC `n = 0` THENL
-   [ASM_REWRITE_TAC [bit_width_def; interval_zero; MAP];
+   [ASM_REWRITE_TAC [];
     ASM_REWRITE_TAC [] THEN
-    CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [bit_width_src])) THEN
-    ASM_REWRITE_TAC [interval_suc; GSYM ADD1; MAP; bit_nth_zero] THEN
-    REWRITE_TAC [bit_tl_nth; MAP_o; map_suc_interval]]);;
+    AP_TERM_TAC THEN
+    AP_TERM_TAC THEN
+    CONV_TAC (LAND_CONV (LAND_CONV (REWR_CONV bit_width_src))) THEN
+    ASM_REWRITE_TAC [GSYM ADD1; SUC_SUB1]]);;
 
 export_thm num_to_bits_src;;
 
@@ -1001,13 +1062,19 @@ let num_to_bits_one = prove
 
 export_thm num_to_bits_one;;
 
+let num_to_bitvec_to_num = prove
+  (`!n k. bits_to_num (num_to_bitvec n k) = bit_bound n k`,
+   REWRITE_TAC [SWAP_FORALL_THM] THEN
+   INDUCT_TAC THENL
+   [REWRITE_TAC [num_to_bitvec_zero; bit_bound_zero; bits_to_num_nil];
+    GEN_TAC THEN
+    ASM_REWRITE_TAC [num_to_bitvec_suc; bit_bound_suc; bits_to_num_cons]]);;
+
+export_thm num_to_bitvec_to_num;;
+
 let num_to_bits_to_num = prove
   (`!n. bits_to_num (num_to_bits n) = n`,
-   MATCH_MP_TAC bit_tl_induction THEN
-   REPEAT STRIP_TAC THENL
-   [REWRITE_TAC [num_to_bits_zero; bits_to_num_nil];
-    ONCE_REWRITE_TAC [num_to_bits_src] THEN
-    ASM_REWRITE_TAC [bits_to_num_cons; bit_cons_hd_tl]]);;
+   REWRITE_TAC [num_to_bits_def; num_to_bitvec_to_num; bit_bound_width]);;
 
 export_thm num_to_bits_to_num;;
 
@@ -1136,7 +1203,7 @@ let bits_to_num_to_bits = prove
     MATCH_MP_TAC nth_eq THEN
     ASM_REWRITE_TAC [length_num_to_bits] THEN
     REPEAT STRIP_TAC THEN
-    ASM_REWRITE_TAC [num_to_bits_def] THEN
+    ASM_REWRITE_TAC [num_to_bits_def; num_to_bitvec] THEN
     MP_TAC (ISPECL [`bit_nth (bits_to_num l)`;
                     `interval 0 (LENGTH (l : bool list))`;
                     `i : num`] nth_map) THEN
@@ -1603,6 +1670,7 @@ export_thm bit_nth_def;;  (* Haskell *)
 export_thm bit_bound_def;;  (* Haskell *)
 export_thm bit_append_def;;  (* Haskell *)
 export_thm bits_to_num_def;;  (* Haskell *)
+export_thm num_to_bitvec_src;;  (* Haskell *)
 export_thm num_to_bits_src;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
@@ -1637,11 +1705,11 @@ let bit_append_num = itlist bit_cons_num;;
 
 let bits_to_num l = bit_append_num l num_0;;
 
-let rec num_to_bits_bound k n =
+let rec num_to_bitvec n k =
     if eq_num k num_0 then [] else
-    bit_hd_num n :: num_to_bits_bound (k -/ num_1) (bit_tl_num n);;
+    bit_hd_num n :: num_to_bitvec (bit_tl_num n) (k -/ num_1);;
 
-let num_to_bits n = num_to_bits_bound (bit_width_num n) n;;
+let num_to_bits n = num_to_bitvec n (bit_width_num n);;
 
 (* ------------------------------------------------------------------------- *)
 (* Bit-list conversions.                                                     *)

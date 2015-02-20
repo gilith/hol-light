@@ -22,9 +22,10 @@ const "HOLLight.bit_shl" as "Number.Natural.Bits.shiftLeft"
 const "HOLLight.bit_shr" as "Number.Natural.Bits.shiftRight"
 const "HOLLight.bit_tl" as "Number.Natural.Bits.tail"
 const "HOLLight.num_to_bits" as "Number.Natural.Bits.toList"
+const "HOLLight.num_to_bitvec" as "Number.Natural.Bits.toVector"
 const "HOLLight.bit_width" as "Number.Natural.Bits.width"
 
 # Number.Natural.Uniform
 
-const "HOLLight.rdecode_uniform" as "Number.Natural.Uniform.fromRandom"
-const "HOLLight.rdecode_uniform_loop" as "Number.Natural.Uniform.fromRandom.loop"
+const "HOLLight.random_uniform" as "Number.Natural.Uniform.fromRandom"
+const "HOLLight.random_uniform_loop" as "Number.Natural.Uniform.fromRandom.loop"

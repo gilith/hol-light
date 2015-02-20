@@ -51,14 +51,14 @@ let synthesize_montgomery_mult_reduce n =
     let kn = lhand (lhand (rhs (concl egcd_th))) in
     let (ns,nc) =
         let r1 = sub_num r num_1 in
-        let n1 = num_to_bits_bound r1 n in
+        let n1 = num_to_bitvec n r1 in
         let n2 = div_num (sub_num n (bits_to_num n1)) num_2 in
-        (bits_to_bus n1, bits_to_bus (num_to_bits_bound r1 n2)) in
+        (bits_to_bus n1, bits_to_bus (num_to_bitvec n2 r1)) in
     let k = dest_numeral kn in
     let (ks,kc) =
-        let k1 = num_to_bits_bound r1 k in
+        let k1 = num_to_bitvec k r1 in
         let k2 = div_num (sub_num k (bits_to_num k1)) num_2 in
-        (bits_to_bus k1, bits_to_bus (num_to_bits_bound r1 k2)) in
+        (bits_to_bus k1, bits_to_bus (num_to_bitvec k2 r1)) in
     let fv_x = `x : num` in
     let fv_y = `y : num` in
     let fv_t = `t : cycle` in
@@ -235,15 +235,15 @@ let synthesize_montgomery_mult n =
     let kn = lhand (lhand (rhs (concl egcd_th))) in
     let (ns,nc) =
         let r1 = sub_num r num_1 in
-        let n1 = num_to_bits_bound r1 n in
+        let n1 = num_to_bitvec n r1 in
         let n2 = div_num (sub_num n (bits_to_num n1)) num_2 in
-        (bits_to_bus n1, bits_to_bus (num_to_bits_bound r1 n2)) in
+        (bits_to_bus n1, bits_to_bus (num_to_bitvec n2 r1)) in
     let k = dest_numeral kn in
     let (ks,kc) =
         let r1 = add_num r num_1 in
-        let k1 = num_to_bits_bound r1 k in
+        let k1 = num_to_bitvec k r1 in
         let k2 = div_num (sub_num k (bits_to_num k1)) num_2 in
-        (bits_to_bus k1, bits_to_bus (num_to_bits_bound r1 k2)) in
+        (bits_to_bus k1, bits_to_bus (num_to_bitvec k2 r1)) in
     let jb =
         let jn = add_num d0 (add_num d1 (add_num d2 (add_num r num_1))) in
         mk_counter_arg (sub_num jn d3) in
@@ -254,7 +254,7 @@ let synthesize_montgomery_mult n =
         NUM_REDUCE_CONV tm in
     let rx =
         let n = dest_numeral (rhs (concl rx_th)) in
-        bits_to_bus (num_to_bits_bound r n) in
+        bits_to_bus (num_to_bitvec n r) in
     let ry_th =
         let tm =
             let tm0 = mk_comb (`(EXP) 2`, rn) in
@@ -263,7 +263,7 @@ let synthesize_montgomery_mult n =
         NUM_REDUCE_CONV tm in
     let ry =
         let n = dest_numeral (rhs (concl ry_th)) in
-        bits_to_bus (num_to_bits_bound r n) in
+        bits_to_bus (num_to_bitvec n r) in
     let rz_th =
         let tm =
             let tm0 = mk_comb (`(EXP) 2`, rn) in
@@ -272,7 +272,7 @@ let synthesize_montgomery_mult n =
         NUM_REDUCE_CONV tm in
     let rz =
         let n = dest_numeral (rhs (concl rz_th)) in
-        bits_to_bus (num_to_bits_bound r n) in
+        bits_to_bus (num_to_bitvec n r) in
     let fv_x = `x : num` in
     let fv_y = `y : num` in
     let fv_t = `t : cycle` in
@@ -552,15 +552,15 @@ let instantiate_montgomery_double_exp n m =
     let kn = lhand (lhand (rhs (concl egcd_th))) in
     let (ns,nc) =
         let r1 = sub_num r num_1 in
-        let n1 = num_to_bits_bound r1 n in
+        let n1 = num_to_bitvec n r1 in
         let n2 = div_num (sub_num n (bits_to_num n1)) num_2 in
-        (bits_to_bus n1, bits_to_bus (num_to_bits_bound r1 n2)) in
+        (bits_to_bus n1, bits_to_bus (num_to_bitvec n2 r1)) in
     let k = dest_numeral kn in
     let (ks,kc) =
         let r1 = add_num r num_1 in
-        let k1 = num_to_bits_bound r1 k in
+        let k1 = num_to_bitvec k r1 in
         let k2 = div_num (sub_num k (bits_to_num k1)) num_2 in
-        (bits_to_bus k1, bits_to_bus (num_to_bits_bound r1 k2)) in
+        (bits_to_bus k1, bits_to_bus (num_to_bitvec k2 r1)) in
     let mb =
         let m1 = sub_num m num_1 in
         mk_event_counter_arg m1 in
@@ -574,7 +574,7 @@ let instantiate_montgomery_double_exp n m =
         NUM_REDUCE_CONV tm in
     let rx =
         let n = dest_numeral (rhs (concl rx_th)) in
-        bits_to_bus (num_to_bits_bound r n) in
+        bits_to_bus (num_to_bitvec n r) in
     let ry_th =
         let tm =
             let tm0 = mk_comb (`(EXP) 2`, rn) in
@@ -583,7 +583,7 @@ let instantiate_montgomery_double_exp n m =
         NUM_REDUCE_CONV tm in
     let ry =
         let n = dest_numeral (rhs (concl ry_th)) in
-        bits_to_bus (num_to_bits_bound r n) in
+        bits_to_bus (num_to_bitvec n r) in
     let rz_th =
         let tm =
             let tm0 = mk_comb (`(EXP) 2`, rn) in
@@ -592,7 +592,7 @@ let instantiate_montgomery_double_exp n m =
         NUM_REDUCE_CONV tm in
     let rz =
         let n = dest_numeral (rhs (concl rz_th)) in
-        bits_to_bus (num_to_bits_bound r n) in
+        bits_to_bus (num_to_bitvec n r) in
     let l_th =
         let tm =
             let tm0 = list_mk_comb (`(+) : num -> num -> num`, [d4n; `1`]) in

@@ -3564,7 +3564,7 @@ export_thm counter_pulse_signal;;
 let mk_event_counter_arg n =
     let r = bit_width_num n in
     let m = bit_shl_num num_1 r in
-    bits_to_bus (num_to_bits_bound r (m -/ n));;
+    bits_to_bus (num_to_bitvec (m -/ n) r);;
 
 let mk_counter_arg n =
     let n2 = add_num n num_2 in
@@ -3574,7 +3574,7 @@ let mk_counter_arg n =
         if le_num n2 m then (m,r) else
         let rs = r +/ num_1 in
         (bit_shl_num num_1 rs +/ rs, rs) in
-    bits_to_bus (num_to_bits_bound r (m -/ n2));;
+    bits_to_bus (num_to_bitvec (m -/ n2) r);;
 
 let bpipe_syn = [("pipeb",bpipe_def)];;
 
