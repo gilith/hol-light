@@ -67,6 +67,7 @@ loads "opentheory/theories/natural-prime/natural-prime.ml";;
 (* Fibonacci numbers.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 loads "opentheory/theories/natural-fibonacci/natural-fibonacci.ml";;
 
 (* ------------------------------------------------------------------------- *)
@@ -213,4 +214,5 @@ loads "opentheory/theories/haskell-char/haskell-char.ml";;
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/haskell-prime/haskell-prime.ml";;
+***)
 ***)

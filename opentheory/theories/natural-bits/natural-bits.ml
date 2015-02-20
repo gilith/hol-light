@@ -1672,6 +1672,8 @@ export_thm bit_append_def;;  (* Haskell *)
 export_thm bits_to_num_def;;  (* Haskell *)
 export_thm num_to_bitvec_src;;  (* Haskell *)
 export_thm num_to_bits_src;;  (* Haskell *)
+export_thm random_uniform_loop_def;;  (* Haskell *)
+export_thm random_uniform_def;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
 (* Bit-list functions operating on ML numerals.                              *)
