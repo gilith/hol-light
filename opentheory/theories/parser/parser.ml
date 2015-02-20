@@ -460,7 +460,7 @@ let parser_strong_inverse_def = new_definition
 
 export_thm parser_strong_inverse_def;;
 
-(* Primitive parsers *)
+(* Primitive parser combinators *)
 
 let parse_token_def = new_definition
   `!(f : A -> B option) (x : A) (xs : A pstream).
@@ -509,7 +509,7 @@ let parser_map_def = new_definition
 
 export_thm parser_map_def;;
 
-(* Derived parsers *)
+(* Derived parser combinators *)
 
 let parser_none_def = new_definition
   `(parser_none : (A,B) parser) = parser_token (K NONE)`;;
@@ -528,38 +528,13 @@ let parser_any_def = new_definition
 
 export_thm parser_any_def;;
 
-let parser_map_def = new_definition
-  `!f p.
-     parser_map (f : B -> C) (p : (A,B) parser) =
-     parser_map_partial (\x. SOME (f x)) p`;;
-
-export_thm parser_map_def;;
-
-let parse_pair_def = new_definition
-  `!p1 p2 x xs.
-     parse_pair (p1 : (A,B) parser) (p2 : (A,C) parser) x xs =
-     case_option
-       NONE
-       (\ (y,ys).
-          case_option
-            NONE
-            (\ (z,zs). SOME ((y,z),zs))
-            (apply_parser p2 ys))
-       (dest_parser p1 x xs)`;;
-
-export_thm parse_pair_def;;
-
 let parser_pair_def = new_definition
-  `!p1 p2.
-     parser_pair (p1 : (A,B) parser) (p2 : (A,C) parser) =
-     mk_parser (parse_pair p1 p2)`;;
+  `!(p1 : (A,B) parser) (p2 : (A,C) parser).
+     parser_pair p1 p2 =
+     parser_sequence
+       (parser_map p1 (\x. SOME (parser_map p2 (\y. SOME (x,y)))))`;;
 
 export_thm parser_pair_def;;
-
-let parser_option_def = new_definition
-  `!f. parser_option (f : A -> B option) = parser_map_partial f parser_any`;;
-
-export_thm parser_option_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of stream parser combinators.                                  *)
