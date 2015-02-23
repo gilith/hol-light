@@ -703,6 +703,56 @@ let parser_token_strong_inverse = prove
 
 export_thm parser_token_strong_inverse;;
 
+let is_parser_sequence = prove
+ (`!p : (A, (A,B) parser) parser. is_parser (parse_sequence p)`,
+  GEN_TAC THEN
+  REWRITE_TAC [is_parser_def; parse_sequence_def] THEN
+  REPEAT GEN_TAC THEN
+  MP_TAC
+    (ISPECL [`p : (A, (A,B) parser) parser`; `x : A`; `xs : A pstream`]
+       dest_parser_cases) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [case_option_def] THEN
+  MP_TAC
+    (ISPECL [`y : (A,B) parser`; `ys : A pstream`]
+       apply_parser_cases) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST1_TAC
+       (X_CHOOSE_THEN `z : B`
+          (X_CHOOSE_THEN `zs : A pstream` STRIP_ASSUME_TAC))) THEN
+  ASM_REWRITE_TAC [case_option_def] THEN
+  MATCH_MP_TAC is_suffix_pstream_trans THEN
+  EXISTS_TAC `ys : A pstream` THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC is_suffix_pstream_proper THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm is_parser_sequence;;
+
+let dest_parser_sequence = prove
+ (`!p : (A, (A,B) parser) parser.
+     dest_parser (parser_sequence p) = parse_sequence p`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC
+    [parser_sequence_def; GSYM (CONJUNCT2 parser_tybij); is_parser_sequence]);;
+
+export_thm dest_parser_sequence;;
+
+let apply_parser_sequence = prove
+ (`!(p : (A, (A,B) parser) parser) xs.
+     apply_parser (parser_sequence p) xs =
+     case_option
+       NONE
+       (\ (y,ys). apply_parser y ys)
+       (apply_parser p xs)`,
+   REPEAT STRIP_TAC THEN
+   MP_TAC (ISPEC `xs : A pstream` pstream_cases) THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [apply_parser_def; case_option_def] THEN
+   REWRITE_TAC [dest_parser_sequence; parse_sequence_def]);;
+
+export_thm apply_parser_sequence;;
+
 let is_parser_map_partial = prove
  (`!(p : (A,B) parser) (f : B -> C option).
      is_parser (parse_map_partial p f)`,
@@ -793,161 +843,61 @@ let parser_map_partial_strong_inverse = prove
 
 export_thm parser_map_partial_strong_inverse;;
 
-let is_parser_sequence = prove
- (`!p : (A, (A,B) parser) parser. is_parser (parse_sequence p)`,
-  GEN_TAC THEN
-  REWRITE_TAC [is_parser_def; parse_sequence_def] THEN
-  REPEAT GEN_TAC THEN
-  MP_TAC
-    (ISPECL [`p : (A, (A,B) parser) parser`; `x : A`; `xs : A pstream`]
-       dest_parser_cases) THEN
-  STRIP_TAC THEN
-  ASM_REWRITE_TAC [case_option_def] THEN
-  MP_TAC
-    (ISPECL [`y : (A,B) parser`; `ys : A pstream`]
-       apply_parser_cases) THEN
-  DISCH_THEN
-    (DISJ_CASES_THEN2 SUBST1_TAC
-       (X_CHOOSE_THEN `z : B`
-          (X_CHOOSE_THEN `zs : A pstream` STRIP_ASSUME_TAC))) THEN
-  ASM_REWRITE_TAC [case_option_def] THEN
-  MATCH_MP_TAC is_suffix_pstream_trans THEN
-  EXISTS_TAC `ys : A pstream` THEN
-  ASM_REWRITE_TAC [] THEN
-  MATCH_MP_TAC is_suffix_pstream_proper THEN
-  ASM_REWRITE_TAC []);;
-
-export_thm is_parser_sequence;;
-
-let dest_parser_sequence = prove
- (`!p : (A, (A,B) parser) parser.
-     dest_parser (parser_sequence p) = parse_sequence p`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC
-    [parser_sequence_def; GSYM (CONJUNCT2 parser_tybij); is_parser_sequence]);;
-
-export_thm dest_parser_sequence;;
-
-let apply_parser_sequence = prove
- (`!(p : (A, (A,B) parser) parser) xs.
-     apply_parser (parser_sequence p) xs =
-     case_option
-       NONE
-       (\ (y,ys). apply_parser y ys)
-       (apply_parser p xs)`,
-   REPEAT STRIP_TAC THEN
-   MP_TAC (ISPEC `xs : A pstream` pstream_cases) THEN
-   REPEAT STRIP_TAC THEN
-   ASM_REWRITE_TAC [apply_parser_def; case_option_def] THEN
-   REWRITE_TAC [dest_parser_sequence; parse_sequence_def]);;
-
-export_thm apply_parser_sequence;;
-
-stop;;
-
-let parser_sequence_inverse = prove
- (`!p1 p2 e1 e2.
-     parse_inverse p1 e1 /\ parse_inverse p2 e2 ==>
-     parse_inverse
-       (parse_pair p1 p2 : (A, B # C) parser)
-       (\ (b,c). APPEND (e1 b) (e2 c))`,
-  REWRITE_TAC [parse_inverse_def] THEN
-  REPEAT STRIP_TAC THEN
-  REWRITE_TAC [parse_parse_pair] THEN
-  MP_TAC (ISPEC `x : B # C` PAIR_SURJECTIVE) THEN
-  STRIP_TAC THEN
-  ASM_REWRITE_TAC [append_pstream_assoc; case_option_def]);;
-
-export_thm parse_pair_inverse;;
-
-let parse_pair_strong_inverse = prove
-  (`!p1 p2 e1 e2.
-      parse_strong_inverse p1 e1 /\ parse_strong_inverse p2 e2 ==>
-      parse_strong_inverse
-        (parse_pair p1 p2 : (A, B # C) parser)
-        (\ (b,c). APPEND (e1 b) (e2 c))`,
-   REWRITE_TAC [parse_strong_inverse_def] THEN
-   REPEAT STRIP_TAC THENL
-   [MATCH_MP_TAC parse_pair_inverse THEN
-    ASM_REWRITE_TAC [];
-    POP_ASSUM MP_TAC THEN
-    MP_TAC (ISPEC `x : B # C` PAIR_SURJECTIVE) THEN
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [parse_parse_pair; append_pstream_assoc] THEN
-    MP_TAC (ISPEC `parse (p1 : (A,B) parser) s` option_cases) THEN
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [case_option_def; option_distinct] THEN
-    POP_ASSUM MP_TAC THEN
-    MP_TAC (ISPEC `a' : B # A pstream` PAIR_SURJECTIVE) THEN
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [] THEN
-    STRIP_TAC THEN
-    MP_TAC (ISPEC `parse (p2 : (A,C) parser) b'` option_cases) THEN
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [case_option_def; option_distinct] THEN
-    POP_ASSUM MP_TAC THEN
-    MP_TAC (ISPEC `a''' : C # A pstream` PAIR_SURJECTIVE) THEN
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [] THEN
-    REWRITE_TAC [option_inj; PAIR_EQ] THEN
-    REPEAT STRIP_TAC THEN
-    UNDISCH_TAC `parse (p2 : (A,C) parser) b' = SOME (a'''',b'')` THEN
-    UNDISCH_TAC `parse (p1 : (A,B) parser) s = SOME (a'',b')` THEN
-    ASM_REWRITE_TAC [] THEN
-    REPEAT STRIP_TAC THEN
-    FIRST_X_ASSUM MATCH_MP_TAC THEN
-    ASM_REWRITE_TAC [option_inj; PAIR_EQ] THEN
-    FIRST_X_ASSUM MATCH_MP_TAC THEN
-    ASM_REWRITE_TAC []]);;
-
-export_thm parse_pair_strong_inverse;;
-
-let is_parser_none = prove
- (`is_parser (parse_none : A -> A pstream -> (B # A pstream) option)`,
-  REWRITE_TAC [is_parser_def; parse_none_def; case_option_def]);;
-
-export_thm is_parser_none;;
-
 let dest_parser_none = prove
- (`dest_parser (parser_none : (A,B) parser) = parse_none`,
+ (`!x xs. dest_parser (parser_none : (A,B) parser) x xs = NONE`,
   REWRITE_TAC
-    [parser_none_def; GSYM (CONJUNCT2 parser_tybij); is_parser_none]);;
+    [parser_none_def; dest_parser_token; parse_token_def; K_THM;
+     case_option_def]);;
 
 export_thm dest_parser_none;;
 
 let apply_parser_none = prove
  (`!xs. apply_parser (parser_none : (A,B) parser) xs = NONE`,
-  REPEAT STRIP_TAC THEN
+  GEN_TAC THEN
   MP_TAC (ISPEC `xs : A pstream` pstream_cases) THEN
   REPEAT STRIP_TAC THEN
-  ASM_REWRITE_TAC [apply_parser_def; case_pstream_def; case_option_def] THEN
-  REWRITE_TAC [dest_parser_none; parse_none_def]);;
+  ASM_REWRITE_TAC
+    [apply_parser_def; case_pstream_def; case_option_def; dest_parser_none]);;
 
 export_thm apply_parser_none;;
 
-let is_parser_any = prove
- (`is_parser (parse_any : A -> A pstream -> (A # A pstream) option)`,
-  REWRITE_TAC
-    [is_parser_def; parse_any_def; case_option_def; is_suffix_pstream_refl]);;
+let dest_parser_some = prove
+ (`!p (x : A) xs.
+     dest_parser (parser_some p) x xs =
+     if p x then SOME (x,xs) else NONE`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [parser_some_def; dest_parser_token; parse_token_def] THEN
+  BOOL_CASES_TAC `(p : A -> bool) x` THEN
+  REWRITE_TAC [case_option_def]);;
 
-export_thm is_parser_any;;
+export_thm dest_parser_some;;
+
+let apply_parser_some = prove
+ (`!p : A -> bool.
+     apply_parser (parser_some p) =
+     case_pstream
+       NONE
+       NONE
+       (\x xs. if p x then SOME (x,xs) else NONE)`,
+  GEN_TAC THEN
+  ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
+  X_GEN_TAC `xs : A pstream` THEN
+  MP_TAC (ISPEC `xs : A pstream` pstream_cases) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [apply_parser_def; case_pstream_def; dest_parser_some]);;
+
+export_thm apply_parser_some;;
 
 let dest_parser_any = prove
- (`dest_parser (parser_any : (A,A) parser) = parse_any`,
-  REWRITE_TAC
-    [parser_any_def; GSYM (CONJUNCT2 parser_tybij); is_parser_any]);;
+ (`!(x : A) xs. dest_parser parser_any x xs = SOME (x,xs)`,
+  REWRITE_TAC [parser_any_def; dest_parser_some; K_THM]);;
 
 export_thm dest_parser_any;;
 
 let apply_parser_any = prove
  (`apply_parser (parser_any : (A,A) parser) =
    case_pstream NONE NONE (\x xs. SOME (x,xs))`,
-  ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
-  X_GEN_TAC `xs : A pstream` THEN
-  MP_TAC (ISPEC `xs : A pstream` pstream_cases) THEN
-  STRIP_TAC THEN
-  ASM_REWRITE_TAC
-    [apply_parser_def; case_pstream_def; dest_parser_any; parse_any_def]);;
+  REWRITE_TAC [parser_any_def; apply_parser_some; K_THM]);;
 
 export_thm apply_parser_any;;
 
@@ -974,8 +924,8 @@ let parser_any_strong_inverse = prove
 export_thm parser_any_strong_inverse;;
 
 let dest_parser_map = prove
- (`!(f : B -> C) (p : (A,B) parser) x xs.
-     dest_parser (parser_map f p) x xs =
+ (`!(p : (A,B) parser) (f : B -> C) x xs.
+     dest_parser (parser_map p f) x xs =
      case_option
        NONE
        (\ (y,ys). SOME (f y, ys))
@@ -987,8 +937,8 @@ let dest_parser_map = prove
 export_thm dest_parser_map;;
 
 let apply_parser_map = prove
- (`!(f : B -> C) (p : (A,B) parser) xs.
-     apply_parser (parser_map f p) xs =
+ (`!(p : (A,B) parser) (f : B -> C) xs.
+     apply_parser (parser_map p f) xs =
      case_option
        NONE
        (\ (y,ys). SOME (f y, ys))
@@ -998,10 +948,10 @@ let apply_parser_map = prove
 export_thm apply_parser_map;;
 
 let parser_map_inverse = prove
- (`!(f : B -> C) (p : (A,B) parser) g e.
+ (`!(p : (A,B) parser) (f : B -> C) g e.
      parser_inverse p e /\
      (!x. f (g x) = x) ==>
-     parser_inverse (parser_map f p) (\x. e (g x))`,
+     parser_inverse (parser_map p f) (\x. e (g x))`,
   REWRITE_TAC [parser_inverse_def] THEN
   REPEAT STRIP_TAC THEN
   ASM_REWRITE_TAC
@@ -1011,169 +961,143 @@ let parser_map_inverse = prove
 export_thm parser_map_inverse;;
 
 let parser_map_strong_inverse = prove
- (`!(f : B -> C) (p : (A,B) parser) g e.
+ (`!(p : (A,B) parser) (f : B -> C) g e.
      parser_strong_inverse p e /\
      (!x. f (g x) = x) /\
      (!y1 y2 x. f y1 = x /\ f y2 = x ==> y1 = y2) ==>
-     parser_strong_inverse (parser_map f p) (\x. e (g x))`,
+     parser_strong_inverse (parser_map p f) (\x. e (g x))`,
   REPEAT GEN_TAC THEN
   REWRITE_TAC [parser_strong_inverse_def] THEN
   REPEAT STRIP_TAC THENL
-  [MATCH_MP_TAC parse_map_inverse THEN
+  [MATCH_MP_TAC parser_map_inverse THEN
    ASM_REWRITE_TAC [];
-   POP_ASSUM MP_TAC THEN
-   ASM_REWRITE_TAC [parse_parse_map; append_pstream_def] THEN
-   MP_TAC (ISPECL [`p : (A,B) parser`; `s : A pstream`] parse_cases) THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [case_option_def; option_distinct; option_inj; PAIR_EQ] THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [] THEN
-   FIRST_X_ASSUM MATCH_MP_TAC THEN
-   ASM_REWRITE_TAC [option_inj; PAIR_EQ] THEN
-   FIRST_X_ASSUM MATCH_MP_TAC THEN
-   EXISTS_TAC `x : C` THEN
-   ASM_REWRITE_TAC []]);;
+   ALL_TAC] THEN
+  POP_ASSUM MP_TAC THEN
+  ASM_REWRITE_TAC [apply_parser_map] THEN
+  MP_TAC (ISPECL [`p : (A,B) parser`; `xs : A pstream`] apply_parser_cases) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST1_TAC
+       (X_CHOOSE_THEN `z : B`
+          (X_CHOOSE_THEN `zs : A pstream` STRIP_ASSUME_TAC))) THEN
+  ASM_REWRITE_TAC [case_option_def; option_distinct; option_inj; PAIR_EQ] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  ASM_REWRITE_TAC [option_inj; PAIR_EQ] THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  EXISTS_TAC `y : C` THEN
+  ASM_REWRITE_TAC []);;
 
-export_thm parse_map_strong_inverse;;
+export_thm parser_map_strong_inverse;;
 
-let is_parser_pair = prove
-  (`!p1 p2. is_parser (parser_pair (p1 : (A,B) parser) (p2 : (A,C) parser))`,
-   REPEAT GEN_TAC THEN
-   REWRITE_TAC [is_parser_def; parser_pair_def] THEN
-   REPEAT GEN_TAC THEN
-   MP_TAC (SPECL [`p1 : (A,B) parser`; `x : A`; `xs : A pstream`]
-             dest_parser_cases) THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [case_option_def] THEN
-   MP_TAC (ISPECL [`p2 : (A,C) parser`; `s' : A pstream`]
-             parse_cases) THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [case_option_def] THEN
-   ASM_MESON_TAC [is_suffix_pstream_trans; is_suffix_pstream_proper]);;
+stop;;
 
-export_thm is_parser_pair;;
-
-let dest_parse_pair = prove
-  (`!p1 p2.
-      dest_parser (parse_pair (p1 : (A,B) parser) (p2 : (A,C) parser)) =
-      parser_pair p1 p2`,
-   REPEAT GEN_TAC THEN
-   REWRITE_TAC
-     [parse_pair_def; GSYM (CONJUNCT2 parser_tybij); is_parser_pair]);;
+let dest_parser_pair = prove
+ (`!(p1 : (A,B) parser) (p2 : (A,C) parser) x xs.
+     dest_parser (parser_pair p1 p2) x xs =
+     case_option
+       NONE
+       (\ (y,ys).
+          case_option
+            NONE
+            (\ (z,zs). SOME ((y,z),zs))
+            (apply_parser p2 ys))
+       (dest_parser p1 x xs)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC
+    [parser_pair_def; dest_parser_sequence; parse_sequence_def;
+     dest_parser_map] THEN
+  MP_TAC
+    (ISPECL [`p1 : (A,B) parser`; `x : A`; `xs : A pstream`]
+       dest_parser_cases) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [case_option_def] THEN
+  REWRITE_TAC [apply_parser_map]);;
 
 export_thm dest_parse_pair;;
 
-let parse_parse_pair = prove
-  (`!p1 p2 s.
-      parse (parse_pair p1 p2 : (A, B # C) parser) s =
-      case_option
-        NONE
-        (\ (b,s').
-           case_option
-             NONE
-             (\ (c,s''). SOME ((b,c),s''))
-             (parse p2 s'))
-        (parse p1 s)`,
-    REPEAT STRIP_TAC THEN
-    MP_TAC (ISPEC `s : A pstream` pstream_cases) THEN
-    REPEAT STRIP_TAC THEN
-    ASM_REWRITE_TAC [parse_def; case_option_def] THEN
-    REWRITE_TAC [dest_parse_pair; parser_pair_def]);;
-
-export_thm parse_parse_pair;;
-
-let parse_pair_inverse = prove
-  (`!p1 p2 e1 e2.
-      parse_inverse p1 e1 /\ parse_inverse p2 e2 ==>
-      parse_inverse
-        (parse_pair p1 p2 : (A, B # C) parser)
-        (\ (b,c). APPEND (e1 b) (e2 c))`,
-   REWRITE_TAC [parse_inverse_def] THEN
-   REPEAT STRIP_TAC THEN
-   REWRITE_TAC [parse_parse_pair] THEN
-   MP_TAC (ISPEC `x : B # C` PAIR_SURJECTIVE) THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [append_pstream_assoc; case_option_def]);;
-
-export_thm parse_pair_inverse;;
-
-let parse_pair_strong_inverse = prove
-  (`!p1 p2 e1 e2.
-      parse_strong_inverse p1 e1 /\ parse_strong_inverse p2 e2 ==>
-      parse_strong_inverse
-        (parse_pair p1 p2 : (A, B # C) parser)
-        (\ (b,c). APPEND (e1 b) (e2 c))`,
-   REWRITE_TAC [parse_strong_inverse_def] THEN
-   REPEAT STRIP_TAC THENL
-   [MATCH_MP_TAC parse_pair_inverse THEN
-    ASM_REWRITE_TAC [];
-    POP_ASSUM MP_TAC THEN
-    MP_TAC (ISPEC `x : B # C` PAIR_SURJECTIVE) THEN
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [parse_parse_pair; append_pstream_assoc] THEN
-    MP_TAC (ISPEC `parse (p1 : (A,B) parser) s` option_cases) THEN
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [case_option_def; option_distinct] THEN
-    POP_ASSUM MP_TAC THEN
-    MP_TAC (ISPEC `a' : B # A pstream` PAIR_SURJECTIVE) THEN
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [] THEN
-    STRIP_TAC THEN
-    MP_TAC (ISPEC `parse (p2 : (A,C) parser) b'` option_cases) THEN
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [case_option_def; option_distinct] THEN
-    POP_ASSUM MP_TAC THEN
-    MP_TAC (ISPEC `a''' : C # A pstream` PAIR_SURJECTIVE) THEN
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC [] THEN
-    REWRITE_TAC [option_inj; PAIR_EQ] THEN
-    REPEAT STRIP_TAC THEN
-    UNDISCH_TAC `parse (p2 : (A,C) parser) b' = SOME (a'''',b'')` THEN
-    UNDISCH_TAC `parse (p1 : (A,B) parser) s = SOME (a'',b')` THEN
-    ASM_REWRITE_TAC [] THEN
-    REPEAT STRIP_TAC THEN
-    FIRST_X_ASSUM MATCH_MP_TAC THEN
-    ASM_REWRITE_TAC [option_inj; PAIR_EQ] THEN
-    FIRST_X_ASSUM MATCH_MP_TAC THEN
-    ASM_REWRITE_TAC []]);;
-
-export_thm parse_pair_strong_inverse;;
-
-let dest_parse_some = prove
-  (`!p a s.
-      dest_parser (parse_some (p : A -> bool)) a s =
-      if p a then SOME (a,s) else NONE`,
-   REWRITE_TAC [parse_some_def; dest_parse_option] THEN
+let apply_parser_pair = prove
+ (`!(p1 : (A,B) parser) (p2 : (A,C) parser) xs.
+     apply_parser (parser_pair p1 p2) xs =
+     case_option
+       NONE
+       (\ (y,ys).
+          case_option
+            NONE
+            (\ (z,zs). SOME ((y,z),zs))
+            (apply_parser p2 ys))
+       (apply_parser p1 xs)`,
    REPEAT GEN_TAC THEN
-   MP_TAC (SPEC `(p : A -> bool) a` BOOL_CASES_AX) THEN
+   MP_TAC (ISPEC `xs : A pstream` pstream_cases) THEN
    STRIP_TAC THEN
-   ASM_REWRITE_TAC [case_option_def; COND_CLAUSES]);;
+   ASM_REWRITE_TAC [apply_parser_def; case_option_def] THEN
+   REWRITE_TAC [dest_parser_pair]);;
 
-export_thm dest_parse_some;;
+export_thm apply_parser_pair;;
 
-let parse_parse_some = prove
-  (`!p.
-      parse (parse_some (p : A -> bool)) =
-      case_pstream
-        NONE
-        NONE
-        (\a s. if p a then SOME (a,s) else NONE)`,
-   ONCE_REWRITE_TAC [FUN_EQ_THM] THEN
-   REPEAT GEN_TAC THEN
-   MP_TAC (ISPEC `x : A pstream` pstream_cases) THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [parse_def; case_pstream_def; dest_parse_some]);;
+let parser_pair_inverse = prove
+ (`!(p1 : (A,B) parser) (p2 : (A,C) parser) e1 e2.
+     parser_inverse p1 e1 /\ parser_inverse p2 e2 ==>
+     parser_inverse (parser_pair p1 p2) (\ (x1,x2). APPEND (e1 x1) (e2 x2))`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [parser_inverse_def] THEN
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [apply_parser_pair] THEN
+  MP_TAC (ISPEC `x : B # C` PAIR_SURJECTIVE) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `y : B`
+       (X_CHOOSE_THEN `z : C` SUBST_VAR_TAC)) THEN
+  ASM_REWRITE_TAC [append_pstream_assoc; case_option_def]);;
 
-export_thm parse_parse_some;;
+export_thm parser_pair_inverse;;
 
-let parse_src = prove
- (`(!p : (A,B) parser. parse p ErrorPstream = NONE) /\
-   (!p : (A,B) parser. parse p EofPstream = NONE) /\
+let parser_pair_strong_inverse = prove
+ (`!(p1 : (A,B) parser) (p2 : (A,C) parser) e1 e2.
+     parser_strong_inverse p1 e1 /\ parser_strong_inverse p2 e2 ==>
+     parser_strong_inverse (parser_pair p1 p2)
+       (\ (x1,x2). APPEND (e1 x1) (e2 x2))`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [parser_strong_inverse_def] THEN
+  REPEAT STRIP_TAC THENL
+  [MATCH_MP_TAC parser_pair_inverse THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  POP_ASSUM MP_TAC THEN
+  MP_TAC (ISPEC `y : B # C` PAIR_SURJECTIVE) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `x1 : B`
+       (X_CHOOSE_THEN `x2 : C` SUBST_VAR_TAC)) THEN
+  ASM_REWRITE_TAC [apply_parser_pair; append_pstream_assoc] THEN
+  MP_TAC
+    (ISPECL [`p1 : (A,B) parser`; `xs : A pstream`] apply_parser_cases) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST1_TAC
+       (X_CHOOSE_THEN `z : B`
+          (X_CHOOSE_THEN `zs : A pstream` STRIP_ASSUME_TAC))) THEN
+  ASM_REWRITE_TAC [case_option_def; option_distinct] THEN
+  MP_TAC
+    (ISPECL [`p2 : (A,C) parser`; `zs : A pstream`] apply_parser_cases) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST1_TAC
+       (X_CHOOSE_THEN `w : C`
+          (X_CHOOSE_THEN `ws : A pstream` STRIP_ASSUME_TAC))) THEN
+  ASM_REWRITE_TAC [case_option_def; option_distinct] THEN
+  REWRITE_TAC [option_inj; PAIR_EQ] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  ASM_REWRITE_TAC [option_inj; PAIR_EQ] THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm parser_pair_strong_inverse;;
+
+let apply_parser_src = prove
+ (`(!p : (A,B) parser. apply_parser p ErrorPstream = NONE) /\
+   (!p : (A,B) parser. apply_parser p EofPstream = NONE) /\
    (!p : (A,B) parser. !a s.
-      parse p (ConsPstream a s) = dest_parser p a s)`,
-  REWRITE_TAC [parse_def]);;
+      apply_parser p (ConsPstream a s) = dest_parser p a s)`,
+  REWRITE_TAC [apply_parser_def]);;
 
-export_thm parse_src;;
+export_thm apply_parser_src;;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of the whole stream parser.                                    *)
