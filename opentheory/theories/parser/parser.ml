@@ -989,8 +989,6 @@ let parser_map_strong_inverse = prove
 
 export_thm parser_map_strong_inverse;;
 
-stop;;
-
 let dest_parser_pair = prove
  (`!(p1 : (A,B) parser) (p2 : (A,C) parser) x xs.
      dest_parser (parser_pair p1 p2) x xs =
@@ -1013,7 +1011,7 @@ let dest_parser_pair = prove
   ASM_REWRITE_TAC [case_option_def] THEN
   REWRITE_TAC [apply_parser_map]);;
 
-export_thm dest_parse_pair;;
+export_thm dest_parser_pair;;
 
 let apply_parser_pair = prove
  (`!(p1 : (A,B) parser) (p2 : (A,C) parser) xs.
@@ -1105,6 +1103,8 @@ export_thm apply_parser_src;;
 
 logfile "parser-all-def";;
 
+stop;;
+
 let parse_exists = prove
  (`!(p : (A,B) parser). ?f.
      (f ErrorPstream = ErrorPstream) /\
@@ -1117,46 +1117,44 @@ let parse_exists = prove
             (dest_parser p x xs))`,
   GEN_TAC THEN
   SUBGOAL_THEN
-    `?f : A pstream -> B pstream. !s.
-       f s =
+    `?f : A pstream -> B pstream. !xs.
+       f xs =
        (\g.
           case_pstream
             ErrorPstream
             EofPstream
-            (\x xs.
+            (\x xt.
                case_option
                  ErrorPstream
-                 (\ (y,ys). ConsPstream b (f' s''))
-                 (dest_parser p a s'))) f s`,
-     GEN_TAC THEN
-     MATCH_MP_TAC is_proper_suffix_pstream_recursion THEN
-     SIMP_TAC [] THEN
-     REPEAT STRIP_TAC THEN
-     MP_TAC (SPEC `s : A pstream` pstream_cases) THEN
-     STRIP_TAC THEN
-     ASM_REWRITE_TAC [case_pstream_def] THEN
-     MP_TAC (ISPEC `dest_parser (p : (A,B) parser) a0 a1` option_cases) THEN
-     STRIP_TAC THEN
-     ASM_REWRITE_TAC [case_option_def] THEN
-     POP_ASSUM MP_TAC THEN
-     MP_TAC (ISPEC `a : B # A pstream` PAIR_SURJECTIVE) THEN
-     STRIP_TAC THEN
-     ASM_REWRITE_TAC [pstream_inj] THEN
-     STRIP_TAC THEN
-     FIRST_ASSUM MATCH_MP_TAC THEN
-     ASM_REWRITE_TAC [is_proper_suffix_pstream_def] THEN
-     REWRITE_TAC [GSYM is_suffix_pstream_def] THEN
-     MATCH_MP_TAC
-       (ISPECL [`p : (A,B) parser`; `a0 : A`; `a1 : A pstream`;
-                `a' : B`; `b : A pstream`] dest_parser_suffix_pstream) THEN
-     ASM_REWRITE_TAC []) in
-  GEN_TAC THEN
-  MP_TAC (SPEC `p : (A,B) parser` exists0) THEN
-  STRIP_TAC THEN
+                 (\ (y,ys). ConsPstream y (g ys))
+                 (dest_parser p x xt))) f xs`
+     STRIP_ASSUME_TAC THENL
+  [MATCH_MP_TAC is_proper_suffix_pstream_recursion THEN
+   SIMP_TAC [] THEN
+   REPEAT STRIP_TAC THEN
+   MP_TAC (SPEC `s : A pstream` pstream_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_pstream_def] THEN
+   MP_TAC (ISPEC `dest_parser (p : (A,B) parser) a0 a1` option_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   POP_ASSUM MP_TAC THEN
+   MP_TAC (ISPEC `a : B # A pstream` PAIR_SURJECTIVE) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [pstream_inj] THEN
+   STRIP_TAC THEN
+   FIRST_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [is_proper_suffix_pstream_def] THEN
+   REWRITE_TAC [GSYM is_suffix_pstream_def] THEN
+   MATCH_MP_TAC
+     (ISPECL [`p : (A,B) parser`; `a0 : A`; `a1 : A pstream`;
+              `a' : B`; `b : A pstream`] dest_parser_suffix_pstream) THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
   EXISTS_TAC `f : A pstream -> B pstream` THEN
-  REPEAT STRIP_TAC THEN
+  REPEAT CONJ_TAC THEN
   POP_ASSUM (fun th -> CONV_TAC (LAND_CONV (REWR_CONV th))) THEN
-  REWRITE_TAC [case_pstream_def]);;
+  ASM_REWRITE_TAC [case_pstream_def]);;
 
 let (parse_pstream_error,
      parse_pstream_eof,
