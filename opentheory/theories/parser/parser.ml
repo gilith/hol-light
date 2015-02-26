@@ -493,6 +493,22 @@ let parser_sequence_def = new_definition
 
 export_thm parser_sequence_def;;
 
+let parse_orelse_def = new_definition
+  `!(p1 : (A,B) parser) p2 x xs.
+     parse_orelse p1 p2 x xs =
+     case_option
+       (dest_parser p2 x xs)
+       (\yys. SOME yys)
+       (dest_parser p1 x xs)`;;
+
+export_thm parse_orelse_def;;
+
+let parser_orelse_def = new_definition
+  `!(p1 : (A,B) parser) p2.
+     parser_orelse p1 p2 = mk_parser (parse_orelse p1 p2)`;;
+
+export_thm parser_orelse_def;;
+
 let parse_map_partial_def = new_definition
   `!(p : (A,B) parser) (f : B -> C option) x xs.
      parse_map_partial p f x xs =
@@ -752,6 +768,48 @@ let apply_parser_sequence = prove
    REWRITE_TAC [dest_parser_sequence; parse_sequence_def]);;
 
 export_thm apply_parser_sequence;;
+
+let is_parser_orelse = prove
+ (`!p1 p2 : (A,B) parser. is_parser (parse_orelse p1 p2)`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [is_parser_def; parse_orelse_def] THEN
+  REPEAT GEN_TAC THEN
+  MP_TAC
+    (ISPECL [`p1 : (A,B) parser`; `x : A`; `xs : A pstream`]
+       dest_parser_cases) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [case_option_def] THEN
+  MP_TAC
+    (ISPECL [`p2 : (A,B) parser`; `x : A`; `xs : A pstream`]
+       dest_parser_cases) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [case_option_def]);;
+
+export_thm is_parser_orelse;;
+
+let dest_parser_orelse = prove
+ (`!p1 p2 : (A,B) parser.
+     dest_parser (parser_orelse p1 p2) = parse_orelse p1 p2`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC
+    [parser_orelse_def; GSYM (CONJUNCT2 parser_tybij); is_parser_orelse]);;
+
+export_thm dest_parser_orelse;;
+
+let apply_parser_orelse = prove
+ (`!(p1 : (A,B) parser) p2 xs.
+     apply_parser (parser_orelse p1 p2) xs =
+     case_option
+       (apply_parser p2 xs)
+       (\yys. SOME yys)
+       (apply_parser p1 xs)`,
+   REPEAT GEN_TAC THEN
+   MP_TAC (ISPEC `xs : A pstream` pstream_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [apply_parser_def; case_option_def] THEN
+   REWRITE_TAC [dest_parser_orelse; parse_orelse_def]);;
+
+export_thm apply_parser_orelse;;
 
 let is_parser_map_partial = prove
  (`!(p : (A,B) parser) (f : B -> C option).
@@ -1130,11 +1188,20 @@ let parse_exists = prove
                  (dest_parser p x xt))) f xs`
      STRIP_ASSUME_TAC THENL
   [MATCH_MP_TAC is_proper_suffix_pstream_recursion THEN
-   SIMP_TAC [] THEN
    REPEAT STRIP_TAC THEN
-   MP_TAC (SPEC `s : A pstream` pstream_cases) THEN
+   MP_TAC (SPEC `xs : A pstream` pstream_cases) THEN
    STRIP_TAC THEN
    ASM_REWRITE_TAC [case_pstream_def] THEN
+   MP_TAC
+     (ISPECL [`p : (A,B) parser`; `x : A`; `xt : A pstream`]
+        dest_parser_cases) THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [case_option_def] THEN
+   AP_TERM_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [is_proper_suffix_pstream_def]
+is_suffix_pstream_def
+***
    MP_TAC (ISPEC `dest_parser (p : (A,B) parser) a0 a1` option_cases) THEN
    STRIP_TAC THEN
    ASM_REWRITE_TAC [case_option_def] THEN
