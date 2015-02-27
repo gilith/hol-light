@@ -390,26 +390,27 @@ let list_to_pstream_to_list = prove
 
 export_thm list_to_pstream_to_list;;
 
-(***
 let pstream_to_list_append = prove
- (`!(l : A list) s.
-     pstream_to_list (append_pstream l s) =
-     case_option NONE (\ls. SOME (APPEND l ls)) (pstream_to_list s)`,
+ (`!(l : A list) xs ys e.
+     pstream_to_list (append_pstream l xs) = (APPEND l ys, e) <=>
+     pstream_to_list xs = (ys,e)`,
+  REPEAT GEN_TAC THEN
+  SPEC_TAC (`l : A list`,`l : A list`) THEN
   LIST_INDUCT_TAC THENL
-  [REWRITE_TAC [APPEND; append_pstream_def] THEN
-   CONV_TAC (DEPTH_CONV ETA_CONV) THEN
-   REWRITE_TAC [case_option_id];
+  [REWRITE_TAC [APPEND; append_pstream_def];
    ALL_TAC] THEN
-  GEN_TAC THEN
+  POP_ASSUM (SUBST1_TAC o SYM) THEN
   REWRITE_TAC [APPEND; append_pstream_def; pstream_to_list_def] THEN
-  POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
-  MP_TAC (ISPEC `pstream_to_list (s : A pstream)` option_cases) THEN
-  STRIP_TAC THENL
-  [ASM_REWRITE_TAC [case_option_def];
-   ASM_REWRITE_TAC [case_option_def]]);;
+  MP_TAC
+    (ISPEC
+       `pstream_to_list (append_pstream (t : A list) xs)`
+       PAIR_SURJECTIVE) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `zs : A list`
+       (X_CHOOSE_THEN `z : bool` SUBST1_TAC)) THEN
+  REWRITE_TAC [LET_DEF; LET_END_DEF; PAIR_EQ; CONS_11]);;
 
 export_thm pstream_to_list_append;;
-***)
 
 let append_pstream_length = prove
  (`!(l : A list) xs.
@@ -427,47 +428,79 @@ let list_to_pstream_length = prove
 
 export_thm list_to_pstream_length;;
 
-(***
 let pstream_to_list_length = prove
- (`!s : A pstream.
-    case_option T (\l. LENGTH l = length_pstream s) (pstream_to_list s)`,
+ (`!(xs : A pstream) ys e.
+     pstream_to_list xs = (ys,e) ==>
+     length_pstream xs = LENGTH ys`,
   MATCH_MP_TAC pstream_induct THEN
-  CONJ_TAC THENL
-  [REWRITE_TAC [pstream_to_list_def; case_option_def];
-   ALL_TAC] THEN
-  CONJ_TAC THENL
-  [REWRITE_TAC
-     [pstream_to_list_def; case_option_def; LENGTH; length_pstream_def];
+  REPEAT CONJ_TAC THENL
+  [REPEAT GEN_TAC THEN
+   PURE_REWRITE_TAC [pstream_to_list_def; PAIR_EQ] THEN
+   DISCH_THEN (CONJUNCTS_THEN (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [length_pstream_def; LENGTH];
+   REPEAT GEN_TAC THEN
+   PURE_REWRITE_TAC [pstream_to_list_def; PAIR_EQ] THEN
+   DISCH_THEN (CONJUNCTS_THEN (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [length_pstream_def; LENGTH];
    ALL_TAC] THEN
   REPEAT GEN_TAC THEN
-  REWRITE_TAC [pstream_to_list_def] THEN
-  MP_TAC (ISPEC `pstream_to_list (a1 : A pstream)` option_cases) THEN
-  STRIP_TAC THENL
-  [ASM_REWRITE_TAC [case_option_def];
+  REWRITE_TAC [pstream_to_list_def; PAIR_EQ] THEN
+  MP_TAC (ISPEC `pstream_to_list (xs : A pstream)` PAIR_SURJECTIVE) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `zs : A list`
+       (X_CHOOSE_THEN `z : bool` SUBST1_TAC)) THEN
+  REWRITE_TAC [LET_DEF; LET_END_DEF; PAIR_EQ] THEN
+  DISCH_THEN (MP_TAC o SPECL [`zs : A list`; `z : bool`]) THEN
+  REWRITE_TAC [] THEN
+  STRIP_TAC THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [NOT_CONS_NIL];
    ALL_TAC] THEN
-  ASM_REWRITE_TAC [case_option_def] THEN
-  REWRITE_TAC [LENGTH; length_pstream_def; SUC_INJ]);;
+  GEN_TAC THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REWRITE_TAC [CONS_11] THEN
+  DISCH_THEN (CONJUNCTS_THEN2 (CONJUNCTS_THEN SUBST_VAR_TAC) SUBST_VAR_TAC) THEN
+  ASM_REWRITE_TAC [length_pstream_def; LENGTH]);;
 
 export_thm pstream_to_list_length;;
-***)
 
-(***
 let pstream_to_list_map = prove
- (`!(f : A -> B) (xs : A pstream).
-     pstream_to_list (map_pstream f xs) =
-     map_option (MAP f) (pstream_to_list xs)`,
+ (`!(f : A -> B) xs ys e.
+     pstream_to_list xs = (ys,e) ==>
+     pstream_to_list (map_pstream f xs) = (MAP f ys, e)`,
   GEN_TAC THEN
   MATCH_MP_TAC pstream_induct THEN
-  REWRITE_TAC [map_pstream_def; pstream_to_list_def; map_option_def; MAP] THEN
-  X_GEN_TAC `a : A` THEN
-  X_GEN_TAC `s' : A pstream` THEN
-  DISCH_THEN SUBST1_TAC THEN
-  MP_TAC (ISPEC `pstream_to_list (s' : A pstream)` option_cases) THEN
+  REPEAT CONJ_TAC THENL
+  [REPEAT GEN_TAC THEN
+   PURE_REWRITE_TAC [pstream_to_list_def; PAIR_EQ] THEN
+   DISCH_THEN (CONJUNCTS_THEN (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [map_pstream_def; pstream_to_list_def; MAP];
+   REPEAT GEN_TAC THEN
+   PURE_REWRITE_TAC [pstream_to_list_def; PAIR_EQ] THEN
+   DISCH_THEN (CONJUNCTS_THEN (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [map_pstream_def; pstream_to_list_def; MAP];
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [pstream_to_list_def; PAIR_EQ] THEN
+  MP_TAC (ISPEC `pstream_to_list (xs : A pstream)` PAIR_SURJECTIVE) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `zs : A list`
+       (X_CHOOSE_THEN `z : bool` SUBST1_TAC)) THEN
+  REWRITE_TAC [LET_DEF; LET_END_DEF; PAIR_EQ] THEN
+  DISCH_THEN (MP_TAC o SPECL [`zs : A list`; `z : bool`]) THEN
+  REWRITE_TAC [] THEN
   STRIP_TAC THEN
-  ASM_REWRITE_TAC [map_option_def; case_option_def; MAP]);;
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [NOT_CONS_NIL];
+   ALL_TAC] THEN
+  GEN_TAC THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REWRITE_TAC [CONS_11] THEN
+  DISCH_THEN (CONJUNCTS_THEN2 (CONJUNCTS_THEN SUBST_VAR_TAC) SUBST_VAR_TAC) THEN
+  ASM_REWRITE_TAC
+    [map_pstream_def; pstream_to_list_def; MAP; LET_DEF; LET_END_DEF]);;
 
 export_thm pstream_to_list_map;;
-***)
 
 let length_pstream_src = prove
  (`(length_pstream (ErrorPstream : A pstream) = 0) /\
