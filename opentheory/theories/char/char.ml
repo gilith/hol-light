@@ -20,13 +20,13 @@ logfile "char-def";;
 (* ~~~~~~ *)
 
 let is_unicode_plane_def = new_definition
-  `!p. is_unicode_plane p = byte_lt p (num_to_byte 17)`;;
+  `!p. is_unicode_plane p = p < 17`;;
 
 export_thm is_unicode_plane_def;;
 
 let unicode_plane_exists = prove
   (`?p. is_unicode_plane p`,
-   EXISTS_TAC `num_to_byte 0` THEN
+   EXISTS_TAC `0` THEN
    REWRITE_TAC [is_unicode_plane_def] THEN
    CONV_TAC byte_reduce_conv);;
 
