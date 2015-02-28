@@ -15,128 +15,74 @@ extend_the_interpretation "opentheory/theories/char/char.int";;
 
 logfile "char-def";;
 
-(* ~~~~~~ *)
-(* Planes *)
-(* ~~~~~~ *)
+let dest_plane_unicode_def = new_definition
+  `!n. dest_plane_unicode n = bit_shr n 16`;;
 
-let is_unicode_plane_def = new_definition
-  `!p. is_unicode_plane p = p < 17`;;
+export_thm dest_plane_unicode_def;;
 
-export_thm is_unicode_plane_def;;
+let dest_position_unicode_def = new_definition
+  `!n. dest_position_unicode n = bit_bound n 16`;;
 
-let unicode_plane_exists = prove
-  (`?p. is_unicode_plane p`,
-   EXISTS_TAC `0` THEN
-   REWRITE_TAC [is_unicode_plane_def] THEN
-   CONV_TAC byte_reduce_conv);;
-
-let (unicode_plane_abs_rep,unicode_plane_rep_abs) =
-  let tybij =
-    new_type_definition "unicode_plane"
-      ("mk_unicode_plane","dest_unicode_plane") unicode_plane_exists in
-  CONJ_PAIR tybij;;
-
-export_thm unicode_plane_abs_rep;;
-export_thm unicode_plane_rep_abs;;
-
-let unicode_plane_tybij = CONJ unicode_plane_abs_rep unicode_plane_rep_abs;;
-
-let rdecode_unicode_plane_def = new_definition
-  `!r.
-     rdecode_unicode_plane r =
-     let (n,r') = rdecode_uniform 17 r in
-     (mk_unicode_plane (num_to_byte n), r')`;;
-
-export_thm rdecode_unicode_plane_def;;
-
-(* ~~~~~~~~~ *)
-(* Positions *)
-(* ~~~~~~~~~ *)
-
-let is_unicode_position_def =
-  let def = new_definition
-    `!p. is_unicode_position (p : word16) = T` in
-  REWRITE_RULE [] def;;
-
-export_thm is_unicode_position_def;;
-
-let unicode_position_exists = prove
-  (`?p. is_unicode_position p`,
-   EXISTS_TAC `p : word16` THEN
-   REWRITE_TAC [is_unicode_position_def]);;
-
-let (unicode_position_abs_rep,unicode_position_rep_abs) =
-  let tybij =
-    new_type_definition "unicode_position"
-      ("mk_unicode_position","dest_unicode_position") unicode_position_exists in
-  CONJ_PAIR (REWRITE_RULE [is_unicode_position_def] tybij);;
-
-export_thm unicode_position_abs_rep;;
-export_thm unicode_position_rep_abs;;
-
-let unicode_position_tybij =
-    CONJ unicode_position_abs_rep unicode_position_rep_abs;;
-
-let rdecode_unicode_position_def = new_definition
-  `!r.
-     rdecode_unicode_position r =
-     let (w,r') = rdecode_word16 r in
-     (mk_unicode_position w, r')`;;
-
-export_thm rdecode_unicode_position_def;;
-
-(* ~~~~~~~~~~~~~~~~~~ *)
-(* Unicode characters *)
-(* ~~~~~~~~~~~~~~~~~~ *)
+export_thm dest_position_unicode_def;;
 
 let is_unicode_def = new_definition
-  `!pl pos.
-     is_unicode (pl,pos) =
-     let pli = dest_unicode_plane pl in
-     let posi = dest_unicode_position pos in
-     ~(pli = num_to_byte 0) \/
-     word16_lt posi (num_to_word16 55296) \/
-     (word16_lt (num_to_word16 57343) posi /\
-      word16_lt posi (num_to_word16 65534))`;;
+  `!n.
+     is_unicode n =
+     let pl = dest_plane_unicode n in
+     let pos = dest_position_unicode n in
+     pl < 17 /\
+     pos < 65534 /\
+     (pl = 0 ==>
+      ~(55296 <= pos /\ pos < 57344) /\
+      ~(64976 <= pos /\ pos < 65008))`;;
 
 export_thm is_unicode_def;;
 
 let unicode_exists = prove
-  (`?pl_pos. is_unicode pl_pos`,
-   EXISTS_TAC
-     `(mk_unicode_plane (num_to_byte 1), (pos : unicode_position))` THEN
-   REWRITE_TAC [is_unicode_def; LET_DEF; LET_END_DEF] THEN
-   MP_TAC (SPEC `num_to_byte 1` (CONJUNCT2 unicode_plane_tybij)) THEN
-   REWRITE_TAC [is_unicode_plane_def] THEN
-   CONV_TAC byte_reduce_conv THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [] THEN
-   CONV_TAC byte_reduce_conv);;
+  (`?n. is_unicode n`,
+   EXISTS_TAC `0` THEN
+   REWRITE_TAC
+     [is_unicode_def; dest_plane_unicode_def; dest_position_unicode_def;
+      zero_bit_shr; zero_bit_bound] THEN
+   REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+   NUM_REDUCE_TAC);;
 
-let (unicode_abs_rep,unicode_rep_abs) =
+let (mk_dest_unicode,dest_mk_unicode) =
   let tybij =
     new_type_definition
       "unicode" ("mk_unicode","dest_unicode") unicode_exists in
   CONJ_PAIR tybij;;
 
-export_thm unicode_abs_rep;;
-export_thm unicode_rep_abs;;
+export_thm mk_dest_unicode;;
+export_thm dest_mk_unicode;;
 
-let unicode_tybij = CONJ unicode_abs_rep unicode_rep_abs;;
+let unicode_tybij = CONJ mk_dest_unicode dest_mk_unicode;;
 
+let plane_unicode_def = new_definition
+  `!c. plane_unicode c = dest_plane_unicode (dest_unicode c)`;;
+
+export_thm plane_unicode_def;;
+
+let position_unicode_def = new_definition
+  `!c. position_unicode c = dest_position_unicode (dest_unicode c)`;;
+
+export_thm position_unicode_def;;
+
+(***
 let rdecode_unicode_def = new_definition
   `!r.
      rdecode_unicode r =
-     let (pl,r') = rdecode_unicode_plane r in
-     let pli = dest_unicode_plane pl in
+     let (pl,r') = rdecode_plane_unicode r in
+     let pli = dest_plane_unicode pl in
      let (pos,r'') =
-         if ~(pli = num_to_byte 0) then rdecode_unicode_position r' else
+         if ~(pli = num_to_byte 0) then rdecode_position_unicode r' else
          let (n,r''') = rdecode_uniform 63486 r' in
          let n' = if n < 55296 then n else n + 2048 in
-         (mk_unicode_position (num_to_word16 n'), r''') in
+         (mk_position_unicode (num_to_word16 n'), r''') in
      (mk_unicode (pl,pos), r'')`;;
 
 export_thm rdecode_unicode_def;;
+***)
 
 (* ~~~~~~~ *)
 (* Strings *)
@@ -150,104 +96,142 @@ new_type_abbrev("string",`:unicode list`);;
 
 logfile "char-thm";;
 
-let unicode_plane_cases = prove
-  (`!pl. ?b. is_unicode_plane b /\ pl = mk_unicode_plane b`,
-   GEN_TAC THEN
-   EXISTS_TAC `dest_unicode_plane pl` THEN
-   REWRITE_TAC [unicode_plane_tybij]);;
-
-export_thm unicode_plane_cases;;
-
-let dest_unicode_plane_cases = prove
-  (`!pl. ?b.
-      is_unicode_plane b /\ pl = mk_unicode_plane b /\
-      dest_unicode_plane pl = b`,
-   GEN_TAC THEN
-   MP_TAC (SPEC `pl : unicode_plane` unicode_plane_cases) THEN
-   REWRITE_TAC [unicode_plane_tybij] THEN
-   STRIP_TAC THEN
-   EXISTS_TAC `b : byte` THEN
-   ASM_REWRITE_TAC []);;
-
-export_thm dest_unicode_plane_cases;;
-
-let dest_unicode_plane_inj = prove
-  (`!pl1 pl2. dest_unicode_plane pl1 = dest_unicode_plane pl2 <=> pl1 = pl2`,
-   REPEAT GEN_TAC THEN
-   EQ_TAC THENL
-   [STRIP_TAC THEN
-    ONCE_REWRITE_TAC [GSYM unicode_plane_abs_rep] THEN
-    ASM_REWRITE_TAC [];
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC []]);;
-
-export_thm dest_unicode_plane_inj;;
-
-let unicode_position_cases = prove
-  (`!pos. ?w. pos = mk_unicode_position w`,
-   GEN_TAC THEN
-   EXISTS_TAC `dest_unicode_position pos` THEN
-   REWRITE_TAC [unicode_position_tybij]);;
-
-export_thm unicode_position_cases;;
-
-let dest_unicode_position_cases = prove
-  (`!pos. ?w. pos = mk_unicode_position w /\ dest_unicode_position pos = w`,
-   GEN_TAC THEN
-   MP_TAC (SPEC `pos : unicode_position` unicode_position_cases) THEN
-   STRIP_TAC THEN
-   EXISTS_TAC `w : word16` THEN
-   ASM_REWRITE_TAC [unicode_position_tybij]);;
-
-export_thm dest_unicode_position_cases;;
-
-let dest_unicode_position_inj = prove
-  (`!pos1 pos2.
-      dest_unicode_position pos1 = dest_unicode_position pos2 <=> pos1 = pos2`,
-   REPEAT GEN_TAC THEN
-   EQ_TAC THENL
-   [STRIP_TAC THEN
-    ONCE_REWRITE_TAC [GSYM unicode_position_abs_rep] THEN
-    ASM_REWRITE_TAC [];
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC []]);;
-
-export_thm dest_unicode_position_inj;;
-
 let unicode_cases = prove
-  (`!c. ?pl pos. is_unicode (pl,pos) /\ c = mk_unicode (pl,pos)`,
-   GEN_TAC THEN
-   EXISTS_TAC `FST (dest_unicode c)` THEN
-   EXISTS_TAC `SND (dest_unicode c)` THEN
-   REWRITE_TAC [unicode_tybij]);;
+ (`!c. ?n. is_unicode n /\ c = mk_unicode n`,
+  GEN_TAC THEN
+  EXISTS_TAC `dest_unicode c` THEN
+  REWRITE_TAC [unicode_tybij]);;
 
 export_thm unicode_cases;;
 
 let dest_unicode_cases = prove
-  (`!c. ?pl pos.
-      is_unicode (pl,pos) /\ c = mk_unicode (pl,pos) /\
-      dest_unicode c = (pl,pos)`,
-   GEN_TAC THEN
-   MP_TAC (SPEC `c : unicode` unicode_cases) THEN
-   REWRITE_TAC [unicode_tybij] THEN
-   STRIP_TAC THEN
-   EXISTS_TAC `pl : unicode_plane` THEN
-   EXISTS_TAC `pos : unicode_position` THEN
-   ASM_REWRITE_TAC []);;
+ (`!c. ?n. is_unicode n /\ c = mk_unicode n /\ dest_unicode c = n`,
+  GEN_TAC THEN
+  MP_TAC (SPEC `c : unicode` unicode_cases) THEN
+  REWRITE_TAC [unicode_tybij] THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `n : num` THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm dest_unicode_cases;;
 
 let dest_unicode_inj = prove
-  (`!c1 c2. dest_unicode c1 = dest_unicode c2 <=> c1 = c2`,
-   REPEAT GEN_TAC THEN
-   EQ_TAC THENL
-   [STRIP_TAC THEN
-    ONCE_REWRITE_TAC [GSYM unicode_abs_rep] THEN
-    ASM_REWRITE_TAC [];
-    STRIP_TAC THEN
-    ASM_REWRITE_TAC []]);;
+ (`!c1 c2. dest_unicode c1 = dest_unicode c2 <=> c1 = c2`,
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   ONCE_REWRITE_TAC [GSYM mk_dest_unicode] THEN
+   ASM_REWRITE_TAC [];
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm dest_unicode_inj;;
+
+let dest_plane_position_unicode = prove
+ (`!c. dest_unicode c = position_unicode c + bit_shl (plane_unicode c) 16`,
+  REWRITE_TAC
+    [position_unicode_def; dest_position_unicode_def; plane_unicode_def;
+     dest_plane_unicode_def; bit_bound]);;
+
+export_thm dest_plane_position_unicode;;
+
+let plane_unicode_bound = prove
+ (`!c. plane_unicode c < 17`,
+  GEN_TAC THEN
+  MP_TAC (SPEC `c : unicode` dest_unicode_cases) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [plane_unicode_def] THEN
+  UNDISCH_TAC `is_unicode n` THEN
+  REWRITE_TAC [is_unicode_def; LET_DEF; LET_END_DEF] THEN
+  STRIP_TAC);;
+
+export_thm plane_unicode_bound;;
+
+let position_unicode_bound = prove
+ (`!c. position_unicode c < 65534`,
+  GEN_TAC THEN
+  MP_TAC (SPEC `c : unicode` dest_unicode_cases) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [position_unicode_def] THEN
+  UNDISCH_TAC `is_unicode n` THEN
+  REWRITE_TAC [is_unicode_def; LET_DEF; LET_END_DEF] THEN
+  STRIP_TAC);;
+
+export_thm position_unicode_bound;;
+
+let dest_unicode_bound = prove
+ (`!c. dest_unicode c < 1114110`,
+  GEN_TAC THEN
+  REWRITE_TAC [dest_plane_position_unicode] THEN
+  MATCH_MP_TAC LTE_TRANS THEN
+  EXISTS_TAC `65534 + bit_shl (plane_unicode c) 16` THEN
+  REWRITE_TAC [LT_ADD_RCANCEL; position_unicode_bound] THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC `65534 + bit_shl 16 16` THEN
+  REWRITE_TAC [LE_ADD_LCANCEL; bit_shl_mono_le] THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [GSYM LT_SUC_LE; NUM_REDUCE_CONV `SUC 16`; plane_unicode_bound];
+   REWRITE_TAC [bit_shl_def] THEN
+   NUM_REDUCE_TAC]);;
+
+export_thm dest_unicode_bound;;
+
+let is_unicode_bound = prove
+ (`!n. is_unicode n ==> n < 1114110`,
+  GEN_TAC THEN
+  STRIP_TAC THEN
+  MP_TAC (SPEC `n : num` dest_mk_unicode) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  REWRITE_TAC [dest_unicode_bound]);;
+
+export_thm is_unicode_bound;;
+
+let finite_unicode = prove
+ (`FINITE (UNIV : unicode set)`,
+  SUBGOAL_THEN `UNIV = IMAGE mk_unicode { n | is_unicode n }` SUBST1_TAC THENL
+  [REWRITE_TAC [EXTENSION] THEN
+   X_GEN_TAC `c : unicode` THEN
+   REWRITE_TAC [IN_UNIV; IN_IMAGE; IN_ELIM] THEN
+   EXISTS_TAC `dest_unicode c` THEN
+   REWRITE_TAC [unicode_tybij];
+   ALL_TAC] THEN
+  MATCH_MP_TAC FINITE_IMAGE THEN
+  MATCH_MP_TAC FINITE_SUBSET THEN
+  EXISTS_TAC `{ n | n < 1114110}` THEN
+  REWRITE_TAC [FINITE_NUMSEG_LT; SUBSET; IN_ELIM; is_unicode_bound]);;
+
+export_thm finite_unicode;;
+
+(***
+(* This is 1,112,064 valid code points minus 66 non-characters *)
+let card_unicode_univ = prove
+ (`CARD (UNIV : unicode set) = 1111998`,
+  SUBGOAL_THEN `UNIV = IMAGE mk_unicode { n | is_unicode n }` SUBST1_TAC THENL
+  [REWRITE_TAC [EXTENSION] THEN
+   X_GEN_TAC `c : unicode` THEN
+   REWRITE_TAC [IN_UNIV; IN_IMAGE; IN_ELIM] THEN
+   EXISTS_TAC `dest_unicode c` THEN
+   REWRITE_TAC [unicode_tybij];
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC `CARD { n | is_unicode n }` THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC CARD_IMAGE_INJ
+
+***)
+
+let plane_unicode_src = prove
+ (`plane_unicode = dest_plane_unicode o dest_unicode`,
+  REWRITE_TAC [FUN_EQ_THM; plane_unicode_def; o_THM]);;
+
+export_thm plane_unicode_src;;
+
+let position_unicode_src = prove
+ (`position_unicode = dest_position_unicode o dest_unicode`,
+  REWRITE_TAC [FUN_EQ_THM; position_unicode_def; o_THM]);;
+
+export_thm position_unicode_src;;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of the UTF-8 encoding of Unicode characters.                   *)
@@ -279,7 +263,7 @@ export_thm parse_cont3_def;;
 let decode_cont1_def = new_definition
   `!b0 b1.
      decode_cont1 b0 b1 =
-     let pl = mk_unicode_plane (num_to_byte 0) in
+     let pl = mk_plane_unicode (num_to_byte 0) in
      let p1 = byte_shr (byte_and b0 (num_to_byte 28)) 2 in
      let y0 = byte_shl (byte_and b0 (num_to_byte 3)) 6 in
      let x0 = byte_and b1 (num_to_byte 63) in
@@ -287,7 +271,7 @@ let decode_cont1_def = new_definition
      if p1 = num_to_byte 0 /\ ~byte_bit p0 7 then
        NONE
      else
-       let pos = mk_unicode_position (bytes_to_word16 p0 p1) in
+       let pos = mk_position_unicode (bytes_to_word16 p0 p1) in
        let ch = mk_unicode (pl,pos) in
        SOME ch`;;
 
@@ -308,8 +292,8 @@ let decode_cont2_def = new_definition
        let p0 = byte_or y0 x0 in
        if p1 = num_to_byte 255 /\ byte_le (num_to_byte 254) p0 then NONE
        else
-         let pl = mk_unicode_plane (num_to_byte 0) in
-         let pos = mk_unicode_position (bytes_to_word16 p0 p1) in
+         let pl = mk_plane_unicode (num_to_byte 0) in
+         let pos = mk_position_unicode (bytes_to_word16 p0 p1) in
          let ch = mk_unicode (pl,pos) in
          SOME ch`;;
 
@@ -323,14 +307,14 @@ let decode_cont3_def = new_definition
      let p = byte_or w z in
      if p = num_to_byte 0 \/ byte_lt (num_to_byte 16) p then NONE
      else
-       let pl = mk_unicode_plane p in
+       let pl = mk_plane_unicode p in
        let z1 = byte_shl (byte_and b1 (num_to_byte 15)) 4 in
        let y1 = byte_shr (byte_and b2 (num_to_byte 60)) 2 in
        let p1 = byte_or z1 y1 in
        let y0 = byte_shl (byte_and b2 (num_to_byte 3)) 6 in
        let x0 = byte_and b3 (num_to_byte 63) in
        let p0 = byte_or y0 x0 in
-       let pos = mk_unicode_position (bytes_to_word16 p0 p1) in
+       let pos = mk_position_unicode (bytes_to_word16 p0 p1) in
        let ch = mk_unicode (pl,pos) in
        SOME ch`;;
 
@@ -352,8 +336,8 @@ let decoder_parse_def = new_definition
        else
          NONE
      else
-       let pl = mk_unicode_plane (num_to_byte 0) in
-       let pos = mk_unicode_position (bytes_to_word16 b0 (num_to_byte 0)) in
+       let pl = mk_plane_unicode (num_to_byte 0) in
+       let pos = mk_position_unicode (bytes_to_word16 b0 (num_to_byte 0)) in
        let ch = mk_unicode (pl,pos) in
        SOME (ch,s)`;;
 
@@ -421,8 +405,8 @@ let encoder_def = new_definition
   `!ch.
      encoder ch =
      let (pl,pos) = dest_unicode ch in
-     let p = dest_unicode_plane pl in
-     let (p0,p1) = word16_to_bytes (dest_unicode_position pos) in
+     let p = dest_plane_unicode pl in
+     let (p0,p1) = word16_to_bytes (dest_position_unicode pos) in
      if p = num_to_byte 0 then
        if p1 = num_to_byte 0 /\ ~byte_bit p0 7 then
          CONS p0 []
@@ -517,11 +501,11 @@ let decoder_encoder_inverse = prove
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    POP_ASSUM MP_TAC THEN
-   MP_TAC (SPEC `pl : unicode_plane` dest_unicode_plane_cases) THEN
+   MP_TAC (SPEC `pl : plane_unicode` dest_plane_unicode_cases) THEN
    DISCH_THEN (X_CHOOSE_THEN `p : byte` STRIP_ASSUME_TAC) THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
-   MP_TAC (SPEC `pos : unicode_position` dest_unicode_position_cases) THEN
+   MP_TAC (SPEC `pos : position_unicode` dest_position_unicode_cases) THEN
    STRIP_TAC THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
    POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
@@ -625,9 +609,9 @@ let decoder_encoder_inverse = prove
       DISCH_THEN MATCH_MP_TAC THEN
       CONJ_TAC THENL
       [PAT_ASSUM `is_unicode X` THEN
-       ASM_REWRITE_TAC [is_unicode_def; unicode_position_tybij] THEN
-       PAT_ASSUM `is_unicode_plane X` THEN
-       REWRITE_TAC [unicode_plane_tybij] THEN
+       ASM_REWRITE_TAC [is_unicode_def; position_unicode_tybij] THEN
+       PAT_ASSUM `is_plane_unicode X` THEN
+       REWRITE_TAC [plane_unicode_tybij] THEN
        DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
        bit_blast_tac THEN
        REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
@@ -642,9 +626,9 @@ let decoder_encoder_inverse = prove
        ALL_TAC] THEN
       DISCH_THEN MATCH_MP_TAC THEN
       PAT_ASSUM `is_unicode X` THEN
-      ASM_REWRITE_TAC [is_unicode_def; unicode_position_tybij] THEN
-      PAT_ASSUM `is_unicode_plane X` THEN
-      ASM_REWRITE_TAC [unicode_plane_tybij] THEN
+      ASM_REWRITE_TAC [is_unicode_def; position_unicode_tybij] THEN
+      PAT_ASSUM `is_plane_unicode X` THEN
+      ASM_REWRITE_TAC [plane_unicode_tybij] THEN
       DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
       bit_blast_tac THEN
       REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
@@ -697,8 +681,8 @@ let decoder_encoder_inverse = prove
      ALL_TAC] THEN
     DISCH_THEN MATCH_MP_TAC THEN
     CONJ_TAC THENL
-    [PAT_ASSUM `is_unicode_plane X` THEN
-     ASM_REWRITE_TAC [is_unicode_plane_def] THEN
+    [PAT_ASSUM `is_plane_unicode X` THEN
+     ASM_REWRITE_TAC [is_plane_unicode_def] THEN
      bit_blast_tac THEN
      ASM_TAUT_TAC;
      ALL_TAC] THEN
@@ -709,8 +693,8 @@ let decoder_encoder_inverse = prove
     AP_THM_TAC THEN
     AP_TERM_TAC THEN
     AP_TERM_TAC THEN
-    PAT_ASSUM `is_unicode_plane X` THEN
-    ASM_REWRITE_TAC [is_unicode_plane_def] THEN
+    PAT_ASSUM `is_plane_unicode X` THEN
+    ASM_REWRITE_TAC [is_plane_unicode_def] THEN
     bit_blast_tac THEN
     ASM_TAUT_TAC]);;
 
@@ -883,19 +867,19 @@ let decoder_encoder_strong_inverse = prove
        REWRITE_TAC [GSYM unicode_rep_abs] THEN
        KNOW_TAC
          `!x y z.
-            is_unicode_plane x /\
-            (is_unicode_plane x ==>
-             is_unicode (mk_unicode_plane x, mk_unicode_position y) /\ z) ==>
-            is_unicode (mk_unicode_plane x, mk_unicode_position y) /\ z` THENL
+            is_plane_unicode x /\
+            (is_plane_unicode x ==>
+             is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z) ==>
+            is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z` THENL
        [SIMP_TAC [];
         ALL_TAC] THEN
        DISCH_THEN MATCH_MP_TAC THEN
        CONJ_TAC THENL
-       [REWRITE_TAC [is_unicode_plane_def] THEN
+       [REWRITE_TAC [is_plane_unicode_def] THEN
         bit_blast_tac;
         ALL_TAC] THEN
-       REWRITE_TAC [is_unicode_def; unicode_position_tybij] THEN
-       DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [unicode_plane_tybij] th]) THEN
+       REWRITE_TAC [is_unicode_def; position_unicode_tybij] THEN
+       DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_unicode_tybij] th]) THEN
        SUBGOAL_THEN
          `(list_to_byte
              [b14; b15; b00; b01; ~b01 /\ ~b00 /\ ~b15 /\ ~b14; F; F; F] =
@@ -1013,19 +997,19 @@ let decoder_encoder_strong_inverse = prove
        REWRITE_TAC [GSYM unicode_rep_abs] THEN
        KNOW_TAC
          `!x y z.
-            is_unicode_plane x /\
-            (is_unicode_plane x ==>
-             is_unicode (mk_unicode_plane x, mk_unicode_position y) /\ z) ==>
-            is_unicode (mk_unicode_plane x, mk_unicode_position y) /\ z` THENL
+            is_plane_unicode x /\
+            (is_plane_unicode x ==>
+             is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z) ==>
+            is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z` THENL
        [SIMP_TAC [];
         ALL_TAC] THEN
        DISCH_THEN MATCH_MP_TAC THEN
        CONJ_TAC THENL
-       [REWRITE_TAC [is_unicode_plane_def] THEN
+       [REWRITE_TAC [is_plane_unicode_def] THEN
         bit_blast_tac;
         ALL_TAC] THEN
-       REWRITE_TAC [is_unicode_def; unicode_position_tybij] THEN
-       DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [unicode_plane_tybij] th]) THEN
+       REWRITE_TAC [is_unicode_def; position_unicode_tybij] THEN
+       DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_unicode_tybij] th]) THEN
        CONJ_TAC THENL
        [REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
         DISJ2_TAC THEN
@@ -1115,19 +1099,19 @@ let decoder_encoder_strong_inverse = prove
       REWRITE_TAC [GSYM unicode_rep_abs] THEN
       KNOW_TAC
         `!x y z.
-           is_unicode_plane x /\
-           (is_unicode_plane x ==>
-            is_unicode (mk_unicode_plane x, mk_unicode_position y) /\ z) ==>
-           is_unicode (mk_unicode_plane x, mk_unicode_position y) /\ z` THENL
+           is_plane_unicode x /\
+           (is_plane_unicode x ==>
+            is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z) ==>
+           is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z` THENL
       [SIMP_TAC [];
        ALL_TAC] THEN
       DISCH_THEN MATCH_MP_TAC THEN
       CONJ_TAC THENL
-      [REWRITE_TAC [is_unicode_plane_def] THEN
+      [REWRITE_TAC [is_plane_unicode_def] THEN
        bit_blast_tac;
        ALL_TAC] THEN
-      REWRITE_TAC [is_unicode_def; unicode_position_tybij] THEN
-      DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [unicode_plane_tybij] th]) THEN
+      REWRITE_TAC [is_unicode_def; position_unicode_tybij] THEN
+      DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_unicode_tybij] th]) THEN
       CONJ_TAC THENL
       [REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
        DISJ2_TAC THEN
@@ -1167,19 +1151,19 @@ let decoder_encoder_strong_inverse = prove
     REWRITE_TAC [GSYM unicode_rep_abs] THEN
     KNOW_TAC
       `!x y z.
-         is_unicode_plane x /\
-         (is_unicode_plane x ==>
-          is_unicode (mk_unicode_plane x, mk_unicode_position y) /\ z) ==>
-         is_unicode (mk_unicode_plane x, mk_unicode_position y) /\ z` THENL
+         is_plane_unicode x /\
+         (is_plane_unicode x ==>
+          is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z) ==>
+         is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z` THENL
     [SIMP_TAC [];
      ALL_TAC] THEN
     DISCH_THEN MATCH_MP_TAC THEN
     CONJ_TAC THENL
-    [REWRITE_TAC [is_unicode_plane_def] THEN
+    [REWRITE_TAC [is_plane_unicode_def] THEN
      bit_blast_tac;
      ALL_TAC] THEN
-    REWRITE_TAC [is_unicode_def; unicode_position_tybij] THEN
-    DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [unicode_plane_tybij] th]) THEN
+    REWRITE_TAC [is_unicode_def; position_unicode_tybij] THEN
+    DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_unicode_tybij] th]) THEN
     CONJ_TAC THENL
     [REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
      DISJ2_TAC THEN
@@ -1252,5 +1236,17 @@ let encode_length = prove
 
 export_thm encode_length;;
 ***)
+
+(* ------------------------------------------------------------------------- *)
+(* Haskell source for unicode characters.                                    *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "char-haskell-src";;
+
+export_thm dest_plane_unicode_def;;  (* Haskell *)
+export_thm dest_position_unicode_def;;  (* Haskell *)
+export_thm mk_dest_unicode;;  (* Haskell *)
+export_thm plane_unicode_src;;  (* Haskell *)
+export_thm position_unicode_src;;  (* Haskell *)
 
 logfile_end ();;

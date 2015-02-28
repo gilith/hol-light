@@ -157,9 +157,7 @@ loads "opentheory/theories/parser/parser.ml";;
 (* Unicode characters.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 loads "opentheory/theories/char/char.ml";;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Hardware devices.                                                         *)
