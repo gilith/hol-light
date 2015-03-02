@@ -1302,6 +1302,19 @@ let bit_width_shl = prove
 
 export_thm bit_width_shl;;
 
+let bit_width_one_shl = prove
+ (`!k. bit_width (bit_shl 1 k) = k + 1`,
+  GEN_TAC THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC `bit_width 1 + k` THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC bit_width_shl THEN
+   REWRITE_TAC [ONE; NOT_SUC];
+   REWRITE_TAC [bit_width_one] THEN
+   MATCH_ACCEPT_TAC ADD_SYM]);;
+
+export_thm bit_width_one_shl;;
+
 let bit_width_shl_le = prove
   (`!n k. bit_width (bit_shl n k) <= bit_width n + k`,
    REPEAT GEN_TAC THEN

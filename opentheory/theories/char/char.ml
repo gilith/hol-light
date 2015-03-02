@@ -127,6 +127,15 @@ let dest_unicode_inj = prove
 
 export_thm dest_unicode_inj;;
 
+let dest_plane_unicode_eq_zero = prove
+ (`!n. (dest_plane_unicode n = 0) <=> n < 65536`,
+  GEN_TAC THEN
+  REWRITE_TAC
+    [dest_plane_unicode_def; bit_shr_eq_zero; bit_width_upper_bound;
+     NUM_REDUCE_CONV `2 EXP 16`]);;
+
+export_thm dest_plane_unicode_eq_zero;;
+
 let dest_plane_position_unicode = prove
  (`!c. dest_unicode c = position_unicode c + bit_shl (plane_unicode c) 16`,
   REWRITE_TAC
@@ -187,19 +196,29 @@ let is_unicode_bound = prove
 
 export_thm is_unicode_bound;;
 
-let finite_unicode = prove
- (`FINITE (UNIV : unicode set)`,
-  SUBGOAL_THEN `UNIV = IMAGE mk_unicode { n | is_unicode n }` SUBST1_TAC THENL
-  [REWRITE_TAC [EXTENSION] THEN
-   X_GEN_TAC `c : unicode` THEN
-   REWRITE_TAC [IN_UNIV; IN_IMAGE; IN_ELIM] THEN
-   EXISTS_TAC `dest_unicode c` THEN
-   REWRITE_TAC [unicode_tybij];
-   ALL_TAC] THEN
-  MATCH_MP_TAC FINITE_IMAGE THEN
+let finite_is_unicode = prove
+ (`FINITE { n | is_unicode n }`,
   MATCH_MP_TAC FINITE_SUBSET THEN
   EXISTS_TAC `{ n | n < 1114110}` THEN
   REWRITE_TAC [FINITE_NUMSEG_LT; SUBSET; IN_ELIM; is_unicode_bound]);;
+
+export_thm finite_is_unicode;;
+
+let image_is_unicode = prove
+ (`IMAGE mk_unicode { n | is_unicode n } = UNIV`,
+  REWRITE_TAC [EXTENSION] THEN
+  X_GEN_TAC `c : unicode` THEN
+  REWRITE_TAC [IN_UNIV; IN_IMAGE; IN_ELIM] THEN
+  EXISTS_TAC `dest_unicode c` THEN
+  REWRITE_TAC [unicode_tybij]);;
+
+export_thm image_is_unicode;;
+
+let finite_unicode = prove
+ (`FINITE (UNIV : unicode set)`,
+  REWRITE_TAC [SYM image_is_unicode] THEN
+  MATCH_MP_TAC FINITE_IMAGE THEN
+  MATCH_ACCEPT_TAC finite_is_unicode);;
 
 export_thm finite_unicode;;
 
@@ -207,17 +226,98 @@ export_thm finite_unicode;;
 (* This is 1,112,064 valid code points minus 66 non-characters *)
 let card_unicode_univ = prove
  (`CARD (UNIV : unicode set) = 1111998`,
-  SUBGOAL_THEN `UNIV = IMAGE mk_unicode { n | is_unicode n }` SUBST1_TAC THENL
-  [REWRITE_TAC [EXTENSION] THEN
-   X_GEN_TAC `c : unicode` THEN
-   REWRITE_TAC [IN_UNIV; IN_IMAGE; IN_ELIM] THEN
-   EXISTS_TAC `dest_unicode c` THEN
-   REWRITE_TAC [unicode_tybij];
-   ALL_TAC] THEN
+  REWRITE_TAC [SYM image_is_unicode] THEN
   MATCH_MP_TAC EQ_TRANS THEN
   EXISTS_TAC `CARD { n | is_unicode n }` THEN
   CONJ_TAC THENL
-  [MATCH_MP_TAC CARD_IMAGE_INJ
+  [MATCH_MP_TAC CARD_IMAGE_INJ THEN
+   REWRITE_TAC [finite_is_unicode; IN_ELIM] THEN
+   X_GEN_TAC `n1 : num` THEN
+   X_GEN_TAC `n2 : num` THEN
+   REWRITE_TAC [dest_mk_unicode] THEN
+   STRIP_TAC THEN
+   FIRST_X_ASSUM (CONV_TAC o LAND_CONV o REWR_CONV o SYM) THEN
+   FIRST_X_ASSUM (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `CARD { n | is_unicode n /\ dest_plane_unicode n = 0 } +
+     CARD { n | is_unicode n /\ ~(dest_plane_unicode n = 0) }` THEN
+  CONJ_TAC THENL
+  [SUBGOAL_THEN
+     `{ n | is_unicode n } =
+      { n | is_unicode n /\ dest_plane_unicode n = 0 } UNION
+      { n | is_unicode n /\ ~(dest_plane_unicode n = 0) }` SUBST1_TAC THENL
+   [REWRITE_TAC [EXTENSION] THEN
+    X_GEN_TAC `n : num` THEN
+    REWRITE_TAC [IN_UNION; IN_ELIM] THEN
+    BOOL_CASES_TAC `dest_plane_unicode n = 0` THEN
+    REWRITE_TAC [];
+    ALL_TAC] THEN
+   MATCH_MP_TAC CARD_UNION THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC FINITE_SUBSET THEN
+    EXISTS_TAC `{ n | is_unicode n }` THEN
+    REWRITE_TAC [finite_is_unicode; SUBSET; IN_ELIM] THEN
+    X_GEN_TAC `n : num` THEN
+    STRIP_TAC;
+    ALL_TAC] THEN
+   CONJ_TAC THENL
+   [MATCH_MP_TAC FINITE_SUBSET THEN
+    EXISTS_TAC `{ n | is_unicode n }` THEN
+    REWRITE_TAC [finite_is_unicode; SUBSET; IN_ELIM] THEN
+    X_GEN_TAC `n : num` THEN
+    STRIP_TAC;
+    ALL_TAC] THEN
+   REWRITE_TAC [DISJOINT; EXTENSION] THEN
+   X_GEN_TAC `n : num` THEN
+   REWRITE_TAC [IN_INTER; NOT_IN_EMPTY; IN_ELIM] THEN
+   BOOL_CASES_TAC `dest_plane_unicode n = 0` THEN
+   REWRITE_TAC [];
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `65000 +
+     CARD { n | is_unicode n /\ ~(dest_plane_unicode n = 0) }` THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [EQ_ADD_RCANCEL] THEN
+   SUBGOAL_THEN
+     `{ n | is_unicode n /\ dest_plane_unicode n = 0 } =
+      { n | n < 55296 } UNION
+      ({ n | n < 64976 } DIFF { n | n < 57344 }) UNION
+      ({ n | n < 65534 } DIFF { n | n < 65008 })` SUBST1_TAC THENL
+   [REWRITE_TAC [EXTENSION] THEN
+    X_GEN_TAC `n : num` THEN
+    REWRITE_TAC
+      [IN_ELIM; IN_UNION; IN_DIFF; is_unicode_def; LET_DEF; LET_END_DEF] THEN
+    REVERSE_TAC (ASM_CASES_TAC `dest_plane_unicode n = 0`) THENL
+    [ASM_REWRITE_TAC [] THEN
+     POP_ASSUM MP_TAC THEN
+     REWRITE_TAC [CONTRAPOS_THM; dest_plane_unicode_eq_zero] THEN
+     STRIP_TAC THENL
+     [MATCH_MP_TAC LTE_TRANS THEN
+      EXISTS_TAC `55296` THEN
+      ASM_REWRITE_TAC [] THEN
+      NUM_REDUCE_TAC;
+      MATCH_MP_TAC LTE_TRANS THEN
+      EXISTS_TAC `64976` THEN
+      ASM_REWRITE_TAC [] THEN
+      NUM_REDUCE_TAC;
+      MATCH_MP_TAC LTE_TRANS THEN
+      EXISTS_TAC `65534` THEN
+      ASM_REWRITE_TAC [] THEN
+      NUM_REDUCE_TAC];
+     ALL_TAC] THEN
+    ASM_REWRITE_TAC [] THEN
+    SUBGOAL_THEN `dest_position_unicode n = n` SUBST1_TAC THENL
+    [MP_TAC (SPECL [`n : num`; `16`] bit_bound) THEN
+     ASM_REWRITE_TAC
+       [GSYM dest_plane_unicode_def; GSYM dest_position_unicode_def;
+        zero_bit_shl; ADD_0];
+     ALL_TAC] THEN
+    REWRITE_TAC [SYM (NUM_REDUCE_CONV `SUC 16`); LT_0] THEN
+    REWRITE_TAC [DE_MORGAN_THM; NOT_LE] THEN
 
 ***)
 
