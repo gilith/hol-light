@@ -1481,6 +1481,15 @@ let bit_bound_eq = prove
 
 export_thm bit_bound_eq;;
 
+let add_bit_bound = prove
+ (`!n1 n2 k. bit_bound (n1 + bit_shl n2 k) k = bit_bound n1 k`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC bit_bound_eq THEN
+  EXISTS_TAC `n2 : num` THEN
+  REWRITE_TAC []);;
+
+export_thm add_bit_bound;;
+
 let bit_bound_add = prove
   (`!m n k. bit_bound (bit_bound m k + bit_bound n k) k = bit_bound (m + n) k`,
    REPEAT GEN_TAC THEN

@@ -222,7 +222,6 @@ let finite_unicode = prove
 
 export_thm finite_unicode;;
 
-(***
 (* This is 1,112,064 valid code points minus 66 non-characters *)
 let card_unicode_univ = prove
  (`CARD (UNIV : unicode set) = 1111998`,
@@ -456,9 +455,157 @@ let card_unicode_univ = prove
   SUBGOAL_THEN
     `CARD {n | is_unicode n /\ ~(dest_plane_unicode n = 0)} = 16 * 65534`
     (fun th -> SUBST1_TAC th THEN NUM_REDUCE_TAC) THEN
+  SUBGOAL_THEN
+    `{n | is_unicode n /\ ~(dest_plane_unicode n = 0)} =
+     IMAGE (\(pl,pos). pos + bit_shl pl 16)
+       ({pl | ~(pl = 0) /\ pl < 17} CROSS {pos | pos < 65534})`
+    SUBST1_TAC THENL
+  [REWRITE_TAC [EXTENSION; IN_ELIM; IN_IMAGE; EXISTS_PAIR_THM; IN_CROSS] THEN
+   X_GEN_TAC `n : num` THEN
+   REWRITE_TAC [is_unicode_def; LET_DEF; LET_END_DEF] THEN
+   ASM_CASES_TAC `dest_plane_unicode n = 0` THENL
+   [ASM_REWRITE_TAC [NOT_EXISTS_THM] THEN
+    X_GEN_TAC `pl : num` THEN
+    X_GEN_TAC `pos : num` THEN
+    POP_ASSUM MP_TAC THEN
+    CONV_TAC (REWR_CONV (GSYM CONTRAPOS_THM)) THEN
+    REWRITE_TAC [dest_plane_unicode_def] THEN
+    STRIP_TAC THEN
+    FIRST_X_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [add_bit_shr; ADD_EQ_0];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    EXISTS_TAC `dest_plane_unicode n` THEN
+    EXISTS_TAC `dest_position_unicode n` THEN
+    ASM_REWRITE_TAC [] THEN
+    REWRITE_TAC [dest_position_unicode_def; dest_plane_unicode_def; bit_bound];
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `pl : num`
+       (X_CHOOSE_THEN `pos : num` STRIP_ASSUME_TAC)) THEN
+   FIRST_X_ASSUM SUBST_VAR_TAC THEN
+   ASM_REWRITE_TAC
+     [dest_position_unicode_def; dest_plane_unicode_def; add_bit_shr;
+      add_bit_bound] THEN
+   SUBGOAL_THEN `bit_bound pos 16 = pos` ASSUME_TAC THENL
+   [MP_TAC (SPECL [`pos : num`; `16`] bit_bound) THEN
+    DISCH_THEN (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    REWRITE_TAC [EQ_ADD_LCANCEL_0; bit_shl_eq_zero; bit_shr_eq_zero] THEN
+    CONV_TAC (RAND_CONV (REWR_CONV (SYM (SPEC `16` bit_width_ones)))) THEN
+    MATCH_MP_TAC bit_width_mono THEN
+    MATCH_MP_TAC LT_IMP_LE THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `65534` THEN
+    ASM_REWRITE_TAC [] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   POP_ASSUM (SUBST1_TAC o SYM) THEN
+   ASM_REWRITE_TAC [bit_shr_bound; ZERO_ADD];
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `CARD ({pl | ~(pl = 0) /\ pl < 17} CROSS {pos | pos < 65534})` THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC CARD_IMAGE_INJ THEN
+   REVERSE_TAC CONJ_TAC THENL
+   [MATCH_MP_TAC FINITE_CROSS THEN
+    REWRITE_TAC [FINITE_NUMSEG_LT] THEN
+    MATCH_MP_TAC FINITE_SUBSET THEN
+    EXISTS_TAC `{pl | pl < 17}` THEN
+    REWRITE_TAC [FINITE_NUMSEG_LT; SUBSET; IN_ELIM] THEN
+    REPEAT STRIP_TAC;
+    ALL_TAC] THEN
+   REWRITE_TAC [FORALL_PAIR_THM; IN_CROSS; IN_ELIM; PAIR_EQ] THEN
+   X_GEN_TAC `pl1 : num` THEN
+   X_GEN_TAC `pos1 : num` THEN
+   X_GEN_TAC `pl2 : num` THEN
+   X_GEN_TAC `pos2 : num` THEN
+   STRIP_TAC THEN
+   SUBGOAL_THEN `bit_bound pos1 16 = pos1` ASSUME_TAC THENL
+   [MP_TAC (SPECL [`pos1 : num`; `16`] bit_bound) THEN
+    DISCH_THEN (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    REWRITE_TAC [EQ_ADD_LCANCEL_0; bit_shl_eq_zero; bit_shr_eq_zero] THEN
+    CONV_TAC (RAND_CONV (REWR_CONV (SYM (SPEC `16` bit_width_ones)))) THEN
+    MATCH_MP_TAC bit_width_mono THEN
+    MATCH_MP_TAC LT_IMP_LE THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `65534` THEN
+    ASM_REWRITE_TAC [] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   SUBGOAL_THEN `bit_bound pos2 16 = pos2` ASSUME_TAC THENL
+   [MP_TAC (SPECL [`pos2 : num`; `16`] bit_bound) THEN
+    DISCH_THEN (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
+    MATCH_MP_TAC EQ_SYM THEN
+    REWRITE_TAC [EQ_ADD_LCANCEL_0; bit_shl_eq_zero; bit_shr_eq_zero] THEN
+    CONV_TAC (RAND_CONV (REWR_CONV (SYM (SPEC `16` bit_width_ones)))) THEN
+    MATCH_MP_TAC bit_width_mono THEN
+    MATCH_MP_TAC LT_IMP_LE THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `65534` THEN
+    ASM_REWRITE_TAC [] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   CONJ_TAC THENL
+   [SUBGOAL_THEN
+      `bit_shr (pos1 + bit_shl pl1 16) 16 = bit_shr (pos2 + bit_shl pl2 16) 16`
+      MP_TAC THENL
+    [ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    POP_ASSUM (SUBST1_TAC o SYM) THEN
+    POP_ASSUM (SUBST1_TAC o SYM) THEN
+    REWRITE_TAC [add_bit_shr; bit_shr_bound; ZERO_ADD];
+    SUBGOAL_THEN
+      `bit_bound (pos1 + bit_shl pl1 16) 16 =
+       bit_bound (pos2 + bit_shl pl2 16) 16`
+      MP_TAC THENL
+    [ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    REWRITE_TAC [add_bit_bound] THEN
+    ASM_REWRITE_TAC []];
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `CARD {pl | ~(pl = 0) /\ pl < 17} * CARD {pos | pos < 65534}` THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC CARD_CROSS THEN
+   REWRITE_TAC [FINITE_NUMSEG_LT] THEN
+   MATCH_MP_TAC FINITE_SUBSET THEN
+   EXISTS_TAC `{pl | pl < 17}` THEN
+   REWRITE_TAC [FINITE_NUMSEG_LT; SUBSET; IN_ELIM] THEN
+   REPEAT STRIP_TAC;
+   ALL_TAC] THEN
+  REWRITE_TAC [CARD_NUMSEG_LT; EQ_MULT_RCANCEL] THEN
+  DISJ1_TAC THEN
+  SUBGOAL_THEN
+    `{pl | ~(pl = 0) /\ pl < 17} = {pl | pl < 17} DIFF {0}`
+    SUBST1_TAC THENL
+  [REWRITE_TAC [EXTENSION; IN_SING; IN_ELIM; IN_DIFF] THEN
+   X_GEN_TAC `pl : num` THEN
+   EQ_TAC THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC `CARD {pl | pl < 17} - CARD {0}` THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC CARD_DIFF THEN
+   REWRITE_TAC [FINITE_NUMSEG_LT; SUBSET; IN_SING; IN_ELIM] THEN
+   X_GEN_TAC `pl : num` THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [] THEN
+   NUM_REDUCE_TAC;
+   ALL_TAC] THEN
+  REWRITE_TAC [CARD_NUMSEG_LT; CARD_SING] THEN
+  NUM_REDUCE_TAC);;
 
-
-***)
+export_thm card_unicode_univ;;
 
 let plane_unicode_src = prove
  (`plane_unicode = dest_plane_unicode o dest_unicode`,
