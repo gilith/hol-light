@@ -68,21 +68,17 @@ let position_unicode_def = new_definition
 
 export_thm position_unicode_def;;
 
-(***
-let rdecode_unicode_def = new_definition
+let random_unicode_def = new_definition
   `!r.
-     rdecode_unicode r =
-     let (pl,r') = rdecode_plane_unicode r in
-     let pli = dest_plane_unicode pl in
-     let (pos,r'') =
-         if ~(pli = num_to_byte 0) then rdecode_position_unicode r' else
-         let (n,r''') = rdecode_uniform 63486 r' in
-         let n' = if n < 55296 then n else n + 2048 in
-         (mk_position_unicode (num_to_word16 n'), r''') in
-     (mk_unicode (pl,pos), r'')`;;
+     random_unicode r =
+     let n0 = random_uniform 1111998 r in
+     let n1 = if n0 < 55296 then n0 else n0 + 2048 in
+     let pl = n1 DIV 65534 in
+     let pos = n1 MOD 65534 in
+     let n2 = pos + bit_shl pl 16 in
+     mk_unicode n2`;;
 
-export_thm rdecode_unicode_def;;
-***)
+export_thm random_unicode_def;;
 
 (* ~~~~~~~ *)
 (* Strings *)
