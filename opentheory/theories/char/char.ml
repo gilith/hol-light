@@ -622,25 +622,54 @@ export_thm position_unicode_src;;
 (***
 logfile "char-utf8-def";;
 
-let is_cont_def = new_definition
-  `!b. is_cont b <=> byte_bit b 7 /\ ~byte_bit b 6`;;
+let parser_ascii_utf8_def = new_definition
+  `parser_ascii_utf8 =
+   parser_token (\b. if byte_bit b 7 then SOME (byte_to_num b) else NONE)`;;
 
-export_thm is_cont_def;;
+export_thm parser_ascii_utf8_def;;
 
-let parse_cont_def = new_definition
-  `parse_cont = parse_some is_cont`;;
+let is_continuation_utf8_def = new_definition
+  `!b. is_continuation_utf8 b <=> byte_bit b 7 /\ ~byte_bit b 6`;;
 
-export_thm parse_cont_def;;
+export_thm is_continuation_utf8_def;;
 
-let parse_cont2_def = new_definition
-  `parse_cont2 = parse_pair parse_cont parse_cont`;;
+let add_continuation_utf8_def = new_definition
+  `!b n.
+     add_continuation_utf8 b n =
+     if is_continuation_utf8 b then
+       SOME (byte_to_num (byte_and b (num_to_byte 63)) + bit_shl n 6)
+     else
+       NONE`;;
 
-export_thm parse_cont2_def;;
+export_thm add_continuation_utf8_def;;
 
-let parse_cont3_def = new_definition
-  `parse_cont3 = parse_pair parse_cont parse_cont2`;;
+let parser_three_byte_utf8_def = new_definition
+  `parser_three_byte_utf8 =
+   parser_filter
+     (parser_foldn add_continuation_utf8 2 (byte_and b (num_to_byte 7)))
+     (\n. 65536 <= n)`;;
 
-export_thm parse_cont3_def;;
+export_thm parser_three_byte_utf8_def;;
+
+let parser_multibyte_utf8_def = new_definition
+ `parser_multibyte_utf8 =
+  parser_sequence
+    (\b.
+       if byte_bit b 6 then
+         if byte_bit b 5 then
+           if byte_bit b 4 then
+             if byte_bit b 3 then NONE
+             else SOME parser_three_byte_utf8
+           else
+             SOME (parser_foldn add_continuation_utf8 1 (byte_and b (num_to_byte 15)))
+         else
+           SOME (parser_foldn add_continuation_utf8 0 (byte_and b (num_to_byte 31)))
+       else
+         NONE
+       i
+ if byte_bit b 7 then SOME (mk_unicode (byte_to_num b)) else NONE)`;;
+
+export_thm parser_ascii_utf8_def;;
 
 let decode_cont1_def = new_definition
   `!b0 b1.
