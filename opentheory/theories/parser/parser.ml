@@ -1585,8 +1585,8 @@ export_thm apply_parser_fold;;
 
 let parser_fold_src = prove
  (`!f : A -> C -> (B + C) option.
-     parser_fold f = \s. mk_parser (parse_fold f s)`,
-  REWRITE_TAC [FUN_EQ_THM; parser_fold_def]);;
+     parser_fold f = mk_parser o parse_fold f`,
+  REWRITE_TAC [FUN_EQ_THM; parser_fold_def; o_THM]);;
 
 export_thm parser_fold_src;;
 
