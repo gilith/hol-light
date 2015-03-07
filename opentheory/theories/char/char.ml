@@ -639,6 +639,73 @@ export_thm position_unicode_src;;
 
 logfile "char-utf8-def";;
 
+let encode_ascii_utf8_def = new_definition
+  `!n. encode_ascii_utf8 n = [num_to_byte n]`;;
+
+export_thm encode_ascii_utf8_def;;
+
+let encode_two_byte_utf8_def = new_definition
+  `!n.
+     encode_two_byte_utf8 n =
+     let n1 = bit_shr n 6 in
+     let b0 = byte_or (num_to_byte 192) (num_to_byte n1) in
+     let b1 = byte_or (num_to_byte 128) (num_to_byte (bit_bound n 6)) in
+     CONS b0 (CONS b1 [])`;;
+
+export_thm encode_two_byte_utf8_def;;
+
+let encode_three_byte_utf8_def = new_definition
+  `!n.
+     encode_three_byte_utf8 n =
+     let n1 = bit_shr n 6 in
+     let n2 = bit_shr n1 6 in
+     let b0 = byte_or (num_to_byte 224) (num_to_byte n2) in
+     let b1 = byte_or (num_to_byte 128) (num_to_byte (bit_bound n1 6)) in
+     let b2 = byte_or (num_to_byte 128) (num_to_byte (bit_bound n 6)) in
+     CONS b0 (CONS b1 (CONS b2 []))`;;
+
+export_thm encode_three_byte_utf8_def;;
+
+let encode_four_byte_utf8_def = new_definition
+  `!n.
+     encode_four_byte_utf8 n =
+     let n1 = bit_shr n 6 in
+     let n2 = bit_shr n1 6 in
+     let n3 = bit_shr n2 6 in
+     let b0 = byte_or (num_to_byte 240) (num_to_byte n3) in
+     let b1 = byte_or (num_to_byte 128) (num_to_byte (bit_bound n2 6)) in
+     let b2 = byte_or (num_to_byte 128) (num_to_byte (bit_bound n1 6)) in
+     let b3 = byte_or (num_to_byte 128) (num_to_byte (bit_bound n 6)) in
+     CONS b0 (CONS b1 (CONS b2 (CONS b3 [])))`;;
+
+export_thm encode_four_byte_utf8_def;;
+
+let encode_char_utf8_def = new_definition
+  `!c.
+     encode_char_utf8 c =
+     let n = dest_unicode c in
+     if n < 128 then encode_ascii_utf8 n else
+     if n < 2048 then encode_two_byte_utf8 n else
+     if n < 65536 then encode_three_byte_utf8 n else
+     encode_four_byte_utf8 n`;;
+
+export_thm encode_char_utf8_def;;
+
+let encode_utf8_def = new_definition
+  `!c. encode_utf8 c = concat (MAP encode_char_utf8 c)`;;
+
+export_thm encode_utf8_def;;
+
+let reencode_char_utf8_def = new_definition
+  `!x. reencode_char_utf8 x = case_sum (\b. [b]) (\c. encode_char_utf8 c) x`;;
+
+export_thm reencode_char_utf8_def;;
+
+let reencode_utf8_def = new_definition
+  `!c. reencode_utf8 c = concat (MAP reencode_char_utf8 c)`;;
+
+export_thm reencode_utf8_def;;
+
 let parser_ascii_utf8_def = new_definition
   `parser_ascii_utf8 =
    parser_token (\b. if byte_bit b 7 then SOME (byte_to_num b) else NONE)`;;
@@ -728,83 +795,12 @@ let parser_utf8_def = new_definition
 
 export_thm parser_utf8_def;;
 
-(***
-let decode_pstream_def = new_definition
-  `decode_pstream = parse_pstream decoder`;;
+let decode_utf8_def = new_definition
+  `!b.
+     decode_utf8 b =
+     FST (pstream_to_list (parse parser_utf8 (list_to_pstream b)))`;;
 
-export_thm decode_pstream_def;;
-
-let decode_def = new_definition
-  `!bs. decode bs = pstream_to_list (decode_pstream (list_to_pstream bs))`;;
-
-export_thm decode_def;;
-
-let encode_cont1_def = new_definition
-  `!p1 p0.
-     encode_cont1 p1 p0 =
-     let b00 = byte_shl p1 2 in
-     let b01 = byte_shr (byte_and p0 (num_to_byte 192)) 6 in
-     let b0 = byte_or (num_to_byte 192) (byte_or b00 b01) in
-     let b10 = byte_and p0 (num_to_byte 63) in
-     let b1 = byte_or (num_to_byte 128) b10 in
-     CONS b0 (CONS b1 [])`;;
-
-export_thm encode_cont1_def;;
-
-let encode_cont2_def = new_definition
-  `!p1 p0.
-     encode_cont2 p1 p0 =
-     let b00 = byte_shr (byte_and p1 (num_to_byte 240)) 4 in
-     let b0 = byte_or (num_to_byte 224) b00 in
-     let b10 = byte_shl (byte_and p1 (num_to_byte 15)) 2 in
-     let b11 = byte_shr (byte_and p0 (num_to_byte 192)) 6 in
-     let b1 = byte_or (num_to_byte 128) (byte_or b10 b11) in
-     let b20 = byte_and p0 (num_to_byte 63) in
-     let b2 = byte_or (num_to_byte 128) b20 in
-     CONS b0 (CONS b1 (CONS b2 []))`;;
-
-export_thm encode_cont2_def;;
-
-let encode_cont3_def = new_definition
-  `!p p1 p0.
-     encode_cont3 p p1 p0 =
-     let b00 = byte_shr (byte_and p (num_to_byte 28)) 2 in
-     let b0 = byte_or (num_to_byte 240) b00 in
-     let b10 = byte_shl (byte_and p (num_to_byte 3)) 4 in
-     let b11 = byte_shr (byte_and p1 (num_to_byte 240)) 4 in
-     let b1 = byte_or (num_to_byte 128) (byte_or b10 b11) in
-     let b20 = byte_shl (byte_and p1 (num_to_byte 15)) 2 in
-     let b21 = byte_shr (byte_and p0 (num_to_byte 192)) 6 in
-     let b2 = byte_or (num_to_byte 128) (byte_or b20 b21) in
-     let b30 = byte_and p0 (num_to_byte 63) in
-     let b3 = byte_or (num_to_byte 128) b30 in
-     CONS b0 (CONS b1 (CONS b2 (CONS b3 [])))`;;
-
-export_thm encode_cont3_def;;
-
-let encoder_def = new_definition
-  `!ch.
-     encoder ch =
-     let (pl,pos) = dest_unicode ch in
-     let p = dest_plane_unicode pl in
-     let (p0,p1) = word16_to_bytes (dest_position_unicode pos) in
-     if p = num_to_byte 0 then
-       if p1 = num_to_byte 0 /\ ~byte_bit p0 7 then
-         CONS p0 []
-       else
-         if byte_and (num_to_byte 248) p1 = num_to_byte 0 then
-           encode_cont1 p1 p0
-         else
-           encode_cont2 p1 p0
-     else
-       encode_cont3 p p1 p0`;;
-
-export_thm encoder_def;;
-
-let encode_def = new_definition
-  `!chs. encode chs = concat (MAP encoder chs)`;;
-
-export_thm encode_def;;
+export_thm decode_utf8_def;;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of the UTF-8 encoding of Unicode characters.                   *)
@@ -812,6 +808,31 @@ export_thm encode_def;;
 
 logfile "char-utf8-thm";;
 
+let map_inl_reencode_utf8 = prove
+ (`!b. reencode_utf8 (MAP INL b) = b`,
+  REWRITE_TAC [reencode_utf8_def] THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [MAP; concat_def];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [MAP; concat_def] THEN
+  REWRITE_TAC [reencode_char_utf8_def; case_sum_def; APPEND_SING]);;
+
+export_thm map_inl_reencode_utf8;;
+
+let map_inr_reencode_utf8 = prove
+ (`!c. reencode_utf8 (MAP INR c) = encode_utf8 c`,
+  REWRITE_TAC [reencode_utf8_def; encode_utf8_def] THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [MAP];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [MAP; concat_def] THEN
+  AP_THM_TAC THEN
+  AP_TERM_TAC THEN
+  REWRITE_TAC [reencode_char_utf8_def; case_sum_def]);;
+
+export_thm map_inr_reencode_utf8;;
+
+(***
 let is_parser_decoder_parse = prove
   (`is_parser decoder_parse`,
    REWRITE_TAC [is_parser_def; decoder_parse_def] THEN
