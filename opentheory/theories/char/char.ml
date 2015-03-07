@@ -603,6 +603,24 @@ let card_unicode_univ = prove
 
 export_thm card_unicode_univ;;
 
+let is_unicode_src = prove
+ (`!n.
+     is_unicode n =
+     let pl = dest_plane_unicode n in
+     let pos = dest_position_unicode n in
+     pos < 65534 /\
+     if ~(pl = 0) then pl < 17 else
+     ~(55296 <= pos /\ pos < 57344) /\
+     ~(64976 <= pos /\ pos < 65008)`,
+  GEN_TAC THEN
+  REWRITE_TAC [is_unicode_def; LET_DEF; LET_END_DEF] THEN
+  ASM_CASES_TAC `dest_position_unicode n < 65534` THEN
+  ASM_REWRITE_TAC [] THEN
+  ASM_CASES_TAC `dest_plane_unicode n = 0` THEN
+  ASM_REWRITE_TAC [LT_NZ; SYM (NUM_REDUCE_CONV `SUC 16`); NOT_SUC]);;
+
+export_thm is_unicode_src;;
+
 let plane_unicode_src = prove
  (`plane_unicode = dest_plane_unicode o dest_unicode`,
   REWRITE_TAC [FUN_EQ_THM; plane_unicode_def; o_THM]);;
@@ -619,7 +637,6 @@ export_thm position_unicode_src;;
 (* Definition of the UTF-8 encoding of Unicode characters.                   *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 logfile "char-utf8-def";;
 
 let parser_ascii_utf8_def = new_definition
@@ -643,122 +660,75 @@ let add_continuation_utf8_def = new_definition
 
 export_thm add_continuation_utf8_def;;
 
+let parser_two_byte_utf8_def = new_definition
+  `!b.
+     parser_two_byte_utf8 b =
+     parser_filter
+       (parser_foldn add_continuation_utf8 0
+         (byte_to_num (byte_and b (num_to_byte 31))))
+       (\n. 128 <= n)`;;
+
+export_thm parser_two_byte_utf8_def;;
+
 let parser_three_byte_utf8_def = new_definition
-  `parser_three_byte_utf8 =
-   parser_filter
-     (parser_foldn add_continuation_utf8 2 (byte_and b (num_to_byte 7)))
-     (\n. 65536 <= n)`;;
+  `!b.
+     parser_three_byte_utf8 b =
+     parser_filter
+       (parser_foldn add_continuation_utf8 1
+          (byte_to_num (byte_and b (num_to_byte 15))))
+       (\n. 2048 <= n)`;;
 
 export_thm parser_three_byte_utf8_def;;
 
+let parser_four_byte_utf8_def = new_definition
+  `!b.
+     parser_four_byte_utf8 b =
+     parser_filter
+       (parser_foldn add_continuation_utf8 2
+          (byte_to_num (byte_and b (num_to_byte 7))))
+       (\n. 65536 <= n)`;;
+
+export_thm parser_four_byte_utf8_def;;
+
 let parser_multibyte_utf8_def = new_definition
- `parser_multibyte_utf8 =
-  parser_sequence
-    (\b.
-       if byte_bit b 6 then
-         if byte_bit b 5 then
-           if byte_bit b 4 then
-             if byte_bit b 3 then NONE
-             else SOME parser_three_byte_utf8
-           else
-             SOME (parser_foldn add_continuation_utf8 1 (byte_and b (num_to_byte 15)))
-         else
-           SOME (parser_foldn add_continuation_utf8 0 (byte_and b (num_to_byte 31)))
-       else
-         NONE
-       i
- if byte_bit b 7 then SOME (mk_unicode (byte_to_num b)) else NONE)`;;
+  `parser_multibyte_utf8 =
+   parser_sequence
+     (parser_token
+        (\b.
+           if byte_bit b 6 then
+             if byte_bit b 5 then
+               if byte_bit b 4 then
+                 if byte_bit b 3 then NONE
+                 else SOME (parser_four_byte_utf8 b)
+               else SOME (parser_three_byte_utf8 b)
+             else SOME (parser_two_byte_utf8 b)
+           else NONE))`;;
 
-export_thm parser_ascii_utf8_def;;
+export_thm parser_multibyte_utf8_def;;
 
-let decode_cont1_def = new_definition
-  `!b0 b1.
-     decode_cont1 b0 b1 =
-     let pl = mk_plane_unicode (num_to_byte 0) in
-     let p1 = byte_shr (byte_and b0 (num_to_byte 28)) 2 in
-     let y0 = byte_shl (byte_and b0 (num_to_byte 3)) 6 in
-     let x0 = byte_and b1 (num_to_byte 63) in
-     let p0 = byte_or y0 x0 in
-     if p1 = num_to_byte 0 /\ ~byte_bit p0 7 then
-       NONE
-     else
-       let pos = mk_position_unicode (bytes_to_word16 p0 p1) in
-       let ch = mk_unicode (pl,pos) in
-       SOME ch`;;
+let parser_num_utf8_def = new_definition
+  `parser_num_utf8 =
+   parser_orelse parser_ascii_utf8 parser_multibyte_utf8`;;
 
-export_thm decode_cont1_def;;
+export_thm parser_num_utf8_def;;
 
-let decode_cont2_def = new_definition
-  `!b0 b1 b2.
-     decode_cont2 b0 (b1,b2) =
-     let z1 = byte_shl (byte_and b0 (num_to_byte 15)) 4 in
-     let y1 = byte_shr (byte_and b1 (num_to_byte 60)) 2 in
-     let p1 = byte_or z1 y1 in
-     if byte_lt p1 (num_to_byte 8) \/
-        (byte_le (num_to_byte 216) p1 /\
-         byte_le p1 (num_to_byte 223)) then NONE
-     else
-       let y0 = byte_shl (byte_and b1 (num_to_byte 3)) 6 in
-       let x0 = byte_and b2 (num_to_byte 63) in
-       let p0 = byte_or y0 x0 in
-       if p1 = num_to_byte 255 /\ byte_le (num_to_byte 254) p0 then NONE
-       else
-         let pl = mk_plane_unicode (num_to_byte 0) in
-         let pos = mk_position_unicode (bytes_to_word16 p0 p1) in
-         let ch = mk_unicode (pl,pos) in
-         SOME ch`;;
+let parser_unicode_utf8_def = new_definition
+  `parser_unicode_utf8 =
+   parser_map_partial
+     parser_num_utf8
+     (\n. if is_unicode n then SOME (mk_unicode n) else NONE)`;;
 
-export_thm decode_cont2_def;;
+export_thm parser_unicode_utf8_def;;
 
-let decode_cont3_def = new_definition
-  `!b0 b1 b2 b3.
-     decode_cont3 b0 (b1,(b2,b3)) =
-     let w = byte_shl (byte_and b0 (num_to_byte 7)) 2 in
-     let z = byte_shr (byte_and b1 (num_to_byte 48)) 4 in
-     let p = byte_or w z in
-     if p = num_to_byte 0 \/ byte_lt (num_to_byte 16) p then NONE
-     else
-       let pl = mk_plane_unicode p in
-       let z1 = byte_shl (byte_and b1 (num_to_byte 15)) 4 in
-       let y1 = byte_shr (byte_and b2 (num_to_byte 60)) 2 in
-       let p1 = byte_or z1 y1 in
-       let y0 = byte_shl (byte_and b2 (num_to_byte 3)) 6 in
-       let x0 = byte_and b3 (num_to_byte 63) in
-       let p0 = byte_or y0 x0 in
-       let pos = mk_position_unicode (bytes_to_word16 p0 p1) in
-       let ch = mk_unicode (pl,pos) in
-       SOME ch`;;
+let parser_utf8_def = new_definition
+  `parser_utf8 =
+   parser_orelse
+     (parser_map parser_unicode_utf8 INR)
+     (parser_map parser_any INL)`;;
 
-export_thm decode_cont3_def;;
+export_thm parser_utf8_def;;
 
-let decoder_parse_def = new_definition
-  `!b0 s.
-     decoder_parse b0 s =
-     if byte_bit b0 7 then
-       if byte_bit b0 6 then
-         if byte_bit b0 5 then
-           if byte_bit b0 4 then
-             if byte_bit b0 3 then NONE
-             else parse (parse_partial_map (decode_cont3 b0) parse_cont3) s
-           else
-             parse (parse_partial_map (decode_cont2 b0) parse_cont2) s
-         else
-           parse (parse_partial_map (decode_cont1 b0) parse_cont) s
-       else
-         NONE
-     else
-       let pl = mk_plane_unicode (num_to_byte 0) in
-       let pos = mk_position_unicode (bytes_to_word16 b0 (num_to_byte 0)) in
-       let ch = mk_unicode (pl,pos) in
-       SOME (ch,s)`;;
-
-export_thm decoder_parse_def;;
-
-let decoder_def = new_definition
-  `decoder = mk_parser decoder_parse`;;
-
-export_thm decoder_def;;
-
+(***
 let decode_pstream_def = new_definition
   `decode_pstream = parse_pstream decoder`;;
 
@@ -1656,8 +1626,10 @@ logfile "char-haskell-src";;
 
 export_thm dest_plane_unicode_def;;  (* Haskell *)
 export_thm dest_position_unicode_def;;  (* Haskell *)
+export_thm is_unicode_src;;  (* Haskell *)
 export_thm mk_dest_unicode;;  (* Haskell *)
 export_thm plane_unicode_src;;  (* Haskell *)
 export_thm position_unicode_src;;  (* Haskell *)
+export_thm random_unicode_def;;  (* Haskell *)
 
 logfile_end ();;

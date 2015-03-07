@@ -10,13 +10,13 @@
 type "HOLLight.unicode" as "Data.Char.char"
 
 const "HOLLight.dest_unicode" as "Data.Char.dest"
+const "HOLLight.dest_plane_unicode" as "Data.Char.destPlane"
+const "HOLLight.dest_position_unicode" as "Data.Char.destPosition"
 const "HOLLight.random_unicode" as "Data.Char.fromRandom"
 const "HOLLight.is_unicode" as "Data.Char.invariant"
 const "HOLLight.mk_unicode" as "Data.Char.mk"
 const "HOLLight.plane_unicode" as "Data.Char.plane"
-const "HOLLight.dest_plane_unicode" as "Data.Char.plane.dest"
 const "HOLLight.position_unicode" as "Data.Char.position"
-const "HOLLight.dest_position_unicode" as "Data.Char.position.dest"
 
 # Data.Char.UTF8
 
