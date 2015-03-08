@@ -67,4 +67,12 @@ let byte_list_cases = prove
 
 export_thm byte_list_cases;;
 
+(* ------------------------------------------------------------------------- *)
+(* Haskell source for bytes.                                                 *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "byte-haskell-src";;
+
+export_thm random_byte_def;;  (* Haskell *)
+
 logfile_end ();;
