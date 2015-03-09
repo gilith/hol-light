@@ -1577,6 +1577,14 @@ let encode_length = prove
    REWRITE_TAC [decode_encode; case_option_def]);;
 
 export_thm encode_length;;
+
+let reencode_decode_utf8 = prove
+  (`!b. reencode_utf8 (decode_utf8 b) = b`,
+   GEN_TAC THEN
+   MP_TAC (SPEC `encode cs` decode_length) THEN
+   REWRITE_TAC [decode_encode; case_option_def]);;
+
+export_thm encode_length;;
 ***)
 
 let encode_unicode_utf8_src = prove

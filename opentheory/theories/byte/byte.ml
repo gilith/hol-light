@@ -73,6 +73,8 @@ export_thm byte_list_cases;;
 
 logfile "byte-haskell-src";;
 
+export_thm byte_width_def;;  (* Haskell *)
+export_thm byte_size_def;;  (* Haskell *)
 export_thm random_byte_def;;  (* Haskell *)
 
 logfile_end ();;
