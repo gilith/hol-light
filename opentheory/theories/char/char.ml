@@ -708,7 +708,7 @@ export_thm reencode_utf8_def;;
 
 let parser_ascii_utf8_def = new_definition
   `parser_ascii_utf8 =
-   parser_token (\b. if byte_bit b 7 then SOME (byte_to_num b) else NONE)`;;
+   parser_token (\b. if byte_bit b 7 then NONE else SOME (byte_to_num b))`;;
 
 export_thm parser_ascii_utf8_def;;
 
