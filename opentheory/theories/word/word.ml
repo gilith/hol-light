@@ -651,17 +651,11 @@ let list_to_word_to_list_eq = new_axiom
 
 let list_to_word_to_list = prove
  (`!l. LENGTH l = word_width <=> word_to_list (list_to_word l) = l`,
-  ***
   GEN_TAC THEN
   EQ_TAC THENL
   [STRIP_TAC THEN
-   MATCH_MP_TAC EQ_TRANS THEN
-   EXISTS_TAC `take (LENGTH (l : bool list)) l` THEN
-   CONJ_TAC THENL
-   [ASM_REWRITE_TAC [] THEN
-    MATCH_MP_TAC long_list_to_word_to_list THEN
-    ASM_REWRITE_TAC [LE_REFL];
-    MATCH_ACCEPT_TAC take_length];
+   ASM_REWRITE_TAC
+     [list_to_word_to_list_eq; LE_REFL; SUB_REFL; REPLICATE; APPEND_NIL];
    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
    MATCH_ACCEPT_TAC length_word_to_list]);;
 
@@ -676,26 +670,14 @@ let word_shl_list = prove
  (`!l n.
      word_shl (list_to_word l) n =
      list_to_word (APPEND (REPLICATE F n) l)`,
-  REWRITE_TAC [word_shl_def] THEN
   REPEAT GEN_TAC THEN
   MATCH_MP_TAC word_to_num_inj THEN
-  REWRITE_TAC [num_to_word_to_num] THEN
-  SPEC_TAC (`n:num`,`n:num`) THEN
-  MATCH_MP_TAC num_INDUCTION THEN
-  CONJ_TAC THENL
-  [REWRITE_TAC [EXP; REPLICATE; APPEND; MULT_CLAUSES] THEN
-   REWRITE_TAC [GSYM num_to_word_to_num; word_to_num_to_word];
-   ALL_TAC] THEN
-  REPEAT STRIP_TAC THEN
-  REWRITE_TAC [REPLICATE; APPEND; cons_to_word_to_num; ZERO_ADD] THEN
-  POP_ASSUM (fun th -> REWRITE_TAC [GSYM th]) THEN
-  MP_TAC (SPECL [`2`; `word_size`; `2 EXP n * word_to_num (list_to_word l)`]
-                MOD_MULT_RMOD) THEN
-  COND_TAC THENL
-  [ACCEPT_TAC word_size_nonzero;
-   ALL_TAC] THEN
-  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-  REWRITE_TAC [EXP; MULT_ASSOC]);;
+  REWRITE_TAC
+    [word_shl_def; list_to_word_def; num_to_word_to_num_bound;
+     bits_to_num_append; LENGTH_REPLICATE; bits_to_num_replicate_false;
+     ZERO_ADD; GSYM bit_bound_shl_add; bit_bound_bound_min] THEN
+  ONCE_REWRITE_TAC [MIN_COMM] THEN
+  REWRITE_TAC [MIN; LE_ADD]);;
 
 export_thm word_shl_list;;
 
@@ -712,10 +694,11 @@ let short_word_shr_list = prove
      word_shr (list_to_word l) n =
      (if LENGTH l <= n then list_to_word []
       else list_to_word (drop n l))`,
-  REWRITE_TAC [word_shr_def] THEN
   REPEAT STRIP_TAC THEN
   MATCH_MP_TAC word_to_num_inj THEN
-  REWRITE_TAC [num_to_word_to_num] THEN
+  REWRITE_TAC [word_shr_def; num_to_word_to_num_bound] THEN
+
+
   bool_cases_tac `LENGTH (l : bool list) <= n` THENL
   [ASM_REWRITE_TAC [] THEN
    REWRITE_TAC [nil_to_word_to_num] THEN
