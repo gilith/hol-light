@@ -40,9 +40,9 @@ let word_size_def = new_axiom
 *)
 
 let word_size_nonzero = prove
-  (`~(word_size = 0)`,
-   REWRITE_TAC [word_size_def; EXP_EQ_0] THEN
-   NUM_REDUCE_TAC);;
+ (`~(word_size = 0)`,
+  REWRITE_TAC [word_size_def; EXP_EQ_0] THEN
+  NUM_REDUCE_TAC);;
 
 export_thm word_size_nonzero;;
 
@@ -62,7 +62,7 @@ loads "opentheory/theories/word/word-modular.ml";;
 logfile "word-bits-def";;
 
 let word_shl_def = new_definition
-  `!w n. word_shl w n = num_to_word ((2 EXP n) * word_to_num w)`;;
+  `!w n. word_shl w n = num_to_word (bit_shl (word_to_num w) n)`;;
 
 (*PARAMETRIC
 new_constant ("word_shl", `:word -> num -> word`);;
@@ -76,7 +76,7 @@ let word_shl_def = new_axiom
 *)
 
 let word_shr_def = new_definition
-  `!w n. word_shr w n = num_to_word (word_to_num w DIV (2 EXP n))`;;
+  `!w n. word_shr w n = num_to_word (bit_shr (word_to_num w) n)`;;
 
 (*PARAMETRIC
 new_constant ("word_shr", `:word -> num -> word`);;
@@ -90,7 +90,7 @@ let word_shr_def = new_axiom
 *)
 
 let word_bit_def = new_definition
-  `!w n. word_bit w n = ODD (word_to_num (word_shr w n))`;;
+  `!w n. word_bit w n = bit_nth (word_to_num w) n`;;
 
 (*PARAMETRIC
 new_constant ("word_bit", `:word -> num -> bool`);;
@@ -104,7 +104,7 @@ let word_bit_def = new_axiom
 *)
 
 let word_to_list_def = new_definition
-  `!w. word_to_list w = MAP (word_bit w) (interval 0 word_width)`;;
+  `!w. word_to_list w = num_to_bitvec (word_to_num w) word_width`;;
 
 (*PARAMETRIC
 new_constant ("word_to_list", `:word -> bool list`);;
@@ -238,8 +238,8 @@ let word_bits_lte_def = CONJ word_bits_lte_nil word_bits_lte_cons;;
 logfile "word-bits-thm";;
 
 let length_word_to_list = prove
-  (`!w. LENGTH (word_to_list w) = word_width`,
-   REWRITE_TAC [word_to_list_def; LENGTH_MAP; length_interval]);;
+ (`!w. LENGTH (word_to_list w) = word_width`,
+  REWRITE_TAC [word_to_list_def; length_num_to_bitvec]);;
 
 export_thm length_word_to_list;;
 
@@ -249,8 +249,8 @@ let length_word_to_list = new_axiom
 *)
 
 let is_word_to_list = prove
-  (`!w. is_word_list (word_to_list w)`,
-   REWRITE_TAC [is_word_list_def; length_word_to_list]);;
+ (`!w. is_word_list (word_to_list w)`,
+  REWRITE_TAC [is_word_list_def; length_word_to_list]);;
 
 export_thm is_word_to_list;;
 
@@ -260,8 +260,8 @@ let is_word_to_list = new_axiom
 *)
 
 let list_to_word_nil = prove
-  (`list_to_word [] = num_to_word 0`,
-   REWRITE_TAC [bits_to_num_nil; list_to_word_def]);;
+ (`list_to_word [] = num_to_word 0`,
+  REWRITE_TAC [bits_to_num_nil; list_to_word_def]);;
 
 export_thm list_to_word_nil;;
 
@@ -271,17 +271,17 @@ let list_to_word_nil = new_axiom
 *)
 
 let list_to_word_cons = prove
-  (`!h t.
-      list_to_word (CONS h t) =
-      if h then word_add (num_to_word 1) (word_shl (list_to_word t) 1)
-      else word_shl (list_to_word t) 1`,
-   REPEAT GEN_TAC THEN
-   REWRITE_TAC
-     [bits_to_num_cons; bit_cons_def; bit_to_num_def;
-      list_to_word_def; num_to_word_add; num_to_word_mult;
-      word_shl_def; EXP_1; word_to_num_to_word] THEN
-   BOOL_CASES_TAC `h : bool` THEN
-   REWRITE_TAC [word_add_left_zero]);;
+ (`!h t.
+     list_to_word (CONS h t) =
+     if h then word_add (num_to_word 1) (word_shl (list_to_word t) 1)
+     else word_shl (list_to_word t) 1`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC
+    [list_to_word_def; word_shl_def; bits_to_num_cons; bit_cons_def;
+     bit_to_num_def; num_to_word_add; num_to_word_mult; bit_shl_one;
+     word_to_num_to_word] THEN
+  BOOL_CASES_TAC `h : bool` THEN
+  REWRITE_TAC [word_add_left_zero]);;
 
 export_thm list_to_word_cons;;
 
@@ -293,6 +293,7 @@ let list_to_word_cons = new_axiom
       else word_shl (list_to_word t) 1`;;
 *)
 
+(***
 let word_bit_div = prove
   (`!w n. word_bit w n = ODD (word_to_num w DIV (2 EXP n))`,
    REWRITE_TAC [word_bit_def; word_shr_def; num_to_word_to_num] THEN
@@ -313,12 +314,33 @@ export_thm word_bit_div;;
 let word_bit_div = new_axiom
   `!w n. word_bit w n = ODD (word_to_num w DIV (2 EXP n))`;;
 *)
+***)
+
+let bound_word_to_num = prove
+ (`!w. bit_bound (word_to_num w) word_width = word_to_num w`,
+  REWRITE_TAC [bit_bound_def; GSYM word_size_def; word_to_num_mod_bound]);;
+
+export_thm bound_word_to_num;;
+
+(*PARAMETRIC
+let bound_word_to_num = new_axiom
+  `!w. bit_bound (word_to_num w) word_width = word_to_num w`;;
+*)
+
+let num_to_word_to_num_bound = prove
+ (`!n. word_to_num (num_to_word n) = bit_bound n word_width`,
+  REWRITE_TAC [num_to_word_to_num; bit_bound_def; word_size_def]);;
+
+export_thm num_to_word_to_num_bound;;
+
+(*PARAMETRIC
+let num_to_word_to_num_bound = new_axiom
+  `!n. word_to_num (num_to_word n) = bit_bound n word_width`;;
+*)
 
 let nil_to_word_to_num = prove
-  (`word_to_num (list_to_word []) = 0`,
-   REWRITE_TAC [list_to_word_nil; num_to_word_to_num] THEN
-   MATCH_MP_TAC mod_lt_word_size THEN
-   REWRITE_TAC [LT_NZ; word_size_nonzero]);;
+ (`word_to_num (list_to_word []) = 0`,
+  REWRITE_TAC [list_to_word_nil; num_to_word_to_num_bound; zero_bit_bound]);;
 
 export_thm nil_to_word_to_num;;
 
@@ -327,18 +349,19 @@ let nil_to_word_to_num = new_axiom
   `word_to_num (list_to_word []) = 0`;;
 *)
 
+(***
 let cons_to_word_to_num = prove
-  (`!h t.
-      word_to_num (list_to_word (CONS h t)) =
-      ((if h then 1 else 0) + 2 * word_to_num (list_to_word t)) MOD
-      word_size`,
-   REPEAT GEN_TAC THEN
-   REWRITE_TAC
-     [list_to_word_def; num_to_word_to_num;
-      bits_to_num_cons; bit_cons_def; bit_to_num_def] THEN
-   ONCE_REWRITE_TAC [GSYM mod_add_mod_word_size] THEN
-   ONCE_REWRITE_TAC [GSYM mod_mult_mod_word_size] THEN
-   REWRITE_TAC [mod_mod_refl_word_size]);;
+ (`!h t.
+     word_to_num (list_to_word (CONS h t)) =
+     ((if h then 1 else 0) + 2 * word_to_num (list_to_word t)) MOD
+     word_size`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC
+    [list_to_word_def; num_to_word_to_num_bound;
+     bits_to_num_cons; bit_cons_def; bit_to_num_def] THEN
+  ONCE_REWRITE_TAC [GSYM mod_add_mod_word_size] THEN
+  ONCE_REWRITE_TAC [GSYM mod_mult_mod_word_size] THEN
+  REWRITE_TAC [mod_mod_refl_word_size]);;
 
 export_thm cons_to_word_to_num;;
 
@@ -349,14 +372,15 @@ let cons_to_word_to_num = new_axiom
       ((if h then 1 else 0) + 2 * word_to_num (list_to_word t)) MOD
       word_size`;;
 *)
+***)
 
 let list_to_word_to_num_bound = prove
-  (`!l. word_to_num (list_to_word l) < 2 EXP (LENGTH l)`,
-   GEN_TAC THEN
-   REWRITE_TAC [list_to_word_def; num_to_word_to_num] THEN
-   MATCH_MP_TAC LET_TRANS THEN
-   EXISTS_TAC `bits_to_num l` THEN
-   REWRITE_TAC [bits_to_num_bound; mod_le_word_size]);;
+ (`!l. word_to_num (list_to_word l) < 2 EXP (LENGTH l)`,
+  GEN_TAC THEN
+  REWRITE_TAC [list_to_word_def; num_to_word_to_num_bound] THEN
+  MATCH_MP_TAC LET_TRANS THEN
+  EXISTS_TAC `bits_to_num l` THEN
+  REWRITE_TAC [bits_to_num_bound; bit_bound_le]);;
 
 export_thm list_to_word_to_num_bound;;
 
@@ -365,11 +389,12 @@ let list_to_word_to_num_bound = new_axiom
   `!l. word_to_num (list_to_word l) < 2 EXP (LENGTH l)`;;
 *)
 
+(***
 let list_to_word_to_num_bound_suc = prove
-  (`!l. 1 + 2 * word_to_num (list_to_word l) < 2 EXP (SUC (LENGTH l))`,
-   GEN_TAC THEN
-   MATCH_MP_TAC lt_exp_two_suc THEN
-   MATCH_ACCEPT_TAC list_to_word_to_num_bound);;
+ (`!l. 1 + 2 * word_to_num (list_to_word l) < 2 EXP (SUC (LENGTH l))`,
+  GEN_TAC THEN
+  MATCH_MP_TAC lt_exp_two_suc THEN
+  MATCH_ACCEPT_TAC list_to_word_to_num_bound);;
 
 export_thm list_to_word_to_num_bound_suc;;
 
@@ -377,19 +402,21 @@ export_thm list_to_word_to_num_bound_suc;;
 let list_to_word_to_num_bound_suc = new_axiom
   `!l. 1 + 2 * word_to_num (list_to_word l) < 2 EXP (SUC (LENGTH l))`;;
 *)
+***)
 
+(***
 let cons_to_word_to_num_bound = prove
-  (`!h t.
-      (if h then 1 else 0) + 2 * word_to_num (list_to_word t) <
-      2 EXP SUC (LENGTH t)`,
-   REPEAT GEN_TAC THEN
-   MATCH_MP_TAC LET_TRANS THEN
-   EXISTS_TAC `1 + 2 * word_to_num (list_to_word t)` THEN
-   CONJ_TAC THENL
-   [REWRITE_TAC [LE_ADD_RCANCEL] THEN
-    BOOL_CASES_TAC `h : bool` THEN
-    REWRITE_TAC [LE_REFL; LE_0];
-    MATCH_ACCEPT_TAC list_to_word_to_num_bound_suc]);;
+ (`!h t.
+     (if h then 1 else 0) + 2 * word_to_num (list_to_word t) <
+     2 EXP SUC (LENGTH t)`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC LET_TRANS THEN
+  EXISTS_TAC `1 + 2 * word_to_num (list_to_word t)` THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [LE_ADD_RCANCEL] THEN
+   BOOL_CASES_TAC `h : bool` THEN
+   REWRITE_TAC [LE_REFL; LE_0];
+   MATCH_ACCEPT_TAC list_to_word_to_num_bound_suc]);;
 
 export_thm cons_to_word_to_num_bound;;
 
@@ -399,67 +426,13 @@ let cons_to_word_to_num_bound = new_axiom
       2 * word_to_num (list_to_word t) + (if h then 1 else 0) <
       2 EXP SUC (LENGTH t)`;;
 *)
+***)
 
 let word_to_list_to_word = prove
-  (`!w. list_to_word (word_to_list w) = w`,
-   GEN_TAC THEN
-   REWRITE_TAC [word_to_list_def] THEN
-   MATCH_MP_TAC word_to_num_inj THEN
-   MATCH_MP_TAC (ITAUT `!p q. (p ==> q) /\ p ==> q`) THEN
-   EXISTS_TAC
-     `!k.
-        k <= word_width ==>
-        word_to_num
-          (list_to_word (MAP (word_bit w) (interval (word_width - k) k))) =
-          word_to_num w DIV (2 EXP (word_width - k))` THEN
-   CONJ_TAC THENL
-   [DISCH_THEN (MP_TAC o SPEC `word_width`) THEN
-    REWRITE_TAC [SUB_REFL; LE_REFL; EXP; DIV_1];
-    ALL_TAC] THEN
-   MATCH_MP_TAC num_INDUCTION THEN
-   CONJ_TAC THENL
-   [REWRITE_TAC
-      [SUB_0; interval_def; MAP; nil_to_word_to_num; GSYM word_size_def;
-       word_to_num_div_bound];
-    ALL_TAC] THEN
-   REPEAT STRIP_TAC THEN
-   FIRST_X_ASSUM (fun th -> MP_TAC th THEN ANTS_TAC) THENL
-   [MATCH_MP_TAC LE_TRANS THEN
-    EXISTS_TAC `SUC k` THEN
-    ASM_REWRITE_TAC [LE; LE_REFL];
-    ALL_TAC] THEN
-   REWRITE_TAC [interval_def; MAP; cons_to_word_to_num] THEN
-   MP_TAC (SPECL [`word_width`; `k : num`] SUB_SUC_CANCEL) THEN
-   COND_TAC THENL
-   [ASM_REWRITE_TAC [GSYM LE_SUC_LT];
-    ALL_TAC] THEN
-   DISCH_THEN (SUBST1_TAC o SYM) THEN
-   DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [word_bit_div; cond_mod_two] THEN
-   ONCE_REWRITE_TAC [ADD_SYM] THEN
-   ONCE_REWRITE_TAC [MULT_SYM] THEN
-   REWRITE_TAC [EXP] THEN
-   MP_TAC (SPECL [`word_to_num w`; `2 EXP (word_width - SUC k)`;
-                   `2`] (ONCE_REWRITE_RULE [MULT_SYM] DIV_DIV)) THEN
-   COND_TAC THENL
-   [REWRITE_TAC [GSYM EXP; EXP_EQ_0] THEN
-    NUM_REDUCE_TAC;
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
-   MP_TAC (SPECL [`word_to_num w DIV (2 EXP (word_width - SUC k))`;
-                   `2`] DIVISION) THEN
-   COND_TAC THENL
-   [NUM_REDUCE_TAC;
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [GSYM (CONJUNCT1 th)]) THEN
-   MATCH_MP_TAC mod_lt_word_size THEN
-   MATCH_MP_TAC LET_TRANS THEN
-   EXISTS_TAC `word_to_num w` THEN
-   CONJ_TAC THENL
-   [MATCH_MP_TAC DIV_LE THEN
-    REWRITE_TAC [EXP_EQ_0] THEN
-    NUM_REDUCE_TAC;
-    REWRITE_TAC [word_to_num_bound]]);;
+ (`!w. list_to_word (word_to_list w) = w`,
+  REWRITE_TAC
+    [word_to_list_def; list_to_word_def; num_to_bitvec_to_num;
+     bound_word_to_num; word_to_num_to_word]);;
 
 export_thm word_to_list_to_word;;
 
@@ -469,10 +442,10 @@ let word_to_list_to_word = new_axiom
 *)
 
 let word_to_list_inj = prove
-  (`!w1 w2. word_to_list w1 = word_to_list w2 ==> w1 = w2`,
-   REPEAT STRIP_TAC THEN
-   ONCE_REWRITE_TAC [GSYM word_to_list_to_word] THEN
-   ASM_REWRITE_TAC []);;
+ (`!w1 w2. word_to_list w1 = word_to_list w2 ==> w1 = w2`,
+  REPEAT STRIP_TAC THEN
+  ONCE_REWRITE_TAC [GSYM word_to_list_to_word] THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm word_to_list_inj;;
 
@@ -482,12 +455,12 @@ let word_to_list_inj = new_axiom
 *)
 
 let word_to_list_inj_eq = prove
-  (`!w1 w2. word_to_list w1 = word_to_list w2 <=> w1 = w2`,
-   REPEAT GEN_TAC THEN
-   EQ_TAC THENL
-   [MATCH_ACCEPT_TAC word_to_list_inj;
-    DISCH_THEN SUBST_VAR_TAC THEN
-    REFL_TAC]);;
+ (`!w1 w2. word_to_list w1 = word_to_list w2 <=> w1 = w2`,
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [MATCH_ACCEPT_TAC word_to_list_inj;
+   DISCH_THEN SUBST_VAR_TAC THEN
+   REFL_TAC]);;
 
 export_thm word_to_list_inj_eq;;
 
@@ -497,276 +470,268 @@ let word_to_list_inj_eq = new_axiom
 *)
 
 let list_to_word_bit = prove
-  (`!l n.
-      word_bit (list_to_word l) n =
-      (n < word_width /\ n < LENGTH l /\ nth l n)`,
-   REWRITE_TAC [word_bit_div] THEN
-   ONCE_REWRITE_TAC [SWAP_FORALL_THM] THEN
-   INDUCT_TAC THENL
-   [LIST_INDUCT_TAC THENL
-    [REWRITE_TAC [LENGTH; nil_to_word_to_num; LT; ODD; EXP; DIV_1];
-     ALL_TAC] THEN
-    POP_ASSUM (K ALL_TAC) THEN
-    REWRITE_TAC
-      [LENGTH; cons_to_word_to_num; EXP; DIV_1; nth_zero; HD; LT_NZ;
-       NOT_SUC] THEN
-    ASM_REWRITE_TAC [word_size_def; odd_mod_exp_two] THEN
-    CONV_TAC (LAND_CONV (REWR_CONV CONJ_SYM)) THEN
-    AP_TERM_TAC THEN
-    ONCE_REWRITE_TAC [ADD_SYM] THEN
-    BOOL_CASES_TAC `h:bool` THENL
-    [ASM_REWRITE_TAC [GSYM ADD1; ODD_DOUBLE];
-     ASM_REWRITE_TAC [ADD_0; GSYM NOT_EVEN; EVEN_DOUBLE]];
-    ALL_TAC] THEN
-   bool_cases_tac' `SUC n < word_width` THENL
-   [POP_ASSUM MP_TAC THEN
-    POP_ASSUM (K ALL_TAC) THEN
-    REPEAT STRIP_TAC THEN
-    ASM_REWRITE_TAC [NOT_ODD] THEN
-    MATCH_MP_TAC even_zero THEN
-    REWRITE_TAC [div_exp_two_lt] THEN
-    MATCH_MP_TAC LTE_TRANS THEN
-    EXISTS_TAC `word_size` THEN
-    REWRITE_TAC [word_to_num_bound] THEN
-    REWRITE_TAC [word_size_def; le_exp_two] THEN
-    ASM_REWRITE_TAC [GSYM NOT_LT];
-    ALL_TAC] THEN
-   ASM_REWRITE_TAC [] THEN
-   LIST_INDUCT_TAC THENL
-   [REWRITE_TAC [LENGTH; nil_to_word_to_num; LT; NOT_ODD] THEN
-    MATCH_MP_TAC even_zero THEN
-    REWRITE_TAC [div_exp_two_lt; LT_NZ; exp_two_nz];
-    ALL_TAC] THEN
-   POP_ASSUM (K ALL_TAC) THEN
-   REWRITE_TAC [LENGTH; cons_to_word_to_num; LT_SUC] THEN
-   MP_TAC (ISPECL [`h : bool`; `t : bool list`; `n : num`] nth_suc) THEN
-   MATCH_MP_TAC
-     (TAUT `!x y z w.
-              ((x /\ y <=> x /\ z) ==> w) ==>
-              ((x ==> (y <=> z)) ==> w)`) THEN
-   DISCH_THEN SUBST1_TAC THEN
-   REWRITE_TAC [word_size_def; mod_div_exp_two; GSYM NOT_LT] THEN
-   ASM_REWRITE_TAC [odd_mod_exp_two] THEN
-   SUBGOAL_THEN `~(word_width - SUC n = 0)` (fun th -> REWRITE_TAC [th]) THENL
-   [MP_TAC (SPECL [`word_width`; `SUC n`] SUB_EQ_0) THEN
-    COND_TAC THENL
-    [MATCH_MP_TAC LT_IMP_LE THEN
-     FIRST_ASSUM ACCEPT_TAC;
-     ALL_TAC] THEN
-    DISCH_THEN SUBST1_TAC THEN
-    STRIP_TAC THEN
-    UNDISCH_TAC `SUC n < word_width` THEN
-    ASM_REWRITE_TAC [NOT_LT; LE_REFL];
-    ALL_TAC] THEN
-   FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `t : bool list` th)) THEN
-   KNOW_TAC `n < word_width` THENL
-   [MATCH_MP_TAC LT_TRANS THEN
-    EXISTS_TAC `SUC n` THEN
-    ASM_REWRITE_TAC [SUC_LT];
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
-   REWRITE_TAC [ODD_MOD] THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   MATCH_MP_TAC EQ_TRANS THEN
-   EXISTS_TAC
-     `(((if h then 1 else 0) + 2 * word_to_num (list_to_word t)) DIV 2) DIV
-      (2 EXP n)` THEN
-   CONJ_TAC THENL
-   [REWRITE_TAC [EXP] THEN
-    MATCH_MP_TAC EQ_SYM THEN
-    MATCH_MP_TAC DIV_DIV THEN
-    REWRITE_TAC [GSYM EXP; exp_two_nz];
-    ALL_TAC] THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   MATCH_ACCEPT_TAC cons_div_two);;
+ (`!l n.
+     word_bit (list_to_word l) n =
+     (n < word_width /\ n < LENGTH l /\ nth l n)`,
+  REWRITE_TAC
+    [word_bit_def; list_to_word_def; num_to_word_to_num_bound;
+     bit_nth_bound; bit_nth_bits_to_num]);;
 
 export_thm list_to_word_bit;;
 
 (*PARAMETRIC
 let list_to_word_bit = new_axiom
-   `!l n.
-      word_bit (list_to_word l) n =
-      (n < word_width /\ n < LENGTH l /\ nth l n)`;;
+  `!l n.
+     word_bit (list_to_word l) n =
+     (n < word_width /\ n < LENGTH l /\ nth l n)`;;
 *)
 
+let num_to_bitvec_bound = prove
+ (`!n k. num_to_bitvec (bit_bound n k) k = num_to_bitvec n k`,
+  CONV_TAC (REWR_CONV SWAP_FORALL_THM) THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [num_to_bitvec_zero];
+   ASM_REWRITE_TAC
+     [num_to_bitvec_suc; bit_bound_suc; bit_hd_cons; bit_tl_cons]]);;
+
+let zero_to_bitvec = prove
+ (`!k. num_to_bitvec 0 k = REPLICATE F k`,
+  INDUCT_TAC THENL
+  [REWRITE_TAC [num_to_bitvec_def; REPLICATE];
+   ASM_REWRITE_TAC [num_to_bitvec_def; REPLICATE; bit_hd_zero; bit_tl_zero]]);;
+
+let bits_to_num_to_long_bitvec = prove
+ (`!l k.
+     num_to_bitvec (bits_to_num l) (LENGTH l + k) =
+     APPEND l (REPLICATE F k)`,
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [bits_to_num_nil; zero_to_bitvec; APPEND; LENGTH; ZERO_ADD];
+   ASM_REWRITE_TAC
+     [bits_to_num_cons; LENGTH; SUC_ADD; num_to_bitvec_suc; bit_hd_cons;
+      bit_tl_cons; APPEND]]);;
+
+let bits_to_num_to_short_bitvec = prove
+ (`!l k. k <= LENGTH l ==> num_to_bitvec (bits_to_num l) k = take k l`,
+  LIST_INDUCT_TAC THENL
+  [GEN_TAC THEN
+   REWRITE_TAC [bits_to_num_nil; zero_to_bitvec; LENGTH; LE] THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   REWRITE_TAC [REPLICATE; take_zero];
+   ALL_TAC] THEN
+  GEN_TAC THEN
+  REWRITE_TAC [bits_to_num_cons; LENGTH] THEN
+  MP_TAC (SPEC `k : num` num_CASES) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST_VAR_TAC
+       (X_CHOOSE_THEN `n : num` SUBST_VAR_TAC)) THENL
+  [REWRITE_TAC [num_to_bitvec_zero; take_zero];
+   ALL_TAC] THEN
+  REWRITE_TAC [LE_SUC; num_to_bitvec_suc; bit_hd_cons; bit_tl_cons] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM (MP_TAC o SPEC `n : num`) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC take_suc THEN
+  ASM_REWRITE_TAC []);;
+
+let bits_to_num_to_bitvec = prove
+ (`!l k.
+     num_to_bitvec (bits_to_num l) k =
+     if LENGTH l <= k then APPEND l (REPLICATE F (k - LENGTH l))
+     else take k l`,
+
+let list_to_word_to_list_eq = prove
+ (`!l.
+     word_to_list (list_to_word l) =
+     if LENGTH l <= word_width then
+       APPEND l (REPLICATE F (word_width - LENGTH l))
+     else
+       take word_width l`,
+
+(***
 let short_list_to_word_to_list = prove
-  (`!l.
-      LENGTH l <= word_width ==>
-      word_to_list (list_to_word l) =
-      APPEND l (REPLICATE F (word_width - LENGTH l))`,
-   REWRITE_TAC [word_to_list_def; list_to_word_bit] THEN
-   REPEAT STRIP_TAC THEN
-   MATCH_MP_TAC nth_eq THEN
-   REWRITE_TAC [LENGTH_MAP; length_interval] THEN
-   CONJ_TAC THENL
-   [REWRITE_TAC [LENGTH_APPEND; LENGTH_REPLICATE] THEN
-    MATCH_MP_TAC EQ_SYM THEN
-    MATCH_MP_TAC SUB_ADD2 THEN
-    FIRST_ASSUM ACCEPT_TAC;
-    ALL_TAC] THEN
-   REPEAT STRIP_TAC THEN
-   MP_TAC (ISPECL [`word_bit (list_to_word l)`; `interval 0 word_width`;
-                   `i : num`] nth_map) THEN
-   COND_TAC THENL
-   [ASM_REWRITE_TAC [length_interval];
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   MP_TAC (SPECL [`0`; `word_width`; `i : num`] nth_interval) THEN
-   ASM_REWRITE_TAC [ADD] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   REWRITE_TAC [list_to_word_bit] THEN
-   MP_TAC (ISPECL [`l : bool list`;
-                   `REPLICATE F (word_width - LENGTH (l : bool list))`;
-                   `i : num`]
-                  nth_append) THEN
-   COND_TAC THENL
-   [REWRITE_TAC [LENGTH_REPLICATE] THEN
-    MATCH_MP_TAC LTE_TRANS THEN
-    EXISTS_TAC `word_width` THEN
-    ASM_REWRITE_TAC [] THEN
-    MP_TAC (SPEC `word_width` LE_REFL) THEN
-    MATCH_MP_TAC EQ_IMP THEN
-    AP_TERM_TAC THEN
-    MATCH_MP_TAC EQ_SYM THEN
-    MATCH_MP_TAC SUB_ADD2 THEN
-    FIRST_ASSUM ACCEPT_TAC;
-    ALL_TAC] THEN
-   DISCH_THEN SUBST1_TAC THEN
-   bool_cases_tac `i < LENGTH (l : bool list)` THENL
-   [ASM_REWRITE_TAC [];
-    ALL_TAC] THEN
+ (`!l.
+     LENGTH l <= word_width ==>
+     word_to_list (list_to_word l) =
+     APPEND l (REPLICATE F (word_width - LENGTH l))`,
+  REWRITE_TAC
+    [word_to_list_def; list_to_word_def; num_to_word_to_num_bound;
+     num_to_bitvec_bound]
+ THEN
+
+
+  REWRITE_TAC [word_to_list_def; list_to_word_bit] THEN
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC nth_eq THEN
+  REWRITE_TAC [LENGTH_MAP; length_interval] THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [LENGTH_APPEND; LENGTH_REPLICATE] THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC SUB_ADD2 THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  REPEAT STRIP_TAC THEN
+  MP_TAC (ISPECL [`word_bit (list_to_word l)`; `interval 0 word_width`;
+                  `i : num`] nth_map) THEN
+  COND_TAC THENL
+  [ASM_REWRITE_TAC [length_interval];
+   ALL_TAC] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  MP_TAC (SPECL [`0`; `word_width`; `i : num`] nth_interval) THEN
+  ASM_REWRITE_TAC [ADD] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  REWRITE_TAC [list_to_word_bit] THEN
+  MP_TAC (ISPECL [`l : bool list`;
+                  `REPLICATE F (word_width - LENGTH (l : bool list))`;
+                  `i : num`]
+                 nth_append) THEN
+  COND_TAC THENL
+  [REWRITE_TAC [LENGTH_REPLICATE] THEN
+   MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `word_width` THEN
    ASM_REWRITE_TAC [] THEN
-   UNDISCH_TAC `i < word_width` THEN
-   POP_ASSUM MP_TAC THEN
-   POP_ASSUM (K ALL_TAC) THEN
-   REWRITE_TAC [NOT_LT; LE_EXISTS] THEN
-   DISCH_THEN (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC) THEN
-   REWRITE_TAC [ADD_SUB2] THEN
-   STRIP_TAC THEN
-   MP_TAC (ISPECL [`F`;
-                   `word_width - LENGTH (l : bool list)`;
-                   `d : num`] nth_replicate) THEN
-   COND_TAC THENL
-   [MP_TAC (SPEC `LENGTH (l : bool list)` LT_ADD_LCANCEL) THEN
-    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
-    MATCH_MP_TAC LTE_TRANS THEN
-    EXISTS_TAC `word_width` THEN
-    ASM_REWRITE_TAC [] THEN
-    MP_TAC (SPEC `word_width` LE_REFL) THEN
-    MATCH_MP_TAC EQ_IMP THEN
-    AP_TERM_TAC THEN
-    MATCH_MP_TAC EQ_SYM THEN
-    ONCE_REWRITE_TAC [ADD_SYM] THEN
-    MATCH_MP_TAC SUB_ADD THEN
-    MATCH_MP_TAC LT_IMP_LE THEN
-    MATCH_MP_TAC LET_TRANS THEN
-    EXISTS_TAC `LENGTH (l : bool list) + d` THEN
-    ASM_REWRITE_TAC [LE_ADD];
-    DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
+   MP_TAC (SPEC `word_width` LE_REFL) THEN
+   MATCH_MP_TAC EQ_IMP THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC SUB_ADD2 THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  bool_cases_tac `i < LENGTH (l : bool list)` THENL
+  [ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  UNDISCH_TAC `i < word_width` THEN
+  POP_ASSUM MP_TAC THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REWRITE_TAC [NOT_LT; LE_EXISTS] THEN
+  DISCH_THEN (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC) THEN
+  REWRITE_TAC [ADD_SUB2] THEN
+  STRIP_TAC THEN
+  MP_TAC (ISPECL [`F`;
+                  `word_width - LENGTH (l : bool list)`;
+                  `d : num`] nth_replicate) THEN
+  COND_TAC THENL
+  [MP_TAC (SPEC `LENGTH (l : bool list)` LT_ADD_LCANCEL) THEN
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+   MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `word_width` THEN
+   ASM_REWRITE_TAC [] THEN
+   MP_TAC (SPEC `word_width` LE_REFL) THEN
+   MATCH_MP_TAC EQ_IMP THEN
+   AP_TERM_TAC THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   ONCE_REWRITE_TAC [ADD_SYM] THEN
+   MATCH_MP_TAC SUB_ADD THEN
+   MATCH_MP_TAC LT_IMP_LE THEN
+   MATCH_MP_TAC LET_TRANS THEN
+   EXISTS_TAC `LENGTH (l : bool list) + d` THEN
+   ASM_REWRITE_TAC [LE_ADD];
+   DISCH_THEN (fun th -> REWRITE_TAC [th])]);;
 
 export_thm short_list_to_word_to_list;;
 
 (*PARAMETRIC
 let short_list_to_word_to_list = new_axiom
-   `!l.
-      LENGTH l <= word_width ==>
-      word_to_list (list_to_word l) =
-      APPEND l (REPLICATE F (word_width - LENGTH l))`;;
+  `!l.
+     LENGTH l <= word_width ==>
+     word_to_list (list_to_word l) =
+     APPEND l (REPLICATE F (word_width - LENGTH l))`;;
 *)
+***)
 
+(***
 let long_list_to_word_to_list = prove
-  (`!l.
-      word_width <= LENGTH l ==>
-      word_to_list (list_to_word l) = take word_width l`,
-   REWRITE_TAC [word_to_list_def; list_to_word_bit] THEN
-   REPEAT STRIP_TAC THEN
-   MATCH_MP_TAC nth_eq THEN
-   REWRITE_TAC [LENGTH_MAP; length_interval] THEN
-   CONJ_TAC THENL
-   [MATCH_MP_TAC EQ_SYM THEN
-    MATCH_MP_TAC length_take THEN
-    FIRST_ASSUM ACCEPT_TAC;
-    ALL_TAC] THEN
-   REPEAT STRIP_TAC THEN
-   MP_TAC (ISPECL [`word_bit (list_to_word l)`; `interval 0 word_width`;
-                   `i : num`] nth_map) THEN
-   COND_TAC THENL
-   [ASM_REWRITE_TAC [length_interval];
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   MP_TAC (SPECL [`0`; `word_width`; `i : num`] nth_interval) THEN
-   ASM_REWRITE_TAC [ADD] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   REWRITE_TAC [list_to_word_bit] THEN
-   ASM_REWRITE_TAC [] THEN
-   KNOW_TAC `i < LENGTH (l : bool list)` THENL
-   [MATCH_MP_TAC LTE_TRANS THEN
-    EXISTS_TAC `word_width` THEN
-    ASM_REWRITE_TAC [];
-    ALL_TAC] THEN
-   STRIP_TAC THEN
-   ASM_REWRITE_TAC [] THEN
-   MATCH_MP_TAC EQ_SYM THEN
-   MATCH_MP_TAC nth_take THEN
-   ASM_REWRITE_TAC []);;
+ (`!l.
+     word_width <= LENGTH l ==>
+     word_to_list (list_to_word l) = take word_width l`,
+  REWRITE_TAC [word_to_list_def; list_to_word_bit] THEN
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC nth_eq THEN
+  REWRITE_TAC [LENGTH_MAP; length_interval] THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC length_take THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  REPEAT STRIP_TAC THEN
+  MP_TAC (ISPECL [`word_bit (list_to_word l)`; `interval 0 word_width`;
+                  `i : num`] nth_map) THEN
+  COND_TAC THENL
+  [ASM_REWRITE_TAC [length_interval];
+   ALL_TAC] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  MP_TAC (SPECL [`0`; `word_width`; `i : num`] nth_interval) THEN
+  ASM_REWRITE_TAC [ADD] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  REWRITE_TAC [list_to_word_bit] THEN
+  ASM_REWRITE_TAC [] THEN
+  KNOW_TAC `i < LENGTH (l : bool list)` THENL
+  [MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `word_width` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC nth_take THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm long_list_to_word_to_list;;
 
 (*PARAMETRIC
 let long_list_to_word_to_list = new_axiom
-   `!l.
-      word_width <= LENGTH l ==>
-      word_to_list (list_to_word l) = take word_width l`;;
+  `!l.
+     word_width <= LENGTH l ==>
+     word_to_list (list_to_word l) = take word_width l`;;
 *)
+***)
 
 let list_to_word_to_list_eq = prove
-  (`!l.
-      word_to_list (list_to_word l) =
-      if LENGTH l <= word_width then
-        APPEND l (REPLICATE F (word_width - LENGTH l))
-      else
-        take word_width l`,
-   GEN_TAC THEN
-   bool_cases_tac `LENGTH (l : bool list) <= word_width` THENL
-   [ASM_REWRITE_TAC [] THEN
-    MATCH_MP_TAC short_list_to_word_to_list THEN
-    FIRST_ASSUM ACCEPT_TAC;
-    ASM_REWRITE_TAC [] THEN
-    MATCH_MP_TAC long_list_to_word_to_list THEN
-    MP_TAC (SPECL [`word_width`; `LENGTH (l : bool list)`] LE_CASES) THEN
-    ASM_REWRITE_TAC []]);;
+ (`!l.
+     word_to_list (list_to_word l) =
+     if LENGTH l <= word_width then
+       APPEND l (REPLICATE F (word_width - LENGTH l))
+     else
+       take word_width l`,
+  GEN_TAC THEN
+  bool_cases_tac `LENGTH (l : bool list) <= word_width` THENL
+  [ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC short_list_to_word_to_list THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC long_list_to_word_to_list THEN
+   MP_TAC (SPECL [`word_width`; `LENGTH (l : bool list)`] LE_CASES) THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm list_to_word_to_list_eq;;
 
 (*PARAMETRIC
 let list_to_word_to_list_eq = new_axiom
-   `!l.
-      word_to_list (list_to_word l) =
-      if LENGTH l <= word_width then
-        APPEND l (REPLICATE F (word_width - LENGTH l))
-      else
-        take word_width l`;;
+  `!l.
+     word_to_list (list_to_word l) =
+     if LENGTH l <= word_width then
+       APPEND l (REPLICATE F (word_width - LENGTH l))
+     else
+       take word_width l`;;
 *)
 
 let list_to_word_to_list = prove
-  (`!l. LENGTH l = word_width <=> word_to_list (list_to_word l) = l`,
-   GEN_TAC THEN
-   EQ_TAC THENL
-   [STRIP_TAC THEN
-    MATCH_MP_TAC EQ_TRANS THEN
-    EXISTS_TAC `take (LENGTH (l : bool list)) l` THEN
-    CONJ_TAC THENL
-    [ASM_REWRITE_TAC [] THEN
-     MATCH_MP_TAC long_list_to_word_to_list THEN
-     ASM_REWRITE_TAC [LE_REFL];
-     MATCH_ACCEPT_TAC take_length];
-    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
-    MATCH_ACCEPT_TAC length_word_to_list]);;
+ (`!l. LENGTH l = word_width <=> word_to_list (list_to_word l) = l`,
+  GEN_TAC THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `take (LENGTH (l : bool list)) l` THEN
+   CONJ_TAC THENL
+   [ASM_REWRITE_TAC [] THEN
+    MATCH_MP_TAC long_list_to_word_to_list THEN
+    ASM_REWRITE_TAC [LE_REFL];
+    MATCH_ACCEPT_TAC take_length];
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
+   MATCH_ACCEPT_TAC length_word_to_list]);;
 
 export_thm list_to_word_to_list;;
 
@@ -776,229 +741,229 @@ let list_to_word_to_list = new_axiom
 *)
 
 let word_shl_list = prove
-  (`!l n.
-      word_shl (list_to_word l) n =
-      list_to_word (APPEND (REPLICATE F n) l)`,
-   REWRITE_TAC [word_shl_def] THEN
-   REPEAT GEN_TAC THEN
-   MATCH_MP_TAC word_to_num_inj THEN
-   REWRITE_TAC [num_to_word_to_num] THEN
-   SPEC_TAC (`n:num`,`n:num`) THEN
-   MATCH_MP_TAC num_INDUCTION THEN
-   CONJ_TAC THENL
-   [REWRITE_TAC [EXP; REPLICATE; APPEND; MULT_CLAUSES] THEN
-    REWRITE_TAC [GSYM num_to_word_to_num; word_to_num_to_word];
-    ALL_TAC] THEN
-   REPEAT STRIP_TAC THEN
-   REWRITE_TAC [REPLICATE; APPEND; cons_to_word_to_num; ZERO_ADD] THEN
-   POP_ASSUM (fun th -> REWRITE_TAC [GSYM th]) THEN
-   MP_TAC (SPECL [`2`; `word_size`; `2 EXP n * word_to_num (list_to_word l)`]
-                 MOD_MULT_RMOD) THEN
-   COND_TAC THENL
-   [ACCEPT_TAC word_size_nonzero;
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   REWRITE_TAC [EXP; MULT_ASSOC]);;
+ (`!l n.
+     word_shl (list_to_word l) n =
+     list_to_word (APPEND (REPLICATE F n) l)`,
+  REWRITE_TAC [word_shl_def] THEN
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC word_to_num_inj THEN
+  REWRITE_TAC [num_to_word_to_num] THEN
+  SPEC_TAC (`n:num`,`n:num`) THEN
+  MATCH_MP_TAC num_INDUCTION THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [EXP; REPLICATE; APPEND; MULT_CLAUSES] THEN
+   REWRITE_TAC [GSYM num_to_word_to_num; word_to_num_to_word];
+   ALL_TAC] THEN
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [REPLICATE; APPEND; cons_to_word_to_num; ZERO_ADD] THEN
+  POP_ASSUM (fun th -> REWRITE_TAC [GSYM th]) THEN
+  MP_TAC (SPECL [`2`; `word_size`; `2 EXP n * word_to_num (list_to_word l)`]
+                MOD_MULT_RMOD) THEN
+  COND_TAC THENL
+  [ACCEPT_TAC word_size_nonzero;
+   ALL_TAC] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  REWRITE_TAC [EXP; MULT_ASSOC]);;
 
 export_thm word_shl_list;;
 
 (*PARAMETRIC
 let word_shl_list = new_axiom
-   `!l n.
-      word_shl (list_to_word l) n =
-      list_to_word (APPEND (REPLICATE F n) l)`;;
+  `!l n.
+     word_shl (list_to_word l) n =
+     list_to_word (APPEND (REPLICATE F n) l)`;;
 *)
 
 let short_word_shr_list = prove
-  (`!l n.
-      LENGTH l <= word_width ==>
-      word_shr (list_to_word l) n =
-      (if LENGTH l <= n then list_to_word []
-       else list_to_word (drop n l))`,
-   REWRITE_TAC [word_shr_def] THEN
-   REPEAT STRIP_TAC THEN
-   MATCH_MP_TAC word_to_num_inj THEN
-   REWRITE_TAC [num_to_word_to_num] THEN
-   bool_cases_tac `LENGTH (l : bool list) <= n` THENL
-   [ASM_REWRITE_TAC [] THEN
-    REWRITE_TAC [nil_to_word_to_num] THEN
-    MP_TAC (SPEC `word_size` MOD_0) THEN
-    COND_TAC THENL
-    [ACCEPT_TAC word_size_nonzero;
-     ALL_TAC] THEN
-    DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
-    AP_THM_TAC THEN
-    AP_TERM_TAC THEN
-    MATCH_MP_TAC DIV_LT THEN
-    MATCH_MP_TAC LTE_TRANS THEN
-    EXISTS_TAC `2 EXP LENGTH (l : bool list)` THEN
-    CONJ_TAC THENL
-    [MATCH_ACCEPT_TAC list_to_word_to_num_bound;
-     ALL_TAC] THEN
-    ASM_REWRITE_TAC [LE_EXP] THEN
-    NUM_REDUCE_TAC;
-    ALL_TAC] THEN
-   ASM_REWRITE_TAC [] THEN
-   KNOW_TAC `n <= LENGTH (l : bool list)` THENL
-   [MATCH_MP_TAC LT_IMP_LE THEN
-    ASM_REWRITE_TAC [GSYM NOT_LE];
-    ALL_TAC] THEN
-   POP_ASSUM (K ALL_TAC) THEN
-   POP_ASSUM MP_TAC THEN
-   SPEC_TAC (`n:num`,`n:num`) THEN
-   SPEC_TAC (`l : bool list`,`l : bool list`) THEN
-   LIST_INDUCT_TAC THENL
-   [REWRITE_TAC [LE; LENGTH] THEN
-    REPEAT STRIP_TAC THEN
-    ASM_REWRITE_TAC [nil_to_word_to_num; drop_zero] THEN
-    NUM_REDUCE_TAC THEN
-    MATCH_MP_TAC MOD_0 THEN
-    ACCEPT_TAC word_size_nonzero;
-    ALL_TAC] THEN
-   GEN_TAC THEN
-   MP_TAC (SPEC `n : num` num_CASES) THEN
-   STRIP_TAC THENL
-   [DISCH_THEN (K ALL_TAC) THEN
-    DISCH_THEN (K ALL_TAC) THEN
-    ASM_REWRITE_TAC [EXP; DIV_1; drop_zero] THEN
-    MATCH_MP_TAC MOD_LT THEN
-    MATCH_ACCEPT_TAC word_to_num_bound;
-    ALL_TAC] THEN
-   POP_ASSUM SUBST_VAR_TAC THEN
-   REWRITE_TAC [LENGTH; LE_SUC; cons_to_word_to_num] THEN
-   REPEAT STRIP_TAC THEN
-   MP_TAC (ISPECL [`n' : num`; `h : bool`; `t : bool list`] drop_suc) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN SUBST1_TAC THEN
-   FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `n' : num` th)) THEN
+ (`!l n.
+     LENGTH l <= word_width ==>
+     word_shr (list_to_word l) n =
+     (if LENGTH l <= n then list_to_word []
+      else list_to_word (drop n l))`,
+  REWRITE_TAC [word_shr_def] THEN
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC word_to_num_inj THEN
+  REWRITE_TAC [num_to_word_to_num] THEN
+  bool_cases_tac `LENGTH (l : bool list) <= n` THENL
+  [ASM_REWRITE_TAC [] THEN
+   REWRITE_TAC [nil_to_word_to_num] THEN
+   MP_TAC (SPEC `word_size` MOD_0) THEN
    COND_TAC THENL
-   [MATCH_MP_TAC LE_TRANS THEN
-    EXISTS_TAC `SUC (LENGTH (t : bool list))` THEN
-    ASM_REWRITE_TAC [SUC_LE];
+   [ACCEPT_TAC word_size_nonzero;
     ALL_TAC] THEN
-   COND_TAC THENL
-   [FIRST_ASSUM ACCEPT_TAC;
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [GSYM th]) THEN
    AP_THM_TAC THEN
    AP_TERM_TAC THEN
-   MATCH_MP_TAC EQ_TRANS THEN
-   EXISTS_TAC
-     `((if h then 1 else 0) + 2 * word_to_num (list_to_word t)) DIV
-      (2 EXP SUC n')` THEN
+   MATCH_MP_TAC DIV_LT THEN
+   MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `2 EXP LENGTH (l : bool list)` THEN
    CONJ_TAC THENL
-   [AP_THM_TAC THEN
-    AP_TERM_TAC THEN
-    MATCH_MP_TAC MOD_LT THEN
-    MATCH_MP_TAC LTE_TRANS THEN
-    EXISTS_TAC `2 EXP SUC (LENGTH (t : bool list))` THEN
-    CONJ_TAC THENL
-    [MATCH_ACCEPT_TAC cons_to_word_to_num_bound;
-     ALL_TAC] THEN
-    ASM_REWRITE_TAC [word_size_def; le_exp_two];
+   [MATCH_ACCEPT_TAC list_to_word_to_num_bound;
     ALL_TAC] THEN
-   MATCH_MP_TAC EQ_TRANS THEN
-   EXISTS_TAC
-     `(((if h then 1 else 0) + 2 * word_to_num (list_to_word t)) DIV 2) DIV
-      (2 EXP n')` THEN
-   CONJ_TAC THENL
-   [REWRITE_TAC [EXP] THEN
-    MATCH_MP_TAC EQ_SYM THEN
-    MATCH_MP_TAC DIV_DIV THEN
-    REWRITE_TAC [GSYM EXP; exp_two_nz];
-    ALL_TAC] THEN
-   AP_THM_TAC THEN
+   ASM_REWRITE_TAC [LE_EXP] THEN
+   NUM_REDUCE_TAC;
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  KNOW_TAC `n <= LENGTH (l : bool list)` THENL
+  [MATCH_MP_TAC LT_IMP_LE THEN
+   ASM_REWRITE_TAC [GSYM NOT_LE];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM MP_TAC THEN
+  SPEC_TAC (`n:num`,`n:num`) THEN
+  SPEC_TAC (`l : bool list`,`l : bool list`) THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [LE; LENGTH] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [nil_to_word_to_num; drop_zero] THEN
+   NUM_REDUCE_TAC THEN
+   MATCH_MP_TAC MOD_0 THEN
+   ACCEPT_TAC word_size_nonzero;
+   ALL_TAC] THEN
+  GEN_TAC THEN
+  MP_TAC (SPEC `n : num` num_CASES) THEN
+  STRIP_TAC THENL
+  [DISCH_THEN (K ALL_TAC) THEN
+   DISCH_THEN (K ALL_TAC) THEN
+   ASM_REWRITE_TAC [EXP; DIV_1; drop_zero] THEN
+   MATCH_MP_TAC MOD_LT THEN
+   MATCH_ACCEPT_TAC word_to_num_bound;
+   ALL_TAC] THEN
+  POP_ASSUM SUBST_VAR_TAC THEN
+  REWRITE_TAC [LENGTH; LE_SUC; cons_to_word_to_num] THEN
+  REPEAT STRIP_TAC THEN
+  MP_TAC (ISPECL [`n' : num`; `h : bool`; `t : bool list`] drop_suc) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `n' : num` th)) THEN
+  COND_TAC THENL
+  [MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `SUC (LENGTH (t : bool list))` THEN
+   ASM_REWRITE_TAC [SUC_LE];
+   ALL_TAC] THEN
+  COND_TAC THENL
+  [FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
+  AP_THM_TAC THEN
+  AP_TERM_TAC THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `((if h then 1 else 0) + 2 * word_to_num (list_to_word t)) DIV
+     (2 EXP SUC n')` THEN
+  CONJ_TAC THENL
+  [AP_THM_TAC THEN
    AP_TERM_TAC THEN
-   MATCH_ACCEPT_TAC cons_div_two);;
+   MATCH_MP_TAC MOD_LT THEN
+   MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `2 EXP SUC (LENGTH (t : bool list))` THEN
+   CONJ_TAC THENL
+   [MATCH_ACCEPT_TAC cons_to_word_to_num_bound;
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [word_size_def; le_exp_two];
+   ALL_TAC] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(((if h then 1 else 0) + 2 * word_to_num (list_to_word t)) DIV 2) DIV
+     (2 EXP n')` THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [EXP] THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   MATCH_MP_TAC DIV_DIV THEN
+   REWRITE_TAC [GSYM EXP; exp_two_nz];
+   ALL_TAC] THEN
+  AP_THM_TAC THEN
+  AP_TERM_TAC THEN
+  MATCH_ACCEPT_TAC cons_div_two);;
 
 export_thm short_word_shr_list;;
 
 (*PARAMETRIC
 let short_word_shr_list = new_axiom
-   `!l n.
-      LENGTH l <= word_width ==>
-      word_shr (list_to_word l) n =
-      (if LENGTH l <= n then list_to_word []
-       else list_to_word (drop n l))`;;
+  `!l n.
+     LENGTH l <= word_width ==>
+     word_shr (list_to_word l) n =
+     (if LENGTH l <= n then list_to_word []
+      else list_to_word (drop n l))`;;
 *)
 
 let long_word_shr_list = prove
-  (`!l n.
-      word_width <= LENGTH l ==>
-      word_shr (list_to_word l) n =
-      if word_width <= n then list_to_word []
-      else list_to_word (drop n (take word_width l))`,
-   REPEAT STRIP_TAC THEN
-   MP_TAC (SPEC `l : bool list` long_list_to_word_to_list) THEN
-   COND_TAC THENL
-   [FIRST_ASSUM ACCEPT_TAC;
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
-   CONV_TAC
-     (LAND_CONV
-        (LAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word]))) THEN
-   MP_TAC (SPEC `list_to_word l` length_word_to_list) THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [GSYM th] THEN ASSUME_TAC th) THEN
-   MATCH_MP_TAC short_word_shr_list THEN
-   ASM_REWRITE_TAC [LE_REFL]);;
+ (`!l n.
+     word_width <= LENGTH l ==>
+     word_shr (list_to_word l) n =
+     if word_width <= n then list_to_word []
+     else list_to_word (drop n (take word_width l))`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPEC `l : bool list` long_list_to_word_to_list) THEN
+  COND_TAC THENL
+  [FIRST_ASSUM ACCEPT_TAC;
+   ALL_TAC] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [GSYM th]) THEN
+  CONV_TAC
+    (LAND_CONV
+       (LAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word]))) THEN
+  MP_TAC (SPEC `list_to_word l` length_word_to_list) THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [GSYM th] THEN ASSUME_TAC th) THEN
+  MATCH_MP_TAC short_word_shr_list THEN
+  ASM_REWRITE_TAC [LE_REFL]);;
 
 export_thm long_word_shr_list;;
 
 (*PARAMETRIC
 let long_word_shr_list = new_axiom
-   `!l n.
-      word_width <= LENGTH l ==>
-      word_shr (list_to_word l) n =
-      if word_width <= n then list_to_word []
-      else list_to_word (drop n (take word_width l))`;;
+  `!l n.
+     word_width <= LENGTH l ==>
+     word_shr (list_to_word l) n =
+     if word_width <= n then list_to_word []
+     else list_to_word (drop n (take word_width l))`;;
 *)
 
 let word_shr_list = prove
-  (`!l n.
-      word_shr (list_to_word l) n =
-      (if LENGTH l <= word_width then
-         if LENGTH l <= n then list_to_word []
-         else list_to_word (drop n l)
-       else
-         if word_width <= n then list_to_word []
-         else list_to_word (drop n (take word_width l)))`,
-   REPEAT GEN_TAC THEN
-   bool_cases_tac `LENGTH (l : bool list) <= word_width` THENL
-   [ASM_REWRITE_TAC [] THEN
-    MATCH_MP_TAC short_word_shr_list THEN
-    FIRST_ASSUM ACCEPT_TAC;
-    ASM_REWRITE_TAC [] THEN
-    MATCH_MP_TAC long_word_shr_list THEN
-    MATCH_MP_TAC LT_IMP_LE THEN
-    ASM_REWRITE_TAC [GSYM NOT_LE]]);;
+ (`!l n.
+     word_shr (list_to_word l) n =
+     (if LENGTH l <= word_width then
+        if LENGTH l <= n then list_to_word []
+        else list_to_word (drop n l)
+      else
+        if word_width <= n then list_to_word []
+        else list_to_word (drop n (take word_width l)))`,
+  REPEAT GEN_TAC THEN
+  bool_cases_tac `LENGTH (l : bool list) <= word_width` THENL
+  [ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC short_word_shr_list THEN
+   FIRST_ASSUM ACCEPT_TAC;
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC long_word_shr_list THEN
+   MATCH_MP_TAC LT_IMP_LE THEN
+   ASM_REWRITE_TAC [GSYM NOT_LE]]);;
 
 export_thm word_shr_list;;
 
 (*PARAMETRIC
 let word_shr_list = new_axiom
-   `!l n.
-      word_shr (list_to_word l) n =
-      (if LENGTH l <= word_width then
-         if LENGTH l <= n then list_to_word []
-         else list_to_word (drop n l)
-       else
-         if word_width <= n then list_to_word []
-         else list_to_word (drop n (take word_width l)))`;;
+  `!l n.
+     word_shr (list_to_word l) n =
+     (if LENGTH l <= word_width then
+        if LENGTH l <= n then list_to_word []
+        else list_to_word (drop n l)
+      else
+        if word_width <= n then list_to_word []
+        else list_to_word (drop n (take word_width l)))`;;
 *)
 
 let word_eq_bits = prove
-  (`!w1 w2.
-      (!i. i < word_width ==> word_bit w1 i = word_bit w2 i) ==> w1 = w2`,
-   REPEAT GEN_TAC THEN
-   CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
-   REWRITE_TAC [list_to_word_bit] THEN
-   STRIP_TAC THEN
-   MATCH_MP_TAC word_to_list_inj THEN
-   MATCH_MP_TAC nth_eq THEN
-   REWRITE_TAC [length_word_to_list] THEN
-   REPEAT STRIP_TAC THEN
-   FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `i : num` th)) THEN
-   ASM_REWRITE_TAC [length_word_to_list]);;
+ (`!w1 w2.
+     (!i. i < word_width ==> word_bit w1 i = word_bit w2 i) ==> w1 = w2`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
+  REWRITE_TAC [list_to_word_bit] THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC word_to_list_inj THEN
+  MATCH_MP_TAC nth_eq THEN
+  REWRITE_TAC [length_word_to_list] THEN
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM (fun th -> MP_TAC (SPEC `i : num` th)) THEN
+  ASM_REWRITE_TAC [length_word_to_list]);;
 
 export_thm word_eq_bits;;
 
@@ -1009,29 +974,29 @@ let word_eq_bits = new_axiom
 *)
 
 let num_to_word_cons = prove
-  (`!n.
-      list_to_word (CONS (ODD n) (word_to_list (num_to_word (n DIV 2)))) =
-      num_to_word n`,
-   GEN_TAC THEN
-   MATCH_MP_TAC word_to_num_inj THEN
-   REWRITE_TAC [cons_to_word_to_num] THEN
-   REWRITE_TAC [word_to_list_to_word] THEN
-   REWRITE_TAC [num_to_word_to_num] THEN
-   ONCE_REWRITE_TAC [GSYM mod_add_mod_word_size] THEN
-   ONCE_REWRITE_TAC [GSYM mod_mult_mod_word_size] THEN
-   REWRITE_TAC [mod_mod_refl_word_size] THEN
-   REWRITE_TAC [mod_mult_mod_word_size] THEN
-   REWRITE_TAC [mod_add_mod_word_size] THEN
-   AP_THM_TAC THEN
-   AP_TERM_TAC THEN
-   REWRITE_TAC [cond_mod_two] THEN
-   ONCE_REWRITE_TAC [MULT_SYM] THEN
-   ONCE_REWRITE_TAC [ADD_SYM] THEN
-   MP_TAC (SPECL [`n : num`; `2`] DIVISION) THEN
-   COND_TAC THENL
-   [NUM_REDUCE_TAC;
-    ALL_TAC] THEN
-   DISCH_THEN (ACCEPT_TAC o SYM o CONJUNCT1));;
+ (`!n.
+     list_to_word (CONS (ODD n) (word_to_list (num_to_word (n DIV 2)))) =
+     num_to_word n`,
+  GEN_TAC THEN
+  MATCH_MP_TAC word_to_num_inj THEN
+  REWRITE_TAC [cons_to_word_to_num] THEN
+  REWRITE_TAC [word_to_list_to_word] THEN
+  REWRITE_TAC [num_to_word_to_num] THEN
+  ONCE_REWRITE_TAC [GSYM mod_add_mod_word_size] THEN
+  ONCE_REWRITE_TAC [GSYM mod_mult_mod_word_size] THEN
+  REWRITE_TAC [mod_mod_refl_word_size] THEN
+  REWRITE_TAC [mod_mult_mod_word_size] THEN
+  REWRITE_TAC [mod_add_mod_word_size] THEN
+  AP_THM_TAC THEN
+  AP_TERM_TAC THEN
+  REWRITE_TAC [cond_mod_two] THEN
+  ONCE_REWRITE_TAC [MULT_SYM] THEN
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  MP_TAC (SPECL [`n : num`; `2`] DIVISION) THEN
+  COND_TAC THENL
+  [NUM_REDUCE_TAC;
+   ALL_TAC] THEN
+  DISCH_THEN (ACCEPT_TAC o SYM o CONJUNCT1));;
 
 export_thm num_to_word_cons;;
 
@@ -1043,15 +1008,15 @@ let num_to_word_cons = new_axiom
 *)
 
 let num_to_word_list = prove
-  (`!n.
-      num_to_word n =
-      list_to_word
-        (if n = 0 then []
-         else CONS (ODD n) (word_to_list (num_to_word (n DIV 2))))`,
-   GEN_TAC THEN
-   bool_cases_tac `n = 0` THENL
-   [ASM_REWRITE_TAC [list_to_word_nil];
-    ASM_REWRITE_TAC [num_to_word_cons]]);;
+ (`!n.
+     num_to_word n =
+     list_to_word
+       (if n = 0 then []
+        else CONS (ODD n) (word_to_list (num_to_word (n DIV 2))))`,
+  GEN_TAC THEN
+  bool_cases_tac `n = 0` THENL
+  [ASM_REWRITE_TAC [list_to_word_nil];
+   ASM_REWRITE_TAC [num_to_word_cons]]);;
 
 export_thm num_to_word_list;;
 
@@ -1065,156 +1030,156 @@ let num_to_word_list = new_axiom
 *)
 
 let word_lte_list = prove
-  (`!q w1 w2.
-      word_bits_lte q (word_to_list w1) (word_to_list w2) <=>
-      (if q then word_le w1 w2 else word_lt w1 w2)`,
-   REPEAT GEN_TAC THEN
-   MATCH_MP_TAC EQ_TRANS THEN
-   EXISTS_TAC `word_to_num w1 < word_to_num w2 + (if q then 1 else 0)` THEN
-   ONCE_REWRITE_TAC [CONJ_SYM] THEN
+ (`!q w1 w2.
+     word_bits_lte q (word_to_list w1) (word_to_list w2) <=>
+     (if q then word_le w1 w2 else word_lt w1 w2)`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC `word_to_num w1 < word_to_num w2 + (if q then 1 else 0)` THEN
+  ONCE_REWRITE_TAC [CONJ_SYM] THEN
+  CONJ_TAC THENL
+  [BOOL_CASES_TAC `q : bool` THENL
+   [REWRITE_TAC [word_le_def; LT_SUC_LE; GSYM ADD1];
+    REWRITE_TAC [word_lt_def; ADD_0]];
+   ALL_TAC] THEN
+  CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
+  KNOW_TAC
+    `LENGTH (word_to_list w1) <= word_width /\
+     LENGTH (word_to_list w2) <= word_width /\
+     LENGTH (word_to_list w1) = LENGTH (word_to_list w2)` THENL
+  [REWRITE_TAC [length_word_to_list; LE_REFL];
+   ALL_TAC] THEN
+  SPEC_TAC (`q : bool`,`q : bool`) THEN
+  SPEC_TAC (`word_to_list w2`,`l2 : bool list`) THEN
+  SPEC_TAC (`word_to_list w1`,`l1 : bool list`) THEN
+  LIST_INDUCT_TAC THENL
+  [LIST_INDUCT_TAC THENL
+   [GEN_TAC THEN
+    REWRITE_TAC [LT_ADD; word_bits_lte_def] THEN
+    BOOL_CASES_TAC `q : bool` THENL
+    [REWRITE_TAC [ONE; LT_0];
+     REWRITE_TAC [LT_REFL]];
+    REWRITE_TAC [LENGTH; NOT_SUC]];
+   ALL_TAC] THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [LENGTH; NOT_SUC];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  GEN_TAC THEN
+  REWRITE_TAC [cons_to_word_to_num; word_bits_lte_def; LENGTH; SUC_INJ] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM
+    (MP_TAC o SPECL [`t' : bool list`; `~h /\ h' \/ ~(h /\ ~h') /\ q`]) THEN
+  COND_TAC THENL
+  [ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC LT_IMP_LE THEN
+   ASM_REWRITE_TAC [GSYM LE_SUC_LT];
+   ALL_TAC] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  KNOW_TAC
+    `((if h then 1 else 0) +
+      2 * word_to_num (list_to_word t)) MOD word_size =
+     ((if h then 1 else 0) + 2 * word_to_num (list_to_word t))` THENL
+  [MATCH_MP_TAC mod_lt_word_size THEN
+   MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `2 EXP SUC (LENGTH (t : bool list))` THEN
    CONJ_TAC THENL
-   [BOOL_CASES_TAC `q : bool` THENL
-    [REWRITE_TAC [word_le_def; LT_SUC_LE; GSYM ADD1];
-     REWRITE_TAC [word_lt_def; ADD_0]];
-    ALL_TAC] THEN
-   CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
-   KNOW_TAC
-     `LENGTH (word_to_list w1) <= word_width /\
-      LENGTH (word_to_list w2) <= word_width /\
-      LENGTH (word_to_list w1) = LENGTH (word_to_list w2)` THENL
-   [REWRITE_TAC [length_word_to_list; LE_REFL];
-    ALL_TAC] THEN
-   SPEC_TAC (`q : bool`,`q : bool`) THEN
-   SPEC_TAC (`word_to_list w2`,`l2 : bool list`) THEN
-   SPEC_TAC (`word_to_list w1`,`l1 : bool list`) THEN
-   LIST_INDUCT_TAC THENL
-   [LIST_INDUCT_TAC THENL
-    [GEN_TAC THEN
-     REWRITE_TAC [LT_ADD; word_bits_lte_def] THEN
-     BOOL_CASES_TAC `q : bool` THENL
-     [REWRITE_TAC [ONE; LT_0];
-      REWRITE_TAC [LT_REFL]];
-     REWRITE_TAC [LENGTH; NOT_SUC]];
-    ALL_TAC] THEN
-   LIST_INDUCT_TAC THENL
-   [REWRITE_TAC [LENGTH; NOT_SUC];
-    ALL_TAC] THEN
-   POP_ASSUM (K ALL_TAC) THEN
-   GEN_TAC THEN
-   REWRITE_TAC [cons_to_word_to_num; word_bits_lte_def; LENGTH; SUC_INJ] THEN
-   STRIP_TAC THEN
-   FIRST_X_ASSUM
-     (MP_TAC o SPECL [`t' : bool list`; `~h /\ h' \/ ~(h /\ ~h') /\ q`]) THEN
-   COND_TAC THENL
-   [ASM_REWRITE_TAC [] THEN
-    MATCH_MP_TAC LT_IMP_LE THEN
-    ASM_REWRITE_TAC [GSYM LE_SUC_LT];
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   KNOW_TAC
-     `((if h then 1 else 0) +
-       2 * word_to_num (list_to_word t)) MOD word_size =
-      ((if h then 1 else 0) + 2 * word_to_num (list_to_word t))` THENL
-   [MATCH_MP_TAC mod_lt_word_size THEN
-    MATCH_MP_TAC LTE_TRANS THEN
-    EXISTS_TAC `2 EXP SUC (LENGTH (t : bool list))` THEN
-    CONJ_TAC THENL
-    [MATCH_ACCEPT_TAC cons_to_word_to_num_bound;
-     REWRITE_TAC [word_size_def; le_exp_two] THEN
-     FIRST_ASSUM ACCEPT_TAC];
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   KNOW_TAC
-     `((if h' then 1 else 0) +
-       2 * word_to_num (list_to_word t')) MOD word_size =
-      ((if h' then 1 else 0) + 2 * word_to_num (list_to_word t'))` THENL
-   [MATCH_MP_TAC mod_lt_word_size THEN
-    MATCH_MP_TAC LTE_TRANS THEN
-    EXISTS_TAC `2 EXP SUC (LENGTH (t' : bool list))` THEN
-    CONJ_TAC THENL
-    [MATCH_ACCEPT_TAC cons_to_word_to_num_bound;
-     REWRITE_TAC [word_size_def; le_exp_two] THEN
-     FIRST_ASSUM ACCEPT_TAC];
-    ALL_TAC] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
-   POP_ASSUM_LIST (K ALL_TAC) THEN
-   SPEC_TAC (`word_to_num (list_to_word t)`, `m : num`) THEN
-   SPEC_TAC (`word_to_num (list_to_word t')`, `n : num`) THEN
-   REPEAT GEN_TAC THEN
-   SUBGOAL_THEN `!x y. 2 * x <= SUC (2 * y) <=> x <= y` ASSUME_TAC THENL
-   [REPEAT GEN_TAC THEN
-    EQ_TAC THENL
-    [MATCH_MP_TAC (TAUT `!x y. (~y ==> ~x) ==> (x ==> y)`) THEN
-     REWRITE_TAC [NOT_LE] THEN
-     CONV_TAC (LAND_CONV (REWR_CONV LT_EXISTS)) THEN
-     DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
-     REWRITE_TAC [LEFT_ADD_DISTRIB; ADD1; MULT_1] THEN
-     REWRITE_TAC [TWO; ONE; ADD_SUC; ADD_0; LT_SUC] THEN
-     REWRITE_TAC [LT_SUC_LE; LE_ADD];
-     CONV_TAC (LAND_CONV (REWR_CONV LE_EXISTS)) THEN
-     DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
-     REWRITE_TAC [LEFT_ADD_DISTRIB; ADD1; GSYM ADD_ASSOC; LE_ADD]];
-    ALL_TAC] THEN
-   BOOL_CASES_TAC `h : bool` THEN
-   BOOL_CASES_TAC `h' : bool` THEN
-   BOOL_CASES_TAC `q : bool` THEN
-   REWRITE_TAC
-     [ZERO_ADD; ADD_0; ONE; ADD_SUC; SUC_ADD;
-      LT_ADD_LCANCEL; LT_MULT_LCANCEL] THEN
-   NUM_REDUCE_TAC THEN
-   MATCH_MP_TAC (TAUT `!x y. (~x <=> ~y) ==> (x <=> y)`) THEN
-   ASM_REWRITE_TAC [NOT_LT; LE_SUC; LE_MULT_LCANCEL] THEN
-   NUM_REDUCE_TAC THEN
-   FIRST_ASSUM (CONV_TAC o LAND_CONV o REWR_CONV o GSYM) THEN
-   REWRITE_TAC [MULT_SUC; TWO; ONE_MULT; ONE; SUC_ADD; ZERO_ADD; LE_SUC] THEN
-   MP_TAC (SPEC `m : num` num_CASES) THEN
-   DISCH_THEN
-     (DISJ_CASES_THEN2
-        SUBST_VAR_TAC
-        (X_CHOOSE_THEN `k : num` SUBST_VAR_TAC)) THENL
-   [REWRITE_TAC [MULT_0; LE; NOT_SUC];
-    REWRITE_TAC [MULT_SUC; SUC_ADD; ZERO_ADD; LE_SUC] THEN
-    ASM_REWRITE_TAC [GSYM ONE; GSYM TWO] THEN
-    REWRITE_TAC [LE_MULT_LCANCEL] THEN
-    NUM_REDUCE_TAC]);;
+   [MATCH_ACCEPT_TAC cons_to_word_to_num_bound;
+    REWRITE_TAC [word_size_def; le_exp_two] THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   ALL_TAC] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  KNOW_TAC
+    `((if h' then 1 else 0) +
+      2 * word_to_num (list_to_word t')) MOD word_size =
+     ((if h' then 1 else 0) + 2 * word_to_num (list_to_word t'))` THENL
+  [MATCH_MP_TAC mod_lt_word_size THEN
+   MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `2 EXP SUC (LENGTH (t' : bool list))` THEN
+   CONJ_TAC THENL
+   [MATCH_ACCEPT_TAC cons_to_word_to_num_bound;
+    REWRITE_TAC [word_size_def; le_exp_two] THEN
+    FIRST_ASSUM ACCEPT_TAC];
+   ALL_TAC] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  POP_ASSUM_LIST (K ALL_TAC) THEN
+  SPEC_TAC (`word_to_num (list_to_word t)`, `m : num`) THEN
+  SPEC_TAC (`word_to_num (list_to_word t')`, `n : num`) THEN
+  REPEAT GEN_TAC THEN
+  SUBGOAL_THEN `!x y. 2 * x <= SUC (2 * y) <=> x <= y` ASSUME_TAC THENL
+  [REPEAT GEN_TAC THEN
+   EQ_TAC THENL
+   [MATCH_MP_TAC (TAUT `!x y. (~y ==> ~x) ==> (x ==> y)`) THEN
+    REWRITE_TAC [NOT_LE] THEN
+    CONV_TAC (LAND_CONV (REWR_CONV LT_EXISTS)) THEN
+    DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+    REWRITE_TAC [LEFT_ADD_DISTRIB; ADD1; MULT_1] THEN
+    REWRITE_TAC [TWO; ONE; ADD_SUC; ADD_0; LT_SUC] THEN
+    REWRITE_TAC [LT_SUC_LE; LE_ADD];
+    CONV_TAC (LAND_CONV (REWR_CONV LE_EXISTS)) THEN
+    DISCH_THEN (CHOOSE_THEN SUBST_VAR_TAC) THEN
+    REWRITE_TAC [LEFT_ADD_DISTRIB; ADD1; GSYM ADD_ASSOC; LE_ADD]];
+   ALL_TAC] THEN
+  BOOL_CASES_TAC `h : bool` THEN
+  BOOL_CASES_TAC `h' : bool` THEN
+  BOOL_CASES_TAC `q : bool` THEN
+  REWRITE_TAC
+    [ZERO_ADD; ADD_0; ONE; ADD_SUC; SUC_ADD;
+     LT_ADD_LCANCEL; LT_MULT_LCANCEL] THEN
+  NUM_REDUCE_TAC THEN
+  MATCH_MP_TAC (TAUT `!x y. (~x <=> ~y) ==> (x <=> y)`) THEN
+  ASM_REWRITE_TAC [NOT_LT; LE_SUC; LE_MULT_LCANCEL] THEN
+  NUM_REDUCE_TAC THEN
+  FIRST_ASSUM (CONV_TAC o LAND_CONV o REWR_CONV o GSYM) THEN
+  REWRITE_TAC [MULT_SUC; TWO; ONE_MULT; ONE; SUC_ADD; ZERO_ADD; LE_SUC] THEN
+  MP_TAC (SPEC `m : num` num_CASES) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2
+       SUBST_VAR_TAC
+       (X_CHOOSE_THEN `k : num` SUBST_VAR_TAC)) THENL
+  [REWRITE_TAC [MULT_0; LE; NOT_SUC];
+   REWRITE_TAC [MULT_SUC; SUC_ADD; ZERO_ADD; LE_SUC] THEN
+   ASM_REWRITE_TAC [GSYM ONE; GSYM TWO] THEN
+   REWRITE_TAC [LE_MULT_LCANCEL] THEN
+   NUM_REDUCE_TAC]);;
 
 export_thm word_lte_list;;
 
 (*PARAMETRIC
 let word_lte_list = new_axiom
-   `!q w1 w2.
-      word_bits_lte q (word_to_list w1) (word_to_list w2) <=>
-      (if q then word_le w1 w2 else word_lt w1 w2)`;;
+  `!q w1 w2.
+     word_bits_lte q (word_to_list w1) (word_to_list w2) <=>
+     (if q then word_le w1 w2 else word_lt w1 w2)`;;
 *)
 
 let word_le_list = prove
-  (`!w1 w2.
-      word_bits_lte T (word_to_list w1) (word_to_list w2) <=> word_le w1 w2`,
-   REPEAT GEN_TAC THEN
-   MP_TAC (SPECL [`T`; `w1 : word`; `w2 : word`] word_lte_list) THEN
-   REWRITE_TAC []);;
+ (`!w1 w2.
+     word_bits_lte T (word_to_list w1) (word_to_list w2) <=> word_le w1 w2`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPECL [`T`; `w1 : word`; `w2 : word`] word_lte_list) THEN
+  REWRITE_TAC []);;
 
 export_thm word_le_list;;
 
 (*PARAMETRIC
 let word_le_list = new_axiom
-   `!w1 w2.
-      word_bits_lte T (word_to_list w1) (word_to_list w2) <=> word_le w1 w2`;;
+  `!w1 w2.
+     word_bits_lte T (word_to_list w1) (word_to_list w2) <=> word_le w1 w2`;;
 *)
 
 let word_lt_list = prove
-  (`!w1 w2.
-      word_bits_lte F (word_to_list w1) (word_to_list w2) <=> word_lt w1 w2`,
-   REPEAT GEN_TAC THEN
-   MP_TAC (SPECL [`F`; `w1 : word`; `w2 : word`] word_lte_list) THEN
-   REWRITE_TAC []);;
+ (`!w1 w2.
+     word_bits_lte F (word_to_list w1) (word_to_list w2) <=> word_lt w1 w2`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPECL [`F`; `w1 : word`; `w2 : word`] word_lte_list) THEN
+  REWRITE_TAC []);;
 
 export_thm word_lt_list;;
 
 (*PARAMETRIC
 let word_lt_list = new_axiom
-   `!w1 w2.
-      word_bits_lte F (word_to_list w1) (word_to_list w2) <=> word_lt w1 w2`;;
+  `!w1 w2.
+     word_bits_lte F (word_to_list w1) (word_to_list w2) <=> word_lt w1 w2`;;
 *)
 
 (* ------------------------------------------------------------------------- *)
