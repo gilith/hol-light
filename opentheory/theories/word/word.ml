@@ -486,69 +486,6 @@ let list_to_word_bit = new_axiom
      (n < word_width /\ n < LENGTH l /\ nth l n)`;;
 *)
 
-let num_to_bitvec_bound = prove
- (`!n k. num_to_bitvec (bit_bound n k) k = num_to_bitvec n k`,
-  CONV_TAC (REWR_CONV SWAP_FORALL_THM) THEN
-  INDUCT_TAC THENL
-  [REWRITE_TAC [num_to_bitvec_zero];
-   ASM_REWRITE_TAC
-     [num_to_bitvec_suc; bit_bound_suc; bit_hd_cons; bit_tl_cons]]);;
-
-let zero_to_bitvec = prove
- (`!k. num_to_bitvec 0 k = REPLICATE F k`,
-  INDUCT_TAC THENL
-  [REWRITE_TAC [num_to_bitvec_def; REPLICATE];
-   ASM_REWRITE_TAC [num_to_bitvec_def; REPLICATE; bit_hd_zero; bit_tl_zero]]);;
-
-let bits_to_num_to_long_bitvec = prove
- (`!l k.
-     num_to_bitvec (bits_to_num l) (LENGTH l + k) =
-     APPEND l (REPLICATE F k)`,
-  LIST_INDUCT_TAC THENL
-  [REWRITE_TAC [bits_to_num_nil; zero_to_bitvec; APPEND; LENGTH; ZERO_ADD];
-   ASM_REWRITE_TAC
-     [bits_to_num_cons; LENGTH; SUC_ADD; num_to_bitvec_suc; bit_hd_cons;
-      bit_tl_cons; APPEND]]);;
-
-let bits_to_num_to_short_bitvec = prove
- (`!l k. k <= LENGTH l ==> num_to_bitvec (bits_to_num l) k = take k l`,
-  LIST_INDUCT_TAC THENL
-  [GEN_TAC THEN
-   REWRITE_TAC [bits_to_num_nil; zero_to_bitvec; LENGTH; LE] THEN
-   DISCH_THEN SUBST_VAR_TAC THEN
-   REWRITE_TAC [REPLICATE; take_zero];
-   ALL_TAC] THEN
-  GEN_TAC THEN
-  REWRITE_TAC [bits_to_num_cons; LENGTH] THEN
-  MP_TAC (SPEC `k : num` num_CASES) THEN
-  DISCH_THEN
-    (DISJ_CASES_THEN2 SUBST_VAR_TAC
-       (X_CHOOSE_THEN `n : num` SUBST_VAR_TAC)) THENL
-  [REWRITE_TAC [num_to_bitvec_zero; take_zero];
-   ALL_TAC] THEN
-  REWRITE_TAC [LE_SUC; num_to_bitvec_suc; bit_hd_cons; bit_tl_cons] THEN
-  STRIP_TAC THEN
-  FIRST_X_ASSUM (MP_TAC o SPEC `n : num`) THEN
-  ASM_REWRITE_TAC [] THEN
-  DISCH_THEN SUBST1_TAC THEN
-  MATCH_MP_TAC EQ_SYM THEN
-  MATCH_MP_TAC take_suc THEN
-  ASM_REWRITE_TAC []);;
-
-let bits_to_num_to_bitvec = prove
- (`!l k.
-     num_to_bitvec (bits_to_num l) k =
-     if LENGTH l <= k then APPEND l (REPLICATE F (k - LENGTH l))
-     else take k l`,
-
-let list_to_word_to_list_eq = prove
- (`!l.
-     word_to_list (list_to_word l) =
-     if LENGTH l <= word_width then
-       APPEND l (REPLICATE F (word_width - LENGTH l))
-     else
-       take word_width l`,
-
 (***
 let short_list_to_word_to_list = prove
  (`!l.
@@ -696,15 +633,9 @@ let list_to_word_to_list_eq = prove
        APPEND l (REPLICATE F (word_width - LENGTH l))
      else
        take word_width l`,
-  GEN_TAC THEN
-  bool_cases_tac `LENGTH (l : bool list) <= word_width` THENL
-  [ASM_REWRITE_TAC [] THEN
-   MATCH_MP_TAC short_list_to_word_to_list THEN
-   FIRST_ASSUM ACCEPT_TAC;
-   ASM_REWRITE_TAC [] THEN
-   MATCH_MP_TAC long_list_to_word_to_list THEN
-   MP_TAC (SPECL [`word_width`; `LENGTH (l : bool list)`] LE_CASES) THEN
-   ASM_REWRITE_TAC []]);;
+  REWRITE_TAC
+    [word_to_list_def; list_to_word_def; num_to_word_to_num_bound;
+     num_to_bitvec_bound; bits_to_num_to_bitvec]);;
 
 export_thm list_to_word_to_list_eq;;
 
@@ -720,6 +651,7 @@ let list_to_word_to_list_eq = new_axiom
 
 let list_to_word_to_list = prove
  (`!l. LENGTH l = word_width <=> word_to_list (list_to_word l) = l`,
+  ***
   GEN_TAC THEN
   EQ_TAC THENL
   [STRIP_TAC THEN

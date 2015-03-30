@@ -1675,6 +1675,79 @@ let bit_bound_le = prove
 
 export_thm bit_bound_le;;
 
+let num_to_bitvec_bound = prove
+ (`!n k. num_to_bitvec (bit_bound n k) k = num_to_bitvec n k`,
+  CONV_TAC (REWR_CONV SWAP_FORALL_THM) THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [num_to_bitvec_zero];
+   ASM_REWRITE_TAC
+     [num_to_bitvec_suc; bit_bound_suc; bit_hd_cons; bit_tl_cons]]);;
+
+export_thm num_to_bitvec_bound;;
+
+let zero_to_bitvec = prove
+ (`!k. num_to_bitvec 0 k = REPLICATE F k`,
+  INDUCT_TAC THENL
+  [REWRITE_TAC [num_to_bitvec_def; REPLICATE];
+   ASM_REWRITE_TAC [num_to_bitvec_def; REPLICATE; bit_hd_zero; bit_tl_zero]]);;
+
+export_thm zero_to_bitvec;;
+
+let bits_to_num_to_long_bitvec = prove
+ (`!l k.
+     num_to_bitvec (bits_to_num l) (LENGTH l + k) =
+     APPEND l (REPLICATE F k)`,
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [bits_to_num_nil; zero_to_bitvec; APPEND; LENGTH; ZERO_ADD];
+   ASM_REWRITE_TAC
+     [bits_to_num_cons; LENGTH; SUC_ADD; num_to_bitvec_suc; bit_hd_cons;
+      bit_tl_cons; APPEND]]);;
+
+export_thm bits_to_num_to_long_bitvec;;
+
+let bits_to_num_to_short_bitvec = prove
+ (`!l k. k <= LENGTH l ==> num_to_bitvec (bits_to_num l) k = take k l`,
+  LIST_INDUCT_TAC THENL
+  [GEN_TAC THEN
+   REWRITE_TAC [bits_to_num_nil; zero_to_bitvec; LENGTH; LE] THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   REWRITE_TAC [REPLICATE; take_zero];
+   ALL_TAC] THEN
+  GEN_TAC THEN
+  REWRITE_TAC [bits_to_num_cons; LENGTH] THEN
+  MP_TAC (SPEC `k : num` num_CASES) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST_VAR_TAC
+       (X_CHOOSE_THEN `n : num` SUBST_VAR_TAC)) THENL
+  [REWRITE_TAC [num_to_bitvec_zero; take_zero];
+   ALL_TAC] THEN
+  REWRITE_TAC [LE_SUC; num_to_bitvec_suc; bit_hd_cons; bit_tl_cons] THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM (MP_TAC o SPEC `n : num`) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  MATCH_MP_TAC EQ_SYM THEN
+  MATCH_MP_TAC take_suc THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bits_to_num_to_short_bitvec;;
+
+let bits_to_num_to_bitvec = prove
+ (`!l k.
+     num_to_bitvec (bits_to_num l) k =
+     if LENGTH l <= k then APPEND l (REPLICATE F (k - LENGTH l))
+     else take k l`,
+  REPEAT GEN_TAC THEN
+  COND_CASES_TAC THENL
+  [POP_ASSUM
+     (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o REWRITE_RULE [LE_EXISTS]) THEN
+   REWRITE_TAC [bits_to_num_to_long_bitvec; ADD_SUB2];
+   MATCH_MP_TAC bits_to_num_to_short_bitvec THEN
+   MATCH_MP_TAC LT_IMP_LE THEN
+   ASM_REWRITE_TAC [GSYM NOT_LE]]);;
+
+export_thm bits_to_num_to_bitvec;;
+
 let random_uniform_src = prove
  (`!n.
      random_uniform n =
