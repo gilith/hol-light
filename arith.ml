@@ -845,6 +845,32 @@ let LT_ADD2 = prove
 
 export_thm LT_ADD2;;
 
+let MAX_ADD_LCANCEL = prove
+ (`!m n p. MAX (m + n) (m + p) = m + MAX n p`,
+  REWRITE_TAC [MAX; LE_ADD_LCANCEL; GSYM COND_RAND]);;
+
+export_thm MAX_ADD_LCANCEL;;
+
+let MAX_ADD_RCANCEL = prove
+ (`!m n p. MAX (n + m) (p + m) = MAX n p + m`,
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  ACCEPT_TAC MAX_ADD_LCANCEL);;
+
+export_thm MAX_ADD_RCANCEL;;
+
+let MIN_ADD_LCANCEL = prove
+ (`!m n p. MIN (m + n) (m + p) = m + MIN n p`,
+  REWRITE_TAC [MIN; LE_ADD_LCANCEL; GSYM COND_RAND]);;
+
+export_thm MIN_ADD_LCANCEL;;
+
+let MIN_ADD_RCANCEL = prove
+ (`!m n p. MIN (n + m) (p + m) = MIN n p + m`,
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  ACCEPT_TAC MIN_ADD_LCANCEL);;
+
+export_thm MIN_ADD_RCANCEL;;
+
 (* Subtraction is defined as the inverse of addition *)
 
 logfile "natural-add-sub-def";;

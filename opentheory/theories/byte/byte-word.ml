@@ -260,22 +260,22 @@ let byte_lt_trans = new_axiom
 new_constant ("byte_shl", `:byte -> num -> byte`);;
 
 let byte_shl_def = new_axiom
-  `!w n. byte_shl w n = num_to_byte ((2 EXP n) * byte_to_num w)`;;
+  `!w n. byte_shl w n = num_to_byte (bit_shl (byte_to_num w) n)`;;
 
 new_constant ("byte_shr", `:byte -> num -> byte`);;
 
 let byte_shr_def = new_axiom
-  `!w n. byte_shr w n = num_to_byte (byte_to_num w DIV (2 EXP n))`;;
+  `!w n. byte_shr w n = num_to_byte (bit_shr (byte_to_num w) n)`;;
 
 new_constant ("byte_bit", `:byte -> num -> bool`);;
 
 let byte_bit_def = new_axiom
-  `!w n. byte_bit w n = ODD (byte_to_num (byte_shr w n))`;;
+  `!w n. byte_bit w n = bit_nth (byte_to_num w) n`;;
 
 new_constant ("byte_to_list", `:byte -> bool list`);;
 
 let byte_to_list_def = new_axiom
-  `!w. byte_to_list w = MAP (byte_bit w) (interval 0 byte_width)`;;
+  `!w. byte_to_list w = num_to_bitvec (byte_to_num w) byte_width`;;
 
 new_constant ("list_to_byte", `:bool list -> byte`);;
 
@@ -332,28 +332,23 @@ let list_to_byte_cons = new_axiom
       if h then byte_add (num_to_byte 1) (byte_shl (list_to_byte t) 1)
       else byte_shl (list_to_byte t) 1`;;
 
-let byte_bit_div = new_axiom
-  `!w n. byte_bit w n = ODD (byte_to_num w DIV (2 EXP n))`;;
+let bound_byte_to_num = new_axiom
+  `!w. bit_bound (byte_to_num w) byte_width = byte_to_num w`;;
+
+let num_to_byte_to_num_bound = new_axiom
+  `!n. byte_to_num (num_to_byte n) = bit_bound n byte_width`;;
 
 let nil_to_byte_to_num = new_axiom
   `byte_to_num (list_to_byte []) = 0`;;
 
-let cons_to_byte_to_num = new_axiom
-   `!h t.
-      byte_to_num (list_to_byte (CONS h t)) =
-      ((if h then 1 else 0) + 2 * byte_to_num (list_to_byte t)) MOD
-      byte_size`;;
-
 let list_to_byte_to_num_bound = new_axiom
   `!l. byte_to_num (list_to_byte l) < 2 EXP (LENGTH l)`;;
 
-let list_to_byte_to_num_bound_suc = new_axiom
-  `!l. 1 + 2 * byte_to_num (list_to_byte l) < 2 EXP (SUC (LENGTH l))`;;
+let bit_width_byte_to_num = new_axiom
+  `!w. bit_width (byte_to_num w) <= byte_width`;;
 
-let cons_to_byte_to_num_bound = new_axiom
-   `!h t.
-      2 * byte_to_num (list_to_byte t) + (if h then 1 else 0) <
-      2 EXP SUC (LENGTH t)`;;
+let byte_to_list_to_num = new_axiom
+  `!w. bits_to_num (byte_to_list w) = byte_to_num w`;;
 
 let byte_to_list_to_byte = new_axiom
   `!w. list_to_byte (byte_to_list w) = w`;;
@@ -365,89 +360,71 @@ let byte_to_list_inj_eq = new_axiom
   `!w1 w2. byte_to_list w1 = byte_to_list w2 <=> w1 = w2`;;
 
 let list_to_byte_bit = new_axiom
-   `!l n.
-      byte_bit (list_to_byte l) n =
-      (n < byte_width /\ n < LENGTH l /\ nth l n)`;;
-
-let short_list_to_byte_to_list = new_axiom
-   `!l.
-      LENGTH l <= byte_width ==>
-      byte_to_list (list_to_byte l) =
-      APPEND l (REPLICATE F (byte_width - LENGTH l))`;;
-
-let long_list_to_byte_to_list = new_axiom
-   `!l.
-      byte_width <= LENGTH l ==>
-      byte_to_list (list_to_byte l) = take byte_width l`;;
+  `!l n.
+     byte_bit (list_to_byte l) n =
+     (n < byte_width /\ n < LENGTH l /\ nth l n)`;;
 
 let list_to_byte_to_list_eq = new_axiom
-   `!l.
-      byte_to_list (list_to_byte l) =
-      if LENGTH l <= byte_width then
-        APPEND l (REPLICATE F (byte_width - LENGTH l))
-      else
-        take byte_width l`;;
+  `!l.
+     byte_to_list (list_to_byte l) =
+     if LENGTH l <= byte_width then
+       APPEND l (REPLICATE F (byte_width - LENGTH l))
+     else
+       take byte_width l`;;
 
 let list_to_byte_to_list = new_axiom
   `!l. LENGTH l = byte_width <=> byte_to_list (list_to_byte l) = l`;;
 
 let byte_shl_list = new_axiom
-   `!l n.
-      byte_shl (list_to_byte l) n =
-      list_to_byte (APPEND (REPLICATE F n) l)`;;
+  `!l n.
+     byte_shl (list_to_byte l) n =
+     list_to_byte (APPEND (REPLICATE F n) l)`;;
 
 let short_byte_shr_list = new_axiom
-   `!l n.
-      LENGTH l <= byte_width ==>
-      byte_shr (list_to_byte l) n =
-      (if LENGTH l <= n then list_to_byte []
-       else list_to_byte (drop n l))`;;
+  `!l n.
+     LENGTH l <= byte_width ==>
+     byte_shr (list_to_byte l) n =
+     (if LENGTH l <= n then list_to_byte []
+      else list_to_byte (drop n l))`;;
 
 let long_byte_shr_list = new_axiom
-   `!l n.
-      byte_width <= LENGTH l ==>
-      byte_shr (list_to_byte l) n =
-      if byte_width <= n then list_to_byte []
-      else list_to_byte (drop n (take byte_width l))`;;
+  `!l n.
+     byte_width <= LENGTH l ==>
+     byte_shr (list_to_byte l) n =
+     if byte_width <= n then list_to_byte []
+     else list_to_byte (drop n (take byte_width l))`;;
 
 let byte_shr_list = new_axiom
-   `!l n.
-      byte_shr (list_to_byte l) n =
-      (if LENGTH l <= byte_width then
-         if LENGTH l <= n then list_to_byte []
-         else list_to_byte (drop n l)
-       else
-         if byte_width <= n then list_to_byte []
-         else list_to_byte (drop n (take byte_width l)))`;;
+  `!l n.
+     byte_shr (list_to_byte l) n =
+     (if LENGTH l <= byte_width then
+        if LENGTH l <= n then list_to_byte []
+        else list_to_byte (drop n l)
+      else
+        if byte_width <= n then list_to_byte []
+        else list_to_byte (drop n (take byte_width l)))`;;
 
 let byte_eq_bits = new_axiom
   `!w1 w2.
      (!i. i < byte_width ==> byte_bit w1 i = byte_bit w2 i) ==> w1 = w2`;;
 
-let num_to_byte_cons = new_axiom
-  `!n.
-     list_to_byte (CONS (ODD n) (byte_to_list (num_to_byte (n DIV 2)))) =
-     num_to_byte n`;;
-
-let num_to_byte_list = new_axiom
-  `!n.
-     num_to_byte n =
-     list_to_byte
-       (if n = 0 then []
-        else CONS (ODD n) (byte_to_list (num_to_byte (n DIV 2))))`;;
+let byte_lte_cmp = new_axiom
+  `!q l1 l2.
+     LENGTH l2 = LENGTH l1 ==>
+     byte_bits_lte q l1 l2 = bit_cmp q (bits_to_num l1) (bits_to_num l2)`;;
 
 let byte_lte_list = new_axiom
-   `!q w1 w2.
-      byte_bits_lte q (byte_to_list w1) (byte_to_list w2) <=>
-      (if q then byte_le w1 w2 else byte_lt w1 w2)`;;
+  `!q w1 w2.
+     byte_bits_lte q (byte_to_list w1) (byte_to_list w2) <=>
+     (if q then byte_le w1 w2 else byte_lt w1 w2)`;;
 
 let byte_le_list = new_axiom
-   `!w1 w2.
-      byte_bits_lte T (byte_to_list w1) (byte_to_list w2) <=> byte_le w1 w2`;;
+  `!w1 w2.
+     byte_bits_lte T (byte_to_list w1) (byte_to_list w2) <=> byte_le w1 w2`;;
 
 let byte_lt_list = new_axiom
-   `!w1 w2.
-      byte_bits_lte F (byte_to_list w1) (byte_to_list w2) <=> byte_lt w1 w2`;;
+  `!w1 w2.
+     byte_bits_lte F (byte_to_list w1) (byte_to_list w2) <=> byte_lt w1 w2`;;
 
 let byte_reduce_conv =
     REWRITE_CONV

@@ -260,22 +260,22 @@ let word12_lt_trans = new_axiom
 new_constant ("word12_shl", `:word12 -> num -> word12`);;
 
 let word12_shl_def = new_axiom
-  `!w n. word12_shl w n = num_to_word12 ((2 EXP n) * word12_to_num w)`;;
+  `!w n. word12_shl w n = num_to_word12 (bit_shl (word12_to_num w) n)`;;
 
 new_constant ("word12_shr", `:word12 -> num -> word12`);;
 
 let word12_shr_def = new_axiom
-  `!w n. word12_shr w n = num_to_word12 (word12_to_num w DIV (2 EXP n))`;;
+  `!w n. word12_shr w n = num_to_word12 (bit_shr (word12_to_num w) n)`;;
 
 new_constant ("word12_bit", `:word12 -> num -> bool`);;
 
 let word12_bit_def = new_axiom
-  `!w n. word12_bit w n = ODD (word12_to_num (word12_shr w n))`;;
+  `!w n. word12_bit w n = bit_nth (word12_to_num w) n`;;
 
 new_constant ("word12_to_list", `:word12 -> bool list`);;
 
 let word12_to_list_def = new_axiom
-  `!w. word12_to_list w = MAP (word12_bit w) (interval 0 word12_width)`;;
+  `!w. word12_to_list w = num_to_bitvec (word12_to_num w) word12_width`;;
 
 new_constant ("list_to_word12", `:bool list -> word12`);;
 
@@ -332,28 +332,23 @@ let list_to_word12_cons = new_axiom
       if h then word12_add (num_to_word12 1) (word12_shl (list_to_word12 t) 1)
       else word12_shl (list_to_word12 t) 1`;;
 
-let word12_bit_div = new_axiom
-  `!w n. word12_bit w n = ODD (word12_to_num w DIV (2 EXP n))`;;
+let bound_word12_to_num = new_axiom
+  `!w. bit_bound (word12_to_num w) word12_width = word12_to_num w`;;
+
+let num_to_word12_to_num_bound = new_axiom
+  `!n. word12_to_num (num_to_word12 n) = bit_bound n word12_width`;;
 
 let nil_to_word12_to_num = new_axiom
   `word12_to_num (list_to_word12 []) = 0`;;
 
-let cons_to_word12_to_num = new_axiom
-   `!h t.
-      word12_to_num (list_to_word12 (CONS h t)) =
-      ((if h then 1 else 0) + 2 * word12_to_num (list_to_word12 t)) MOD
-      word12_size`;;
-
 let list_to_word12_to_num_bound = new_axiom
   `!l. word12_to_num (list_to_word12 l) < 2 EXP (LENGTH l)`;;
 
-let list_to_word12_to_num_bound_suc = new_axiom
-  `!l. 1 + 2 * word12_to_num (list_to_word12 l) < 2 EXP (SUC (LENGTH l))`;;
+let bit_width_word12_to_num = new_axiom
+  `!w. bit_width (word12_to_num w) <= word12_width`;;
 
-let cons_to_word12_to_num_bound = new_axiom
-   `!h t.
-      2 * word12_to_num (list_to_word12 t) + (if h then 1 else 0) <
-      2 EXP SUC (LENGTH t)`;;
+let word12_to_list_to_num = new_axiom
+  `!w. bits_to_num (word12_to_list w) = word12_to_num w`;;
 
 let word12_to_list_to_word12 = new_axiom
   `!w. list_to_word12 (word12_to_list w) = w`;;
@@ -365,89 +360,71 @@ let word12_to_list_inj_eq = new_axiom
   `!w1 w2. word12_to_list w1 = word12_to_list w2 <=> w1 = w2`;;
 
 let list_to_word12_bit = new_axiom
-   `!l n.
-      word12_bit (list_to_word12 l) n =
-      (n < word12_width /\ n < LENGTH l /\ nth l n)`;;
-
-let short_list_to_word12_to_list = new_axiom
-   `!l.
-      LENGTH l <= word12_width ==>
-      word12_to_list (list_to_word12 l) =
-      APPEND l (REPLICATE F (word12_width - LENGTH l))`;;
-
-let long_list_to_word12_to_list = new_axiom
-   `!l.
-      word12_width <= LENGTH l ==>
-      word12_to_list (list_to_word12 l) = take word12_width l`;;
+  `!l n.
+     word12_bit (list_to_word12 l) n =
+     (n < word12_width /\ n < LENGTH l /\ nth l n)`;;
 
 let list_to_word12_to_list_eq = new_axiom
-   `!l.
-      word12_to_list (list_to_word12 l) =
-      if LENGTH l <= word12_width then
-        APPEND l (REPLICATE F (word12_width - LENGTH l))
-      else
-        take word12_width l`;;
+  `!l.
+     word12_to_list (list_to_word12 l) =
+     if LENGTH l <= word12_width then
+       APPEND l (REPLICATE F (word12_width - LENGTH l))
+     else
+       take word12_width l`;;
 
 let list_to_word12_to_list = new_axiom
   `!l. LENGTH l = word12_width <=> word12_to_list (list_to_word12 l) = l`;;
 
 let word12_shl_list = new_axiom
-   `!l n.
-      word12_shl (list_to_word12 l) n =
-      list_to_word12 (APPEND (REPLICATE F n) l)`;;
+  `!l n.
+     word12_shl (list_to_word12 l) n =
+     list_to_word12 (APPEND (REPLICATE F n) l)`;;
 
 let short_word12_shr_list = new_axiom
-   `!l n.
-      LENGTH l <= word12_width ==>
-      word12_shr (list_to_word12 l) n =
-      (if LENGTH l <= n then list_to_word12 []
-       else list_to_word12 (drop n l))`;;
+  `!l n.
+     LENGTH l <= word12_width ==>
+     word12_shr (list_to_word12 l) n =
+     (if LENGTH l <= n then list_to_word12 []
+      else list_to_word12 (drop n l))`;;
 
 let long_word12_shr_list = new_axiom
-   `!l n.
-      word12_width <= LENGTH l ==>
-      word12_shr (list_to_word12 l) n =
-      if word12_width <= n then list_to_word12 []
-      else list_to_word12 (drop n (take word12_width l))`;;
+  `!l n.
+     word12_width <= LENGTH l ==>
+     word12_shr (list_to_word12 l) n =
+     if word12_width <= n then list_to_word12 []
+     else list_to_word12 (drop n (take word12_width l))`;;
 
 let word12_shr_list = new_axiom
-   `!l n.
-      word12_shr (list_to_word12 l) n =
-      (if LENGTH l <= word12_width then
-         if LENGTH l <= n then list_to_word12 []
-         else list_to_word12 (drop n l)
-       else
-         if word12_width <= n then list_to_word12 []
-         else list_to_word12 (drop n (take word12_width l)))`;;
+  `!l n.
+     word12_shr (list_to_word12 l) n =
+     (if LENGTH l <= word12_width then
+        if LENGTH l <= n then list_to_word12 []
+        else list_to_word12 (drop n l)
+      else
+        if word12_width <= n then list_to_word12 []
+        else list_to_word12 (drop n (take word12_width l)))`;;
 
 let word12_eq_bits = new_axiom
   `!w1 w2.
      (!i. i < word12_width ==> word12_bit w1 i = word12_bit w2 i) ==> w1 = w2`;;
 
-let num_to_word12_cons = new_axiom
-  `!n.
-     list_to_word12 (CONS (ODD n) (word12_to_list (num_to_word12 (n DIV 2)))) =
-     num_to_word12 n`;;
-
-let num_to_word12_list = new_axiom
-  `!n.
-     num_to_word12 n =
-     list_to_word12
-       (if n = 0 then []
-        else CONS (ODD n) (word12_to_list (num_to_word12 (n DIV 2))))`;;
+let word12_lte_cmp = new_axiom
+  `!q l1 l2.
+     LENGTH l2 = LENGTH l1 ==>
+     word12_bits_lte q l1 l2 = bit_cmp q (bits_to_num l1) (bits_to_num l2)`;;
 
 let word12_lte_list = new_axiom
-   `!q w1 w2.
-      word12_bits_lte q (word12_to_list w1) (word12_to_list w2) <=>
-      (if q then word12_le w1 w2 else word12_lt w1 w2)`;;
+  `!q w1 w2.
+     word12_bits_lte q (word12_to_list w1) (word12_to_list w2) <=>
+     (if q then word12_le w1 w2 else word12_lt w1 w2)`;;
 
 let word12_le_list = new_axiom
-   `!w1 w2.
-      word12_bits_lte T (word12_to_list w1) (word12_to_list w2) <=> word12_le w1 w2`;;
+  `!w1 w2.
+     word12_bits_lte T (word12_to_list w1) (word12_to_list w2) <=> word12_le w1 w2`;;
 
 let word12_lt_list = new_axiom
-   `!w1 w2.
-      word12_bits_lte F (word12_to_list w1) (word12_to_list w2) <=> word12_lt w1 w2`;;
+  `!w1 w2.
+     word12_bits_lte F (word12_to_list w1) (word12_to_list w2) <=> word12_lt w1 w2`;;
 
 let word12_reduce_conv =
     REWRITE_CONV
