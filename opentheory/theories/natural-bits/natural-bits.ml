@@ -2062,11 +2062,35 @@ let num_to_bits n = num_to_bitvec n (bit_width_num n);;
 let bit_tl_conv = REWR_CONV bit_tl_def THENC NUM_REDUCE_CONV;;
 
 let rec bit_width_conv tm =
-    (REWR_CONV bit_width_src THENC
-     RATOR_CONV (LAND_CONV NUM_REDUCE_CONV) THENC
-     (REWR_CONV COND_TRUE ORELSEC
-      (REWR_CONV COND_FALSE THENC
-       LAND_CONV (RAND_CONV bit_tl_conv THENC bit_width_conv) THENC
-       NUM_REDUCE_CONV))) tm;;
+  (REWR_CONV bit_width_src THENC
+   RATOR_CONV (LAND_CONV NUM_REDUCE_CONV) THENC
+   (REWR_CONV COND_TRUE ORELSEC
+    (REWR_CONV COND_FALSE THENC
+     LAND_CONV (RAND_CONV bit_tl_conv THENC bit_width_conv) THENC
+     NUM_REDUCE_CONV))) tm;;
+
+let numeral_to_bits_conv =
+  let zero_th = prove
+    (`_0 = bits_to_num []`,
+     REWRITE_TAC [bits_to_num_nil; NUMERAL]) in
+  let bit0_th = prove
+    (`!l. BIT0 (bits_to_num l) = bits_to_num (CONS F l)`,
+     REWRITE_TAC [bits_to_num_cons; bit_cons_false; MULT_2] THEN
+     REWRITE_TAC [BIT0]) in
+  let bit1_th = prove
+    (`!l. BIT1 (bits_to_num l) = bits_to_num (CONS T l)`,
+     REWRITE_TAC
+       [bits_to_num_cons; bit_cons_true; MULT_2; ONE; SUC_ADD; ZERO_ADD] THEN
+     REWRITE_TAC [BIT1]) in
+  let numeral_conv = REWR_CONV NUMERAL
+  and zero_conv = REWR_CONV zero_th
+  and bit0_conv = REWR_CONV bit0_th
+  and bit1_conv = REWR_CONV bit1_th in
+  let rec bits_conv tm =
+      (zero_conv ORELSEC
+       (RAND_CONV bits_conv THENC
+        (bit0_conv ORELSEC bit1_conv))) tm in
+  numeral_conv THENC
+  bits_conv;;
 
 logfile_end ();;
