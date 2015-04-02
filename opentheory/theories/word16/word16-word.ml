@@ -572,8 +572,8 @@ let word16_bit_conv =
   word16_eq_list_conv;;
 
 let bit_blast_subterm_conv = word16_bit_conv ORELSEC bit_blast_subterm_conv;;
-let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;
-let bit_blast_tac = CONV_TAC bit_blast_conv;;
+let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;  (* word16 *)
+let bit_blast_tac = CONV_TAC bit_blast_conv;;  (* word16 *)
 
 let prove_word16_list_cases n =
   let interval =

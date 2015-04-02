@@ -73,27 +73,9 @@ export_thm byte_to_word16_list;;
 
 let word16_to_byte_list = prove
  (`!w. num_to_byte (word16_to_num w) = list_to_byte (word16_to_list w)`,
-  GEN_TAC THEN
-  MATCH_MP_TAC byte_eq_bits THEN
-  REPEAT STRIP_TAC THEN
-  ASM_REWRITE_TAC [list_to_byte_bit] THEN
-  REWRITE_TAC [byte_bit_div; num_to_byte_to_num] THEN
-  REWRITE_TAC [byte_size_def; mod_div_exp_two] THEN
-  ASM_REWRITE_TAC [GSYM NOT_LT] THEN
-  REWRITE_TAC [odd_mod_exp_two] THEN
-  MATCH_MP_TAC EQ_TRANS THEN
-  EXISTS_TAC
-    `i < word16_width /\ i < LENGTH (word16_to_list w) /\
-     nth (word16_to_list w) i` THEN
-  CONJ_TAC THENL
-  [REWRITE_TAC [GSYM list_to_word16_bit; word16_to_list_to_word16] THEN
-   REWRITE_TAC [word16_bit_div] THEN
-   MATCH_MP_TAC (ITAUT `x ==> (y /\ x <=> y)`) THEN
-   POP_ASSUM (MP_TAC o REWRITE_RULE [GSYM LE_SUC_LT]) THEN
-   REWRITE_TAC [LE_EXISTS] THEN
-   DISCH_THEN (CHOOSE_THEN SUBST1_TAC) THEN
-   REWRITE_TAC [ADD_SUB2; ADD; GSYM ADD_SUC; NOT_SUC];
-   REWRITE_TAC [length_word16_to_list; CONJ_ASSOC]]);;
+  REWRITE_TAC
+    [word16_to_list_def; list_to_byte_def; num_to_bitvec_to_num;
+     bit_bound_word16_to_num]);;
 
 export_thm word16_to_byte_list;;
 
@@ -182,7 +164,7 @@ let word16_bytes_conv =
     word16_to_bytes_list_conv;;
 
 let bit_blast_subterm_conv = word16_bytes_conv ORELSEC bit_blast_subterm_conv;;
-let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;
-let bit_blast_tac = CONV_TAC bit_blast_conv;;
+let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;  (* word16-bytes *)
+let bit_blast_tac = CONV_TAC bit_blast_conv;;  (* word16-bytes *)
 
 logfile_end ();;

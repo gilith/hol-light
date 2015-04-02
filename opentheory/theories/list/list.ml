@@ -136,5 +136,5 @@ let list_bit_conv =
     list_eq_conv ALL_CONV;;
 
 let bit_blast_subterm_conv = list_bit_conv ORELSEC bit_blast_subterm_conv;;
-let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;
-let bit_blast_tac = CONV_TAC bit_blast_conv;;
+let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;  (* list *)
+let bit_blast_tac = CONV_TAC bit_blast_conv;;  (* list *)

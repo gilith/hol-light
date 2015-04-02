@@ -127,7 +127,6 @@ loads "opentheory/theories/word/word.ml";;
 (* Bytes.                                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-(***
 loads "opentheory/theories/byte/byte.ml";;
 
 (* ------------------------------------------------------------------------- *)
@@ -185,4 +184,3 @@ loads "opentheory/theories/h/h.ml";;
 (* Requires MiniSat to be hooked up to HOL Light
 loads "opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.ml";;
 *)
-***)

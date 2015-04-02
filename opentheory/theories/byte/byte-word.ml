@@ -572,8 +572,8 @@ let byte_bit_conv =
   byte_eq_list_conv;;
 
 let bit_blast_subterm_conv = byte_bit_conv ORELSEC bit_blast_subterm_conv;;
-let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;
-let bit_blast_tac = CONV_TAC bit_blast_conv;;
+let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;  (* byte *)
+let bit_blast_tac = CONV_TAC bit_blast_conv;;  (* byte *)
 
 let prove_byte_list_cases n =
   let interval =
