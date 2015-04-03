@@ -261,6 +261,14 @@ let is_bits_def = new_definition
 
 export_thm is_bits_def;;
 
+(***
+bit_or m n = bits_to_num (map (\i. bit_nth m i \/ bit_nth n i) (interval 0 (MAX (bit_width m) (bit_width n))))
+
+bit_and m n = bits_to_num (map (\i. bit_nth m i /\ bit_nth n i) (interval 0 (MIN (bit_width m) (bit_width n))))
+
+bit_or m n + bit_and m n = m + n
+***)
+
 let random_uniform_loop_exists = prove
  (`!n w. ?loop. !r.
      loop r =

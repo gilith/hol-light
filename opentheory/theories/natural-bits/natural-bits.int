@@ -11,6 +11,7 @@ const "HOLLight.bit_to_num" as "Number.Natural.fromBool"
 
 # Number.Natural.Bits
 
+const "HOLLight.bit_and" as "Number.Natural.Bits.and"
 const "HOLLight.bit_append" as "Number.Natural.Bits.append"
 const "HOLLight.bit_nth" as "Number.Natural.Bits.bit"
 const "HOLLight.bit_bound" as "Number.Natural.Bits.bound"
@@ -19,6 +20,7 @@ const "HOLLight.bit_cons" as "Number.Natural.Bits.cons"
 const "HOLLight.bits_to_num" as "Number.Natural.Bits.fromList"
 const "HOLLight.bit_hd" as "Number.Natural.Bits.head"
 const "HOLLight.is_bits" as "Number.Natural.Bits.normalList"
+const "HOLLight.bit_or" as "Number.Natural.Bits.or"
 const "HOLLight.bit_shl" as "Number.Natural.Bits.shiftLeft"
 const "HOLLight.bit_shr" as "Number.Natural.Bits.shiftRight"
 const "HOLLight.bit_tl" as "Number.Natural.Bits.tail"
