@@ -364,6 +364,15 @@ let list_to_byte_bit = new_axiom
      byte_bit (list_to_byte l) n =
      (n < byte_width /\ n < LENGTH l /\ nth l n)`;;
 
+let byte_bit_and = new_axiom
+  `!k w1 w2. byte_bit (byte_and w1 w2) k <=> byte_bit w1 k /\ byte_bit w2 k`;;
+
+let byte_bit_or = new_axiom
+  `!k w1 w2. byte_bit (byte_or w1 w2) k <=> byte_bit w1 k \/ byte_bit w2 k`;;
+
+let byte_bit_not = new_axiom
+  `!k w. byte_bit (byte_not w) k <=> k < byte_width /\ ~byte_bit w k`;;
+
 let list_to_byte_to_list_eq = new_axiom
   `!l.
      byte_to_list (list_to_byte l) =

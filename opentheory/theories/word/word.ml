@@ -423,6 +423,78 @@ let list_to_word_bit = new_axiom
      (n < word_width /\ n < LENGTH l /\ nth l n)`;;
 *)
 
+let word_bit_and = prove
+ (`!k w1 w2. word_bit (word_and w1 w2) k <=> word_bit w1 k /\ word_bit w2 k`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
+  REWRITE_TAC [word_and_def; list_to_word_bit] THEN
+  MP_TAC
+    (ISPECL
+       [`(/\)`; `word_to_list w1`; `word_to_list w2`; `word_width`]
+       length_zipwith) THEN
+  REWRITE_TAC [length_word_to_list] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REVERSE_TAC (ASM_CASES_TAC `k < word_width`) THENL
+  [ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC nth_zipwith THEN
+  EXISTS_TAC `word_width` THEN
+  ASM_REWRITE_TAC [length_word_to_list]);;
+
+export_thm word_bit_and;;
+
+(*PARAMETRIC
+let word_bit_and = new_axiom
+  `!k w1 w2. word_bit (word_and w1 w2) k <=> word_bit w1 k /\ word_bit w2 k`;;
+*)
+
+let word_bit_or = prove
+ (`!k w1 w2. word_bit (word_or w1 w2) k <=> word_bit w1 k \/ word_bit w2 k`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
+  REWRITE_TAC [word_or_def; list_to_word_bit] THEN
+  MP_TAC
+    (ISPECL
+       [`(\/)`; `word_to_list w1`; `word_to_list w2`; `word_width`]
+       length_zipwith) THEN
+  REWRITE_TAC [length_word_to_list] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REVERSE_TAC (ASM_CASES_TAC `k < word_width`) THENL
+  [ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC nth_zipwith THEN
+  EXISTS_TAC `word_width` THEN
+  ASM_REWRITE_TAC [length_word_to_list]);;
+
+export_thm word_bit_or;;
+
+(*PARAMETRIC
+let word_bit_or = new_axiom
+  `!k w1 w2. word_bit (word_or w1 w2) k <=> word_bit w1 k \/ word_bit w2 k`;;
+*)
+
+let word_bit_not = prove
+ (`!k w. word_bit (word_not w) k <=> k < word_width /\ ~word_bit w k`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
+  REWRITE_TAC
+    [word_not_def; list_to_word_bit; LENGTH_MAP; length_word_to_list] THEN
+  REVERSE_TAC (ASM_CASES_TAC `k < word_width`) THENL
+  [ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC nth_map THEN
+  ASM_REWRITE_TAC [length_word_to_list]);;
+
+export_thm word_bit_not;;
+
+(*PARAMETRIC
+let word_bit_not = new_axiom
+  `!k w. word_bit (word_not w) k <=> k < word_width /\ ~word_bit w k`;;
+*)
+
 let list_to_word_to_list_eq = prove
  (`!l.
      word_to_list (list_to_word l) =

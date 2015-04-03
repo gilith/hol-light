@@ -364,6 +364,15 @@ let list_to_word12_bit = new_axiom
      word12_bit (list_to_word12 l) n =
      (n < word12_width /\ n < LENGTH l /\ nth l n)`;;
 
+let word12_bit_and = new_axiom
+  `!k w1 w2. word12_bit (word12_and w1 w2) k <=> word12_bit w1 k /\ word12_bit w2 k`;;
+
+let word12_bit_or = new_axiom
+  `!k w1 w2. word12_bit (word12_or w1 w2) k <=> word12_bit w1 k \/ word12_bit w2 k`;;
+
+let word12_bit_not = new_axiom
+  `!k w. word12_bit (word12_not w) k <=> k < word12_width /\ ~word12_bit w k`;;
+
 let list_to_word12_to_list_eq = new_axiom
   `!l.
      word12_to_list (list_to_word12 l) =

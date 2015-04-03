@@ -832,27 +832,154 @@ let map_inr_reencode_utf8 = prove
 
 export_thm map_inr_reencode_utf8;;
 
+let parser_ascii_utf8_encode_ascii = prove
+ (`!n b.
+     n < 128 ==>
+     apply_parser parser_ascii_utf8 (append_pstream (encode_ascii_utf8 n) b) =
+     SOME (n,b)`,
+  REPEAT GEN_TAC THEN
+  DISCH_THEN
+    (STRIP_ASSUME_TAC o
+     REWRITE_RULE
+       [GSYM bit_width_upper_bound; SYM (NUM_REDUCE_CONV `2 EXP 7`)]) THEN
+  REWRITE_TAC
+    [encode_ascii_utf8_def; parser_ascii_utf8_def; apply_parser_token;
+     append_pstream_def; case_pstream_def; byte_bit_def;
+     num_to_byte_to_num_bit_bound; bit_nth_bound] THEN
+  SUBGOAL_THEN
+    `bit_bound n 7 = n`
+    ASSUME_TAC THENL
+  [ASM_REWRITE_TAC [bit_bound_id];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `bit_nth n 7 <=> F`
+    SUBST1_TAC THENL
+  [POP_ASSUM (SUBST1_TAC o SYM) THEN
+   REWRITE_TAC [bit_nth_bound; LT_REFL];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `bit_bound n byte_width = n`
+    SUBST1_TAC THENL
+  [POP_ASSUM (SUBST1_TAC o SYM) THEN
+   REWRITE_TAC
+     [bit_bound_bound_min; byte_width_def; NUM_REDUCE_CONV `MIN 7 8`];
+   ALL_TAC] THEN
+  REWRITE_TAC [case_option_def]);;
+
+export_thm parser_ascii_utf8_encode_ascii;;
+
+let parser_ascii_utf8_encode_two_byte = prove
+ (`!n b.
+     apply_parser parser_ascii_utf8
+       (append_pstream (encode_two_byte_utf8 n) b) =
+     NONE`,
+  REWRITE_TAC
+    [encode_two_byte_utf8_def; LET_DEF; LET_END_DEF; append_pstream_def;
+     parser_ascii_utf8_def; apply_parser_token; case_pstream_def;
+     byte_bit_or; bit_blast_conv `byte_bit (num_to_byte 192) 7`;
+     case_option_def]);;
+
+export_thm parser_ascii_utf8_encode_two_byte;;
+
+let parser_ascii_utf8_encode_three_byte = prove
+ (`!n b.
+     apply_parser parser_ascii_utf8
+       (append_pstream (encode_three_byte_utf8 n) b) =
+     NONE`,
+  REWRITE_TAC
+    [encode_three_byte_utf8_def; LET_DEF; LET_END_DEF; append_pstream_def;
+     parser_ascii_utf8_def; apply_parser_token; case_pstream_def;
+     byte_bit_or; bit_blast_conv `byte_bit (num_to_byte 224) 7`;
+     case_option_def]);;
+
+export_thm parser_ascii_utf8_encode_three_byte;;
+
+let parser_ascii_utf8_encode_four_byte = prove
+ (`!n b.
+     apply_parser parser_ascii_utf8
+       (append_pstream (encode_four_byte_utf8 n) b) =
+     NONE`,
+  REWRITE_TAC
+    [encode_four_byte_utf8_def; LET_DEF; LET_END_DEF; append_pstream_def;
+     parser_ascii_utf8_def; apply_parser_token; case_pstream_def;
+     byte_bit_or; bit_blast_conv `byte_bit (num_to_byte 240) 7`;
+     case_option_def]);;
+
+export_thm parser_ascii_utf8_encode_four_byte;;
+
 (***
+let parser_multibyte_utf8_encode_two_byte = prove
+ (`!n b.
+     128 <= n /\ n < 2048 ==>
+     apply_parser parser_multibyte_utf8
+       (append_pstream (encode_two_byte_utf8 n) b) =
+     SOME (n,b)`,
+  REPEAT GEN_TAC THEN
+  DISCH_THEN
+    (STRIP_ASSUME_TAC o
+     REWRITE_RULE
+       [GSYM bit_width_upper_bound; SYM (NUM_REDUCE_CONV `2 EXP 11`)]) THEN
+  REWRITE_TAC
+    [encode_two_byte_utf8_def; LET_DEF; LET_END_DEF; append_pstream_def;
+     parser_multibyte_utf8_def; apply_parser_sequence; apply_parser_token;
+     case_pstream_def; byte_bit_or;
+     bit_blast_conv `byte_bit (num_to_byte 192) 6`;
+     bit_blast_conv `byte_bit (num_to_byte 192) 5`] THEN
+  SUBGOAL_THEN `byte_bit (num_to_byte (bit_shr n 6)) 5 <=> F` SUBST1_TAC THENL
+  [REWRITE_TAC
+     [byte_bit_def; num_to_byte_to_num_bit_bound; bit_nth_bound;
+      DE_MORGAN_THM; GSYM bit_nth_add; NUM_REDUCE_CONV `6 + 5`] THEN
+   DISJ2_TAC THEN
+   STRIP_TAC THEN
+   MP_TAC (SPECL [`n : num`; `11`] bit_nth_width) THEN
+   ASM_REWRITE_TAC [NOT_LT];
+   ALL_TAC] THEN
+  REWRITE_TAC
+    [case_option_def; parser_two_byte_utf8_def; apply_parser_filter;
+     parser_foldn_def] THEN
+  SUBGOAL_THEN
+    `byte_to_num
+       (byte_and (byte_or (num_to_byte 192) (num_to_byte (bit_shr n 6)))
+          (num_to_byte 31)) =
+     bit_shr n 6` SUBST1_TAC THENL
+  [***
+
+export_thm parser_multibyte_utf8_encode_two_byte;;
+
 let parser_unicode_utf8_inverse = prove
  (`parser_inverse parser_unicode_utf8 encode_unicode_utf8`,
   REWRITE_TAC [parser_inverse_def] THEN
   X_GEN_TAC `c : unicode` THEN
   X_GEN_TAC `b : byte pstream` THEN
-  REWRITE_TAC
+  MP_TAC (SPEC `c : unicode` dest_unicode_cases) THEN
+  STRIP_TAC THEN
+  UNDISCH_THEN `c = mk_unicode n` SUBST_VAR_TAC THEN
+  ASM_REWRITE_TAC
     [encode_unicode_utf8_def; LET_DEF; LET_END_DEF; parser_unicode_utf8_def;
      apply_parser_map_partial; parser_num_utf8_def; apply_parser_orelse] THEN
   COND_CASES_TAC THENL
-  [REWRITE_TAC
-     [encode_ascii_utf8_def; parser_ascii_utf8_def; apply_parser_token;
-      append_pstream_def; case_pstream_def; byte_bit_def] THEN
-   SUBGOAL_THEN `byte_bit (num_to_byte (dest_unicode c)) 7`
+  [MP_TAC (SPECL [`n : num`; `b : byte pstream`] parser_ascii_utf8_inverse) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   ASM_REWRITE_TAC [case_option_def];
+   ALL_TAC] THEN
+  SUBGOAL_THEN
+    `apply_parser parser_ascii_utf8
+       (append_pstream
+        (if n < 2048 then encode_two_byte_utf8 n else
+         if n < 65536 then encode_three_byte_utf8 n else
+         encode_four_byte_utf8 n) b) =
+     NONE` SUBST1_TAC THENL
+  [REPEAT COND_CASES_TAC THENL
+   [REWRITE_TAC [parser_ascii_utf8_encode_two_byte];
+    REWRITE_TAC [parser_ascii_utf8_encode_three_byte];
+    REWRITE_TAC [parser_ascii_utf8_encode_four_byte]];
+   ALL_TAC] THEN
+  REWRITE_TAC [case_option_def] THEN
+  COND_CASES_TAC (***THENL
+  [***)
 
 
-
-num_to_byte_to_num
-
-REWRITE_TAC [encode_ascii_utf8_def; append_pstream_def; apply_parser_def] THEN
-   
   MP_TAC (SPEC `x : unicode` dest_unicode_cases) THEN
   STRIP_TAC THEN
   POP_ASSUM (fun th -> REWRITE_TAC [th]) THEN
