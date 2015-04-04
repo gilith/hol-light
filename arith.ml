@@ -473,6 +473,32 @@ let MAX_SUC = prove
 
 export_thm MAX_SUC;;
 
+let MAX_LT = prove
+ (`!m n p. MAX n p < m <=> n < m /\ p < m`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPECL [`m : num`; `SUC n`; `SUC p`] MAX_LE) THEN
+  REWRITE_TAC [LE_SUC_LT; MAX_SUC]);;
+
+export_thm MAX_LT;;
+
+let LE_MAX = prove
+ (`!m n p. m <= MAX n p <=> m <= n \/ m <= p`,
+  REWRITE_TAC [GSYM NOT_LT; MAX_LT; DE_MORGAN_THM]);;
+
+export_thm LE_MAX;;
+
+let LT_MAX = prove
+ (`!m n p. m < MAX n p <=> m < n \/ m < p`,
+  REWRITE_TAC [GSYM NOT_LE; MAX_LE; DE_MORGAN_THM]);;
+
+export_thm LT_MAX;;
+
+let MAX_EQ_ZERO = prove
+ (`!m n. MAX m n = 0 <=> m = 0 /\ n = 0`,
+  REWRITE_TAC [GSYM LE; MAX_LE]);;
+
+export_thm MAX_EQ_ZERO;;
+
 let MIN_REFL = prove
  (`!n. MIN n n = n`,
   REWRITE_TAC [MIN; LE_REFL]);;
@@ -556,6 +582,26 @@ let MIN_SUC = prove
   REWRITE_TAC []);;
 
 export_thm MIN_SUC;;
+
+let LT_MIN = prove
+ (`!m n p. m < MIN n p <=> m < n /\ m < p`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPECL [`SUC m`; `n : num`; `p : num`] LE_MIN) THEN
+  REWRITE_TAC [LE_SUC_LT]);;
+
+export_thm LT_MIN;;
+
+let MIN_LE = prove
+ (`!m n p. MIN n p <= m <=> n <= m \/ p <= m`,
+  REWRITE_TAC [GSYM NOT_LT; LT_MIN; DE_MORGAN_THM]);;
+
+export_thm MIN_LE;;
+
+let MIN_LT = prove
+ (`!m n p. MIN n p < m <=> n < m \/ p < m`,
+  REWRITE_TAC [GSYM NOT_LE; LE_MIN; DE_MORGAN_THM]);;
+
+export_thm MIN_LT;;
 
 let MINIMAL_EQ = prove
  (`!p n. p n /\ (!m. m < n ==> ~(p m)) ==> (minimal) p = n`,
