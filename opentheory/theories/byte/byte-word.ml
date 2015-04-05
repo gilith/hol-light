@@ -291,15 +291,15 @@ new_constant ("byte_and", `:byte -> byte -> byte`);;
 
 let byte_and_def = new_axiom
   `!w1 w2.
-     byte_and w1 w2 =
-     list_to_byte (zipwith ( /\ ) (byte_to_list w1) (byte_to_list w2))`;;
+      byte_and w1 w2 =
+      num_to_byte (bit_and (byte_to_num w1) (byte_to_num w2))`;;
 
 new_constant ("byte_or", `:byte -> byte -> byte`);;
 
 let byte_or_def = new_axiom
   `!w1 w2.
-     byte_or w1 w2 =
-     list_to_byte (zipwith ( \/ ) (byte_to_list w1) (byte_to_list w2))`;;
+      byte_or w1 w2 =
+      num_to_byte (bit_or (byte_to_num w1) (byte_to_num w2))`;;
 
 new_constant ("byte_not", `:byte -> byte`);;
 
@@ -367,8 +367,18 @@ let list_to_byte_bit = new_axiom
 let byte_bit_and = new_axiom
   `!k w1 w2. byte_bit (byte_and w1 w2) k <=> byte_bit w1 k /\ byte_bit w2 k`;;
 
+let byte_and_list = new_axiom
+  `!w1 w2.
+     byte_and w1 w2 =
+     list_to_byte (zipwith ( /\ ) (byte_to_list w1) (byte_to_list w2))`;;
+
 let byte_bit_or = new_axiom
   `!k w1 w2. byte_bit (byte_or w1 w2) k <=> byte_bit w1 k \/ byte_bit w2 k`;;
+
+let byte_or_list = new_axiom
+  `!w1 w2.
+     byte_or w1 w2 =
+     list_to_byte (zipwith ( \/ ) (byte_to_list w1) (byte_to_list w2))`;;
 
 let byte_bit_not = new_axiom
   `!k w. byte_bit (byte_not w) k <=> k < byte_width /\ ~byte_bit w k`;;
@@ -469,7 +479,7 @@ let numeral_to_byte_list_conv =
   list_to_byte_conv;;
 
 let byte_and_list_conv =
-  let th = SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_and_def in
+  let th = SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_and_list in
   REWR_CONV th THENC
   RAND_CONV
     (LAND_CONV list_to_byte_to_list_conv THENC
@@ -477,7 +487,7 @@ let byte_and_list_conv =
      zipwith_conv and_simp_conv);;
 
 let byte_or_list_conv =
-  let th = SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_or_def in
+  let th = SPECL [`list_to_byte l1`; `list_to_byte l2`] byte_or_list in
   REWR_CONV th THENC
   RAND_CONV
     (LAND_CONV list_to_byte_to_list_conv THENC

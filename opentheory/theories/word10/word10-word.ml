@@ -291,15 +291,15 @@ new_constant ("word10_and", `:word10 -> word10 -> word10`);;
 
 let word10_and_def = new_axiom
   `!w1 w2.
-     word10_and w1 w2 =
-     list_to_word10 (zipwith ( /\ ) (word10_to_list w1) (word10_to_list w2))`;;
+      word10_and w1 w2 =
+      num_to_word10 (bit_and (word10_to_num w1) (word10_to_num w2))`;;
 
 new_constant ("word10_or", `:word10 -> word10 -> word10`);;
 
 let word10_or_def = new_axiom
   `!w1 w2.
-     word10_or w1 w2 =
-     list_to_word10 (zipwith ( \/ ) (word10_to_list w1) (word10_to_list w2))`;;
+      word10_or w1 w2 =
+      num_to_word10 (bit_or (word10_to_num w1) (word10_to_num w2))`;;
 
 new_constant ("word10_not", `:word10 -> word10`);;
 
@@ -367,8 +367,18 @@ let list_to_word10_bit = new_axiom
 let word10_bit_and = new_axiom
   `!k w1 w2. word10_bit (word10_and w1 w2) k <=> word10_bit w1 k /\ word10_bit w2 k`;;
 
+let word10_and_list = new_axiom
+  `!w1 w2.
+     word10_and w1 w2 =
+     list_to_word10 (zipwith ( /\ ) (word10_to_list w1) (word10_to_list w2))`;;
+
 let word10_bit_or = new_axiom
   `!k w1 w2. word10_bit (word10_or w1 w2) k <=> word10_bit w1 k \/ word10_bit w2 k`;;
+
+let word10_or_list = new_axiom
+  `!w1 w2.
+     word10_or w1 w2 =
+     list_to_word10 (zipwith ( \/ ) (word10_to_list w1) (word10_to_list w2))`;;
 
 let word10_bit_not = new_axiom
   `!k w. word10_bit (word10_not w) k <=> k < word10_width /\ ~word10_bit w k`;;
@@ -469,7 +479,7 @@ let numeral_to_word10_list_conv =
   list_to_word10_conv;;
 
 let word10_and_list_conv =
-  let th = SPECL [`list_to_word10 l1`; `list_to_word10 l2`] word10_and_def in
+  let th = SPECL [`list_to_word10 l1`; `list_to_word10 l2`] word10_and_list in
   REWR_CONV th THENC
   RAND_CONV
     (LAND_CONV list_to_word10_to_list_conv THENC
@@ -477,7 +487,7 @@ let word10_and_list_conv =
      zipwith_conv and_simp_conv);;
 
 let word10_or_list_conv =
-  let th = SPECL [`list_to_word10 l1`; `list_to_word10 l2`] word10_or_def in
+  let th = SPECL [`list_to_word10 l1`; `list_to_word10 l2`] word10_or_list in
   REWR_CONV th THENC
   RAND_CONV
     (LAND_CONV list_to_word10_to_list_conv THENC

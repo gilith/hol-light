@@ -291,15 +291,15 @@ new_constant ("word16_and", `:word16 -> word16 -> word16`);;
 
 let word16_and_def = new_axiom
   `!w1 w2.
-     word16_and w1 w2 =
-     list_to_word16 (zipwith ( /\ ) (word16_to_list w1) (word16_to_list w2))`;;
+      word16_and w1 w2 =
+      num_to_word16 (bit_and (word16_to_num w1) (word16_to_num w2))`;;
 
 new_constant ("word16_or", `:word16 -> word16 -> word16`);;
 
 let word16_or_def = new_axiom
   `!w1 w2.
-     word16_or w1 w2 =
-     list_to_word16 (zipwith ( \/ ) (word16_to_list w1) (word16_to_list w2))`;;
+      word16_or w1 w2 =
+      num_to_word16 (bit_or (word16_to_num w1) (word16_to_num w2))`;;
 
 new_constant ("word16_not", `:word16 -> word16`);;
 
@@ -367,8 +367,18 @@ let list_to_word16_bit = new_axiom
 let word16_bit_and = new_axiom
   `!k w1 w2. word16_bit (word16_and w1 w2) k <=> word16_bit w1 k /\ word16_bit w2 k`;;
 
+let word16_and_list = new_axiom
+  `!w1 w2.
+     word16_and w1 w2 =
+     list_to_word16 (zipwith ( /\ ) (word16_to_list w1) (word16_to_list w2))`;;
+
 let word16_bit_or = new_axiom
   `!k w1 w2. word16_bit (word16_or w1 w2) k <=> word16_bit w1 k \/ word16_bit w2 k`;;
+
+let word16_or_list = new_axiom
+  `!w1 w2.
+     word16_or w1 w2 =
+     list_to_word16 (zipwith ( \/ ) (word16_to_list w1) (word16_to_list w2))`;;
 
 let word16_bit_not = new_axiom
   `!k w. word16_bit (word16_not w) k <=> k < word16_width /\ ~word16_bit w k`;;
@@ -469,7 +479,7 @@ let numeral_to_word16_list_conv =
   list_to_word16_conv;;
 
 let word16_and_list_conv =
-  let th = SPECL [`list_to_word16 l1`; `list_to_word16 l2`] word16_and_def in
+  let th = SPECL [`list_to_word16 l1`; `list_to_word16 l2`] word16_and_list in
   REWR_CONV th THENC
   RAND_CONV
     (LAND_CONV list_to_word16_to_list_conv THENC
@@ -477,7 +487,7 @@ let word16_and_list_conv =
      zipwith_conv and_simp_conv);;
 
 let word16_or_list_conv =
-  let th = SPECL [`list_to_word16 l1`; `list_to_word16 l2`] word16_or_def in
+  let th = SPECL [`list_to_word16 l1`; `list_to_word16 l2`] word16_or_list in
   REWR_CONV th THENC
   RAND_CONV
     (LAND_CONV list_to_word16_to_list_conv THENC

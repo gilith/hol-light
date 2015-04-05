@@ -261,15 +261,6 @@ let is_bits_def = new_definition
 
 export_thm is_bits_def;;
 
-let bit_or_def = new_definition
-  `!m n.
-     bit_or m n =
-     bits_to_num
-       (MAP (\i. bit_nth m i \/ bit_nth n i)
-          (interval 0 (MAX (bit_width m) (bit_width n))))`;;
-
-export_thm bit_or_def;;
-
 let bit_and_def = new_definition
   `!m n.
      bit_and m n =
@@ -278,6 +269,15 @@ let bit_and_def = new_definition
           (interval 0 (MIN (bit_width m) (bit_width n))))`;;
 
 export_thm bit_and_def;;
+
+let bit_or_def = new_definition
+  `!m n.
+     bit_or m n =
+     bits_to_num
+       (MAP (\i. bit_nth m i \/ bit_nth n i)
+          (interval 0 (MAX (bit_width m) (bit_width n))))`;;
+
+export_thm bit_or_def;;
 
 let random_uniform_loop_exists = prove
  (`!n w. ?loop. !r.
@@ -2003,6 +2003,169 @@ let bit_cmp_cons = prove
 
 export_thm bit_cmp_cons;;
 
+let bit_nth_and = prove
+ (`!m n i. bit_nth (bit_and m n) i <=> bit_nth m i /\ bit_nth n i`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC
+    [bit_and_def; bit_nth_bits_to_num; LENGTH_MAP; length_interval;
+     length_num_to_bits] THEN
+  REVERSE_TAC (ASM_CASES_TAC `i < MIN (bit_width m) (bit_width n)`) THENL
+  [ASM_REWRITE_TAC [DE_MORGAN_THM] THEN
+   POP_ASSUM (STRIP_ASSUME_TAC o REWRITE_RULE [LT_MIN; DE_MORGAN_THM]) THENL
+   [DISJ1_TAC THEN
+    MP_TAC (SPECL [`m : num`; `i : num`] bit_nth_width) THEN
+    ASM_REWRITE_TAC [];
+    DISJ2_TAC THEN
+    MP_TAC (SPECL [`n : num`; `i : num`] bit_nth_width) THEN
+    ASM_REWRITE_TAC []];
+   ALL_TAC] THEN
+  MP_TAC
+    (ISPECL
+       [`\i. bit_nth m i /\ bit_nth n i`;
+        `interval 0 (MIN (bit_width m) (bit_width n))`;
+        `i : num`]
+       nth_map) THEN
+  ASM_REWRITE_TAC [length_interval] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  MP_TAC
+    (SPECL
+       [`0`; `MIN (bit_width m) (bit_width n)`; `i : num`]
+       nth_interval) THEN
+  ASM_REWRITE_TAC [ZERO_ADD] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REFL_TAC);;
+
+export_thm bit_nth_and;;
+
+let bit_and_refl = prove
+ (`!n. bit_and n n = n`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC bit_nth_eq THEN
+  GEN_TAC THEN
+  REWRITE_TAC [bit_nth_and]);;
+
+export_thm bit_and_refl;;
+
+let bit_and_comm = prove
+ (`!m n. bit_and m n = bit_and n m`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC bit_nth_eq THEN
+  GEN_TAC THEN
+  REWRITE_TAC [bit_nth_and] THEN
+  MATCH_ACCEPT_TAC CONJ_SYM);;
+
+export_thm bit_and_comm;;
+
+let zero_bit_and = prove
+ (`!n. bit_and 0 n = 0`,
+  GEN_TAC THEN
+  MATCH_MP_TAC bit_nth_eq THEN
+  REWRITE_TAC [zero_bit_nth; bit_nth_and]);;
+
+export_thm zero_bit_and;;
+
+let bit_and_zero = prove
+ (`!n. bit_and n 0 = 0`,
+  ONCE_REWRITE_TAC [bit_and_comm] THEN
+  ACCEPT_TAC zero_bit_and);;
+
+export_thm bit_and_zero;;
+
+let bit_and_cons = prove
+ (`!h1 h2 t1 t2.
+     bit_and (bit_cons h1 t1) (bit_cons h2 t2) =
+     bit_cons (h1 /\ h2) (bit_and t1 t2)`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC bit_nth_eq THEN
+  X_GEN_TAC `i : num` THEN
+  REWRITE_TAC [bit_nth_and] THEN
+  MP_TAC (SPEC `i : num` num_CASES) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST_VAR_TAC
+       (X_CHOOSE_THEN `n : num` SUBST_VAR_TAC)) THENL
+  [REWRITE_TAC [bit_nth_zero; bit_hd_cons];
+   REWRITE_TAC [bit_nth_suc; bit_tl_cons; bit_nth_and]]);;
+
+export_thm bit_and_cons;;
+
+let bit_and_le1 = prove
+ (`!m n. bit_and m n <= m`,
+  MATCH_MP_TAC bit_cons_induction THEN
+  REWRITE_TAC [zero_bit_and; LE_0] THEN
+  X_GEN_TAC `h1 : bool` THEN
+  X_GEN_TAC `t1 : num` THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC bit_cons_induction THEN
+  REWRITE_TAC [bit_and_zero; LE_0] THEN
+  X_GEN_TAC `h2 : bool` THEN
+  X_GEN_TAC `t2 : num` THEN
+  DISCH_THEN (K ALL_TAC) THEN
+  REWRITE_TAC [bit_and_cons; bit_cons_le] THEN
+  POP_ASSUM (STRIP_ASSUME_TAC o REWRITE_RULE [LE_LT] o SPEC `t2 : num`) THENL
+  [ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  DISJ2_TAC THEN
+  ASM_REWRITE_TAC [bit_to_num_def] THEN
+  BOOL_CASES_TAC `h2 : bool` THEN
+  REWRITE_TAC [LE_REFL; LE_0]);;
+
+export_thm bit_and_le1;;
+
+let bit_and_le2 = prove
+ (`!m n. bit_and m n <= n`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC [bit_and_comm] THEN
+  MATCH_ACCEPT_TAC bit_and_le1);;
+
+export_thm bit_and_le2;;
+
+let bit_and_min = prove
+ (`!m n. bit_and m n <= MIN m n`,
+  REWRITE_TAC [LE_MIN; bit_and_le1; bit_and_le2]);;
+
+export_thm bit_and_min;;
+
+let bit_hd_and = prove
+ (`!m n. bit_hd (bit_and m n) <=> bit_hd m /\ bit_hd n`,
+  REWRITE_TAC [GSYM bit_nth_zero; bit_nth_and]);;
+
+export_thm bit_hd_and;;
+
+let bit_tl_and = prove
+ (`!m n. bit_tl (bit_and m n) = bit_and (bit_tl m) (bit_tl n)`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC bit_nth_eq THEN
+  REWRITE_TAC [GSYM bit_nth_suc; bit_nth_and]);;
+
+export_thm bit_tl_and;;
+
+let num_to_bitvec_bit_and = prove
+ (`!m n k.
+     num_to_bitvec (bit_and m n) k =
+     zipwith ( /\ ) (num_to_bitvec m k) (num_to_bitvec n k)`,
+  REPEAT GEN_TAC THEN
+  SPEC_TAC (`n : num`, `n : num`) THEN
+  SPEC_TAC (`m : num`, `m : num`) THEN
+  SPEC_TAC (`k : num`, `k : num`) THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [num_to_bitvec_zero; zipwith_nil];
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [num_to_bitvec_suc] THEN
+  MP_TAC
+    (ISPECL
+       [`( /\ )`;
+        `bit_hd m`;
+        `bit_hd n`;
+        `num_to_bitvec (bit_tl m) k`;
+        `num_to_bitvec (bit_tl n) k`]
+       zipwith_cons) THEN
+  REWRITE_TAC [length_num_to_bitvec] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  ASM_REWRITE_TAC [CONS_11; bit_hd_and; bit_tl_and]);;
+
+export_thm num_to_bitvec_bit_and;;
+
 let bit_nth_or = prove
  (`!m n i. bit_nth (bit_or m n) i <=> bit_nth m i \/ bit_nth n i`,
   REPEAT GEN_TAC THEN
@@ -2130,6 +2293,47 @@ let bit_or_max = prove
 
 export_thm bit_or_max;;
 
+let bit_hd_or = prove
+ (`!m n. bit_hd (bit_or m n) <=> bit_hd m \/ bit_hd n`,
+  REWRITE_TAC [GSYM bit_nth_zero; bit_nth_or]);;
+
+export_thm bit_hd_or;;
+
+let bit_tl_or = prove
+ (`!m n. bit_tl (bit_or m n) = bit_or (bit_tl m) (bit_tl n)`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC bit_nth_eq THEN
+  REWRITE_TAC [GSYM bit_nth_suc; bit_nth_or]);;
+
+export_thm bit_tl_or;;
+
+let num_to_bitvec_bit_or = prove
+ (`!m n k.
+     num_to_bitvec (bit_or m n) k =
+     zipwith ( \/ ) (num_to_bitvec m k) (num_to_bitvec n k)`,
+  REPEAT GEN_TAC THEN
+  SPEC_TAC (`n : num`, `n : num`) THEN
+  SPEC_TAC (`m : num`, `m : num`) THEN
+  SPEC_TAC (`k : num`, `k : num`) THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [num_to_bitvec_zero; zipwith_nil];
+   ALL_TAC] THEN
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [num_to_bitvec_suc] THEN
+  MP_TAC
+    (ISPECL
+       [`( \/ )`;
+        `bit_hd m`;
+        `bit_hd n`;
+        `num_to_bitvec (bit_tl m) k`;
+        `num_to_bitvec (bit_tl n) k`]
+       zipwith_cons) THEN
+  REWRITE_TAC [length_num_to_bitvec] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  ASM_REWRITE_TAC [CONS_11; bit_hd_or; bit_tl_or]);;
+
+export_thm num_to_bitvec_bit_or;;
+
 let bit_or_eq_zero = prove
  (`!m n. bit_or m n = 0 <=> m = 0 /\ n = 0`,
   REPEAT GEN_TAC THEN
@@ -2145,133 +2349,42 @@ let bit_or_eq_zero = prove
 
 export_thm bit_or_eq_zero;;
 
-let bit_nth_and = prove
- (`!m n i. bit_nth (bit_and m n) i <=> bit_nth m i /\ bit_nth n i`,
-  REPEAT GEN_TAC THEN
-  REWRITE_TAC
-    [bit_and_def; bit_nth_bits_to_num; LENGTH_MAP; length_interval;
-     length_num_to_bits] THEN
-  REVERSE_TAC (ASM_CASES_TAC `i < MIN (bit_width m) (bit_width n)`) THENL
-  [ASM_REWRITE_TAC [DE_MORGAN_THM] THEN
-   POP_ASSUM (STRIP_ASSUME_TAC o REWRITE_RULE [LT_MIN; DE_MORGAN_THM]) THENL
-   [DISJ1_TAC THEN
-    MP_TAC (SPECL [`m : num`; `i : num`] bit_nth_width) THEN
-    ASM_REWRITE_TAC [];
-    DISJ2_TAC THEN
-    MP_TAC (SPECL [`n : num`; `i : num`] bit_nth_width) THEN
-    ASM_REWRITE_TAC []];
-   ALL_TAC] THEN
-  MP_TAC
-    (ISPECL
-       [`\i. bit_nth m i /\ bit_nth n i`;
-        `interval 0 (MIN (bit_width m) (bit_width n))`;
-        `i : num`]
-       nth_map) THEN
-  ASM_REWRITE_TAC [length_interval] THEN
-  DISCH_THEN SUBST1_TAC THEN
-  MP_TAC
-    (SPECL
-       [`0`; `MIN (bit_width m) (bit_width n)`; `i : num`]
-       nth_interval) THEN
-  ASM_REWRITE_TAC [ZERO_ADD] THEN
-  DISCH_THEN SUBST1_TAC THEN
-  REFL_TAC);;
-
-export_thm bit_nth_and;;
-
-let bit_and_refl = prove
- (`!n. bit_and n n = n`,
-  REPEAT GEN_TAC THEN
-  MATCH_MP_TAC bit_nth_eq THEN
-  GEN_TAC THEN
-  REWRITE_TAC [bit_nth_and]);;
-
-export_thm bit_and_refl;;
-
-let bit_and_comm = prove
- (`!m n. bit_and m n = bit_and n m`,
-  REPEAT GEN_TAC THEN
-  MATCH_MP_TAC bit_nth_eq THEN
-  GEN_TAC THEN
-  REWRITE_TAC [bit_nth_and] THEN
-  MATCH_ACCEPT_TAC CONJ_SYM);;
-
-export_thm bit_and_comm;;
-
-let zero_bit_and = prove
- (`!n. bit_and 0 n = 0`,
-  GEN_TAC THEN
-  MATCH_MP_TAC bit_nth_eq THEN
-  REWRITE_TAC [zero_bit_nth; bit_nth_and]);;
-
-export_thm zero_bit_and;;
-
-let bit_and_zero = prove
- (`!n. bit_and n 0 = 0`,
-  ONCE_REWRITE_TAC [bit_and_comm] THEN
-  ACCEPT_TAC zero_bit_and);;
-
-export_thm bit_and_zero;;
-
-let bit_and_cons = prove
- (`!h1 h2 t1 t2.
-     bit_and (bit_cons h1 t1) (bit_cons h2 t2) =
-     bit_cons (h1 /\ h2) (bit_and t1 t2)`,
-  REPEAT GEN_TAC THEN
-  MATCH_MP_TAC bit_nth_eq THEN
-  X_GEN_TAC `i : num` THEN
-  REWRITE_TAC [bit_nth_and] THEN
-  MP_TAC (SPEC `i : num` num_CASES) THEN
-  DISCH_THEN
-    (DISJ_CASES_THEN2 SUBST_VAR_TAC
-       (X_CHOOSE_THEN `n : num` SUBST_VAR_TAC)) THENL
-  [REWRITE_TAC [bit_nth_zero; bit_hd_cons];
-   REWRITE_TAC [bit_nth_suc; bit_tl_cons; bit_nth_and]]);;
-
-export_thm bit_and_cons;;
-
-let bit_and_le1 = prove
- (`!m n. bit_and m n <= m`,
+let bit_or_and = prove
+ (`!m n. bit_or m n + bit_and m n = m + n`,
   MATCH_MP_TAC bit_cons_induction THEN
-  REWRITE_TAC [zero_bit_and; LE_0] THEN
+  REWRITE_TAC [zero_bit_or; zero_bit_and; ZERO_ADD; ADD_0] THEN
   X_GEN_TAC `h1 : bool` THEN
   X_GEN_TAC `t1 : num` THEN
   STRIP_TAC THEN
   MATCH_MP_TAC bit_cons_induction THEN
-  REWRITE_TAC [bit_and_zero; LE_0] THEN
+  REWRITE_TAC [bit_or_zero; bit_and_zero; ADD_0] THEN
   X_GEN_TAC `h2 : bool` THEN
   X_GEN_TAC `t2 : num` THEN
   DISCH_THEN (K ALL_TAC) THEN
-  REWRITE_TAC [bit_and_cons; bit_cons_le] THEN
-  POP_ASSUM (STRIP_ASSUME_TAC o REWRITE_RULE [LE_LT] o SPEC `t2 : num`) THENL
-  [ASM_REWRITE_TAC [];
+  REWRITE_TAC [bit_or_cons; bit_and_cons] THEN
+  REWRITE_TAC [bit_cons_def] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC
+    `(bit_to_num (h1 \/ h2) + bit_to_num (h1 /\ h2)) +
+     2 * (bit_or t1 t2 + bit_and t1 t2)` THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [LEFT_ADD_DISTRIB; ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
    ALL_TAC] THEN
-  DISJ2_TAC THEN
-  ASM_REWRITE_TAC [bit_to_num_def] THEN
-  BOOL_CASES_TAC `h2 : bool` THEN
-  REWRITE_TAC [LE_REFL; LE_0]);;
+  POP_ASSUM (SUBST1_TAC o SPEC `t2 : num`) THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC `(bit_to_num h1 + bit_to_num h2) + 2 * (t1 + t2)` THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [REWRITE_TAC [LEFT_ADD_DISTRIB; ADD_ASSOC; EQ_ADD_RCANCEL] THEN
+   REWRITE_TAC [GSYM ADD_ASSOC; EQ_ADD_LCANCEL] THEN
+   MATCH_ACCEPT_TAC ADD_SYM;
+   ALL_TAC] THEN
+  REWRITE_TAC [EQ_ADD_RCANCEL] THEN
+  BOOL_CASES_TAC `h1 : bool` THEN
+  REWRITE_TAC [bit_to_num_true; bit_to_num_false; ADD_0; ZERO_ADD]);;
 
-export_thm bit_and_le1;;
-
-let bit_and_le2 = prove
- (`!m n. bit_and m n <= n`,
-  REPEAT GEN_TAC THEN
-  ONCE_REWRITE_TAC [bit_and_comm] THEN
-  MATCH_ACCEPT_TAC bit_and_le1);;
-
-export_thm bit_and_le2;;
-
-let bit_and_min = prove
- (`!m n. bit_and m n <= MIN m n`,
-  REWRITE_TAC [LE_MIN; bit_and_le1; bit_and_le2]);;
-
-export_thm bit_and_min;;
-
-(***
-let bit_or_and = prove
- (`!m n. bit_or m n + bit_and m n = m + n`,
-  MATCH_MP_TAC bit_cons_induction
-***)
+export_thm bit_or_and;;
 
 let random_uniform_src = prove
  (`!n.

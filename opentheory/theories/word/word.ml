@@ -147,8 +147,8 @@ let is_word_list_def = new_axiom
 
 let word_and_def = new_definition
   `!w1 w2.
-     word_and w1 w2 =
-     list_to_word (zipwith ( /\ ) (word_to_list w1) (word_to_list w2))`;;
+      word_and w1 w2 =
+      num_to_word (bit_and (word_to_num w1) (word_to_num w2))`;;
 
 (*PARAMETRIC
 new_constant ("word_and", `:word -> word -> word`);;
@@ -159,14 +159,14 @@ export_thm word_and_def;;
 (*PARAMETRIC
 let word_and_def = new_axiom
   `!w1 w2.
-     word_and w1 w2 =
-     list_to_word (zipwith ( /\ ) (word_to_list w1) (word_to_list w2))`;;
+      word_and w1 w2 =
+      num_to_word (bit_and (word_to_num w1) (word_to_num w2))`;;
 *)
 
 let word_or_def = new_definition
   `!w1 w2.
-     word_or w1 w2 =
-     list_to_word (zipwith ( \/ ) (word_to_list w1) (word_to_list w2))`;;
+      word_or w1 w2 =
+      num_to_word (bit_or (word_to_num w1) (word_to_num w2))`;;
 
 (*PARAMETRIC
 new_constant ("word_or", `:word -> word -> word`);;
@@ -177,8 +177,8 @@ export_thm word_or_def;;
 (*PARAMETRIC
 let word_or_def = new_axiom
   `!w1 w2.
-     word_or w1 w2 =
-     list_to_word (zipwith ( \/ ) (word_to_list w1) (word_to_list w2))`;;
+      word_or w1 w2 =
+      num_to_word (bit_or (word_to_num w1) (word_to_num w2))`;;
 *)
 
 let word_not_def = new_definition
@@ -426,21 +426,11 @@ let list_to_word_bit = new_axiom
 let word_bit_and = prove
  (`!k w1 w2. word_bit (word_and w1 w2) k <=> word_bit w1 k /\ word_bit w2 k`,
   REPEAT GEN_TAC THEN
-  CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
-  REWRITE_TAC [word_and_def; list_to_word_bit] THEN
-  MP_TAC
-    (ISPECL
-       [`(/\)`; `word_to_list w1`; `word_to_list w2`; `word_width`]
-       length_zipwith) THEN
-  REWRITE_TAC [length_word_to_list] THEN
-  DISCH_THEN SUBST1_TAC THEN
-  REVERSE_TAC (ASM_CASES_TAC `k < word_width`) THENL
-  [ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  ASM_REWRITE_TAC [] THEN
-  MATCH_MP_TAC nth_zipwith THEN
-  EXISTS_TAC `word_width` THEN
-  ASM_REWRITE_TAC [length_word_to_list]);;
+  (CONV_TAC o RAND_CONV o LAND_CONV o LAND_CONV o REWR_CONV)
+    (GSYM word_to_num_to_word) THEN
+  REWRITE_TAC
+    [word_bit_def; word_and_def; num_to_word_to_num_bit_bound;
+     bit_nth_bound; bit_nth_and; CONJ_ASSOC]);;
 
 export_thm word_bit_and;;
 
@@ -449,30 +439,62 @@ let word_bit_and = new_axiom
   `!k w1 w2. word_bit (word_and w1 w2) k <=> word_bit w1 k /\ word_bit w2 k`;;
 *)
 
+let word_and_list = prove
+ (`!w1 w2.
+     word_and w1 w2 =
+     list_to_word (zipwith ( /\ ) (word_to_list w1) (word_to_list w2))`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (LAND_CONV (REWR_CONV (GSYM word_to_num_to_word))) THEN
+  REWRITE_TAC
+    [word_and_def; word_to_list_def; GSYM num_to_bitvec_bit_and;
+     list_to_word_def; num_to_word_to_num_bit_bound;
+     num_to_bitvec_to_num]);;
+
+export_thm word_and_list;;
+
+(*PARAMETRIC
+let word_and_list = new_axiom
+  `!w1 w2.
+     word_and w1 w2 =
+     list_to_word (zipwith ( /\ ) (word_to_list w1) (word_to_list w2))`;;
+*)
+
 let word_bit_or = prove
  (`!k w1 w2. word_bit (word_or w1 w2) k <=> word_bit w1 k \/ word_bit w2 k`,
   REPEAT GEN_TAC THEN
-  CONV_TAC (RAND_CONV (ONCE_REWRITE_CONV [GSYM word_to_list_to_word])) THEN
-  REWRITE_TAC [word_or_def; list_to_word_bit] THEN
-  MP_TAC
-    (ISPECL
-       [`(\/)`; `word_to_list w1`; `word_to_list w2`; `word_width`]
-       length_zipwith) THEN
-  REWRITE_TAC [length_word_to_list] THEN
-  DISCH_THEN SUBST1_TAC THEN
-  REVERSE_TAC (ASM_CASES_TAC `k < word_width`) THENL
-  [ASM_REWRITE_TAC [];
-   ALL_TAC] THEN
-  ASM_REWRITE_TAC [] THEN
-  MATCH_MP_TAC nth_zipwith THEN
-  EXISTS_TAC `word_width` THEN
-  ASM_REWRITE_TAC [length_word_to_list]);;
+  (CONV_TAC o RAND_CONV o LAND_CONV o LAND_CONV o REWR_CONV)
+    (GSYM word_to_num_to_word) THEN
+  (CONV_TAC o RAND_CONV o RAND_CONV o LAND_CONV o REWR_CONV)
+    (GSYM word_to_num_to_word) THEN
+  REWRITE_TAC
+    [word_bit_def; word_or_def; num_to_word_to_num_bit_bound;
+     bit_nth_bound; bit_nth_or; LEFT_OR_DISTRIB]);;
 
 export_thm word_bit_or;;
 
 (*PARAMETRIC
 let word_bit_or = new_axiom
   `!k w1 w2. word_bit (word_or w1 w2) k <=> word_bit w1 k \/ word_bit w2 k`;;
+*)
+
+let word_or_list = prove
+ (`!w1 w2.
+     word_or w1 w2 =
+     list_to_word (zipwith ( \/ ) (word_to_list w1) (word_to_list w2))`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (LAND_CONV (REWR_CONV (GSYM word_to_num_to_word))) THEN
+  REWRITE_TAC
+    [word_or_def; word_to_list_def; GSYM num_to_bitvec_bit_or;
+     list_to_word_def; num_to_word_to_num_bit_bound;
+     num_to_bitvec_to_num]);;
+
+export_thm word_or_list;;
+
+(*PARAMETRIC
+let word_or_list = new_axiom
+  `!w1 w2.
+     word_or w1 w2 =
+     list_to_word (zipwith ( \/ ) (word_to_list w1) (word_to_list w2))`;;
 *)
 
 let word_bit_not = prove
@@ -809,7 +831,7 @@ let numeral_to_word_list_conv =
   list_to_word_conv;;
 
 let word_and_list_conv =
-  let th = SPECL [`list_to_word l1`; `list_to_word l2`] word_and_def in
+  let th = SPECL [`list_to_word l1`; `list_to_word l2`] word_and_list in
   REWR_CONV th THENC
   RAND_CONV
     (LAND_CONV list_to_word_to_list_conv THENC
@@ -817,7 +839,7 @@ let word_and_list_conv =
      zipwith_conv and_simp_conv);;
 
 let word_or_list_conv =
-  let th = SPECL [`list_to_word l1`; `list_to_word l2`] word_or_def in
+  let th = SPECL [`list_to_word l1`; `list_to_word l2`] word_or_list in
   REWR_CONV th THENC
   RAND_CONV
     (LAND_CONV list_to_word_to_list_conv THENC
