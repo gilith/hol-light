@@ -942,7 +942,10 @@ let parser_multibyte_utf8_encode_two_byte = prove
        (byte_and (byte_or (num_to_byte 192) (num_to_byte (bit_shr n 6)))
           (num_to_byte 31)) =
      bit_shr n 6` SUBST1_TAC THENL
-  [***
+  [REWRITE_TAC
+     [byte_and_def; byte_or_def; num_to_byte_to_num_bit_bound;
+      bit_bound_and; bit_bound_or; bit_bound_bound]
+   ***bit_and_ones
 
 export_thm parser_multibyte_utf8_encode_two_byte;;
 

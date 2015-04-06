@@ -2139,6 +2139,17 @@ let bit_tl_and = prove
 
 export_thm bit_tl_and;;
 
+let bit_bound_and = prove
+ (`!m n k. bit_bound (bit_and m n) k = bit_and (bit_bound m k) (bit_bound n k)`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC bit_nth_eq THEN
+  X_GEN_TAC `i : num` THEN
+  REWRITE_TAC [bit_nth_and; bit_nth_bound] THEN
+  ASM_CASES_TAC `i < (k : num)` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bit_bound_and;;
+
 let num_to_bitvec_bit_and = prove
  (`!m n k.
      num_to_bitvec (bit_and m n) k =
@@ -2165,6 +2176,23 @@ let num_to_bitvec_bit_and = prove
   ASM_REWRITE_TAC [CONS_11; bit_hd_and; bit_tl_and]);;
 
 export_thm num_to_bitvec_bit_and;;
+
+let bit_and_ones = prove
+ (`!n k. bit_and n (2 EXP k - 1) = bit_bound n k`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC bit_nth_eq THEN
+  X_GEN_TAC `i : num` THEN
+  REWRITE_TAC
+    [GSYM bits_to_num_replicate_true; bit_nth_and; bit_nth_bound;
+     bit_nth_bits_to_num; LENGTH_REPLICATE] THEN
+  BOOL_CASES_TAC `bit_nth n i` THEN
+  REWRITE_TAC [] THEN
+  ASM_CASES_TAC `i < (k : num)` THEN
+  ASM_REWRITE_TAC [] THEN
+  MP_TAC (ISPECL [`T`; `k : num`; `i : num`] nth_replicate) THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bit_and_ones;;
 
 let bit_nth_or = prove
  (`!m n i. bit_nth (bit_or m n) i <=> bit_nth m i \/ bit_nth n i`,
@@ -2306,6 +2334,17 @@ let bit_tl_or = prove
   REWRITE_TAC [GSYM bit_nth_suc; bit_nth_or]);;
 
 export_thm bit_tl_or;;
+
+let bit_bound_or = prove
+ (`!m n k. bit_bound (bit_or m n) k = bit_or (bit_bound m k) (bit_bound n k)`,
+  REPEAT GEN_TAC THEN
+  MATCH_MP_TAC bit_nth_eq THEN
+  X_GEN_TAC `i : num` THEN
+  REWRITE_TAC [bit_nth_or; bit_nth_bound] THEN
+  ASM_CASES_TAC `i < (k : num)` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm bit_bound_or;;
 
 let num_to_bitvec_bit_or = prove
  (`!m n k.
