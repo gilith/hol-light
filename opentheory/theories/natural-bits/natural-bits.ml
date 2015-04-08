@@ -1366,6 +1366,25 @@ let bit_width_shl_le = prove
 
 export_thm bit_width_shl_le;;
 
+let bit_width_shr_le = prove
+ (`!n k m. bit_width n <= m + k ==> bit_width (bit_shr n k) <= m`,
+  REPEAT STRIP_TAC THEN
+  ASM_CASES_TAC `bit_shr n k = 0` THENL
+  [ASM_REWRITE_TAC [bit_width_zero; LE_0];
+   ALL_TAC] THEN
+  CONV_TAC (REWR_CONV (GSYM (SPEC `k : num` LE_ADD_RCANCEL))) THEN
+  MP_TAC (SPECL [`bit_shr n k`; `k : num`] bit_width_shl) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC `bit_width n` THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC bit_width_mono THEN
+  CONV_TAC (REWR_CONV (GSYM (SPEC `bit_bound n k` LE_ADD_LCANCEL))) THEN
+  REWRITE_TAC [bit_bound; LE_ADDR]);;
+
+export_thm bit_width_shr_le;;
+
 let bit_width_max = prove
   (`!m n. bit_width (MAX m n) = MAX (bit_width m) (bit_width n)`,
    REPEAT GEN_TAC THEN
@@ -1963,6 +1982,38 @@ let bit_cons_le = prove
    ASM_REWRITE_TAC []]);;
 
 export_thm bit_cons_le;;
+
+let bit_shr_shl = prove
+ (`!n k. bit_shr (bit_shl n k) k = n`,
+  GEN_TAC THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [bit_shl_zero; bit_shr_zero];
+   ASM_REWRITE_TAC [bit_shr_suc'; bit_shl_suc; bit_tl_cons]]);;
+
+export_thm bit_shr_shl;;
+
+let bit_nth_shl = prove
+ (`!n k i. bit_nth (bit_shl n k) i <=> k <= i /\ bit_nth n (i - k)`,
+  REPEAT GEN_TAC THEN
+  ASM_CASES_TAC `k <= (i : num)` THENL
+  [POP_ASSUM
+     (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+      REWRITE_RULE [LE_EXISTS]) THEN
+   REWRITE_TAC [ADD_SUB2; LE_ADD; bit_nth_add; bit_shr_shl];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  POP_ASSUM
+    (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+     REWRITE_RULE [LT_EXISTS; NOT_LE]) THEN
+  REWRITE_TAC [ADD_SUC] THEN
+  SPEC_TAC (`i : num`, `i : num`) THEN
+  INDUCT_TAC THENL
+  [REWRITE_TAC [bit_nth_zero; bit_shl_suc; bit_hd_cons];
+   ALL_TAC] THEN
+  REWRITE_TAC [bit_nth_suc; bit_tl_cons; bit_shl_suc] THEN
+  ASM_REWRITE_TAC [SUC_ADD]);;
+
+export_thm bit_nth_shl;;
 
 let zero_bit_cmp = prove
  (`!q n. bit_cmp q 0 n <=> q \/ ~(n = 0)`,
