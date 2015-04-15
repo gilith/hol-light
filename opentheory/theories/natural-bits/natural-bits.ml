@@ -1367,7 +1367,7 @@ let bit_width_shl_le = prove
 export_thm bit_width_shl_le;;
 
 let bit_width_shr_le = prove
- (`!n k m. bit_width n <= m + k ==> bit_width (bit_shr n k) <= m`,
+ (`!n j k. bit_width n <= j + k ==> bit_width (bit_shr n k) <= j`,
   REPEAT STRIP_TAC THEN
   ASM_CASES_TAC `bit_shr n k = 0` THENL
   [ASM_REWRITE_TAC [bit_width_zero; LE_0];
@@ -2015,6 +2015,43 @@ let bit_nth_shl = prove
 
 export_thm bit_nth_shl;;
 
+let add_bit_width = prove
+ (`!m n j k.
+     bit_width (bit_bound m k + bit_shl n k) <= j + k <=>
+     bit_width n <= j`,
+  REPEAT GEN_TAC THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   (CONV_TAC o LAND_CONV o RAND_CONV o REWR_CONV)
+     (SYM (SPECL [`n : num`; `k : num`] bit_shr_shl)) THEN
+   MATCH_MP_TAC bit_width_shr_le THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `bit_width (bit_bound m k + bit_shl n k)` THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC bit_width_mono THEN
+   REWRITE_TAC [LE_ADDR];
+   ALL_TAC] THEN
+  STRIP_TAC THEN
+  (CONV_TAC o RAND_CONV o REWR_CONV) ADD_SYM THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC `LENGTH (APPEND (num_to_bitvec m k) (num_to_bits n))` THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [ASM_REWRITE_TAC
+     [LENGTH_APPEND; length_num_to_bitvec; LE_ADD_LCANCEL; length_num_to_bits];
+   ALL_TAC] THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC
+    `bit_width (bits_to_num (APPEND (num_to_bitvec m k) (num_to_bits n)))` THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [MATCH_ACCEPT_TAC bit_width_bits_to_num;
+   ALL_TAC] THEN
+  MATCH_MP_TAC bit_width_mono THEN
+  REWRITE_TAC
+    [bits_to_num_append; num_to_bitvec_to_num; num_to_bits_to_num;
+     length_num_to_bitvec; LE_REFL]);;
+
+export_thm add_bit_width;;
+
 let zero_bit_cmp = prove
  (`!q n. bit_cmp q 0 n <=> q \/ ~(n = 0)`,
   REPEAT GEN_TAC THEN
@@ -2583,5 +2620,73 @@ let numeral_to_bits_conv =
         (bit0_conv ORELSEC bit1_conv))) tm in
   numeral_conv THENC
   bits_conv;;
+
+let bit_nth_numeral_conv =
+  let init_th = prove
+    (`!l i.
+        i < LENGTH l /\ nth l i <=>
+        0 <= i /\ i - 0 < LENGTH l /\ nth l (i - 0)`,
+     REWRITE_TAC [LE_0; SUB_0]) in
+  let nil_th = prove
+    (`!i j. j <= i /\ i - j < LENGTH ([] : bool list) /\ nth [] (i - j) <=> F`,
+     REWRITE_TAC [LENGTH; LT_ZERO]) in
+  let cons_th = prove
+    (`!h t i j.
+        j <= i /\ i - j < LENGTH (CONS h t) /\ nth (CONS h t) (i - j) <=>
+        (h /\ i = j) \/
+        (\n. n <= i /\ i - n < LENGTH t /\ nth t (i - n)) (SUC j)`,
+     REPEAT GEN_TAC THEN
+     (CONV_TAC o LAND_CONV o LAND_CONV o REWR_CONV) LE_LT THEN
+     ASM_CASES_TAC `(i : num) = j` THENL
+     [POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
+      REWRITE_TAC [LT_REFL; SUB_REFL; LENGTH; LT_0; nth_zero] THEN
+      REWRITE_TAC [LE_SUC_LT; LT_REFL];
+      ALL_TAC] THEN
+     ASM_REWRITE_TAC [LE_SUC_LT] THEN
+     REVERSE_TAC (ASM_CASES_TAC `j < (i : num)`) THENL
+     [ASM_REWRITE_TAC [];
+      ALL_TAC] THEN
+     ASM_REWRITE_TAC [] THEN
+     POP_ASSUM
+      (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+       REWRITE_RULE [LT_EXISTS]) THEN
+     REWRITE_TAC [LT_0; ADD_SUB2; LENGTH; LT_SUC] THEN
+     REWRITE_TAC [ADD_SUC; GSYM SUC_ADD; ADD_SUB2] THEN
+     REVERSE_TAC (ASM_CASES_TAC `d < LENGTH (t : bool list)`) THENL
+     [ASM_REWRITE_TAC [];
+      ALL_TAC] THEN
+     ASM_REWRITE_TAC [] THEN
+     MATCH_MP_TAC nth_suc THEN
+     ASM_REWRITE_TAC []) in
+  let cons_false_th = prove
+    (`!t i j.
+        j <= i /\ i - j < LENGTH (CONS F t) /\ nth (CONS F t) (i - j) <=>
+        (\n. n <= i /\ i - n < LENGTH t /\ nth t (i - n)) (SUC j)`,
+     REWRITE_TAC [cons_th]) in
+  let cons_true_th = prove
+    (`!t i j.
+        j <= i /\ i - j < LENGTH (CONS T t) /\ nth (CONS T t) (i - j) <=>
+        i = j \/ (\n. n <= i /\ i - n < LENGTH t /\ nth t (i - n)) (SUC j)`,
+     REWRITE_TAC [cons_th]) in
+  let init_conv = REWR_CONV init_th in
+  let nil_conv = REWR_CONV nil_th in
+  let cons_true_conv = REWR_CONV cons_true_th in
+  let cons_false_conv = REWR_CONV cons_false_th in
+  let or_false_conv = REWR_CONV (TAUT `x \/ F <=> x`) in
+  let rec reduce_conv tm =
+      (nil_conv ORELSEC
+       (cons_true_conv THENC
+        RAND_CONV reduce_cons_conv THENC
+        TRY_CONV or_false_conv) ORELSEC
+       (cons_false_conv THENC
+        reduce_cons_conv)) tm
+  and reduce_cons_conv tm =
+      (RAND_CONV NUM_REDUCE_CONV THENC
+       BETA_CONV THENC
+       reduce_conv) tm in
+  LAND_CONV numeral_to_bits_conv THENC
+  REWR_CONV bit_nth_bits_to_num THENC
+  init_conv THENC
+  reduce_conv;;
 
 logfile_end ();;

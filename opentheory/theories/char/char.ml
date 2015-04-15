@@ -1302,7 +1302,8 @@ let parser_unicode_utf8_strong_inverse = prove
   REVERSE_TAC COND_CASES_TAC THENL
   [REWRITE_TAC [case_option_def; option_distinct];
    ALL_TAC] THEN
-  REVERSE_TAC COND_CASES_TAC *** THENL
+  REVERSE_TAC COND_CASES_TAC
+*** THENL
   [REWRITE_TAC
      [parser_two_byte_utf8_def; case_option_def; apply_parser_filter;
       parser_foldn_def; apply_parser_fold] THEN
@@ -1341,8 +1342,72 @@ let parser_unicode_utf8_strong_inverse = prove
    REVERSE_TAC COND_CASES_TAC THENL
    [REWRITE_TAC [case_option_def; option_distinct];
     ALL_TAC] THEN
-   REWRITE_TAC [case_option_def; option_inj; PAIR_EQ]
-   ***
+   REWRITE_TAC [case_option_def; option_inj; PAIR_EQ] THEN
+   DISCH_THEN (CONJUNCTS_THEN (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [encode_unicode_utf8_def; LET_DEF; LET_END_DEF] THEN
+   POP_ASSUM (MP_TAC o REWRITE_RULE [dest_mk_unicode]) THEN
+   DISCH_THEN SUBST1_TAC THEN
+   COND_CASES_TAC THENL
+   [SUBGOAL_THEN `F` CONTR_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    ASM_REWRITE_TAC [NOT_LT];
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REVERSE_TAC COND_CASES_TAC THENL
+   [SUBGOAL_THEN `F` CONTR_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC
+      [SYM (NUM_REDUCE_CONV `2 EXP (5 + 6)`); GSYM bit_width_upper_bound;
+       add_bit_width; bit_width_bound];
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REWRITE_TAC
+     [encode_two_byte_utf8_def; LET_DEF; LET_END_DEF; add_bit_shr;
+      add_bit_bound; bit_bound_bound; bit_shr_bound; ZERO_ADD;
+      append_pstream_def; pstream_inj] THEN
+   CONJ_TAC
+*** THENL
+   [POP_ASSUM (K ALL_TAC) THEN
+    MATCH_MP_TAC byte_eq_bits THEN
+    X_GEN_TAC `i : num` THEN
+    POP_ASSUM MP_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC
+      [byte_width_def; byte_bit_def; byte_or_def;
+       num_to_byte_to_num_bit_bound; bit_nth_bound; bit_bound_bound_min;
+       bit_nth_or; NUM_REDUCE_CONV `MIN 5 8`] THEN
+    REPEAT STRIP_TAC THEN
+    ASM_REWRITE_TAC [bit_nth_numeral_conv `bit_nth 192 i`] THEN
+***
+    (REVERSE_TAC o POP_ASSUM)
+      (STRIP_ASSUME_TAC o
+       REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 7`); LT_SUC_LE; LE_LT])
+
+    ASM_CASES_TAC `i < 5` THENL
+    [ASM_REWRITE_TAC [] THEN
+     ASM_CASES_TAC `i = 6` THENL
+     [
+
+    REWRITE_TAC
+      [GSYM bit_and_ones; GSYM byte_and_def]
+byte_width_def; byte_bit_def; byte_or_def;
+       num_to_byte_to_num_bit_bound]
+
+    MP_TAC (SPEC `b : byte` byte_list_cases) THEN
+    DISCH_THEN
+      (X_CHOOSE_THEN `x0 : bool`
+        (X_CHOOSE_THEN `x1 : bool`
+          (X_CHOOSE_THEN `x2 : bool`
+            (X_CHOOSE_THEN `x3 : bool`
+              (X_CHOOSE_THEN `x4 : bool`
+                (X_CHOOSE_THEN `x5 : bool`
+                  (X_CHOOSE_THEN `x6 : bool`
+                    (X_CHOOSE_THEN `x7 : bool`
+                       SUBST_VAR_TAC)))))))) THEN
+    bit_blast_tac THEN
+    REWRITE_TAC [];
 
 
   REWRITE_TAC [apply_parser_def] THEN
