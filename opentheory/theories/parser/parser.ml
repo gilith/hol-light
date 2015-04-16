@@ -380,6 +380,25 @@ let append_pstream_assoc = prove
 
 export_thm append_pstream_assoc;;
 
+let list_to_pstream_nil = prove
+ (`list_to_pstream ([] : A list) = EofPstream`,
+  REWRITE_TAC [list_to_pstream_def; append_pstream_nil]);;
+
+export_thm list_to_pstream_nil;;
+
+let list_to_pstream_cons = prove
+ (`!(h : A) t. list_to_pstream (CONS h t) = ConsPstream h (list_to_pstream t)`,
+  REWRITE_TAC [list_to_pstream_def; append_pstream_cons]);;
+
+export_thm list_to_pstream_cons;;
+
+let list_to_pstream_append = prove
+ (`!l1 l2 : A list.
+     list_to_pstream (APPEND l1 l2) = append_pstream l1 (list_to_pstream l2)`,
+  REWRITE_TAC [list_to_pstream_def; append_pstream_assoc]);;
+
+export_thm list_to_pstream_append;;
+
 let list_to_pstream_to_list = prove
  (`!l : A list. pstream_to_list (list_to_pstream l) = (l,F)`,
   REWRITE_TAC [list_to_pstream_def] THEN
@@ -1659,6 +1678,25 @@ let parse_def =
 (* ------------------------------------------------------------------------- *)
 
 logfile "parser-all-thm";;
+
+let parse_apply = prove
+ (`!(p : (A,B) parser) xs.
+     parse p xs =
+     case_option
+       (case_pstream ErrorPstream EofPstream (\y ys. ErrorPstream) xs)
+       (\ (y,ys). ConsPstream y (parse p ys))
+       (apply_parser p xs)`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPEC `xs : A pstream` pstream_cases) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST_VAR_TAC
+      (DISJ_CASES_THEN2 SUBST_VAR_TAC
+        (X_CHOOSE_THEN `x : A`
+          (X_CHOOSE_THEN `xt : A pstream` SUBST_VAR_TAC)))) THEN
+  REWRITE_TAC
+    [parse_def; apply_parser_def; case_option_def; case_pstream_def]);;
+
+export_thm parse_apply;;
 
 let parse_map = prove
  (`!(p : (A,B) parser) (f : B -> C) xs.

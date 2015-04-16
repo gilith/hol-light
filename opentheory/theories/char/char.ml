@@ -1242,7 +1242,6 @@ let parser_unicode_utf8_inverse = prove
 
 export_thm parser_unicode_utf8_inverse;;
 
-(***
 let parser_unicode_utf8_strong_inverse = prove
  (`parser_strong_inverse parser_unicode_utf8 encode_unicode_utf8`,
   REWRITE_TAC [parser_strong_inverse_def; parser_unicode_utf8_inverse] THEN
@@ -1310,7 +1309,14 @@ let parser_unicode_utf8_strong_inverse = prove
      `byte_to_num (byte_and b (num_to_byte 31)) =
       bit_bound (byte_to_num b) 5`
      SUBST1_TAC THENL
-   [CHEAT_TAC;
+   [REWRITE_TAC
+      [byte_and_def; num_to_byte_to_num_bit_bound; bit_bound_and;
+       bit_bound_bound; bit_bound_byte_to_num] THEN
+    (CONV_TAC o RAND_CONV o REWR_CONV) (GSYM bit_and_ones) THEN
+    AP_TERM_TAC THEN
+    NUM_REDUCE_TAC THEN
+    REWRITE_TAC [bit_bound_id; byte_width_def; bit_width_upper_bound] THEN
+    NUM_REDUCE_TAC;
     ALL_TAC] THEN
    MP_TAC (ISPEC `zs : byte pstream` pstream_cases) THEN
    DISCH_THEN
@@ -1328,7 +1334,14 @@ let parser_unicode_utf8_strong_inverse = prove
      `byte_to_num (byte_and b1 (num_to_byte 63)) =
       bit_bound (byte_to_num b1) 6`
      SUBST1_TAC THENL
-   [CHEAT_TAC;
+   [REWRITE_TAC
+      [byte_and_def; num_to_byte_to_num_bit_bound; bit_bound_and;
+       bit_bound_bound; bit_bound_byte_to_num] THEN
+    (CONV_TAC o RAND_CONV o REWR_CONV) (GSYM bit_and_ones) THEN
+    AP_TERM_TAC THEN
+    NUM_REDUCE_TAC THEN
+    REWRITE_TAC [bit_bound_id; byte_width_def; bit_width_upper_bound] THEN
+    NUM_REDUCE_TAC;
     ALL_TAC] THEN
    REVERSE_TAC COND_CASES_TAC THENL
    [REWRITE_TAC [map_option_def; case_option_def; option_distinct];
@@ -1445,501 +1458,619 @@ let parser_unicode_utf8_strong_inverse = prove
      ALL_TAC] THEN
     ASM_REWRITE_TAC []];
    ALL_TAC] THEN
-***
-
-    REWRITE_TAC
-      [GSYM bit_and_ones; GSYM byte_and_def]
-byte_width_def; byte_bit_def; byte_or_def;
-       num_to_byte_to_num_bit_bound]
-
-    MP_TAC (SPEC `b : byte` byte_list_cases) THEN
-    DISCH_THEN
-      (X_CHOOSE_THEN `x0 : bool`
-        (X_CHOOSE_THEN `x1 : bool`
-          (X_CHOOSE_THEN `x2 : bool`
-            (X_CHOOSE_THEN `x3 : bool`
-              (X_CHOOSE_THEN `x4 : bool`
-                (X_CHOOSE_THEN `x5 : bool`
-                  (X_CHOOSE_THEN `x6 : bool`
-                    (X_CHOOSE_THEN `x7 : bool`
-                       SUBST_VAR_TAC)))))))) THEN
-    bit_blast_tac THEN
-    REWRITE_TAC [];
-
-
-  REWRITE_TAC [apply_parser_def] THEN
-  MP_TAC (SPEC `b0 : byte` byte_list_cases) THEN
-  DISCH_THEN
-    (X_CHOOSE_THEN `b00 : bool`
-      (X_CHOOSE_THEN `b01 : bool`
-        (X_CHOOSE_THEN `b02 : bool`
-          (X_CHOOSE_THEN `b03 : bool`
-            (X_CHOOSE_THEN `b04 : bool`
-              (X_CHOOSE_THEN `b05 : bool`
-                (X_CHOOSE_THEN `b06 : bool`
-                  (X_CHOOSE_THEN `b07 : bool`
-                     SUBST_VAR_TAC)))))))) THEN
-  bit_blast_tac THEN
-  BOOL_CASES_TAC `b07 : bool` THENL
-  [REWRITE_TAC [] THEN
-   BOOL_CASES_TAC `b06 : bool` THENL
-   [REWRITE_TAC [] THEN
-    BOOL_CASES_TAC `b05 : bool` THENL
-    [REWRITE_TAC [] THEN
-     BOOL_CASES_TAC `b04 : bool` THENL
-     [REWRITE_TAC [] THEN
-      BOOL_CASES_TAC `b03 : bool` THENL
-      [REWRITE_TAC [option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC
-        [parse_parse_partial_map; parse_parse_some; parse_cont3_def;
-         parse_parse_pair; parse_cont2_def; parse_cont_def;
-         case_option_def; case_pstream_def; is_cont_def] THEN
-      MP_TAC (ISPEC `s0 : byte pstream` pstream_cases) THEN
-      DISCH_THEN
-        (DISJ_CASES_THEN2 SUBST_VAR_TAC
-          (DISJ_CASES_THEN2 SUBST_VAR_TAC
-             (X_CHOOSE_THEN `b1 : byte`
-               (X_CHOOSE_THEN `s1 : byte pstream` SUBST_VAR_TAC)))) THENL
-      [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-       ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [case_pstream_def] THEN
-      MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
-      DISCH_THEN
-        (X_CHOOSE_THEN `b10 : bool`
-          (X_CHOOSE_THEN `b11 : bool`
-            (X_CHOOSE_THEN `b12 : bool`
-              (X_CHOOSE_THEN `b13 : bool`
-                (X_CHOOSE_THEN `b14 : bool`
-                  (X_CHOOSE_THEN `b15 : bool`
-                    (X_CHOOSE_THEN `b16 : bool`
-                      (X_CHOOSE_THEN `b17 : bool`
-                         SUBST_VAR_TAC)))))))) THEN
-      bit_blast_tac THEN
-      BOOL_CASES_TAC' `b17 : bool` THENL
-      [REWRITE_TAC [case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [] THEN
-      BOOL_CASES_TAC `b16 : bool` THENL
-      [REWRITE_TAC [case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [case_option_def] THEN
-      MP_TAC (ISPEC `s1 : byte pstream` pstream_cases) THEN
-      DISCH_THEN
-        (DISJ_CASES_THEN2 SUBST_VAR_TAC
-          (DISJ_CASES_THEN2 SUBST_VAR_TAC
-             (X_CHOOSE_THEN `b2 : byte`
-               (X_CHOOSE_THEN `s2 : byte pstream` SUBST_VAR_TAC)))) THENL
-      [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-       ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [case_pstream_def] THEN
-      MP_TAC (SPEC `b2 : byte` byte_list_cases) THEN
-      DISCH_THEN
-        (X_CHOOSE_THEN `b20 : bool`
-          (X_CHOOSE_THEN `b21 : bool`
-            (X_CHOOSE_THEN `b22 : bool`
-              (X_CHOOSE_THEN `b23 : bool`
-                (X_CHOOSE_THEN `b24 : bool`
-                  (X_CHOOSE_THEN `b25 : bool`
-                    (X_CHOOSE_THEN `b26 : bool`
-                      (X_CHOOSE_THEN `b27 : bool`
-                         SUBST_VAR_TAC)))))))) THEN
-      bit_blast_tac THEN
-      BOOL_CASES_TAC' `b27 : bool` THENL
-      [REWRITE_TAC [case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [] THEN
-      BOOL_CASES_TAC `b26 : bool` THENL
-      [REWRITE_TAC [case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [case_option_def] THEN
-      MP_TAC (ISPEC `s2 : byte pstream` pstream_cases) THEN
-      DISCH_THEN
-        (DISJ_CASES_THEN2 SUBST_VAR_TAC
-          (DISJ_CASES_THEN2 SUBST_VAR_TAC
-             (X_CHOOSE_THEN `b3 : byte`
-               (X_CHOOSE_THEN `s3 : byte pstream` SUBST_VAR_TAC)))) THENL
-      [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-       ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [case_pstream_def] THEN
-      MP_TAC (SPEC `b3 : byte` byte_list_cases) THEN
-      DISCH_THEN
-        (X_CHOOSE_THEN `b30 : bool`
-          (X_CHOOSE_THEN `b31 : bool`
-            (X_CHOOSE_THEN `b32 : bool`
-              (X_CHOOSE_THEN `b33 : bool`
-                (X_CHOOSE_THEN `b34 : bool`
-                  (X_CHOOSE_THEN `b35 : bool`
-                    (X_CHOOSE_THEN `b36 : bool`
-                      (X_CHOOSE_THEN `b37 : bool`
-                         SUBST_VAR_TAC)))))))) THEN
-      bit_blast_tac THEN
-      BOOL_CASES_TAC' `b37 : bool` THENL
-      [REWRITE_TAC [case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [] THEN
-      BOOL_CASES_TAC `b36 : bool` THENL
-      [REWRITE_TAC [case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [case_option_def] THEN
-      REWRITE_TAC [decode_cont3_def] THEN
-      bit_blast_tac THEN
-      REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-      bit_blast_tac THEN
-      CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
-      ONCE_REWRITE_TAC [COND_RAND] THEN
-      ONCE_REWRITE_TAC [COND_RAND] THEN
-      REWRITE_TAC [case_option_def; option_distinct] THEN
-      MATCH_MP_TAC
-        (TAUT `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d`) THEN
-      STRIP_TAC THEN
-      SUBGOAL_THEN `b02 <=> ~b01 /\ ~b00 /\ ~b15 /\ ~b14`
-        (fun th -> POP_ASSUM (K ALL_TAC) THEN SUBST_VAR_TAC th) THENL
-      [POP_ASSUM MP_TAC THEN
-       BOOL_CASES_TAC `b02 : bool` THEN
-       REWRITE_TAC [DE_MORGAN_THM] THEN
-       STRIP_TAC THEN
-       ASM_REWRITE_TAC [];
-       ALL_TAC] THEN
-      REWRITE_TAC [option_inj; PAIR_EQ] THEN
-      STRIP_TAC THEN
-      POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
-      POP_ASSUM SUBST_VAR_TAC THEN
-      REWRITE_TAC [encoder_def] THEN
-      REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-      KNOW_TAC
-        `!x y f (z : byte pstream).
-           dest_unicode (mk_unicode y) = y /\ x = append_pstream (f y) z ==>
-           x = append_pstream (f (dest_unicode (mk_unicode y))) z` THENL
-      [SIMP_TAC [];
-       ALL_TAC] THEN
-      DISCH_THEN MATCH_MP_TAC THEN
-      REWRITE_TAC [GSYM unicode_rep_abs] THEN
-      KNOW_TAC
-        `!x y z.
-           is_plane_unicode x /\
-           (is_plane_unicode x ==>
-            is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z) ==>
-           is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z` THENL
-      [SIMP_TAC [];
-       ALL_TAC] THEN
-      DISCH_THEN MATCH_MP_TAC THEN
-      CONJ_TAC THENL
-      [REWRITE_TAC [is_plane_unicode_def] THEN
-       bit_blast_tac;
-       ALL_TAC] THEN
-      REWRITE_TAC [is_unicode_def; position_unicode_tybij] THEN
-      DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_unicode_tybij] th]) THEN
-      SUBGOAL_THEN
-        `(list_to_byte
-            [b14; b15; b00; b01; ~b01 /\ ~b00 /\ ~b15 /\ ~b14; F; F; F] =
-          num_to_byte 0) <=> F` ASSUME_TAC THENL
-      [bit_blast_tac THEN
-       TAUT_TAC;
-       ALL_TAC] THEN
-      CONJ_TAC THENL
-      [ASM_REWRITE_TAC [LET_DEF; LET_END_DEF];
-       ALL_TAC] THEN
-      POP_ASSUM SUBST1_TAC THEN
-      REWRITE_TAC [] THEN
-      SPEC_TAC (`~b01 /\ ~b00 /\ ~b15 /\ ~b14`, `b02 : bool`) THEN
-      GEN_TAC THEN
-      bit_blast_tac THEN
-      REWRITE_TAC [encode_cont3_def] THEN
-      bit_blast_tac THEN
-      REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-      bit_blast_tac THEN
-      REWRITE_TAC [append_pstream_def];
-      REWRITE_TAC
-        [parse_parse_partial_map; parse_parse_some; parse_cont3_def;
-         parse_parse_pair; parse_cont2_def; parse_cont_def;
-         case_option_def; case_pstream_def; is_cont_def] THEN
-      MP_TAC (ISPEC `s0 : byte pstream` pstream_cases) THEN
-      DISCH_THEN
-        (DISJ_CASES_THEN2 SUBST_VAR_TAC
-          (DISJ_CASES_THEN2 SUBST_VAR_TAC
-             (X_CHOOSE_THEN `b1 : byte`
-               (X_CHOOSE_THEN `s1 : byte pstream` SUBST_VAR_TAC)))) THENL
-      [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-       ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [case_pstream_def] THEN
-      MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
-      DISCH_THEN
-        (X_CHOOSE_THEN `b10 : bool`
-          (X_CHOOSE_THEN `b11 : bool`
-            (X_CHOOSE_THEN `b12 : bool`
-              (X_CHOOSE_THEN `b13 : bool`
-                (X_CHOOSE_THEN `b14 : bool`
-                  (X_CHOOSE_THEN `b15 : bool`
-                    (X_CHOOSE_THEN `b16 : bool`
-                      (X_CHOOSE_THEN `b17 : bool`
-                         SUBST_VAR_TAC)))))))) THEN
-      bit_blast_tac THEN
-      BOOL_CASES_TAC' `b17 : bool` THENL
-      [REWRITE_TAC [case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [] THEN
-      BOOL_CASES_TAC `b16 : bool` THENL
-      [REWRITE_TAC [case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [case_option_def] THEN
-      MP_TAC (ISPEC `s1 : byte pstream` pstream_cases) THEN
-      DISCH_THEN
-        (DISJ_CASES_THEN2 SUBST_VAR_TAC
-          (DISJ_CASES_THEN2 SUBST_VAR_TAC
-             (X_CHOOSE_THEN `b2 : byte`
-               (X_CHOOSE_THEN `s2 : byte pstream` SUBST_VAR_TAC)))) THENL
-      [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-       ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [case_pstream_def] THEN
-      MP_TAC (SPEC `b2 : byte` byte_list_cases) THEN
-      DISCH_THEN
-        (X_CHOOSE_THEN `b20 : bool`
-          (X_CHOOSE_THEN `b21 : bool`
-            (X_CHOOSE_THEN `b22 : bool`
-              (X_CHOOSE_THEN `b23 : bool`
-                (X_CHOOSE_THEN `b24 : bool`
-                  (X_CHOOSE_THEN `b25 : bool`
-                    (X_CHOOSE_THEN `b26 : bool`
-                      (X_CHOOSE_THEN `b27 : bool`
-                         SUBST_VAR_TAC)))))))) THEN
-      bit_blast_tac THEN
-      BOOL_CASES_TAC' `b27 : bool` THENL
-      [REWRITE_TAC [case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [] THEN
-      BOOL_CASES_TAC `b26 : bool` THENL
-      [REWRITE_TAC [case_option_def; option_distinct];
-       ALL_TAC] THEN
-      REWRITE_TAC [case_option_def] THEN
-      REWRITE_TAC [decode_cont2_def] THEN
-      bit_blast_tac THEN
-      REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-      bit_blast_tac THEN
-      CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
-      ONCE_REWRITE_TAC [COND_RAND] THEN
-      ONCE_REWRITE_TAC [COND_RAND] THEN
-      REWRITE_TAC [case_option_def; option_distinct] THEN
-      MATCH_MP_TAC
-        (TAUT `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d`) THEN
-      STRIP_TAC THEN
-      ONCE_REWRITE_TAC [COND_RAND] THEN
-      ONCE_REWRITE_TAC [COND_RAND] THEN
-      REWRITE_TAC [case_option_def; option_distinct] THEN
-      MATCH_MP_TAC
-        (TAUT `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d`) THEN
-      STRIP_TAC THEN
-      REWRITE_TAC [option_inj; PAIR_EQ] THEN
-      STRIP_TAC THEN
-      POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
-      POP_ASSUM SUBST_VAR_TAC THEN
-      REWRITE_TAC [encoder_def] THEN
-      REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-      KNOW_TAC
-        `!x y f (z : byte pstream).
-           dest_unicode (mk_unicode y) = y /\ x = append_pstream (f y) z ==>
-           x = append_pstream (f (dest_unicode (mk_unicode y))) z` THENL
-      [SIMP_TAC [];
-       ALL_TAC] THEN
-      DISCH_THEN MATCH_MP_TAC THEN
-      REWRITE_TAC [GSYM unicode_rep_abs] THEN
-      KNOW_TAC
-        `!x y z.
-           is_plane_unicode x /\
-           (is_plane_unicode x ==>
-            is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z) ==>
-           is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z` THENL
-      [SIMP_TAC [];
-       ALL_TAC] THEN
-      DISCH_THEN MATCH_MP_TAC THEN
-      CONJ_TAC THENL
-      [REWRITE_TAC [is_plane_unicode_def] THEN
-       bit_blast_tac;
-       ALL_TAC] THEN
-      REWRITE_TAC [is_unicode_def; position_unicode_tybij] THEN
-      DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_unicode_tybij] th]) THEN
-      CONJ_TAC THENL
-      [REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-       DISJ2_TAC THEN
-       bit_blast_tac THEN
-       ASM_TAUT_TAC;
-       ALL_TAC] THEN
-      bit_blast_tac THEN
-      REWRITE_TAC [] THEN
-      bit_blast_tac THEN
-      ONCE_REWRITE_TAC [COND_RAND] THEN
-      ONCE_REWRITE_TAC [COND_RATOR] THEN
-      ONCE_REWRITE_TAC [COND_RAND] THEN
-      MATCH_MP_TAC (TAUT `~X /\ Z ==> (if X then Y else Z)`) THEN
-      CONJ_TAC THENL
-      [ASM_TAUT_TAC;
-       ALL_TAC] THEN
-      ONCE_REWRITE_TAC [COND_RAND] THEN
-      ONCE_REWRITE_TAC [COND_RATOR] THEN
-      ONCE_REWRITE_TAC [COND_RAND] THEN
-      MATCH_MP_TAC (TAUT `~X /\ Z ==> (if X then Y else Z)`) THEN
-      CONJ_TAC THENL
-      [ASM_TAUT_TAC;
-       ALL_TAC] THEN
-      REWRITE_TAC [encode_cont2_def] THEN
-      bit_blast_tac THEN
-      REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-      bit_blast_tac THEN
-      REWRITE_TAC [append_pstream_def]];
-     REWRITE_TAC
-       [parse_parse_partial_map; parse_parse_some; parse_cont3_def;
-        parse_parse_pair; parse_cont2_def; parse_cont_def;
-        case_option_def; case_pstream_def; is_cont_def] THEN
-     MP_TAC (ISPEC `s0 : byte pstream` pstream_cases) THEN
-     DISCH_THEN
+  REVERSE_TAC COND_CASES_TAC THENL
+  [REWRITE_TAC
+     [parser_three_byte_utf8_def; case_option_def; apply_parser_filter;
+      parser_foldn_def; apply_parser_fold] THEN
+   SUBGOAL_THEN
+     `byte_to_num (byte_and b (num_to_byte 15)) =
+      bit_bound (byte_to_num b) 4`
+     SUBST1_TAC THENL
+   [REWRITE_TAC
+      [byte_and_def; num_to_byte_to_num_bit_bound; bit_bound_and;
+       bit_bound_bound; bit_bound_byte_to_num] THEN
+    (CONV_TAC o RAND_CONV o REWR_CONV) (GSYM bit_and_ones) THEN
+    AP_TERM_TAC THEN
+    NUM_REDUCE_TAC THEN
+    REWRITE_TAC [bit_bound_id; byte_width_def; bit_width_upper_bound] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   MP_TAC (ISPEC `zs : byte pstream` pstream_cases) THEN
+   DISCH_THEN
+     (DISJ_CASES_THEN2 SUBST_VAR_TAC
        (DISJ_CASES_THEN2 SUBST_VAR_TAC
-         (DISJ_CASES_THEN2 SUBST_VAR_TAC
-            (X_CHOOSE_THEN `b1 : byte`
-              (X_CHOOSE_THEN `s1 : byte pstream` SUBST_VAR_TAC)))) THENL
-     [ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-      ASM_REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
-      ALL_TAC] THEN
-     REWRITE_TAC [case_pstream_def] THEN
-     MP_TAC (SPEC `b1 : byte` byte_list_cases) THEN
-     DISCH_THEN
-       (X_CHOOSE_THEN `b10 : bool`
-         (X_CHOOSE_THEN `b11 : bool`
-           (X_CHOOSE_THEN `b12 : bool`
-             (X_CHOOSE_THEN `b13 : bool`
-               (X_CHOOSE_THEN `b14 : bool`
-                 (X_CHOOSE_THEN `b15 : bool`
-                   (X_CHOOSE_THEN `b16 : bool`
-                     (X_CHOOSE_THEN `b17 : bool`
-                        SUBST_VAR_TAC)))))))) THEN
-     bit_blast_tac THEN
-     BOOL_CASES_TAC' `b17 : bool` THENL
-     [REWRITE_TAC [case_option_def; option_distinct];
-      ALL_TAC] THEN
-     REWRITE_TAC [] THEN
-     BOOL_CASES_TAC `b16 : bool` THENL
-     [REWRITE_TAC [case_option_def; option_distinct];
-      ALL_TAC] THEN
-     REWRITE_TAC [case_option_def] THEN
-     REWRITE_TAC [decode_cont1_def] THEN
-     bit_blast_tac THEN
-     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-     bit_blast_tac THEN
-     CONV_TAC (LAND_CONV (REWR_CONV EQ_SYM_EQ)) THEN
-     ONCE_REWRITE_TAC [COND_RAND] THEN
-     ONCE_REWRITE_TAC [COND_RAND] THEN
-     REWRITE_TAC [case_option_def; option_distinct] THEN
-     MATCH_MP_TAC
-       (TAUT `!c b d. (~c ==> b ==> d) ==> (if c then F else b) ==> d`) THEN
-     STRIP_TAC THEN
-     REWRITE_TAC [option_inj; PAIR_EQ] THEN
-     STRIP_TAC THEN
-     POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
-     POP_ASSUM SUBST_VAR_TAC THEN
-     REWRITE_TAC [encoder_def] THEN
-     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-     KNOW_TAC
-       `!x y f (z : byte pstream).
-          dest_unicode (mk_unicode y) = y /\ x = append_pstream (f y) z ==>
-          x = append_pstream (f (dest_unicode (mk_unicode y))) z` THENL
-     [SIMP_TAC [];
-      ALL_TAC] THEN
-     DISCH_THEN MATCH_MP_TAC THEN
-     REWRITE_TAC [GSYM unicode_rep_abs] THEN
-     KNOW_TAC
-       `!x y z.
-          is_plane_unicode x /\
-          (is_plane_unicode x ==>
-           is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z) ==>
-          is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z` THENL
-     [SIMP_TAC [];
-      ALL_TAC] THEN
-     DISCH_THEN MATCH_MP_TAC THEN
-     CONJ_TAC THENL
-     [REWRITE_TAC [is_plane_unicode_def] THEN
-      bit_blast_tac;
-      ALL_TAC] THEN
-     REWRITE_TAC [is_unicode_def; position_unicode_tybij] THEN
-     DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_unicode_tybij] th]) THEN
-     CONJ_TAC THENL
-     [REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-      DISJ2_TAC THEN
-      DISJ1_TAC THEN
-      bit_blast_tac;
-      ALL_TAC] THEN
-     bit_blast_tac THEN
-     REWRITE_TAC [] THEN
-     bit_blast_tac THEN
-     ONCE_REWRITE_TAC [COND_RAND] THEN
-     ONCE_REWRITE_TAC [COND_RATOR] THEN
-     ONCE_REWRITE_TAC [COND_RAND] THEN
-     MATCH_MP_TAC (TAUT `~X /\ Z ==> (if X then Y else Z)`) THEN
-     CONJ_TAC THENL
-     [ASM_TAUT_TAC;
-      ALL_TAC] THEN
-     REWRITE_TAC [encode_cont1_def] THEN
-     bit_blast_tac THEN
-     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-     bit_blast_tac THEN
-     REWRITE_TAC [append_pstream_def]];
-    REWRITE_TAC [option_distinct]];
-   REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-   REWRITE_TAC [option_inj; PAIR_EQ] THEN
-   STRIP_TAC THEN
-   POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
-   POP_ASSUM SUBST_VAR_TAC THEN
-   REWRITE_TAC [encoder_def] THEN
-   REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-   KNOW_TAC
-     `!x y f (z : byte pstream).
-        dest_unicode (mk_unicode y) = y /\ x = append_pstream (f y) z ==>
-        x = append_pstream (f (dest_unicode (mk_unicode y))) z` THENL
-   [SIMP_TAC [];
+         (X_CHOOSE_THEN `b1 : byte`
+           (X_CHOOSE_THEN `zs1 : byte pstream` SUBST_VAR_TAC)))) THENL
+   [REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+    REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
     ALL_TAC] THEN
-   DISCH_THEN MATCH_MP_TAC THEN
-   REWRITE_TAC [GSYM unicode_rep_abs] THEN
-   KNOW_TAC
-     `!x y z.
-        is_plane_unicode x /\
-        (is_plane_unicode x ==>
-         is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z) ==>
-        is_unicode (mk_plane_unicode x, mk_position_unicode y) /\ z` THENL
-   [SIMP_TAC [];
+   REWRITE_TAC [case_pstream_def] THEN
+   ONCE_REWRITE_TAC [parse_fold_def] THEN
+   REWRITE_TAC [add_continuation_utf8_def] THEN
+   SUBGOAL_THEN
+     `byte_to_num (byte_and b1 (num_to_byte 63)) =
+      bit_bound (byte_to_num b1) 6`
+     SUBST1_TAC THENL
+   [REWRITE_TAC
+      [byte_and_def; num_to_byte_to_num_bit_bound; bit_bound_and;
+       bit_bound_bound; bit_bound_byte_to_num] THEN
+    (CONV_TAC o RAND_CONV o REWR_CONV) (GSYM bit_and_ones) THEN
+    AP_TERM_TAC THEN
+    NUM_REDUCE_TAC THEN
+    REWRITE_TAC [bit_bound_id; byte_width_def; bit_width_upper_bound] THEN
+    NUM_REDUCE_TAC;
     ALL_TAC] THEN
-   DISCH_THEN MATCH_MP_TAC THEN
+   REVERSE_TAC COND_CASES_TAC THENL
+   [REWRITE_TAC [map_option_def; case_option_def; option_distinct];
+    ALL_TAC] THEN
+   REWRITE_TAC
+     [NUM_REDUCE_CONV `1 = 0`; map_option_def; case_option_def;
+     case_sum_def; SUB_REFL] THEN
+   MP_TAC (ISPEC `zs1 : byte pstream` pstream_cases) THEN
+   DISCH_THEN
+     (DISJ_CASES_THEN2 SUBST_VAR_TAC
+       (DISJ_CASES_THEN2 SUBST_VAR_TAC
+         (X_CHOOSE_THEN `b2 : byte`
+           (X_CHOOSE_THEN `zs2 : byte pstream` SUBST_VAR_TAC)))) THENL
+   [REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+    REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+    ALL_TAC] THEN
+   REWRITE_TAC [case_pstream_def] THEN
+   ONCE_REWRITE_TAC [parse_fold_def] THEN
+   REWRITE_TAC [add_continuation_utf8_def] THEN
+   SUBGOAL_THEN
+     `byte_to_num (byte_and b2 (num_to_byte 63)) =
+      bit_bound (byte_to_num b2) 6`
+     SUBST1_TAC THENL
+   [REWRITE_TAC
+      [byte_and_def; num_to_byte_to_num_bit_bound; bit_bound_and;
+       bit_bound_bound; bit_bound_byte_to_num] THEN
+    (CONV_TAC o RAND_CONV o REWR_CONV) (GSYM bit_and_ones) THEN
+    AP_TERM_TAC THEN
+    NUM_REDUCE_TAC THEN
+    REWRITE_TAC [bit_bound_id; byte_width_def; bit_width_upper_bound] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   REVERSE_TAC COND_CASES_TAC THENL
+   [REWRITE_TAC [map_option_def; case_option_def; option_distinct];
+    ALL_TAC] THEN
+   REWRITE_TAC [map_option_def; case_option_def; case_sum_def] THEN
+   REVERSE_TAC COND_CASES_TAC THENL
+   [REWRITE_TAC [case_option_def; option_distinct];
+    ALL_TAC] THEN
+   REWRITE_TAC [case_option_def] THEN
+   REVERSE_TAC COND_CASES_TAC THENL
+   [REWRITE_TAC [case_option_def; option_distinct];
+    ALL_TAC] THEN
+   REWRITE_TAC [case_option_def; option_inj; PAIR_EQ] THEN
+   DISCH_THEN (CONJUNCTS_THEN (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [encode_unicode_utf8_def; LET_DEF; LET_END_DEF] THEN
+   POP_ASSUM (MP_TAC o REWRITE_RULE [dest_mk_unicode]) THEN
+   DISCH_THEN SUBST1_TAC THEN
+   COND_CASES_TAC THENL
+   [SUBGOAL_THEN `F` CONTR_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [NOT_LT] THEN
+    MATCH_MP_TAC LE_TRANS THEN
+    EXISTS_TAC `2048` THEN
+    ASM_REWRITE_TAC [] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   COND_CASES_TAC THENL
+   [SUBGOAL_THEN `F` CONTR_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    ASM_REWRITE_TAC [NOT_LT];
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REVERSE_TAC COND_CASES_TAC THENL
+   [SUBGOAL_THEN `F` CONTR_TAC THEN
+    POP_ASSUM MP_TAC THEN
+    REWRITE_TAC
+      [SYM (NUM_REDUCE_CONV `2 EXP ((4 + 6) + 6)`);
+       GSYM bit_width_upper_bound; add_bit_width; bit_width_bound];
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   REWRITE_TAC
+     [encode_three_byte_utf8_def; LET_DEF; LET_END_DEF; add_bit_shr;
+      add_bit_bound; bit_bound_bound; bit_shr_bound; ZERO_ADD;
+      append_pstream_def; pstream_inj] THEN
    CONJ_TAC THENL
-   [REWRITE_TAC [is_plane_unicode_def] THEN
-    bit_blast_tac;
+   [POP_ASSUM (K ALL_TAC) THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    MATCH_MP_TAC byte_eq_bits THEN
+    X_GEN_TAC `i : num` THEN
+    REPEAT (POP_ASSUM MP_TAC) THEN
+    REWRITE_TAC
+      [byte_width_def; byte_bit_def; byte_or_def;
+       num_to_byte_to_num_bit_bound; bit_nth_bound; bit_bound_bound_min;
+       bit_nth_or; NUM_REDUCE_CONV `MIN 4 8`] THEN
+    REPEAT STRIP_TAC THEN
+    ASM_REWRITE_TAC [bit_nth_numeral_conv `bit_nth 224 i`] THEN
+    (REVERSE_TAC o POP_ASSUM)
+      (STRIP_ASSUME_TAC o
+       REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 7`); LT_SUC_LE; LE_LT]) THENL
+    [POP_ASSUM SUBST_VAR_TAC THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    SUBGOAL_THEN `(i = 7) <=> F` SUBST1_TAC THENL
+    [POP_ASSUM MP_TAC THEN
+     REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     REWRITE_TAC [LE_REFL];
+     ALL_TAC] THEN
+    REWRITE_TAC [] THEN
+    (REVERSE_TAC o POP_ASSUM)
+      (STRIP_ASSUME_TAC o
+       REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 6`); LT_SUC_LE; LE_LT]) THENL
+    [POP_ASSUM SUBST_VAR_TAC THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    SUBGOAL_THEN `(i = 6) <=> F` SUBST1_TAC THENL
+    [POP_ASSUM MP_TAC THEN
+     REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     REWRITE_TAC [LE_REFL];
+     ALL_TAC] THEN
+    REWRITE_TAC [] THEN
+    (REVERSE_TAC o POP_ASSUM)
+      (STRIP_ASSUME_TAC o
+       REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 5`); LT_SUC_LE; LE_LT]) THENL
+    [POP_ASSUM SUBST_VAR_TAC THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    SUBGOAL_THEN `(i = 5) <=> F` SUBST1_TAC THENL
+    [POP_ASSUM MP_TAC THEN
+     REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     REWRITE_TAC [LE_REFL];
+     ALL_TAC] THEN
+    REWRITE_TAC [] THEN
+    (REVERSE_TAC o POP_ASSUM)
+      (STRIP_ASSUME_TAC o
+       REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 4`); LT_SUC_LE; LE_LT]) THENL
+    [POP_ASSUM SUBST_VAR_TAC THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    ASM_REWRITE_TAC [];
     ALL_TAC] THEN
-   REWRITE_TAC [is_unicode_def; position_unicode_tybij] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [REWRITE_RULE [plane_unicode_tybij] th]) THEN
    CONJ_TAC THENL
-   [REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-    DISJ2_TAC THEN
-    DISJ1_TAC THEN
-    bit_blast_tac;
+   [MATCH_MP_TAC byte_eq_bits THEN
+    X_GEN_TAC `i : num` THEN
+    POP_ASSUM (K ALL_TAC) THEN
+    POP_ASSUM MP_TAC THEN
+    POP_ASSUM_LIST (K ALL_TAC) THEN
+    REWRITE_TAC [is_continuation_utf8_def] THEN
+    REWRITE_TAC
+      [byte_width_def; byte_bit_def; byte_or_def;
+       num_to_byte_to_num_bit_bound; bit_nth_bound; bit_bound_bound_min;
+       bit_nth_or; NUM_REDUCE_CONV `MIN 6 8`] THEN
+    REPEAT STRIP_TAC THEN
+    ASM_REWRITE_TAC [bit_nth_numeral_conv `bit_nth 128 i`] THEN
+    (REVERSE_TAC o POP_ASSUM)
+      (STRIP_ASSUME_TAC o
+       REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 7`); LT_SUC_LE; LE_LT]) THENL
+    [POP_ASSUM SUBST_VAR_TAC THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    SUBGOAL_THEN `(i = 7) <=> F` SUBST1_TAC THENL
+    [POP_ASSUM MP_TAC THEN
+     REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+     DISCH_THEN SUBST1_TAC THEN
+     REWRITE_TAC [LE_REFL];
+     ALL_TAC] THEN
+    REWRITE_TAC [] THEN
+    (REVERSE_TAC o POP_ASSUM)
+      (STRIP_ASSUME_TAC o
+       REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 6`); LT_SUC_LE; LE_LT]) THENL
+    [POP_ASSUM SUBST_VAR_TAC THEN
+     ASM_REWRITE_TAC [];
+     ALL_TAC] THEN
+    ASM_REWRITE_TAC [];
     ALL_TAC] THEN
-   bit_blast_tac THEN
+   MATCH_MP_TAC byte_eq_bits THEN
+   X_GEN_TAC `i : num` THEN
+   POP_ASSUM MP_TAC THEN
+   POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [is_continuation_utf8_def] THEN
+   REWRITE_TAC
+     [byte_width_def; byte_bit_def; byte_or_def;
+      num_to_byte_to_num_bit_bound; bit_nth_bound; bit_bound_bound_min;
+      bit_nth_or; NUM_REDUCE_CONV `MIN 6 8`] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [bit_nth_numeral_conv `bit_nth 128 i`] THEN
+   (REVERSE_TAC o POP_ASSUM)
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 7`); LT_SUC_LE; LE_LT]) THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   SUBGOAL_THEN `(i = 7) <=> F` SUBST1_TAC THENL
+   [POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [LE_REFL];
+    ALL_TAC] THEN
    REWRITE_TAC [] THEN
-   bit_blast_tac THEN
-   REWRITE_TAC [append_pstream_def]]);;
-
-export_thm decoder_encoder_strong_inverse;;
-
-let decode_encode = prove
-  (`!cs. decode (encode cs) = SOME cs`,
-   GEN_TAC THEN
-   REWRITE_TAC [decode_def; encode_def; decode_pstream_def] THEN
-   REWRITE_TAC [GSYM list_to_pstream_to_list] THEN
+   (REVERSE_TAC o POP_ASSUM)
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 6`); LT_SUC_LE; LE_LT]) THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  COND_CASES_TAC THENL
+  [REWRITE_TAC [case_option_def; option_distinct];
+   ALL_TAC] THEN
+  REWRITE_TAC
+    [parser_four_byte_utf8_def; case_option_def; apply_parser_filter;
+     parser_foldn_def; apply_parser_fold] THEN
+  SUBGOAL_THEN
+    `byte_to_num (byte_and b (num_to_byte 7)) =
+     bit_bound (byte_to_num b) 3`
+    SUBST1_TAC THENL
+  [REWRITE_TAC
+     [byte_and_def; num_to_byte_to_num_bit_bound; bit_bound_and;
+      bit_bound_bound; bit_bound_byte_to_num] THEN
+   (CONV_TAC o RAND_CONV o REWR_CONV) (GSYM bit_and_ones) THEN
    AP_TERM_TAC THEN
-   MATCH_MP_TAC parse_pstream_inverse THEN
-   ACCEPT_TAC decoder_encoder_inverse);;
+   NUM_REDUCE_TAC THEN
+   REWRITE_TAC [bit_bound_id; byte_width_def; bit_width_upper_bound] THEN
+   NUM_REDUCE_TAC;
+   ALL_TAC] THEN
+  MP_TAC (ISPEC `zs : byte pstream` pstream_cases) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST_VAR_TAC
+      (DISJ_CASES_THEN2 SUBST_VAR_TAC
+        (X_CHOOSE_THEN `b1 : byte`
+          (X_CHOOSE_THEN `zs1 : byte pstream` SUBST_VAR_TAC)))) THENL
+  [REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+   REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+   ALL_TAC] THEN
+  REWRITE_TAC [case_pstream_def] THEN
+  ONCE_REWRITE_TAC [parse_fold_def] THEN
+  REWRITE_TAC [add_continuation_utf8_def] THEN
+  SUBGOAL_THEN
+    `byte_to_num (byte_and b1 (num_to_byte 63)) =
+     bit_bound (byte_to_num b1) 6`
+    SUBST1_TAC THENL
+  [REWRITE_TAC
+     [byte_and_def; num_to_byte_to_num_bit_bound; bit_bound_and;
+      bit_bound_bound; bit_bound_byte_to_num] THEN
+   (CONV_TAC o RAND_CONV o REWR_CONV) (GSYM bit_and_ones) THEN
+   AP_TERM_TAC THEN
+   NUM_REDUCE_TAC THEN
+   REWRITE_TAC [bit_bound_id; byte_width_def; bit_width_upper_bound] THEN
+   NUM_REDUCE_TAC;
+   ALL_TAC] THEN
+  REVERSE_TAC COND_CASES_TAC THENL
+  [REWRITE_TAC [map_option_def; case_option_def; option_distinct];
+   ALL_TAC] THEN
+  REWRITE_TAC
+    [NUM_REDUCE_CONV `2 = 0`; NUM_REDUCE_CONV `2 - 1`;
+     map_option_def; case_option_def; case_sum_def] THEN
+  MP_TAC (ISPEC `zs1 : byte pstream` pstream_cases) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST_VAR_TAC
+      (DISJ_CASES_THEN2 SUBST_VAR_TAC
+        (X_CHOOSE_THEN `b2 : byte`
+          (X_CHOOSE_THEN `zs2 : byte pstream` SUBST_VAR_TAC)))) THENL
+  [REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+   REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+   ALL_TAC] THEN
+  REWRITE_TAC [case_pstream_def] THEN
+  ONCE_REWRITE_TAC [parse_fold_def] THEN
+  REWRITE_TAC [add_continuation_utf8_def] THEN
+  SUBGOAL_THEN
+    `byte_to_num (byte_and b2 (num_to_byte 63)) =
+     bit_bound (byte_to_num b2) 6`
+    SUBST1_TAC THENL
+  [REWRITE_TAC
+     [byte_and_def; num_to_byte_to_num_bit_bound; bit_bound_and;
+      bit_bound_bound; bit_bound_byte_to_num] THEN
+   (CONV_TAC o RAND_CONV o REWR_CONV) (GSYM bit_and_ones) THEN
+   AP_TERM_TAC THEN
+   NUM_REDUCE_TAC THEN
+   REWRITE_TAC [bit_bound_id; byte_width_def; bit_width_upper_bound] THEN
+   NUM_REDUCE_TAC;
+   ALL_TAC] THEN
+  REVERSE_TAC COND_CASES_TAC THENL
+  [REWRITE_TAC [map_option_def; case_option_def; option_distinct];
+   ALL_TAC] THEN
+  REWRITE_TAC
+    [NUM_REDUCE_CONV `1 = 0`;
+     map_option_def; case_option_def; case_sum_def; SUB_REFL] THEN
+  MP_TAC (ISPEC `zs2 : byte pstream` pstream_cases) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST_VAR_TAC
+      (DISJ_CASES_THEN2 SUBST_VAR_TAC
+        (X_CHOOSE_THEN `b3 : byte`
+          (X_CHOOSE_THEN `zs3 : byte pstream` SUBST_VAR_TAC)))) THENL
+  [REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+   REWRITE_TAC [case_pstream_def; case_option_def; option_distinct];
+   ALL_TAC] THEN
+  REWRITE_TAC [case_pstream_def] THEN
+  ONCE_REWRITE_TAC [parse_fold_def] THEN
+  REWRITE_TAC [add_continuation_utf8_def] THEN
+  SUBGOAL_THEN
+    `byte_to_num (byte_and b3 (num_to_byte 63)) =
+     bit_bound (byte_to_num b3) 6`
+    SUBST1_TAC THENL
+  [REWRITE_TAC
+     [byte_and_def; num_to_byte_to_num_bit_bound; bit_bound_and;
+      bit_bound_bound; bit_bound_byte_to_num] THEN
+   (CONV_TAC o RAND_CONV o REWR_CONV) (GSYM bit_and_ones) THEN
+   AP_TERM_TAC THEN
+   NUM_REDUCE_TAC THEN
+   REWRITE_TAC [bit_bound_id; byte_width_def; bit_width_upper_bound] THEN
+   NUM_REDUCE_TAC;
+   ALL_TAC] THEN
+  REVERSE_TAC COND_CASES_TAC THENL
+  [REWRITE_TAC [map_option_def; case_option_def; option_distinct];
+   ALL_TAC] THEN
+  REWRITE_TAC [map_option_def; case_option_def; case_sum_def] THEN
+  REVERSE_TAC COND_CASES_TAC THENL
+  [REWRITE_TAC [case_option_def; option_distinct];
+   ALL_TAC] THEN
+  REWRITE_TAC [case_option_def] THEN
+  REVERSE_TAC COND_CASES_TAC THENL
+  [REWRITE_TAC [case_option_def; option_distinct];
+   ALL_TAC] THEN
+  REWRITE_TAC [case_option_def; option_inj; PAIR_EQ] THEN
+  DISCH_THEN (CONJUNCTS_THEN (SUBST_VAR_TAC o SYM)) THEN
+  REWRITE_TAC [encode_unicode_utf8_def; LET_DEF; LET_END_DEF] THEN
+  POP_ASSUM (MP_TAC o REWRITE_RULE [dest_mk_unicode]) THEN
+  DISCH_THEN SUBST1_TAC THEN
+  COND_CASES_TAC THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [NOT_LT] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `65536` THEN
+   ASM_REWRITE_TAC [] THEN
+   NUM_REDUCE_TAC;
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  COND_CASES_TAC THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [NOT_LT] THEN
+   MATCH_MP_TAC LE_TRANS THEN
+   EXISTS_TAC `65536` THEN
+   ASM_REWRITE_TAC [] THEN
+   NUM_REDUCE_TAC;
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  COND_CASES_TAC THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   ASM_REWRITE_TAC [NOT_LT];
+   ALL_TAC] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  REWRITE_TAC
+    [encode_four_byte_utf8_def; LET_DEF; LET_END_DEF; add_bit_shr;
+     add_bit_bound; bit_bound_bound; bit_shr_bound; ZERO_ADD;
+     append_pstream_def; pstream_inj] THEN
+  CONJ_TAC THENL
+  [POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   MATCH_MP_TAC byte_eq_bits THEN
+   X_GEN_TAC `i : num` THEN
+   REPEAT (POP_ASSUM MP_TAC) THEN
+   REWRITE_TAC
+     [byte_width_def; byte_bit_def; byte_or_def;
+      num_to_byte_to_num_bit_bound; bit_nth_bound; bit_bound_bound_min;
+      bit_nth_or; NUM_REDUCE_CONV `MIN 3 8`] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [bit_nth_numeral_conv `bit_nth 240 i`] THEN
+   (REVERSE_TAC o POP_ASSUM)
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 7`); LT_SUC_LE; LE_LT]) THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   SUBGOAL_THEN `(i = 7) <=> F` SUBST1_TAC THENL
+   [POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [LE_REFL];
+    ALL_TAC] THEN
+   REWRITE_TAC [] THEN
+   (REVERSE_TAC o POP_ASSUM)
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 6`); LT_SUC_LE; LE_LT]) THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   SUBGOAL_THEN `(i = 6) <=> F` SUBST1_TAC THENL
+   [POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [LE_REFL];
+    ALL_TAC] THEN
+   REWRITE_TAC [] THEN
+   (REVERSE_TAC o POP_ASSUM)
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 5`); LT_SUC_LE; LE_LT]) THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   SUBGOAL_THEN `(i = 5) <=> F` SUBST1_TAC THENL
+   [POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [LE_REFL];
+    ALL_TAC] THEN
+   REWRITE_TAC [] THEN
+   (REVERSE_TAC o POP_ASSUM)
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 4`); LT_SUC_LE; LE_LT]) THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   SUBGOAL_THEN `(i = 4) <=> F` SUBST1_TAC THENL
+   [POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [LE_REFL];
+    ALL_TAC] THEN
+   REWRITE_TAC [] THEN
+   (REVERSE_TAC o POP_ASSUM)
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 3`); LT_SUC_LE; LE_LT]) THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC byte_eq_bits THEN
+   X_GEN_TAC `i : num` THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM MP_TAC THEN
+   POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [is_continuation_utf8_def] THEN
+   REWRITE_TAC
+     [byte_width_def; byte_bit_def; byte_or_def;
+      num_to_byte_to_num_bit_bound; bit_nth_bound; bit_bound_bound_min;
+      bit_nth_or; NUM_REDUCE_CONV `MIN 6 8`] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [bit_nth_numeral_conv `bit_nth 128 i`] THEN
+   (REVERSE_TAC o POP_ASSUM)
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 7`); LT_SUC_LE; LE_LT]) THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   SUBGOAL_THEN `(i = 7) <=> F` SUBST1_TAC THENL
+   [POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [LE_REFL];
+    ALL_TAC] THEN
+   REWRITE_TAC [] THEN
+   (REVERSE_TAC o POP_ASSUM)
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 6`); LT_SUC_LE; LE_LT]) THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC byte_eq_bits THEN
+   X_GEN_TAC `i : num` THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   POP_ASSUM MP_TAC THEN
+   POP_ASSUM_LIST (K ALL_TAC) THEN
+   REWRITE_TAC [is_continuation_utf8_def] THEN
+   REWRITE_TAC
+     [byte_width_def; byte_bit_def; byte_or_def;
+      num_to_byte_to_num_bit_bound; bit_nth_bound; bit_bound_bound_min;
+      bit_nth_or; NUM_REDUCE_CONV `MIN 6 8`] THEN
+   REPEAT STRIP_TAC THEN
+   ASM_REWRITE_TAC [bit_nth_numeral_conv `bit_nth 128 i`] THEN
+   (REVERSE_TAC o POP_ASSUM)
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 7`); LT_SUC_LE; LE_LT]) THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   SUBGOAL_THEN `(i = 7) <=> F` SUBST1_TAC THENL
+   [POP_ASSUM MP_TAC THEN
+    REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [LE_REFL];
+    ALL_TAC] THEN
+   REWRITE_TAC [] THEN
+   (REVERSE_TAC o POP_ASSUM)
+     (STRIP_ASSUME_TAC o
+      REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 6`); LT_SUC_LE; LE_LT]) THENL
+   [POP_ASSUM SUBST_VAR_TAC THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  MATCH_MP_TAC byte_eq_bits THEN
+  X_GEN_TAC `i : num` THEN
+  POP_ASSUM MP_TAC THEN
+  POP_ASSUM_LIST (K ALL_TAC) THEN
+  REWRITE_TAC [is_continuation_utf8_def] THEN
+  REWRITE_TAC
+    [byte_width_def; byte_bit_def; byte_or_def;
+     num_to_byte_to_num_bit_bound; bit_nth_bound; bit_bound_bound_min;
+     bit_nth_or; NUM_REDUCE_CONV `MIN 6 8`] THEN
+  REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC [bit_nth_numeral_conv `bit_nth 128 i`] THEN
+  (REVERSE_TAC o POP_ASSUM)
+    (STRIP_ASSUME_TAC o
+     REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 7`); LT_SUC_LE; LE_LT]) THENL
+  [POP_ASSUM SUBST_VAR_TAC THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `(i = 7) <=> F` SUBST1_TAC THENL
+  [POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [CONTRAPOS_THM; GSYM NOT_LE] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [LE_REFL];
+   ALL_TAC] THEN
+  REWRITE_TAC [] THEN
+  (REVERSE_TAC o POP_ASSUM)
+    (STRIP_ASSUME_TAC o
+     REWRITE_RULE [SYM (NUM_REDUCE_CONV `SUC 6`); LT_SUC_LE; LE_LT]) THENL
+  [POP_ASSUM SUBST_VAR_TAC THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC []);;
 
-export_thm decode_encode;;
+export_thm parser_unicode_utf8_strong_inverse;;
+
+let decode_encode_utf8 = prove
+ (`!c. decode_utf8 (encode_utf8 c) = MAP INR c`,
+  REWRITE_TAC [decode_utf8_def; encode_utf8_def; parser_utf8_def] THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC
+     [MAP; concat_def; list_to_pstream_nil; parse_def; pstream_to_list_def];
+   ALL_TAC] THEN
+  REWRITE_TAC [MAP; concat_def; list_to_pstream_append] THEN
+  ONCE_REWRITE_TAC [parse_apply] THEN
+  REWRITE_TAC [apply_parser_orelse; apply_parser_map] THEN
+  MP_TAC
+    (ISPECL
+       [`parser_unicode_utf8`; `encode_unicode_utf8`]
+       parser_inverse_def) THEN
+  REWRITE_TAC [parser_unicode_utf8_inverse] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  REWRITE_TAC [case_option_def; pstream_to_list_cons; LET_DEF; LET_END_DEF] THEN
+  MP_TAC
+   (ISPEC
+      `pstream_to_list
+         (parse parser_utf8
+            (list_to_pstream (concat (MAP encode_unicode_utf8 t))))`
+      PAIR) THEN
+  PURE_REWRITE_TAC [parser_utf8_def] THEN
+  POP_ASSUM SUBST1_TAC THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  REWRITE_TAC []);;
+
+export_thm decode_encode_utf8;;
+
+(***
+let reencode_decode_utf8 = prove
+ (`!b. reencode_utf8 (decode_utf8 b) = b`,
+  GEN_TAC THEN
+
+parse_strong_inverse;;
+
+  MP_TAC (SPEC `encode cs` decode_length) THEN
+  REWRITE_TAC [decode_encode; case_option_def]);;
+
+export_thm reencode_decode_utf8;;
 
 let encode_decode = prove
   (`!bs. case_option T (\cs. encode cs = bs) (decode bs)`,
@@ -1983,14 +2114,6 @@ export_thm decode_length;;
 
 let encode_length = prove
   (`!cs. LENGTH cs <= LENGTH (encode cs)`,
-   GEN_TAC THEN
-   MP_TAC (SPEC `encode cs` decode_length) THEN
-   REWRITE_TAC [decode_encode; case_option_def]);;
-
-export_thm encode_length;;
-
-let reencode_decode_utf8 = prove
-  (`!b. reencode_utf8 (decode_utf8 b) = b`,
    GEN_TAC THEN
    MP_TAC (SPEC `encode cs` decode_length) THEN
    REWRITE_TAC [decode_encode; case_option_def]);;
