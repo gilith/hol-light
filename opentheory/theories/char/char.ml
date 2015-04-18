@@ -822,6 +822,72 @@ export_thm decode_utf8_def;;
 
 logfile "char-utf8-thm";;
 
+let encode_ascii_utf8_length = prove
+ (`!n. LENGTH (encode_ascii_utf8 n) = 1`,
+  REWRITE_TAC [encode_ascii_utf8_def; LENGTH; ONE]);;
+
+export_thm encode_ascii_utf8_length;;
+
+let encode_two_byte_utf8_length = prove
+ (`!n. LENGTH (encode_two_byte_utf8 n) = 2`,
+  REWRITE_TAC
+    [encode_two_byte_utf8_def; LET_DEF; LET_END_DEF; LENGTH;
+     GSYM TWO; GSYM ONE]);;
+
+export_thm encode_two_byte_utf8_length;;
+
+let encode_three_byte_utf8_length = prove
+ (`!n. LENGTH (encode_three_byte_utf8 n) = 3`,
+  REWRITE_TAC
+    [encode_three_byte_utf8_def; LET_DEF; LET_END_DEF; LENGTH;
+     GSYM TWO; GSYM ONE; SYM (NUM_REDUCE_CONV `SUC 2`)]);;
+
+export_thm encode_three_byte_utf8_length;;
+
+let encode_four_byte_utf8_length = prove
+ (`!n. LENGTH (encode_four_byte_utf8 n) = 4`,
+  REWRITE_TAC
+    [encode_four_byte_utf8_def; LET_DEF; LET_END_DEF; LENGTH; GSYM TWO;
+     GSYM ONE; SYM (NUM_REDUCE_CONV `SUC 2`); SYM (NUM_REDUCE_CONV `SUC 3`)]);;
+
+export_thm encode_four_byte_utf8_length;;
+
+let encode_unicode_utf8_length = prove
+ (`!c. 1 <= LENGTH (encode_unicode_utf8 c)`,
+  GEN_TAC THEN
+  REWRITE_TAC [encode_unicode_utf8_def; LET_DEF; LET_END_DEF] THEN
+  REPEAT COND_CASES_TAC THEN
+  REWRITE_TAC
+    [encode_ascii_utf8_length; LE_REFL; encode_two_byte_utf8_length;
+     encode_three_byte_utf8_length; encode_four_byte_utf8_length;
+     NUM_REDUCE_CONV `1 <= 2`; NUM_REDUCE_CONV `1 <= 3`;
+     NUM_REDUCE_CONV `1 <= 4`]);;
+
+export_thm encode_unicode_utf8_length;;
+
+let reencode_unicode_utf8_inl = prove
+ (`!b. reencode_unicode_utf8 (INL b) = [b]`,
+  REWRITE_TAC [reencode_unicode_utf8_def; case_sum_def]);;
+
+export_thm reencode_unicode_utf8_inl;;
+
+let reencode_unicode_utf8_inr = prove
+ (`!c. reencode_unicode_utf8 (INR c) = encode_unicode_utf8 c`,
+  REWRITE_TAC [reencode_unicode_utf8_def; case_sum_def]);;
+
+export_thm reencode_unicode_utf8_inr;;
+
+let reencode_unicode_utf8_length = prove
+ (`!c. 1 <= LENGTH (reencode_unicode_utf8 c)`,
+  GEN_TAC THEN
+  REWRITE_TAC [reencode_unicode_utf8_def] THEN
+  MP_TAC (ISPEC `c : byte + unicode` sum_CASES) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC
+    [case_sum_def; LENGTH; GSYM ONE; LE_REFL; encode_unicode_utf8_length]);;
+
+export_thm reencode_unicode_utf8_length;;
+
 let map_inl_reencode_utf8 = prove
  (`!b. reencode_utf8 (MAP INL b) = b`,
   REWRITE_TAC [reencode_utf8_def] THEN
@@ -845,6 +911,22 @@ let map_inr_reencode_utf8 = prove
   REWRITE_TAC [reencode_unicode_utf8_def; case_sum_def]);;
 
 export_thm map_inr_reencode_utf8;;
+
+let reencode_utf8_length = prove
+ (`!c. LENGTH c <= LENGTH (reencode_utf8 c)`,
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [LENGTH; LE_0];
+   ALL_TAC] THEN
+  REWRITE_TAC [LENGTH; reencode_utf8_def; MAP; concat_def; LENGTH_APPEND] THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC `1 + LENGTH (reencode_utf8 t)` THEN
+  CONJ_TAC THENL
+  [ASM_REWRITE_TAC [ONE; SUC_ADD; ZERO_ADD; LE_SUC];
+   ALL_TAC] THEN
+  REWRITE_TAC
+    [reencode_utf8_def; LE_ADD_RCANCEL; reencode_unicode_utf8_length]);;
+
+export_thm reencode_utf8_length;;
 
 let parser_ascii_utf8_encode_ascii = prove
  (`!n b.
@@ -2048,11 +2130,11 @@ let decode_encode_utf8 = prove
   DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
   REWRITE_TAC [case_option_def; pstream_to_list_cons; LET_DEF; LET_END_DEF] THEN
   MP_TAC
-   (ISPEC
-      `pstream_to_list
-         (parse parser_utf8
-            (list_to_pstream (concat (MAP encode_unicode_utf8 t))))`
-      PAIR) THEN
+    (ISPEC
+       `pstream_to_list
+          (parse parser_utf8
+             (list_to_pstream (concat (MAP encode_unicode_utf8 t))))`
+       PAIR) THEN
   PURE_REWRITE_TAC [parser_utf8_def] THEN
   POP_ASSUM SUBST1_TAC THEN
   DISCH_THEN (SUBST1_TAC o SYM) THEN
@@ -2060,66 +2142,136 @@ let decode_encode_utf8 = prove
 
 export_thm decode_encode_utf8;;
 
-(***
 let reencode_decode_utf8 = prove
  (`!b. reencode_utf8 (decode_utf8 b) = b`,
   GEN_TAC THEN
-
-parse_strong_inverse;;
-
-  MP_TAC (SPEC `encode cs` decode_length) THEN
-  REWRITE_TAC [decode_encode; case_option_def]);;
+  REWRITE_TAC [reencode_utf8_def; decode_utf8_def] THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC `FST (pstream_to_list (list_to_pstream b)) : byte list` THEN
+  REVERSE_TAC CONJ_TAC THENL
+  [REWRITE_TAC [list_to_pstream_to_list];
+   ALL_TAC] THEN
+  SPEC_TAC (`list_to_pstream (b : byte list)`, `xs : byte pstream`) THEN
+  MATCH_MP_TAC is_proper_suffix_pstream_induct THEN
+  GEN_TAC THEN
+  STRIP_TAC THEN
+  ONCE_REWRITE_TAC [parse_apply] THEN
+  REWRITE_TAC [parser_utf8_def; apply_parser_orelse; apply_parser_map] THEN
+  MP_TAC
+    (ISPECL
+       [`parser_unicode_utf8`; `xs : byte pstream`]
+       apply_parser_cases) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST1_TAC
+       (X_CHOOSE_THEN `c : unicode`
+          (X_CHOOSE_THEN `ys : byte pstream` STRIP_ASSUME_TAC))) THENL
+  [REWRITE_TAC [case_option_def] THEN
+   MP_TAC (ISPEC `xs : byte pstream` pstream_cases) THEN
+   DISCH_THEN
+     (DISJ_CASES_THEN2 SUBST_VAR_TAC
+        (DISJ_CASES_THEN2 SUBST_VAR_TAC
+           (X_CHOOSE_THEN `b : byte`
+              (X_CHOOSE_THEN `ys : byte pstream` SUBST_VAR_TAC)))) THENL
+   [REWRITE_TAC
+      [apply_parser_any; case_pstream_def; case_option_def;
+       pstream_to_list_def; MAP; concat_def];
+    REWRITE_TAC
+      [apply_parser_any; case_pstream_def; case_option_def;
+       pstream_to_list_def; MAP; concat_def];
+    ALL_TAC] THEN
+   REWRITE_TAC
+     [apply_parser_any; case_pstream_def; case_option_def;
+      pstream_to_list_def; MAP; concat_def] THEN
+   MP_TAC (ISPEC `pstream_to_list (parse parser_utf8 ys)` PAIR) THEN
+   PURE_REWRITE_TAC [parser_utf8_def] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   MP_TAC (ISPEC `pstream_to_list (ys : byte pstream)` PAIR) THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   REWRITE_TAC
+     [LET_DEF; LET_END_DEF; MAP; concat_def; reencode_unicode_utf8_inl;
+      APPEND_SING; CONS_11] THEN
+   FIRST_X_ASSUM (MP_TAC o SPEC `ys : byte pstream`) THEN
+   REWRITE_TAC
+     [parser_utf8_def; is_proper_suffix_pstream_def; is_suffix_pstream_refl];
+   ALL_TAC] THEN
+  MP_TAC
+    (ISPECL
+       [`parser_unicode_utf8`; `encode_unicode_utf8`]
+       parser_strong_inverse_def) THEN
+  REWRITE_TAC
+    [parser_unicode_utf8_strong_inverse; parser_unicode_utf8_inverse] THEN
+  DISCH_THEN
+    (MP_TAC o
+     SPECL [`xs : byte pstream`; `c : unicode`; `ys : byte pstream`]) THEN
+  ASM_REWRITE_TAC [case_option_def; pstream_to_list_def] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  MP_TAC
+    (ISPEC
+       `pstream_to_list (ys : byte pstream)`
+       PAIR_SURJECTIVE) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `zs : byte list`
+       (X_CHOOSE_THEN `e : bool` STRIP_ASSUME_TAC)) THEN
+  MP_TAC
+    (ISPECL
+       [`encode_unicode_utf8 c`;
+        `ys : byte pstream`;
+        `zs : byte list`;
+        `e : bool`]
+       pstream_to_list_append) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [] THEN
+  MP_TAC
+    (ISPEC
+       `pstream_to_list (parse parser_utf8 ys)`
+       PAIR_SURJECTIVE) THEN
+  REWRITE_TAC [parser_utf8_def] THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `yl : (byte + unicode) list`
+       (X_CHOOSE_THEN `e' : bool` STRIP_ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC
+    [LET_DEF; LET_END_DEF; MAP; concat_def; reencode_unicode_utf8_inr] THEN
+  AP_TERM_TAC THEN
+  FIRST_X_ASSUM (MP_TAC o SPEC `ys : byte pstream`) THEN
+  ASM_REWRITE_TAC [parser_utf8_def]);;
 
 export_thm reencode_decode_utf8;;
 
-let encode_decode = prove
-  (`!bs. case_option T (\cs. encode cs = bs) (decode bs)`,
-   GEN_TAC THEN
-   REWRITE_TAC [decode_def; encode_def; decode_pstream_def] THEN
-   MP_TAC (ISPECL [`decoder`; `encoder`; `list_to_pstream (bs : byte list)`]
-                  parse_pstream_strong_inverse) THEN
-   COND_TAC THENL
-   [ACCEPT_TAC decoder_encoder_strong_inverse;
-    ALL_TAC] THEN
-   REWRITE_TAC [list_to_pstream_to_list; option_inj] THEN
-   DISCH_THEN (ACCEPT_TAC o ONCE_REWRITE_RULE [EQ_SYM_EQ]));;
+let decode_utf8_length = prove
+ (`!b. LENGTH (decode_utf8 b) <= LENGTH b`,
+  GEN_TAC THEN
+  REWRITE_TAC [decode_utf8_def] THEN
+  CONV_TAC (RAND_CONV (REWR_CONV (GSYM list_to_pstream_length))) THEN
+  SPEC_TAC (`list_to_pstream (b : byte list)`, `b : byte pstream`) THEN
+  GEN_TAC THEN
+  MP_TAC
+    (ISPEC
+       `pstream_to_list (parse parser_utf8 b)`
+       PAIR_SURJECTIVE) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `l : (byte + unicode) list`
+       (X_CHOOSE_THEN `e : bool` STRIP_ASSUME_TAC)) THEN
+  MP_TAC
+    (ISPECL
+       [`parse parser_utf8 b`; `l : (byte + unicode) list`; `e : bool`]
+       pstream_to_list_length) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  MATCH_ACCEPT_TAC parse_length);;
 
-export_thm encode_decode;;
+export_thm decode_utf8_length;;
 
-let decode_pstream_length = prove
-  (`!bs. length_pstream (decode_pstream bs) <= length_pstream bs`,
-   GEN_TAC THEN
-   REWRITE_TAC [decode_pstream_def] THEN
-   MATCH_ACCEPT_TAC parse_pstream_length);;
+let encode_utf8_length = prove
+ (`!c. LENGTH c <= LENGTH (encode_utf8 c)`,
+  GEN_TAC THEN
+  (CONV_TAC o LAND_CONV o REWR_CONV)
+    (GSYM (ISPEC `INR : unicode -> byte + unicode` LENGTH_MAP)) THEN
+  (CONV_TAC o LAND_CONV o RAND_CONV o REWR_CONV) (GSYM decode_encode_utf8) THEN
+  MATCH_ACCEPT_TAC decode_utf8_length);;
 
-export_thm decode_pstream_length;;
-
-let decode_length = prove
-  (`!bs. case_option T (\cs. LENGTH cs <= LENGTH bs) (decode bs)`,
-   GEN_TAC THEN
-   REWRITE_TAC [decode_def] THEN
-   REWRITE_TAC [GSYM list_to_pstream_length] THEN
-   SPEC_TAC (`list_to_pstream (bs : byte list)`, `bs : byte pstream`) THEN
-   GEN_TAC THEN
-   MP_TAC (ISPEC `pstream_to_list (decode_pstream bs)` option_cases) THEN
-   STRIP_TAC THENL
-   [ASM_REWRITE_TAC [case_option_def];
-    ALL_TAC] THEN
-   MP_TAC (ISPEC `decode_pstream bs` pstream_to_list_length) THEN
-   ASM_REWRITE_TAC [case_option_def] THEN
-   DISCH_THEN (fun th -> REWRITE_TAC [th; list_to_pstream_length]) THEN
-   MATCH_ACCEPT_TAC decode_pstream_length);;
-
-export_thm decode_length;;
-
-let encode_length = prove
-  (`!cs. LENGTH cs <= LENGTH (encode cs)`,
-   GEN_TAC THEN
-   MP_TAC (SPEC `encode cs` decode_length) THEN
-   REWRITE_TAC [decode_encode; case_option_def]);;
-
-export_thm encode_length;;
-***)
+export_thm encode_utf8_length;;
 
 let encode_unicode_utf8_src = prove
  (`encode_unicode_utf8 =
@@ -2165,5 +2317,17 @@ export_thm parser_num_utf8_def;;  (* Haskell *)
 export_thm parser_unicode_utf8_def;;  (* Haskell *)
 export_thm parser_utf8_def;;  (* Haskell *)
 export_thm decode_utf8_def;;  (* Haskell *)
+
+(* ------------------------------------------------------------------------- *)
+(* Haskell tests for unicode characters.                                     *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "char-haskell-test";;
+
+export_thm encode_utf8_length;;  (* Haskell *)
+export_thm reencode_utf8_length;;  (* Haskell *)
+export_thm decode_utf8_length;;  (* Haskell *)
+export_thm decode_encode_utf8;;  (* Haskell *)
+export_thm reencode_decode_utf8;;  (* Haskell *)
 
 logfile_end ();;
