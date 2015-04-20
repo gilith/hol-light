@@ -77,8 +77,8 @@ egcdCorrect =
     prop r0 =
       egcdProp (a + 1) b
         where
-      (a,r1) = fromRandom r0
-      (b,_) = fromRandom r1
+      (a,r1) = random r0
+      (b,_) = random r1
 
 -------------------------------------------------------------------------------
 -- Individual bits
@@ -163,7 +163,7 @@ randomBits :: Random -> (Bits,Random)
 randomBits r =
     (numToBits n, r')
   where
-    (n,r') = fromRandom r
+    (n,r') = random r
 
 randomPrefixBits :: Int -> Random -> (Bits,Random)
 randomPrefixBits k r =
@@ -175,7 +175,7 @@ instance Show Bits where
   show x = show (bitsToNum x) ++ ":[" ++ show (widthBits x) ++ "]"
 
 randomLength :: Random -> (Natural,Random)
-randomLength = Geometric.fromRandom
+randomLength = Geometric.random
 
 -- A 3:2 compressor
 
@@ -331,8 +331,8 @@ counterCorrect =
     prop r0 =
       counterProp (n + 1) t
         where
-      (n,r1) = fromRandom r0
-      (t,_) = fromRandom r1
+      (n,r1) = random r0
+      (t,_) = random r1
 
 -------------------------------------------------------------------------------
 -- Montgomery multiplication
@@ -677,7 +677,7 @@ montgomerySquareCorrect =
     prop r0 =
       montgomerySquareProp n r s k xs xc
         where
-      (m,r1) = fromRandom r0
+      (m,r1) = random r0
       n = 2 * m + 1
       (r,s,k) = montgomeryParameters n
       (xs,r2) = randomPrefixBits (r - 2) r1

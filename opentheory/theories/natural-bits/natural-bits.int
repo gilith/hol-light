@@ -30,5 +30,5 @@ const "HOLLight.bit_width" as "Number.Natural.Bits.width"
 
 # Number.Natural.Uniform
 
-const "HOLLight.random_uniform" as "Number.Natural.Uniform.fromRandom"
-const "HOLLight.random_uniform_loop" as "Number.Natural.Uniform.fromRandom.loop"
+const "HOLLight.random_uniform" as "Number.Natural.Uniform.random"
+const "HOLLight.random_uniform_loop" as "Number.Natural.Uniform.random.loop"

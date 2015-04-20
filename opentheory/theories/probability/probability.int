@@ -7,11 +7,11 @@
 
 # Data.List
 
-const "HOLLight.random_vector" as "Data.List.fromRandom"
+const "HOLLight.random_vector" as "Data.List.random"
 
 # Data.List.Geometric
 
-const "HOLLight.random_geometric_list" as "Data.List.Geometric.fromRandom"
+const "HOLLight.random_geometric_list" as "Data.List.Geometric.random"
 
 # Number
 
@@ -19,8 +19,8 @@ const "HOLLight.random_geometric_list" as "Data.List.Geometric.fromRandom"
 
 # Number.Natural.Geometric
 
-const "HOLLight.random_geometric" as "Number.Natural.Geometric.fromRandom"
-const "HOLLight.random_geometric_loop" as "Number.Natural.Geometric.fromRandom.loop"
+const "HOLLight.random_geometric" as "Number.Natural.Geometric.random"
+const "HOLLight.random_geometric_loop" as "Number.Natural.Geometric.random.loop"
 
 # Probability
 
