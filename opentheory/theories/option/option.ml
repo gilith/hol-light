@@ -16,16 +16,20 @@ extend_the_interpretation "opentheory/theories/option/option.int";;
 logfile "option-thm";;
 
 let option_distinct = prove
-  (`!(a : A). ~(SOME a = NONE)`,
-   MATCH_ACCEPT_TAC (GSYM (prove_constructors_distinct option_RECURSION)));;
+ (`!(a : A). ~(SOME a = NONE)`,
+  MATCH_ACCEPT_TAC (GSYM (prove_constructors_distinct option_RECURSION)));;
 
 export_thm option_distinct;;
 
-let option_inj = prove_constructors_injective option_RECURSION;;
+let option_inj = prove
+ (`!a b : A. SOME a = SOME b <=> a = b`,
+  MATCH_ACCEPT_TAC (prove_constructors_injective option_RECURSION));;
 
 export_thm option_inj;;
 
-let option_cases = prove_cases_thm option_INDUCT;;
+let option_cases = prove
+ (`!x : A option. x = NONE \/ ?a. x = SOME a`,
+  MATCH_ACCEPT_TAC (prove_cases_thm option_INDUCT));;
 
 export_thm option_cases;;
 

@@ -1983,7 +1983,27 @@ let zip_def = new_definition
 
 export_thm zip_def;;
 
+let unzip_def = new_definition
+  `unzip = foldr (\ (x : A, y : B) (xs,ys). (CONS x xs, CONS y ys)) ([],[])`;;
+
+export_thm unzip_def;;
+
 logfile "list-zip-thm";;
+
+let zip_nil = prove
+ (`zip [] [] = ([] : (A # B) list)`,
+  REWRITE_TAC [zip_def; zipwith_nil]);;
+
+export_thm zip_nil;;
+
+let zip_cons = prove
+ (`!(x : A) (y : B) xs ys.
+     LENGTH xs = LENGTH ys ==>
+     zip (CONS x xs) (CONS y ys) = CONS (x,y) (zip xs ys)`,
+  REWRITE_TAC [zip_def] THEN
+  MATCH_ACCEPT_TAC zipwith_cons);;
+
+export_thm zip_cons;;
 
 let length_zipwith = prove
   (`!(f : A -> B -> C) l1 l2 n.
@@ -2164,6 +2184,51 @@ let zip_append = prove
   MATCH_ACCEPT_TAC zipwith_append);;
 
 export_thm zip_append;;
+
+let unzip_nil = prove
+ (`unzip [] = ([] : A list, [] : B list)`,
+  REWRITE_TAC [unzip_def; foldr_def]);;
+
+export_thm unzip_nil;;
+
+let unzip_cons = prove
+ (`!(x : A) (y : B) l xs ys.
+     unzip (CONS (x,y) l) = (CONS x xs, CONS y ys) <=> unzip l = (xs,ys)`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (ISPEC `unzip (l : (A # B) list)` PAIR_SURJECTIVE) THEN
+  REWRITE_TAC [unzip_def; foldr_def] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [CONS_11; PAIR_EQ]);;
+
+export_thm unzip_cons;;
+
+(***
+let zip_unzip = prove
+ (`!l (xs : A list) (ys : B list).
+     unzip l = (xs,ys) <=> LENGTH xs = LENGTH ys /\ l = zip xs ys`,
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [unzip_nil; PAIR_EQ] THEN
+   REPEAT GEN_TAC THEN
+   MP_TAC (ISPEC `xs : A list` list_cases) THEN
+   DISCH_THEN
+     (DISJ_CASES_THEN2 ***
+   LIST_INDUCT_TAC THENL
+   [LIST_INDUCT_TAC THENL
+    [REWRITE_TAC [zip_nil; LENGTH];
+     REWRITE_TAC [NOT_CONS_NIL; LENGTH; NOT_SUC]];
+    ALL_TAC] THEN
+   REWRITE_TAC [NOT_CONS_NIL] THEN
+   LIST_INDUCT_TAC THENL
+   [REWRITE_TAC [LENGTH; NOT_SUC];
+    ALL_TAC] THEN
+   REWRITE_TAC [LENGTH; SUC_INJ] THEN
+   STRIP_TAC THEN
+     MP_TAC (ISPECL [`(,) : A -> B -> A # B`,
+     MATCH_MP_TAC (TAUT `(x ==> ~y) ==> ~(x /\ y)`) THEN
+     STRIP_TAC
+
+export_thm zip_unzip;;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Nub.                                                                      *)

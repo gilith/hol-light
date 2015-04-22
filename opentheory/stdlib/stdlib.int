@@ -60,6 +60,7 @@ const "HOLLight.REVERSE" as "Data.List.reverse"
 const "HOLLight.TL" as "Data.List.tail"
 const "HOLLight.take" as "Data.List.take"
 const "HOLLight.set_of_list" as "Data.List.toSet"
+const "HOLLight.unzip" as "Data.List.unzip"
 const "HOLLight.zip" as "Data.List.zip"
 const "HOLLight.zipwith" as "Data.List.zipWith"
 

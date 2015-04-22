@@ -34,12 +34,10 @@ let () = (export_haskell_thm o prove)
   ACCEPT_TAC equal_listH_def);;
 ***)
 
-let length_src = prove
+let () = (export_thm o prove)
  (`(LENGTH ([] : A list) = 0) /\
    (!(h : A) t. LENGTH (CONS h t) = LENGTH t + 1)`,
   REWRITE_TAC [LENGTH_NIL; LENGTH_CONS; ADD1]);;
-
-export_thm length_src;;
 
 (***
 let () = (export_haskell_thm o prove)
@@ -68,11 +66,9 @@ let () = (export_haskell_thm o prove)
 
 (* Natural numbers *)
 
-let odd_src = prove
+let () = (export_thm o prove)
  (`!n. ODD n <=> n MOD 2 = 1`,
   ACCEPT_TAC ODD_MOD);;
-
-export_thm odd_src;;
 
 (***
 let () = (export_haskell_thm o prove)
@@ -214,33 +210,36 @@ let () = (export_haskell_thm o prove)
 ***)
 
 (* ------------------------------------------------------------------------- *)
-(* Testing the Haskell base.                                                 *)
+(* Haskell tests for the standard theory library.                            *)
 (* ------------------------------------------------------------------------- *)
 
-(***
-logfile "haskell-test";;
+logfile "base-haskell-test";;
 
-let () = (export_haskell_thm o prove)
- (`2 + 2 = 4`,
-  NUM_REDUCE_TAC);;
-
-let () = (export_haskell_thm o prove)
- (`!r.
-     let (n1,r') = rdecode_fibH r in
-     let (n2,r'') = rdecode_fibH r' in
-     (~(n1 = n2) \/ n2 = n1)`,
+let () = (export_thm o prove)
+ (`!x : A option. ~(is_some x <=> is_none x)`,
   GEN_TAC THEN
-  PAIR_CASES_TAC `rdecode_fibH r` THEN
-  DISCH_THEN
-    (X_CHOOSE_THEN `n1 : num`
-      (X_CHOOSE_THEN `r' : random` STRIP_ASSUME_TAC)) THEN
-  PAIR_CASES_TAC `rdecode_fibH r'` THEN
-  DISCH_THEN
-    (X_CHOOSE_THEN `n2 : num`
-      (X_CHOOSE_THEN `r'' : random` STRIP_ASSUME_TAC)) THEN
-  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-  MATCH_MP_TAC (TAUT `!x y. (x ==> y) ==> ~x \/ y`) THEN
-  MATCH_ACCEPT_TAC EQ_SYM);;
+  MP_TAC (SPEC `x : A option` option_cases) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [is_some_def; is_none_def]);;
+
+export_thm sum_distinct;;  (* Haskell *)
+
+(***
+let () = (export_thm o prove)
+ (`!x : A + B. ~(ISL x <=> ISR x)`,
+  GEN_TAC THEN
+  MP_TAC (SPEC `x : A + B` sum_CASES) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [ISL_def; ISR_def]);;
+***)
+
+(***
+let () = (export_thm o prove)
+ (`!l : (A # B) list. (let (x,y) = unzip l in zip x y) = l`,
+  GEN_TAC THEN
+  MP_TAC (SPEC `x : A option` option_cases) THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [is_some_def; is_none_def]);;
 ***)
 
 logfile_end ();;
