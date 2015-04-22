@@ -2192,17 +2192,73 @@ let unzip_nil = prove
 export_thm unzip_nil;;
 
 let unzip_cons = prove
- (`!(x : A) (y : B) l xs ys.
-     unzip (CONS (x,y) l) = (CONS x xs, CONS y ys) <=> unzip l = (xs,ys)`,
+ (`!h (x : A) (y : B) t xs ys.
+     unzip (CONS h t) = (CONS x xs, CONS y ys) <=>
+     h = (x,y) /\ unzip t = (xs,ys)`,
   REPEAT GEN_TAC THEN
-  MP_TAC (ISPEC `unzip (l : (A # B) list)` PAIR_SURJECTIVE) THEN
+  MP_TAC (ISPEC `h : A # B` PAIR_SURJECTIVE) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `a : A`
+       (X_CHOOSE_THEN `b : B` SUBST_VAR_TAC)) THEN
+  X_CHOOSE_THEN `xt : A list`
+    (X_CHOOSE_THEN `yt : B list` MP_TAC)
+  (ISPEC `unzip (t : (A # B) list)` PAIR_SURJECTIVE) THEN
   REWRITE_TAC [unzip_def; foldr_def] THEN
-  STRIP_TAC THEN
-  ASM_REWRITE_TAC [CONS_11; PAIR_EQ]);;
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [CONS_11; PAIR_EQ] THEN
+  BOOL_CASES_TAC `(b : B) = y` THEN
+  REWRITE_TAC [CONJ_ASSOC]);;
 
 export_thm unzip_cons;;
 
-(***
+let unzip_eq_nil1 = prove
+ (`!(l : (A # B) list) ys. unzip l = ([],ys) <=> l = [] /\ ys = []`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (ISPEC `l : (A # B) list` list_cases) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST_VAR_TAC
+       (X_CHOOSE_THEN `h : A # B`
+          (X_CHOOSE_THEN `t : (A # B) list` SUBST_VAR_TAC))) THENL
+  [REWRITE_TAC [unzip_nil; PAIR_EQ] THEN
+   MATCH_ACCEPT_TAC EQ_SYM_EQ;
+   MP_TAC (ISPEC `h : A # B` PAIR_SURJECTIVE) THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `a : A`
+        (X_CHOOSE_THEN `b : B` SUBST_VAR_TAC)) THEN
+   MP_TAC (ISPEC `unzip t : A list # B list ` PAIR_SURJECTIVE) THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `xt : A list`
+        (X_CHOOSE_THEN `yt : B list` MP_TAC)) THEN
+   REWRITE_TAC [unzip_def; foldr_def] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [NOT_CONS_NIL; PAIR_EQ]]);;
+
+export_thm unzip_eq_nil1;;
+
+let unzip_eq_nil2 = prove
+ (`!(l : (A # B) list) xs. unzip l = (xs,[]) <=> l = [] /\ xs = []`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (ISPEC `l : (A # B) list` list_cases) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST_VAR_TAC
+       (X_CHOOSE_THEN `h : A # B`
+          (X_CHOOSE_THEN `t : (A # B) list` SUBST_VAR_TAC))) THENL
+  [REWRITE_TAC [unzip_nil; PAIR_EQ] THEN
+   MATCH_ACCEPT_TAC EQ_SYM_EQ;
+   MP_TAC (ISPEC `h : A # B` PAIR_SURJECTIVE) THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `a : A`
+        (X_CHOOSE_THEN `b : B` SUBST_VAR_TAC)) THEN
+   MP_TAC (ISPEC `unzip t : A list # B list ` PAIR_SURJECTIVE) THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `xt : A list`
+        (X_CHOOSE_THEN `yt : B list` MP_TAC)) THEN
+   REWRITE_TAC [unzip_def; foldr_def] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REWRITE_TAC [NOT_CONS_NIL; PAIR_EQ]]);;
+
+export_thm unzip_eq_nil2;;
+
 let zip_unzip = prove
  (`!l (xs : A list) (ys : B list).
      unzip l = (xs,ys) <=> LENGTH xs = LENGTH ys /\ l = zip xs ys`,
@@ -2232,42 +2288,39 @@ let zip_unzip = prove
      STRIP_TAC THEN
      MP_TAC
        (SPECL [`x : A`; `y : B`; `xt : A list`; `yt : B list`] zip_cons) THEN
-     ASM_REWRITE_TAC []
-     MATCH_MP_TAC (TAUT `(x ==> ~y) ==> ~(x /\ y)`) THEN
+     ASM_REWRITE_TAC [] THEN
      POP_ASSUM (SUBST1_TAC o SYM) THEN
      REWRITE_TAC [NOT_CONS_NIL]]];
-   ***
    REPEAT GEN_TAC THEN
    MP_TAC (ISPEC `xs : A list` list_cases) THEN
    DISCH_THEN
      (DISJ_CASES_THEN2 SUBST_VAR_TAC
         (X_CHOOSE_THEN `x : A`
            (X_CHOOSE_THEN `xt : A list` SUBST_VAR_TAC))) THENL
-   [MP_TAC (ISPEC `ys : B list` list_cases) THEN
-    DISCH_THEN
-      (DISJ_CASES_THEN2 SUBST_VAR_TAC
-         (X_CHOOSE_THEN `y : B`
-            (X_CHOOSE_THEN `yt : B list` SUBST_VAR_TAC))) THENL
-    [REWRITE_TAC [zip_nil; LENGTH];
-     REWRITE_TAC [NOT_CONS_NIL; LENGTH; NOT_SUC]];
-    REWRITE_TAC [NOT_CONS_NIL] THEN
+   [REWRITE_TAC [unzip_eq_nil1; NOT_CONS_NIL] THEN
     MP_TAC (ISPEC `ys : B list` list_cases) THEN
     DISCH_THEN
       (DISJ_CASES_THEN2 SUBST_VAR_TAC
          (X_CHOOSE_THEN `y : B`
             (X_CHOOSE_THEN `yt : B list` SUBST_VAR_TAC))) THENL
-    [REWRITE_TAC [LENGTH; NOT_SUC];
-     REWRITE_TAC [LENGTH; SUC_INJ] THEN
-     STRIP_TAC THEN
-     MP_TAC
-       (SPECL [`x : A`; `y : B`; `xt : A list`; `yt : B list`] zip_cons) THEN
-     ASM_REWRITE_TAC []
-     MATCH_MP_TAC (TAUT `(x ==> ~y) ==> ~(x /\ y)`) THEN
-     POP_ASSUM (SUBST1_TAC o SYM) THEN
-     REWRITE_TAC [NOT_CONS_NIL]]];
+    [REWRITE_TAC [zip_nil; NOT_CONS_NIL];
+     REWRITE_TAC [LENGTH; NOT_SUC]];
+    MP_TAC (ISPEC `ys : B list` list_cases) THEN
+    DISCH_THEN
+      (DISJ_CASES_THEN2 SUBST_VAR_TAC
+         (X_CHOOSE_THEN `y : B`
+            (X_CHOOSE_THEN `yt : B list` SUBST_VAR_TAC))) THENL
+    [REWRITE_TAC [unzip_eq_nil2; NOT_CONS_NIL; LENGTH; NOT_SUC];
+     ASM_REWRITE_TAC [LENGTH; SUC_INJ; unzip_cons] THEN
+     ASM_CASES_TAC `LENGTH (xt : A list) = LENGTH (yt : B list)` THENL
+     [MP_TAC
+        (SPECL [`x : A`; `y : B`; `xt : A list`; `yt : B list`] zip_cons) THEN
+      ASM_REWRITE_TAC [] THEN
+      DISCH_THEN SUBST1_TAC THEN
+      REWRITE_TAC [CONS_11];
+      ASM_REWRITE_TAC []]]]]);;
 
 export_thm zip_unzip;;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Nub.                                                                      *)

@@ -233,13 +233,16 @@ let () = (export_thm o prove)
   ASM_REWRITE_TAC [ISL_def; ISR_def]);;
 ***)
 
-(***
 let () = (export_thm o prove)
  (`!l : (A # B) list. (let (x,y) = unzip l in zip x y) = l`,
   GEN_TAC THEN
-  MP_TAC (SPEC `x : A option` option_cases) THEN
-  STRIP_TAC THEN
-  ASM_REWRITE_TAC [is_some_def; is_none_def]);;
-***)
+  REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  MP_TAC (ISPEC `unzip l : A list # B list ` PAIR_SURJECTIVE) THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `xs : A list`
+       (X_CHOOSE_THEN `ys : B list` STRIP_ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [] THEN
+  POP_ASSUM (STRIP_ASSUME_TAC o REWRITE_RULE [zip_unzip]) THEN
+  ASM_REWRITE_TAC []);;
 
 logfile_end ();;
