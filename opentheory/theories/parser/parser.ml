@@ -144,16 +144,6 @@ let list_to_pstream_def = new_definition
 
 export_thm list_to_pstream_def;;
 
-let random_pstream_def = new_definition
-  `!f r.
-     random_pstream (f : random -> A) r =
-     let (r1,r2) = split_random r in
-     let l = random_fib_list f r1 in
-     let b = random_bit r2 in
-     append_pstream l (if b then ErrorPstream else EofPstream)`;;
-
-export_thm random_pstream_def;;
-
 (* ------------------------------------------------------------------------- *)
 (* Properties of parse streams.                                              *)
 (* ------------------------------------------------------------------------- *)
@@ -528,6 +518,28 @@ let length_pstream_src = prove
   REWRITE_TAC [length_pstream_def; ADD1]);;
 
 export_thm length_pstream_src;;
+
+let arbitrary_pstream = prove
+ (`ONTO
+     (\ ((l : A list), b).
+        append_pstream l (if b then ErrorPstream else EofPstream))`,
+  REWRITE_TAC [ONTO] THEN
+  MATCH_MP_TAC pstream_induct THEN
+  REPEAT CONJ_TAC THENL
+  [EXISTS_TAC `([] : A list, T)` THEN
+   REWRITE_TAC [append_pstream_nil];
+   EXISTS_TAC `([] : A list, F)` THEN
+   REWRITE_TAC [append_pstream_nil];
+   X_GEN_TAC `x : A` THEN
+   X_GEN_TAC `xs : A pstream` THEN
+   DISCH_THEN
+     (X_CHOOSE_THEN `l : A list`
+        (X_CHOOSE_THEN `b : bool` SUBST_VAR_TAC) o
+      REWRITE_RULE [EXISTS_PAIR_THM]) THEN
+   EXISTS_TAC `(CONS (x : A) l, (b : bool))` THEN
+   REWRITE_TAC [append_pstream_cons]]);;
+
+export_thm arbitrary_pstream;;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of stream parser combinators.                                  *)
@@ -1912,6 +1924,7 @@ export_thm length_pstream_src;;  (* Haskell *)
 export_thm pstream_to_list_def;;  (* Haskell *)
 export_thm append_pstream_def;;  (* Haskell *)
 export_thm list_to_pstream_def;;  (* Haskell *)
+export_thm arbitrary_pstream;;  (* Haskell *)
 export_thm mk_dest_parser;;  (* Haskell *)
 export_thm apply_parser_src;;  (* Haskell *)
 export_thm parse_token_def;;  (* Haskell *)
@@ -1932,5 +1945,13 @@ export_thm parse_fold_def;;  (* Haskell *)
 export_thm parser_fold_src;;  (* Haskell *)
 export_thm parser_foldn_def;;  (* Haskell *)
 export_thm parse_src;;  (* Haskell *)
+
+(* ------------------------------------------------------------------------- *)
+(* Haskell tests for stream parsers.                                         *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "parser-haskell-test";;
+
+export_thm list_to_pstream_to_list;;  (* Haskell *)
 
 logfile_end ();;
