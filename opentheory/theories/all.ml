@@ -28,7 +28,7 @@ loads "opentheory/theories/option/option.ml";;
 loads "opentheory/theories/list/list.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell source for the standard theory library.                           *)
+(* The standard theory library in Haskell.                                   *)
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/haskell/haskell.ml";;
