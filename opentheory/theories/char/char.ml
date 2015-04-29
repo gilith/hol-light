@@ -73,10 +73,11 @@ let random_unicode_def = new_definition
      random_unicode r =
      let n0 = random_uniform 1111998 r in
      let n1 = if n0 < 55296 then n0 else n0 + 2048 in
-     let pl = n1 DIV 65534 in
-     let pos = n1 MOD 65534 in
-     let n2 = pos + bit_shl pl 16 in
-     mk_unicode n2`;;
+     let n2 = if n1 < 64976 then n1 else n1 + 32 in
+     let pl = n2 DIV 65534 in
+     let pos = n2 MOD 65534 in
+     let n = pos + bit_shl pl 16 in
+     mk_unicode n`;;
 
 export_thm random_unicode_def;;
 
@@ -646,6 +647,132 @@ let position_unicode_src = prove
   REWRITE_TAC [FUN_EQ_THM; position_unicode_def; o_THM]);;
 
 export_thm position_unicode_src;;
+
+(***
+let random_unicode_surj = prove
+ (`!c. ?r. random_unicode r = c`,
+  GEN_TAC THEN
+  REWRITE_TAC [random_unicode_def; LET_DEF; LET_END_DEF] THEN
+  X_CHOOSE_THEN `n : num` STRIP_ASSUME_TAC
+    (SPEC `c : unicode` unicode_cases) THEN
+  POP_ASSUM SUBST_VAR_TAC THEN
+  SUBGOAL_THEN
+    `dest_position_unicode n + bit_shl (dest_plane_unicode n) 16 = n`
+    (SUBST1_TAC o SYM) THENL
+  [REWRITE_TAC [dest_position_unicode_def; dest_plane_unicode_def; bit_bound];
+   ALL_TAC] THEN
+  POP_ASSUM MP_TAC THEN
+  REWRITE_TAC [is_unicode_def; LET_DEF; LET_END_DEF] THEN
+  SPEC_TAC (`dest_position_unicode n`, `pos : num`) THEN
+  SPEC_TAC (`dest_plane_unicode n`, `pl : num`) THEN
+  REPEAT GEN_TAC THEN
+  ASM_CASES_TAC `pl = 0` THENL
+  [ASM_REWRITE_TAC [GSYM NOT_LT] THEN
+   ASM_CASES_TAC `pos < 55296` THENL
+   [ASM_REWRITE_TAC [] THEN
+    STRIP_TAC THEN
+    MP_TAC (SPECL [`1111998`; `pos : num`] random_uniform_surj) THEN
+    ANTS_TAC THENL
+    [MATCH_MP_TAC LTE_TRANS THEN
+     EXISTS_TAC `55296` THEN
+     ASM_REWRITE_TAC [] THEN
+     NUM_REDUCE_TAC;
+     ALL_TAC] THEN
+    DISCH_THEN (X_CHOOSE_THEN `r : random` STRIP_ASSUME_TAC) THEN
+    EXISTS_TAC `r : random` THEN
+    ASM_REWRITE_TAC [] THEN
+    SUBGOAL_THEN `pos < 64976` (SUBST1_TAC o EQT_INTRO) THENL
+    [MATCH_MP_TAC LTE_TRANS THEN
+     EXISTS_TAC `55296` THEN
+     ASM_REWRITE_TAC [] THEN
+     NUM_REDUCE_TAC;
+     ALL_TAC] THEN
+    REWRITE_TAC [] THEN
+    MP_TAC (SPECL [`pos : num`; `65534`] DIV_LT) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    MP_TAC (SPECL [`pos : num`; `65534`] MOD_LT) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REFL_TAC;
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   SUBGOAL_THEN
+     `?d. pos = d + 55296 + 2048`
+     (X_CHOOSE_THEN `pos1 : num` SUBST_VAR_TAC) THENL
+   [ONCE_REWRITE_TAC [ADD_SYM] THEN
+    ASM_REWRITE_TAC
+      [GSYM LE_EXISTS; NUM_REDUCE_CONV `55296 + 2048`; GSYM NOT_LT];
+    ALL_TAC] THEN
+   POP_ASSUM (K ALL_TAC) THEN
+   ASM_CASES_TAC `pos1 + 55296 + 2048 < 64976` THENL
+   [ASM_REWRITE_TAC [] THEN
+    MP_TAC (SPECL [`1111998`; `pos1 + 55296`] random_uniform_surj) THEN
+    ANTS_TAC THENL
+    [CONV_TAC (REWR_CONV (GSYM (SPEC `2048` LT_ADD_RCANCEL))) THEN
+     MATCH_MP_TAC LTE_TRANS THEN
+     EXISTS_TAC `64976` THEN
+     ASM_REWRITE_TAC [GSYM ADD_ASSOC] THEN
+     NUM_REDUCE_TAC;
+     ALL_TAC] THEN
+    DISCH_THEN (X_CHOOSE_THEN `r : random` STRIP_ASSUME_TAC) THEN
+    EXISTS_TAC `r : random` THEN
+    ASM_REWRITE_TAC [LT_ADD_RCANCEL_0; GSYM ADD_ASSOC] THEN
+    MP_TAC (SPECL [`pos1 + 55296 + 2048`; `65534`] DIV_LT) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    MP_TAC (SPECL [`pos1 + 55296 + 2048`; `65534`] MOD_LT) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [ADD_ASSOC];
+    ALL_TAC] THEN
+   ASM_REWRITE_TAC [] THEN
+   UNDISCH_TAC `pos1 + 55296 + 2048 < 65534` THEN
+   POP_ASSUM_LIST (K ALL_TAC) THEN
+   SUBGOAL_THEN
+     `?d. pos1 + 55296 + 2048 = d + 2048 + 32`
+     (X_CHOOSE_THEN `pos : num` SUBST1_TAC) THENL
+   [EXISTS_TAC `pos1 + 55264` THEN
+    REWRITE_TAC [GSYM ADD_ASSOC] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   REWRITE_TAC [NOT_LT] THEN
+   REPEAT STRIP_TAC THEN
+   ***
+   MP_TAC (SPECL [`1111998`; `pos : num`] random_uniform_surj) THEN
+   ANTS_TAC THENL
+   [MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `55296` THEN
+    ASM_REWRITE_TAC [] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   DISCH_THEN (X_CHOOSE_THEN `r : random` STRIP_ASSUME_TAC) THEN
+   EXISTS_TAC `r : random` THEN
+   ASM_REWRITE_TAC [] THEN
+   SUBGOAL_THEN `pos < 64976` (SUBST1_TAC o EQT_INTRO) THENL
+   [MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `55296` THEN
+    ASM_REWRITE_TAC [] THEN
+    NUM_REDUCE_TAC;
+    ALL_TAC] THEN
+   REWRITE_TAC [] THEN
+   MP_TAC (SPECL [`pos : num`; `65534`] DIV_LT) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   MP_TAC (SPECL [`pos : num`; `65534`] MOD_LT) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REFL_TAC;
+
+
+let arbitrary_unicode = prove
+ (`ONTO random_unicode`,
+  REWRITE_TAC [ONTO]
+
+export_thm arbitrary_unicode;;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of the UTF-8 encoding of Unicode characters.                   *)
@@ -2298,6 +2425,7 @@ export_thm mk_dest_unicode;;  (* Haskell *)
 export_thm plane_unicode_src;;  (* Haskell *)
 export_thm position_unicode_src;;  (* Haskell *)
 export_thm random_unicode_def;;  (* Haskell *)
+(***export_thm arbitrary_unicode;;  (* Haskell *)***)
 export_thm encode_ascii_utf8_def;;  (* Haskell *)
 export_thm encode_two_byte_utf8_def;;  (* Haskell *)
 export_thm encode_three_byte_utf8_def;;  (* Haskell *)

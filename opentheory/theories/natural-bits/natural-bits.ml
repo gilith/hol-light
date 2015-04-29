@@ -2513,6 +2513,43 @@ let bit_or_and = prove
 
 export_thm bit_or_and;;
 
+let random_uniform_loop_surj = prove
+ (`!n i. i < n ==> ?r. random_uniform_loop n (bit_width (n - 1)) r = i`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPEC `n : num` num_CASES) THEN
+  DISCH_THEN
+    (DISJ_CASES_THEN2 SUBST_VAR_TAC
+       (X_CHOOSE_THEN `m : num` SUBST_VAR_TAC)) THENL
+  [REWRITE_TAC [LT_ZERO];
+   ALL_TAC] THEN
+  ONCE_REWRITE_TAC [random_uniform_loop_def] THEN
+  REWRITE_TAC [SUC_SUB1; LT_SUC_LE; LET_DEF; LET_END_DEF] THEN
+  STRIP_TAC THEN
+  MP_TAC
+    (SPECL [`bit_width m`; `num_to_bitvec i (bit_width m)`]
+       random_bits_surj) THEN
+  REWRITE_TAC [length_num_to_bitvec] THEN
+  DISCH_THEN (X_CHOOSE_THEN `r1 : random` STRIP_ASSUME_TAC) THEN
+  MP_TAC (SPECL [`r1 : random`; `r2 : random`] split_random_surj) THEN
+  DISCH_THEN (X_CHOOSE_THEN `r : random` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `r : random` THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF; num_to_bitvec_to_num] THEN
+  SUBGOAL_THEN
+    `bit_bound i (bit_width m) = i`
+    (fun th -> ASM_REWRITE_TAC [th]) THEN
+  REWRITE_TAC [bit_bound_id] THEN
+  MATCH_MP_TAC bit_width_mono THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm random_uniform_loop_surj;;
+
+let random_uniform_surj = prove
+ (`!n i. i < n ==> ?r. random_uniform n r = i`,
+  REWRITE_TAC
+    [random_uniform_def; LET_DEF; LET_END_DEF; random_uniform_loop_surj]);;
+
+export_thm random_uniform_surj;;
+
 let random_uniform_src = prove
  (`!n.
      random_uniform n =

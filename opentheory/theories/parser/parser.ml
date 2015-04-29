@@ -473,6 +473,16 @@ let pstream_to_list_length = prove
 
 export_thm pstream_to_list_length;;
 
+let length_fst_pstream_to_list = prove
+ (`!(xs : A pstream).
+     length_pstream xs = LENGTH (FST (pstream_to_list xs))`,
+  GEN_TAC THEN
+  MATCH_MP_TAC pstream_to_list_length THEN
+  EXISTS_TAC `SND (pstream_to_list (xs : A pstream))` THEN
+  REWRITE_TAC []);;
+
+export_thm length_fst_pstream_to_list;;
+
 let pstream_to_list_map = prove
  (`!(f : A -> B) xs ys e.
      pstream_to_list xs = (ys,e) ==>
@@ -1953,5 +1963,6 @@ export_thm parse_src;;  (* Haskell *)
 logfile "parser-haskell-test";;
 
 export_thm list_to_pstream_to_list;;  (* Haskell *)
+export_thm length_fst_pstream_to_list;;  (* Haskell *)
 
 logfile_end ();;

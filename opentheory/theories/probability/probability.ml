@@ -113,6 +113,24 @@ export_thm random_geometric_list_def;;
 
 logfile "probability-thm";;
 
+let random_bit_surj = prove
+ (`!b. ?r. random_bit r = b`,
+  GEN_TAC THEN
+  EXISTS_TAC `mk_random (sreplicate b)` THEN
+  REWRITE_TAC [random_bit_def; random_tybij; shd_def; snth_sreplicate]);;
+
+export_thm random_bit_surj;;
+
+let split_random_surj = prove
+ (`!r1 r2. ?r. split_random r = (r1,r2)`,
+  REPEAT GEN_TAC THEN
+  EXISTS_TAC `mk_random (sinterleave (dest_random r1) (dest_random r2))` THEN
+  REWRITE_TAC
+    [split_random_def; random_tybij; ssplit_sinterleave; LET_DEF;
+     LET_END_DEF]);;
+
+export_thm split_random_surj;;
+
 let length_random_vector = prove
  (`!(f : random -> A) n r. LENGTH (random_vector f n r) = n`,
   GEN_TAC THEN
@@ -144,11 +162,41 @@ let random_vector_src = prove
 
 export_thm random_vector_src;;
 
+let random_vector_surj = prove
+ (`!f n (l : A list). ONTO f /\ LENGTH l = n ==> ?r. random_vector f n r = l`,
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
+  SPEC_TAC (`l : A list`, `l : A list`) THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [LENGTH; random_vector_def];
+   ALL_TAC] THEN
+  REWRITE_TAC [LENGTH; random_vector_def] THEN
+  POP_ASSUM (X_CHOOSE_THEN `r2 : random` STRIP_ASSUME_TAC) THEN
+  FIRST_X_ASSUM
+    (X_CHOOSE_THEN `r1 : random` SUBST_VAR_TAC o
+     SPEC `h : A` o
+     REWRITE_RULE [ONTO]) THEN
+  MP_TAC (SPECL [`r1 : random`; `r2 : random`] split_random_surj) THEN
+  DISCH_THEN (X_CHOOSE_THEN `r : random` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `r : random` THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF]);;
+
+export_thm random_vector_surj;;
+
 let length_random_bits = prove
  (`!n r. LENGTH (random_bits n r) = n`,
   REWRITE_TAC [random_bits_def; length_random_vector]);;
 
 export_thm length_random_bits;;
+
+let random_bits_surj = prove
+ (`!n l. LENGTH l = n ==> ?r. random_bits n r = l`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [random_bits_def] THEN
+  MATCH_MP_TAC random_vector_surj THEN
+  ASM_REWRITE_TAC [ONTO; ONCE_REWRITE_RULE [EQ_SYM_EQ] random_bit_surj]);;
+
+export_thm random_bits_surj;;
 
 let random_geometric_loop_src =
     REWRITE_RULE [ADD1] random_geometric_loop_def;;
