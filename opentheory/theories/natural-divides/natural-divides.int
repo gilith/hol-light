@@ -8,3 +8,5 @@
 # Number.Natural
 
 const "HOLLight.divides" as "Number.Natural.divides"
+const "HOLLight.gcd" as "Number.Natural.gcd"
+const "HOLLight.lcm" as "Number.Natural.lcm"

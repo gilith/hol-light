@@ -58,12 +58,6 @@ loads "opentheory/theories/natural-bits/natural-bits.ml";;
 loads "opentheory/theories/natural-divides/natural-divides.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Natural number greatest common divisor.                                   *)
-(* ------------------------------------------------------------------------- *)
-
-loads "opentheory/theories/natural-gcd/natural-gcd.ml";;
-
-(* ------------------------------------------------------------------------- *)
 (* Prime natural numbers.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
