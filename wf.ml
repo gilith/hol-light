@@ -158,6 +158,8 @@ let WF_UREC = prove
   FIRST_ASSUM MATCH_MP_TAC THEN GEN_TAC THEN
   DISCH_THEN(ANTE_RES_THEN MP_TAC) THEN ASM_REWRITE_TAC[]);;
 
+export_thm WF_UREC;;
+
 let WF_UREC_WF = prove
  (`!r.
      (!h. (!f g x. (!z. r z x ==> (f z = g z)) ==> (h f x = h g x))
@@ -193,6 +195,8 @@ let WF_UREC_WF = prove
     FIRST_X_ASSUM (MP_TAC o SPEC `x:A`) THEN
     ASM_REWRITE_TAC []]]);;
 
+export_thm WF_UREC_WF;;
+
 (* ------------------------------------------------------------------------- *)
 (* Stronger form of recursion with "inductive invariant" (Krstic/Matthews).  *)
 (* ------------------------------------------------------------------------- *)
@@ -221,6 +225,8 @@ let WF_REC_INVARIANT = prove
     ASM_MESON_TAC []];
    ASM_MESON_TAC []]);;
 
+export_thm WF_REC_INVARIANT;;
+
 (* ------------------------------------------------------------------------- *)
 (* Equivalent to just *existence* part of recursion.                         *)
 (* ------------------------------------------------------------------------- *)
@@ -233,6 +239,8 @@ let WF_REC = prove
   REPEAT STRIP_TAC THEN
   FIRST_X_ASSUM(MATCH_MP_TAC o MATCH_MP WF_REC_INVARIANT) THEN
   EXISTS_TAC `\x:A y:B. T` THEN ASM_REWRITE_TAC[]);;
+
+export_thm WF_REC;;
 
 let WF_REC_WF = prove
  (`!r.
@@ -262,6 +270,8 @@ let WF_REC_WF = prove
     FIRST_ASSUM(fun th -> GEN_REWRITE_TAC RAND_CONV [th]) THEN REWRITE_TAC[LT];
     MP_TAC(SPEC `\n:num. ?i:num. n = f(x(i):A)` num_WOP) THEN
     REWRITE_TAC[] THEN ASM_MESON_TAC[]]);;
+
+export_thm WF_REC_WF;;
 
 (* ------------------------------------------------------------------------- *)
 (* Combine the two versions of the recursion theorem.                        *)
