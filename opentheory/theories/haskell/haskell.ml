@@ -19,8 +19,12 @@ let () = (export_thm o prove)
 (* Natural numbers *)
 
 let () = (export_thm o prove)
- (`!n. ODD n <=> n MOD 2 = 1`,
-  ACCEPT_TAC ODD_MOD);;
+ (`!n. EVEN n <=> n MOD 2 = 0`,
+  ACCEPT_TAC EVEN_MOD);;
+
+let () = (export_thm o prove)
+ (`!n. ODD n <=> ~EVEN n`,
+  REWRITE_TAC [NOT_EVEN]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Haskell tests for the standard theory library.                            *)

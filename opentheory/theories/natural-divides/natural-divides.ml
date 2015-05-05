@@ -1419,9 +1419,8 @@ let egcd_gcd = prove
 
 export_thm egcd_gcd;;
 
-(***
 let egcd_nonzero = prove
- (`!a b s t g. ~(a = 0) /\ egcd a b = (s,t,g) ==> t * b + g = s * a`,
+ (`!a b g s t. ~(a = 0) /\ egcd a b = (g,s,t) ==> t * b + g = s * a`,
   MATCH_MP_TAC egcd_induction THEN
   CONJ_TAC THENL
   [REPEAT GEN_TAC THEN
@@ -1430,22 +1429,70 @@ let egcd_nonzero = prove
    REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
    REWRITE_TAC [ONE_MULT];
    ALL_TAC] THEN
+  CONJ_TAC THENL
+  [REPEAT GEN_TAC THEN
+   STRIP_TAC THEN
+   REPEAT GEN_TAC THEN
+   ONCE_REWRITE_TAC [egcd_def] THEN
+   POP_ASSUM MP_TAC THEN
+   ASM_REWRITE_TAC [divides_mod_cond] THEN
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF; PAIR_EQ] THEN
+   STRIP_TAC THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [ONE_MULT] THEN
+   MATCH_MP_TAC EQ_TRANS THEN
+   EXISTS_TAC `(a DIV b) * b` THEN
+   CONJ_TAC THENL
+   [ASM_REWRITE_TAC [GSYM SUC_MULT; EQ_MULT_RCANCEL; ADD1] THEN
+    MATCH_MP_TAC SUB_ADD THEN
+    REWRITE_TAC [ONE; LE_SUC_LT; LT_NZ] THEN
+    STRIP_TAC THEN
+    MP_TAC (SPECL [`a : num`; `b : num`] DIVISION_DEF_DIV) THEN
+    ASM_REWRITE_TAC [ZERO_MULT; ADD_0];
+    ALL_TAC] THEN
+   MP_TAC (SPECL [`a : num`; `b : num`] DIVISION_DEF_DIV) THEN
+   ASM_REWRITE_TAC [ADD_0];
+   ALL_TAC] THEN
   REPEAT GEN_TAC THEN
   STRIP_TAC THEN
   REPEAT GEN_TAC THEN
+  UNDISCH_THEN `c = a MOD b` (STRIP_ASSUME_TAC o SYM) THEN
   ONCE_REWRITE_TAC [egcd_def] THEN
   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-  MP_TAC (ISPEC `egcd b (a MOD b)` PAIR_SURJECTIVE) THEN
+  MP_TAC (ISPEC `egcd c (b MOD c)` PAIR_SURJECTIVE) THEN
   REWRITE_TAC [EXISTS_PAIR_THM] THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `s' : num`
-      (X_CHOOSE_THEN `t' : num`
-        (X_CHOOSE_THEN `g' : num` STRIP_ASSUME_TAC))) THEN
+    (X_CHOOSE_THEN `g' : num`
+      (X_CHOOSE_THEN `s' : num`
+        (X_CHOOSE_THEN `t' : num` STRIP_ASSUME_TAC))) THEN
+  FIRST_X_ASSUM (MP_TAC o SPECL [`g' : num`; `s' : num`; `t' : num`]) THEN
   ASM_REWRITE_TAC [PAIR_EQ] THEN
   STRIP_TAC THEN
-  REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
-  FIRST_X_ASSUM (MP_TAC o SPECL [`s' : num`; `t' : num`; `g' : num`]) THEN
+  STRIP_TAC THEN
+  POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
+  POP_ASSUM MP_TAC THEN
+  POP_ASSUM SUBST_VAR_TAC THEN
+  STRIP_TAC THEN
   ASM_REWRITE_TAC [] THEN
+  CONV_TAC (LAND_CONV (LAND_CONV (LAND_CONV (REWR_CONV ADD_SYM)))) THEN
+  REWRITE_TAC [RIGHT_ADD_DISTRIB; GSYM ADD_ASSOC] THEN
+  MP_TAC (SPECL [`b : num`; `c : num`] DIVISION_DEF_DIV) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN
+    (CONV_TAC o LAND_CONV o RAND_CONV o LAND_CONV o RAND_CONV o
+     REWR_CONV o SYM) THEN
+  ASM_REWRITE_TAC [LEFT_ADD_DISTRIB; GSYM ADD_ASSOC] THEN
+  MP_TAC (SPECL [`a : num`; `b : num`] DIVISION_DEF_DIV) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (CONV_TAC o RAND_CONV o RAND_CONV o REWR_CONV o SYM) THEN
+  REWRITE_TAC [LEFT_ADD_DISTRIB; MULT_ASSOC] THEN
+  CONV_TAC (RAND_CONV (LAND_CONV (LAND_CONV (REWR_CONV MULT_SYM)))) THEN
+  REWRITE_TAC [EQ_ADD_LCANCEL] THEN
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
+  ASM_REWRITE_TAC [EQ_ADD_LCANCEL; RIGHT_ADD_DISTRIB; EQ_MULT_RCANCEL] THEN
+  MATCH_ACCEPT_TAC MULT_SYM);;
 
 export_thm egcd_nonzero;;
 
@@ -1453,8 +1500,46 @@ let egcd_cases = prove
  (`!a b.
      ~(a = 0) ==>
      ?s t. egcd a b = (gcd a b, s ,t) /\ t * b + gcd a b = s * a`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (ISPEC `egcd a b` PAIR_SURJECTIVE) THEN
+  REWRITE_TAC [EXISTS_PAIR_THM] THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `g : num`
+      (X_CHOOSE_THEN `s : num`
+        (X_CHOOSE_THEN `t : num` STRIP_ASSUME_TAC))) THEN
+  EXISTS_TAC `s : num` THEN
+  EXISTS_TAC `t : num` THEN
+  ASM_REWRITE_TAC [PAIR_EQ] THEN
+  MP_TAC (SPECL [`a : num`; `b : num`] egcd_gcd) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  REWRITE_TAC [] THEN
+  MATCH_MP_TAC egcd_nonzero THEN
+  ASM_REWRITE_TAC []);;
 
-***)
+export_thm egcd_cases;;
+
+let egcd_divides1_test = prove
+ (`!a b. divides (FST (egcd a b)) a`,
+  REWRITE_TAC [egcd_gcd; gcd_divides1]);;
+
+export_thm egcd_divides1_test;;
+
+let egcd_divides2_test = prove
+ (`!a b. divides (FST (egcd a b)) b`,
+  REWRITE_TAC [egcd_gcd; gcd_divides2]);;
+
+export_thm egcd_divides2_test;;
+
+let egcd_nonzero_test = prove
+ (`!a b. let (g,s,t) = egcd (a + 1) b in t * b + g = s * (a + 1)`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPECL [`a + 1`; `b : num`] egcd_cases) THEN
+  REWRITE_TAC [GSYM ADD1; NOT_SUC] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF]);;
+
+export_thm egcd_nonzero_test;;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of natural number least common multiple.                       *)
@@ -1857,9 +1942,21 @@ export_thm gcd_right_distrib;;
 logfile "natural-divides-haskell-src";;
 
 export_thm divides_mod_cond;;  (* Haskell *)
-(***
 export_thm egcd_def;;  (* Haskell *)
-***)
+
+(* ------------------------------------------------------------------------- *)
+(* Haskell tests for the divides relation on natural numbers.                *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "natural-divides-haskell-test";;
+
+export_thm divides_refl;;  (* Haskell *)
+export_thm divides_zero;;  (* Haskell *)
+export_thm one_divides;;  (* Haskell *)
+export_thm two_divides;;  (* Haskell *)
+export_thm egcd_divides1_test;;  (* Haskell *)
+export_thm egcd_divides2_test;;  (* Haskell *)
+export_thm egcd_nonzero_test;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
 (* Divides functions operating on ML numerals.                               *)
