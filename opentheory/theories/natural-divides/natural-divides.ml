@@ -477,22 +477,16 @@ export_thm gcd_divides1;;
 export_thm gcd_divides2;;
 export_thm gcd_greatest_imp;;
 
-(***
-egcd a b =
-    if b == 0 then (1,0,a) else
-    let c = a `mod` b in
-    if c == 0 then (1, a `div` b - 1, b) else
-    let (s,t,g) = egcd c (b `mod` c) in
-    let u = s + (b `div` c) * t in
-    (u, t + (a `div` b) * u, g)
-
 let egcd_def =
   let exists_lemma = prove
     (`?f. !a b.
         f a b =
-        if b = 0 then (1,0,a) else
-        let (s,t,g) = f b (a MOD b) in
-        (t, s - (a DIV b) * t, g)`,
+        if b = 0 then (a,1,0) else
+        let c = a MOD b in
+        if c = 0 then (b, 1, a DIV b - 1) else
+        let (g,s,t) = f c (b MOD c) in
+        let u = s + (b DIV c) * t in
+        (g, u, t + (a DIV b) * u)`,
      MP_TAC
        ((INST_TYPE [(`:num # num # num`,`:B`)] o
          ISPEC `MEASURE (SND : num # num -> num)`) WF_REC) THEN
@@ -500,9 +494,12 @@ let egcd_def =
      DISCH_THEN
        (MP_TAC o
         SPEC `\f (a,b).
-                if b = 0 then (1,0,a) else
-                let (s,t,g) = f (b, a MOD b) in
-                (t, s - (a DIV b) * t, g)`) THEN
+                if b = 0 then (a,1,0) else
+                let c = a MOD b in
+                if c = 0 then (b, 1, a DIV b - 1) else
+                let (g,s,t) = f (c, b MOD c) in
+                let u = s + (b DIV c) * t in
+                (g, u, t + (a DIV b) * u)`) THEN
      REVERSE_TAC ANTS_TAC THENL
      [STRIP_TAC THEN
       EXISTS_TAC `\a b. (f : num # num -> num # num # num) (a,b)` THEN
@@ -519,18 +516,24 @@ let egcd_def =
      COND_CASES_TAC THENL
      [REWRITE_TAC [];
       ALL_TAC] THEN
-     DISCH_THEN (MP_TAC o SPECL [`b : num`; `a MOD b`]) THEN
+     REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+     COND_CASES_TAC THENL
+     [REWRITE_TAC [];
+      ALL_TAC] THEN
+     DISCH_THEN (MP_TAC o SPECL [`a MOD b`; `b MOD (a MOD b)`]) THEN
      REVERSE_TAC ANTS_TAC THENL
      [DISCH_THEN (SUBST1_TAC o SYM) THEN
       REWRITE_TAC [];
       ALL_TAC] THEN
      REWRITE_TAC [MEASURE] THEN
+     MATCH_MP_TAC LT_TRANS THEN
+     EXISTS_TAC `a MOD b` THEN
+     CONJ_TAC THEN
      MATCH_MP_TAC DIVISION_DEF_MOD THEN
      ASM_REWRITE_TAC []) in
   new_specification ["egcd"] exists_lemma;;
 
 export_thm egcd_def;;
-***)
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of natural number greatest common divisor.                     *)
@@ -1307,11 +1310,12 @@ let gcd_mod = prove
 
 export_thm gcd_mod;;
 
-(***
 let egcd_induction = prove
  (`!p.
      (!a. p a 0) /\
-     (!a b. ~(b = 0) /\ p b (a MOD b) ==> p a b) ==>
+     (!a b. ~(b = 0) /\ divides b a ==> p a b) /\
+     (!a b c.
+        ~(b = 0) /\ c = a MOD b /\ ~(c = 0) /\ p c (b MOD c) ==> p a b) ==>
      !a b. p a b`,
   GEN_TAC THEN
   STRIP_TAC THEN
@@ -1325,20 +1329,33 @@ let egcd_induction = prove
   ASM_CASES_TAC `b = 0` THENL
   [ASM_REWRITE_TAC [];
    ALL_TAC] THEN
-  DISCH_THEN (MP_TAC o SPECL [`b : num`; `a MOD b`]) THEN
+  ASM_CASES_TAC `a MOD b = 0` THENL
+  [DISCH_THEN (K ALL_TAC) THEN
+   POP_ASSUM MP_TAC THEN
+   MP_TAC (SPECL [`b : num`; `a : num`] divides_mod) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   POP_ASSUM MP_TAC THEN
+   ASM_REWRITE_TAC [IMP_IMP];
+   ALL_TAC] THEN
+  DISCH_THEN (MP_TAC o SPECL [`a MOD b`; `b MOD (a MOD b)`]) THEN
   ANTS_TAC THENL
   [REWRITE_TAC [MEASURE] THEN
+   MATCH_MP_TAC LT_TRANS THEN
+   EXISTS_TAC `a MOD b` THEN
+   CONJ_TAC THEN
    MATCH_MP_TAC DIVISION_DEF_MOD THEN
    ASM_REWRITE_TAC [];
    ALL_TAC] THEN
   STRIP_TAC THEN
   FIRST_X_ASSUM MATCH_MP_TAC THEN
+  EXISTS_TAC `a MOD b` THEN
   ASM_REWRITE_TAC []);;
 
 export_thm egcd_induction;;
 
 let egcd_zero = prove
- (`!a. egcd a 0 = (1,0,a)`,
+ (`!a. egcd a 0 = (a,1,0)`,
   GEN_TAC THEN
   ONCE_REWRITE_TAC [egcd_def] THEN
   REWRITE_TAC []);;
@@ -1346,50 +1363,63 @@ let egcd_zero = prove
 export_thm egcd_zero;;
 
 let zero_egcd = prove
- (`!b. ~(b = 0) ==> egcd 0 b = (0,1,b)`,
+ (`!b. ~(b = 0) ==> FST (egcd 0 b) = b`,
   GEN_TAC THEN
   STRIP_TAC THEN
   ONCE_REWRITE_TAC [egcd_def] THEN
   MP_TAC (SPEC `b : num` MOD_0) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN SUBST1_TAC THEN
-  REWRITE_TAC [egcd_zero; LET_DEF; LET_END_DEF; MULT_0; SUB_0]);;
+  REWRITE_TAC [egcd_zero; LET_DEF; LET_END_DEF]);;
 
 export_thm zero_egcd;;
 
 let egcd_gcd = prove
- (`!a b s t g. egcd a b = (s,t,g) ==> gcd a b = g`,
+ (`!a b. FST (egcd a b) = gcd a b`,
   MATCH_MP_TAC egcd_induction THEN
   CONJ_TAC THENL
-  [REPEAT GEN_TAC THEN
-   REWRITE_TAC [egcd_zero; gcd_zero; PAIR_EQ] THEN
-   STRIP_TAC;
+  [REWRITE_TAC [egcd_zero; gcd_zero];
    ALL_TAC] THEN
-  REPEAT GEN_TAC THEN
-  STRIP_TAC THEN
-  REPEAT GEN_TAC THEN
+  CONJ_TAC THENL
+  [REPEAT STRIP_TAC THEN
+   ONCE_REWRITE_TAC [egcd_def] THEN
+   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+   REVERSE_TAC COND_CASES_TAC THENL
+   [SUBGOAL_THEN `F` CONTR_TAC THEN
+    MP_TAC (SPECL [`b : num`; `a : num`] divides_mod) THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   MATCH_MP_TAC EQ_SYM THEN
+   ASM_REWRITE_TAC [gcd_divides];
+   ALL_TAC] THEN
+  REPEAT STRIP_TAC THEN
+  UNDISCH_THEN `c = a MOD b` (STRIP_ASSUME_TAC o SYM) THEN
   ONCE_REWRITE_TAC [egcd_def] THEN
   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
-  MP_TAC (ISPEC `egcd b (a MOD b)` PAIR_SURJECTIVE) THEN
+  UNDISCH_TAC `FST (egcd c (b MOD c)) = gcd c (b MOD c)` THEN
+  MP_TAC (ISPEC `egcd c (b MOD c)` PAIR_SURJECTIVE) THEN
   REWRITE_TAC [EXISTS_PAIR_THM] THEN
   DISCH_THEN
-    (X_CHOOSE_THEN `s' : num`
-      (X_CHOOSE_THEN `t' : num`
-        (X_CHOOSE_THEN `g' : num` STRIP_ASSUME_TAC))) THEN
-  ASM_REWRITE_TAC [PAIR_EQ] THEN
-  DISCH_THEN
-    (CONJUNCTS_THEN2 (SUBST_VAR_TAC o SYM)
-       (CONJUNCTS_THEN (SUBST_VAR_TAC o SYM))) THEN
-  ONCE_REWRITE_TAC [gcd_comm] THEN
-  MATCH_MP_TAC EQ_SYM THEN
-  FIRST_X_ASSUM (MP_TAC o SPECL [`s' : num`; `t' : num`; `g' : num`]) THEN
+    (X_CHOOSE_THEN `g : num`
+      (X_CHOOSE_THEN `s : num`
+        (X_CHOOSE_THEN `t : num` STRIP_ASSUME_TAC))) THEN
   ASM_REWRITE_TAC [] THEN
-  DISCH_THEN (SUBST1_TAC o SYM) THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  DISCH_THEN SUBST1_TAC THEN
+  MATCH_MP_TAC EQ_TRANS THEN
+  EXISTS_TAC `gcd c b` THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC gcd_mod THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ONCE_REWRITE_TAC [gcd_comm] THEN
+  POP_ASSUM (SUBST_VAR_TAC o SYM) THEN
   MATCH_MP_TAC gcd_mod THEN
   ASM_REWRITE_TAC []);;
 
 export_thm egcd_gcd;;
 
+(***
 let egcd_nonzero = prove
  (`!a b s t g. ~(a = 0) /\ egcd a b = (s,t,g) ==> t * b + g = s * a`,
   MATCH_MP_TAC egcd_induction THEN
@@ -1418,6 +1448,12 @@ let egcd_nonzero = prove
   ASM_REWRITE_TAC [] THEN
 
 export_thm egcd_nonzero;;
+
+let egcd_cases = prove
+ (`!a b.
+     ~(a = 0) ==>
+     ?s t. egcd a b = (gcd a b, s ,t) /\ t * b + gcd a b = s * a`,
+
 ***)
 
 (* ------------------------------------------------------------------------- *)
