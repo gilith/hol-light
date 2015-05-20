@@ -1363,16 +1363,58 @@ let egcd_zero = prove
 export_thm egcd_zero;;
 
 let zero_egcd = prove
- (`!b. ~(b = 0) ==> FST (egcd 0 b) = b`,
+ (`!b. FST (egcd 0 b) = b`,
   GEN_TAC THEN
-  STRIP_TAC THEN
   ONCE_REWRITE_TAC [egcd_def] THEN
+  ASM_CASES_TAC `b = 0` THENL
+  [POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [];
+   ALL_TAC] THEN
   MP_TAC (SPEC `b : num` MOD_0) THEN
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN SUBST1_TAC THEN
   REWRITE_TAC [egcd_zero; LET_DEF; LET_END_DEF]);;
 
 export_thm zero_egcd;;
+
+let egcd_one = prove
+ (`!a. ~(a = 0) ==> egcd a 1 = (1, 1, a - 1)`,
+  GEN_TAC THEN
+  STRIP_TAC THEN
+  ONCE_REWRITE_TAC [egcd_def] THEN
+  REWRITE_TAC [NUM_REDUCE_CONV `1 = 0`; MOD_1; DIV_1; LET_DEF; LET_END_DEF]);;
+
+export_thm egcd_one;;
+
+let one_egcd = prove
+ (`!b. egcd 1 b = (1,1,0)`,
+  GEN_TAC THEN
+  ONCE_REWRITE_TAC [egcd_def] THEN
+  COND_CASES_TAC THENL
+  [REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_CASES_TAC `b = 1` THENL
+  [POP_ASSUM SUBST_VAR_TAC THEN
+   REWRITE_TAC [MOD_1; LET_DEF; LET_END_DEF; DIV_1; SUB_REFL];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `1 < b` ASSUME_TAC THENL
+  [POP_ASSUM MP_TAC THEN
+   MP_TAC (SPEC `b : num` num_CASES) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (X_CHOOSE_THEN `n : num` SUBST1_TAC) THEN
+   REWRITE_TAC [ONE; SUC_INJ; LT_SUC; LT_NZ];
+   ALL_TAC] THEN
+  SUBGOAL_THEN `1 MOD b = 1` SUBST1_TAC THENL
+  [MATCH_MP_TAC MOD_LT THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  REWRITE_TAC
+     [LET_DEF; LET_END_DEF; NUM_REDUCE_CONV `1 = 0`; MOD_1; egcd_zero;
+      MULT_0; ADD_0; ZERO_ADD; MULT_1; PAIR_EQ] THEN
+  MATCH_MP_TAC DIV_LT THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm one_egcd;;
 
 let egcd_gcd = prove
  (`!a b. FST (egcd a b) = gcd a b`,
@@ -1496,7 +1538,6 @@ let egcd_nonzero = prove
 
 export_thm egcd_nonzero;;
 
-(***
 let egcd_bound = prove
  (`!a b g s t. ~(a = 0) /\ egcd a b = (g,s,t) ==> s < MAX b 2 /\ t < a`,
   MATCH_MP_TAC egcd_induction THEN
@@ -1564,41 +1605,101 @@ let egcd_bound = prove
    UNDISCH_TAC `a MOD b = c` THEN
    ASM_REWRITE_TAC [MOD_1];
    ALL_TAC] THEN
-  SUBGOAL_THEN `MAX b 2 = b` SUBST1_TAC THENL
-  [ONCE_REWRITE_TAC [MAX_COMM] THEN
-   REWRITE_TAC [MAX] THEN
-   COND_CASES_TAC THENL
-   [REWRITE_TAC [];
-    ALL_TAC] THEN
-   SUBGOAL_THEN `F` CONTR_TAC THEN
-   POP_ASSUM MP_TAC THEN
-   REWRITE_TAC [] THEN
-   POP_ASSUM MP_TAC THEN
+  SUBGOAL_THEN `1 < b` ASSUME_TAC THENL
+  [POP_ASSUM MP_TAC THEN
    MP_TAC (SPEC `b : num` num_CASES) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN (X_CHOOSE_THEN `n : num` SUBST1_TAC) THEN
-   REWRITE_TAC [ONE; TWO; SUC_INJ; LE_SUC] THEN
-   STRIP_TAC THEN
-   MP_TAC (SPEC `n : num` num_CASES) THEN
-   ASM_REWRITE_TAC [] THEN
-   DISCH_THEN (X_CHOOSE_THEN `m : num` SUBST1_TAC) THEN
-   REWRITE_TAC [LE_SUC; LE_0];
+   REWRITE_TAC [ONE; SUC_INJ; LT_SUC; LT_NZ];
    ALL_TAC] THEN
-  ***
+  SUBGOAL_THEN `MAX b 2 = b` SUBST1_TAC THENL
+  [ONCE_REWRITE_TAC [MAX_COMM] THEN
+   ASM_REWRITE_TAC [MAX; LE_SUC_LT; TWO];
+   ALL_TAC] THEN
   SUBGOAL_THEN `s < (b : num)` ASSUME_TAC THENL
   [MP_TAC (SPECL [`b : num`; `c : num`] DIVISION_DEF_DIV) THEN
    ASM_REWRITE_TAC [] THEN
    DISCH_THEN (CONV_TAC o RAND_CONV o REWR_CONV o SYM) THEN
    ONCE_REWRITE_TAC [ADD_SYM] THEN
-   FIRST_X_ASSUM (SUBST1_TAC o SYM)
+   FIRST_X_ASSUM (SUBST1_TAC o SYM) THEN
+   UNDISCH_TAC `s' < MAX (b MOD c) 2` THEN
+   ONCE_REWRITE_TAC [MAX_COMM] THEN
+   REWRITE_TAC [MAX] THEN
+   COND_CASES_TAC THENL
+   [STRIP_TAC THEN
+    MATCH_MP_TAC LTE_TRANS THEN
+    EXISTS_TAC `b MOD c + b DIV c * t'` THEN
+    ASM_REWRITE_TAC [LT_ADD_RCANCEL; LE_ADD_LCANCEL; LE_MULT_LCANCEL] THEN
+    DISJ2_TAC THEN
+    MATCH_MP_TAC LT_IMP_LE THEN
+    ASM_REWRITE_TAC [];
+    ALL_TAC] THEN
+   DISCH_THEN (K ALL_TAC) THEN
+   POP_ASSUM (STRIP_ASSUME_TAC o REWRITE_RULE [NOT_LE; TWO; LT_SUC_LE]) THEN
+   ASM_CASES_TAC `b DIV c = 0` THENL
+   [SUBGOAL_THEN `F` CONTR_TAC THEN
+    UNDISCH_TAC `1 < b` THEN
+    REWRITE_TAC [NOT_LT] THEN
+    MP_TAC (SPECL [`b : num`; `c : num`] DIVISION_DEF_DIV) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (CONV_TAC o LAND_CONV o REWR_CONV o SYM) THEN
+    ASM_REWRITE_TAC [ZERO_MULT; ZERO_ADD];
+    ALL_TAC] THEN
+   UNDISCH_TAC `egcd c (b MOD c) = g,s',t'` THEN
+   UNDISCH_THEN `b MOD c <= 1`
+     (STRIP_ASSUME_TAC o REWRITE_RULE [GSYM ONE] o REWRITE_RULE [ONE; LE]) THENL
+   [MP_TAC (SPEC `c : num` egcd_one) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [PAIR_EQ] THEN
+    DISCH_THEN
+      (CONJUNCTS_THEN2 (K ALL_TAC)
+         (CONJUNCTS_THEN (SUBST1_TAC o SYM))) THEN
+    ASM_REWRITE_TAC [LT_ADD_LCANCEL; LT_MULT_LCANCEL] THEN
+    MP_TAC (SPEC `c : num` num_CASES) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (CHOOSE_THEN SUBST1_TAC) THEN
+    REWRITE_TAC [SUC_SUB1; SUC_LT];
+    MP_TAC (SPEC `c : num` egcd_zero) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    REWRITE_TAC [PAIR_EQ] THEN
+    DISCH_THEN
+      (CONJUNCTS_THEN2 (K ALL_TAC)
+         (CONJUNCTS_THEN (SUBST1_TAC o SYM))) THEN
+    REWRITE_TAC [MULT_0; ADD_0; ZERO_ADD] THEN
+    MP_TAC (SPECL [`b : num`; `c : num`] DIVISION_DEF_DIV) THEN
+    ASM_REWRITE_TAC [ADD_0] THEN
+    DISCH_THEN SUBST1_TAC THEN
+    ASM_REWRITE_TAC []];
+   ALL_TAC] THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_MP_TAC LTE_TRANS THEN
+  EXISTS_TAC `c + a DIV b * s` THEN
+  ASM_REWRITE_TAC [LT_ADD_RCANCEL] THEN
+  MATCH_MP_TAC LE_TRANS THEN
+  EXISTS_TAC `c + a DIV b * b` THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [LE_ADD_LCANCEL; LE_MULT_LCANCEL] THEN
+   DISJ2_TAC THEN
+   MATCH_MP_TAC LT_IMP_LE THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  MP_TAC (SPECL [`a : num`; `b : num`] DIVISION_DEF_DIV) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  REWRITE_TAC [LE_REFL]);;
 
 export_thm egcd_bound;;
-***)
 
 let egcd_cases = prove
  (`!a b.
      ~(a = 0) ==>
-     ?s t. egcd a b = (gcd a b, s, t) /\ t * b + gcd a b = s * a`,
+     ?s t.
+       egcd a b = (gcd a b, s, t) /\
+       t * b + gcd a b = s * a /\
+       s < MAX b 2 /\ t < a`,
   REPEAT STRIP_TAC THEN
   MP_TAC (ISPEC `egcd a b` PAIR_SURJECTIVE) THEN
   REWRITE_TAC [EXISTS_PAIR_THM] THEN
@@ -1613,8 +1714,12 @@ let egcd_cases = prove
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN (SUBST1_TAC o SYM) THEN
   REWRITE_TAC [] THEN
-  MATCH_MP_TAC egcd_nonzero THEN
-  ASM_REWRITE_TAC []);;
+  CONJ_TAC THENL
+  [MATCH_MP_TAC egcd_nonzero THEN
+   ASM_REWRITE_TAC [];
+   MATCH_MP_TAC egcd_bound THEN
+   EXISTS_TAC `g : num` THEN
+   ASM_REWRITE_TAC []]);;
 
 export_thm egcd_cases;;
 
@@ -1631,14 +1736,34 @@ let egcd_divides2_test = prove
 export_thm egcd_divides2_test;;
 
 let egcd_nonzero_test = prove
- (`!a b. let (g,s,t) = egcd (a + 1) b in t * b + g = s * (a + 1)`,
+ (`!ap b. let a = ap + 1 in let (g,s,t) = egcd a b in t * b + g = s * a`,
   REPEAT GEN_TAC THEN
-  MP_TAC (SPECL [`a + 1`; `b : num`] egcd_cases) THEN
+  MP_TAC (SPECL [`ap + 1`; `b : num`] egcd_cases) THEN
   REWRITE_TAC [GSYM ADD1; NOT_SUC] THEN
   STRIP_TAC THEN
   ASM_REWRITE_TAC [LET_DEF; LET_END_DEF]);;
 
 export_thm egcd_nonzero_test;;
+
+let egcd_bound1_test = prove
+ (`!ap b. let a = ap + 1 in let (g,s,t) = egcd a b in s < MAX b 2`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPECL [`ap + 1`; `b : num`] egcd_cases) THEN
+  REWRITE_TAC [GSYM ADD1; NOT_SUC] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF]);;
+
+export_thm egcd_bound1_test;;
+
+let egcd_bound2_test = prove
+ (`!ap b. let a = ap + 1 in let (g,s,t) = egcd a b in t < a`,
+  REPEAT GEN_TAC THEN
+  MP_TAC (SPECL [`ap + 1`; `b : num`] egcd_cases) THEN
+  REWRITE_TAC [GSYM ADD1; NOT_SUC] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF]);;
+
+export_thm egcd_bound2_test;;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of natural number least common multiple.                       *)
@@ -2056,6 +2181,8 @@ export_thm two_divides;;  (* Haskell *)
 export_thm egcd_divides1_test;;  (* Haskell *)
 export_thm egcd_divides2_test;;  (* Haskell *)
 export_thm egcd_nonzero_test;;  (* Haskell *)
+export_thm egcd_bound1_test;;  (* Haskell *)
+export_thm egcd_bound2_test;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
 (* Divides functions operating on ML numerals.                               *)
