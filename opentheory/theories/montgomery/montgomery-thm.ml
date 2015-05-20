@@ -291,29 +291,17 @@ let montgomery_reduce_unnormalized_bound = prove
 
 export_thm montgomery_reduce_unnormalized_bound;;
 
-(***
 let montgomery_reduce_small_bound = prove
- (`!n r k m a.
+ (`!n r k a.
      ~(n = 0) /\
      ~(r = 0) /\
      a <= r ==>
-     montgomery_reduce n r k a < n`,
+     montgomery_reduce n r k a <= n`,
   REPEAT STRIP_TAC THEN
-  REWRITE_TAC [montgomery_reduce_def] THEN
-  MATCH_MP_TAC LT_LDIV THEN
-  MP_TAC (SPEC `r : num` num_CASES) THEN
-  ASM_REWRITE_TAC [] THEN
-  DISCH_THEN (X_CHOOSE_THEN `s : num` SUBST_VAR_TAC) THEN
-  MATCH_MP_TAC LET_TRANS THEN
-  EXISTS_TAC `a + (r - 1) * n`
-  REWRITE_TAC [LEFT_ADD_DISTRIB] THEN
-  MATCH_MP_TAC LTE_TRANS THEN
-  EXISTS_TAC `a + r * n : num` THEN
-  ASM_REWRITE_TAC [LT_ADD_LCANCEL; LE_ADD_RCANCEL; LT_MULT_RCANCEL] THEN
-  MATCH_MP_TAC DIVISION_DEF_MOD THEN
-  FIRST_ASSUM ACCEPT_TAC);;
+  REWRITE_TAC [GSYM LT_SUC_LE; ONCE_REWRITE_RULE [ADD_SYM] ADD1] THEN
+  MATCH_MP_TAC montgomery_reduce_bound THEN
+  ASM_REWRITE_TAC [MULT_1]);;
 
-export_thm montgomery_small_bound;;
-***)
+export_thm montgomery_reduce_small_bound;;
 
 logfile_end ();;

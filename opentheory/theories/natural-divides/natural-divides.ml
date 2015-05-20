@@ -1696,10 +1696,7 @@ export_thm egcd_bound;;
 let egcd_cases = prove
  (`!a b.
      ~(a = 0) ==>
-     ?s t.
-       egcd a b = (gcd a b, s, t) /\
-       t * b + gcd a b = s * a /\
-       s < MAX b 2 /\ t < a`,
+     ?s t. egcd a b = (gcd a b, s, t) /\ t * b + gcd a b = s * a`,
   REPEAT STRIP_TAC THEN
   MP_TAC (ISPEC `egcd a b` PAIR_SURJECTIVE) THEN
   REWRITE_TAC [EXISTS_PAIR_THM] THEN
@@ -1714,12 +1711,8 @@ let egcd_cases = prove
   ASM_REWRITE_TAC [] THEN
   DISCH_THEN (SUBST1_TAC o SYM) THEN
   REWRITE_TAC [] THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC egcd_nonzero THEN
-   ASM_REWRITE_TAC [];
-   MATCH_MP_TAC egcd_bound THEN
-   EXISTS_TAC `g : num` THEN
-   ASM_REWRITE_TAC []]);;
+  MATCH_MP_TAC egcd_nonzero THEN
+  ASM_REWRITE_TAC []);;
 
 export_thm egcd_cases;;
 
@@ -1751,7 +1744,12 @@ let egcd_bound1_test = prove
   MP_TAC (SPECL [`ap + 1`; `b : num`] egcd_cases) THEN
   REWRITE_TAC [GSYM ADD1; NOT_SUC] THEN
   STRIP_TAC THEN
-  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF]);;
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  MP_TAC
+    (SPECL [`SUC ap`; `b : num`; `gcd (SUC ap) b`; `s : num`; `t : num`]
+       egcd_bound) THEN
+  ASM_REWRITE_TAC [NOT_SUC] THEN
+  STRIP_TAC);;
 
 export_thm egcd_bound1_test;;
 
@@ -1761,7 +1759,12 @@ let egcd_bound2_test = prove
   MP_TAC (SPECL [`ap + 1`; `b : num`] egcd_cases) THEN
   REWRITE_TAC [GSYM ADD1; NOT_SUC] THEN
   STRIP_TAC THEN
-  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF]);;
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF] THEN
+  MP_TAC
+    (SPECL [`SUC ap`; `b : num`; `gcd (SUC ap) b`; `s : num`; `t : num`]
+       egcd_bound) THEN
+  ASM_REWRITE_TAC [NOT_SUC] THEN
+  STRIP_TAC);;
 
 export_thm egcd_bound2_test;;
 
