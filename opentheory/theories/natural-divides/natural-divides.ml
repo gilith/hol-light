@@ -267,6 +267,20 @@ let divides_sub = prove
 
 export_thm divides_sub;;
 
+let divides_dist = prove
+ (`!a b c. divides c a /\ divides c b ==> divides c (dist a b)`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC [dist] THEN
+  COND_CASES_TAC THENL
+  [MATCH_MP_TAC divides_sub THEN
+   ASM_REWRITE_TAC [];
+   MATCH_MP_TAC divides_sub THEN
+   ASM_REWRITE_TAC [] THEN
+   MATCH_MP_TAC LT_IMP_LE THEN
+   ASM_REWRITE_TAC [GSYM NOT_LE]]);;
+
+export_thm divides_dist;;
+
 let divides_div = prove
  (`!a b. ~(a = 0) ==> (divides a b <=> (b DIV a) * a = b)`,
   REPEAT STRIP_TAC THEN
@@ -976,6 +990,52 @@ let egcd_divides = prove
    ASM_REWRITE_TAC []]);;
 
 export_thm egcd_divides;;
+
+let egcd_imp_gcd = prove
+ (`!a b s t g.
+     dist (s * a) (t * b) = g /\ divides g a /\ divides g b ==>
+     gcd a b = g`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC gcd_unique THEN
+  ASM_REWRITE_TAC [] THEN
+  X_GEN_TAC `c : num` THEN
+  STRIP_TAC THEN
+  MATCH_MP_TAC divides_trans THEN
+  EXISTS_TAC `gcd a b` THEN
+  ASM_REWRITE_TAC [gcd_greatest] THEN
+  UNDISCH_THEN `dist (s * a) (t * b) = g` (SUBST1_TAC o SYM) THEN
+  MATCH_ACCEPT_TAC egcd_divides);;
+
+export_thm egcd_imp_gcd;;
+
+let egcd1_imp_gcd = prove
+ (`!a b s t g.
+     t * b + g = s * a /\ divides g a /\ divides g b ==>
+     gcd a b = g`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC egcd_imp_gcd THEN
+  EXISTS_TAC `s : num` THEN
+  EXISTS_TAC `t : num` THEN
+  ASM_REWRITE_TAC [] THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (K ALL_TAC) THEN
+  POP_ASSUM (SUBST1_TAC o SYM) THEN
+  REWRITE_TAC [DIST_LADD_0]);;
+
+export_thm egcd1_imp_gcd;;
+
+let egcd2_imp_gcd = prove
+ (`!a b s t g.
+     s * a + g = t * b /\ divides g a /\ divides g b ==>
+     gcd a b = g`,
+  REPEAT STRIP_TAC THEN
+  ONCE_REWRITE_TAC [gcd_comm] THEN
+  MATCH_MP_TAC egcd1_imp_gcd THEN
+  EXISTS_TAC `t : num` THEN
+  EXISTS_TAC `s : num` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm egcd2_imp_gcd;;
 
 let coprime_egcd = prove
  (`!a b s t. dist (s * a) (t * b) = 1 ==> gcd a b = 1`,
@@ -1937,12 +1997,13 @@ let egcd_bound2_test = prove
 
 export_thm egcd_bound2_test;;
 
-(***
 let chinese_remainder1_test = prove
  (`!ap bp xp yp.
-     let a = ap + 1 in
-     let bq = a + bp in
-     let b = bq DIV FST (egcd a bq) in
+     let aq = ap + 1 in
+     let bq = bp + 1 in
+     let g = FST (egcd aq bq) in
+     let a = aq DIV g in
+     let b = bq DIV g in
      let x = xp MOD a in
      let y = yp MOD b in
      chinese a b x y MOD a = x`,
@@ -1956,9 +2017,186 @@ let chinese_remainder1_test = prove
   [STRIP_TAC;
    ALL_TAC] THEN
   REWRITE_TAC [] THEN
+  ASM_CASES_TAC `g = 0` THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   UNDISCH_TAC `gcd aq bq = g` THEN
+   ASM_REWRITE_TAC [gcd_is_zero] THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [ADD_EQ_0; NUM_REDUCE_CONV `1 = 0`];
+   ALL_TAC] THEN
   CONJ_TAC THENL
-  [
-***)
+  [MP_TAC (SPECL [`gcd a b`; `1`; `g : num`] EQ_MULT_RCANCEL) THEN
+   ASM_REWRITE_TAC [ONE_MULT] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   REWRITE_TAC [GSYM gcd_mult_cancel] THEN
+   MP_TAC (SPECL [`g : num`; `aq : num`] divides_div) THEN
+   MP_TAC (SPECL [`g : num`; `bq : num`] divides_div) THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   ASM_REWRITE_TAC [gcd_divides1; gcd_divides2] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REFL_TAC;
+   ALL_TAC] THEN
+  ASM_CASES_TAC `a = 0` THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   UNDISCH_TAC `aq DIV g = a` THEN
+   MP_TAC (SPECL [`aq : num`; `g : num`] DIV_EQ_0) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [NOT_LT] THEN
+   MATCH_MP_TAC divides_le THEN
+   REWRITE_TAC [ADD_EQ_0; NUM_REDUCE_CONV `1 = 0`; gcd_divides1];
+   ALL_TAC] THEN
+  ASM_CASES_TAC `b = 0` THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   UNDISCH_TAC `bq DIV g = b` THEN
+   MP_TAC (SPECL [`bq : num`; `g : num`] DIV_EQ_0) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [NOT_LT] THEN
+   MATCH_MP_TAC divides_le THEN
+   REWRITE_TAC [ADD_EQ_0; NUM_REDUCE_CONV `1 = 0`; gcd_divides2];
+   ALL_TAC] THEN
+  CONJ_TAC THENL
+  [UNDISCH_THEN `xp MOD a = x` (SUBST1_TAC o SYM) THEN
+   MATCH_MP_TAC DIVISION_DEF_MOD THEN
+   ASM_REWRITE_TAC [];
+   UNDISCH_THEN `yp MOD b = y` (SUBST1_TAC o SYM) THEN
+   MATCH_MP_TAC DIVISION_DEF_MOD THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm chinese_remainder1_test;;
+
+let chinese_remainder2_test = prove
+ (`!ap bp xp yp.
+     let aq = ap + 1 in
+     let bq = bp + 1 in
+     let g = FST (egcd aq bq) in
+     let a = aq DIV g in
+     let b = bq DIV g in
+     let x = xp MOD a in
+     let y = yp MOD b in
+     chinese a b x y MOD b = y`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [egcd_gcd] THEN
+  REPEAT LET_TAC THEN
+  MP_TAC
+    (SPECL [`a : num`; `b : num`; `x : num`; `y : num`; `chinese a b x y`]
+       chinese_remainder) THEN
+  REVERSE_TAC ANTS_TAC THENL
+  [STRIP_TAC;
+   ALL_TAC] THEN
+  REWRITE_TAC [] THEN
+  ASM_CASES_TAC `g = 0` THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   UNDISCH_TAC `gcd aq bq = g` THEN
+   ASM_REWRITE_TAC [gcd_is_zero] THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [ADD_EQ_0; NUM_REDUCE_CONV `1 = 0`];
+   ALL_TAC] THEN
+  CONJ_TAC THENL
+  [MP_TAC (SPECL [`gcd a b`; `1`; `g : num`] EQ_MULT_RCANCEL) THEN
+   ASM_REWRITE_TAC [ONE_MULT] THEN
+   DISCH_THEN (SUBST1_TAC o SYM) THEN
+   REWRITE_TAC [GSYM gcd_mult_cancel] THEN
+   MP_TAC (SPECL [`g : num`; `aq : num`] divides_div) THEN
+   MP_TAC (SPECL [`g : num`; `bq : num`] divides_div) THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   ASM_REWRITE_TAC [gcd_divides1; gcd_divides2] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REFL_TAC;
+   ALL_TAC] THEN
+  ASM_CASES_TAC `a = 0` THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   UNDISCH_TAC `aq DIV g = a` THEN
+   MP_TAC (SPECL [`aq : num`; `g : num`] DIV_EQ_0) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [NOT_LT] THEN
+   MATCH_MP_TAC divides_le THEN
+   REWRITE_TAC [ADD_EQ_0; NUM_REDUCE_CONV `1 = 0`; gcd_divides1];
+   ALL_TAC] THEN
+  ASM_CASES_TAC `b = 0` THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   UNDISCH_TAC `bq DIV g = b` THEN
+   MP_TAC (SPECL [`bq : num`; `g : num`] DIV_EQ_0) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [NOT_LT] THEN
+   MATCH_MP_TAC divides_le THEN
+   REWRITE_TAC [ADD_EQ_0; NUM_REDUCE_CONV `1 = 0`; gcd_divides2];
+   ALL_TAC] THEN
+  CONJ_TAC THENL
+  [UNDISCH_THEN `xp MOD a = x` (SUBST1_TAC o SYM) THEN
+   MATCH_MP_TAC DIVISION_DEF_MOD THEN
+   ASM_REWRITE_TAC [];
+   UNDISCH_THEN `yp MOD b = y` (SUBST1_TAC o SYM) THEN
+   MATCH_MP_TAC DIVISION_DEF_MOD THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm chinese_remainder2_test;;
+
+let chinese_bound_test = prove
+ (`!ap bp xp yp.
+     let aq = ap + 1 in
+     let bq = bp + 1 in
+     let g = FST (egcd aq bq) in
+     let a = aq DIV g in
+     let b = bq DIV g in
+     let x = xp MOD a in
+     let y = yp MOD b in
+     chinese a b x y < a * b`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC [egcd_gcd] THEN
+  REPEAT LET_TAC THEN
+  MP_TAC
+    (SPECL [`a : num`; `b : num`; `x : num`; `y : num`] chinese_bound) THEN
+  REVERSE_TAC ANTS_TAC THENL
+  [STRIP_TAC;
+   ALL_TAC] THEN
+  ASM_CASES_TAC `g = 0` THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   UNDISCH_TAC `gcd aq bq = g` THEN
+   ASM_REWRITE_TAC [gcd_is_zero] THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [ADD_EQ_0; NUM_REDUCE_CONV `1 = 0`];
+   ALL_TAC] THEN
+  ASM_CASES_TAC `a = 0` THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   UNDISCH_TAC `aq DIV g = a` THEN
+   MP_TAC (SPECL [`aq : num`; `g : num`] DIV_EQ_0) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [NOT_LT] THEN
+   MATCH_MP_TAC divides_le THEN
+   REWRITE_TAC [ADD_EQ_0; NUM_REDUCE_CONV `1 = 0`; gcd_divides1];
+   ALL_TAC] THEN
+  ASM_CASES_TAC `b = 0` THENL
+  [SUBGOAL_THEN `F` CONTR_TAC THEN
+   UNDISCH_TAC `bq DIV g = b` THEN
+   MP_TAC (SPECL [`bq : num`; `g : num`] DIV_EQ_0) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN SUBST1_TAC THEN
+   REPEAT (FIRST_X_ASSUM (SUBST_VAR_TAC o SYM)) THEN
+   REWRITE_TAC [NOT_LT] THEN
+   MATCH_MP_TAC divides_le THEN
+   REWRITE_TAC [ADD_EQ_0; NUM_REDUCE_CONV `1 = 0`; gcd_divides2];
+   ALL_TAC] THEN
+  CONJ_TAC THENL
+  [UNDISCH_THEN `xp MOD a = x` (SUBST1_TAC o SYM) THEN
+   MATCH_MP_TAC DIVISION_DEF_MOD THEN
+   ASM_REWRITE_TAC [];
+   UNDISCH_THEN `yp MOD b = y` (SUBST1_TAC o SYM) THEN
+   MATCH_MP_TAC DIVISION_DEF_MOD THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm chinese_bound_test;;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of natural number least common multiple.                       *)
@@ -2379,6 +2617,9 @@ export_thm egcd_divides2_test;;  (* Haskell *)
 export_thm egcd_nonzero_test;;  (* Haskell *)
 export_thm egcd_bound1_test;;  (* Haskell *)
 export_thm egcd_bound2_test;;  (* Haskell *)
+export_thm chinese_remainder1_test;;  (* Haskell *)
+export_thm chinese_remainder2_test;;  (* Haskell *)
+export_thm chinese_bound_test;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
 (* Divides functions operating on ML numerals.                               *)
