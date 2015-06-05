@@ -16,6 +16,95 @@ and external_mk_type = mk_type
 and external_mk_var = mk_var;;
 
 (* ------------------------------------------------------------------------- *)
+(* Inference rules used by articles.                                         *)
+(* ------------------------------------------------------------------------- *)
+
+let SYM th =
+    let AP_TERM tm =
+      let rth = REFL tm in
+      fun th -> try MK_COMB(rth,th)
+                with Failure _ -> failwith "AP_TERM" in
+    let tm = concl th in
+    let l,r = dest_eq tm in
+    let lth = REFL l in
+    let res = EQ_MP (MK_COMB(AP_TERM (rator (rator tm)) th,lth)) lth in
+    let () = replace_proof res (Sym_proof th) in
+    res;;
+
+let PROVE_HYP ath bth =
+    let aconv s t = alphaorder s t = 0 in
+    if exists (aconv (concl ath)) (hyp bth)
+    then let res = EQ_MP (DEDUCT_ANTISYM_RULE ath bth) ath in
+         let () = replace_proof res (Prove_hyp_proof (ath,bth)) in
+         res
+    else bth;;
+
+(* ------------------------------------------------------------------------- *)
+(* The new principle of constant definition.                                 *)
+(* ------------------------------------------------------------------------- *)
+
+let define_const_list =
+    let maps (f : 'a -> 's -> 'b * 's) =
+        let rec m xs s =
+            match xs with
+              [] -> ([],s)
+            | x :: xs ->
+              let (y,s) = f x s in
+              let (ys,s) = m xs s in
+              (y :: ys, s) in
+         m in
+    let vassoc (v : term) =
+        let pred (u, (_ : term)) = u = v in
+        fun vm ->
+        match partition pred vm with
+          ([],vm) -> (None,vm)
+        | ([(_,tm)],vm) -> (Some tm, vm)
+        | (_ :: _ :: _, _) -> failwith "repeated vars" in
+    let add tm vm =
+        let (v,tm) = dest_eq tm in
+        let () =
+            match vassoc v vm with
+              (None,_) -> ()
+            | (Some _, _) -> failwith "repeated vars in assumptions" in
+        (v,tm) :: vm in
+    let del (n,v) vm =
+        let (tm,vm) =
+            match vassoc v vm with
+              (None,_) -> failwith "given var not in assumptions"
+            | (Some tm, vm) -> (tm,vm) in
+        let def = new_basic_definition (mk_eq (mk_var (n, type_of v), tm)) in
+        let (c,_) = dest_eq (concl def) in
+        (((n,(c,v)),def),vm) in
+    fun nvs -> fun th ->
+    let vm = rev_itlist add (hyp th) [] in
+    let () =
+        if subset (frees (concl th)) (map snd nvs) then () else
+        failwith "additional free vars in definition theorem" in
+    let (cs,sub,defs) =
+        let (cs_sub_defs,vm) = maps del nvs vm in
+        let () =
+            match vm with
+              [] -> ()
+            | _ :: _ ->
+              failwith "additional assumptions in definition theorem" in
+        let (cs_sub,defs) = unzip cs_sub_defs in
+        let (cs,sub) = unzip cs_sub in
+        (cs,sub,defs) in
+    let res = rev_itlist PROVE_HYP defs (INST sub th) in
+    let () =
+        match cs with
+          [] -> ()
+        | c :: _ -> replace_proof res (Define_const_list_proof c) in
+    let () =
+        let f c i =
+            let cdef = Const_list_definition (((nvs,th),res),i) in
+            let () = replace_const_definition c cdef in
+            i + 1 in
+        let _ = rev_itlist f cs 0 in
+        () in
+    res;;
+
+(* ------------------------------------------------------------------------- *)
 (* Type matching.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
@@ -175,6 +264,11 @@ let dest_list obj =
     match obj with
       List_object l -> l
     | _ -> failwith "Object.dest_list";;
+
+let dest_cons obj =
+    match obj with
+      List_object (h :: t) -> (h, List_object t)
+    | _ -> failwith "Object.dest_cons";;
 
 let mk_nil = mk_list [];;
 
@@ -403,6 +497,16 @@ let mkDefineConst const_context objN objT =
     let th = new_basic_definition tm in
     (Const_object c, Thm_object th);;
 
+let mkDefineConstList const_context objL objT =
+    let f nv =
+        let (n,v) = dest_pair nv in
+        (const_context (dest_name n), dest_var v) in
+    let g (c,_) = Const_object c in
+    let l = map f (dest_list objL) in
+    let th = dest_thm objT in
+    let def = define_const_list l th in
+    (mk_list (map g l), Thm_object def);;
+
 let mkDefineTypeOp type_op_context const_context objN objA objR objL objT =
     let n = dest_name objN in
     let a = dest_name objA in
@@ -420,6 +524,13 @@ let mkDefineTypeOp type_op_context const_context objN objA objR objL objT =
         let l' = List.map dest_vartype l' in
         if l' = l then () else
         failwith "type variable list does not match specification" in
+    let ra =
+        let (_,v) = dest_eq (concl ra) in
+        ABS v ra in
+    let ar =
+        let (p,_) = dest_eq (concl ar) in
+        let (_,v) = dest_comb p in
+        ABS v (SYM ar) in
     let n = Type_op_object n in
     let a = Const_object a in
     let r = Const_object r in
@@ -431,6 +542,8 @@ let mkEqMp obj1 obj2 =
     let t1 = dest_thm obj1 in
     let t2 = dest_thm obj2 in
     Thm_object (EQ_MP t1 t2);;
+
+let mkHdTl objL = dest_cons objL;;
 
 let mkOpType objT objL =
     let t = dest_type_op objT in
@@ -444,6 +557,11 @@ let mkOpType objT objL =
         else failwith ("arity mismatch for type operator " ^ t) in
     Type_object (external_mk_type (t,l));;
 
+let mkProveHyp obj1 obj2 =
+    let t1 = dest_thm obj1 in
+    let t2 = dest_thm obj2 in
+    Thm_object (PROVE_HYP t1 t2) ;;
+
 let mkRefl objT =
     let t = dest_term objT in
     Thm_object (REFL t);;
@@ -452,6 +570,15 @@ let mkSubst objS objT =
     let (tys,tms) = dest_subst objS in
     let t = dest_thm objT in
     Thm_object (INST tms (INST_TYPE tys t));;
+
+let mkSym obj1 =
+    let t1 = dest_thm obj1 in
+    Thm_object (SYM t1);;
+
+let mkTrans obj1 obj2 =
+    let t1 = dest_thm obj1 in
+    let t2 = dest_thm obj2 in
+    Thm_object (TRANS t1 t2);;
 
 let mkTypeOp type_op_context objN =
     let n = dest_name objN in

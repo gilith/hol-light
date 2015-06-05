@@ -1,6 +1,6 @@
 (* ========================================================================= *)
 (* OPENTHEORY ARTICLE READING FOR HOL LIGHT                                  *)
-(* Ramana Kumar and Joe Leslie-Hurd                                          *)
+(* Ramana Kumar, Joe Leslie-Hurd and Robert White                            *)
 (* ========================================================================= *)
 
 module Int_map = Map.Make (struct type t = int let compare = compare end);;
@@ -176,6 +176,15 @@ let process_command context state cmd =
         | _ -> (None,None) in
     let stack = objD :: objC :: stack in
     {stack = stack; dict = dict; asms = asms; thms = thms}
+  | ("defineConstList", objT :: objL :: stack) ->
+    let (objC,objD) =
+        match (objL,objT) with
+          (Some l, Some t) ->
+            let (c,d) = Object.mkDefineConstList (context.const_context) l t in
+            (Some c, Some d)
+        | _ -> (None,None) in
+    let stack = objD :: objC :: stack in
+    {stack = stack; dict = dict; asms = asms; thms = thms}
   | ("defineTypeOp", objT :: objL :: objR :: objA :: objN :: stack) ->
     let (objT,objA,objR,objRA,objAR) =
         match (objN,objA,objR,objL,objT) with
@@ -194,6 +203,15 @@ let process_command context state cmd =
         | _ -> None in
     let stack = obj :: stack in
     {stack = stack; dict = dict; asms = asms; thms = thms}
+  | ("hdTl", objL :: stack) ->
+    let (objH,objT) =
+        match objL with
+          Some l ->
+            let (h,t) = Object.mkHdTl l in
+            (Some h, Some t)
+        | None -> (None,None) in
+    let stack = objT :: objH :: stack in
+    {stack = stack; dict = dict; asms = asms; thms = thms}
   | ("nil", _) ->
     let stack = Some Object.mk_nil :: stack in
     {stack = stack; dict = dict; asms = asms; thms = thms}
@@ -205,6 +223,15 @@ let process_command context state cmd =
     let stack = obj :: stack in
     {stack = stack; dict = dict; asms = asms; thms = thms}
   | ("pop", _ :: stack) ->
+    {stack = stack; dict = dict; asms = asms; thms = thms}
+  | ("pragma", _ :: stack) ->
+    {stack = stack; dict = dict; asms = asms; thms = thms}
+  | ("proveHyp", objU :: objT :: stack) ->
+    let obj =
+        match (objT,objU) with
+          (Some t, Some u) -> Some (Object.mkProveHyp t u)
+        | _ -> None in
+    let stack = obj :: stack in
     {stack = stack; dict = dict; asms = asms; thms = thms}
   | ("ref", Some (Object.Num_object k) :: stack) ->
     let obj = Int_map.find k dict in
@@ -229,6 +256,13 @@ let process_command context state cmd =
         | _ -> None in
     let stack = obj :: stack in
     {stack = stack; dict = dict; asms = asms; thms = thms}
+  | ("sym", objU :: stack) ->
+    let obj =
+        match objU with
+          Some u -> Some (Object.mkSym u)
+        | None -> None in
+    let stack = obj :: stack in
+    {stack = stack; dict = dict; asms = asms; thms = thms}
   | ("thm", objC :: objH :: objT :: stack) ->
     let thm =
       match (objH,objC) with
@@ -241,6 +275,13 @@ let process_command context state cmd =
         Some (t,h_c)
       | _ -> None in
     let thms = thms @ [thm] in
+    {stack = stack; dict = dict; asms = asms; thms = thms}
+  | ("trans", objU :: objT :: stack) ->
+    let obj =
+        match (objT,objU) with
+          (Some t, Some u) -> Some (Object.mkTrans t u)
+        | _ -> None in
+    let stack = obj :: stack in
     {stack = stack; dict = dict; asms = asms; thms = thms}
   | ("typeOp", objN :: stack) ->
     let obj =
@@ -269,6 +310,8 @@ let process_command context state cmd =
           Some n -> Some (Object.mkVarType n)
         | _ -> None in
     let stack = obj :: stack in
+    {stack = stack; dict = dict; asms = asms; thms = thms}
+  | ("version", _ :: stack) ->
     {stack = stack; dict = dict; asms = asms; thms = thms}
   | _ -> failwith ("unhandled article line: " ^ cmd);;
 

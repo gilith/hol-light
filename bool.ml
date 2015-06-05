@@ -67,12 +67,7 @@ let PINST tyin tmin =
 (* Useful derived deductive rule.                                            *)
 (* ------------------------------------------------------------------------- *)
 
-let PROVE_HYP ath bth =
-  if exists (aconv (concl ath)) (hyp bth)
-  then let res = EQ_MP (DEDUCT_ANTISYM_RULE ath bth) ath in
-       let () = replace_proof res (Prove_hyp_proof (ath,bth)) in
-       res
-  else bth;;
+let PROVE_HYP = Object.PROVE_HYP;;
 
 (* ------------------------------------------------------------------------- *)
 (* Rules for T                                                               *)

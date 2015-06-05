@@ -65,13 +65,7 @@ let AP_THM th tm =
   try MK_COMB(th,REFL tm)
   with Failure _ -> failwith "AP_THM";;
 
-let SYM th =
-  let tm = concl th in
-  let l,r = dest_eq tm in
-  let lth = REFL l in
-  let res = EQ_MP (MK_COMB(AP_TERM (rator (rator tm)) th,lth)) lth in
-  let () = replace_proof res (Sym_proof th) in
-  res;;
+let SYM = Object.SYM;;
 
 let ALPHA tm1 tm2 =
   try TRANS (REFL tm1) (REFL tm2)

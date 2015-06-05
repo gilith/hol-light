@@ -401,134 +401,44 @@ let is_numeral = can dest_numeral;;
 
 (* ------------------------------------------------------------------------- *)
 (* Derived principles of definition based on existence.                      *)
-(*                                                                           *)
-(* This is put here because we use numerals as tags to force different       *)
-(* constants specified with equivalent theorems to have different underlying *)
-(* definitions, ensuring that there are no provable equalities between them  *)
-(* and so in some sense the constants are "underspecified" as the user might *)
-(* want for some applications.                                               *)
 (* ------------------------------------------------------------------------- *)
 
 let the_specifications = ref [];;
 
-let new_specification =
-  let code c = mk_small_numeral (Char.code (c.[0])) in
-  let mk_code name =
-      end_itlist (curry mk_pair) (map code (explode name)) in
-  let check_distinct l =
-    try itlist (fun t res -> if mem t res then fail() else t::res) l []; true
-    with Failure _ -> false in
-  let specify name th =
-    let ntm = mk_code name in
-    let gv = genvar(type_of ntm) in
-    let th0 = CONV_RULE(REWR_CONV SKOLEM_THM) (GEN gv th) in
-    let th1 = CONV_RULE(RATOR_CONV (REWR_CONV EXISTS_THM) THENC
-                        BETA_CONV) th0 in
-    let l,r = dest_comb(concl th1) in
-    let rn = mk_comb(r,ntm) in
-    let ty = type_of rn in
-    let th2 = new_definition(mk_eq(mk_var(name,ty),rn)) in
-    GEN_REWRITE_RULE ONCE_DEPTH_CONV [GSYM th2]
-     (SPEC ntm (CONV_RULE BETA_CONV th1)) in
-  let rec specifies names th =
-    match names with
-      [] -> th
-    | name::onames -> let th' = specify name th in
-                      specifies onames th' in
-  fun names th ->
-    let asl,c = dest_thm th in
-    if not (asl = []) then
-      failwith "new_specification: Assumptions not allowed in theorem" else
-    if not (frees c = []) then
-      failwith "new_specification: Free variables in predicate" else
-    let avs = fst(strip_exists c) in
-    if length names = 0 or length names > length avs then
-      failwith "new_specification: Unsuitable number of constant names" else
-    if not (check_distinct names) then
-      failwith "new_specification: Constant names not distinct"
-    else
-      try let sth = snd(find (fun ((names',th'),sth') ->
-                               names' = names & aconv (concl th') (concl th))
-                             (!the_specifications)) in
-          warn true ("Benign respecification"); sth
-      with Failure _ ->
-          let sth = specifies names th in
-          the_specifications := ((names,th),sth)::(!the_specifications);
-          sth;;
-
-(* ------------------------------------------------------------------------- *)
-(* The new principle of constant definition.                                 *)
-(* ------------------------------------------------------------------------- *)
-
-let define_const_list =
-    let maps (f : 'a -> 's -> 'b * 's) =
-        let rec m xs s =
-            match xs with
-              [] -> ([],s)
-            | x :: xs ->
-              let (y,s) = f x s in
-              let (ys,s) = m xs s in
-              (y :: ys, s) in
-         m in
-    let vassoc (v : term) =
-        let pred (u, (_ : term)) = u = v in
-        fun vm ->
-        match partition pred vm with
-          ([],vm) -> (None,vm)
-        | ([(_,tm)],vm) -> (Some tm, vm)
-        | (_ :: _ :: _, _) -> failwith "repeated vars" in
-    let add tm vm =
-        let (v,tm) = dest_eq tm in
-        let () =
-            match vassoc v vm with
-              (None,_) -> ()
-            | (Some _, _) -> failwith "repeated vars in assumptions" in
-        (v,tm) :: vm in
-    let del (n,v) vm =
-        let (tm,vm) =
-            match vassoc v vm with
-              (None,_) -> failwith "given var not in assumptions"
-            | (Some tm, vm) -> (tm,vm) in
-        let def = new_basic_definition (mk_eq (mk_var (n, type_of v), tm)) in
-        let (c,_) = dest_eq (concl def) in
-        (((n,(c,v)),def),vm) in
-    fun nvs -> fun th ->
-    let vm = rev_itlist add (hyp th) [] in
-    let () =
-        if subset (frees (concl th)) (map snd nvs) then () else
-        failwith "additional free vars in definition theorem" in
-    let (cs,sub,defs) =
-        let (cs_sub_defs,vm) = maps del nvs vm in
-        let () =
-            match vm with
-              [] -> ()
-            | _ :: _ ->
-              failwith "additional assumptions in definition theorem" in
-        let (cs_sub,defs) = unzip cs_sub_defs in
-        let (cs,sub) = unzip cs_sub in
-        (cs,sub,defs) in
-    let res = rev_itlist PROVE_HYP defs (INST sub th) in
-    let () =
-        match cs with
-          [] -> ()
-        | c :: _ -> replace_proof res (Define_const_list_proof c) in
-    let () =
-        let f c i =
-            let cdef = Const_list_definition (((nvs,th),res),i) in
-            let () = replace_const_definition c cdef in
-            i + 1 in
-        let _ = rev_itlist f cs 0 in
-        () in
-    res;;
+let define_const_list = Object.define_const_list;;
 
 let new_specification =
+    let check_distinct l =
+        let f t res = if mem t res then fail () else t :: res in
+        try (let _ = itlist f l [] in true)
+        with Failure _ -> false in
     let exists_conv = RATOR_CONV (REWR_CONV EXISTS_THM) THENC BETA_CONV in
-    let f n th =
+    let specify n th =
         let (v,_) = dest_exists (concl th) in
         let th = CONV_RULE exists_conv th in
         let rth = SYM (ASSUME (mk_eq (v, rand (concl th)))) in
         let th = CONV_RULE (RAND_CONV (K rth) THENC BETA_CONV) th in
         define_const_list [(n,v)] th in
-    rev_itlist f;;
+    let specifies = rev_itlist specify in
+    fun names th ->
+      let asl,c = dest_thm th in
+      if not (asl = []) then
+        failwith "new_specification: Assumptions not allowed in theorem" else
+      if not (frees c = []) then
+        failwith "new_specification: Free variables in predicate" else
+      let avs = fst(strip_exists c) in
+      if length names = 0 or length names > length avs then
+        failwith "new_specification: Unsuitable number of constant names" else
+      if not (check_distinct names) then
+        failwith "new_specification: Constant names not distinct"
+      else
+        try let sth = snd(find (fun ((names',th'),sth') ->
+                                 names' = names & aconv (concl th') (concl th))
+                               (!the_specifications)) in
+            warn true ("Benign respecification"); sth
+        with Failure _ ->
+            let sth = specifies names th in
+            the_specifications := ((names,th),sth)::(!the_specifications);
+            sth;;
 
 logfile_end ();;
