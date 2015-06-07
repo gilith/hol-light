@@ -506,4 +506,67 @@ let (LET_TAC:tactic) =
         let tm' = follow_path path w' in
         CONV_TAC(PATH_CONV path (K(let_CONV tm'))))) gl;;
 
+(* ------------------------------------------------------------------------- *)
+(* Add LET and LET_END tags to let expressions.                              *)
+(* Add GABS and GEQ tags to generalized abstractions.                        *)
+(* ------------------------------------------------------------------------- *)
+
+let (native_let_conv,native_genabs_conv) =
+    let dest_genabs tm =
+        let (f,tm) = dest_select tm in
+        let (vl,tm) = strip_forall tm in
+        let () =
+            if not (exists ((=) f) vl) then () else
+            failwith "function is var" in
+        let (pat,body) = dest_eq tm in
+        let (ft,pat) = dest_comb pat in
+        let () = if f = ft then () else failwith "no function" in
+        let () =
+            let cmp v1 v2 = fst (dest_var v1) <= fst (dest_var v2) in
+            if sort cmp (frees pat) = vl then () else
+            failwith "bad pattern var list" in
+        let () =
+            if not (free_in f body) then () else
+            failwith "function in body" in
+        (pat,body) in
+    let is_genabs = can dest_genabs in
+    let let_conv =
+        let let_def_conv = REWR_CONV (GSYM LET_DEF) in
+        let let_end_conv = REWR_CONV (GSYM LET_END_DEF) in
+        let rec find_let_end_conv tm =
+            if is_eq tm then RAND_CONV let_end_conv tm else
+            RAND_CONV (ABS_CONV find_let_end_conv) tm in
+        let conv tm =
+            let (body,def) = dest_comb tm in
+            if is_abs body then
+              (RATOR_CONV (ABS_CONV let_end_conv) THENC let_def_conv) tm
+            else if is_genabs body then
+              (RATOR_CONV find_let_end_conv THENC let_def_conv) tm
+            else
+              failwith "not a let expression" in
+        DEPTH_CONV conv in
+    let genabs_conv =
+        let gabs_conv = REWR_CONV (GSYM GABS_DEF) in
+        let geq_conv = REWR_CONV (GSYM GEQ_DEF) in
+        let rec find_geq_conv tm =
+            if is_eq tm then geq_conv tm else
+            RAND_CONV (ABS_CONV find_geq_conv) tm in
+        let tag_conv = gabs_conv THENC find_geq_conv in
+        let conv tm =
+            if not (is_genabs tm) then failwith "not a genabs" else
+            tag_conv tm in
+        DEPTH_CONV conv in
+    (let_conv,genabs_conv);;
+
+let () =
+    let special = map concl [BETA_THM] in
+    let conv tm = if mem tm special then REFL tm else native_let_conv tm in
+    let native_conv = Import.the_go_native_conv in
+    native_conv := !native_conv THENC conv;;
+
+let () =
+    let conv = native_genabs_conv in
+    let native_conv = Import.the_go_native_conv in
+    native_conv := !native_conv THENC conv;;
+
 logfile_end ();;

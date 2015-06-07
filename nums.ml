@@ -441,4 +441,33 @@ let new_specification =
             the_specifications := ((names,th),sth)::(!the_specifications);
             sth;;
 
+(* ------------------------------------------------------------------------- *)
+(* Add numeral tags to numeral subterms.                                     *)
+(* ------------------------------------------------------------------------- *)
+
+let native_numeral_conv =
+    let is_zero = (=) `_0` in
+    let is_bit0 = (=) `BIT0` in
+    let is_bit1 = (=) `BIT1` in
+    let rec dest_numeral tm =
+        if is_zero tm then 0 else
+        let (f,x) = dest_comb tm in
+        let n = dest_numeral x in
+        if is_bit0 f & n <> 0 then 2 * n else
+        if is_bit1 f then 2 * n + 1 else
+        failwith "not a numeral" in
+    let is_numeral = can dest_numeral in
+    let tag_conv = REWR_CONV (GSYM NUMERAL) in
+    let conv tm = if is_numeral tm then tag_conv tm else NO_CONV tm in
+    ONCE_DEPTH_CONV conv;;
+
+let () =
+    let special =
+        map (concl o REWRITE_RULE [NUMERAL])
+          [NOT_SUC; num_INDUCTION; num_Axiom] in
+    let conv tm =
+        if mem tm special then REFL tm else native_numeral_conv tm in
+    let native_conv = Import.the_go_native_conv in
+    native_conv := !native_conv THENC conv;;
+
 logfile_end ();;

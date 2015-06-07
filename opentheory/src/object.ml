@@ -16,6 +16,20 @@ and external_mk_type = mk_type
 and external_mk_var = mk_var;;
 
 (* ------------------------------------------------------------------------- *)
+(* Utility functions.                                                        *)
+(* ------------------------------------------------------------------------- *)
+
+let maps (f : 'a -> 's -> 'b * 's) =
+    let rec m xs s =
+        match xs with
+          [] -> ([],s)
+        | x :: xs ->
+          let (y,s) = f x s in
+          let (ys,s) = m xs s in
+          (y :: ys, s) in
+     m;;
+
+(* ------------------------------------------------------------------------- *)
 (* Inference rules used by articles.                                         *)
 (* ------------------------------------------------------------------------- *)
 
@@ -44,15 +58,6 @@ let PROVE_HYP ath bth =
 (* ------------------------------------------------------------------------- *)
 
 let define_const_list =
-    let maps (f : 'a -> 's -> 'b * 's) =
-        let rec m xs s =
-            match xs with
-              [] -> ([],s)
-            | x :: xs ->
-              let (y,s) = f x s in
-              let (ys,s) = m xs s in
-              (y :: ys, s) in
-         m in
     let vassoc (v : term) =
         let pred (u, (_ : term)) = u = v in
         fun vm ->
@@ -381,9 +386,10 @@ let dest_term_list obj = List.map dest_term (dest_list obj);;
 (* Sequents.                                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-let mk_sequent (h,c) = (mk_term_list h, mk_term c);;
+let mk_sequent (Sequent.Sequent (h,c)) = (mk_term_list h, mk_term c);;
 
-let dest_sequent (objH,objC) = (dest_term_list objH, dest_term objC);;
+let dest_sequent (objH,objC) =
+    Sequent.Sequent (dest_term_list objH, dest_term objC);;
 
 (* ------------------------------------------------------------------------- *)
 (* Type variables.                                                           *)
@@ -602,33 +608,3 @@ let mkVarType objN =
 end
 
 module Object_map = Map.Make(Object);;
-
-(* ------------------------------------------------------------------------- *)
-(* Sequents.                                                                 *)
-(* ------------------------------------------------------------------------- *)
-
-module Sequent =
-struct
-
-type t = Sequent of term list * term;;
-
-let compare (Sequent (h1,c1)) (Sequent (h2,c2)) =
-    let c = Pervasives.compare c1 c2 in
-    if c <> 0 then c else
-    Pervasives.compare h1 h2;;
-
-let from_thm th = Sequent (hyp th, concl th);;
-
-end
-
-module Sequent_map = Map.Make(Sequent);;
-
-let add_sequent_map seqs th = Sequent_map.add (Sequent.from_thm th) th seqs;;
-
-let add_list_sequent_map = List.fold_left add_sequent_map;;
-
-let from_list_sequent_map = add_list_sequent_map Sequent_map.empty;;
-
-let peek_sequent_map seqs seq =
-    if not (Sequent_map.mem seq seqs) then None
-    else Some (Sequent_map.find seq seqs);;

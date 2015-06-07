@@ -502,8 +502,7 @@ let pp_print_qterm fmt tm =
 (* Printer for theorems.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
-let pp_print_thm fmt th =
-  let asl,tm = dest_thm th in
+let pp_print_sequent fmt (Sequent.Sequent (asl,tm)) =
   (if not (asl = []) then
     (if !print_all_thm then
       (pp_print_term fmt (hd asl);
@@ -519,6 +518,10 @@ let pp_print_thm fmt th =
    pp_print_term fmt tm;
    pp_close_box fmt ());;
 
+let pp_print_thm fmt th =
+  let (asl,c) = dest_thm th in
+  pp_print_sequent fmt (Sequent.Sequent (asl,c));;
+
 (* ------------------------------------------------------------------------- *)
 (* Print on standard output.                                                 *)
 (* ------------------------------------------------------------------------- *)
@@ -528,6 +531,7 @@ let print_qtype = pp_print_qtype std_formatter;;
 let print_term = pp_print_term std_formatter;;
 let print_qterm = pp_print_qterm std_formatter;;
 let print_thm = pp_print_thm std_formatter;;
+let print_sequent = pp_print_sequent std_formatter;;
 
 (* ------------------------------------------------------------------------- *)
 (* Install all the printers.                                                 *)
@@ -536,6 +540,7 @@ let print_thm = pp_print_thm std_formatter;;
 #install_printer print_qtype;;
 #install_printer print_qterm;;
 #install_printer print_thm;;
+#install_printer print_sequent;;
 
 (* ------------------------------------------------------------------------- *)
 (* Conversions to string.                                                    *)
@@ -558,3 +563,5 @@ let print_to_string printer =
 let string_of_type = print_to_string pp_print_type;;
 let string_of_term = print_to_string pp_print_term;;
 let string_of_thm = print_to_string pp_print_thm;;
+let string_of_sequent = print_to_string pp_print_sequent;;
+let () = Sequent.to_string_function := string_of_sequent;;
