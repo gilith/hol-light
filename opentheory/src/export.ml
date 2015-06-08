@@ -638,6 +638,9 @@ let add_the_exported_thms th =
 
 let peek_the_exported_thms seq = peek_sequent_map (!the_exported_thms) seq;;
 
+let list_the_exported_thms () =
+    map snd (Sequent_map.bindings (!the_exported_thms));;
+
 (* ------------------------------------------------------------------------- *)
 (* Exporting theorems.                                                       *)
 (* ------------------------------------------------------------------------- *)
