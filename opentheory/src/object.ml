@@ -225,19 +225,6 @@ let option_list_to_string objs =
     "[" ^ String.concat "; " (List.map option_to_string objs) ^ "]";;
 
 (* ------------------------------------------------------------------------- *)
-(* Type matching.                                                            *)
-(* ------------------------------------------------------------------------- *)
-
-let rec type_match vty cty sofar =
-  if is_vartype vty then
-     try if rev_assoc vty sofar = cty then sofar else failwith "type_match"
-     with Failure "find" -> (cty,vty)::sofar
-  else
-     let vop,vargs = dest_type vty and cop,cargs = dest_type cty in
-     if vop = cop then itlist2 type_match vargs cargs sofar
-     else failwith "type_match";;
-
-(* ------------------------------------------------------------------------- *)
 (* Numbers.                                                                  *)
 (* ------------------------------------------------------------------------- *)
 

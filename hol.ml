@@ -167,6 +167,13 @@ loads "cart.ml";;       (* Finite Cartesian products                         *)
 loads "define.ml";;     (* Support for general recursive definitions         *)
 
 (* ------------------------------------------------------------------------- *)
+(* Extra theories that are part of the standard theory library.              *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/stdlib/sum.ml";;
+loads "opentheory/stdlib/option.ml";;
+
+(* ------------------------------------------------------------------------- *)
 (* The help system.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
