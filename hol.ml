@@ -181,3 +181,9 @@ loads "help.ml";;       (* Online help using the entries in Help directory   *)
 (* Skip the standard HOL Light theorem database (we'll make our own)
 loads "database.ml";;   (* List of name-theorem pairs for search system      *)
 *)
+
+(* ------------------------------------------------------------------------- *)
+(* Create a theorem database for the standard theory library.                *)
+(* ------------------------------------------------------------------------- *)
+
+loads "update_database.ml";;
