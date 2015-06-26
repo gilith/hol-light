@@ -1131,6 +1131,53 @@ let zeckendorf_decode_encode_fib = prove
 
 export_thm zeckendorf_decode_encode_fib;;
 
+let decode_fib_dest_src = decode_fib_dest_def;;
+
+export_thm decode_fib_dest_src;;
+
+let decode_fib_src = prove
+ (`decode_fib = decode_fib_dest 1 0`,
+  REWRITE_TAC [FUN_EQ_THM; decode_fib_def]);;
+
+export_thm decode_fib_src;;
+
+let encode_fib_src = prove
+ (`encode_fib = \n. encode_fib_find n 1 0`,
+  REWRITE_TAC [FUN_EQ_THM; encode_fib_def]);;
+
+export_thm encode_fib_src;;
+
+let zeckendorf_src = prove
+ (`(zeckendorf [] <=> T) /\
+   !h t.
+     zeckendorf (CONS h t) <=>
+     if NULL t then h else ~(h /\ HD t) /\ zeckendorf t`,
+  REWRITE_TAC [zeckendorf_def]);;
+
+export_thm zeckendorf_src;;
+
+(* ------------------------------------------------------------------------- *)
+(* Haskell source for Fibonacci numbers.                                     *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "natural-fibonacci-haskell-src";;
+
+export_thm decode_fib_dest_src;;  (* Haskell *)
+export_thm decode_fib_src;;  (* Haskell *)
+export_thm encode_fib_mk_def;;  (* Haskell *)
+export_thm encode_fib_find_def;;  (* Haskell *)
+export_thm encode_fib_src;;  (* Haskell *)
+export_thm zeckendorf_src;;  (* Haskell *)
+
+(* ------------------------------------------------------------------------- *)
+(* Haskell tests for Fibonacci numbers.                                      *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "natural-fibonacci-haskell-test";;
+
+export_thm encode_decode_fib;;  (* Haskell *)
+export_thm zeckendorf_encode_fib;;  (* Haskell *)
+
 logfile_end ();;
 
 (* ------------------------------------------------------------------------- *)
