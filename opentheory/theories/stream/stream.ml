@@ -150,6 +150,12 @@ let snth_suc = prove
 
 export_thm snth_suc;;
 
+let snth_one = prove
+ (`!(s : A stream). snth s 1 = shd (stl s)`,
+  REWRITE_TAC [ONE; snth_suc; shd_def]);;
+
+export_thm snth_one;;
+
 let shd_scons = prove
   (`!(h : A) t. shd (scons h t) = h`,
    REPEAT STRIP_TAC THEN
@@ -490,6 +496,30 @@ let sunfold = prove
    ASM_REWRITE_TAC [SUC_SUB1; NOT_SUC; funpow_suc_x'; o_THM]]);;
 
 export_thm sunfold;;
+
+let shd_sunfold = prove
+ (`!(f : B -> A # B) b. shd (sunfold f b) = FST (f b)`,
+  REWRITE_TAC [sunfold_def; shd_def; stream_snth; funpow_zero; I_THM]);;
+
+export_thm shd_sunfold;;
+
+let stl_sunfold = prove
+ (`!(f : B -> A # B) b. stl (sunfold f b) = sunfold f (SND (f b))`,
+  REPEAT GEN_TAC THEN
+  CONV_TAC (LAND_CONV (RAND_CONV (REWR_CONV sunfold))) THEN
+  MP_TAC (ISPEC `(f : B -> A # B) b` PAIR_SURJECTIVE) THEN
+  DISCH_THEN (X_CHOOSE_THEN `a : A` (X_CHOOSE_THEN `b' : B` ASSUME_TAC)) THEN
+  ASM_REWRITE_TAC [LET_DEF; LET_END_DEF; stl_scons]);;
+
+export_thm stl_sunfold;;
+
+let snth_sunfold_add = prove
+ (`!(f : B -> A # B) b n k.
+     snth (sunfold f b) (n + k) = snth (sunfold f (funpow (SND o f) n b)) k`,
+  ONCE_REWRITE_TAC [ADD_SYM] THEN
+  REWRITE_TAC [sunfold_def; funpow_add; stream_snth; o_THM]);;
+
+export_thm snth_sunfold_add;;
 
 let num_stream_exists = prove
   (`!(p : num -> bool).

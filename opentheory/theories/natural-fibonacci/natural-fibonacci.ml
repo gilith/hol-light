@@ -142,6 +142,10 @@ export_thm fibonacci_add2;;
 let fibonacci_def =
     CONJ fibonacci_zero (CONJ fibonacci_one fibonacci_add2);;
 
+let fibonaccis_def = new_definition `fibonaccis = stream fibonacci`;;
+
+export_thm fibonaccis_def;;
+
 let (decode_fib_dest_nil,decode_fib_dest_cons) =
   let def = new_recursive_definition list_RECURSION
     `(!f p. decode_fib_dest f p [] = 0) /\
@@ -484,6 +488,50 @@ let fibonacci_vorobev = prove
   FIRST_ASSUM MATCH_ACCEPT_TAC);;
 
 export_thm fibonacci_vorobev;;
+
+let snth_fibonaccis = prove
+ (`!n. snth fibonaccis n = fibonacci n`,
+  REWRITE_TAC [fibonaccis_def; stream_snth]);;
+
+export_thm snth_fibonaccis;;
+
+let fibonaccis_sunfold = prove
+ (`fibonaccis = sunfold (\ (p,f). (p, f, p + f)) (0,1)`,
+  MATCH_MP_TAC snth_eq_imp THEN
+  REWRITE_TAC [fibonaccis_def; stream_snth] THEN
+  MATCH_MP_TAC fibonacci_induction THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [GSYM shd_def; shd_sunfold; fibonacci_zero];
+   ALL_TAC] THEN
+  CONJ_TAC THENL
+  [REWRITE_TAC [snth_one; stl_sunfold; shd_sunfold; fibonacci_one];
+   ALL_TAC] THEN
+  X_GEN_TAC `n : num` THEN
+  CONV_TAC
+    (LAND_CONV
+       (LAND_CONV (RAND_CONV (RAND_CONV (REWR_CONV (GSYM ADD_0)))))) THEN
+  REWRITE_TAC [snth_sunfold_add] THEN
+  SPEC_TAC (`funpow (SND o (\(p,f). p,f,p + f)) n (0,1)`, `x : num # num`) THEN
+  REWRITE_TAC [FORALL_PAIR_THM] THEN
+  X_GEN_TAC `p : num` THEN
+  X_GEN_TAC `f : num` THEN
+  REWRITE_TAC [fibonacci_add2] THEN
+  REWRITE_TAC
+    [GSYM shd_def; snth_one; TWO; snth_suc; shd_sunfold; stl_sunfold] THEN
+  STRIP_TAC THEN
+  ASM_REWRITE_TAC [] THEN
+  MATCH_ACCEPT_TAC ADD_SYM);;
+
+export_thm fibonaccis_sunfold;;
+
+let fibonaccis_vorobev = prove
+ (`!j k.
+     snth fibonaccis (j + k + 1) =
+     snth fibonaccis j * snth fibonaccis k +
+     snth fibonaccis (j + 1) * snth fibonaccis (k + 1)`,
+  REWRITE_TAC [snth_fibonaccis; fibonacci_vorobev]);;
+
+export_thm fibonaccis_vorobev;;
 
 let decode_fib_nil = prove
  (`decode_fib [] = 0`,
@@ -1162,6 +1210,7 @@ export_thm zeckendorf_src;;
 
 logfile "natural-fibonacci-haskell-src";;
 
+export_thm fibonaccis_sunfold;;  (* Haskell *)
 export_thm decode_fib_dest_src;;  (* Haskell *)
 export_thm decode_fib_src;;  (* Haskell *)
 export_thm encode_fib_mk_def;;  (* Haskell *)
@@ -1175,6 +1224,7 @@ export_thm zeckendorf_src;;  (* Haskell *)
 
 logfile "natural-fibonacci-haskell-test";;
 
+export_thm fibonaccis_vorobev;;  (* Haskell *)
 export_thm encode_decode_fib;;  (* Haskell *)
 export_thm zeckendorf_encode_fib;;  (* Haskell *)
 

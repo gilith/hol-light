@@ -19,6 +19,7 @@ const "HOLLight.fibonacci" as "Number.Natural.fibonacci"
 
 # Number.Natural.Fibonacci
 
+const "HOLLight.fibonaccis" as "Number.Natural.Fibonacci.all"
 const "HOLLight.decode_fib" as "Number.Natural.Fibonacci.decode"
 const "HOLLight.decode_fib_dest" as "Number.Natural.Fibonacci.decode.dest"
 const "HOLLight.encode_fib" as "Number.Natural.Fibonacci.encode"
