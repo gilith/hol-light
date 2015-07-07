@@ -490,7 +490,11 @@ let parse_preterm =
     >> end_itlist (fun s t -> Combp(Combp(Varp("_SEQPATTERN",dpty),s),t))) i in
   (fun inp ->
     match inp with
-      [Ident s] -> Varp(s,dpty),[]
+      [Ident s] when
+        not(String.length s >= 2 &
+            String.sub s 0 1 = "\"" &
+            String.sub s (String.length s - 1) 1 = "\"")
+      -> Varp(s,dpty),[]
     | _ -> preterm inp);;
 
 (* ------------------------------------------------------------------------- *)

@@ -1,7 +1,8 @@
 (* ========================================================================= *)
-(* Various convenient background stuff.                                      *)
+(* Various convenient background stuff not specifically to do with R^n.      *)
 (*                                                                           *)
 (*              (c) Copyright, John Harrison 1998-2008                       *)
+(*                (c) Copyright, Marco Maggesi 2014                          *)
 (* ========================================================================= *)
 
 prioritize_real();;
@@ -345,6 +346,20 @@ let HULL_P_AND_Q = prove
   MATCH_MP_TAC HULL_UNIQUE THEN ASM_SIMP_TAC[HULL_INC; SUBSET_HULL] THEN
   ASM_MESON_TAC[P_HULL; HULL_SUBSET; SUBSET_TRANS]);;
 
+let HULL_UNIONS_SUBSET = prove
+ (`!P f. UNIONS {P hull s | s IN f} SUBSET P hull (UNIONS f)`,
+  REWRITE_TAC[UNIONS_SUBSET; FORALL_IN_GSPEC] THEN
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC HULL_MONO THEN ASM SET_TAC[]);;
+
+let HULL_INTERS_SUBSET = prove
+ (`!P f. P hull (INTERS f) SUBSET INTERS {P hull s | s IN f}`,
+  REWRITE_TAC[SUBSET_INTERS; FORALL_IN_GSPEC] THEN
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC HULL_MONO THEN ASM SET_TAC[]);;
+
+let HULL_INTER_SUBSET = prove
+ (`!P s t. P hull (s INTER t) SUBSET (P hull s) INTER (P hull t)`,
+  REWRITE_TAC[hull; INTERS_GSPEC] THEN SET_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* More variants of the Archimedian property and useful consequences.        *)
 (* ------------------------------------------------------------------------- *)
@@ -403,6 +418,19 @@ let FORALL_POS_MONO_1 = prove
  (`!P. (!d e. d < e /\ P d ==> P e) /\ (!n. P(inv(&n + &1)))
        ==> !e. &0 < e ==> P e`,
   REWRITE_TAC[REAL_OF_NUM_SUC; GSYM FORALL_SUC; FORALL_POS_MONO]);;
+
+let FORALL_POS_MONO_EQ = prove
+ (`!P. (!d e. d < e /\ P d ==> P e)
+       ==> ((!e. &0 < e ==> P e) <=> (!n. ~(n = 0) ==> P(inv(&n))))`,
+  MESON_TAC[REAL_ARCH_INV; REAL_LT_INV_EQ; REAL_LT_TRANS; LE_1;
+            REAL_OF_NUM_LT]);;
+
+let FORALL_POS_MONO_1_EQ = prove
+ (`!P. (!d e. d < e /\ P d ==> P e)
+       ==> ((!e. &0 < e ==> P e) <=> (!n. P(inv(&n + &1))))`,
+  GEN_TAC THEN
+  DISCH_THEN(SUBST1_TAC o MATCH_MP FORALL_POS_MONO_EQ) THEN
+  REWRITE_TAC[REAL_OF_NUM_SUC; GSYM FORALL_SUC]);;
 
 let REAL_ARCH_RDIV_EQ_0 = prove
  (`!x c. &0 <= x /\ &0 <= c /\ (!m. 0 < m ==> &m * x <= c) ==> x = &0`,
@@ -544,6 +572,10 @@ let INFINITE_FROM = prove
    num_INFINITE]) THEN
   REWRITE_TAC[EXTENSION; from; IN_DIFF; IN_UNIV; IN_ELIM_THM] THEN ARITH_TAC);;
 
+let FINITE_INTER_NUMSEG = prove
+ (`!s m n. FINITE(s INTER (m..n))`,
+  MESON_TAC[FINITE_SUBSET; FINITE_NUMSEG; INTER_SUBSET]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Make a Horner-style evaluation of sum(m..n) (\k. a(k) * x pow k).         *)
 (* ------------------------------------------------------------------------- *)
@@ -569,3 +601,170 @@ let HORNER_SUM_CONV =
     try (conv_0 THENC REAL_RAT_REDUCE_CONV) tm with Failure _ ->
     (conv_s THENC RAND_CONV(RAND_CONV conv) THENC REAL_RAT_REDUCE_CONV) tm in
   conv;;
+
+(* ------------------------------------------------------------------------- *)
+(* Some general lemmas about subsequences.                                   *)
+(* ------------------------------------------------------------------------- *)
+
+let MONOTONE_BIGGER = prove
+ (`!r. (!m n. m < n ==> r(m) < r(n)) ==> !n:num. n <= r(n)`,
+  GEN_TAC THEN DISCH_TAC THEN INDUCT_TAC THEN
+  ASM_MESON_TAC[LE_0; ARITH_RULE `n <= m /\ m < p ==> SUC n <= p`; LT]);;
+
+let MONOTONE_SUBSEQUENCE = prove
+ (`!s:num->real. ?r:num->num.
+           (!m n. m < n ==> r(m) < r(n)) /\
+           ((!m n. m <= n ==> s(r(m)) <= s(r(n))) \/
+            (!m n. m <= n ==> s(r(n)) <= s(r(m))))`,
+  GEN_TAC THEN
+  ASM_CASES_TAC `!n:num. ?p. n < p /\ !m. p <= m ==> s(m) <= s(p)` THEN
+  POP_ASSUM MP_TAC THEN
+  REWRITE_TAC[NOT_FORALL_THM; NOT_EXISTS_THM; NOT_IMP; DE_MORGAN_THM] THEN
+  REWRITE_TAC[RIGHT_OR_EXISTS_THM; SKOLEM_THM; REAL_NOT_LE; REAL_NOT_LT] THENL
+   [ABBREV_TAC `N = 0`; DISCH_THEN(X_CHOOSE_THEN `N:num` MP_TAC)] THEN
+  DISCH_THEN(X_CHOOSE_THEN `next:num->num` STRIP_ASSUME_TAC) THEN
+  (MP_TAC o prove_recursive_functions_exist num_RECURSION)
+   `(r 0 = next(SUC N)) /\ (!n. r(SUC n) = next(r n))` THEN
+  MATCH_MP_TAC MONO_EXISTS THEN GEN_TAC THEN STRIP_TAC THENL
+   [SUBGOAL_THEN `!m:num n:num. r n <= m ==> s(m) <= s(r n):real`
+    ASSUME_TAC THEN TRY CONJ_TAC THEN TRY DISJ2_TAC THEN
+    GEN_TAC THEN INDUCT_TAC THEN ASM_REWRITE_TAC[LT; LE] THEN
+    ASM_MESON_TAC[REAL_LE_TRANS; REAL_LE_REFL; LT_IMP_LE; LT_TRANS];
+    SUBGOAL_THEN `!n. N < (r:num->num) n` ASSUME_TAC THEN
+    TRY(CONJ_TAC THENL [GEN_TAC; DISJ1_TAC THEN GEN_TAC]) THEN
+    INDUCT_TAC THEN ASM_REWRITE_TAC[LT; LE] THEN
+    TRY STRIP_TAC THEN ASM_REWRITE_TAC[] THEN
+    ASM_MESON_TAC[REAL_LT_REFL; LT_LE; LTE_TRANS; REAL_LE_REFL;
+                  REAL_LT_LE; REAL_LE_TRANS; LT]]);;
+
+let CONVERGENT_BOUNDED_INCREASING = prove
+ (`!s:num->real b. (!m n. m <= n ==> s m <= s n) /\ (!n. abs(s n) <= b)
+                   ==> ?l. !e. &0 < e ==> ?N. !n. N <= n ==> abs(s n - l) < e`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC(SPEC `\x. ?n. (s:num->real) n = x` REAL_COMPLETE) THEN
+  REWRITE_TAC[] THEN ANTS_TAC THENL
+   [ASM_MESON_TAC[REAL_ARITH `abs(x) <= b ==> x <= b`]; ALL_TAC] THEN
+  MATCH_MP_TAC MONO_EXISTS THEN X_GEN_TAC `l:real` THEN STRIP_TAC THEN
+  X_GEN_TAC `e:real` THEN STRIP_TAC THEN
+  FIRST_X_ASSUM(MP_TAC o SPEC `l - e`) THEN
+  ASM_MESON_TAC[REAL_ARITH `&0 < e ==> ~(l <= l - e)`;
+      REAL_ARITH `x <= y /\ y <= l /\ ~(x <= l - e) ==> abs(y - l) < e`]);;
+
+let CONVERGENT_BOUNDED_MONOTONE = prove
+ (`!s:num->real b. (!n. abs(s n) <= b) /\
+                   ((!m n. m <= n ==> s m <= s n) \/
+                    (!m n. m <= n ==> s n <= s m))
+                   ==> ?l. !e. &0 < e ==> ?N. !n. N <= n ==> abs(s n - l) < e`,
+  REPEAT STRIP_TAC THENL
+   [ASM_MESON_TAC[CONVERGENT_BOUNDED_INCREASING]; ALL_TAC] THEN
+  MP_TAC(SPEC `\n. --((s:num->real) n)` CONVERGENT_BOUNDED_INCREASING) THEN
+  ASM_REWRITE_TAC[REAL_LE_NEG2; REAL_ABS_NEG] THEN
+  ASM_MESON_TAC[REAL_ARITH `abs(x - --l) = abs(--x - l)`]);;
+
+(* ------------------------------------------------------------------------- *)
+(* A characterization of monotonicity.                                       *)
+(* ------------------------------------------------------------------------- *)
+
+let REAL_NON_MONOTONE = prove
+ (`!P f:real->real.
+        (!x y. P x /\ P y /\ x <= y ==> f x <= f y) \/
+        (!x y. P x /\ P y /\ x <= y ==> f y <= f x) <=>
+        ~(?x y z. P x /\ P y /\ P z /\ x < y /\ y < z /\
+                 (f x < f y /\ f z < f y \/ f y < f x /\ f y < f z))`,
+  REPEAT STRIP_TAC THEN EQ_TAC THENL
+   [MESON_TAC[REAL_LT_IMP_LE; REAL_LET_ANTISYM]; ALL_TAC] THEN
+  GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM] THEN
+  REWRITE_TAC[NOT_FORALL_THM; LEFT_IMP_EXISTS_THM; NOT_IMP; DE_MORGAN_THM] THEN
+  ONCE_REWRITE_TAC[IMP_CONJ] THEN REWRITE_TAC[LEFT_IMP_EXISTS_THM] THEN
+  REWRITE_TAC[GSYM CONJ_ASSOC; REAL_NOT_LE; MESON[REAL_LT_LE]
+   `(x <= y /\ (f:real->real) y < f x <=> x < y /\ f y < f x) /\
+    (x <= y /\ f x < f y <=> x < y /\ f x < f y)`] THEN
+  MAP_EVERY X_GEN_TAC [`u:real`; `v:real`] THEN STRIP_TAC THEN
+  MAP_EVERY X_GEN_TAC [`w:real`; `z:real`] THEN STRIP_TAC THEN
+  REPEAT_TCL DISJ_CASES_THEN ASSUME_TAC (REAL_ARITH
+   `u:real = w \/ u < w \/ w < u`)
+  THENL
+   [FIRST_X_ASSUM SUBST_ALL_TAC THEN
+    MATCH_MP_TAC(MESON[] `P w v z \/ P w z v ==> ?x y z. P x y z`);
+    MATCH_MP_TAC(MESON[] `P u v \/ P u w \/ P u z ==> ?x y. P x y`) THEN
+    ASM_REWRITE_TAC[OR_EXISTS_THM; REAL_LT_REFL] THEN
+    MATCH_MP_TAC(MESON[] `P(v:real) \/ P z ==> ?x. P x`);
+    MATCH_MP_TAC(MESON[] `P w u \/ P w v \/ P w z ==> ?x y. P x y`) THEN
+    ASM_REWRITE_TAC[OR_EXISTS_THM; REAL_LT_REFL] THEN
+    MATCH_MP_TAC(MESON[] `P(v:real) \/ P z ==> ?x. P x`)] THEN
+  ASM_SIMP_TAC[REAL_LT_REFL; REAL_ARITH `a < b ==> ~(b < a)`] THEN
+  POP_ASSUM_LIST(MP_TAC o end_itlist CONJ o rev) THEN
+  CONV_TAC NNFC_CONV THEN CONV_TAC CNF_CONV THEN
+  REPEAT CONJ_TAC THEN TRY REAL_ARITH_TAC THEN
+  ASM_CASES_TAC `u:real = w` THEN ASM_REWRITE_TAC[REAL_LT_REFL] THEN
+  ASM_CASES_TAC `u:real = z` THEN ASM_REWRITE_TAC[REAL_LT_REFL] THEN
+  ASM_CASES_TAC `v:real = w` THEN ASM_REWRITE_TAC[REAL_LT_REFL] THEN
+  ASM_CASES_TAC `v:real = z` THEN ASM_REWRITE_TAC[REAL_LT_REFL] THEN
+  REPEAT(FIRST_X_ASSUM SUBST_ALL_TAC) THEN ASM_REAL_ARITH_TAC);;
+
+(* ------------------------------------------------------------------------- *)
+(* Extensional functions over a set.                                         *)
+(* ------------------------------------------------------------------------- *)
+
+let UNDEFINED = new_definition
+  `UNDEFINED = (@x:A. F)`;;
+
+let EXTENSIONAL = new_definition
+  `EXTENSIONAL s = {f:A->B | !x. ~(x IN s) ==> f x = UNDEFINED}`;;
+
+let IN_EXTENSIONAL = prove
+ (`!s f:A->B. f IN EXTENSIONAL s <=> (!x. ~(x IN s) ==> f x = UNDEFINED)`,
+  REWRITE_TAC[EXTENSIONAL; IN_ELIM_THM]);;
+
+let IN_EXTENSIONAL_UNDEFINED = prove
+ (`!s f:A->B x. f IN EXTENSIONAL s /\ ~(x IN s) ==> f x = UNDEFINED`,
+  SIMP_TAC[IN_EXTENSIONAL]);;
+
+let EXTENSIONAL_EMPTY = prove
+ (`EXTENSIONAL {} = {\x:A. UNDEFINED:B}`,
+  REWRITE_TAC[EXTENSION; IN_EXTENSIONAL; IN_SING; NOT_IN_EMPTY] THEN
+  REWRITE_TAC[FUN_EQ_THM]);;
+
+let EXTENSIONAL_EQ = prove
+ (`!s f g:A->B.
+     f IN EXTENSIONAL s /\ g IN EXTENSIONAL s /\ (!x. x IN s ==> f x = g x)
+     ==> f = g`,
+  REPEAT STRIP_TAC THEN REWRITE_TAC[FUN_EQ_THM] THEN GEN_TAC THEN
+  ASM_CASES_TAC `x:A IN s` THENL
+  [ASM_SIMP_TAC[]; ASM_MESON_TAC[IN_EXTENSIONAL_UNDEFINED]]);;
+
+(* ------------------------------------------------------------------------- *)
+(* Restriction of a function on a set.                                       *)
+(* ------------------------------------------------------------------------- *)
+
+let RESTRICTION = new_definition
+  `RESTRICTION s (f:A->B) x = if x IN s then f x else UNDEFINED`;;
+
+let RESTRICTION_DEFINED = prove
+ (`!s f:A->B x. x IN s ==> RESTRICTION s f x = f x`,
+  SIMP_TAC[RESTRICTION]);;
+
+let RESTRICTION_UNDEFINED = prove
+ (`!s f:A->B x. ~(x IN s) ==> RESTRICTION s f x = UNDEFINED`,
+  SIMP_TAC[RESTRICTION]);;
+
+let RESTRICTION_EQ = prove
+ (`!s f:A->B x y. x IN s /\ f x = y ==> RESTRICTION s f x = y`,
+  SIMP_TAC[RESTRICTION_DEFINED]);;
+
+let RESTRICTION_IN_EXTENSIONAL = prove
+ (`!s f:A->B. RESTRICTION s f IN EXTENSIONAL s`,
+  SIMP_TAC[IN_EXTENSIONAL; RESTRICTION]);;
+
+let RESTRICTION_EXTENSION = prove
+ (`!s f g:A->B. RESTRICTION s f = RESTRICTION s g <=>
+                (!x. x IN s ==> f x = g x)`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[RESTRICTION; FUN_EQ_THM] THEN MESON_TAC[]);;
+
+let RESTRICTION_FIXPOINT = prove
+ (`!s f:A->B. RESTRICTION s f = f <=> f IN EXTENSIONAL s`,
+  REWRITE_TAC[IN_EXTENSIONAL; FUN_EQ_THM; RESTRICTION] THEN MESON_TAC[]);;
+
+let RESTRICTION_IDEMP = prove
+ (`!s f:A->B. RESTRICTION s (RESTRICTION s f) = RESTRICTION s f`,
+  REWRITE_TAC[RESTRICTION_FIXPOINT; RESTRICTION_IN_EXTENSIONAL]);;

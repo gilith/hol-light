@@ -35,6 +35,14 @@ let TRACE_SUB = prove
  (`!A B:real^N^N. trace(A - B) = trace(A) - trace(B)`,
   SIMP_TAC[trace; matrix_sub; SUM_SUB_NUMSEG; LAMBDA_BETA]);;
 
+let TRACE_CMUL = prove
+ (`!c A:real^N^N. trace(c %% A) = c * trace A`,
+  REWRITE_TAC[trace; MATRIX_CMUL_COMPONENT; SUM_LMUL]);;
+
+let TRACE_NEG = prove
+ (`!A:real^N^N. trace(--A) = --(trace A)`,
+  REWRITE_TAC[trace; MATRIX_NEG_COMPONENT; SUM_NEG]);;
+
 let TRACE_MUL_SYM = prove
  (`!A B:real^N^N. trace(A ** B) = trace(B ** A)`,
   REPEAT GEN_TAC THEN SIMP_TAC[trace; matrix_mul; LAMBDA_BETA] THEN
@@ -49,6 +57,10 @@ let TRACE_CONJUGATE = prove
         invertible U ==> trace(matrix_inv U ** A ** U) = trace A`,
   REPEAT STRIP_TAC THEN ONCE_REWRITE_TAC[TRACE_MUL_SYM] THEN
   ASM_SIMP_TAC[GSYM MATRIX_MUL_ASSOC; MATRIX_INV; MATRIX_MUL_RID]);;
+
+let TRACE_MUL_CYCLIC = prove
+ (`!A:real^N^N B C:real^N^N. trace(A ** B ** C) = trace(B ** C ** A)`,
+  MESON_TAC[MATRIX_MUL_ASSOC; TRACE_MUL_SYM]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of determinant.                                                *)
@@ -167,15 +179,6 @@ let DET_UPPERTRIANGULAR = prove
   ASM_REWRITE_TAC[PRODUCT_EQ_0_NUMSEG; REAL_ENTIRE; SIGN_NZ] THEN
   MP_TAC(SPECL [`p:num->num`; `1..dimindex(:N)`] PERMUTES_NUMSET_GE) THEN
   ASM_MESON_TAC[PERMUTES_IN_IMAGE; IN_NUMSEG; NOT_LT]);;
-
-let DET_DIAGONAL = prove
- (`!A:real^N^N.
-        (!i j. 1 <= i /\ i <= dimindex(:N) /\
-               1 <= j /\ j <= dimindex(:N) /\ ~(i = j) ==> A$i$j = &0)
-        ==> det(A) = product(1..dimindex(:N)) (\i. A$i$i)`,
-  REPEAT STRIP_TAC THEN MATCH_MP_TAC DET_LOWERTRIANGULAR THEN
-  REPEAT STRIP_TAC THEN FIRST_X_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[] THEN
-  ASM_MESON_TAC[LT_REFL]);;
 
 let DET_I = prove
  (`det(mat 1 :real^N^N) = &1`,
@@ -643,6 +646,13 @@ let INVERTIBLE_DET_NZ = prove
 let DET_EQ_0 = prove
  (`!A:real^N^N. det(A) = &0 <=> ~invertible(A)`,
   REWRITE_TAC[INVERTIBLE_DET_NZ]);;
+
+let DET_MATRIX_INV = prove
+ (`!A:real^N^N. det(matrix_inv A) = inv(det A)`,
+  GEN_TAC THEN ASM_CASES_TAC `invertible(A:real^N^N)` THENL
+   [MATCH_MP_TAC(REAL_FIELD `a * b = &1 ==> a = inv b`) THEN
+    ASM_SIMP_TAC[GSYM DET_MUL; MATRIX_INV; DET_I];
+    ASM_MESON_TAC[DET_EQ_0; INVERTIBLE_MATRIX_INV; REAL_INV_0]]);;
 
 let MATRIX_MUL_LINV = prove
  (`!A:real^N^N. ~(det A = &0) ==> matrix_inv A ** A = mat 1`,
@@ -1180,6 +1190,30 @@ let DET_4 = prove
 (* Existence of the characteristic polynomial.                               *)
 (* ------------------------------------------------------------------------- *)
 
+let EIGENVALUES_CHARACTERISTIC_ALT = prove
+ (`!A:real^N^N c.
+        (?v. ~(v = vec 0) /\ A ** v = c % v) <=> det(A - c %% mat 1) = &0`,
+  REWRITE_TAC[GSYM HOMOGENEOUS_LINEAR_EQUATIONS_DET] THEN
+  REWRITE_TAC[MATRIX_VECTOR_MUL_SUB_RDISTRIB] THEN
+  REWRITE_TAC[MATRIX_VECTOR_LMUL; VECTOR_SUB_EQ; MATRIX_VECTOR_MUL_LID]);;
+
+let EIGENVALUES_CHARACTERISTIC = prove
+ (`!A:real^N^N c.
+        (?v. ~(v = vec 0) /\ A ** v = c % v) <=> det(c %% mat 1 - A) = &0`,
+  ONCE_REWRITE_TAC[GSYM MATRIX_NEG_SUB] THEN
+  ASM_REWRITE_TAC[EIGENVALUES_CHARACTERISTIC_ALT; DET_NEG] THEN
+  REWRITE_TAC[REAL_ENTIRE; REAL_POW_EQ_0] THEN
+  CONV_TAC REAL_RAT_REDUCE_CONV);;
+
+let INVERTIBLE_EIGENVALUES = prove
+ (`!A:real^N^N.
+        invertible(A) <=> !c v. A ** v = c % v /\ ~(v = vec 0) ==> ~(c = &0)`,
+  GEN_TAC THEN REWRITE_TAC[LEFT_FORALL_IMP_THM] THEN
+  ONCE_REWRITE_TAC[CONJ_SYM] THEN
+  REWRITE_TAC[EIGENVALUES_CHARACTERISTIC_ALT; INVERTIBLE_DET_NZ] THEN
+  ONCE_REWRITE_TAC[GSYM CONTRAPOS_THM] THEN
+  REWRITE_TAC[FORALL_UNWIND_THM2; MATRIX_CMUL_LZERO; MATRIX_SUB_RZERO]);;
+
 let CHARACTERISTIC_POLYNOMIAL = prove
  (`!A:real^N^N.
         ?a. a(dimindex(:N)) = &1 /\
@@ -1339,11 +1373,551 @@ let diagonal_matrix = new_definition
               ~(i = j)
               ==> A$i$j = &0`;;
 
+let DIAGONAL_MATRIX = prove
+ (`!A:real^N^N.
+     diagonal_matrix A <=> A = (lambda i j. if i = j then A$i$j else &0)`,
+  SIMP_TAC[CART_EQ; LAMBDA_BETA; diagonal_matrix] THEN MESON_TAC[]);;
+
 let TRANSP_DIAGONAL_MATRIX = prove
  (`!A:real^N^N. diagonal_matrix A ==> transp A = A`,
   GEN_TAC THEN REWRITE_TAC[diagonal_matrix; CART_EQ; TRANSP_COMPONENT] THEN
   STRIP_TAC THEN X_GEN_TAC `i:num` THEN STRIP_TAC THEN X_GEN_TAC `j:num` THEN
   STRIP_TAC THEN ASM_CASES_TAC `i:num = j` THEN ASM_SIMP_TAC[]);;
+
+let DIAGONAL_MATRIX_ADD = prove
+ (`!A B:real^N^M.
+        diagonal_matrix A /\ diagonal_matrix B
+        ==> diagonal_matrix(A + B)`,
+  SIMP_TAC[diagonal_matrix; MATRIX_ADD_COMPONENT;
+           REAL_ADD_LID; REAL_ADD_RID]);;
+
+let DIAGONAL_MATRIX_CMUL = prove
+ (`!A:real^N^M c.
+        diagonal_matrix A ==> diagonal_matrix(c %% A)`,
+  SIMP_TAC[diagonal_matrix; MATRIX_CMUL_COMPONENT; REAL_MUL_RZERO]);;
+
+let DIAGONAL_MATRIX_MUL_EXPLICIT = prove
+ (`!A:real^N^N B:real^N^N.
+        diagonal_matrix A /\ diagonal_matrix B
+        ==> A ** B = lambda i j. A$i$j * B$i$j`,
+  REPEAT STRIP_TAC THEN
+  REPEAT(FIRST_X_ASSUM(SUBST1_TAC o GEN_REWRITE_RULE I [DIAGONAL_MATRIX])) THEN
+  SIMP_TAC[CART_EQ; matrix_mul; LAMBDA_BETA] THEN
+  ONCE_REWRITE_TAC[MESON[REAL_MUL_LZERO; REAL_MUL_RZERO]
+   `(if p then a else &0) * (if q then b else &0) =
+    if q then (if p then a * b else &0) else &0`] THEN
+  SIMP_TAC[SUM_DELTA; IN_NUMSEG; COND_ID; SUM_0]);;
+
+let DIAGONAL_MATRIX_MUL_COMPONENT = prove
+ (`!A:real^N^N B:real^N^N i j.
+        diagonal_matrix A /\ diagonal_matrix B /\
+        1 <= i /\ i <= dimindex(:N) /\
+        1 <= j /\ j <= dimindex(:N)
+        ==> (A ** B)$i$j = A$i$j * B$i$j`,
+  ASM_SIMP_TAC[DIAGONAL_MATRIX_MUL_EXPLICIT; LAMBDA_BETA]);;
+
+let DIAGONAL_MATRIX_MUL = prove
+ (`!A:real^N^N B:real^N^N.
+        diagonal_matrix A /\ diagonal_matrix B
+        ==> diagonal_matrix(A ** B)`,
+  REPEAT GEN_TAC THEN
+  GEN_REWRITE_TAC RAND_CONV [diagonal_matrix] THEN
+  SIMP_TAC[DIAGONAL_MATRIX_MUL_COMPONENT] THEN
+  SIMP_TAC[diagonal_matrix; REAL_MUL_LZERO]);;
+
+let DIAGONAL_MATRIX_INV_EXPLICIT = prove
+ (`!A:real^N^N. diagonal_matrix A ==> matrix_inv A = lambda i j. inv(A$i$j)`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC MATRIX_INV_UNIQUE_STRONG THEN
+  SUBGOAL_THEN
+   `diagonal_matrix((lambda i j. inv((A:real^N^N)$i$j)):real^N^N)`
+  ASSUME_TAC THENL
+   [RULE_ASSUM_TAC(REWRITE_RULE[diagonal_matrix]) THEN
+    ASM_SIMP_TAC[diagonal_matrix; LAMBDA_BETA; REAL_INV_0];
+    ASM_SIMP_TAC[DIAGONAL_MATRIX_MUL_COMPONENT; CART_EQ; LAMBDA_BETA;
+                 TRANSP_COMPONENT; DIAGONAL_MATRIX_MUL]] THEN
+  MP_TAC(ISPEC `A:real^N^N` DIAGONAL_MATRIX) THEN ASM_REWRITE_TAC[] THEN
+  DISCH_THEN SUBST1_TAC THEN SIMP_TAC[LAMBDA_BETA] THEN
+  REPEAT CONJ_TAC THEN X_GEN_TAC `i:num` THEN STRIP_TAC THEN
+  X_GEN_TAC `j:num` THEN STRIP_TAC THEN COND_CASES_TAC THEN
+  ASM_REWRITE_TAC[REAL_INV_0; REAL_MUL_LZERO; REAL_MUL_RZERO] THEN
+  REWRITE_TAC[REAL_INV_EQ_0; REAL_RING
+    `a * b * a = a <=> b * a = &1 \/ a = &0`] THEN
+  CONV_TAC REAL_FIELD);;
+
+let DIAGONAL_MATRIX_INV_COMPONENT = prove
+ (`!A:real^N^N i j.
+        diagonal_matrix A /\
+        1 <= i /\ i <= dimindex(:N) /\ 1 <= j /\ j <= dimindex(:N)
+        ==> (matrix_inv A)$i$j = inv(A$i$j)`,
+  ASM_SIMP_TAC[DIAGONAL_MATRIX_INV_EXPLICIT; LAMBDA_BETA]);;
+
+let DIAGONAL_MATRIX_INV = prove
+ (`!A:real^N^N. diagonal_matrix(matrix_inv A) <=> diagonal_matrix A`,
+  SUBGOAL_THEN
+   `!A:real^N^N. diagonal_matrix A ==> diagonal_matrix(matrix_inv A)`
+  MP_TAC THENL [REPEAT STRIP_TAC; MESON_TAC[MATRIX_INV_INV]] THEN
+  FIRST_ASSUM(SUBST1_TAC o MATCH_MP DIAGONAL_MATRIX_INV_EXPLICIT) THEN
+  POP_ASSUM MP_TAC THEN SIMP_TAC[diagonal_matrix; LAMBDA_BETA] THEN
+  REWRITE_TAC[REAL_INV_0]);;
+
+let DET_DIAGONAL = prove
+ (`!A:real^N^N.
+        diagonal_matrix A
+        ==> det(A) = product(1..dimindex(:N)) (\i. A$i$i)`,
+  REWRITE_TAC[diagonal_matrix] THEN
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC DET_LOWERTRIANGULAR THEN
+  REPEAT STRIP_TAC THEN FIRST_X_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[] THEN
+  ASM_MESON_TAC[LT_REFL]);;
+
+let COMMUTING_WITH_DIAGONAL_MATRIX = prove
+ (`!A D:real^N^N.
+        diagonal_matrix D
+        ==> (A ** D = D ** A <=>
+             !i j. 1 <= i /\ i <= dimindex(:N) /\
+                   1 <= j /\ j <= dimindex(:N)
+                   ==> A$i$j = &0 \/ D$i$i = D$j$j)`,
+  REPEAT STRIP_TAC THEN
+  FIRST_ASSUM(SUBST1_TAC o REWRITE_RULE[DIAGONAL_MATRIX]) THEN
+  SIMP_TAC[CART_EQ; matrix_mul; LAMBDA_BETA] THEN
+  REWRITE_TAC[MESON[REAL_MUL_LZERO; REAL_MUL_RZERO; REAL_MUL_SYM]
+   `(if a = b then x else &0) * y = (if b = a then x * y else &0) /\
+    y * (if a = b then x else &0) = (if a = b then x * y else &0)`] THEN
+  SIMP_TAC[SUM_DELTA; IN_NUMSEG; REAL_EQ_MUL_RCANCEL] THEN MESON_TAC[]);;
+
+let RANK_DIAGONAL_MATRIX = prove
+ (`!A:real^N^N.
+        diagonal_matrix A
+        ==> rank A = CARD {i | i IN 1..dimindex(:N) /\ ~(A$i$i = &0)}`,
+  REPEAT STRIP_TAC THEN REWRITE_TAC[RANK_DIM_IM; GSYM SPAN_STDBASIS] THEN
+  SIMP_TAC[GSYM SPAN_LINEAR_IMAGE; MATRIX_VECTOR_MUL_LINEAR; DIM_SPAN] THEN
+  REWRITE_TAC[GSYM IN_NUMSEG; SIMPLE_IMAGE; GSYM IMAGE_o; o_DEF] THEN
+  TRANS_TAC EQ_TRANS
+    `dim {(A:real^N^N)$i$i % basis i:real^N | i IN 1..dimindex(:N)}` THEN
+  CONJ_TAC THENL
+   [AP_TERM_TAC THEN MATCH_MP_TAC(SET_RULE
+     `(!x. x IN s ==> f x = g x) ==> IMAGE f s = {g x | x IN s}`) THEN
+    FIRST_ASSUM(SUBST1_TAC o GEN_REWRITE_RULE I [DIAGONAL_MATRIX]) THEN
+    SIMP_TAC[matrix_vector_mul; LAMBDA_BETA; IN_NUMSEG; CART_EQ] THEN
+    ONCE_REWRITE_TAC[MESON[REAL_MUL_LZERO]
+     `(if i = j then a else &0) * b = if j = i then a * b else &0`] THEN
+    SIMP_TAC[SUM_DELTA; IN_NUMSEG; BASIS_COMPONENT; VECTOR_MUL_COMPONENT] THEN
+    MESON_TAC[REAL_MUL_RZERO];
+    ALL_TAC] THEN
+  TRANS_TAC EQ_TRANS
+   `dim {(A:real^N^N)$i$i % basis i:real^N |i|
+          i IN 1..dimindex(:N) /\ ~(A$i$i = &0)}` THEN
+  CONJ_TAC THENL
+   [MATCH_MP_TAC(MESON[DIM_INSERT_0]
+    `(vec 0:real^N) INSERT s = (vec 0:real^N) INSERT t ==> dim s = dim t`) THEN
+    MATCH_MP_TAC(SET_RULE
+     `t SUBSET s /\ (!x. x IN s ==> ~(x IN t) ==> x = a)
+      ==> a INSERT s = a INSERT t`) THEN
+    CONJ_TAC THENL [SET_TAC[]; REWRITE_TAC[FORALL_IN_GSPEC]] THEN
+    SIMP_TAC[VECTOR_MUL_EQ_0; IN_ELIM_THM; BASIS_NONZERO; IN_NUMSEG] THEN
+    SET_TAC[];
+    ALL_TAC] THEN
+  TRANS_TAC EQ_TRANS
+  `dim{basis i:real^N | i IN 1..dimindex(:N) /\ ~((A:real^N^N)$i$i = &0)}` THEN
+  CONJ_TAC THENL
+   [MATCH_MP_TAC SPAN_EQ_DIM THEN REWRITE_TAC[GSYM SUBSET_ANTISYM_EQ] THEN
+    CONJ_TAC THEN MATCH_MP_TAC SPAN_SUBSET_SUBSPACE THEN
+    REWRITE_TAC[SUBSPACE_SPAN] THEN
+    REWRITE_TAC[FORALL_IN_GSPEC; SUBSET; IN_NUMSEG] THEN
+    X_GEN_TAC `i:num` THEN STRIP_TAC THENL
+     [ALL_TAC;
+      SUBGOAL_THEN
+       `basis i:real^N = inv((A:real^N^N)$i$i) % A$i$i % basis i`
+       (fun th -> GEN_REWRITE_TAC LAND_CONV [th])
+      THENL [ASM_SIMP_TAC[VECTOR_MUL_ASSOC; REAL_MUL_LINV; VECTOR_MUL_LID];
+             ALL_TAC]] THEN
+    MATCH_MP_TAC SPAN_MUL THEN MATCH_MP_TAC SPAN_SUPERSET THEN ASM SET_TAC[];
+    ALL_TAC] THEN
+  W(MP_TAC o PART_MATCH (lhs o rand) DIM_EQ_CARD o lhand o snd) THEN
+  ANTS_TAC THENL
+   [MATCH_MP_TAC(MATCH_MP (REWRITE_RULE[IMP_CONJ] INDEPENDENT_MONO)
+        INDEPENDENT_STDBASIS) THEN
+    REWRITE_TAC[IN_NUMSEG] THEN SET_TAC[];
+    DISCH_THEN SUBST1_TAC] THEN
+  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [SIMPLE_IMAGE_GEN] THEN
+  MATCH_MP_TAC CARD_IMAGE_INJ THEN
+  SIMP_TAC[FINITE_RESTRICT; FINITE_NUMSEG; IN_ELIM_THM; IN_NUMSEG] THEN
+  REWRITE_TAC[IMP_CONJ] THEN SIMP_TAC[BASIS_INJ_EQ]);;
+
+(* ------------------------------------------------------------------------- *)
+(* Positive semidefinite matrices.                                           *)
+(* ------------------------------------------------------------------------- *)
+
+let positive_semidefinite = new_definition
+ `positive_semidefinite(A:real^N^N) <=>
+    transp A = A /\ !x. &0 <= x dot (A ** x)`;;
+
+let POSITIVE_SEMIDEFINITE_IMP_SYMMETRIC = prove
+ (`!A:real^N^N. positive_semidefinite A ==> transp A = A`,
+  SIMP_TAC[positive_semidefinite]);;
+
+let POSITIVE_SEMIDEFINITE_ADD = prove
+ (`!A B:real^N^N.
+        positive_semidefinite A /\ positive_semidefinite B
+        ==> positive_semidefinite(A + B)`,
+  SIMP_TAC[positive_semidefinite; TRANSP_MATRIX_ADD] THEN
+  SIMP_TAC[MATRIX_VECTOR_MUL_ADD_RDISTRIB; DOT_RADD; REAL_LE_ADD]);;
+
+let POSITIVE_SEMIDEFINITE_CMUL = prove
+ (`!c A:real^N^N.
+        positive_semidefinite A /\ &0 <= c
+        ==> positive_semidefinite(c %% A)`,
+  SIMP_TAC[positive_semidefinite; TRANSP_MATRIX_CMUL] THEN
+  SIMP_TAC[MATRIX_VECTOR_LMUL; DOT_RMUL; REAL_LE_MUL]);;
+
+let POSITIVE_SEMIDEFINITE_TRANSP = prove
+ (`!A:real^N^N. positive_semidefinite(transp A) <=> positive_semidefinite A`,
+  REWRITE_TAC[positive_semidefinite] THEN MESON_TAC[TRANSP_TRANSP]);;
+
+let POSITIVE_SEMIDEFINITE_COVARIANCE = prove
+ (`!A:real^N^M. positive_semidefinite(transp A ** A)`,
+  REWRITE_TAC[positive_semidefinite; MATRIX_TRANSP_MUL; TRANSP_TRANSP] THEN
+  REWRITE_TAC[GSYM MATRIX_VECTOR_MUL_ASSOC] THEN
+  ONCE_REWRITE_TAC[GSYM DOT_LMUL_MATRIX] THEN
+  REWRITE_TAC[GSYM MATRIX_VECTOR_MUL_TRANSP; DOT_POS_LE]);;
+
+let POSITIVE_SEMIDEFINITE_SIMILAR = prove
+ (`!A B:real^N^M.
+        positive_semidefinite A
+        ==> positive_semidefinite(transp B ** A ** B)`,
+  REWRITE_TAC[positive_semidefinite] THEN REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC[MATRIX_TRANSP_MUL; TRANSP_TRANSP; GSYM MATRIX_MUL_ASSOC] THEN
+  REWRITE_TAC[GSYM MATRIX_VECTOR_MUL_ASSOC] THEN
+  REWRITE_TAC[GSYM DOT_LMUL_MATRIX; GSYM MATRIX_VECTOR_MUL_TRANSP] THEN
+  ASM_REWRITE_TAC[DOT_LMUL_MATRIX]);;
+
+let POSITIVE_SEMIDEFINITE_SIMILAR_EQ = prove
+ (`!A B:real^N^N.
+        invertible B
+        ==> (positive_semidefinite (transp B ** A ** B) <=>
+             positive_semidefinite A)`,
+  REPEAT STRIP_TAC THEN EQ_TAC THEN
+  REWRITE_TAC[POSITIVE_SEMIDEFINITE_SIMILAR] THEN
+  DISCH_THEN(MP_TAC o ISPEC `matrix_inv B:real^N^N` o MATCH_MP
+    POSITIVE_SEMIDEFINITE_SIMILAR) THEN
+  ASM_SIMP_TAC[GSYM MATRIX_MUL_ASSOC; MATRIX_INV; MATRIX_MUL_RID] THEN
+  REWRITE_TAC[MATRIX_MUL_ASSOC; GSYM MATRIX_TRANSP_MUL] THEN
+  ASM_SIMP_TAC[MATRIX_INV; TRANSP_MAT; MATRIX_MUL_LID]);;
+
+let POSITIVE_SEMIDEFINITE_DIAGONAL_MATRIX = prove
+ (`!D:real^N^N.
+        diagonal_matrix D /\
+        (!i. 1 <= i /\ i <= dimindex(:N) ==> &0 <= D$i$i)
+        ==> positive_semidefinite D`,
+  SIMP_TAC[positive_semidefinite; TRANSP_DIAGONAL_MATRIX] THEN
+  REPEAT STRIP_TAC THEN
+  FIRST_ASSUM(SUBST1_TAC o GEN_REWRITE_RULE I [DIAGONAL_MATRIX]) THEN
+  SIMP_TAC[matrix_vector_mul; LAMBDA_BETA; dot] THEN
+  SIMP_TAC[COND_RATOR; COND_RAND; REAL_MUL_LZERO] THEN
+  CONV_TAC(RAND_CONV(ONCE_DEPTH_CONV SYM_CONV)) THEN
+  SIMP_TAC[SUM_DELTA] THEN MATCH_MP_TAC SUM_POS_LE_NUMSEG THEN
+  GEN_TAC THEN STRIP_TAC THEN
+  REWRITE_TAC[REAL_ARITH `x * d * x:real = d * x * x`] THEN
+  MATCH_MP_TAC REAL_LE_MUL THEN
+  ASM_SIMP_TAC[REAL_LE_SQUARE]);;
+
+let POSITIVE_SEMIDEFINITE_DIAGONAL_MATRIX_EQ = prove
+ (`!D:real^N^N.
+        diagonal_matrix D
+        ==> (positive_semidefinite D <=>
+             !i. 1 <= i /\ i <= dimindex(:N) ==> &0 <= D$i$i)`,
+  REPEAT STRIP_TAC THEN EQ_TAC THEN
+  ASM_SIMP_TAC[POSITIVE_SEMIDEFINITE_DIAGONAL_MATRIX] THEN
+  REWRITE_TAC[positive_semidefinite] THEN REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM(MP_TAC o SPEC `basis i:real^N`) THEN
+  ASM_SIMP_TAC[DOT_BASIS; MATRIX_VECTOR_MUL_BASIS; column; LAMBDA_BETA]);;
+
+let DIAGONAL_POSITIVE_SEMIDEFINITE = prove
+ (`!A:real^N^N i.
+        positive_semidefinite A /\ 1 <= i /\ i <= dimindex(:N)
+        ==> &0 <= A$i$i`,
+  REWRITE_TAC[positive_semidefinite] THEN REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM(MP_TAC o SPEC `basis i:real^N`) THEN
+  ASM_SIMP_TAC[MATRIX_VECTOR_MUL_BASIS; column; DOT_BASIS; LAMBDA_BETA]);;
+
+let TRACE_POSITIVE_SEMIDEFINITE = prove
+ (`!A:real^N^N. positive_semidefinite A ==> &0 <= trace A`,
+  SIMP_TAC[trace; SUM_POS_LE_NUMSEG; DIAGONAL_POSITIVE_SEMIDEFINITE]);;
+
+let TRACE_LE_MUL_SQUARES = prove
+ (`!A B:real^N^N.
+        transp A = A /\ transp B = B
+        ==> trace((A ** B) ** (A ** B)) <= trace((A ** A) ** (B ** B))`,
+  REPEAT STRIP_TAC THEN MP_TAC
+   (ISPEC `A ** B - B ** A:real^N^N` POSITIVE_SEMIDEFINITE_COVARIANCE) THEN
+  DISCH_THEN(MP_TAC o MATCH_MP TRACE_POSITIVE_SEMIDEFINITE) THEN
+  REWRITE_TAC[MATRIX_TRANSP_MUL; TRANSP_MATRIX_SUB; MATRIX_SUB_LDISTRIB] THEN
+  ASM_REWRITE_TAC[MATRIX_SUB_RDISTRIB; TRACE_SUB] THEN MATCH_MP_TAC(REAL_ARITH
+  `a = y /\ d = y /\ b = x /\ c = x ==> &0 <= a - b - (c - d) ==> x <= y`) THEN
+  REWRITE_TAC[GSYM MATRIX_MUL_ASSOC] THEN REPEAT CONJ_TAC THEN
+  REPEAT(GEN_REWRITE_TAC LAND_CONV [TRACE_MUL_SYM] THEN
+         REWRITE_TAC[GSYM MATRIX_MUL_ASSOC]));;
+
+let POSITIVE_SEMIDEFINITE_ZERO_FORM = prove
+ (`!A:real^N^N. positive_semidefinite A /\ x dot (A ** x) = &0
+                ==> A ** x = vec 0`,
+  let lemma = prove
+   (`(!t. &0 <= a + b * t) ==> b = &0`,
+    ONCE_REWRITE_TAC[GSYM CONTRAPOS_THM] THEN DISCH_TAC THEN
+    DISCH_THEN(MP_TAC o SPEC `--(a + &1) / b`) THEN
+    ASM_SIMP_TAC[REAL_DIV_LMUL] THEN REAL_ARITH_TAC) in
+  REWRITE_TAC[positive_semidefinite] THEN REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM(MP_TAC o GEN `t:real` o SPEC `(A:real^N^N) ** x + t % x`) THEN
+  REWRITE_TAC[MATRIX_VECTOR_MUL_ADD_LDISTRIB; DOT_RADD] THEN
+  REWRITE_TAC[DOT_LADD; MATRIX_VECTOR_MUL_RMUL; DOT_LMUL] THEN
+  REWRITE_TAC[DOT_RMUL] THEN
+  SUBGOAL_THEN `x dot (A ** A ** x) = ((A:real^N^N) ** x) dot (A ** x)`
+  SUBST1_TAC THENL
+   [ASM_REWRITE_TAC[GSYM DOT_LMUL_MATRIX; VECTOR_MATRIX_MUL_TRANSP];
+    ASM_REWRITE_TAC[REAL_ARITH `(a + t * b) + t * b + t * t * &0 =
+                                a + (&2 * b) * t`]] THEN
+  DISCH_THEN(MP_TAC o MATCH_MP lemma) THEN
+  REWRITE_TAC[REAL_ENTIRE; DOT_EQ_0; REAL_OF_NUM_EQ; ARITH_EQ]);;
+
+let POSITIVE_SEMIDEFINITE_ZERO_FORM_EQ = prove
+ (`!A:real^N^N. positive_semidefinite A
+                ==> (x dot (A ** x) = &0 <=> A ** x = vec 0)`,
+  REPEAT(STRIP_TAC ORELSE EQ_TAC) THEN
+  ASM_SIMP_TAC[DOT_RZERO; POSITIVE_SEMIDEFINITE_ZERO_FORM]);;
+
+let POSITIVE_SEMIDEFINITE_1 = prove
+ (`!A:real^1^1. positive_semidefinite A <=> &0 <= A$1$1`,
+  GEN_TAC THEN REWRITE_TAC[positive_semidefinite; transp; CART_EQ; dot] THEN
+  SIMP_TAC[matrix_vector_mul; DIMINDEX_1; SUM_1; FORALL_1; ARITH;
+           LAMBDA_BETA; REAL_ARITH `x * a * x:real = a * x pow 2`] THEN
+  EQ_TAC THENL [ALL_TAC; MESON_TAC[REAL_LE_MUL; REAL_LE_POW_2]] THEN
+  DISCH_THEN(MP_TAC o SPEC `basis 1:real^1`) THEN
+  SIMP_TAC[BASIS_COMPONENT; ARITH; DIMINDEX_1] THEN REAL_ARITH_TAC);;
+
+let POSITIVE_SEMIDEFINITE_SUBMATRIX_2 = prove
+ (`!A:real^N^N i j.
+        positive_semidefinite A /\
+        1 <= i /\ i <= dimindex(:N) /\ 1 <= j /\ j <= dimindex(:N)
+        ==> positive_semidefinite
+              (vector[vector[A$i$i;A$i$j];
+                      vector[A$j$i;A$j$j]]:real^2^2)`,
+  REWRITE_TAC[positive_semidefinite] THEN REPEAT STRIP_TAC THENL
+   [FIRST_X_ASSUM(MP_TAC o GEN_REWRITE_RULE I [CART_EQ]) THEN
+    SIMP_TAC[CART_EQ; transp; LAMBDA_BETA; DIMINDEX_2; VECTOR_2; ARITH;
+             FORALL_2] THEN
+    ASM_MESON_TAC[];
+    SIMP_TAC[DOT_2; VECTOR_2; matrix_vector_mul; DIMINDEX_2; LAMBDA_BETA;
+             ARITH; SUM_2]] THEN
+  ASM_CASES_TAC `j:num = i` THENL
+   [ASM_REWRITE_TAC[REAL_ARITH
+     `x * (a * x + a * y) + y * (a * x + a * y):real =
+      a * (x + y) pow 2`] THEN
+    MATCH_MP_TAC REAL_LE_MUL THEN REWRITE_TAC[REAL_LE_POW_2] THEN
+    MATCH_MP_TAC DIAGONAL_POSITIVE_SEMIDEFINITE THEN
+    ASM_REWRITE_TAC[positive_semidefinite];
+    FIRST_X_ASSUM(MP_TAC o SPEC
+     `(lambda m. if m = i then (x:real^2)$1
+                 else if m = j then (x:real^2)$2  else &0):real^N`) THEN
+    SIMP_TAC[matrix_vector_mul; LAMBDA_BETA] THEN
+    REPLICATE_TAC 2
+     (REPLICATE_TAC 2 (ONCE_REWRITE_TAC[COND_RAND]) THEN
+      SIMP_TAC[SUM_CASES; FINITE_NUMSEG; SUM_DELTA; REAL_MUL_RZERO] THEN
+      ASM_SIMP_TAC[SET_RULE `P a ==> {x | P x /\ x = a} = {a}`;
+                   IN_NUMSEG; IN_ELIM_THM; SUM_SING] THEN
+      SIMP_TAC[dot; LAMBDA_BETA] THEN ONCE_REWRITE_TAC[REAL_MUL_SYM])]);;
+
+(* ------------------------------------------------------------------------- *)
+(* Trace of covariance as an inner product (actually if we "flatten" the     *)
+(* matrix into a vector, which we could do, it's the usual dot product).     *)
+(* ------------------------------------------------------------------------- *)
+
+let TRACE_COVARIANCE_POS_LE = prove
+ (`!A:real^M^N. &0 <= trace(transp A ** A)`,
+  SIMP_TAC[POSITIVE_SEMIDEFINITE_COVARIANCE; TRACE_POSITIVE_SEMIDEFINITE]);;
+
+let TRACE_COVARIANCE_EQ_0 = prove
+ (`!A:real^M^N. trace(transp A ** A) = &0 <=> A = mat 0`,
+  GEN_TAC THEN EQ_TAC THEN SIMP_TAC[TRACE_0; MATRIX_MUL_RZERO] THEN
+  SIMP_TAC[trace; matrix_mul; transp; LAMBDA_BETA] THEN REPEAT
+  (DISCH_THEN(MP_TAC o MATCH_MP (ONCE_REWRITE_RULE[IMP_CONJ_ALT]
+        SUM_POS_EQ_0_NUMSEG)) THEN
+   SIMP_TAC[SUM_POS_LE; REAL_LE_SQUARE; REAL_ENTIRE] THEN
+   ONCE_REWRITE_TAC[GSYM TRANSP_EQ_0] THEN
+   REWRITE_TAC[CART_EQ; MAT_0_COMPONENT; TRANSP_COMPONENT] THEN
+   MATCH_MP_TAC MONO_FORALL THEN X_GEN_TAC `i:num` THEN
+   DISCH_THEN(fun th -> STRIP_TAC THEN MP_TAC th) THEN
+   ASM_REWRITE_TAC[]));;
+
+let TRACE_COVARIANCE_POS_LT = prove
+ (`!A:real^M^N. &0 < trace(transp A ** A) <=> ~(A = mat 0)`,
+  MESON_TAC[REAL_LT_LE; TRACE_COVARIANCE_POS_LE; TRACE_COVARIANCE_EQ_0]);;
+
+let TRACE_COVARIANCE_CAUCHY_SCHWARZ = prove
+ (`!A B:real^M^N.
+        trace(transp A ** B)
+         <= sqrt(trace(transp A ** A)) * sqrt(trace(transp B ** B))`,
+  REPEAT STRIP_TAC THEN MAP_EVERY ASM_CASES_TAC
+   [`A:real^M^N = mat 0`; `B:real^M^N = mat 0`] THEN
+  ASM_REWRITE_TAC[MATRIX_MUL_LZERO; TRANSP_MAT; TRACE_0; SQRT_0; REAL_ABS_NUM;
+    REAL_MUL_LZERO; REAL_LE_REFL; MATRIX_MUL_RZERO; REAL_MUL_RZERO] THEN
+  MP_TAC(ISPEC
+   `sqrt(trace(transp(B:real^M^N) ** B)) %% A -
+    sqrt(trace(transp(A:real^M^N) ** A)) %% B`
+   TRACE_COVARIANCE_POS_LE) THEN
+  REWRITE_TAC[MATRIX_SUB_LDISTRIB; MATRIX_SUB_RDISTRIB; TRACE_SUB;
+              TRANSP_MATRIX_SUB; TRANSP_MATRIX_CMUL;
+              MATRIX_MUL_LMUL; MATRIX_MUL_RMUL; TRACE_CMUL] THEN
+  ASM_SIMP_TAC[SQRT_POW_2; TRACE_COVARIANCE_POS_LE; REAL_RING
+   `sqrt a pow 2 = a /\ sqrt b pow 2 = b
+    ==> sqrt b * (sqrt b * a - sqrt a * y) -
+        sqrt a * (sqrt b * x - sqrt a * b) =
+        sqrt a * sqrt b * (&2 * sqrt a * sqrt b - (x + y))`] THEN
+  ASM_SIMP_TAC[REAL_LE_MUL_EQ; SQRT_POS_LT; TRACE_COVARIANCE_POS_LT] THEN
+  GEN_REWRITE_TAC (LAND_CONV o funpow 3 RAND_CONV) [GSYM TRACE_TRANSP] THEN
+  REWRITE_TAC[MATRIX_TRANSP_MUL; TRANSP_TRANSP] THEN REAL_ARITH_TAC);;
+
+let TRACE_COVARIANCE_CAUCHY_SCHWARZ_ABS = prove
+ (`!A B:real^M^N.
+        abs(trace(transp A ** B))
+         <= sqrt(trace(transp A ** A)) * sqrt(trace(transp B ** B))`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[GSYM REAL_BOUNDS_LE; TRACE_COVARIANCE_CAUCHY_SCHWARZ] THEN
+  MP_TAC(ISPECL [`A:real^M^N`; `--B:real^M^N`]
+    TRACE_COVARIANCE_CAUCHY_SCHWARZ) THEN
+  REWRITE_TAC[TRANSP_MATRIX_NEG; MATRIX_MUL_LNEG; MATRIX_MUL_RNEG;
+              MATRIX_NEG_NEG; TRACE_NEG] THEN
+  REAL_ARITH_TAC);;
+
+(* ------------------------------------------------------------------------- *)
+(* Positive definite matrices.                                               *)
+(* ------------------------------------------------------------------------- *)
+
+let positive_definite = new_definition
+ `positive_definite(A:real^N^N) <=>
+         transp A = A /\ !x. ~(x = vec 0) ==> &0 < x dot (A ** x)`;;
+
+let POSITIVE_DEFINITE_IMP_SYMMETRIC = prove
+ (`!A:real^N^N. positive_definite A ==> transp A = A`,
+  SIMP_TAC[positive_definite]);;
+
+let POSITIVE_DEFINITE_POSITIVE_SEMIDEFINITE = prove
+ (`!A:real^N^N.
+        positive_definite A <=> positive_semidefinite A /\ invertible A`,
+  GEN_TAC THEN
+  REWRITE_TAC[REAL_ARITH `&0 < x <=> &0 <= x /\ ~(x = &0)`; positive_definite;
+        FORALL_AND_THM; TAUT `p ==> q /\ r <=> (p ==> q) /\ (p ==> r)`] THEN
+  SIMP_TAC[MESON[] `P a ==> ((!x:real^N. ~(x = a) ==> P x) <=> (!x. P x))`;
+           DOT_LZERO; REAL_LE_REFL] THEN
+  REWRITE_TAC[CONJ_ASSOC; GSYM positive_semidefinite] THEN
+  ASM_CASES_TAC `positive_semidefinite(A:real^N^N)` THEN
+  ASM_SIMP_TAC[POSITIVE_SEMIDEFINITE_ZERO_FORM_EQ] THEN
+  REWRITE_TAC[GSYM HOMOGENEOUS_LINEAR_EQUATIONS_DET; INVERTIBLE_DET_NZ] THEN
+  MESON_TAC[]);;
+
+let POSITIVE_DEFINITE_1 = prove
+ (`!A:real^1^1. positive_definite A <=> &0 < A$1$1`,
+  REWRITE_TAC[POSITIVE_DEFINITE_POSITIVE_SEMIDEFINITE; DET_1;
+              POSITIVE_SEMIDEFINITE_1; INVERTIBLE_DET_NZ] THEN
+  REAL_ARITH_TAC);;
+
+let POSITIVE_DEFINITE_IMP_INVERTIBLE = prove
+ (`!A:real^N^N. positive_definite A ==> invertible A`,
+  SIMP_TAC[POSITIVE_DEFINITE_POSITIVE_SEMIDEFINITE]);;
+
+let POSITIVE_DEFINITE_IMP_POSITIVE_SEMIDEFINITE = prove
+ (`!A:real^N^N. positive_definite A ==> positive_semidefinite A`,
+  SIMP_TAC[POSITIVE_DEFINITE_POSITIVE_SEMIDEFINITE]);;
+
+let POSITIVE_SEMIDEFINITE_POSITIVE_DEFINITE_ADD = prove
+ (`!A B:real^N^N.
+        positive_semidefinite A /\ positive_definite B
+        ==> positive_definite(A + B)`,
+  SIMP_TAC[positive_definite; positive_semidefinite; TRANSP_MATRIX_ADD] THEN
+  SIMP_TAC[MATRIX_VECTOR_MUL_ADD_RDISTRIB; DOT_RADD; REAL_LET_ADD]);;
+
+let POSITIVE_DEFINITE_POSITIVE_SEMIDEFINITE_ADD = prove
+ (`!A B:real^N^N.
+        positive_definite A /\ positive_semidefinite B
+        ==> positive_definite(A + B)`,
+  SIMP_TAC[positive_definite; positive_semidefinite; TRANSP_MATRIX_ADD] THEN
+  SIMP_TAC[MATRIX_VECTOR_MUL_ADD_RDISTRIB; DOT_RADD; REAL_LTE_ADD]);;
+
+let POSITIVE_DEFINITE_ADD = prove
+ (`!A B:real^N^N.
+        positive_definite A /\ positive_definite B
+        ==> positive_definite(A + B)`,
+  SIMP_TAC[positive_definite; TRANSP_MATRIX_ADD] THEN
+  SIMP_TAC[MATRIX_VECTOR_MUL_ADD_RDISTRIB; DOT_RADD; REAL_LT_ADD]);;
+
+let POSITIVE_DEFINITE_CMUL = prove
+ (`!c A:real^N^N.
+        positive_definite A /\ &0 < c
+        ==> positive_definite(c %% A)`,
+  SIMP_TAC[positive_definite; TRANSP_MATRIX_CMUL] THEN
+  SIMP_TAC[MATRIX_VECTOR_LMUL; DOT_RMUL; REAL_LT_MUL]);;
+
+let POSITIVE_DEFINITE_TRANSP = prove
+ (`!A:real^N^N. positive_definite(transp A) <=> positive_definite A`,
+  REWRITE_TAC[positive_definite] THEN MESON_TAC[TRANSP_TRANSP]);;
+
+let POSITIVE_DEFINITE_COVARIANCE = prove
+ (`!A:real^N^N. positive_definite(transp A ** A) <=> invertible A`,
+  REWRITE_TAC[POSITIVE_DEFINITE_POSITIVE_SEMIDEFINITE;
+              POSITIVE_SEMIDEFINITE_COVARIANCE] THEN
+  REWRITE_TAC[INVERTIBLE_MATRIX_MUL; INVERTIBLE_TRANSP]);;
+
+let POSITIVE_DEFINITE_SIMILAR = prove
+ (`!A B:real^N^N.
+        positive_definite A /\ invertible B
+        ==> positive_definite(transp B ** A ** B)`,
+  SIMP_TAC[POSITIVE_DEFINITE_POSITIVE_SEMIDEFINITE;
+           POSITIVE_SEMIDEFINITE_SIMILAR; INVERTIBLE_MATRIX_MUL;
+           INVERTIBLE_TRANSP]);;
+
+let POSITIVE_DEFINITE_DIAGONAL_MATRIX = prove
+ (`!D:real^N^N.
+        diagonal_matrix D /\
+        (!i. 1 <= i /\ i <= dimindex(:N) ==> &0 < D$i$i)
+        ==> positive_definite D`,
+  SIMP_TAC[positive_definite; TRANSP_DIAGONAL_MATRIX] THEN
+  REPEAT STRIP_TAC THEN
+  FIRST_ASSUM(SUBST1_TAC o GEN_REWRITE_RULE I [DIAGONAL_MATRIX]) THEN
+  SIMP_TAC[matrix_vector_mul; LAMBDA_BETA; dot] THEN
+  SIMP_TAC[COND_RATOR; COND_RAND; REAL_MUL_LZERO] THEN
+  CONV_TAC(RAND_CONV(ONCE_DEPTH_CONV SYM_CONV)) THEN
+  SIMP_TAC[SUM_DELTA] THEN MATCH_MP_TAC SUM_POS_LT THEN
+  REWRITE_TAC[REAL_ARITH `x * d * x:real = d * x * x`] THEN
+  ASM_SIMP_TAC[FINITE_NUMSEG; IN_NUMSEG; REAL_LE_MUL; REAL_LE_SQUARE;
+               REAL_LT_IMP_LE] THEN
+  FIRST_X_ASSUM(MP_TAC o GEN_REWRITE_RULE RAND_CONV [CART_EQ]) THEN
+  REWRITE_TAC[NOT_FORALL_THM; NOT_IMP; VEC_COMPONENT] THEN
+  MATCH_MP_TAC MONO_EXISTS THEN
+  ASM_SIMP_TAC[GSYM REAL_POW_2; REAL_LT_MUL; REAL_LT_POW_2]);;
+
+let POSITIVE_DEFINITE_DIAGONAL_MATRIX_EQ = prove
+ (`!D:real^N^N.
+        diagonal_matrix D
+        ==> (positive_definite D <=>
+             !i. 1 <= i /\ i <= dimindex(:N) ==> &0 < D$i$i)`,
+  REPEAT STRIP_TAC THEN EQ_TAC THEN
+  ASM_SIMP_TAC[POSITIVE_DEFINITE_DIAGONAL_MATRIX] THEN
+  REWRITE_TAC[positive_definite] THEN REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM(MP_TAC o SPEC `basis i:real^N`) THEN
+  ASM_SIMP_TAC[DOT_BASIS; MATRIX_VECTOR_MUL_BASIS; column; LAMBDA_BETA;
+               BASIS_NONZERO]);;
+
+let DIAGONAL_POSITIVE_DEFINITE = prove
+ (`!A:real^N^N i.
+        positive_definite A /\ 1 <= i /\ i <= dimindex(:N)
+        ==> &0 < A$i$i`,
+  REWRITE_TAC[positive_definite] THEN REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM(MP_TAC o SPEC `basis i:real^N`) THEN
+  ASM_SIMP_TAC[MATRIX_VECTOR_MUL_BASIS; column; DOT_BASIS; LAMBDA_BETA;
+               BASIS_NONZERO]);;
+
+let TRACE_POSITIVE_DEFINITE = prove
+ (`!A:real^N^N. positive_definite A ==> &0 < trace A`,
+  SIMP_TAC[trace; SUM_POS_LT_ALL; DIAGONAL_POSITIVE_DEFINITE;
+           IN_NUMSEG; FINITE_NUMSEG; NUMSEG_EMPTY; NOT_LT; DIMINDEX_GE_1]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Orthogonality of a transformation and matrix.                             *)
@@ -1429,11 +2003,26 @@ let ORTHOGONAL_MATRIX_MATRIX = prove
     orthogonal_transformation f ==> orthogonal_matrix(matrix f)`,
   SIMP_TAC[ORTHOGONAL_TRANSFORMATION_MATRIX]);;
 
+let ORTHOGONAL_MATRIX_NORM_EQ = prove
+ (`!A. orthogonal_matrix A <=> !x. norm(A ** x) = norm x`,
+  REWRITE_TAC[ORTHOGONAL_MATRIX_TRANSFORMATION; MATRIX_VECTOR_MUL_LINEAR;
+              ORTHOGONAL_TRANSFORMATION]);;
+
+let ORTHOGONAL_MATRIX_NORM = prove
+ (`!A x:real^N. orthogonal_matrix A ==> norm(A ** x) = norm x`,
+  SIMP_TAC[ORTHOGONAL_MATRIX_TRANSFORMATION; ORTHOGONAL_TRANSFORMATION]);;
+
 let DET_ORTHOGONAL_MATRIX = prove
  (`!Q. orthogonal_matrix Q ==> det(Q) = &1 \/ det(Q) = -- &1`,
   GEN_TAC THEN REWRITE_TAC[REAL_RING `x = &1 \/ x = -- &1 <=> x * x = &1`] THEN
   GEN_REWRITE_TAC (RAND_CONV o LAND_CONV o RAND_CONV) [GSYM DET_TRANSP] THEN
   SIMP_TAC[GSYM DET_MUL; orthogonal_matrix; DET_I]);;
+
+let ORTHOGONAL_MATRIX_IMP_INVERTIBLE = prove
+ (`!A:real^N^N. orthogonal_matrix A ==> invertible A`,
+  GEN_TAC THEN REWRITE_TAC[INVERTIBLE_DET_NZ] THEN
+  DISCH_THEN(MP_TAC o MATCH_MP DET_ORTHOGONAL_MATRIX) THEN
+  REAL_ARITH_TAC);;
 
 let ORTHOGONAL_MATRIX_TRANSP = prove
  (`!A:real^N^N. orthogonal_matrix(transp A) <=> orthogonal_matrix A`,
@@ -1588,6 +2177,61 @@ let ORTHOGONAL_MATRIX_ORTHOGONAL_EIGENVECTORS = prove
   REWRITE_TAC[ORTHOGONAL_MATRIX_TRANSFORMATION;
               ORTHOGONAL_TRANSFORMATION_ORTHOGONAL_EIGENVECTORS]);;
 
+let ORTHOGONAL_TRANSFORMATION_ID = prove
+ (`orthogonal_transformation(\x. x)`,
+  REWRITE_TAC[orthogonal_transformation; LINEAR_ID]);;
+
+let ORTHOGONAL_TRANSFORMATION_I = prove
+ (`orthogonal_transformation I`,
+  REWRITE_TAC[I_DEF; ORTHOGONAL_TRANSFORMATION_ID]);;
+
+let ORTHOGONAL_TRANSFORMATION_1_GEN = prove
+ (`!f:real^N->real^N.
+        dimindex(:N) = 1
+        ==> (orthogonal_transformation f <=> f = I \/ f = (--))`,
+  REPEAT STRIP_TAC THEN REWRITE_TAC[I_DEF] THEN
+  GEN_REWRITE_TAC (funpow 3 RAND_CONV) [GSYM ETA_AX] THEN
+  EQ_TAC THEN STRIP_TAC THEN
+  ASM_REWRITE_TAC[ORTHOGONAL_TRANSFORMATION_ID;
+                  ORTHOGONAL_TRANSFORMATION_NEG] THEN
+  FIRST_X_ASSUM(MP_TAC o GEN_REWRITE_RULE I [ORTHOGONAL_TRANSFORMATION]) THEN
+  ASM_SIMP_TAC[LINEAR_1_GEN] THEN
+  DISCH_THEN(CONJUNCTS_THEN2 STRIP_ASSUME_TAC MP_TAC) THEN
+  ASM_REWRITE_TAC[NORM_MUL] THEN
+  DISCH_THEN(MP_TAC o SPEC `basis 1:real^N`) THEN
+  SIMP_TAC[NORM_BASIS; DIMINDEX_GE_1; LE_REFL; DIMINDEX_1] THEN
+  REWRITE_TAC[REAL_ARITH `abs x * &1 = &1 <=> x = &1 \/ x = -- &1`] THEN
+  MATCH_MP_TAC MONO_OR THEN SIMP_TAC[FUN_EQ_THM] THEN
+  REPEAT STRIP_TAC THEN CONV_TAC VECTOR_ARITH);;
+
+let MATRIX_INV_ORTHOGONAL_LMUL = prove
+ (`!U A:real^M^N.
+        orthogonal_matrix U
+        ==> matrix_inv(U ** A) = matrix_inv A ** matrix_inv U`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC MATRIX_INV_UNIQUE_STRONG THEN
+  REWRITE_TAC[MATRIX_TRANSP_MUL; GSYM MATRIX_MUL_ASSOC] THEN
+  ASM_SIMP_TAC[ORTHOGONAL_MATRIX_INV; TRANSP_TRANSP] THEN
+  REWRITE_TAC[MESON[MATRIX_MUL_ASSOC]
+   `(A:real^M^N) ** transp U ** U ** (B:real^P^M) =
+    A ** (transp U ** U) ** B`] THEN
+  RULE_ASSUM_TAC(REWRITE_RULE[orthogonal_matrix]) THEN
+  ASM_REWRITE_TAC[MATRIX_MUL_LID] THEN
+  RULE_ASSUM_TAC(REWRITE_RULE[GSYM orthogonal_matrix]) THEN
+  ASM_SIMP_TAC[MATRIX_MUL_LCANCEL; ORTHOGONAL_MATRIX_IMP_INVERTIBLE] THEN
+  REWRITE_TAC[MATRIX_MUL_ASSOC] THEN
+  ASM_SIMP_TAC[MATRIX_MUL_RCANCEL; ORTHOGONAL_MATRIX_IMP_INVERTIBLE;
+               ORTHOGONAL_MATRIX_TRANSP] THEN
+  REWRITE_TAC[GSYM MATRIX_TRANSP_MUL; GSYM MATRIX_MUL_ASSOC] THEN
+  REWRITE_TAC[SYMMETRIC_MATRIX_INV_LMUL; SYMMETRIC_MATRIX_INV_RMUL;
+              MATRIX_INV_MUL_INNER; MATRIX_INV_MUL_OUTER]);;
+
+let MATRIX_INV_ORTHOGONAL_RMUL = prove
+ (`!U A:real^M^N.
+        orthogonal_matrix U
+        ==> matrix_inv(A ** U) = matrix_inv U ** matrix_inv A`,
+  ONCE_REWRITE_TAC[GSYM TRANSP_EQ; GSYM ORTHOGONAL_MATRIX_TRANSP] THEN
+  SIMP_TAC[TRANSP_MATRIX_INV; MATRIX_TRANSP_MUL; MATRIX_INV_ORTHOGONAL_LMUL]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Linearity of scaling, and hence isometry, that preserves origin.          *)
 (* ------------------------------------------------------------------------- *)
@@ -1731,14 +2375,6 @@ let ORTHOGONAL_TRANSFORMATION_INVERSE = prove
   GEN_TAC THEN
   DISCH_THEN(MP_TAC o MATCH_MP ORTHOGONAL_TRANSFORMATION_INVERSE_o) THEN
   REWRITE_TAC[FUN_EQ_THM; o_THM; I_THM]);;
-
-let ORTHOGONAL_TRANSFORMATION_ID = prove
- (`orthogonal_transformation(\x. x)`,
-  REWRITE_TAC[orthogonal_transformation; LINEAR_ID]);;
-
-let ORTHOGONAL_TRANSFORMATION_I = prove
- (`orthogonal_transformation I`,
-  REWRITE_TAC[I_DEF; ORTHOGONAL_TRANSFORMATION_ID]);;
 
 (* ------------------------------------------------------------------------- *)
 (* We can find an orthogonal matrix taking any unit vector to any other.     *)
@@ -2401,7 +3037,7 @@ let REFLECT_ALONG_EQ_0 = prove
  (`!v x:real^N. reflect_along v x = vec 0 <=> x = vec 0`,
   MESON_TAC[REFLECT_ALONG_0; REFLECT_ALONG_INVOLUTION]);;
 
-let ORTHGOONAL_TRANSFORMATION_REFLECT_ALONG = prove
+let ORTHOGONAL_TRANSFORMATION_REFLECT_ALONG = prove
  (`!v:real^N. orthogonal_transformation(reflect_along v)`,
   GEN_TAC THEN ASM_CASES_TAC `v:real^N = vec 0` THENL
    [GEN_REWRITE_TAC RAND_CONV [GSYM ETA_AX] THEN
@@ -2483,7 +3119,7 @@ let ROTOINVERSION_MATRIX_REFLECT_ALONG = prove
   REPEAT STRIP_TAC THEN REWRITE_TAC[rotoinversion_matrix] THEN
   CONJ_TAC THENL
    [ASM_MESON_TAC[ORTHOGONAL_TRANSFORMATION_MATRIX;
-                ORTHGOONAL_TRANSFORMATION_REFLECT_ALONG];
+                ORTHOGONAL_TRANSFORMATION_REFLECT_ALONG];
     ALL_TAC] THEN
   ABBREV_TAC `w:real^N = inv(norm v) % v` THEN
   SUBGOAL_THEN `reflect_along (v:real^N) = reflect_along w` SUBST1_TAC THENL
@@ -2543,6 +3179,30 @@ let DET_MATRIX_REFLECT_ALONG = prove
   FIRST_ASSUM(MP_TAC o MATCH_MP ROTOINVERSION_MATRIX_REFLECT_ALONG) THEN
   SIMP_TAC[rotoinversion_matrix]);;
 
+let REFLECT_ALONG_BASIS_COMPONENT = prove
+ (`!x:real^N i j.
+       1 <= i /\ i <= dimindex(:N) /\
+       1 <= j /\ j <= dimindex(:N)
+       ==> reflect_along (basis i) x$j = if j = i then --(x$j) else x$j`,
+  SIMP_TAC[REFLECT_ALONG_BASIS; VECTOR_SUB_COMPONENT] THEN
+  SIMP_TAC[VECTOR_MUL_COMPONENT; BASIS_COMPONENT] THEN
+  REPEAT STRIP_TAC THEN
+  COND_CASES_TAC THEN ASM_REWRITE_TAC[] THEN REAL_ARITH_TAC);;
+
+let NORM_REFLECT_ALONG = prove
+ (`!v x:real^N. norm(reflect_along v x) = norm x`,
+  MESON_TAC[ORTHOGONAL_TRANSFORMATION;
+            ORTHOGONAL_TRANSFORMATION_REFLECT_ALONG]);;
+
+let REFLECT_ALONG_EQ = prove
+ (`!v x y:real^N. reflect_along v x = reflect_along v y <=> x = y`,
+  MESON_TAC[ORTHOGONAL_TRANSFORMATION_INJECTIVE;
+            ORTHOGONAL_TRANSFORMATION_REFLECT_ALONG]);;
+
+let REFLECT_ALONG_SURJECTIVE = prove
+ (`!v y:real^N. ?x. reflect_along v x = y`,
+  MESON_TAC[REFLECT_ALONG_INVOLUTION]);;
+
 (* ------------------------------------------------------------------------- *)
 (* All orthogonal transformations are a composition of reflections.          *)
 (* ------------------------------------------------------------------------- *)
@@ -2567,7 +3227,7 @@ let ORTHOGONAL_TRANSFORMATION_GENERATED_BY_REFLECTIONS = prove
     DISCH_THEN(X_CHOOSE_TAC `a:real^N`) THEN
     ABBREV_TAC `v:real^N = inv(&2) % (f a - a)` THEN FIRST_X_ASSUM
       (MP_TAC o SPEC `reflect_along v o (f:real^N->real^N)`) THEN
-    ASM_SIMP_TAC[ORTHGOONAL_TRANSFORMATION_REFLECT_ALONG;
+    ASM_SIMP_TAC[ORTHOGONAL_TRANSFORMATION_REFLECT_ALONG;
                  ORTHOGONAL_TRANSFORMATION_COMPOSE] THEN
     ANTS_TAC THENL
      [FIRST_X_ASSUM(MATCH_MP_TAC o MATCH_MP (ARITH_RULE

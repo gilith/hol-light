@@ -136,6 +136,14 @@ let CONVEX_HALFSPACE_IM_LT = prove
   REWRITE_TAC[EXTENSION; dot; SUM_2; DIMINDEX_2; GSYM RE_DEF; GSYM IM_DEF] THEN
   REWRITE_TAC[ii; RE_CX; IM_CX; RE; IM; IN_ELIM_THM] THEN REAL_ARITH_TAC);;
 
+let CONVEX_HALFSPACE_RE_SGN = prove
+ (`!b. convex {z | real_sgn(Re z) = b}`,
+  REWRITE_TAC[RE_DEF; CONVEX_HALFSPACE_COMPONENT_SGN]);;
+
+let CONVEX_HALFSPACE_IM_SGN = prove
+ (`!b. convex {z | real_sgn(Im z) = b}`,
+  REWRITE_TAC[IM_DEF; CONVEX_HALFSPACE_COMPONENT_SGN]);;
+
 let COMPLEX_IN_BALL_0 = prove
  (`!v r. v IN ball(Cx(&0),r) <=> norm v < r`,
   REWRITE_TAC [GSYM COMPLEX_VEC_0; IN_BALL_0]);;
@@ -787,10 +795,6 @@ let CONTINUOUS_TAC =
 (* ------------------------------------------------------------------------- *)
 (* Hence a limit calculator                                                  *)
 (* ------------------------------------------------------------------------- *)
-
-let LIM_CONTINUOUS = prove
- (`!net f l. f continuous net /\ f(netlimit net) = l ==> (f --> l) net`,
-  MESON_TAC[continuous]);;
 
 let LIM_TAC =
   MATCH_MP_TAC LIM_CONTINUOUS THEN CONJ_TAC THENL
@@ -2738,21 +2742,9 @@ let SUMS_GP = prove
 
 let SUMMABLE_GP = prove
  (`!z k. norm(z) < &1 ==> summable k (\n. z pow n)`,
-  REPEAT STRIP_TAC THEN
-  MATCH_MP_TAC SUMMABLE_SUBSET THEN EXISTS_TAC `(:num)` THEN
-  REWRITE_TAC[SUBSET_UNIV] THEN
-  MATCH_MP_TAC SERIES_COMPARISON_COMPLEX THEN
-  EXISTS_TAC `\n. Cx(norm(z:complex) pow n)` THEN
-  REWRITE_TAC[REAL_CX; RE_CX; COMPLEX_NORM_CX] THEN
-  SIMP_TAC[REAL_POW_LE; NORM_POS_LE] THEN CONJ_TAC THENL
-   [REWRITE_TAC[summable; GSYM FROM_0; CX_POW] THEN
-    EXISTS_TAC `Cx(norm z) pow 0 / (Cx(&1) - Cx(norm(z:complex)))` THEN
-    MATCH_MP_TAC SUMS_GP THEN
-    ASM_REWRITE_TAC[COMPLEX_NORM_CX; REAL_ABS_NORM];
-    EXISTS_TAC `0` THEN REPEAT STRIP_TAC THEN
-    COND_CASES_TAC THEN
-    ASM_SIMP_TAC[REAL_ABS_POW; REAL_ABS_NORM; REAL_LE_REFL; NORM_POS_LE;
-                 COMPLEX_NORM_POW; NORM_0; REAL_ABS_POS; REAL_POW_LE]]);;
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC SUMMABLE_RATIO THEN
+  MAP_EVERY EXISTS_TAC [`norm(z:complex)`; `0`] THEN
+  ASM_REWRITE_TAC[complex_pow; COMPLEX_NORM_MUL; REAL_LE_REFL]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Complex version (the usual one) of Dirichlet convergence test.            *)
@@ -2963,10 +2955,11 @@ let INTEGRABLE_BOUNDED_VARIATION_COMPLEX_RMUL = prove
   REWRITE_TAC[INTEGRABLE_BOUNDED_VARIATION_COMPLEX_LMUL]);;
 
 let HAS_BOUNDED_VARIATION_ON_COMPLEX_MUL = prove
- (`!f g:real^1->complex a b.
-        f has_bounded_variation_on interval[a,b] /\
-        g has_bounded_variation_on interval[a,b]
-        ==> (\x. f x * g x) has_bounded_variation_on interval[a,b]`,
+ (`!f g:real^1->complex s.
+        f has_bounded_variation_on s /\
+        g has_bounded_variation_on s /\
+        is_interval s
+        ==> (\x. f x * g x) has_bounded_variation_on s`,
   REPEAT GEN_TAC THEN
   ONCE_REWRITE_TAC[HAS_BOUNDED_VARIATION_ON_COMPONENTWISE] THEN
   REWRITE_TAC[complex_mul; DIMINDEX_2; FORALL_2; GSYM IM_DEF; GSYM RE_DEF] THEN

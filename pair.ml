@@ -5,6 +5,7 @@
 (*                                                                           *)
 (*            (c) Copyright, University of Cambridge 1998                    *)
 (*              (c) Copyright, John Harrison 1998-2007                       *)
+(*                 (c) Copyright, Marco Maggesi 2015                         *)
 (* ========================================================================= *)
 
 needs "quot.ml";;
@@ -355,11 +356,19 @@ let LAMBDA_PAIR_THM = prove
 
 export_thm LAMBDA_PAIR_THM;;
 
+let LAMBDA_UNPAIR_THM = prove
+ (`!f:A->B->C. (\ (x:A,y:B). f x y) = (\p. f (FST p) (SND p))`,
+  REWRITE_TAC[LAMBDA_PAIR_THM]);;
+
+export_thm LAMBDA_UNPAIR_THM;;
+
 let PAIRED_ETA_THM = prove
  (`(!(f : A # B -> C). (\ (a,b). f (a,b)) = f) /\
    (!(f : A # B # C -> D). (\ (a,b,c). f (a,b,c)) = f) /\
    (!(f : A # B # C # D -> E). (\ (a,b,c,d). f (a,b,c,d)) = f)`,
   REPEAT STRIP_TAC THEN REWRITE_TAC[FUN_EQ_THM; FORALL_PAIR_THM]);;
+
+export_thm PAIRED_ETA_THM;;
 
 let FORALL_UNCURRY = prove
  (`!p. (!(f : A -> B -> C). p f) <=> (!f. p (\a b. f (a,b)))`,
@@ -439,6 +448,28 @@ let EXISTS_TRIPLED_THM = prove
   REWRITE_TAC[REWRITE_RULE[ETA_AX] NOT_EXISTS_THM; FORALL_PAIR_THM]);;
 
 export_thm EXISTS_TRIPLED_THM;;
+
+(* ------------------------------------------------------------------------- *)
+(* Similar theorems for the choice operator.                                 *)
+(* ------------------------------------------------------------------------- *)
+
+let CHOICE_UNPAIR_THM = prove
+ (`!p. (@(a:A,b:B). p a b) = (@x. p (FST x) (SND x))`,
+  REWRITE_TAC[LAMBDA_UNPAIR_THM]);;
+
+export_thm CHOICE_UNPAIR_THM;;
+
+let CHOICE_PAIRED_THM = prove
+ (`!p q. (?a:A b:B. p a b) /\ (!a b. p a b ==> q (a,b)) ==> q (@(a,b). p a b)`,
+  INTRO_TAC "!p q; (@a0 b0. p0) pq" THEN
+  SUBGOAL_THEN `(\ (a:A,b:B). p a b:bool) = (\x. p (FST x) (SND x))`
+    SUBST1_TAC THENL
+  [REWRITE_TAC[LAMBDA_PAIR_THM]; SELECT_ELIM_TAC] THEN
+  INTRO_TAC "![c]; c" THEN ONCE_REWRITE_TAC[GSYM PAIR] THEN
+  REMOVE_THEN "pq" MATCH_MP_TAC THEN REMOVE_THEN "c" MATCH_MP_TAC THEN
+  REWRITE_TAC[EXISTS_PAIR_THM] THEN ASM_MESON_TAC[]);;
+
+export_thm CHOICE_PAIRED_THM;;
 
 (* ------------------------------------------------------------------------- *)
 (* Expansion of a let-term.                                                  *)

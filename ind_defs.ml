@@ -245,49 +245,6 @@ let derive_nonschematic_inductive_relations =
 (* Part 2: Tactic-integrated tools for proving monotonicity automatically.   *)
 (* ========================================================================= *)
 
-logfile "bool-int";;
-
-let MONO_AND =
-    ITAUT
-      `!p1 p2 q1 q2.
-         (p1 ==> p2) /\ (q1 ==> q2) ==> (p1 /\ q1 ==> p2 /\ q2)`;;
-
-export_thm MONO_AND;;
-
-let MONO_OR =
-    ITAUT
-      `!p1 p2 q1 q2.
-         (p1 ==> p2) /\ (q1 ==> q2) ==> (p1 \/ q1 ==> p2 \/ q2)`;;
-
-export_thm MONO_OR;;
-
-let MONO_IMP =
-    ITAUT
-      `!p1 p2 q1 q2.
-         (p2 ==> p1) /\ (q1 ==> q2) ==> ((p1 ==> q1) ==> (p2 ==> q2))`;;
-
-export_thm MONO_IMP;;
-
-let MONO_NOT = ITAUT `!p q. (q ==> p) ==> (~p ==> ~q)`;;
-
-export_thm MONO_NOT;;
-
-let MONO_FORALL = prove
- (`!p q. (!x:A. p x ==> q x) ==> ((!x. p x) ==> (!x. q x))`,
-  REPEAT STRIP_TAC THEN FIRST_ASSUM MATCH_MP_TAC THEN
-  ASM_REWRITE_TAC[]);;
-
-export_thm MONO_FORALL;;
-
-let MONO_EXISTS = prove
- (`!p q. (!x:A. p x ==> q x) ==> ((?x. p x) ==> (?x. q x))`,
-  REPEAT GEN_TAC THEN
-  DISCH_TAC THEN DISCH_THEN(X_CHOOSE_TAC `x:A`) THEN
-  EXISTS_TAC `x:A` THEN FIRST_ASSUM MATCH_MP_TAC THEN
-  ASM_REWRITE_TAC[]);;
-
-export_thm MONO_EXISTS;;
-
 (* ------------------------------------------------------------------------- *)
 (* Assignable list of monotonicity theorems, so users can add their own.     *)
 (* ------------------------------------------------------------------------- *)

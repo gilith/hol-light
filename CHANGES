@@ -1,3 +1,331 @@
+Fri 12th Jun 2015       sets.ml
+
+Added two useful rewrites for sup and inf on finite sets from Marco
+Maggesi. Note that they don't a priori require the set to be finite,
+so they are easy to apply.
+
+  INF_INSERT_INSERT =
+    |- !a b s. inf (b INSERT a INSERT s) = inf (min a b INSERT s)
+
+  SUP_INSERT_INSERT =
+    |- !a b s. sup (b INSERT a INSERT s) = sup (max a b INSERT s)
+
+Fri 29th May 2015       Library/card.ml
+
+Added two more theorems about representing countable sets as images:
+
+  COUNTABLE_AS_IMAGE_NUM_SUBSET =
+    |- !s. COUNTABLE s <=> (?f k. s = IMAGE f k)
+
+  COUNTABLE_AS_INJECTIVE_IMAGE_SUBSET =
+    |- !s. COUNTABLE s <=>
+           (?f k.
+                s = IMAGE f k /\
+                (!m n. m IN k /\ n IN k /\ f m = f n ==> m = n))
+
+Fri 15th May 2015       pair.ml, arith.ml, sets.ml
+
+Added a few useful theorems from Marco Maggesi:
+
+  CHOICE_PAIRED_THM =
+    |- !P Q. (?x y. P x y) /\ (!x y. P x y ==> Q (x,y)) ==> Q (@(x,y). P x y)
+
+  CHOICE_UNPAIR_THM =
+    |- !P. (@(x,y). P x y) = (@p. P (FST p) (SND p))
+
+  INTERS_SUBSET =
+    |- !u s. ~(u = {}) /\ (!t. t IN u ==> t SUBSET s) ==> INTERS u SUBSET s
+
+  LAMBDA_UNPAIR_THM =
+    |- !f. (\(x,y). f x y) = (\p. f (FST p) (SND p))
+
+  LE_INDUCT =
+    |- !P. (!m. P m m) /\ (!m n. m <= n /\ P m n ==> P m (SUC n))
+           ==> (!m n. m <= n ==> P m n)
+
+Fri 24th Apr 2015       sets.ml
+
+Slightly sharpened PAIRWISE_IMP to
+
+  |- !P Q s.
+         pairwise P s /\
+         (!x y. x IN s /\ y IN s /\ P x y /\ ~(x = y) ==> Q x y)
+         ==> pairwise Q s
+
+and added one more trivial but useful theorem about "pairwise":
+
+  PAIRWISE_CHAIN_UNIONS =
+    |- !R c.
+         (!s. s IN c ==> pairwise R s) /\
+         (!s t. s IN c /\ t IN c ==> s SUBSET t \/ t SUBSET s)
+         ==> pairwise R (UNIONS c)
+
+Fri 17th Apr 2015       calc_rat.ml, int.ml
+
+Added a few equivalential forms of transitivity; the first few in
+particular can be useful for epsilon-delta arguments in analysis.
+
+  REAL_LE_TRANS_LE = |- !x y:real. x <= y <=> (!z. y <= z ==> x <= z)
+  REAL_LE_TRANS_LTE = |- !x y:real. x <= y <=> (!z. y < z ==> x <= z)
+  REAL_LE_TRANS_LT = |- !x y:real. x <= y <=> (!z. y < z ==> x < z)
+  INT_LE_TRANS_LE = |- !x y:int x <= y <=> (!z. y <= z ==> x <= z)
+  INT_LE_TRANS_LT = |- !x y:int. x <= y <=> (!z. y < z ==> x < z)
+
+Mon 30th Mar 2015       sets.ml
+
+Added a simple lemma about "pairwise":
+
+  PAIRWISE_UNION =
+   |- !R s t. pairwise R (s UNION t) <=>
+              pairwise R s /\ pairwise R t /\
+              (!x y. x IN s DIFF t /\ y IN t DIFF s ==> R x y /\ R y x)
+
+Fri 20th Mar 2015       sets.ml, Library/card.ml
+
+Added a few convenient rewrites extending existing ones with an injectivity
+assumption:
+
+  EXISTS_COUNTABLE_SUBSET_IMAGE_INJ =
+    |- !P f s.
+           (?t. COUNTABLE t /\ t SUBSET IMAGE f s /\ P t) <=>
+           (?t. COUNTABLE t /\
+                t SUBSET s /\
+                (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y)) /\
+                P (IMAGE f t))
+
+  EXISTS_FINITE_SUBSET_IMAGE_INJ =
+    |- !P f s.
+           (?t. FINITE t /\ t SUBSET IMAGE f s /\ P t) <=>
+           (?t. FINITE t /\
+                t SUBSET s /\
+                (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y)) /\
+                P (IMAGE f t))
+
+  EXISTS_SUBSET_IMAGE_INJ =
+    |- !P f s.
+           (?t. t SUBSET IMAGE f s /\ P t) <=>
+           (?t. t SUBSET s /\
+                (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y)) /\
+                P (IMAGE f t))
+
+  FORALL_COUNTABLE_SUBSET_IMAGE_INJ =
+    |- !P f s.
+           (!t. COUNTABLE t /\ t SUBSET IMAGE f s ==> P t) <=>
+           (!t. COUNTABLE t /\
+                t SUBSET s /\
+                (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y))
+                ==> P (IMAGE f t))
+
+  FORALL_FINITE_SUBSET_IMAGE_INJ =
+    |- !P f s.
+           (!t. FINITE t /\ t SUBSET IMAGE f s ==> P t) <=>
+           (!t. FINITE t /\
+                t SUBSET s /\
+                (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y))
+                ==> P (IMAGE f t))
+
+  FORALL_SUBSET_IMAGE_INJ =
+    |- !P f s.
+           (!t. t SUBSET IMAGE f s ==> P t) <=>
+           (!t. t SUBSET s /\
+                (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y))
+                ==> P (IMAGE f t))
+
+  SUBSET_IMAGE_INJ =
+    |- !f s t.
+           s SUBSET IMAGE f t <=>
+           (?u. u SUBSET t /\
+                (!x y. x IN u /\ y IN u ==> (f x = f y <=> x = y)) /\
+                s = IMAGE f u)
+
+Wed 11th Mar 2015       sets.ml
+
+Added a couple of trivial but convenient sup/inf theorems:
+
+  ELEMENT_LE_SUP =
+    |- !s a. (?b. !x. x IN s ==> x <= b) /\ a IN s ==> a <= sup s
+
+  INF_LE_ELEMENT =
+    |- !s a. (?b. !x. x IN s ==> b <= x) /\ a IN s ==> inf s <= a
+
+Fri  6th Mar 2015       sets.ml
+
+Added PAIRWISE_AND =
+    |- !R R' s.
+           pairwise R s /\ pairwise R' s <=> pairwise (\x y. R x y /\ R' x y) s
+
+Fri  6th Feb 2015       iterate.ml
+
+Added two rather trivial but occasionally useful results:
+
+  NSUM_MUL_BOUND =
+    |- !a b s. FINITE s ==> nsum s (\i. a i * b i) <= nsum s a * nsum s b
+
+  SUM_MUL_BOUND;;
+    |- !a b s.
+        FINITE s /\ (!i. i IN s ==> &0 <= a i /\ &0 <= b i)
+        ==> sum s (\i. a i * b i) <= sum s a * sum s b
+
+Fri 30th Jan 2015       sets.ml
+
+Added the following, which is convenient to avoid manual reshuffling
+around FORALL_IN_IMAGE:
+
+ FORALL_IN_IMAGE_2 =
+  |- !f P s.
+         (!x y. x IN IMAGE f s /\ y IN IMAGE f s ==> P x y) <=>
+         (!x y. x IN s /\ y IN s ==> P (f x) (f y))
+
+Fri 23rd Jan 2015       Library/card.ml
+
+Added
+
+   CARD_MUL_FINITE_EQ =
+     |- !s t. FINITE (s *_c t) <=> s = {} \/ t = {} \/ FINITE s /\ FINITE t
+
+Fri 23rd Jan 2015       sets.ml
+
+Added three more simple theorems:
+
+  CROSS_EMPTY = |- (!s. s CROSS {} = {}) /\ (!t. {} CROSS t = {})
+
+  FINITE_CROSS_EQ =
+    |- !s t. FINITE (s CROSS t) <=> s = {} \/ t = {} \/ FINITE s /\ FINITE t
+
+  PAIRWISE_IMP =
+   |- !P Q s.
+        pairwise P s /\ (!x y. P x y /\ ~(x = y) ==> Q x y)
+        ==> pairwise Q s
+
+Mon 12th Jan 2015       sets.ml
+
+Added another related theorem to the previous addition:
+
+ INTER_UNIONS_PAIRWISE_DISJOINT =
+  |- !s t.
+         pairwise DISJOINT (s UNION t)
+         ==> UNIONS s INTER UNIONS t = UNIONS (s INTER t)
+
+Fri  9th Jan 2015       sets.ml
+
+Added this fairly obvious theorem:
+
+  DIFF_UNIONS_PAIRWISE_DISJOINT =
+    |- !s t. pairwise DISJOINT s /\ t SUBSET s
+             ==> UNIONS s DIFF UNIONS t = UNIONS(s DIFF t)
+
+Sat 27th Dec 2014       Quaternions/*
+
+Added a substantial new theory of quaternions from Marco Maggesi. This includes
+basic operations, automatic normalization, quaternionic analysis and the
+relation of quaternions to orthogonal transformations.
+
+Sat 13th Dec 2014       theorems.ml
+
+Added CLAIM_TAC from Marco Maggesi. This combines SUBGOAL_THEN and DESTRUCT_TAC
+in a natural way so one can make a labelled claim with a subproof.
+
+Sat  6th Dec 2014       IEEE/* [new directory]
+
+Added an extensive formal theory of IEEE floating-point arithmetic, written by
+Charlie Jacobsen. This includes theories of fixed-point numbers, generalized
+floating-point numbers (with any even radix >= 2 and any precision >= 2) and
+then the properties of the usual IEEE floating-point numbers.
+
+Sun 30th Nov 2014       lists.ml, Help/dest_char.doc [new file], Help/mk_char.doc [new file], Help/dest_string.doc [new file], Help/mk_string.doc [new file], Help/CHAR_EQ_CONV.doc [new file], Help/STRING_EQ_CONV.doc [new file]
+
+Added a systematic set of syntax constructors, destructors and comparison
+conversions for characters and for strings (== char lists), written by Marco
+Maggesi:
+
+        dest_char
+        mk_char
+        dest_string
+        mk_string
+        CHAR_EQ_CONV
+        STRING_EQ_CONV
+
+Sun 30th Nov 2014       parser.ml
+
+Fixed a bug in the parsing of HOL strings where the special handling of a
+quotation with just a single identifier (designed to allow one to omit the
+parantheses round infixes in this special case) was accidentally catching
+strings as well.
+
+Sun 23rd Nov 2014       sets.ml
+
+Added this, a natural dual to the existing INTERS_OVER_UNIONS
+
+UNIONS_OVER_INTERS =
+  |- !f s. UNIONS {INTERS (f x) | x IN s} =
+           INTERS {UNIONS {g x | x IN s} | g | !x. x IN s ==> g x IN f x}
+
+Fri  7th Nov 2014       Examples/misiurewicz.ml [new file]
+
+Added a new example, a formalization (suggested on the FOM list by Lasse
+Rempe-Gillen) of Misiurewicz's original proof that the complex exponential map
+is topologically transitive. See "On iterates of e^z", Ergodic Theory and
+Dynamical Systems, vol 1, pp. 103-106, 1981.
+
+Fri  7th Nov 2014       Library/iter.ml
+
+Added ITER_ADD_POINTLESS : thm = |- !m n. ITER (m + n) f = ITER m f o ITER n f
+
+Fri  7th Nov 2014       sets.ml
+
+Added FINITE_SUBSET_NUMSEG = |- !s. FINITE s <=> (?n. s SUBSET 0..n)
+
+Fri 31st Oct 2014       sets.ml
+
+Added the following, both stronger and more convenient than the existing
+INFINITE_IMAGE_INJ (which is kept for compatibility):
+
+  INFINITE_IMAGE
+    |- !f s.
+         INFINITE s /\ (!x y. x IN s /\ y IN s /\ f x = f y ==> x = y)
+         ==> INFINITE (IMAGE f s)
+
+Fri 31st Oct 2014       theorems.ml, ind_defs.ml
+
+Added a general form of "without loss of generality" lemmas like REAL_WLOG_LE,
+as well as reshuffling other theorems from ind_defs.ml to theorems.ml.
+
+  WLOG_RELATION =
+    |- !R P.
+         (!x y. P x y ==> P y x) /\
+         (!x y. R x y \/ R y x) /\
+         (!x y. R x y ==> P x y)
+         ==> (!x y. P x y)
+
+Sun 12th Oct 2014       theorems.ml, Help/DESTRUCT_TAC/doc, Help/FIX_TAX.doc, Help/HYP_TAC.doc [new file]
+
+Added a new tactic HYP_TAC from Marco Maggesi. This fits into the existing
+suite of tatics (FIX_TAC, DESTRUCT_TAC etc.) for manipulations via brief
+strings, now applying to a named hypothesis. Also added a few improvements
+to the existing suite and their documentation.
+
+Sun 12th Oct 2014       Library/integer.ml
+
+Removed the theorem INT_CONG_0, which as pointed out by Marco Maggesi is
+the same as INT_CONG_0_DIVIDES except for the order of quantification.
+The longer name was kept because it fits the natural number case which
+is called CONG_DIVIDES_0, and it is actually used elsewhere.
+
+Thu  9th Oct 2014       iterate.ml
+
+Added variants of "grouping" theorems for sums, not requiring an explicit
+function:
+
+  NSUM_GROUP_RELATION =
+    |- !R g s t.
+           FINITE s /\ (!x. x IN s ==> (?!y. y IN t /\ R x y))
+           ==> nsum t (\y. nsum {x | x IN s /\ R x y} g) = nsum s g
+
+  SUM_GROUP_RELATION =
+    |- !R g s t.
+           FINITE s /\ (!x. x IN s ==> (?!y. y IN t /\ R x y))
+           ==> sum t (\y. sum {x | x IN s /\ R x y} g) = sum s g
+
 Sat  4th Oct 2014       Functionspaces/README, Functionspaces/make.ml, Functionspaces/utils.ml, Functionspaces/cfunspace.ml [new files], Jordan/float.ml
 
 Added a new library by Mohamed Yousri Mahmoud and Vincent Aravantinos of vector

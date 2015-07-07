@@ -1049,6 +1049,11 @@ let CARD_MUL_FINITE = prove
  (`!s t. FINITE s /\ FINITE t ==> FINITE(s *_c t)`,
   SIMP_TAC[mul_c; FINITE_PRODUCT]);;
 
+let CARD_MUL_FINITE_EQ = prove
+ (`!s:A->bool t:B->bool.
+        FINITE(s *_c t) <=> s = {} \/ t = {} \/ FINITE s /\ FINITE t`,
+  REWRITE_TAC[mul_c; GSYM CROSS; FINITE_CROSS_EQ]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Hence the "absorption laws" for arithmetic with an infinite cardinal.     *)
 (* ------------------------------------------------------------------------- *)
@@ -1347,6 +1352,22 @@ let COUNTABLE_AS_INJECTIVE_IMAGE = prove
   REWRITE_TAC[CARD_LE_ANTISYM; eq_c] THEN
   MATCH_MP_TAC MONO_EXISTS THEN SET_TAC[]);;
 
+let COUNTABLE_AS_IMAGE_NUM_SUBSET,COUNTABLE_AS_INJECTIVE_IMAGE_SUBSET =
+ (CONJ_PAIR o prove)
+ (`(!s. COUNTABLE s <=> ?(f:num->A) k. s = IMAGE f k) /\
+   (!s. COUNTABLE s <=>
+       ?(f:num->A) k. s = IMAGE f k /\
+                      (!m n. m IN k /\ n IN k /\ f m = f n ==> m = n))`,
+  REWRITE_TAC[AND_FORALL_THM] THEN X_GEN_TAC `s:A->bool` THEN
+  MATCH_MP_TAC(TAUT
+   `(r ==> q) /\ (q ==> p) /\ (p ==> r) ==> (p <=> q) /\ (p <=> r)`) THEN
+  REPEAT CONJ_TAC THENL
+   [MESON_TAC[];
+    SIMP_TAC[LEFT_IMP_EXISTS_THM; COUNTABLE_IMAGE; COUNTABLE_SUBSET_NUM];
+    DISCH_TAC THEN ASM_CASES_TAC `FINITE(s:A->bool)` THENL
+     [ASM_MESON_TAC[FINITE_INDEX_NUMBERS];
+      ASM_MESON_TAC[COUNTABLE_AS_INJECTIVE_IMAGE; INFINITE]]]);;
+
 let COUNTABLE_UNIONS = prove
  (`!A:(A->bool)->bool.
         COUNTABLE A /\ (!s. s IN A ==> COUNTABLE s)
@@ -1475,28 +1496,32 @@ let COUNTABLE_CART = prove
   ASM_MESON_TAC[LE; ARITH_RULE `1 <= SUC n`;
                 ARITH_RULE `n < i /\ ~(i = SUC n) ==> SUC n < i`]);;
 
-let COUNTABLE_SUBSET_IMAGE = prove
- (`!f:A->B s t.
-        COUNTABLE(t) /\ t SUBSET (IMAGE f s) <=>
-        ?s'. COUNTABLE s' /\ s' SUBSET s /\ (t = IMAGE f s')`,
-  REPEAT GEN_TAC THEN EQ_TAC THENL
-   [ALL_TAC; ASM_MESON_TAC[COUNTABLE_IMAGE; IMAGE_SUBSET]] THEN
-  STRIP_TAC THEN
-  EXISTS_TAC `IMAGE (\y. @x. x IN s /\ ((f:A->B)(x) = y)) t` THEN
-  ASM_SIMP_TAC[COUNTABLE_IMAGE] THEN
-  REWRITE_TAC[EXTENSION; SUBSET; FORALL_IN_IMAGE] THEN CONJ_TAC THENL
-   [ASM_MESON_TAC[SUBSET; IN_IMAGE]; ALL_TAC] THEN
-  REWRITE_TAC[IN_IMAGE] THEN X_GEN_TAC `y:B` THEN
-  REWRITE_TAC[RIGHT_AND_EXISTS_THM] THEN
-  ONCE_REWRITE_TAC[SWAP_EXISTS_THM] THEN ONCE_REWRITE_TAC[CONJ_SYM] THEN
-  REWRITE_TAC[UNWIND_THM2; GSYM CONJ_ASSOC] THEN
-  ASM_MESON_TAC[SUBSET; IN_IMAGE]);;
+let EXISTS_COUNTABLE_SUBSET_IMAGE_INJ = prove
+ (`!P f s.
+    (?t. COUNTABLE t /\ t SUBSET IMAGE f s /\ P t) <=>
+    (?t. COUNTABLE t /\ t SUBSET s /\
+         (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y)) /\
+         P (IMAGE f t))`,
+  ONCE_REWRITE_TAC[TAUT `p /\ q /\ r <=> q /\ p /\ r`] THEN
+  REPEAT GEN_TAC THEN REWRITE_TAC[EXISTS_SUBSET_IMAGE_INJ] THEN
+  AP_TERM_TAC THEN ABS_TAC THEN MESON_TAC[COUNTABLE_IMAGE_INJ_EQ]);;
+
+let FORALL_COUNTABLE_SUBSET_IMAGE_INJ = prove
+ (`!P f s. (!t. COUNTABLE t /\ t SUBSET IMAGE f s ==> P t) <=>
+           (!t. COUNTABLE t /\ t SUBSET s /\
+                (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y))
+                 ==> P(IMAGE f t))`,
+  REPEAT GEN_TAC THEN
+  ONCE_REWRITE_TAC[MESON[] `(!t. p t) <=> ~(?t. ~p t)`] THEN
+  REWRITE_TAC[NOT_IMP; EXISTS_COUNTABLE_SUBSET_IMAGE_INJ; GSYM CONJ_ASSOC]);;
 
 let EXISTS_COUNTABLE_SUBSET_IMAGE = prove
  (`!P f s.
     (?t. COUNTABLE t /\ t SUBSET IMAGE f s /\ P t) <=>
     (?t. COUNTABLE t /\ t SUBSET s /\ P (IMAGE f t))`,
-  REWRITE_TAC[COUNTABLE_SUBSET_IMAGE; CONJ_ASSOC] THEN MESON_TAC[]);;
+  REPEAT GEN_TAC THEN EQ_TAC THENL
+   [REWRITE_TAC[EXISTS_COUNTABLE_SUBSET_IMAGE_INJ] THEN MESON_TAC[];
+    MESON_TAC[COUNTABLE_IMAGE; IMAGE_SUBSET]]);;
 
 let FORALL_COUNTABLE_SUBSET_IMAGE = prove
  (`!P f s. (!t. COUNTABLE t /\ t SUBSET IMAGE f s ==> P t) <=>
@@ -1504,6 +1529,15 @@ let FORALL_COUNTABLE_SUBSET_IMAGE = prove
   REPEAT GEN_TAC THEN
   ONCE_REWRITE_TAC[MESON[] `(!x. P x) <=> ~(?x. ~P x)`] THEN
   REWRITE_TAC[NOT_IMP; GSYM CONJ_ASSOC; EXISTS_COUNTABLE_SUBSET_IMAGE]);;
+
+let COUNTABLE_SUBSET_IMAGE = prove
+ (`!f:A->B s t.
+        COUNTABLE(t) /\ t SUBSET (IMAGE f s) <=>
+        ?s'. COUNTABLE s' /\ s' SUBSET s /\ (t = IMAGE f s')`,
+  REPEAT GEN_TAC THEN EQ_TAC THENL
+   [ALL_TAC; ASM_MESON_TAC[COUNTABLE_IMAGE; IMAGE_SUBSET]] THEN
+  SPEC_TAC(`t:B->bool`,`t:B->bool`) THEN
+  REWRITE_TAC[FORALL_COUNTABLE_SUBSET_IMAGE] THEN MESON_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Cardinality of infinite list and cartesian product types.                 *)

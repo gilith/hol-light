@@ -5,6 +5,7 @@
 (*                                                                           *)
 (*            (c) Copyright, University of Cambridge 1998                    *)
 (*              (c) Copyright, John Harrison 1998-2007                       *)
+(*                 (c) Copyright, Marco Maggesi 2015                         *)
 (* ========================================================================= *)
 
 needs "recursion.ml";;
@@ -916,6 +917,26 @@ let MIN_ADD_RCANCEL = prove
   ACCEPT_TAC MIN_ADD_LCANCEL);;
 
 export_thm MIN_ADD_RCANCEL;;
+
+(* Another variant of induction *)
+
+let LE_INDUCT = prove
+ (`!p : num -> num -> bool.
+     (!m. p m m) /\
+     (!m n. m <= n /\ p m n ==> p m (SUC n)) ==>
+     (!m n. m <= n ==> p m n)`,
+  REPEAT STRIP_TAC THEN
+  POP_ASSUM
+    (X_CHOOSE_THEN `d : num` SUBST_VAR_TAC o
+     REWRITE_RULE [LE_EXISTS]) THEN
+  SPEC_TAC (`d : num`, `d : num`) THEN
+  INDUCT_TAC THENL
+  [ASM_REWRITE_TAC [ADD_0];
+   REWRITE_TAC [ADD_SUC] THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC [LE_ADD]]);;
+
+export_thm LE_INDUCT;;
 
 (* Subtraction is defined as the inverse of addition *)
 
