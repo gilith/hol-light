@@ -120,7 +120,7 @@ let default_context =
         | None -> failwith ("unknown type operator " ^ Name.to_string n) in
     let axiom_context s =
         match peek_the_exported_thms s with
-          Some th -> th
+          Some (th,_) -> th
         | None -> failwith ("unknown assumption:\n" ^ Sequent.to_string s) in
     {const_context = const_context;
      type_op_context = type_op_context;

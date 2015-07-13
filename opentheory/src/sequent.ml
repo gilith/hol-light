@@ -24,7 +24,8 @@ end
 
 module Sequent_map = Map.Make(Sequent);;
 
-let add_sequent_map seqs th = Sequent_map.add (Sequent.from_thm th) th seqs;;
+let add_sequent_map seqs (th,x) =
+    Sequent_map.add (Sequent.from_thm th) (th,x) seqs;;
 
 let add_list_sequent_map = List.fold_left add_sequent_map;;
 

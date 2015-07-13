@@ -497,22 +497,22 @@ let (log_term,log_thm,log_clear) =
 
 type article = Article of string * string;;
 
-let articles = ref ([] : article list);;
+let the_articles = ref ([] : article list);;
 
-let reset_articles () = articles := [];;
+let reset_articles () = the_articles := [];;
 
 let thy_article (Article (thy,_)) = thy;;
 
 let name_article (Article (_,name)) = name;;
 
 let exists_name_article name =
-    List.exists (fun art -> name_article art = name) (!articles);;
+    List.exists (fun art -> name_article art = name) (!the_articles);;
 
-let fresh_name_article name =
+let fresh_name_article thy =
     let rec check i =
-        let name_i = name ^ "-a" ^ string_of_int i in
-        if exists_name_article name_i then check (i + 1) else name_i in
-    if exists_name_article name then check 1 else name;;
+        let name = thy ^ "-a" ^ string_of_int i in
+        if exists_name_article name then check (i + 1) else name in
+    if exists_name_article thy then check 1 else thy;;
 
 let filename_article art =
     "opentheory/articles/" ^ name_article art ^ ".art";;
@@ -520,7 +520,7 @@ let filename_article art =
 let add_article thy =
     let name = fresh_name_article thy in
     let art = Article (thy,name) in
-    let () = articles := art :: !articles in
+    let () = the_articles := art :: !the_articles in
     filename_article art;;
 
 (* ------------------------------------------------------------------------- *)
@@ -570,15 +570,31 @@ let write_theory_files () =
             let arts = List.filter not_thy arts in
             let () = write_theory_file thy (rev names) in
             write_theories arts in
-    let arts = !articles in
+    let arts = !the_articles in
     let () = write_theories arts in
     ();;
+
+(* ------------------------------------------------------------------------- *)
+(* The current theory.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
+let the_current_theory = ref (None : string option);;
+
+let reset_the_current_theory () = the_current_theory := None;;
+
+let set_the_current_theory thy = the_current_theory := Some thy;;
+
+let get_the_current_theory () =
+    match !the_current_theory with
+      Some thy -> thy
+    | None -> failwith "no current theory (use logfile to set)";;
 
 (* ------------------------------------------------------------------------- *)
 (* Setting up the log files: part 2                                          *)
 (* ------------------------------------------------------------------------- *)
 
 let logfile_end () =
+    let () = reset_the_current_theory () in
     match (!log_state) with
       Active_logging (h,_) ->
         let () = log_clear () in
@@ -589,6 +605,7 @@ let logfile_end () =
 
 let logfile thy =
     let () = logfile_end () in
+    let () = set_the_current_theory thy in
     match (!log_state) with
       Ready_logging ->
         let file = add_article thy in
@@ -631,10 +648,11 @@ let stop_logging () =
 (* Tracking exported theorems.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-let the_exported_thms = ref (Sequent_map.empty : thm Sequent_map.t);;
+let the_exported_thms =
+    ref (Sequent_map.empty : (thm * string) Sequent_map.t);;
 
-let add_the_exported_thms th =
-    the_exported_thms := add_sequent_map (!the_exported_thms) th;;
+let add_the_exported_thms th thy =
+    the_exported_thms := add_sequent_map (!the_exported_thms) (th,thy);;
 
 let peek_the_exported_thms seq = peek_sequent_map (!the_exported_thms) seq;;
 
@@ -707,7 +725,8 @@ let export_thm th =
     let () = delete_proof th in
     let () = delete_type_op_definition (thm_type_ops th) in
     let () = delete_const_definition (thm_consts th) in
-    let () = add_the_exported_thms th in
+    let thy = get_the_current_theory () in
+    let () = add_the_exported_thms th thy in
     ();;
 
 (* ------------------------------------------------------------------------- *)
@@ -754,5 +773,6 @@ and export_thm = Export.export_thm
 and logfile = Export.logfile
 and logfile_end = Export.logfile_end
 and peek_the_exported_thms = Export.peek_the_exported_thms
+and list_the_exported_thms = Export.list_the_exported_thms
 and start_logging = Export.start_logging
 and stop_logging = Export.stop_logging;;
