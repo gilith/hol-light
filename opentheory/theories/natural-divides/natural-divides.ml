@@ -1784,6 +1784,29 @@ let egcd_cases = prove
 
 export_thm egcd_cases;;
 
+let coprime_inverse_exists = prove
+ (`!a b. 1 < b /\ gcd a b = 1 ==> ?s. (s * a) MOD b = 1`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (SPECL [`a : num`; `b : num`] egcd_cases) THEN
+  ANTS_TAC THENL
+  [DISCH_THEN SUBST_VAR_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [zero_gcd] THEN
+   DISCH_THEN SUBST_VAR_TAC THEN
+   POP_ASSUM MP_TAC THEN
+   REWRITE_TAC [LT_REFL];
+   ALL_TAC] THEN
+  DISCH_THEN
+    (X_CHOOSE_THEN `s : num`
+       (X_CHOOSE_THEN `t : num` STRIP_ASSUME_TAC)) THEN
+  EXISTS_TAC `s : num` THEN
+  POP_ASSUM (SUBST1_TAC o SYM) THEN
+  ASM_REWRITE_TAC [MOD_MULT_ADD] THEN
+  MATCH_MP_TAC MOD_LT THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm coprime_inverse_exists;;
+
 let chinese_remainder = prove
  (`!a b x y n.
      gcd a b = 1 /\ x < a /\ y < b /\ chinese a b x y = n ==>
