@@ -34,6 +34,11 @@ let dest_global (Name (ns,n)) =
       [] -> Some n
     | _ -> None;;
 
+let is_empty n =
+    match dest_global n with
+      Some s -> s = ""
+    | None -> false;;
+
 let mk_hol_light n = Name (["HOLLight"],n);;
 
 let dest_hol_light (Name (ns,n)) =

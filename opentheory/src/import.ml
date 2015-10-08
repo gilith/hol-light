@@ -93,6 +93,21 @@ let (go_native_sequent,go_native_thm) =
     (go_sequent,go_thm);;
 
 (* ------------------------------------------------------------------------- *)
+(* Fresh names for constants and type operators that are local to a theory.  *)
+(* ------------------------------------------------------------------------- *)
+
+let (new_theory_const_name,new_theory_type_op_name) =
+    let new_name f thy =
+        let r = ref 0 in
+        let rec go () =
+            let i = !r in
+            let () = r := i + 1 in
+            let n = thy ^ "_" ^ string_of_int i in
+            if can f n then go () else n in
+        go in
+    (new_name get_const_type, new_name get_type_arity);;
+
+(* ------------------------------------------------------------------------- *)
 (* A type of import contexts.                                                *)
 (* ------------------------------------------------------------------------- *)
 
@@ -102,7 +117,10 @@ type context =
    axiom_context : Sequent.t -> thm};;
 
 let default_context =
+    let new_const_name = new_theory_const_name "" in
+    let new_type_op_name = new_theory_type_op_name "" in
     let const_context n =
+        if Name.is_empty n then new_const_name () else
         let n =
             match import_const_from_the_interpretation n with
               [] -> n
@@ -111,6 +129,7 @@ let default_context =
           Some s -> s
         | None -> failwith ("unknown constant " ^ Name.to_string n) in
     let type_op_context n =
+        if Name.is_empty n then new_type_op_name () else
         let n =
             match import_type_op_from_the_interpretation n with
               [] -> n

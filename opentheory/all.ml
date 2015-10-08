@@ -45,7 +45,7 @@ let () =
 (* ------------------------------------------------------------------------- *)
 
 (*
-logfile "test-import-1";
+logfile "test-import-1";;
 
 extend_the_interpretation
   "opentheory/theories/natural-divides/natural-divides.int";;
@@ -61,7 +61,7 @@ import_article "natural-prime.art";;
 *)
 
 (*
-logfile "test-import-2";
+logfile "test-import-2";;
 
 extend_the_interpretation
   "opentheory/theories/stream/stream.int";;
@@ -80,12 +80,16 @@ extend_the_interpretation
 import_article "natural-divides.art";;
 
 extend_the_interpretation
-  "opentheory/theories/modular/modular.int";;
-extend_the_interpretation
-  "opentheory/theories/word/word.int";;
-extend_the_interpretation
   "opentheory/theories/word10/word10.int";;
 import_article "word10.art";;
+*)
+
+(*
+logfile "test-import-3";;
+
+extend_the_interpretation
+  "opentheory/theories/parser/parser.int";;
+import_article "parser.art";;
 *)
 
 (* ------------------------------------------------------------------------- *)
