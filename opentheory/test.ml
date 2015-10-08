@@ -131,7 +131,9 @@ export_thm test_th;;
 
 logfile_end ();;
 
-(* Simple example exporting a theorem with hypotheses *)
+(* ------------------------------------------------------------------------- *)
+(* Simple example exporting a theorem with hypotheses                        *)
+(* ------------------------------------------------------------------------- *)
 
 logfile "example11";;
 
@@ -139,6 +141,24 @@ let test_th =
     ASSUME `a`;;
 
 export_thm test_th;;
+
+logfile_end ();;
+
+(* ------------------------------------------------------------------------- *)
+(* Same constant name in assumption and theorem                              *)
+(* ------------------------------------------------------------------------- *)
+
+logfile "example12";;
+
+new_constant ("asm_name", `:bool`);;
+
+let same_name_ax = new_axiom `asm_name`;;
+
+let same_name_def = new_basic_definition `thm_name = asm_name`;;
+
+let same_name_th = EQ_MP (SYM same_name_def) same_name_ax;;
+
+export_thm same_name_th;;
 
 logfile_end ();;
 
