@@ -3,6 +3,8 @@
 (* Ramana Kumar, Joe Leslie-Hurd and Robert White                            *)
 (* ========================================================================= *)
 
+#load "unix.cma";;
+
 module Int_map = Map.Make (struct type t = int let compare = compare end);;
 
 module Import =
@@ -116,9 +118,9 @@ type context =
    type_op_context : Name.t -> string;
    axiom_context : Sequent.t -> thm};;
 
-let default_context =
-    let new_const_name = new_theory_const_name "" in
-    let new_type_op_name = new_theory_type_op_name "" in
+let theory_context thy =
+    let new_const_name = new_theory_const_name thy in
+    let new_type_op_name = new_theory_type_op_name thy in
     let const_context n =
         if Name.is_empty n then new_const_name () else
         let n =
@@ -144,6 +146,8 @@ let default_context =
     {const_context = const_context;
      type_op_context = type_op_context;
      axiom_context = axiom_context};;
+
+let default_context = theory_context "";;
 
 (* ------------------------------------------------------------------------- *)
 (* A type of import states.                                                  *)
@@ -329,6 +333,10 @@ let process_command context state cmd =
     {stack = stack; dict = dict; asms = asms; thms = thms}
   | _ -> failwith ("unhandled article line: " ^ cmd);;
 
+(* ------------------------------------------------------------------------- *)
+(* Importing articles.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
 let read_article context name h =
     let rec loop line_number state =
         try let line = input_line h in
@@ -345,6 +353,51 @@ let read_article context name h =
     let {stack = _; dict = _; asms = asms; thms = thms} =
         loop 1 initial_state in
     (rev asms, rev thms);;
+
+(* ------------------------------------------------------------------------- *)
+(* Importing theories.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
+let the_imported_theories = ref ["base"];;
+
+let open_command cmd =
+    let (fd_in,fd_out) = Unix.pipe () in
+    match Unix.fork () with
+      0 -> let () = Unix.dup2 fd_out Unix.stdout in
+           let () = Unix.close fd_out in
+           let () = Unix.close fd_in in
+           let () = Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |] in
+           failwith "returned from execv"
+    | _ -> let () = Unix.close fd_out in
+           let h = Unix.in_channel_of_descr fd_in in
+           let () = set_binary_mode_in h false in
+           h;;
+
+(***
+let read_all_lines h =
+    let rec loop line_number state =
+        try let line = input_line h in
+            let state =
+                try process_command context state line
+                with Failure f ->
+                     failwith ("in article " ^ name ^ " at line " ^
+                               string_of_int line_number ^ ": " ^ line ^
+                               "\nstack = " ^
+                               Object.list_to_string (state.stack) ^
+                               "\n" ^ f) in
+            loop (line_number + 1) state
+        with End_of_file -> state in
+
+  16         ;
+  17         close fd_in
+
+let required_theories thy =
+    let h = 
+
+let import_theory thy =
+    
+
+***)
 
 end
 
