@@ -422,7 +422,7 @@ let theory_interpretation thy =
 let import_theory =
     let rec import prefix thy =
         let () = List.iter auto_import (required_theories thy) in
-        let () = output_string stdout (prefix ^ "importing theory " ^ thy ^ "\n") in
+        let () = print_endline (prefix ^ "importing theory " ^ thy) in
         let () = theory_interpretation thy in
         let th = read_theory thy in
         let () = the_imported_theories := !the_imported_theories @ [thy] in
