@@ -7,7 +7,7 @@
 (* Interpretations for 16-bit words.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/theories/word16/word16.int";;
+extend_the_interpretation "opentheory/interpretations/word16.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of 16-bit words.                                               *)

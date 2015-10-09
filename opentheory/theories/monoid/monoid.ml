@@ -7,7 +7,7 @@
 (* Interpretations for a parametric theory of monoids.                       *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/theories/monoid/monoid.int";;
+extend_the_interpretation "opentheory/interpretations/monoid.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory witness for monoids.                                    *)

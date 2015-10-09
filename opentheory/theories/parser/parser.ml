@@ -7,7 +7,7 @@
 (* Interpretations for stream parsers.                                       *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/theories/parser/parser.int";;
+extend_the_interpretation "opentheory/interpretations/parser.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of parse streams.                                              *)

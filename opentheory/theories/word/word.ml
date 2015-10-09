@@ -7,7 +7,7 @@
 (* Interpretations for a parametric theory of words.                         *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/theories/word/word.int";;
+extend_the_interpretation "opentheory/interpretations/word.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory witness for words.                                      *)

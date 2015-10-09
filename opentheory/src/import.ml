@@ -343,7 +343,7 @@ let read_article context name h =
             let state =
                 try process_command context state line
                 with Failure f ->
-                     failwith ("in article " ^ name ^ " at line " ^
+                     failwith ("in " ^ name ^ " at line " ^
                                string_of_int line_number ^ ": " ^ line ^
                                "\nstack = " ^
                                Object.list_to_string (state.stack) ^
@@ -354,11 +354,23 @@ let read_article context name h =
         loop 1 initial_state in
     (rev asms, rev thms);;
 
+let import_article filename =
+    let h = open_in filename in
+    let c = default_context in
+    let n = "article " ^ filename in
+    let thy = read_article c n h in
+    let () = close_in h in
+    thy;;
+
 (* ------------------------------------------------------------------------- *)
 (* Importing theories.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
 let the_imported_theories = ref ["base"];;
+
+let imported_theories () = !the_imported_theories;;
+
+let is_imported_theory thy = mem thy (imported_theories ());;
 
 let open_command cmd =
     let (fd_in,fd_out) = Unix.pipe () in
@@ -373,36 +385,58 @@ let open_command cmd =
            let () = set_binary_mode_in h false in
            h;;
 
-(***
 let read_all_lines h =
-    let rec loop line_number state =
-        try let line = input_line h in
-            let state =
-                try process_command context state line
-                with Failure f ->
-                     failwith ("in article " ^ name ^ " at line " ^
-                               string_of_int line_number ^ ": " ^ line ^
-                               "\nstack = " ^
-                               Object.list_to_string (state.stack) ^
-                               "\n" ^ f) in
-            loop (line_number + 1) state
-        with End_of_file -> state in
+    let rec loop l =
+        try loop (input_line h :: l)
+        with End_of_file -> l in
+    rev (loop []);;
 
-  16         ;
-  17         close fd_in
+let read_from_command cmd =
+    let h = open_command cmd in
+    let l = read_all_lines h in
+    let () = close_in h in
+    l;;
 
 let required_theories thy =
-    let h = 
+    let cmd = "opentheory list --dependency-order --format NAME 'Requires " ^
+              thy ^ "'" in
+    read_from_command cmd;;
 
-let import_theory thy =
-    
+let theory_article thy =
+    let cmd = "opentheory info --clear-local-names --article " ^ thy in
+    open_command cmd;;
 
-***)
+let read_theory thy =
+    let h = theory_article thy in
+    let c = theory_context thy in
+    let n = "theory " ^ thy in
+    let th = read_article c n h in
+    let () = close_in h in
+    th;;
+
+let theory_interpretation thy =
+    let file = "opentheory/interpretations/" ^ thy ^ ".int" in
+    if Sys.file_exists file then extend_the_interpretation file else
+    failwith ("no interpretation found in " ^ file);;
+
+let import_theory =
+    let rec import prefix thy =
+        let () = List.iter auto_import (required_theories thy) in
+        let () = output_string stdout (prefix ^ "importing theory " ^ thy ^ "\n") in
+        let () = theory_interpretation thy in
+        let th = read_theory thy in
+        let () = the_imported_theories := !the_imported_theories @ [thy] in
+        th
+    and auto_import thy =
+        if is_imported_theory thy then () else
+        let _ = import "auto-" thy in
+        () in
+    fun thy ->
+    if not (is_imported_theory thy) then import "" thy else
+    failwith ("theory " ^ thy ^ " is already imported");;
 
 end
 
-let import_article filename =
-  let h = open_in filename in
-  let thy = Import.read_article Import.default_context filename h in
-  let _ = close_in h in
-  thy;;
+let import_article = Import.import_article
+and imported_theories = Import.imported_theories
+and import_theory = Import.import_theory;;

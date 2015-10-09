@@ -7,7 +7,7 @@
 (* Interpretations for a parametric theory of GF(p) finite fields.           *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/theories/gfp/gfp.int";;
+extend_the_interpretation "opentheory/interpretations/gfp.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory witness for GF(p) finite fields.                        *)

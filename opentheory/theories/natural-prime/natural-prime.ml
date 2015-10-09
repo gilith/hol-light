@@ -7,8 +7,7 @@
 (* Interpretations for prime natural numbers.                                *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation
-  "opentheory/theories/natural-prime/natural-prime.int";;
+extend_the_interpretation "opentheory/interpretations/natural-prime.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of prime natural numbers.                                      *)

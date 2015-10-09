@@ -7,7 +7,7 @@
 (* Interpretations for a parametric theory of commutative monoids.           *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/theories/monoid-comm/monoid-comm.int";;
+extend_the_interpretation "opentheory/interpretations/monoid-comm.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory witness for commutative monoids.                        *)

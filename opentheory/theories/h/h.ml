@@ -38,7 +38,7 @@
 (* Interpretations for memory safety for the H interface.                    *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/theories/h/h.int";;
+extend_the_interpretation "opentheory/interpretations/h.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of memory safety for the H interface.                          *)
