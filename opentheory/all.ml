@@ -45,14 +45,8 @@ let () =
 (* ------------------------------------------------------------------------- *)
 
 (*
-logfile "test-import";;
-imported_theories ();;
-import_theory "word10";;
-imported_theories ();;
-import_theory "parser";;
-imported_theories ();;
-import_theory "word12";;
-imported_theories ();;
+let thys = Import.list_theories "UpToDate - (Includes base | axiom | empty)";;
+map import_theory thys;;
 *)
 
 (* ------------------------------------------------------------------------- *)

@@ -440,12 +440,9 @@ let theory_interpretation thy =
     failwith ("no interpretation found in " ^ file);;
 
 let import_theory =
-    let print_thy prefix th =
-        let () = print_endline (prefix ^ " " ^ Theory.to_string th) in
-        () in
     let import_thy prefix thy =
         let th = read_theory thy in
-        let () = print_thy prefix th in
+        let () = print_endline (prefix ^ " " ^ Theory.to_string th) in
         let () = add_imported_theory th in
         th in
     let import_sub prefix thy =
@@ -464,9 +461,7 @@ let import_theory =
     fun thy ->
     match peek_imported_theory thy with
       None -> import "" thy
-    | Some th ->
-      let () = print_thy "already imported theory" th in
-      th;;
+    | Some th -> th;;
 
 end
 
