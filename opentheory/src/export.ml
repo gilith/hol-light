@@ -126,7 +126,7 @@ let log_type_var s = log_type_var_name s;;
 (* Logging terms and theorems.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-let (log_term,log_thm,log_clear) =
+let (log_term,log_proof,log_clear) =
     let peek_type_op_def t =
         match !log_state with
           Active_logging (_,ld) ->
@@ -204,7 +204,7 @@ let (log_term,log_thm,log_clear) =
         let () = log_const_name absTm in
         let () = log_const_name repTm in
         let () = log_list log_type_var tyVars in
-        let () = log_thm exists_th in
+        let () = log_proof exists_th in
         let () = log_command "defineTypeOp" in
         let rap_k = save_top () in
         let () = log_command "pop" in
@@ -293,7 +293,7 @@ let (log_term,log_thm,log_clear) =
         (c_k,th_k)
     and log_const_list_def (((nvs,th),def),i) =
         let () = log_list (log_pair log_const_name log_var) nvs in
-        let () = log_thm th in
+        let () = log_proof th in
         let () = log_command "defineConstList" in
         let def_k = save_top_obj (Object.Thm_object def) in
         let () = log_command "pop" in
@@ -387,7 +387,7 @@ let (log_term,log_thm,log_clear) =
         let _ = save_top_obj ob in
         ()
     and log_subst ins = log_object (Object.mk_subst ins)
-    and log_thm th =
+    and log_proof th =
         let ob = Object.Thm_object th in
         if saved ob then () else
         let () =
@@ -402,22 +402,22 @@ let (log_term,log_thm,log_clear) =
                 let () = log_command "refl" in
                 ()
             | Sym_proof th ->
-                let () = log_thm th in
+                let () = log_proof th in
                 let () = log_command "sym" in
                 ()
             | Trans_proof (th1,th2) ->
-                let () = log_thm th1 in
-                let () = log_thm th2 in
+                let () = log_proof th1 in
+                let () = log_proof th2 in
                 let () = log_command "trans" in
                 ()
             | Mk_comb_proof (th1,th2) ->
-                let () = log_thm th1 in
-                let () = log_thm th2 in
+                let () = log_proof th1 in
+                let () = log_proof th2 in
                 let () = log_command "appThm" in
                 ()
             | Abs_proof (v1,th2) ->
                 let () = log_var v1 in
-                let () = log_thm th2 in
+                let () = log_proof th2 in
                 let () = log_command "absThm" in
                 ()
             | Beta_conv_proof tm ->
@@ -429,23 +429,23 @@ let (log_term,log_thm,log_clear) =
                 let () = log_command "assume" in
                 ()
             | Eq_mp_proof (th1,th2) ->
-                let () = log_thm th1 in
-                let () = log_thm th2 in
+                let () = log_proof th1 in
+                let () = log_proof th2 in
                 let () = log_command "eqMp" in
                 ()
             | Deduct_antisym_rule_proof (th1,th2) ->
-                let () = log_thm th1 in
-                let () = log_thm th2 in
+                let () = log_proof th1 in
+                let () = log_proof th2 in
                 let () = log_command "deductAntisym" in
                 ()
             | Prove_hyp_proof (th1,th2) ->
-                let () = log_thm th1 in
-                let () = log_thm th2 in
+                let () = log_proof th1 in
+                let () = log_proof th2 in
                 let () = log_command "proveHyp" in
                 ()
             | Subst_proof (i1,th2) ->
                 let () = log_subst i1 in
-                let () = log_thm th2 in
+                let () = log_proof th2 in
                 let () = log_command "subst" in
                 ()
             | New_basic_definition_proof c ->
@@ -488,8 +488,15 @@ let (log_term,log_thm,log_clear) =
         | Object.Const_object c -> log_const c
         | Object.Var_object v -> log_var v
         | Object.Term_object t -> log_term t
-        | Object.Thm_object t -> log_thm t in
-    (log_term,log_thm,log_clear);;
+        | Object.Thm_object t -> log_proof t in
+    (log_term,log_proof,log_clear);;
+
+let log_thm th =
+    let () = log_proof th in
+    let () = log_list log_term (hyp th) in
+    let () = log_term (concl th) in
+    let () = log_command "thm" in
+    ();;
 
 (* ------------------------------------------------------------------------- *)
 (* Article files.                                                            *)
@@ -711,22 +718,20 @@ let thm_consts =
             consts_in_terms acc (b :: tms) in
     fun th -> consts_in_terms [] (concl th :: hyp th);;
 
+let add_exported_thm thy th =
+    let () = delete_proof th in
+    let () = delete_type_op_definition (thm_type_ops th) in
+    let () = delete_const_definition (thm_consts th) in
+    let () = add_the_exported_thms th thy in
+    ();;
+
 let debug_export_thm_enable = ref true;;
 
 let export_thm th =
     if not (!debug_export_thm_enable) then () else
-    let () =
-        if not_logging () then () else
-        let () = log_thm th in
-        let () = log_list log_term (hyp th) in
-        let () = log_term (concl th) in
-        let () = log_command "thm" in
-        () in
-    let () = delete_proof th in
-    let () = delete_type_op_definition (thm_type_ops th) in
-    let () = delete_const_definition (thm_consts th) in
+    let () = if not_logging () then () else log_thm th in
     let thy = get_the_current_theory () in
-    let () = add_the_exported_thms th thy in
+    let () = add_exported_thm thy th in
     ();;
 
 (* ------------------------------------------------------------------------- *)
@@ -738,9 +743,6 @@ let export_proof h th =
     let ld = new_log_dict true in
     let () = log_state := Active_logging (h,ld) in
     let () = log_thm th in
-    let () = log_list log_term (hyp th) in
-    let () = log_term (concl th) in
-    let () = log_command "thm" in
     let () = log_clear () in
     let () = log_state := old_log_state in
     ();;

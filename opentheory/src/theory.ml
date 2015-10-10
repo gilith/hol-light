@@ -26,9 +26,10 @@ let from_current_state n =
     Theory (n,a,t);;
 
 let to_string th =
+    let string_of_list l = "{" ^ string_of_int (length l) ^ "}" in
     name th ^ " : " ^
-    string_of_int (length (assumptions th)) ^ " |> " ^
-    string_of_int (length (theorems th));;
+    string_of_list (assumptions th) ^ " |> " ^
+    string_of_list (theorems th);;
 
 let pp fmt th =
     let () = Format.pp_open_hbox fmt () in

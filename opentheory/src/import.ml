@@ -306,7 +306,6 @@ let process_command context state cmd =
   | ("thm", objC :: objH :: objT :: stack) ->
     let s = Object.dest_sequent (objH,objC) in
     let th = go_native_thm (alpha_rule s (Object.dest_thm objT)) in
-    let () = export_thm th in
     let thms = th :: thms in
     {stack = stack; dict = dict; asms = asms; thms = thms}
   | ("trans", objU :: objT :: stack) ->
@@ -370,10 +369,21 @@ let the_imported_theories = ref ([] : Theory.t list);;
 
 let imported_theories () = !the_imported_theories;;
 
+let peek_imported_theory n =
+    let pred thy = Theory.name thy = n in
+    let thys = imported_theories () in
+    try Some (List.find pred thys)
+    with Not_found -> None;;
+
 let is_imported_theory n =
-    exists (fun thy -> Theory.name thy = n) (imported_theories ());;
+    match peek_imported_theory n with
+      Some _ -> true
+    | None -> false;;
 
 let add_imported_theory thy =
+    let n = Theory.name thy in
+    let thl = Theory.theorems thy in
+    let () = List.iter (Export.add_exported_thm n) thl in
     let () = the_imported_theories := !the_imported_theories @ [thy] in
     ();;
 
@@ -402,10 +412,16 @@ let read_from_command cmd =
     let () = close_in h in
     l;;
 
-let required_theories thy =
-    let cmd = "opentheory list --dependency-order --format NAME 'Requires " ^
-              thy ^ "'" in
+let list_theories exp =
+    let qexp = "'" ^ exp ^ "'" in
+    let cmd = "opentheory list --dependency-order --format NAME " ^ qexp in
     read_from_command cmd;;
+
+let required_theories thy =
+    let rsubs = "(Requires & Subtheories)" in
+    let reqs = "((Requires | Requires " ^ rsubs ^ ") - Subtheories) " ^ thy in
+    let subs = rsubs ^ " " ^ thy in
+    (list_theories reqs, list_theories subs);;
 
 let theory_article thy =
     let cmd = "opentheory info --clear-local-names --article " ^ thy in
@@ -424,20 +440,33 @@ let theory_interpretation thy =
     failwith ("no interpretation found in " ^ file);;
 
 let import_theory =
-    let rec import prefix thy =
-        let () = List.iter auto_import (required_theories thy) in
-        let () = print_endline (prefix ^ "importing theory " ^ thy) in
-        let () = theory_interpretation thy in
+    let print_thy prefix th =
+        let () = print_endline (prefix ^ " " ^ Theory.to_string th) in
+        () in
+    let import_thy prefix thy =
         let th = read_theory thy in
+        let () = print_thy prefix th in
         let () = add_imported_theory th in
-        th
+        th in
+    let import_sub prefix thy =
+        let _ = import_thy (prefix ^ "imported sub-theory") thy in
+        () in
+    let rec import prefix thy =
+        let (reqs,subs) = required_theories thy in
+        let () = List.iter auto_import reqs in
+        let () = theory_interpretation thy in
+        let () = List.iter (import_sub prefix) subs in
+        import_thy (prefix ^ "imported theory") thy
     and auto_import thy =
         if is_imported_theory thy then () else
         let _ = import "auto-" thy in
         () in
     fun thy ->
-    if not (is_imported_theory thy) then import "" thy else
-    failwith ("theory " ^ thy ^ " is already imported");;
+    match peek_imported_theory thy with
+      None -> import "" thy
+    | Some th ->
+      let () = print_thy "already imported theory" th in
+      th;;
 
 end
 
