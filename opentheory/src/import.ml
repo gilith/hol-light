@@ -366,11 +366,16 @@ let import_article filename =
 (* Importing theories.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-let the_imported_theories = ref ["base"];;
+let the_imported_theories = ref ([] : Theory.t list);;
 
 let imported_theories () = !the_imported_theories;;
 
-let is_imported_theory thy = mem thy (imported_theories ());;
+let is_imported_theory n =
+    exists (fun thy -> Theory.name thy = n) (imported_theories ());;
+
+let add_imported_theory thy =
+    let () = the_imported_theories := !the_imported_theories @ [thy] in
+    ();;
 
 let open_command cmd =
     let (fd_in,fd_out) = Unix.pipe () in
@@ -409,10 +414,9 @@ let theory_article thy =
 let read_theory thy =
     let h = theory_article thy in
     let c = theory_context thy in
-    let n = "theory " ^ thy in
-    let th = read_article c n h in
+    let (a,t) = read_article c ("theory " ^ thy) h in
     let () = close_in h in
-    th;;
+    Theory.Theory (thy,a,t);;
 
 let theory_interpretation thy =
     let file = "opentheory/interpretations/" ^ thy ^ ".int" in
@@ -425,7 +429,7 @@ let import_theory =
         let () = print_endline (prefix ^ "importing theory " ^ thy) in
         let () = theory_interpretation thy in
         let th = read_theory thy in
-        let () = the_imported_theories := !the_imported_theories @ [thy] in
+        let () = add_imported_theory th in
         th
     and auto_import thy =
         if is_imported_theory thy then () else

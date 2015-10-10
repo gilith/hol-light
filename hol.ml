@@ -187,3 +187,9 @@ loads "database.ml";;   (* List of name-theorem pairs for search system      *)
 (* ------------------------------------------------------------------------- *)
 
 loads "update_database.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Register the standard theory library.                                     *)
+(* ------------------------------------------------------------------------- *)
+
+Import.add_imported_theory (Theory.from_current_state "base");;

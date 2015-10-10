@@ -770,9 +770,9 @@ end
 let export_goal = Export.export_goal
 and export_proof = Export.export_proof
 and export_thm = Export.export_thm
+and list_the_exported_thms = Export.list_the_exported_thms
 and logfile = Export.logfile
 and logfile_end = Export.logfile_end
 and peek_the_exported_thms = Export.peek_the_exported_thms
-and list_the_exported_thms = Export.list_the_exported_thms
 and start_logging = Export.start_logging
 and stop_logging = Export.stop_logging;;
