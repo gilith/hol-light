@@ -3,15 +3,62 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-module Sequent =
+module type Sequent =
+sig
+
+type t
+
+val mk : term list * term -> t
+
+val dest : t -> term list * term
+
+val compare : t -> t -> int
+
+val from_thm : thm -> t
+
+val to_string : t -> string
+
+val install_to_string : (t -> string) -> unit
+
+end;;
+
+module Sequent : Sequent =
 struct
+
+(***
+let unique cmp =
+    let rec uniq l =
+        match l with
+          [] -> l
+        | x1 :: t ->
+          match uniq t with
+            [] -> l
+          |
+    let rec uniq_cons x l =
+        match l with
+          [] -> l
+        | h :: t ->
+***)
+
+let lex_compare cmp =
+    let rec lex l1 l2 =
+        match (l1,l2) with
+          ([],[]) -> 0
+        | ([],l2) -> -1
+        | (l1,[]) -> 1
+        | (h1 :: t1, h2 :: t2) ->
+          let c = cmp h1 h2 in if c <> 0 then c else lex t1 t2 in
+    lex;;
 
 type t = Sequent of term list * term;;
 
+let mk (h,c) = Sequent (List.sort_uniq alphaorder h, c);;
+
+let dest (Sequent (h,c)) = (h,c);;
+
 let compare (Sequent (h1,c1)) (Sequent (h2,c2)) =
-    let c = Pervasives.compare c1 c2 in
-    if c <> 0 then c else
-    Pervasives.compare h1 h2;;
+    let c = alphaorder c1 c2 in
+    if c <> 0 then c else lex_compare alphaorder h1 h2;;
 
 let from_thm th = Sequent (hyp th, concl th);;
 
@@ -19,6 +66,8 @@ let to_string_function =
     ref (fun (Sequent (_,_)) -> "default Sequent.to_string_function");;
 
 let to_string s = (!to_string_function) s;;
+
+let install_to_string f = to_string_function := f;;
 
 end
 
