@@ -563,4 +563,4 @@ let string_of_type = print_to_string pp_print_type;;
 let string_of_term = print_to_string pp_print_term;;
 let string_of_thm = print_to_string pp_print_thm;;
 let string_of_sequent = print_to_string pp_print_sequent;;
-let () = Sequent.install_to_string := string_of_sequent;;
+Sequent.install_to_string string_of_sequent;;
