@@ -7,7 +7,7 @@
 (* Interpretations for probability.                                          *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/interpretations/probability.int";;
+export_interpretation "opentheory/interpretations/probability.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of probability.                                                *)

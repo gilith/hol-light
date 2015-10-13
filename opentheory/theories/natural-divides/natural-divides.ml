@@ -7,7 +7,7 @@
 (* Interpretations for the divides relation on natural numbers.              *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/interpretations/natural-divides.int";;
+export_interpretation "opentheory/interpretations/natural-divides.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of the divides relation on natural numbers.                    *)

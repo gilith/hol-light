@@ -7,7 +7,7 @@
 (* Interpretations for stream types.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/interpretations/stream.int";;
+export_interpretation "opentheory/interpretations/stream.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of stream types.                                               *)

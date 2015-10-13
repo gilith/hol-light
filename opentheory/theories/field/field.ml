@@ -7,7 +7,7 @@
 (* Interpretations for a parametric theory of fields.                        *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/interpretations/field.int";;
+export_interpretation "opentheory/interpretations/field.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory witness for fields.                                     *)

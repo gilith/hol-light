@@ -7,7 +7,7 @@
 (* Interpretations for Unicode characters.                                   *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/interpretations/char.int";;
+export_interpretation "opentheory/interpretations/char.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of Unicode characters.                                         *)

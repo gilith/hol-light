@@ -7,7 +7,7 @@
 (* Interpretations for a parametric theory of modular arithmetic.            *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/interpretations/modular.int";;
+export_interpretation "opentheory/interpretations/modular.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory witness for modular arithmetic.                         *)

@@ -18,6 +18,7 @@ default: theories
 
 TEMP = \
   articles/*.art \
+  articles/*.int \
   articles/*.thy
 
 .PHONY: clean

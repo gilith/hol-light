@@ -7,7 +7,7 @@
 (* Interpretations for natural number to bit-list conversions.               *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/interpretations/natural-bits.int";;
+export_interpretation "opentheory/interpretations/natural-bits.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Helper theorems (not exported).                                           *)

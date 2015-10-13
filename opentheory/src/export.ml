@@ -7,6 +7,14 @@ module Export =
 struct
 
 (* ------------------------------------------------------------------------- *)
+(* The export directory.                                                     *)
+(* ------------------------------------------------------------------------- *)
+
+let export_directory = "opentheory/articles";;
+
+let export_directory_file = Filename.concat export_directory;;
+
+(* ------------------------------------------------------------------------- *)
 (* Imperative logging dictionaries.                                          *)
 (* ------------------------------------------------------------------------- *)
 
@@ -58,6 +66,20 @@ let log_raw s =
     match (!log_state) with
       Active_logging (h,_) -> output_string h (s ^ "\n")
     | _ -> ();;
+
+(* ------------------------------------------------------------------------- *)
+(* Exporting interpretations.                                                *)
+(* ------------------------------------------------------------------------- *)
+
+let export_interpretation file =
+    let () = extend_the_interpretation file in
+    match !log_state with
+      Not_logging -> ()
+    | _ ->
+      let xfile = export_directory_file (Filename.basename file) in
+      let cmd = "cp " ^ file ^ " " ^ xfile in
+      if Sys.command cmd = 0 then () else
+      failwith ("couldn't execute command:\n" ^ cmd);;
 
 (* ------------------------------------------------------------------------- *)
 (* Logging primitive types                                                   *)
@@ -522,7 +544,7 @@ let fresh_name_article thy =
     if exists_name_article thy then check 1 else thy;;
 
 let filename_article art =
-    "opentheory/articles/" ^ name_article art ^ ".art";;
+    export_directory_file (name_article art ^ ".art");;
 
 let add_article thy =
     let name = fresh_name_article thy in
@@ -541,7 +563,7 @@ type theory_block =
 
 let write_theory_file thy names =
     let int = "" in
-    let h = open_out ("opentheory/articles/" ^ thy ^ ".thy") in
+    let h = open_out (export_directory_file (thy ^ ".thy")) in
     let add_theory_block name imps sint block =
         let () = output_string h ("\n" ^ name ^ " {\n" ^ imps) in
         let () = if sint then output_string h int else () in
@@ -769,7 +791,8 @@ let export_goal file (hs,c) =
 
 end
 
-let export_goal = Export.export_goal
+let export_interpretation = Export.export_interpretation
+and export_goal = Export.export_goal
 and export_proof = Export.export_proof
 and export_thm = Export.export_thm
 and list_the_exported_thms = Export.list_the_exported_thms

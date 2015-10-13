@@ -9,7 +9,7 @@
 (* Interpretations for Fibonacci numbers.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/interpretations/natural-fibonacci.int";;
+export_interpretation "opentheory/interpretations/natural-fibonacci.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Existence of Fibonacci numbers.                                           *)

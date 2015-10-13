@@ -12,7 +12,7 @@
 (* Interpretations for hardware devices.                                     *)
 (* ------------------------------------------------------------------------- *)
 
-extend_the_interpretation "opentheory/interpretations/hardware.int";;
+export_interpretation "opentheory/interpretations/hardware.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of the hardware model.                                         *)
