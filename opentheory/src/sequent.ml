@@ -25,20 +25,20 @@ end;;
 module Sequent : Sequent =
 struct
 
-(***
 let unique cmp =
     let rec uniq l =
         match l with
           [] -> l
-        | x1 :: t ->
-          match uniq t with
+        | x1 :: l1 ->
+          let l2 = uniq l1 in
+          match l2 with
             [] -> l
-          |
-    let rec uniq_cons x l =
-        match l with
-          [] -> l
-        | h :: t ->
-***)
+          | x2 :: _ ->
+            if cmp x1 x2 = 0 then l2 else
+            if l2 == l1 then l else x1 :: l2 in
+    uniq;;
+
+let sort_uniq cmp l = unique cmp (List.sort cmp l);;
 
 let lex_compare cmp =
     let rec lex l1 l2 =
@@ -52,7 +52,7 @@ let lex_compare cmp =
 
 type t = Sequent of term list * term;;
 
-let mk (h,c) = Sequent (List.sort_uniq alphaorder h, c);;
+let mk (h,c) = Sequent (sort_uniq alphaorder h, c);;
 
 let dest (Sequent (h,c)) = (h,c);;
 

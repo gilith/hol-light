@@ -502,7 +502,8 @@ let pp_print_qterm fmt tm =
 (* Printer for theorems.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
-let pp_print_sequent fmt (Sequent.Sequent (asl,tm)) =
+let pp_print_sequent fmt seq =
+  let (asl,tm) = Sequent.dest seq in
   (if not (asl = []) then
     (if !print_all_thm then
       (pp_print_term fmt (hd asl);
@@ -518,9 +519,7 @@ let pp_print_sequent fmt (Sequent.Sequent (asl,tm)) =
    pp_print_term fmt tm;
    pp_close_box fmt ());;
 
-let pp_print_thm fmt th =
-  let (asl,c) = dest_thm th in
-  pp_print_sequent fmt (Sequent.Sequent (asl,c));;
+let pp_print_thm fmt th = pp_print_sequent fmt (Sequent.from_thm th);;
 
 (* ------------------------------------------------------------------------- *)
 (* Print on standard output.                                                 *)
@@ -564,4 +563,4 @@ let string_of_type = print_to_string pp_print_type;;
 let string_of_term = print_to_string pp_print_term;;
 let string_of_thm = print_to_string pp_print_thm;;
 let string_of_sequent = print_to_string pp_print_sequent;;
-let () = Sequent.to_string_function := string_of_sequent;;
+let () = Sequent.install_to_string := string_of_sequent;;

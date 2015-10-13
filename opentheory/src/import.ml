@@ -25,7 +25,8 @@ let alpha_rule =
         let th0 = ASSUME h in
         let th1 = DEDUCT_ANTISYM_RULE th0 th in
         EQ_MP th1 th0 in
-    fun (Sequent.Sequent (hs,c)) th ->
+    fun s th ->
+    let (hs,c) = Sequent.dest s in
     let c' = concl th in
     let th = if c = c' then th else EQ_MP (ALPHA c' c) th in
     List.fold_left alpha_hyp th hs;;
@@ -59,14 +60,14 @@ let go_native_term_list =
 
 let (go_native_sequent,go_native_thm) =
     let sequent_convert s =
-        let Sequent.Sequent (h,c) = s in
+        let (h,c) = Sequent.dest s in
         let (h,aths) = go_native_term_list h in
         let (c,cth) = go_native_term c in
         let cvt = (aths,cth) in
         let seq =
             match cvt with
               ([],None) -> s
-            | _ -> Sequent.Sequent (h,c) in
+            | _ -> Sequent.mk (h,c) in
         (seq,cvt) in
     let reverse_convert (aths,cth) =
         let aths = map Object.SYM aths in

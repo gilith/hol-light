@@ -373,10 +373,12 @@ let dest_term_list obj = List.map dest_term (dest_list obj);;
 (* Sequents.                                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-let mk_sequent (Sequent.Sequent (h,c)) = (mk_term_list h, mk_term c);;
+let mk_sequent s =
+    let (h,c) = Sequent.dest s in
+    (mk_term_list h, mk_term c);;
 
 let dest_sequent (objH,objC) =
-    Sequent.Sequent (dest_term_list objH, dest_term objC);;
+    Sequent.mk (dest_term_list objH, dest_term objC);;
 
 (* ------------------------------------------------------------------------- *)
 (* Type variables.                                                           *)
