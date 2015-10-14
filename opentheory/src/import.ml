@@ -11,10 +11,10 @@ module Import =
 struct
 
 (* ------------------------------------------------------------------------- *)
-(* The local interpretations directory.                                      *)
+(* The local import directory.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-let interpretations_directory = "opentheory/interpretations";;
+let import_directory = "opentheory/import";;
 
 (* ------------------------------------------------------------------------- *)
 (* Alpha conversion.                                                         *)
@@ -454,8 +454,7 @@ let theory_interpretation thy =
         | file :: files ->
           if Sys.file_exists file then extend_the_interpretation file else
           extend_with_first files in
-    let local_override_file =
-        Filename.concat interpretations_directory (thy ^ ".int") in
+    let local_override_file = Filename.concat import_directory (thy ^ ".int") in
     let theory_file = Filename.concat (theory_directory thy) "hol-light.int" in
     extend_with_first [local_override_file; theory_file];;
 
