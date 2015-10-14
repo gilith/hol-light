@@ -46,6 +46,7 @@ let () =
 
 (*
 let thys = Import.list_theories "UpToDate - (Includes base | axiom | empty)";;
+let thys = subtract thys ["monoid"; "monoid-comm"];;
 map import_theory thys;;
 *)
 

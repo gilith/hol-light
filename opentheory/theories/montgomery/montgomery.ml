@@ -7,7 +7,7 @@
 (* Interpretations for Montgomery multiplication.                            *)
 (* ------------------------------------------------------------------------- *)
 
-export_interpretation "opentheory/interpretations/montgomery.int";;
+export_interpretation "opentheory/theories/montgomery/montgomery.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of Montgomery multiplication.                                  *)

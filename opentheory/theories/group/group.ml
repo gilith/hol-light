@@ -7,7 +7,7 @@
 (* Interpretations for a parametric theory of groups.                        *)
 (* ------------------------------------------------------------------------- *)
 
-export_interpretation "opentheory/interpretations/group.int";;
+export_interpretation "opentheory/theories/group/group.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory witness for groups.                                     *)

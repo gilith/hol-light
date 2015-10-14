@@ -457,7 +457,7 @@ let theory_interpretation thy =
     let local_override_file =
         Filename.concat interpretations_directory (thy ^ ".int") in
     let theory_file = Filename.concat (theory_directory thy) "hol-light.int" in
-    extend_with_first [(***local_override_file;***) theory_file];;
+    extend_with_first [local_override_file; theory_file];;
 
 let import_theory =
     let import_thy prefix thy =

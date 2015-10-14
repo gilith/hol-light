@@ -7,7 +7,7 @@
 (* Interpretations for a parametric theory of rings.                         *)
 (* ------------------------------------------------------------------------- *)
 
-export_interpretation "opentheory/interpretations/ring.int";;
+export_interpretation "opentheory/theories/ring/ring.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory witness for rings.                                      *)

@@ -4,15 +4,15 @@
 (*                                                                           *)
 (* Modelling hardware in higher order logic in the Gordon style [1].         *)
 (*                                                                           *)
-(* 1. "Why higher order logic is a good formalism for specifying and         *)
-(*    verifying hardware", http://www.cl.cam.ac.uk/~mjcg/WhyHOL.pdf          *)
+(* 1. Why higher order logic is a good formalism for specifying and          *)
+(*    verifying hardware, http://www.cl.cam.ac.uk/~mjcg/WhyHOL.pdf           *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
 (* Interpretations for hardware devices.                                     *)
 (* ------------------------------------------------------------------------- *)
 
-export_interpretation "opentheory/interpretations/hardware.int";;
+export_interpretation "opentheory/theories/hardware/hardware.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of the hardware model.                                         *)

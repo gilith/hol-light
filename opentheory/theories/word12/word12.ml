@@ -7,7 +7,7 @@
 (* Interpretations for 12-bit words.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-export_interpretation "opentheory/interpretations/word12.int";;
+export_interpretation "opentheory/theories/word12/word12.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of 12-bit words.                                               *)

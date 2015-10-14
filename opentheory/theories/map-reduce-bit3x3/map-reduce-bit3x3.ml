@@ -7,7 +7,8 @@
 (* Interpretations for the map reduce 3x3 bit matrix example.                *)
 (* ------------------------------------------------------------------------- *)
 
-export_interpretation "opentheory/interpretations/map-reduce-bit3x3.int";;
+export_interpretation
+  "opentheory/theories/map-reduce-bit3x3/map-reduce-bit3x3.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Proof tools for the map reduce bit matrix examples.                       *)

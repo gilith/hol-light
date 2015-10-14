@@ -30,15 +30,15 @@
 (* 2. A refinement of the actions that are deterministic with respect to the *)
 (*    domain views.                                                          *)
 (*                                                                           *)
-(* 3. A proof that the refined actions satisfy Rushby's "unwinding           *)
-(*    conditions" for the system noninterference policy.                     *)
+(* 3. A proof that the refined actions satisfy Rushby's unwinding conditions *)
+(*    for the system noninterference policy.                                 *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
 (* Interpretations for memory safety for the H interface.                    *)
 (* ------------------------------------------------------------------------- *)
 
-export_interpretation "opentheory/interpretations/h.int";;
+export_interpretation "opentheory/theories/h/h.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of memory safety for the H interface.                          *)

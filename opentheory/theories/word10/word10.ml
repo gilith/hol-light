@@ -7,7 +7,7 @@
 (* Interpretations for 10-bit words.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-export_interpretation "opentheory/interpretations/word10.int";;
+export_interpretation "opentheory/theories/word10/word10.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of 10-bit words.                                               *)

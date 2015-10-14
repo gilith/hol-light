@@ -7,7 +7,7 @@
 (* Interpretations for bytes.                                                *)
 (* ------------------------------------------------------------------------- *)
 
-export_interpretation "opentheory/interpretations/byte.int";;
+export_interpretation "opentheory/theories/byte/byte.int";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of bytes.                                                      *)
