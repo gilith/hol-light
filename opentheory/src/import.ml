@@ -11,6 +11,12 @@ module Import =
 struct
 
 (* ------------------------------------------------------------------------- *)
+(* The local interpretations directory.                                      *)
+(* ------------------------------------------------------------------------- *)
+
+let interpretations_directory = "opentheory/interpretations";;
+
+(* ------------------------------------------------------------------------- *)
 (* Alpha conversion.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
@@ -428,6 +434,12 @@ let theory_article thy =
     let cmd = "opentheory info --clear-local-names --article " ^ thy in
     open_command cmd;;
 
+let theory_directory thy =
+    let cmd = "opentheory info --directory " ^ thy in
+    match read_from_command cmd with
+      [dir] -> dir
+    | _ -> failwith ("theory_directory: strange output for theory " ^ thy);;
+
 let read_theory thy =
     let h = theory_article thy in
     let c = theory_context thy in
@@ -436,9 +448,16 @@ let read_theory thy =
     Theory.Theory (thy,a,t);;
 
 let theory_interpretation thy =
-    let file = "opentheory/interpretations/" ^ thy ^ ".int" in
-    if Sys.file_exists file then extend_the_interpretation file else
-    failwith ("no interpretation found in " ^ file);;
+    let rec extend_with_first files =
+        match files with
+          [] -> failwith ("no interpretation found for theory " ^ thy)
+        | file :: files ->
+          if Sys.file_exists file then extend_the_interpretation file else
+          extend_with_first files in
+    let local_override_file =
+        Filename.concat interpretations_directory (thy ^ ".int") in
+    let theory_file = Filename.concat (theory_directory thy) "hol-light.int" in
+    extend_with_first [(***local_override_file;***) theory_file];;
 
 let import_theory =
     let import_thy prefix thy =
