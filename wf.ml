@@ -13,7 +13,7 @@ needs "relations.ml";;
 (* Definition of wellfoundedness for arbitrary (infix) relation              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "relation-well-founded-def";;
+export_theory "relation-well-founded-def";;
 
 let WF = new_definition
   `!(r : A -> A -> bool).
@@ -25,7 +25,7 @@ export_thm WF;;
 (* Strengthen it to equality.                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "relation-well-founded-thm";;
+export_theory "relation-well-founded-thm";;
 
 let WF_EQ = prove
  (`!(r : A -> A -> bool).
@@ -83,7 +83,7 @@ export_thm WF_IND;;
 (* Equivalence of the "infinite descending chains" version.                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "relation-natural-thm";;
+export_theory "relation-natural-thm";;
 
 let WF_DCHAIN = prove
  (`!(r : A -> A -> bool). WF r <=> ~(?f. !n. r (f (SUC n)) (f n))`,
@@ -290,7 +290,7 @@ export_thm WF_EREC;;
 (* Some preservation theorems for wellfoundedness.                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "relation-well-founded-thm";;
+export_theory "relation-well-founded-thm";;
 
 let wellfounded_subrelation = prove
  (`!(r : A -> A -> bool) s. subrelation r s /\ WF s ==> WF r`,
@@ -359,7 +359,7 @@ export_thm WF_POINTWISE;;
 (* Wellfoundedness properties of natural numbers.                            *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "relation-natural-thm";;
+export_theory "relation-natural-thm";;
 
 let WF_num = prove
  (`WF(<)`,
@@ -376,7 +376,7 @@ let WF_REC_num = prove
 (* Natural number measures (useful in program verification).                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "relation-natural-def";;
+export_theory "relation-natural-def";;
 
 let MEASURE = new_definition
   `!m (x:A) y. MEASURE m x y = m x < m y`;;
@@ -392,7 +392,7 @@ let MEASURE_EXPAND = prove
    GEN_TAC THEN
    REWRITE_TAC [MEASURE]);;
 
-logfile "relation-natural-thm";;
+export_theory "relation-natural-thm";;
 
 let WF_MEASURE = prove
  (`!m:A->num. WF(MEASURE m)`,
@@ -413,7 +413,7 @@ export_thm MEASURE_LE;;
 (* Trivially, a WF relation is irreflexive.                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "relation-well-founded-thm";;
+export_theory "relation-well-founded-thm";;
 
 let wellfounded_irreflexive = prove
  (`!(r : A -> A -> bool). WF r ==> irreflexive r`,
@@ -458,7 +458,7 @@ let WF_FALSE = prove
 (* Tail recursion.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "relation-natural-thm";;
+export_theory "relation-natural-thm";;
 
 let WF_REC_TAIL = prove
  (`!p g h. ?(f : A -> B). !x. f x = if p x then f (g x) else h x`,
@@ -585,7 +585,7 @@ let WF_INDUCT_TAC =
 (* Transitive relation with finitely many predecessors is wellfounded.       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "relation-natural-thm";;
+export_theory "relation-natural-thm";;
 
 let WF_FINITE = prove
  (`!r. (!x. ~(r x x)) /\ (!x y z. r x y /\ r y z ==> r x z) /\
@@ -645,5 +645,3 @@ let irreflexive_successor = prove
   ACCEPT_TAC wellfounded_successor);;
 
 export_thm irreflexive_successor;;
-
-logfile_end ();;

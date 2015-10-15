@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "ring-thm";;
+export_theory "ring-thm";;
 
 let ring_mult_left_zero = prove
   (`!x. ring_mult ring_zero x = ring_zero`,
@@ -60,5 +60,3 @@ let ring_sub_right_distrib = prove
    REWRITE_TAC [ring_sub_def; ring_add_right_distrib; ring_mult_left_neg]);;
 
 export_thm ring_sub_right_distrib;;
-
-logfile_end ();;

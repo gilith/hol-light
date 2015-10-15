@@ -443,5 +443,3 @@ let derive_strong_induction =
     let nasm = lhand(concl th3) in
     let th4 = GENL ps (DISCH nasm (weaken_triv(UNDISCH th3))) in
     GENL svs (prove_monotonicity_hyps th4);;
-
-logfile_end ();;

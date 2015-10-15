@@ -43,7 +43,7 @@ loads "opentheory/theories/ring/ring-char.ml";;
 (* Definition of the multiplicative group of ring units.                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "ring-unit-def";;
+export_theory "ring-unit-def";;
 
 let is_ring_unit_def = new_definition
   `!x. is_ring_unit x <=> ?y. ring_mult y x = ring_one`;;
@@ -104,7 +104,7 @@ export_thm ring_unit_neg_def;;
 (* Properties of the multiplicative group of ring units.                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "ring-unit-thm";;
+export_theory "ring-unit-thm";;
 
 let is_ring_unit_one = prove
   (`is_ring_unit ring_one`,
@@ -252,7 +252,7 @@ loads "opentheory/theories/ring/ring-unit-group.ml";;
 (* Definition of ring division and exponentiation.                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "ring-mult-def";;
+export_theory "ring-mult-def";;
 
 let ring_div_def =
   let def = new_definition
@@ -282,7 +282,6 @@ export_thm ring_exp_def;;
 let ring_mult_add_def = new_definition
   `!z x l.
      ring_mult_add z x l =
-     
      if n = 0 then ring_one else
      if x = ring_zero then ring_zero else
      dest_ring_unit (ring_unit_scale (mk_ring_unit x) n)`;;
@@ -293,7 +292,7 @@ export_thm ring_exp_def;;
 (* Properties of ring division and exponentiation.                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "ring-mult-thm";;
+export_theory "ring-mult-thm";;
 
 let ring_div_left_zero = prove
   (`!x.
@@ -718,5 +717,3 @@ let ring_mult_comm' = new_axiom
    `!x y z. ring_mult x (ring_mult y z) = ring_mult y (ring_mult x z)`;;
 ***)
 ***)
-
-logfile_end ();;

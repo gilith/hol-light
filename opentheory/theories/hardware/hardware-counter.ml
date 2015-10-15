@@ -7,7 +7,7 @@
 (* Definition of hardware counter devices.                                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "hardware-counter-def";;
+export_theory "hardware-counter-def";;
 
 let bpipe_def = new_definition
   `!w x.
@@ -125,7 +125,7 @@ export_thm counter_pulse_def;;
 (* Properties of hardware counter devices.                                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "hardware-counter-thm";;
+export_theory "hardware-counter-thm";;
 
 let bpipe_signal = prove
  (`!w x i xi t.
@@ -3630,5 +3630,3 @@ let comment = default_verilog_comment ();;
 let primary = Verilog_primary (`clk : wire` :: frees_circuit counter_91_ckt);;
 hardware_to_verilog_file name comment primary counter_91_ckt;;
 *)
-
-logfile_end ();;

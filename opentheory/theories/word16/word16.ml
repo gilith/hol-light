@@ -13,7 +13,7 @@ export_interpretation "opentheory/theories/word16/word16.int";;
 (* Definition of 16-bit words.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "word16-def";;
+export_theory "word16-def";;
 
 let word16_width_def = new_definition
   `word16_width = 16`;;
@@ -28,7 +28,7 @@ loads "opentheory/theories/word16/word16-word.ml";;
 (* 16-bit word to bit-list conversions.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "word16-bits";;
+export_theory "word16-bits";;
 
 let word16_list_cases = prove_word16_list_cases 16;;
 
@@ -38,7 +38,7 @@ export_thm word16_list_cases;;
 (* Definition of 16-bit word to byte pair conversions.                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "word16-bytes-def";;
+export_theory "word16-bytes-def";;
 
 let word16_to_bytes_def = new_definition
   `!w.
@@ -61,7 +61,7 @@ export_thm bytes_to_word16_def;;
 (* Properties of 16-bit word to byte pair conversions.                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "word16-bytes-thm";;
+export_theory "word16-bytes-thm";;
 
 let byte_to_word16_list = prove
  (`!b. num_to_word16 (byte_to_num b) = list_to_word16 (byte_to_list b)`,
@@ -166,5 +166,3 @@ let word16_bytes_conv =
 let bit_blast_subterm_conv = word16_bytes_conv ORELSEC bit_blast_subterm_conv;;
 let bit_blast_conv = DEPTH_CONV bit_blast_subterm_conv;;  (* word16-bytes *)
 let bit_blast_tac = CONV_TAC bit_blast_conv;;  (* word16-bytes *)
-
-logfile_end ();;

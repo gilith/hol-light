@@ -13,7 +13,7 @@ loads "opentheory/theories/ring/ring-add-group.ml";;
 (* Selectively export group theorems and prove commutativity.                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "ring-add-thm";;
+export_theory "ring-add-thm";;
 
 let ring_add_comm =
   let th =
@@ -39,5 +39,3 @@ export_thm ring_add_comm;;
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/ring/ring-add-comm.ml";;
-
-logfile_end ();;

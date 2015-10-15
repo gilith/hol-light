@@ -61,5 +61,3 @@ loads "opentheory/theories/hardware/hardware-counter.ml";;
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/hardware/hardware-multiplier.ml";;
-
-logfile_end ();;

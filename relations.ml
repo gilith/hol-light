@@ -4,7 +4,7 @@
 
 needs "sets.ml";;
 
-logfile "relation-def";;
+export_theory "relation-def";;
 
 let set_to_relation_def = new_definition
   `!s (x:A) (y:B). set_to_relation s x y <=> (x,y) IN s`;;
@@ -80,7 +80,7 @@ let transitive_closure_def = new_definition
 
 export_thm transitive_closure_def;;
 
-logfile "relation-thm";;
+export_theory "relation-thm";;
 
 let relation_to_set = prove
   (`!r (x:A) (y:B). (x,y) IN relation_to_set r <=> r x y`,
@@ -313,14 +313,14 @@ let transitive_closure_smallest = prove
 
 export_thm transitive_closure_smallest;;
 
-logfile "relation-natural-def";;
+export_theory "relation-natural-def";;
 
 let successor_def = new_definition
   `!m n. successor m n <=> SUC m = n`;;
 
 export_thm successor_def;;
 
-logfile "relation-natural-thm";;
+export_theory "relation-natural-thm";;
 
 let subrelation_successor_lt = prove
  (`subrelation successor (<)`,
@@ -418,5 +418,3 @@ let TRANSITIVE_STEPWISE_LE_EQ = prove
   MATCH_MP_TAC TRANSITIVE_STEPWISE_LE THEN
   REPEAT CONJ_TAC THEN
   FIRST_ASSUM ACCEPT_TAC);;
-
-logfile_end ();;

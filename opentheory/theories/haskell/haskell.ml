@@ -7,7 +7,7 @@
 (* Haskell source for the standard theory library.                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "base-haskell-src";;
+export_theory "base-haskell-src";;
 
 (* Lists *)
 
@@ -30,7 +30,7 @@ let () = (export_thm o prove)
 (* Haskell tests for the standard theory library.                            *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "base-haskell-test";;
+export_theory "base-haskell-test";;
 
 let () = (export_thm o prove)
  (`!x : A option. ~(is_some x <=> is_none x)`,
@@ -61,5 +61,3 @@ let () = (export_thm o prove)
   ASM_REWRITE_TAC [] THEN
   POP_ASSUM (STRIP_ASSUME_TAC o REWRITE_RULE [zip_unzip]) THEN
   ASM_REWRITE_TAC []);;
-
-logfile_end ();;

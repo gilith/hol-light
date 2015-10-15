@@ -13,7 +13,7 @@ export_interpretation "opentheory/theories/field/field.int";;
 (* Parametric theory witness for fields.                                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "field-witness";;
+export_theory "field-witness";;
 
 let (field_add_left_zero,
      field_add_left_neg,
@@ -107,7 +107,7 @@ export_thm field_finite;;
 (* Definition of field characteristic.                                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "field-def";;
+export_theory "field-def";;
 
 let (num_to_field_zero,num_to_field_suc) =
     let def = new_recursive_definition num_RECURSION
@@ -152,7 +152,7 @@ loads "opentheory/theories/field/field-group.ml";;
 (* Consequences of the field axioms and the additive group.                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "field-thm";;
+export_theory "field-thm";;
 
 let field_add_right_distrib = prove
   (`!x y z.
@@ -248,7 +248,7 @@ export_thm field_mult_nonzero;;
 (* Definition of the multiplicative group of the field.                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "field-star-def";;
+export_theory "field-star-def";;
 
 let (mk_dest_field_star,dest_mk_field_star) =
   let exists = prove
@@ -286,7 +286,7 @@ export_thm field_star_add_def;;
 (* Properties of the multiplicative group of the field.                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "field-star-thm";;
+export_theory "field-star-thm";;
 
 let dest_field_star_nonzero = prove
   (`!x. ~(dest_field_star x = field_zero)`,
@@ -396,7 +396,7 @@ loads "opentheory/theories/field/field-star-group.ml";;
 (* Definition of field division and exponentiation.                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "field-mult-def";;
+export_theory "field-mult-def";;
 
 let field_div_def =
   let def = new_definition
@@ -426,7 +426,6 @@ export_thm field_exp_def;;
 let field_mult_add_def = new_definition
   `!z x l.
      field_mult_add z x l =
-     
      if n = 0 then field_one else
      if x = field_zero then field_zero else
      dest_field_star (field_star_scale (mk_field_star x) n)`;;
@@ -437,7 +436,7 @@ export_thm field_exp_def;;
 (* Properties of field division and exponentiation.                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "field-mult-thm";;
+export_theory "field-mult-thm";;
 
 let field_div_left_zero = prove
   (`!x.
@@ -861,5 +860,3 @@ let field_star_elgamal_correct = new_axiom
 let field_mult_comm' = new_axiom
    `!x y z. field_mult x (field_mult y z) = field_mult y (field_mult x z)`;;
 ***)
-
-logfile_end ();;

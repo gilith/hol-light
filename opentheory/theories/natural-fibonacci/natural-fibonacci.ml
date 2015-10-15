@@ -16,7 +16,7 @@ export_interpretation
 (* Existence of Fibonacci numbers.                                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-fibonacci-exists";;
+export_theory "natural-fibonacci-exists";;
 
 let fibonacci_induction = prove
   (`!p : num -> bool.
@@ -125,7 +125,7 @@ export_thm fibonacci_exists;;
 (* Definition of Fibonacci numbers.                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-fibonacci-def";;
+export_theory "natural-fibonacci-def";;
 
 let (fibonacci_zero,fibonacci_one,fibonacci_add2) =
   let def = new_specification ["fibonacci"] fibonacci_exists in
@@ -309,7 +309,7 @@ export_thm random_fib_list_def;;
 (* Properties of Fibonacci numbers.                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-fibonacci-thm";;
+export_theory "natural-fibonacci-thm";;
 
 export_thm fibonacci_induction;;  (* Re-export *)
 export_thm fibonacci_recursion;;  (* Re-export *)
@@ -1208,7 +1208,7 @@ export_thm zeckendorf_src;;
 (* Haskell source for Fibonacci numbers.                                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-fibonacci-haskell-src";;
+export_theory "natural-fibonacci-haskell-src";;
 
 export_thm fibonaccis_sunfold;;  (* Haskell *)
 export_thm decode_fib_dest_src;;  (* Haskell *)
@@ -1222,90 +1222,8 @@ export_thm zeckendorf_src;;  (* Haskell *)
 (* Haskell tests for Fibonacci numbers.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-fibonacci-haskell-test";;
+export_theory "natural-fibonacci-haskell-test";;
 
 export_thm fibonaccis_vorobev;;  (* Haskell *)
 export_thm encode_decode_fib;;  (* Haskell *)
 export_thm zeckendorf_encode_fib;;  (* Haskell *)
-
-logfile_end ();;
-
-(* ------------------------------------------------------------------------- *)
-(* Prototyping in Standard ML.                                               *)
-(* ------------------------------------------------------------------------- *)
-
-(*
-local
-  fun mkFib l n f p =
-      if p = 0 then l
-      else if f <= n then mkFib (true :: l) (n - f) p (f - p)
-      else mkFib (false :: l) n p (f - p);
-
-  fun findMax n f p =
-      let
-        val s = f + p
-      in
-        if n < s then mkFib [] n f p else findMax n s f
-      end;
-in
-  fun encode n = findMax n 1 0;
-end;
-
-encode 0;
-encode 1;
-encode 2;
-encode 10;
-encode 11;
-encode 12;
-encode 13;
-
-local
-  fun destFib f p l =
-      case l of
-        [] => 0
-      | h :: t =>
-        let
-          val s = f + p
-
-          val n = destFib s f t
-        in
-          if h then s + n else n
-        end;
-in
-  fun decode l = destFib 1 0 l;
-end;
-
-(decode o encode) 0;
-(decode o encode) 1;
-(decode o encode) 2;
-(decode o encode) 10;
-(decode o encode) 11;
-(decode o encode) 12;
-(decode o encode) 13;
-
-(* A decoding function that just uses subtraction *)
-
-local
-  fun destFib b n d f p l =
-      case l of
-        [] => if b then n - d else d - n
-      | h :: t =>
-        let
-          val s = p - f
-
-          val n = if h then n - s else n
-        in
-          destFib (not b) d n s f t
-        end;
-in
-  val decodeSub = destFib true 0 0 1 0;
-end;
-
-(decodeSub o encode) 0;
-(decodeSub o encode) 1;
-(decodeSub o encode) 2;
-(decodeSub o encode) 10;
-(decodeSub o encode) 11;
-(decodeSub o encode) 12;
-(decodeSub o encode) 13;
-*)

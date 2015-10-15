@@ -2,7 +2,7 @@
 (* OpenTheory logging.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "example-pos";;
+export_theory "example-pos";;
 
 (* Helper functions *)
 
@@ -899,9 +899,3 @@ let MULT_ASSOC = save_thm (prove
         X_GEN_TAC `z:P` THEN
         REWRITE_TAC [mult_def; N_INJECTIVE] THEN
         MESON_TAC [MULTP_ASSOC]]]]));;
-
-(* ------------------------------------------------------------------------- *)
-(* Close out the logfile.                                                    *)
-(* ------------------------------------------------------------------------- *)
-
-logfile_end ();;

@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "montgomery-hardware-def";;
+export_theory "montgomery-hardware-def";;
 
 (* -------------------------------------------------------------- *)
 (* Montgomery multiplication modulo 2^(r+2), where d = d1 + d2    *)
@@ -324,5 +324,3 @@ let montgomery_double_exp_def = new_definition
         bdelay pcr pc`;;
 
 export_thm montgomery_double_exp_def;;
-
-logfile_end ();;

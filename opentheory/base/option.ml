@@ -7,7 +7,7 @@
 (* Properties of option types.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "option-thm";;
+export_theory "option-thm";;
 
 let option_distinct = prove
  (`!(a : A). ~(SOME a = NONE)`,
@@ -33,7 +33,7 @@ let option_cases_tac = CASES_TAC option_cases;;
 (* Definition of option type destructors.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "option-dest-def";;
+export_theory "option-dest-def";;
 
 let (case_option_none,case_option_some) =
   let def = new_recursive_definition option_RECURSION
@@ -72,7 +72,7 @@ let is_none_def = CONJ is_none_none is_none_some;;
 (* Properties of option type destructors.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "option-dest-thm";;
+export_theory "option-dest-thm";;
 
 let case_option_id = prove
   (`!(x : A option). case_option NONE SOME x = x`,
@@ -87,7 +87,7 @@ export_thm case_option_id;;
 (* Definition of the option map function.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "option-map-def";;
+export_theory "option-map-def";;
 
 let (map_option_none,map_option_some) =
   let def = new_recursive_definition option_RECURSION
@@ -104,7 +104,7 @@ let map_option_def = CONJ map_option_none map_option_some;;
 (* Properties of the option map function.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "option-map-thm";;
+export_theory "option-map-thm";;
 
 let map_option_id = prove
   (`map_option I = (I : A option -> A option)`,
@@ -134,5 +134,3 @@ let map_option_o' = prove
    REWRITE_TAC [FUN_EQ_THM; map_option_o; o_THM]);;
 
 export_thm map_option_o';;
-
-logfile_end ();;

@@ -160,5 +160,3 @@ let lift_theorem =
     let ith = MATCH_MP pth cth in
     fun trths ->
       REWRITE_RULE (ith::trths);;
-
-logfile_end ();;

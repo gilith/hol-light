@@ -7,7 +7,7 @@
 (* Definition of ring characteristic.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "ring-char-def";;
+export_theory "ring-char-def";;
 
 let (num_to_ring_zero,num_to_ring_suc) =
     let def = new_recursive_definition num_RECURSION
@@ -46,7 +46,7 @@ export_thm ring_char_def;;
 (* Properties of ring characteristic.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "ring-char-thm";;
+export_theory "ring-char-thm";;
 
 let num_to_ring_char = prove
   (`num_to_ring ring_char = ring_zero`,
@@ -59,5 +59,3 @@ let num_to_ring_char = prove
     ACCEPT_TAC num_to_ring_zero]);;
 
 export_thm num_to_ring_char;;
-
-logfile_end ();;

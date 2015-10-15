@@ -13,7 +13,7 @@ export_interpretation "opentheory/theories/modular/modular.int";;
 (* Parametric theory witness for modular arithmetic.                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "modular-witness";;
+export_theory "modular-witness";;
 
 let modulus_nonzero =
   let def = new_definition `modulus = SUC 0` in
@@ -27,7 +27,7 @@ export_thm modulus_nonzero;;
 (* Definition of modular arithmetic.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "modular-def";;
+export_theory "modular-def";;
 
 let mod_refl_modulus = prove
   (`modulus MOD modulus = 0`,
@@ -460,7 +460,7 @@ let random_modular_def = new_axiom
 (* Properties of modular arithmetic.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "modular-thm";;
+export_theory "modular-thm";;
 
 let modular_to_num_inj = prove
   (`!x y. modular_to_num x = modular_to_num y ==> x = y`,
@@ -1141,5 +1141,3 @@ export_thm modular_lt_trans;;
 let modular_lt_trans = new_axiom
   `!x1 x2 x3. modular_lt x1 x2 /\ modular_lt x2 x3 ==> modular_lt x1 x3`;;
 *)
-
-logfile_end ();;

@@ -7,7 +7,7 @@
 (* Definition of hardware multiplier devices.                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "hardware-multiplier-def";;
+export_theory "hardware-multiplier-def";;
 
 (* --------------------------------------- *)
 (*        r+2 r+1  r  r-1  ...  2   1   0  *)
@@ -96,7 +96,7 @@ export_thm scmult_def;;
 (* Properties of hardware multiplier devices.                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "hardware-multiplier-thm";;
+export_theory "hardware-multiplier-thm";;
 
 let bmult_width = prove
  (`!ld xb ys yc zb zs zc.
@@ -728,5 +728,3 @@ let scmult_syn =
     setify
       (("mulsc",scmult_def) ::
        scshiftr_syn @ pipe_syn @ bmult_syn);;
-
-logfile_end ();;

@@ -114,5 +114,3 @@ let new_recursive_definition =
     let dths = map GEN_ALL dths in
     let th = end_itlist CONJ dths in
     the_recursive_definitions := th::(!the_recursive_definitions); th;;
-
-logfile_end ();;

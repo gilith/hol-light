@@ -7,7 +7,7 @@
 (* Definition of group subtraction.                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "group-sub-def";;
+export_theory "group-sub-def";;
 
 let group_sub_def = new_definition
   `!(x : group) (y : group). group_sub x y = group_add x (group_neg y)`;;
@@ -27,7 +27,7 @@ let group_sub_def = new_axiom
 (* Properties of group subtraction.                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "group-sub-thm";;
+export_theory "group-sub-thm";;
 
 let group_sub_left_zero = prove
   (`!x. group_sub group_zero x = group_neg x`,
@@ -99,5 +99,3 @@ let group_comm_right_sub = new_axiom
       group_add z y = group_add y z ==>
       group_add z (group_sub x y) = group_add (group_sub x y) z`;;
 *)
-
-logfile_end ();;

@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "monoid-comm-witness";;
+export_theory "monoid-comm-witness";;
 
 let (monoid_add_left_zero,
      _,
@@ -38,5 +38,3 @@ let (monoid_add_left_zero,
 export_thm monoid_add_left_zero;;
 export_thm monoid_add_assoc;;
 export_thm monoid_add_comm;;
-
-logfile_end ();;

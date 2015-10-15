@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "hardware-def";;
+export_theory "hardware-def";;
 
 (* ------------------------------------------------------------------------- *)
 (* Cycles are the primitive time steps.                                      *)
@@ -317,5 +317,3 @@ let genvar_bus =
         let b = mk_bus (n -/ num_1) in
         mk_bappend (mk_bwire w) b in
     mk_bus;;
-
-logfile_end ();;

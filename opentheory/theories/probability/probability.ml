@@ -13,7 +13,7 @@ export_interpretation "opentheory/theories/probability/probability.int";;
 (* Definition of probability.                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "probability-def";;
+export_theory "probability-def";;
 
 let (mk_dest_random,dest_mk_random) =
   CONJ_PAIR (define_newtype ("r","random") ("s",`:bool stream`));;
@@ -111,7 +111,7 @@ export_thm random_geometric_list_def;;
 (* Properties of probability.                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "probability-thm";;
+export_theory "probability-thm";;
 
 let random_bit_surj = prove
  (`!b. ?r. random_bit r = b`,
@@ -207,12 +207,10 @@ export_thm random_geometric_loop_src;;
 (* Haskell source for probability.                                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "probability-haskell-src";;
+export_theory "probability-haskell-src";;
 
 export_thm random_vector_src;;  (* Haskell *)
 export_thm random_bits_def;;  (* Haskell *)
 export_thm random_geometric_loop_src;;  (* Haskell *)
 export_thm random_geometric_def;;  (* Haskell *)
 export_thm random_geometric_list_def;;  (* Haskell *)
-
-logfile_end ();;

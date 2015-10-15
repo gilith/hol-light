@@ -731,5 +731,3 @@ let rec PROP_ATOM_CONV conv tm =
         -> BINOP_CONV (PROP_ATOM_CONV conv) tm
   | Comb(Const("~",_),_) -> RAND_CONV (PROP_ATOM_CONV conv) tm
   | _ -> TRY_CONV conv tm;;
-
-logfile_end ();;

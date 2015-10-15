@@ -13,7 +13,7 @@ export_interpretation "opentheory/theories/byte/byte.int";;
 (* Definition of bytes.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "byte-def";;
+export_theory "byte-def";;
 
 let byte_width_def = new_definition
   `byte_width = 8`;;
@@ -28,7 +28,7 @@ loads "opentheory/theories/byte/byte-word.ml";;
 (* Byte to bit-list conversions.                                             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "byte-bits";;
+export_theory "byte-bits";;
 
 let byte_list_cases = prove
   (`!b. ?x0 x1 x2 x3 x4 x5 x6 x7.
@@ -71,10 +71,8 @@ export_thm byte_list_cases;;
 (* Haskell source for bytes.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "byte-haskell-src";;
+export_theory "byte-haskell-src";;
 
 export_thm byte_width_def;;  (* Haskell *)
 export_thm byte_size_def;;  (* Haskell *)
 export_thm random_byte_def;;  (* Haskell *)
-
-logfile_end ();;

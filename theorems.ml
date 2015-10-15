@@ -14,7 +14,7 @@ needs "simp.ml";;
 (* More stuff about equality.                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-int";;
+export_theory "bool-int";;
 
 let EQ_REFL = prove
  (`!x:A. x = x`,
@@ -867,5 +867,3 @@ let DESTRUCT_TAC,FIX_TAC,INTRO_TAC,HYP_TAC =
   DESTRUCT_TAC,FIX_TAC,INTRO_TAC,HYP_TAC;;
 
 let CLAIM_TAC s tm = SUBGOAL_THEN tm (DESTRUCT_TAC s);;
-
-logfile_end ();;

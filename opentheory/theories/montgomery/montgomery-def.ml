@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "montgomery-def";;
+export_theory "montgomery-def";;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of Montgomery multiplication [1].                              *)
@@ -17,5 +17,3 @@ let montgomery_reduce_def = new_definition
      (a + ((a * k) MOD r) * n) DIV r`;;
 
 export_thm montgomery_reduce_def;;
-
-logfile_end ();;

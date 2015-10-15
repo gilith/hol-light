@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "hardware-thm";;
+export_theory "hardware-thm";;
 
 (* ------------------------------------------------------------------------- *)
 (* Cycles are the primitive time steps.                                      *)
@@ -890,5 +890,3 @@ let bpower_bits_to_num = prove
   REWRITE_TAC [bpower_bsignal; bits_to_num_replicate_true]);;
 
 export_thm bpower_bits_to_num;;
-
-logfile_end ();;

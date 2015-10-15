@@ -13,7 +13,7 @@ export_interpretation "opentheory/theories/parser/parser.int";;
 (* Definition of parse streams.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "parser-stream-def";;
+export_theory "parser-stream-def";;
 
 let (pstream_induct,pstream_recursion) =
   let (induct0,recursion0) = define_type
@@ -148,7 +148,7 @@ export_thm list_to_pstream_def;;
 (* Properties of parse streams.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "parser-stream-thm";;
+export_theory "parser-stream-thm";;
 
 export_thm case_pstream_def;;
 export_thm map_pstream_def;;
@@ -555,7 +555,7 @@ export_thm arbitrary_pstream;;
 (* Definition of stream parser combinators.                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "parser-comb-def";;
+export_theory "parser-comb-def";;
 
 (* A type of parsers *)
 
@@ -728,7 +728,7 @@ export_thm parser_pair_def;;
 (* Properties of stream parser combinators.                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "parser-comb-thm";;
+export_theory "parser-comb-thm";;
 
 let dest_is_parser = prove
  (`!p : (A,B) parser. is_parser (dest_parser p)`,
@@ -1398,7 +1398,7 @@ export_thm apply_parser_src;;
 (* Definition of the fold parsers.                                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "parser-fold-def";;
+export_theory "parser-fold-def";;
 
 let parse_fold_exists = prove
  (`!(f : A -> C -> (B + C) option). ?g. !s x xs.
@@ -1518,7 +1518,7 @@ export_thm parser_foldn_def;;
 (* Properties of the fold parsers.                                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "parser-fold-thm";;
+export_theory "parser-fold-thm";;
 
 let is_parser_fold = prove
  (`!(f : A -> C -> (B + C) option) s. is_parser (parse_fold f s)`,
@@ -1635,7 +1635,7 @@ export_thm parser_fold_src;;
 (* Definition of the whole stream parser.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "parser-all-def";;
+export_theory "parser-all-def";;
 
 let parse_exists = prove
  (`!(p : (A,B) parser). ?f.
@@ -1699,7 +1699,7 @@ let parse_def =
 (* Properties of the whole stream parser.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "parser-all-thm";;
+export_theory "parser-all-thm";;
 
 let parse_apply = prove
  (`!(p : (A,B) parser) xs.
@@ -1926,7 +1926,7 @@ export_thm parse_src;;
 (* Haskell source for stream parsers.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "parser-haskell-src";;
+export_theory "parser-haskell-src";;
 
 export_thm case_pstream_def;;  (* Haskell *)
 export_thm map_pstream_def;;  (* Haskell *)
@@ -1960,9 +1960,7 @@ export_thm parse_src;;  (* Haskell *)
 (* Haskell tests for stream parsers.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "parser-haskell-test";;
+export_theory "parser-haskell-test";;
 
 export_thm list_to_pstream_to_list;;  (* Haskell *)
 export_thm length_fst_pstream_to_list;;  (* Haskell *)
-
-logfile_end ();;

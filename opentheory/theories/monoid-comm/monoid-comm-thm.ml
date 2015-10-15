@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "monoid-comm-thm";;
+export_theory "monoid-comm-thm";;
 
 export_thm monoid_add_right_zero;;
 
@@ -21,5 +21,3 @@ export_thm monoid_add_comm';;
 let monoid_add_comm' = new_axiom
    `!x y z. monoid_add x (monoid_add y z) = monoid_add y (monoid_add x z)`;;
 *)
-
-logfile_end ();;

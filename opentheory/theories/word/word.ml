@@ -13,7 +13,7 @@ export_interpretation "opentheory/theories/word/word.int";;
 (* Parametric theory witness for words.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "word-witness";;
+export_theory "word-witness";;
 
 let () =
   let _ = new_definition `word_width = 0` in
@@ -23,7 +23,7 @@ let () =
 (* Definition of word operations.                                            *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "word-def";;
+export_theory "word-def";;
 
 let word_size_def = new_definition
   `word_size = 2 EXP word_width`;;
@@ -59,7 +59,7 @@ loads "opentheory/theories/word/word-modular.ml";;
 (* Definition of word to bit-list conversions.                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "word-bits-def";;
+export_theory "word-bits-def";;
 
 let word_shl_def = new_definition
   `!w n. word_shl w n = num_to_word (bit_shl (word_to_num w) n)`;;
@@ -235,7 +235,7 @@ let word_bits_lte_def = CONJ word_bits_lte_nil word_bits_lte_cons;;
 (* Properties of word to bit-list conversions.                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "word-bits-thm";;
+export_theory "word-bits-thm";;
 
 let length_word_to_list = prove
  (`!w. LENGTH (word_to_list w) = word_width`,
@@ -990,5 +990,3 @@ let prove_word_list_cases n =
       REWRITE_TAC [LENGTH_EQ_NIL] in
   prove (goal,tac);;
 *)
-
-logfile_end ();;

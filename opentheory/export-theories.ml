@@ -1,5 +1,5 @@
 (* ========================================================================= *)
-(* LOAD REGULAR AND OPENTHEORY THEORIES                                      *)
+(* EXPORT STANDARD THEORY LIBRARY AND ADDITIONAL THEORIES                    *)
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
@@ -10,7 +10,7 @@
 #use "hol.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Additional OpenTheory theories.                                           *)
+(* Additional theories.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/load.ml";;
@@ -51,7 +51,7 @@ map import_theory thys;;
 *)
 
 (* ------------------------------------------------------------------------- *)
-(* Stop proof logging (and emit theories).                                   *)
+(* Stop exporting (and generate theory files).                               *)
 (* ------------------------------------------------------------------------- *)
 
-stop_logging ();;
+export_end ();;

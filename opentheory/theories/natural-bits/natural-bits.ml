@@ -31,7 +31,7 @@ let le_exp_two = prove
 (* Definition of natural number to bit-list conversions.                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-bits-def";;
+export_theory "natural-bits-def";;
 
 let bit_width_def = new_definition
   `!n. bit_width n = if n = 0 then 0 else log 2 n + 1`;;
@@ -196,7 +196,7 @@ export_thm random_uniform_def;;
 (* Properties of natural number to bit-list conversions.                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-bits-thm";;
+export_theory "natural-bits-thm";;
 
 let bit_width_zero = prove
  (`bit_width 0 = 0`,
@@ -2438,7 +2438,7 @@ export_thm random_uniform_src;;
 (* Haskell source for natural number to bit-list conversions.                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-bits-haskell-src";;
+export_theory "natural-bits-haskell-src";;
 
 export_thm bit_hd_def;;  (* Haskell *)
 export_thm bit_tl_src;;  (* Haskell *)
@@ -2597,5 +2597,3 @@ let bit_nth_numeral_conv =
   REWR_CONV bit_nth_bits_to_num THENC
   init_conv THENC
   reduce_conv;;
-
-logfile_end ();;

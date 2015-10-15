@@ -13,7 +13,7 @@ needs "ind_defs.ml";;
 (* Eta-axiom, corresponding conversion, and extensionality.                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "axiom-extensionality";;
+export_theory "axiom-extensionality";;
 
 let ETA_AX =
   let axiom =
@@ -57,7 +57,7 @@ let ETA_CONV =
         else fail()
     with Failure _ -> failwith "ETA_CONV";;
 
-logfile "bool-ext";;
+export_theory "bool-ext";;
 
 let EQ_EXT = prove
  (`!(f:A->B) g. (!x. f x = g x) ==> f = g`,
@@ -83,7 +83,7 @@ let FUN_EQ_THM = prove
 (* Indefinite descriptor (giving AC).                                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "axiom-choice";;
+export_theory "axiom-choice";;
 
 new_constant("@",`:(A->bool)->A`);;
 
@@ -159,7 +159,7 @@ export_thm SELECT_AX;;
 (* Useful for compatibility. (The old EXISTS_DEF.)                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-class";;
+export_theory "bool-class";;
 
 let EXISTS_THM = prove
  (`(?) = \p:A->bool. p ((@) p)`,
@@ -205,7 +205,7 @@ let SELECT_CONV =
 (* Some basic theorems.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-class";;
+export_theory "bool-class";;
 
 let SELECT_REFL = prove
  (`!x:A. (@y. y = x) = x`,
@@ -249,7 +249,7 @@ let new_type_definition tyname (absname,repname) th =
 (* the original Diaconescu proof as presented in Beeson's book.              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-class";;
+export_theory "bool-class";;
 
 let EXCLUDED_MIDDLE = prove
  (`!t. t \/ ~t`,
@@ -378,7 +378,7 @@ let REFUTE_THEN =
 (* Infinite de Morgan laws.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-class";;
+export_theory "bool-class";;
 
 let NOT_EXISTS_THM = prove
  (`!p. ~(?x:A. p x) <=> (!x. ~(p x))`,
@@ -490,7 +490,7 @@ export_thm RIGHT_EXISTS_IMP_THM;;
 (* The conditional.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-def";;
+export_theory "bool-def";;
 
 let COND_DEF = new_definition
   `COND = \t t1 t2. @x:A. ((t <=> T) ==> (x = t1)) /\
@@ -498,7 +498,7 @@ let COND_DEF = new_definition
 
 export_thm COND_DEF;;
 
-logfile "bool-class";;
+export_theory "bool-class";;
 
 let COND_TRUE = prove
  (`!(t1:A) t2. (if T then t1 else t2) = t1`,
@@ -538,7 +538,7 @@ let dest_cond tm =
 
 extend_basic_rewrites [COND_CLAUSES];;
 
-logfile "bool-class";;
+export_theory "bool-class";;
 
 let COND_EXPAND = prove
  (`!b t1 t2. (if b then t1 else t2) <=> (~b \/ t1) /\ (b \/ t2)`,
@@ -636,7 +636,7 @@ let (COND_CASES_TAC :tactic) =
 (* Skolemization.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-class";;
+export_theory "bool-class";;
 
 let SKOLEM_THM = prove
  (`!r. (!x:A. ?y:B. r x y) <=> (?f. !x. r x (f x))`,
@@ -707,7 +707,7 @@ let COND_EQ_CLAUSE = prove
 (* We can now treat "bool" as an enumerated type for some purposes.          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-class";;
+export_theory "bool-class";;
 
 let bool_INDUCT = prove
  (`!p. p F /\ p T ==> !x. p x`,
@@ -725,5 +725,3 @@ export_thm bool_RECURSION;;
 
 let inductive_type_store = ref
  ["bool",(2,bool_INDUCT,bool_RECURSION)];;
-
-logfile_end ();;

@@ -67,7 +67,7 @@ let _FUNCTION = new_definition
 (* Pair type.                                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "pair-def";;
+export_theory "pair-def";;
 
 let mk_pair_def = new_definition
   `!(x:A) (y:B). mk_pair x y = \a b. (a = x) /\ (b = y)`;;
@@ -137,7 +137,7 @@ let SND = prove
 
 export_thm SND;;
 
-logfile "pair-thm";;
+export_theory "pair-thm";;
 
 let PAIR = prove
  (`!(x : A # B). (FST x, SND x) = x`,
@@ -336,7 +336,7 @@ inductive_type_store :=
 (* Convenient rules to eliminate binders over pairs.                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "pair-thm";;
+export_theory "pair-thm";;
 
 let FORALL_PAIR_THM = prove
  (`!p. (!x. p x) <=> (!a b. p ((a : A), (b : B)))`,
@@ -599,5 +599,3 @@ let () =
     let conv = native_genabs_conv in
     let native_conv = Import.the_go_native_conv in
     native_conv := !native_conv THENC conv;;
-
-logfile_end ();;

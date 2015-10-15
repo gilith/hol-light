@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "ring-witness";;
+export_theory "ring-witness";;
 
 let (ring_add_left_zero,
      ring_add_left_neg,
@@ -87,5 +87,3 @@ export_thm ring_add_right_distrib;;
 export_thm ring_one_nonzero;;
 export_thm ring_mult_comm;;
 export_thm ring_finite;;
-
-logfile_end ();;

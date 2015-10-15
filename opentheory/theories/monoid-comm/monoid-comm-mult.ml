@@ -7,7 +7,7 @@
 (* Definition of commutative monoid multiplication.                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "monoid-comm-mult-def";;
+export_theory "monoid-comm-mult-def";;
 
 export_thm monoid_mult_right_zero;;
 export_thm monoid_mult_right_suc;;
@@ -16,7 +16,7 @@ export_thm monoid_mult_right_suc;;
 (* Properties of commutative monoid multiplication.                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "monoid-comm-mult-thm";;
+export_theory "monoid-comm-mult-thm";;
 
 export_thm monoid_mult_left_zero;;
 export_thm monoid_mult_right_one;;
@@ -29,7 +29,7 @@ export_thm monoid_mult_right_mult;;
 (* Commutative monoid multiplication by repeated addition.                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "monoid-comm-mult-add";;
+export_theory "monoid-comm-mult-add";;
 
 (* Definition *)
 
@@ -40,5 +40,3 @@ export_thm monoid_mult_add_cons;;
 
 export_thm monoid_mult_add_invariant;;
 export_thm monoid_mult_add_correct;;
-
-logfile_end ();;

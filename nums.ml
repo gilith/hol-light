@@ -19,7 +19,7 @@ new_type ("ind",0);;
 (* We assert the axiom of infinity as in HOL88, but then we can forget it!   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "function-def";;
+export_theory "function-def";;
 
 let ONE_ONE = new_definition
   `!(f:A->B). ONE_ONE f = !x1 x2. (f x1 = f x2) ==> (x1 = x2)`;;
@@ -31,7 +31,7 @@ let ONTO = new_definition
 
 export_thm ONTO;;
 
-logfile "axiom-infinity";;
+export_theory "axiom-infinity";;
 
 let INFINITY_AX =
   let axiom =
@@ -152,7 +152,7 @@ export_thm INFINITY_AX;;
 (* Actually introduce constants.                                             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-def";;
+export_theory "natural-def";;
 
 let IND_SUC_0_EXISTS = prove
  (`?(f:ind->ind) z. (!x1 x2. (f x1 = f x2) = (x1 = x2)) /\ (!x. ~(f x = z))`,
@@ -241,7 +241,7 @@ export_thm num_INDUCTION;;
 (* Recursion.                                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-thm";;
+export_theory "natural-thm";;
 
 let num_Axiom = prove
  (`!(e:A) f. ?!fn. (fn _0 = e) /\
@@ -330,7 +330,7 @@ inductive_type_store :=
 (* "Bitwise" binary representation of numerals.                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-numeral-def";;
+export_theory "natural-numeral-def";;
 
 let (BIT0_ZERO,BIT0_SUC) =
   let def = new_definition
@@ -469,5 +469,3 @@ let () =
         if mem tm special then REFL tm else native_numeral_conv tm in
     let native_conv = Import.the_go_native_conv in
     native_conv := !native_conv THENC conv;;
-
-logfile_end ();;

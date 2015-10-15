@@ -13,7 +13,7 @@ export_interpretation "opentheory/theories/gfp/gfp.int";;
 (* Parametric theory witness for GF(p) finite fields.                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "gfp-witness";;
+export_theory "gfp-witness";;
 
 let (oddprime_odd,oddprime_prime) =
   let def = new_definition `oddprime = 3` in
@@ -33,7 +33,7 @@ export_thm oddprime_prime;;
 (* Definition of GF(p) finite fields.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "gfp-def";;
+export_theory "gfp-def";;
 
 let oddprime_nonzero = prove
   (`~(oddprime = 0)`,
@@ -56,7 +56,7 @@ loads "opentheory/theories/gfp/gfp-modular.ml";;
 (* Properties of GF(p) finite fields.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "gfp-thm";;
+export_theory "gfp-thm";;
 
 let oddprime_not_one = prove
   (`~(oddprime = 1)`,
@@ -254,7 +254,7 @@ let gfp_exp_eq_zero = new_axiom
 (* Definition of GF(p) field division.                                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "gfp-div-def";;
+export_theory "gfp-div-def";;
 
 let gfp_inv_exists = prove
   (`!x : gfp. ~(x = num_to_gfp 0) ==> ?y. gfp_mult y x = num_to_gfp 1`,
@@ -332,7 +332,7 @@ let gfp_mult_left_div = new_axiom
 (* Properties of GF(p) field division.                                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "gfp-div-thm";;
+export_theory "gfp-div-thm";;
 
 let gfp_mult_right_inv = prove
   (`!x. ~(x = num_to_gfp 0) ==> gfp_mult x (gfp_inv x) = num_to_gfp 1`,
@@ -785,7 +785,7 @@ let gfp_exp_inv = new_axiom
 (* This is Algorithm 2.22 in Guide to Elliptic Curve Cryptography.           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "gfp-div-gcd-def";;
+export_theory "gfp-div-gcd-def";;
 
 let gfp_div_gcd_def =
   let th = prove
@@ -865,7 +865,7 @@ let gfp_div_gcd_def = new_axiom
 (* Correctness of a GF(p) division algorithm based on gcd.                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "gfp-div-gcd-thm";;
+export_theory "gfp-div-gcd-thm";;
 
 let gfp_div_gcd_induction = prove
   (`!p : num -> num -> bool.
@@ -1237,7 +1237,7 @@ let gfp_div_gcd = new_axiom
 (* Definition of a GF(p) exponentiation algorithm based on division.         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "gfp-div-exp-def";;
+export_theory "gfp-div-exp-def";;
 
 let (gfp_exp_div_nil,gfp_exp_div_cons) =
   let def = new_recursive_definition list_RECURSION
@@ -1280,7 +1280,7 @@ let gfp_exp_div_def = CONJ gfp_exp_div_nil gfp_exp_div_cons;;
 (* Correctness of a GF(p) exponentiation algorithm based on division.        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "gfp-div-exp-thm";;
+export_theory "gfp-div-exp-thm";;
 
 let gfp_exp_div_invariant = prove
   (`!x n d f p l.
@@ -1481,5 +1481,3 @@ let gfp_exp_div = new_axiom
        else gfp_exp_div T (num_to_gfp 1) (num_to_gfp 1) x (num_to_gfp 1)
               (encode_fib n))`;;
 *)
-
-logfile_end ();;

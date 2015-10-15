@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "montgomery-thm";;
+export_theory "montgomery-thm";;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of Montgomery multiplication.                                  *)
@@ -303,5 +303,3 @@ let montgomery_reduce_small_bound = prove
   ASM_REWRITE_TAC [MULT_1]);;
 
 export_thm montgomery_reduce_small_bound;;
-
-logfile_end ();;

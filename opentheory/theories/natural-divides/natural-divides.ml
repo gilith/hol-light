@@ -14,7 +14,7 @@ export_interpretation
 (* Definition of the divides relation on natural numbers.                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-divides-def";;
+export_theory "natural-divides-def";;
 
 let divides_def = new_definition
   `!(a:num) b. divides a b <=> ?c. c * a = b`;;
@@ -25,7 +25,7 @@ export_thm divides_def;;
 (* Properties of the divides relation on natural numbers.                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-divides-thm";;
+export_theory "natural-divides-thm";;
 
 let symmetry_reduction = prove
  (`!p : num -> num -> bool.
@@ -475,7 +475,7 @@ export_thm gcd_exists;;
 (* Definition of natural number greatest common divisor.                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-divides-gcd-def";;
+export_theory "natural-divides-gcd-def";;
 
 let (gcd_divides1,gcd_divides2,gcd_greatest_imp) =
   let def = new_specification ["gcd"]
@@ -561,7 +561,7 @@ export_thm chinese_def;;
 (* Properties of natural number greatest common divisor.                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-divides-gcd-thm";;
+export_theory "natural-divides-gcd-thm";;
 
 let gcd_greatest = prove
  (`!a b c. divides c (gcd a b) <=> divides c a /\ divides c b`,
@@ -2225,7 +2225,7 @@ export_thm chinese_bound_test;;
 (* Definition of natural number least common multiple.                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-divides-lcm-def";;
+export_theory "natural-divides-lcm-def";;
 
 let (zero_lcm,lcm_gcd) =
   let def = new_definition
@@ -2260,7 +2260,7 @@ export_thm lcm_gcd;;
 (* Properties of natural number least common multiple.                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-divides-lcm-thm";;
+export_theory "natural-divides-lcm-thm";;
 
 let lcm_comm = prove
  (`!a b. lcm a b = lcm b a`,
@@ -2619,7 +2619,7 @@ export_thm gcd_right_distrib;;
 (* Haskell source for the divides relation on natural numbers.               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-divides-haskell-src";;
+export_theory "natural-divides-haskell-src";;
 
 export_thm divides_mod_cond;;  (* Haskell *)
 export_thm egcd_def;;  (* Haskell *)
@@ -2629,7 +2629,7 @@ export_thm chinese_src;;  (* Haskell *)
 (* Haskell tests for the divides relation on natural numbers.                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-divides-haskell-test";;
+export_theory "natural-divides-haskell-test";;
 
 export_thm divides_refl;;  (* Haskell *)
 export_thm divides_zero;;  (* Haskell *)
@@ -2678,5 +2678,3 @@ let prove_egcd a b =
         mk_eq (mk_mult (mk_numeral s) a,
                mk_add (mk_mult (mk_numeral t) b) (mk_numeral g)) in
     EQT_ELIM (NUM_REDUCE_CONV tm);;
-
-logfile_end ();;

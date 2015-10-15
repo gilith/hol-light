@@ -7,7 +7,7 @@
 (* Definition of group cryptography.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "group-crypt-def";;
+export_theory "group-crypt-def";;
 
 let group_elgamal_encrypt_def = new_definition
   `!g h m k.
@@ -53,7 +53,7 @@ let group_elgamal_decrypt_def = new_axiom
 (* Properties of group cryptography.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "group-crypt-thm";;
+export_theory "group-crypt-thm";;
 
 let group_elgamal_correct = prove
   (`!g h m k x.
@@ -75,5 +75,3 @@ let group_elgamal_correct = new_axiom
       (h = group_mult g x) ==>
       (group_elgamal_decrypt x (group_elgamal_encrypt g h m k) = m)`;;
 *)
-
-logfile_end ();;

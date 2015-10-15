@@ -44,5 +44,3 @@ loads "opentheory/theories/montgomery/montgomery-hardware-synthesis.ml";;
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/montgomery/timelock.ml";;
-
-logfile_end ();;

@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "group-thm";;
+export_theory "group-thm";;
 
 let group_add_left_neg' = prove
   (`!x y. group_add (group_neg x) (group_add x y) = y`,
@@ -432,5 +432,3 @@ let group_comm_right_neg = new_axiom
       group_add y (group_neg x) = group_add (group_neg x) y <=>
       group_add y x = group_add x y`;;
 *)
-
-logfile_end ();;

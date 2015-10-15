@@ -7,7 +7,7 @@
 (* Definition of hardware adder devices.                                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "hardware-adder-def";;
+export_theory "hardware-adder-def";;
 
 (* ~~~~~~~~~~~~~~~~~~ *)
 (* Wire adder devices *)
@@ -131,7 +131,7 @@ export_thm scshiftr_def;;
 (* Properties of hardware adder devices.                                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "hardware-adder-thm";;
+export_theory "hardware-adder-thm";;
 
 (* ~~~~~~~~~~~~~~~~~~ *)
 (* Wire adder devices *)
@@ -1447,5 +1447,3 @@ let badder3_syn =
 
 let scshiftr_syn =
     setify (("shrsc",scshiftr_def) :: badder2_syn);;
-
-logfile_end ();;

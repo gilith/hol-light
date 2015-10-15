@@ -7,7 +7,7 @@
 (* Definition of hardware wire devices.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "hardware-wire-def";;
+export_theory "hardware-wire-def";;
 
 (* ~~~~~~~~~~~~~~~~~~~~~~ *)
 (* Primitive wire devices *)
@@ -125,7 +125,7 @@ export_thm sticky_def;;
 (* Properties of hardware wire devices.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "hardware-wire-thm";;
+export_theory "hardware-wire-thm";;
 
 (* ~~~~~~~~~~~~~~~~~~~~~~ *)
 (* Primitive wire devices *)
@@ -1086,5 +1086,3 @@ let xor3_syn = [("xor3",xor3_def)];;
 let majority3_syn = setify (("maj3",majority3_def) :: or3_syn);;
 
 let sticky_syn = [("sticky",sticky_def)];;
-
-logfile_end ();;

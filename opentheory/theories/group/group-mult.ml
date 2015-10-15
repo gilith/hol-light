@@ -14,7 +14,7 @@ loads "opentheory/theories/group/group-mult-monoid.ml";;
 (* Properties of group multiplication.                                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "group-mult-thm";;
+export_theory "group-mult-thm";;
 
 let group_neg_mult = prove
   (`!x n. group_neg (group_mult x n) = group_mult (group_neg x) n`,
@@ -34,7 +34,7 @@ let group_neg_mult = new_axiom
 (* Definition of group multiplication by repeated subtraction.               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "group-mult-sub-def";;
+export_theory "group-mult-sub-def";;
 
 let (group_mult_sub_nil,group_mult_sub_cons) =
   let def = new_recursive_definition list_RECURSION
@@ -77,7 +77,7 @@ let group_mult_sub_def = CONJ group_mult_sub_nil group_mult_sub_cons;;
 (* Correctness of group multiplication by repeated subtraction.              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "group-mult-sub-thm";;
+export_theory "group-mult-sub-thm";;
 
 let group_mult_sub_invariant = prove
   (`!x n d f p l.
@@ -219,5 +219,3 @@ let group_mult_sub_correct = new_axiom
       group_mult x n =
       group_mult_sub T group_zero group_zero x group_zero (encode_fib n)`;;
 *)
-
-logfile_end ();;

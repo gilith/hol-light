@@ -765,7 +765,7 @@ let parse_inductive_type_specification =
 (* Use this temporary version to define the sum type.                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "sum-def";;
+export_theory "sum-def";;
 
 let (sum_INDUCT,sum_RECURSION) =
   let (induct,recursion) =
@@ -931,7 +931,7 @@ let define_type_raw =
 (* Set up options and lists.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "option-def";;
+export_theory "option-def";;
 
 let option_INDUCT,option_RECURSION =
   let (induct,recursion) =
@@ -948,7 +948,7 @@ let option_INDUCT,option_RECURSION =
 export_thm option_INDUCT;;
 export_thm option_RECURSION;;
 
-logfile "list-def";;
+export_theory "list-def";;
 
 let list_INDUCT,list_RECURSION =
   let (induct,recursion) =
@@ -1655,5 +1655,3 @@ let FORALL_UNWIND_CONV =
         CONV_RULE (RAND_CONV FORALL_UNWIND_CONV) (TRANS th3 th4)
     with Failure _ -> REFL tm in
   FORALL_UNWIND_CONV;;
-
-logfile_end ();;

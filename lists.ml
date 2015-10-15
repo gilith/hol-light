@@ -14,7 +14,7 @@ needs "ind_types.ml";;
 (* Various trivial theorems.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-thm";;
+export_theory "list-thm";;
 
 let NOT_CONS_NIL = prove
  (`!(h:A) t. ~(CONS h t = [])`,
@@ -48,7 +48,7 @@ let LIST_CASES_TAC = CASES_TAC list_cases;;
 (* Destructors.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-dest-def";;
+export_theory "list-dest-def";;
 
 let HD = new_recursive_definition list_RECURSION
   `!(h : A) t. HD (CONS h t) = h`;;
@@ -82,7 +82,7 @@ export_thm case_list_cons;;
 
 let case_list_def = CONJ case_list_nil case_list_cons;;
 
-logfile "list-dest-thm";;
+export_theory "list-dest-thm";;
 
 let NULL_EQ_NIL = prove
  (`!l. NULL (l : A list) <=> l = []`,
@@ -109,7 +109,7 @@ export_thm CONS_HD_TL;;
 (* Length.                                                                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-length-def";;
+export_theory "list-length-def";;
 
 let (LENGTH_NIL,LENGTH_CONS) =
   let def = new_recursive_definition list_RECURSION
@@ -122,7 +122,7 @@ export_thm LENGTH_CONS;;
 
 let LENGTH = CONJ LENGTH_NIL LENGTH_CONS;;
 
-logfile "list-length-thm";;
+export_theory "list-length-thm";;
 
 let NULL_LENGTH = prove
  (`!(l : A list). (LENGTH l = 0) <=> NULL l`,
@@ -169,7 +169,7 @@ export_thm LENGTH_TL;;
 (* Mapping between finite sets and lists.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-set-def";;
+export_theory "list-set-def";;
 
 let (set_of_list_nil,set_of_list_cons) =
   let def = new_recursive_definition list_RECURSION
@@ -237,7 +237,7 @@ export_thm MEM_CONS;;
 
 let MEM = CONJ MEM_NIL MEM_CONS;;
 
-logfile "list-set-thm";;
+export_theory "list-set-thm";;
 
 let SET_OF_LIST_OF_SET = prove
  (`!(s : A set). FINITE s ==> (set_of_list (list_of_set s) = s)`,
@@ -489,7 +489,7 @@ monotonicity_theorems := [MONO_ALL] @ !monotonicity_theorems;;
 (* Appending lists.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-append-def";;
+export_theory "list-append-def";;
 
 let (NIL_APPEND,CONS_APPEND) =
   let def = new_recursive_definition list_RECURSION
@@ -513,7 +513,7 @@ export_thm concat_cons;;
 
 let concat_def = CONJ concat_nil concat_cons;;
 
-logfile "list-append-thm";;
+export_theory "list-append-thm";;
 
 let APPEND_NIL = prove
  (`!(l : A list). APPEND l [] = l`,
@@ -729,7 +729,7 @@ export_thm null_concat;;
 (* List map.                                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-map-def";;
+export_theory "list-map-def";;
 
 let (MAP_NIL,MAP_CONS) =
   let def = new_recursive_definition list_RECURSION
@@ -742,7 +742,7 @@ export_thm MAP_CONS;;
 
 let MAP = CONJ MAP_NIL MAP_CONS;;
 
-logfile "list-map-thm";;
+export_theory "list-map-thm";;
 
 let LENGTH_MAP = prove
  (`!(f : A -> B) l. LENGTH (MAP f l) = LENGTH l`,
@@ -902,7 +902,7 @@ export_thm MEM_MAP;;
 (* Filter.                                                                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-filter-def";;
+export_theory "list-filter-def";;
 
 let (FILTER_NIL,FILTER_CONS) =
   let def = new_recursive_definition list_RECURSION
@@ -917,7 +917,7 @@ export_thm FILTER_CONS;;
 
 let FILTER = CONJ FILTER_NIL FILTER_CONS;;
 
-logfile "list-filter-thm";;
+export_theory "list-filter-thm";;
 
 let FILTER_APPEND = prove
  (`!(p : A -> bool) l1 l2.
@@ -1004,7 +1004,7 @@ export_thm MEM_FILTER;;
 (* Reverse.                                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-reverse-def";;
+export_theory "list-reverse-def";;
 
 let (REVERSE_NIL,REVERSE_CONS) =
   let def = new_recursive_definition list_RECURSION
@@ -1017,7 +1017,7 @@ export_thm REVERSE_CONS;;
 
 let REVERSE = CONJ REVERSE_NIL REVERSE_CONS;;
 
-logfile "list-reverse-thm";;
+export_theory "list-reverse-thm";;
 
 let REVERSE_APPEND = prove
  (`!(l1 : A list) l2.
@@ -1068,7 +1068,7 @@ export_thm MAP_REVERSE;;
 (* fold.                                                                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-fold-def";;
+export_theory "list-fold-def";;
 
 let (foldr_nil,foldr_cons) =
   let def = new_recursive_definition list_RECURSION
@@ -1087,7 +1087,7 @@ let foldl_def = new_definition
 
 export_thm foldl_def;;
 
-logfile "list-fold-thm";;
+export_theory "list-fold-thm";;
 
 let foldr_suc = prove
   (`!(l : A list) k. foldr (\x n. SUC n) k l = LENGTH l + k`,
@@ -1204,14 +1204,14 @@ export_thm foldl_append_assoc;;
 (* The last element of the list.                                             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-last-def";;
+export_theory "list-last-def";;
 
 let LAST = new_recursive_definition list_RECURSION
   `!(h:A) t. LAST (CONS h t) = if NULL t then h else LAST t`;;
 
 export_thm LAST;;
 
-logfile "list-last-thm";;
+export_theory "list-last-thm";;
 
 let LAST_SING = prove
  (`!(x : A). LAST [x] = x`,
@@ -1231,7 +1231,7 @@ let LAST_CLAUSES = CONJ LAST_SING LAST_MULTIPLE;;
 (* Element indices.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-nth-def";;
+export_theory "list-nth-def";;
 
 let (nth_zero,nth_suc) =
   let def = new_recursive_definition num_RECURSION
@@ -1250,7 +1250,7 @@ export_thm nth_suc;;
 
 let nth_def = CONJ nth_zero nth_suc;;
 
-logfile "list-nth-thm";;
+export_theory "list-nth-thm";;
 
 let nth_append = prove
  (`!(l1 : A list) l2 k.
@@ -1445,7 +1445,7 @@ export_thm mem_nth;;
 (* Replicate.                                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-replicate-def";;
+export_theory "list-replicate-def";;
 
 let (REPLICATE_0,REPLICATE_SUC) =
   let def = new_recursive_definition num_RECURSION
@@ -1458,7 +1458,7 @@ export_thm REPLICATE_SUC;;
 
 let REPLICATE = CONJ REPLICATE_0 REPLICATE_SUC;;
 
-logfile "list-replicate-thm";;
+export_theory "list-replicate-thm";;
 
 let LENGTH_REPLICATE = prove
  (`!(x : A) n. LENGTH (REPLICATE x n) = n`,
@@ -1579,7 +1579,7 @@ export_thm MEM_REPLICATE;;
 (* Take and drop.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-take-drop-def";;
+export_theory "list-take-drop-def";;
 
 let (take_zero,take_suc) =
   let def = new_recursive_definition num_RECURSION
@@ -1619,7 +1619,7 @@ export_thm drop_suc;;
 
 let drop_def = CONJ drop_zero drop_suc;;
 
-logfile "list-take-drop-thm";;
+export_theory "list-take-drop-thm";;
 
 let take_one = prove
   (`!(h : A) t. take 1 (CONS h t) = [h]`,
@@ -1894,7 +1894,7 @@ export_thm take_append;;
 (* Interval.                                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-interval-def";;
+export_theory "list-interval-def";;
 
 let (interval_zero,interval_suc) =
   let def = new_recursive_definition num_RECURSION
@@ -1907,7 +1907,7 @@ export_thm interval_suc;;
 
 let interval_def = CONJ interval_zero interval_suc;;
 
-logfile "list-interval-thm";;
+export_theory "list-interval-thm";;
 
 let length_interval = prove
   (`!m n. LENGTH (interval m n) = n`,
@@ -1955,7 +1955,7 @@ export_thm nth_interval;;
 (* Zip.                                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-zip-def";;
+export_theory "list-zip-def";;
 
 let (zipwith_nil,zipwith_cons) =
   let def = new_recursive_definition list_RECURSION
@@ -1989,7 +1989,7 @@ let unzip_def = new_definition
 
 export_thm unzip_def;;
 
-logfile "list-zip-thm";;
+export_theory "list-zip-thm";;
 
 let zip_nil = prove
  (`zip [] [] = ([] : (A # B) list)`,
@@ -2327,7 +2327,7 @@ export_thm zip_unzip;;
 (* Nub.                                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "list-nub-def";;
+export_theory "list-nub-def";;
 
 let (setify_nil,setify_cons) =
   let def = new_recursive_definition list_RECURSION
@@ -2347,7 +2347,7 @@ let nub_def = new_definition
 
 export_thm nub_def;;
 
-logfile "list-nub-thm";;
+export_theory "list-nub-thm";;
 
 let length_setify = prove
   (`!(l : A list). LENGTH (setify l) <= LENGTH l`,
@@ -2448,5 +2448,3 @@ let rec LIST_CONV conv tm =
     COMB2_CONV (RAND_CONV conv) (LIST_CONV conv) tm
   else if fst(dest_const tm) = "NIL" then REFL tm
   else failwith "LIST_CONV";;
-
-logfile_end ();;

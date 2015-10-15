@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "monoid-thm";;
+export_theory "monoid-thm";;
 
 let monoid_comm_left_zero = prove
   (`!x. monoid_add monoid_zero x = monoid_add x monoid_zero`,
@@ -66,5 +66,3 @@ let monoid_comm_right_add = new_axiom
       monoid_add z y = monoid_add y z ==>
       monoid_add z (monoid_add x y) = monoid_add (monoid_add x y) z`;;
 *)
-
-logfile_end ();;

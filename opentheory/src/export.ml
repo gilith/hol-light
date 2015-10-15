@@ -614,7 +614,7 @@ let set_the_current_theory thy = the_current_theory := Some thy;;
 let get_the_current_theory () =
     match !the_current_theory with
       Some thy -> thy
-    | None -> failwith "no current theory (use logfile to set)";;
+    | None -> failwith "no current theory (use export_theory to set)";;
 
 (* ------------------------------------------------------------------------- *)
 (* Setting up the log files: part 2                                          *)
@@ -789,13 +789,12 @@ let export_goal file (hs,c) =
 
 end
 
-let export_interpretation = Export.export_interpretation
+let export_begin = Export.start_logging
+and export_end = Export.stop_logging
+and export_interpretation = Export.export_interpretation
 and export_goal = Export.export_goal
 and export_proof = Export.export_proof
+and export_theory = Export.logfile
 and export_thm = Export.export_thm
 and list_the_exported_thms = Export.list_the_exported_thms
-and logfile = Export.logfile
-and logfile_end = Export.logfile_end
-and peek_the_exported_thms = Export.peek_the_exported_thms
-and start_logging = Export.start_logging
-and stop_logging = Export.stop_logging;;
+and peek_the_exported_thms = Export.peek_the_exported_thms;;

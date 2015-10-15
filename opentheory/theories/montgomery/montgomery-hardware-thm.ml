@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "montgomery-hardware-thm";;
+export_theory "montgomery-hardware-thm";;
 
 (* ------------------------------------------------------------------------- *)
 (* Correctness of the Montgomery multiplication circuit.                     *)
@@ -4966,5 +4966,3 @@ let montgomery_double_exp_bits_to_num = prove
   ASM_REWRITE_TAC [ONCE_REWRITE_RULE [ADD_SYM] ADD1]);;
 
 export_thm montgomery_double_exp_bits_to_num;;
-
-logfile_end ();;

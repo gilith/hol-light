@@ -7,7 +7,7 @@
 (* Definition of monoid multiplication.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "monoid-mult-def";;
+export_theory "monoid-mult-def";;
 
 let (monoid_mult_right_zero,monoid_mult_right_suc) =
     let def = new_recursive_definition num_RECURSION
@@ -39,7 +39,7 @@ let monoid_mult_def = CONJ monoid_mult_right_zero monoid_mult_right_suc;;
 (* Properties of monoid multiplication.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "monoid-mult-thm";;
+export_theory "monoid-mult-thm";;
 
 let monoid_mult_left_zero = prove
   (`!n. monoid_mult monoid_zero n = monoid_zero`,
@@ -161,7 +161,7 @@ let monoid_comm_right_mult = new_axiom
 (* Definition of monoid multiplication by repeated addition.                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "monoid-mult-add-def";;
+export_theory "monoid-mult-add-def";;
 
 let (monoid_mult_add_nil,monoid_mult_add_cons) =
   let def = new_recursive_definition list_RECURSION
@@ -198,7 +198,7 @@ let monoid_mult_add_def = CONJ monoid_mult_add_nil monoid_mult_add_cons;;
 (* Correctness of monoid multiplication by repeated addition.                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "monoid-mult-add-thm";;
+export_theory "monoid-mult-add-thm";;
 
 let monoid_mult_add_invariant = prove
   (`!z x l.
@@ -251,5 +251,3 @@ let monoid_mult_add_correct = new_axiom
       monoid_mult_add monoid_zero x (num_to_bits n) =
       monoid_mult x n`;;
 *)
-
-logfile_end ();;

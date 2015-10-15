@@ -13,7 +13,7 @@ needs "class.ml";;
 (* Combinators. We don't bother with S and K, which seem of little use.      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "function-def";;
+export_theory "function-def";;
 
 parse_as_infix ("o",(26,"right"));;
 
@@ -47,7 +47,7 @@ let W_DEF = new_definition
 
 export_thm W_DEF;;
 
-logfile "function-thm";;
+export_theory "function-thm";;
 
 let o_DEF = prove
  (`!f g. (o) (f:B->C) g = \x:A. f(g(x))`,
@@ -142,7 +142,7 @@ export_thm CC_EQ_I;;
 (* The theory "1" (a 1-element type).                                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "unit-def";;
+export_theory "unit-def";;
 
 let EXISTS_ONE_REP = prove
  (`?b:bool. b`,
@@ -164,7 +164,7 @@ let one = prove
 
 export_thm one;;
 
-logfile "unit-thm";;
+export_theory "unit-thm";;
 
 let one_axiom = prove
  (`!f g. f = (g:A->1)`,

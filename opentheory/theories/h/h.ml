@@ -44,7 +44,7 @@ export_interpretation "opentheory/theories/h/h.int";;
 (* Definition of memory safety for the H interface.                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "h-def";;
+export_theory "h-def";;
 
 (* ~~~~~~~~~~~~~~ *)
 (* Region lengths *)
@@ -1486,7 +1486,7 @@ export_thm interferes_def;;
 (* Proof of memory safety for the H interface.                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "h-thm";;
+export_theory "h-thm";;
 
 (* ~~~~~~~~~~~~~~ *)
 (* Region lengths *)
@@ -6519,5 +6519,3 @@ let output_consistency = prove
 
 export_thm output_consistency;;
 *)
-
-logfile_end ();;

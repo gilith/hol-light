@@ -7,7 +7,7 @@
 (* Properties of sum types.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "sum-thm";;
+export_theory "sum-thm";;
 
 let sum_distinct = prove
  (`!(a : A) (b : B). ~(INL a = INR b)`,
@@ -64,5 +64,3 @@ let ISR_case_sum = prove
   ASM_REWRITE_TAC [case_sum_def; ISR_def; OUTR]);;
 
 export_thm ISR_case_sum;;
-
-logfile_end ();;

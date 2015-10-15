@@ -13,7 +13,7 @@ export_interpretation "opentheory/theories/stream/stream.int";;
 (* Definition of stream types.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "stream-def";;
+export_theory "stream-def";;
 
 let (snth_stream,stream_snth) =
   let exists = prove (`?(s : num -> A). T`, REWRITE_TAC []) in
@@ -112,7 +112,7 @@ export_thm sreplicate_def;;
 (* Properties of stream types.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "stream-thm";;
+export_theory "stream-thm";;
 
 let snth_eq_imp = prove
   (`!(s1 : A stream) s2.
@@ -667,10 +667,8 @@ export_thm stake_src;;
 (* Haskell source for stream types.                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "stream-haskell-src";;
+export_theory "stream-haskell-src";;
 
 export_thm snth_src;;  (* Haskell *)
 export_thm stake_src;;  (* Haskell *)
 export_thm sunfold;;  (* Haskell *)
-
-logfile_end ();;

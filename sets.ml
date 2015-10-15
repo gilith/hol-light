@@ -34,7 +34,7 @@ parse_as_infix("=_c",(12,"right"));;
 (* Set membership.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-def";;
+export_theory "set-def";;
 
 let set_exists = prove
   (`?p : A -> bool. (\x. T) p`,
@@ -211,7 +211,7 @@ export_thm REST;;
 (* Basic membership properties.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-thm";;
+export_theory "set-thm";;
 
 let EXTENSION' = prove
  (`!s t. (!x:A. x IN s <=> x IN t) <=> s = t`,
@@ -2902,7 +2902,7 @@ export_thm UNIONS_OVER_INTERS;;
 (* Finiteness.                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-finite-def";;
+export_theory "set-finite-def";;
 
 let FINITE_RULES,FINITE_INDUCT,FINITE_CASES =
     let (rules,induct,cases) =
@@ -2939,7 +2939,7 @@ export_thm INFINITE;;
 (* Basic combining theorems for finite sets.                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-finite-thm";;
+export_theory "set-finite-thm";;
 
 let FINITE_SUBSET = prove
  (`!(s:A set) t. FINITE t /\ s SUBSET t ==> FINITE s`,
@@ -3580,7 +3580,7 @@ export_thm UNIONS_MAXIMAL_SETS;;
 (* Recursion over finite sets; based on Ching-Tsun's code (archive 713).     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-fold-def";;
+export_theory "set-fold-def";;
 
 let FINREC = new_recursive_definition num_RECURSION
   `(!f b s a. FINREC (f:A->B->B) b s a 0 <=> (s = {}) /\ (a = b)) /\
@@ -3836,7 +3836,7 @@ let FINITE_RECURSION = prove
 
 export_thm FINITE_RECURSION;;
 
-logfile "set-fold-thm";;
+export_theory "set-fold-thm";;
 
 let FINITE_RECURSION_DELETE = prove
  (`!(f:A->B->B) b.
@@ -3919,14 +3919,14 @@ export_thm ITSET_EQ;;
 (* Cardinality.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-size-def";;
+export_theory "set-size-def";;
 
 let CARD = new_definition
  `CARD = ITSET (\ (x:A) n. SUC n) 0`;;
 
 export_thm CARD;;
 
-logfile "set-size-thm";;
+export_theory "set-size-thm";;
 
 let (CARD_EMPTY,CARD_INSERT) = (CONJ_PAIR o prove)
  (`(CARD ({}:A set) = 0) /\
@@ -4083,14 +4083,14 @@ export_thm FINITE_INDUCT_DELETE;;
 (* Relational form is often more useful.                                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-size-def";;
+export_theory "set-size-def";;
 
 let HAS_SIZE = new_definition
   `!(s : A set) n. s HAS_SIZE n <=> FINITE s /\ (CARD s = n)`;;
 
 export_thm HAS_SIZE;;
 
-logfile "set-size-thm";;
+export_theory "set-size-thm";;
 
 let HAS_SIZE_CARD = prove
  (`!(s:A set) n. s HAS_SIZE n ==> (CARD s = n)`,
@@ -4785,7 +4785,7 @@ export_thm CHOOSE_SUBSET_BETWEEN;;
 (* Cardinality of product.                                                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-thm";;
+export_theory "set-thm";;
 
 let EMPTY_PRODUCT_DEPENDENT = prove
  (`!(t : A -> B set). { (x,y) | x IN {} /\ y IN t x } = {}`,
@@ -4820,7 +4820,7 @@ let INSERT_PRODUCT_DEPENDENT = prove
 
 export_thm INSERT_PRODUCT_DEPENDENT;;
 
-logfile "set-size-thm";;
+export_theory "set-size-thm";;
 
 let HAS_SIZE_PRODUCT_DEPENDENT = prove
  (`!s t m n.
@@ -4880,7 +4880,7 @@ let HAS_SIZE_PRODUCT_DEPENDENT = prove
 
 export_thm HAS_SIZE_PRODUCT_DEPENDENT;;
 
-logfile "set-finite-thm";;
+export_theory "set-finite-thm";;
 
 let FINITE_PRODUCT_DEPENDENT = prove
  (`!(f:A->B->C) s t.
@@ -4929,7 +4929,7 @@ let FINITE_PRODUCT = prove
 
 export_thm FINITE_PRODUCT;;
 
-logfile "set-size-thm";;
+export_theory "set-size-thm";;
 
 let CARD_PRODUCT = prove
  (`!s t. FINITE s /\ FINITE t
@@ -4962,14 +4962,14 @@ export_thm HAS_SIZE_PRODUCT;;
 
 parse_as_infix("CROSS",(22,"right"));;
 
-logfile "set-def";;
+export_theory "set-def";;
 
 let CROSS = new_definition
  `!(s : A set) (t : B set). s CROSS t = {x,y | x IN s /\ y IN t}`;;
 
 export_thm CROSS;;
 
-logfile "set-thm";;
+export_theory "set-thm";;
 
 let IN_CROSS = prove
  (`!(x:A) (y:B) s t. (x,y) IN (s CROSS t) <=> x IN s /\ y IN t`,
@@ -4977,7 +4977,7 @@ let IN_CROSS = prove
 
 export_thm IN_CROSS;;
 
-logfile "set-size-thm";;
+export_theory "set-size-thm";;
 
 let HAS_SIZE_CROSS = prove
  (`!(s : A set) (t : B set) m n.
@@ -4986,7 +4986,7 @@ let HAS_SIZE_CROSS = prove
 
 export_thm HAS_SIZE_CROSS;;
 
-logfile "set-finite-thm";;
+export_theory "set-finite-thm";;
 
 let FINITE_CROSS = prove
  (`!(s : A set) (t : B set). FINITE s /\ FINITE t ==> FINITE (s CROSS t)`,
@@ -4994,7 +4994,7 @@ let FINITE_CROSS = prove
 
 export_thm FINITE_CROSS;;
 
-logfile "set-size-thm";;
+export_theory "set-size-thm";;
 
 let CARD_CROSS = prove
  (`!(s : A set) (t : B set).
@@ -5006,7 +5006,7 @@ let CARD_CROSS = prove
 
 export_thm CARD_CROSS;;
 
-logfile "set-thm";;
+export_theory "set-thm";;
 
 let CROSS_EQ_EMPTY = prove
  (`!(s : A set) (t : B set). s CROSS t = {} <=> s = {} \/ t = {}`,
@@ -5034,7 +5034,7 @@ let CROSS_UNIV = prove
 
 export_thm CROSS_UNIV;;
 
-logfile "set-finite-thm";;
+export_theory "set-finite-thm";;
 
 let FINITE_CROSS_EQ = prove
  (`!(s : A set) (t : B set).
@@ -5080,7 +5080,7 @@ export_thm FINITE_CROSS_EQ;;
 (* Cardinality of functions with bounded domain (support) and range.         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-thm";;
+export_theory "set-thm";;
 
 let EMPTY_FUNSPACE = prove
  (`!d (t : B set).
@@ -5183,7 +5183,7 @@ let INSERT_FUNSPACE = prove
 
 export_thm INSERT_FUNSPACE;;
 
-logfile "set-finite-thm";;
+export_theory "set-finite-thm";;
 
 let FINITE_FUNSPACE = prove
  (`!d (s : A set) (t : B set).
@@ -5206,7 +5206,7 @@ let FINITE_FUNSPACE = prove
 
 export_thm FINITE_FUNSPACE;;
 
-logfile "set-size-thm";;
+export_theory "set-size-thm";;
 
 let HAS_SIZE_FUNSPACE = prove
  (`!d (s : A set) (t : B set) m n.
@@ -5304,7 +5304,7 @@ export_thm CARD_FUNSPACE_UNIV;;
 (* Hence cardinality of powerset.                                            *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-thm";;
+export_theory "set-thm";;
 
 let IMAGE_POWERSET = prove
  (`!(s : A set).
@@ -5385,7 +5385,7 @@ export_thm INSERT_POWERSET;;
 
 let POWERSET_CLAUSES = CONJ EMPTY_POWERSET INSERT_POWERSET;;
 
-logfile "set-finite-thm";;
+export_theory "set-finite-thm";;
 
 let FINITE_BOOL = prove
  (`FINITE (UNIV : bool set)`,
@@ -5427,7 +5427,7 @@ let FINITE_UNIONS = prove
 
 export_thm FINITE_UNIONS;;
 
-logfile "set-size-thm";;
+export_theory "set-size-thm";;
 
 let HAS_SIZE_BOOL = prove
  (`(UNIV : bool set) HAS_SIZE 2`,
@@ -5466,7 +5466,7 @@ export_thm CARD_POWERSET;;
 (* Set of numbers is infinite.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-thm";;
+export_theory "set-thm";;
 
 let EMPTY_NUMSEG_LT = prove
   (`{m | m < 0} = EMPTY`,
@@ -5504,7 +5504,7 @@ let INSERT_NUMSEG_LT' = prove
 
 export_thm INSERT_NUMSEG_LT';;
 
-logfile "set-finite-thm";;
+export_theory "set-finite-thm";;
 
 let FINITE_NUMSEG_LT = prove
  (`!(n:num). FINITE {m | m < n}`,
@@ -5664,7 +5664,7 @@ let INFINITE_ENUMERATE = prove
 
 export_thm INFINITE_ENUMERATE;;
 
-logfile "set-size-thm";;
+export_theory "set-size-thm";;
 
 let HAS_SIZE_NUMSEG_LT = prove
  (`!n. {m | m < n} HAS_SIZE n`,
@@ -5699,7 +5699,7 @@ export_thm CARD_NUMSEG_LE;;
 (* Indexing of finite sets.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-size-thm";;
+export_theory "set-size-thm";;
 
 let HAS_SIZE_INDEX = prove
  (`!s n.
@@ -5972,7 +5972,7 @@ export_thm CARD_LE_INJ;;
 (* Occasionally handy rewrites.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-thm";;
+export_theory "set-thm";;
 
 let FORALL_IN_EMPTY = prove
  (`!p. (!x : A. x IN {} ==> p x) <=> T`,
@@ -6118,7 +6118,7 @@ let BIJECTIVE_LEFT_RIGHT_INVERSE = prove
 
 export_thm BIJECTIVE_LEFT_RIGHT_INVERSE;;
 
-logfile "function-thm";;
+export_theory "function-thm";;
 
 let INJECTIVE_ON_ALT = prove
  (`!p (f : A -> B).
@@ -6248,7 +6248,7 @@ let SURJECTIVE_EXISTS_THM = prove
 
 export_thm SURJECTIVE_EXISTS_THM;;
 
-logfile "set-thm";;
+export_theory "set-thm";;
 
 let SURJECTIVE_IMAGE_THM = prove
  (`!(f:A->B). (!y. ?x. f x = y) <=> (!p. IMAGE f {x | p (f x)} = {x | p x})`,
@@ -6479,7 +6479,7 @@ export_thm SURJECTIVE_IMAGE;;
 (* Existence of bijections between two finite sets of same size.             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "set-size-thm";;
+export_theory "set-size-thm";;
 
 let CARD_EQ_BIJECTION = prove
  (`!s t. FINITE s /\ FINITE t /\ CARD s = CARD t
@@ -6620,5 +6620,3 @@ let BIJECTIONS_CARD_EQ = prove
    REFL_TAC]);;
 
 export_thm BIJECTIONS_CARD_EQ;;
-
-logfile_end ();;

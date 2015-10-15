@@ -51,7 +51,7 @@ let prioritize_num() = prioritize_overload(mk_type("num",[]));;
 (* Absolute distance function on the naturals.                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-distance-def";;
+export_theory "natural-distance-def";;
 
 let dist = new_definition
   `!m n. dist m n = if m <= n then n - m else m - n`;;
@@ -62,7 +62,7 @@ export_thm dist;;
 (* Some easy theorems.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-distance-thm";;
+export_theory "natural-distance-thm";;
 
 let DIST_REFL = prove
  (`!n. dist n n = 0`,
@@ -357,7 +357,7 @@ export_thm DIST_TRIANGLES_LE;;
 (* Useful lemmas about bounds.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-mult-thm";;
+export_theory "natural-mult-thm";;
 
 let BOUNDS_LINEAR = prove
  (`!a b c. (!n. a * n <= b * n + c) <=> a <= b`,
@@ -418,7 +418,7 @@ let BOUNDS_NOTZERO = prove
 
 export_thm BOUNDS_NOTZERO;;
 
-logfile "natural-add-thm";;
+export_theory "natural-add-thm";;
 
 let BOUNDS_IGNORE = prove
  (`!p q. (?b. !i. p(i) <= q(i) + b) <=>
@@ -446,7 +446,7 @@ export_thm BOUNDS_IGNORE;;
 (* Define type of nearly additive functions.                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "real-def";;
+export_theory "real-def";;
 
 let is_nadd = new_definition
   `!x. is_nadd x <=> (?B. !m n. dist (m * x n) (n * x m) <= B * (m + n))`;;
@@ -2244,7 +2244,7 @@ let (sup_bound,sup_least) =
 export_thm sup_bound;;
 export_thm sup_least;;
 
-logfile "real-thm";;
+export_theory "real-thm";;
 
 let REAL_COMPLETE = prove
  (`!p. (?x. p x) /\
@@ -2278,5 +2278,3 @@ do_list reduce_interface
   "inv",`hreal_inv:hreal->hreal`];;
 
 do_list remove_interface ["**"; "++"; "<<="; "==="; "fn"; "afn"];;
-
-logfile_end ();;

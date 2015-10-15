@@ -1,8 +1,13 @@
+(* ========================================================================= *)
+(* OPENTHEORY TEST THEORY                                                    *)
+(* Joe Leslie-Hurd                                                           *)
+(* ========================================================================= *)
+
 (* ------------------------------------------------------------------------- *)
-(* OpenTheory test theory.                                                   *)
+(* Start exporting.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-start_logging ();;
+export_begin ();;
 
 (* ------------------------------------------------------------------------- *)
 (* Setup.                                                                    *)
@@ -32,7 +37,7 @@ let unwanted_id_def = prove
 (* Testing the argument order of the eqMp command                            *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "example4";;
+export_theory "example4";;
 
 let test_ax = new_axiom `a`;;
 
@@ -40,25 +45,21 @@ let test_th = EQ_MP test_ab_ax test_ax;;
 
 export_thm test_th;;
 
-logfile_end ();;
-
 (* ------------------------------------------------------------------------- *)
 (* Testing removal of Unwanted.id constants                                  *)
 (* ------------------------------------------------------------------------- *)
 
 (* Clean removal of appTerm *)
 
-logfile "example5";;
+export_theory "example5";;
 
 let test_th = REFL `unwanted_id a`;;
 
 export_thm test_th;;
 
-logfile_end ();;
-
 (* Clean removal of appThm *)
 
-logfile "example6";;
+export_theory "example6";;
 
 let test_th =
     TRANS
@@ -67,11 +68,9 @@ let test_th =
 
 export_thm test_th;;
 
-logfile_end ();;
-
 (* Unclean removal using basic definition *)
 
-logfile "example7";;
+export_theory "example7";;
 
 let test_th =
   let conv = RATOR_CONV (K opentheory_unwanted_id_def) THENC BETA_CONV in
@@ -85,11 +84,9 @@ let test_th =
 
 export_thm test_th;;
 
-logfile_end ();;
-
 (* Unclean removal when unwanted_id is air-dropped in using betaConv *)
 
-logfile "example8";;
+export_theory "example8";;
 
 let test_th =
     let conv th = RATOR_CONV (ABS_CONV (RAND_CONV (K th))) in
@@ -105,11 +102,9 @@ let test_th =
 
 export_thm test_th;;
 
-logfile_end ();;
-
 (* Unclean removal when unwanted_id is air-dropped in using subst *)
 
-logfile "example9";;
+export_theory "example9";;
 
 let test_th =
     let f = `f : bool -> bool` in
@@ -129,26 +124,22 @@ let test_th =
 
 export_thm test_th;;
 
-logfile_end ();;
-
 (* ------------------------------------------------------------------------- *)
 (* Simple example exporting a theorem with hypotheses                        *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "example11";;
+export_theory "example11";;
 
 let test_th =
     ASSUME `a`;;
 
 export_thm test_th;;
 
-logfile_end ();;
-
 (* ------------------------------------------------------------------------- *)
 (* Same constant name in assumption and theorem                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "example12";;
+export_theory "example12";;
 
 new_constant ("asm_name", `:bool`);;
 
@@ -160,13 +151,11 @@ let same_name_th = EQ_MP (SYM same_name_def) same_name_ax;;
 
 export_thm same_name_th;;
 
-logfile_end ();;
-
 (* ------------------------------------------------------------------------- *)
 (* Testing generation of theory theorems.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "theorems1";;
+export_theory "theorems1";;
 
 let def1 = new_basic_definition `c1 = \f x. (f : A -> B) x`;;
 
@@ -190,18 +179,18 @@ let (abs_rep2,rep_abs2) =
 export_thm abs_rep2;;
 export_thm rep_abs2;;
 
-logfile_end ();;
-
 (* ------------------------------------------------------------------------- *)
 (* Testing the QBF cloud tactic                                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "qbf1";;
+export_theory "qbf1";;
 
 let qbf_query = new_axiom `?x. !y. ?z. (~x \/ ~y) /\ (~z \/ ~y)`;;
 
 export_thm qbf_query;;
 
-logfile_end ();;
+(* ------------------------------------------------------------------------- *)
+(* Stop exporting (and generate theory files).                               *)
+(* ------------------------------------------------------------------------- *)
 
-stop_logging ();;
+export_end ();;

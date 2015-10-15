@@ -13,7 +13,7 @@ export_interpretation "opentheory/theories/natural-prime/natural-prime.int";;
 (* Definition of prime natural numbers.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-prime-def";;
+export_theory "natural-prime-def";;
 
 let prime_def = new_definition
   `!p. prime p <=> ~(p = 1) /\ !n. divides n p ==> n = 1 \/ n = p`;;
@@ -24,7 +24,7 @@ export_thm prime_def;;
 (* Properties of prime natural numbers.                                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-prime-thm";;
+export_theory "natural-prime-thm";;
 
 let prime_zero = prove
   (`~prime 0`,
@@ -279,7 +279,7 @@ export_thm large_prime;;
 (* Definition of the ordered stream of all prime numbers.                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-prime-stream-def";;
+export_theory "natural-prime-stream-def";;
 
 let (primes_mono_le,snth_primes) =
   let def = new_specification ["primes"]
@@ -302,7 +302,7 @@ export_thm primes_below_def;;
 (* Properties of the ordered stream of all prime numbers.                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-prime-stream-thm";;
+export_theory "natural-prime-stream-thm";;
 
 let prime_primes = prove
   (`!i. prime (snth primes i)`,
@@ -731,7 +731,7 @@ export_thm primes_equiv_test;;
 (* Definition of the sieve of Eratosthenes.                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-prime-sieve-def";;
+export_theory "natural-prime-sieve-def";;
 
 let (is_counters_sieve_nil,is_counters_sieve_cons) =
   let def = new_recursive_definition list_RECURSION
@@ -882,7 +882,7 @@ export_thm next_sieve_def;;
 (* Properties of the sieve of Eratosthenes.                                  *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-prime-sieve-thm";;
+export_theory "natural-prime-sieve-thm";;
 
 let inc_counters_sieve_def =
     CONJ inc_counters_sieve_nil inc_counters_sieve_cons;;
@@ -1297,7 +1297,7 @@ export_thm primes_src;;
 (* Haskell source for prime numbers.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-prime-haskell-src";;
+export_theory "natural-prime-haskell-src";;
 
 export_thm mk_dest_sieve;;  (* Haskell *)
 export_thm max_sieve_def;;  (* Haskell *)
@@ -1311,11 +1311,9 @@ export_thm primes_src;;  (* Haskell *)
 (* Haskell tests for prime numbers.                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-prime-haskell-test";;
+export_theory "natural-prime-haskell-test";;
 
 export_thm snth_primes_zero_test;;  (* Haskell *)
 export_thm primes_mono_le;;  (* Haskell *)
 export_thm primes_divides_inj_test;;  (* Haskell *)
 export_thm primes_below_prime_test;;  (* Haskell *)
-
-logfile_end ();;

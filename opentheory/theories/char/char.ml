@@ -13,7 +13,7 @@ export_interpretation "opentheory/theories/char/char.int";;
 (* Definition of Unicode characters.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "char-def";;
+export_theory "char-def";;
 
 let dest_plane_unicode_def = new_definition
   `!n. dest_plane_unicode n = bit_shr n 16`;;
@@ -91,7 +91,7 @@ new_type_abbrev("string",`:unicode list`);;
 (* Properties of Unicode characters.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "char-thm";;
+export_theory "char-thm";;
 
 let unicode_cases = prove
  (`!c. ?n. is_unicode n /\ c = mk_unicode n`,
@@ -873,7 +873,7 @@ export_thm arbitrary_unicode;;
 (* Definition of the UTF-8 encoding of Unicode characters.                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "char-utf8-def";;
+export_theory "char-utf8-def";;
 
 let encode_ascii_utf8_def = new_definition
   `!n. encode_ascii_utf8 n = [num_to_byte n]`;;
@@ -1042,7 +1042,7 @@ export_thm decode_utf8_def;;
 (* Properties of the UTF-8 encoding of Unicode characters.                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "char-utf8-thm";;
+export_theory "char-utf8-thm";;
 
 let encode_ascii_utf8_length = prove
  (`!n. LENGTH (encode_ascii_utf8 n) = 1`,
@@ -2511,7 +2511,7 @@ export_thm encode_unicode_utf8_src;;
 (* Haskell source for unicode characters.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "char-haskell-src";;
+export_theory "char-haskell-src";;
 
 export_thm dest_plane_unicode_def;;  (* Haskell *)
 export_thm dest_position_unicode_def;;  (* Haskell *)
@@ -2545,12 +2545,10 @@ export_thm decode_utf8_def;;  (* Haskell *)
 (* Haskell tests for unicode characters.                                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "char-haskell-test";;
+export_theory "char-haskell-test";;
 
 export_thm encode_utf8_length;;  (* Haskell *)
 export_thm reencode_utf8_length;;  (* Haskell *)
 export_thm decode_utf8_length;;  (* Haskell *)
 export_thm decode_encode_utf8;;  (* Haskell *)
 export_thm reencode_decode_utf8;;  (* Haskell *)
-
-logfile_end ();;

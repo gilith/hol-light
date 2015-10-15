@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "group-witness";;
+export_theory "group-witness";;
 
 let (group_add_left_zero,
      group_add_left_neg,
@@ -41,5 +41,3 @@ export_thm group_add_left_neg;;
 export_thm group_add_assoc;;
 export_thm group_add_comm;;
 export_thm group_finite;;
-
-logfile_end ();;

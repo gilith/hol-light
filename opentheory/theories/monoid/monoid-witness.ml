@@ -3,7 +3,7 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-logfile "monoid-witness";;
+export_theory "monoid-witness";;
 
 export_thm monoid_add_left_zero;;
 export_thm monoid_add_assoc;;
@@ -14,5 +14,3 @@ let monoid_add_right_zero = prove
   ACCEPT_TAC monoid_add_left_zero);;
 
 export_thm monoid_add_right_zero;;
-
-logfile_end ();;

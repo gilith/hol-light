@@ -37,7 +37,7 @@ parse_as_binder "minimal";;
 (* The predecessor function.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-dest-def";;
+export_theory "natural-dest-def";;
 
 let PRE =
     let def = new_recursive_definition num_RECURSION
@@ -51,7 +51,7 @@ export_thm PRE;;
 (* Orderings.                                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-order-def";;
+export_theory "natural-order-def";;
 
 (* Define the orderings recursively *)
 
@@ -89,7 +89,7 @@ export_thm GT;;
 
 (* Step cases *)
 
-logfile "natural-order-thm";;
+export_theory "natural-order-thm";;
 
 let LE_SUC_LT = prove
  (`!m n. (SUC m <= n) <=> (m < n)`,
@@ -362,7 +362,7 @@ export_thm num_MAX;;
 
 (* Definition of maximum and minimum *)
 
-logfile "natural-order-min-max-def";;
+export_theory "natural-order-min-max-def";;
 
 let MAX = new_definition
   `!m n. MAX m n = if m <= n then n else m`;;
@@ -388,7 +388,7 @@ export_thm MINIMAL;;
 
 (* Properties of maximum and minimum *)
 
-logfile "natural-order-min-max-thm";;
+export_theory "natural-order-min-max-thm";;
 
 let MAX_REFL = prove
  (`!n. MAX n n = n`,
@@ -632,7 +632,7 @@ export_thm MINIMAL_T;;
 (* Addition.                                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-add-def";;
+export_theory "natural-add-def";;
 
 let (ZERO_ADD,SUC_ADD) =
   let def = new_recursive_definition num_RECURSION
@@ -645,7 +645,7 @@ export_thm SUC_ADD;;
 
 let ADD = CONJ ZERO_ADD SUC_ADD;;
 
-logfile "natural-add-thm";;
+export_theory "natural-add-thm";;
 
 let ADD_0 = prove
  (`!m. m + 0 = m`,
@@ -940,7 +940,7 @@ export_thm LE_INDUCT;;
 
 (* Subtraction is defined as the inverse of addition *)
 
-logfile "natural-add-sub-def";;
+export_theory "natural-add-sub-def";;
 
 let ADD_SUB =
   let SUB_DEF = new_recursive_definition num_RECURSION
@@ -956,7 +956,7 @@ let ADD_SUB =
 
 export_thm ADD_SUB;;
 
-logfile "natural-add-sub-thm";;
+export_theory "natural-add-sub-thm";;
 
 let SUB_0 = prove
  (`!m. m - 0 = m`,
@@ -1116,7 +1116,7 @@ export_thm SUB_PRESUC;;
 (* Multiplication.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-mult-def";;
+export_theory "natural-mult-def";;
 
 let (ZERO_MULT,SUC_MULT) =
     let def = new_recursive_definition num_RECURSION
@@ -1129,7 +1129,7 @@ export_thm SUC_MULT;;
 
 let MULT = CONJ ZERO_MULT SUC_MULT;;
 
-logfile "natural-mult-thm";;
+export_theory "natural-mult-thm";;
 
 let MULT_0 = prove
  (`!m. m * 0 = 0`,
@@ -1374,7 +1374,7 @@ export_thm LE_SQUARE_REFL;;
 (* Division and modulus.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-div-def";;
+export_theory "natural-div-def";;
 
 (* First evenness and oddity (recursively rather than inductively!) *)
 
@@ -1447,7 +1447,7 @@ let DIVISION = prove
  (`!m n. ~(n = 0) ==> (m = m DIV n * n + m MOD n) /\ m MOD n < n`,
   MESON_TAC[DIVISION_DEF_DIV; DIVISION_DEF_MOD]);;
 
-logfile "natural-div-thm";;
+export_theory "natural-div-thm";;
 
 let NOT_EVEN = prove
  (`!n. ~(EVEN n) <=> ODD n`,
@@ -2120,7 +2120,7 @@ export_thm div_induction;;
 (* Exponentiation.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-exp-def";;
+export_theory "natural-exp-def";;
 
 let (EXP_0,EXP_SUC) =
   let def = new_recursive_definition num_RECURSION
@@ -2133,7 +2133,7 @@ export_thm EXP_SUC;;
 
 let EXP = CONJ EXP_0 EXP_SUC;;
 
-logfile "natural-exp-thm";;
+export_theory "natural-exp-thm";;
 
 let EXP_EQ_0 = prove
  (`!m n. (m EXP n = 0) <=> (m = 0) /\ ~(n = 0)`,
@@ -2433,7 +2433,7 @@ export_thm large_exp;;
 
 (* Logarithm *)
 
-logfile "natural-exp-log-def";;
+export_theory "natural-exp-log-def";;
 
 let log_def =
   let def = new_definition
@@ -2462,7 +2462,7 @@ let log_def =
 
 export_thm log_def;;
 
-logfile "natural-exp-log-thm";;
+export_theory "natural-exp-log-thm";;
 
 let log_exists_lemma = prove
  (`!k n.
@@ -2740,7 +2740,7 @@ export_thm log_mult_upper_bound;;
 (* The factorial function.                                                   *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-factorial-def";;
+export_theory "natural-factorial-def";;
 
 let (FACT_ZERO,FACT_SUC) =
   let def = new_recursive_definition num_RECURSION
@@ -2753,7 +2753,7 @@ export_thm FACT_SUC;;
 
 let FACT = CONJ FACT_ZERO FACT_SUC;;
 
-logfile "natural-factorial-thm";;
+export_theory "natural-factorial-thm";;
 
 let FACT_LT = prove
  (`!n. 0 < FACT n`,
@@ -2789,7 +2789,7 @@ export_thm FACT_MONO;;
 (* Function powers.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "natural-funpow-def";;
+export_theory "natural-funpow-def";;
 
 let (funpow_zero,funpow_suc) =
   let def = new_recursive_definition num_RECURSION
@@ -2802,7 +2802,7 @@ export_thm funpow_suc;;
 
 let funpow_def = CONJ funpow_zero funpow_suc;;
 
-logfile "natural-funpow-thm";;
+export_theory "natural-funpow-thm";;
 
 let funpow_I = prove
  (`!n. funpow (I : A -> A) n = I`,
@@ -2968,5 +2968,3 @@ let NUM_CANCEL_CONV =
 let LE_IMP =
   let pth = PURE_ONCE_REWRITE_RULE[IMP_CONJ] LE_TRANS in
   fun th -> GEN_ALL(MATCH_MP pth (SPEC_ALL th));;
-
-logfile_end ();;

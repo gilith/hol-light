@@ -39,7 +39,7 @@ let SAT_TAC =
 (* SAT proof for the map reduce 3x3 bit matrix example.                      *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "map-reduce-bit3x3-sat";;
+export_theory "map-reduce-bit3x3-sat";;
 
 let bit3x3_sat_goal =
 `((~(a11 /\ ~(a11' /\ a11'' <=> ~(a12' /\ a21'' <=> a13' /\ a31'')) <=>
@@ -105,7 +105,7 @@ export_thm bit3x3_sat_thm;;
 (* Correctness of the map reduce 3x3 bit matrix example.                     *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "map-reduce-bit3x3-product";;
+export_theory "map-reduce-bit3x3-product";;
 
 new_type_abbrev("bit3",`:bool # bool # bool`);;
 
@@ -549,5 +549,3 @@ let bit4x4_product_parallel = prove
     REWRITE_TAC [bit4x4_mult_def; bit4_dot_def; PAIR_EQ] THEN
     ACCEPT_TAC bit4x4_sat_thm]);;
 *)
-
-logfile_end ();;

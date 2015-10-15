@@ -7,7 +7,7 @@
 (* Definition of hardware bus devices.                                       *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "hardware-bus-def";;
+export_theory "hardware-bus-def";;
 
 (* ~~~~~~~~~ *)
 (* Bus wires *)
@@ -147,7 +147,7 @@ export_thm bmajority3_def;;
 (* Properties of bus devices.                                                *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "hardware-bus-thm";;
+export_theory "hardware-bus-thm";;
 
 (* ~~~~~~~~~ *)
 (* Bus wires *)
@@ -3622,5 +3622,3 @@ let bmajority3_syn =
         EXISTS_TAC `xy : bus` THEN
         ASM_REWRITE_TAC []]) in
     setify (("maj3b",syn) :: bor3_syn);;
-
-logfile_end ();;

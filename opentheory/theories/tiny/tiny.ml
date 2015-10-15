@@ -6,17 +6,17 @@
 (* ========================================================================= *)
 
 Export.debug_export_thm_enable := true;;
-start_logging ();;
+export_begin ();;
 
 (* ------------------------------------------------------------------------- *)
 (* Rules for T                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-true-def";;
+export_theory "bool-true-def";;
 
 export_thm T_DEF;;
 
-logfile "bool-true-thm";;
+export_theory "bool-true-thm";;
 
 export_thm TRUTH;;
 
@@ -24,11 +24,11 @@ export_thm TRUTH;;
 (* Rules for !                                                               *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-forall-def";;
+export_theory "bool-forall-def";;
 
 export_thm FORALL_DEF;;
 
-logfile "bool-forall-thm";;
+export_theory "bool-forall-thm";;
 
 let FORALL_T = GEN `x:A` TRUTH;;
 
@@ -38,11 +38,11 @@ export_thm FORALL_T;;
 (* Rules for /\                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-and-def";;
+export_theory "bool-and-def";;
 
 export_thm AND_DEF;;
 
-logfile "bool-and-thm";;
+export_theory "bool-and-thm";;
 
 let AND_REFL =
     let th0 = CONJ (ASSUME `x:bool`) (ASSUME `x:bool`) in
@@ -58,7 +58,7 @@ let AND_RID =
 
 export_thm AND_RID;;
 
-logfile "bool-and-thm-new";;
+export_theory "bool-and-thm-new";;
 
 let AND_REFL' =
     let th0 = CONJ (ASSUME `x:bool`) (ASSUME `x:bool`) in
@@ -87,11 +87,11 @@ export_thm AND_LID';;
 (* Rules for ==>                                                             *)
 (* ------------------------------------------------------------------------- *)
 
-logfile "bool-implies-def";;
+export_theory "bool-implies-def";;
 
 export_thm IMP_DEF;;
 
-logfile "bool-implies-thm";;
+export_theory "bool-implies-thm";;
 
 let IMP_REFL =
     let th0 = AP_THM (AP_THM IMP_DEF `x:bool`) `x:bool` in
@@ -107,7 +107,7 @@ let IMP_T =
 
 export_thm IMP_T;;
 
-logfile "bool-implies-thm-new";;
+export_theory "bool-implies-thm-new";;
 
 let IMP_REFL' =
     let th0 = AP_THM (AP_THM IMP_DEF `x:bool`) `x:bool` in
@@ -124,5 +124,3 @@ let IMP_T' =
     GEN `x:bool` (EQ_MP (SYM (TRANS th0 th1)) (TRANS th2 th3));;
 
 export_thm IMP_T';;
-
-logfile_end ();;
