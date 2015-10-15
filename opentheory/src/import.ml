@@ -485,5 +485,5 @@ let import_theory =
 end
 
 let import_article = Import.import_article
-and imported_theories = Import.imported_theories
+and list_the_imported_theories = Import.imported_theories
 and import_theory = Import.import_theory;;

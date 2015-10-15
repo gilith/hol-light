@@ -294,4 +294,4 @@ let extend_the_interpretation file =
     let int = Interpretation.extend int file in
     the_interpretation := int;;
 
-extend_the_interpretation "opentheory/stdlib/stdlib.int";;
+extend_the_interpretation "opentheory/base/base.int";;

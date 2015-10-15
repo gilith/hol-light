@@ -13,7 +13,7 @@
 (* Additional OpenTheory theories.                                           *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/theories/all.ml";;
+loads "opentheory/theories/load.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Update the theorem database.                                              *)
@@ -26,7 +26,7 @@ update_database ();;
 (* ------------------------------------------------------------------------- *)
 
 let () =
-    let h = open_out ("opentheory/files") in
+    let h = open_out ("opentheory/export/files.txt") in
     let output_filename f = output_string h (f ^ "\n") in
     let () = List.iter output_filename (rev (!loaded_filenames)) in
     let () = close_out h in
@@ -37,7 +37,7 @@ let () =
 (* ------------------------------------------------------------------------- *)
 
 (*
-#use "opentheory/test.ml";;
+#use "opentheory/theories/test.ml";;
 *)
 
 (* ------------------------------------------------------------------------- *)

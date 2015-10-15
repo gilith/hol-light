@@ -1,8 +1,8 @@
 #!/bin/bash
 
-log=opentheory/log
+log=opentheory/export/log.txt
 
-echo '#use "opentheory/all.ml";;' | ocaml >$log 2>&1
+echo '#use "opentheory/export-theories.ml";;' | ocaml >$log 2>&1
 
 if grep '^Exception:\|^Error:\|^Error in included file\|Warning: inventing type variables' $log
 then

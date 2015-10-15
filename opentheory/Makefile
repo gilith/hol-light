@@ -17,9 +17,11 @@ default: theories
 ###############################################################################
 
 TEMP = \
-  articles/*.art \
-  articles/*.int \
-  articles/*.thy
+  export/files.txt \
+  export/log.txt \
+  export/*.art \
+  export/*.int \
+  export/*.thy
 
 .PHONY: clean
 clean:
@@ -113,33 +115,33 @@ info-theory-interpretations:
 	@$(MAKE) theory-interpretations
 
 ###############################################################################
-# Extract the theories.
+# Export the theories.
 ###############################################################################
 
-.PHONY: extract-theories
-extract-theories:
-	cd .. && OPENTHEORY_LOGGING=1 opentheory/scripts/capture
+.PHONY: export-theories
+export-theories:
+	cd .. && OPENTHEORY_EXPORT_BASE=1 opentheory/scripts/export-theories
 
-.PHONY: info-extract-theories
-info-extract-theories:
+.PHONY: info-export-theories
+info-export-theories:
 	@echo
-	@echo '+------------------+'
-	@echo '| Extract theories |'
-	@echo '+------------------+'
+	@echo '+-----------------+'
+	@echo '| Export theories |'
+	@echo '+-----------------+'
 	@echo
-	@$(MAKE) extract-theories
+	@$(MAKE) export-theories
 
 ###############################################################################
 # Check the theory sources.
 ###############################################################################
 
 .PHONY: check-theories
-check-theories: files
+check-theories: export/files.txt
 	@echo Looking for duplicate let bindings:
-	@cd .. && (for f in $$(cat opentheory/files) ; do cat $$f ; done) | grep '^let ' | sort | uniq -d
+	@cd .. && (for f in $$(cat opentheory/export/files.txt) ; do cat $$f ; done) | grep '^let ' | sort | uniq -d
 	@echo
 	@echo Looking for duplicate theorem exports:
-	@cd .. && (for f in $$(cat opentheory/files) ; do cat $$f ; done) | grep '^export_thm ' | sort | uniq -d
+	@cd .. && (for f in $$(cat opentheory/export/files.txt) ; do cat $$f ; done) | grep '^export_thm ' | sort | uniq -d
 	@echo
 
 .PHONY: info-check-theories
@@ -159,16 +161,16 @@ info-check-theories:
 theories:
 	@$(MAKE) info-clean
 	@$(MAKE) info-theory-interpretations
-	@$(MAKE) info-extract-theories
+	@$(MAKE) info-export-theories
 	@$(MAKE) info-check-theories
 
 ###############################################################################
-# Extract the tiny set of theories used to test the opentheory tool.
+# Export the tiny set of theories used to test the opentheory tool.
 ###############################################################################
 
 .PHONY: prepare-tiny-theories
 prepare-tiny-theories:
-	perl -ne 'BEGIN: { my $$done = 0; } if (!$$done) { print "$$_"; chomp; if ($$_ =~ /opentheory[.]ml/) { print "Export.debug_export_thm_enable := false;;\n"; } elsif ($$_ =~ /drule[.]ml/) { print "loads \"opentheory/tiny/tiny.ml\";;\n"; $$done = 1; } }' < ../hol.ml > tiny/hol.ml
+	perl -ne 'BEGIN: { my $$done = 0; } if (!$$done) { print "$$_"; chomp; if ($$_ =~ m{opentheory/load[.]ml}) { print "Export.debug_export_thm_enable := false;;\n"; } elsif ($$_ =~ /drule[.]ml/) { print "loads \"opentheory/tiny/tiny.ml\";;\n"; $$done = 1; } }' < ../hol.ml > theories/tiny/hol.ml
 
 .PHONY: info-prepare-tiny-theories
 info-prepare-tiny-theories:
@@ -179,22 +181,22 @@ info-prepare-tiny-theories:
 	@echo
 	@$(MAKE) prepare-tiny-theories
 
-.PHONY: extract-tiny-theories
-extract-tiny-theories:
-	cd .. && echo '#use "opentheory/tiny/hol.ml";;' | ocaml >opentheory/tiny/log 2>&1
-	if grep '^Exception:\|^Error:\|^Error in included file\|Warning: inventing type variables' tiny/log ; then cat tiny/log ; exit 1 ; fi
+.PHONY: export-tiny-theories
+export-tiny-theories:
+	cd .. && echo '#use "opentheory/theories/tiny/hol.ml";;' | ocaml >opentheory/theories/tiny/log.txt 2>&1
+	if grep '^Exception:\|^Error:\|^Error in included file\|Warning: inventing type variables' theories/tiny/log.txt ; then cat theories/tiny/log.txt ; exit 1 ; fi
 
-.PHONY: info-extract-tiny-theories
-info-extract-tiny-theories:
+.PHONY: info-export-tiny-theories
+info-export-tiny-theories:
 	@echo
-	@echo '+-----------------------+'
-	@echo '| Extract tiny theories |'
-	@echo '+-----------------------+'
+	@echo '+----------------------+'
+	@echo '| Export tiny theories |'
+	@echo '+----------------------+'
 	@echo
-	@$(MAKE) extract-tiny-theories
+	@$(MAKE) export-tiny-theories
 
 .PHONY: tiny-theories
 tiny-theories:
 	@$(MAKE) info-clean
 	@$(MAKE) info-prepare-tiny-theories
-	@$(MAKE) info-extract-tiny-theories
+	@$(MAKE) info-export-tiny-theories

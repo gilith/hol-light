@@ -102,7 +102,7 @@ loads "fusion.ml";;
 (* Load the OpenTheory infrastructure.                                       *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/opentheory.ml";;
+loads "opentheory/load.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)
@@ -170,8 +170,8 @@ loads "define.ml";;     (* Support for general recursive definitions         *)
 (* Extra theories that are part of the standard theory library.              *)
 (* ------------------------------------------------------------------------- *)
 
-loads "opentheory/stdlib/sum.ml";;
-loads "opentheory/stdlib/option.ml";;
+loads "opentheory/base/sum.ml";;
+loads "opentheory/base/option.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* The help system.                                                          *)
