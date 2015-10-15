@@ -170,7 +170,7 @@ theories:
 
 .PHONY: prepare-tiny-theories
 prepare-tiny-theories:
-	perl -ne 'BEGIN: { my $$done = 0; } if (!$$done) { print "$$_"; chomp; if ($$_ =~ m{opentheory/load[.]ml}) { print "Export.debug_export_thm_enable := false;;\n"; } elsif ($$_ =~ /drule[.]ml/) { print "loads \"opentheory/tiny/tiny.ml\";;\n"; $$done = 1; } }' < ../hol.ml > theories/tiny/hol.ml
+	perl -ne 'BEGIN: { my $$done = 0; } if (!$$done) { print "$$_"; chomp; if ($$_ =~ m{opentheory/load[.]ml}) { print "Export.debug_export_thm_enable := false;;\n"; } elsif ($$_ =~ /drule[.]ml/) { print "loads \"opentheory/theories/tiny/tiny.ml\";;\n"; $$done = 1; } }' < ../hol.ml > theories/tiny/hol.ml
 
 .PHONY: info-prepare-tiny-theories
 info-prepare-tiny-theories:
