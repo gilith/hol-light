@@ -1,9 +1,11 @@
 (* ========================================================================= *)
-(* A collection of tiny theories to test the opentheory tool.                *)
-(*                                                                           *)
-(* To use this, comment out everything after loads "equal.ml";; in hol.ml,   *)
-(* then launch ocaml and type #use "hol.ml";; #use "opentheory/tiny.ml";;    *)
+(* A COLLECTION OF TINY THEORIES TO TEST THE OPENTHEORY TOOL                 *)
+(* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
+
+(* ------------------------------------------------------------------------- *)
+(* Start exporting.                                                          *)
+(* ------------------------------------------------------------------------- *)
 
 Export.debug_export_thm_enable := true;;
 export_begin ();;
@@ -124,3 +126,9 @@ let IMP_T' =
     GEN `x:bool` (EQ_MP (SYM (TRANS th0 th1)) (TRANS th2 th3));;
 
 export_thm IMP_T';;
+
+(* ------------------------------------------------------------------------- *)
+(* Stop exporting (and generate theory files).                               *)
+(* ------------------------------------------------------------------------- *)
+
+export_end ();;
