@@ -1141,3 +1141,13 @@ export_thm modular_lt_trans;;
 let modular_lt_trans = new_axiom
   `!x1 x2 x3. modular_lt x1 x2 /\ modular_lt x2 x3 ==> modular_lt x1 x3`;;
 *)
+
+(* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for a parametric theory of modular arithmetic.         *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "modular-hol-light-thm";;
+
+export_thm_names
+  ["modular-def";
+   "modular-thm"];;

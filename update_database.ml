@@ -15,6 +15,8 @@
 let exec = ignore o Toploop.execute_phrase false Format.std_formatter
   o !Toploop.parse_toplevel_phrase o Lexing.from_string;;
 
+Import.exec_function := exec;;
+
 type dummy;;
 
 (* ------------------------------------------------------------------------- *)
@@ -267,6 +269,8 @@ let search =
     (if nontriv = [] & triv <> [] then []
      else sort (increasing fst)
                (itlist (filter o filterpred) pats (!theorems)));;
+
+Export.search_function := search;;
 
 (* ------------------------------------------------------------------------- *)
 (* Update to bring things back to current state.                             *)

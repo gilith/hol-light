@@ -44,3 +44,15 @@ loads "opentheory/theories/montgomery/montgomery-hardware-synthesis.ml";;
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/montgomery/timelock.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for Montgomery multiplication.                         *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "montgomery-hol-light-thm";;
+
+export_thm_names
+  ["montgomery-def";
+   "montgomery-thm";
+   "montgomery-hardware-def";
+   "montgomery-hardware-thm"];;

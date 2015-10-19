@@ -6519,3 +6519,13 @@ let output_consistency = prove
 
 export_thm output_consistency;;
 *)
+
+(* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for memory safety for the H interface.                 *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "h-hol-light-thm";;
+
+export_thm_names
+  ["h-def";
+   "h-thm"];;

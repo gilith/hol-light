@@ -1481,3 +1481,19 @@ let gfp_exp_div = new_axiom
        else gfp_exp_div T (num_to_gfp 1) (num_to_gfp 1) x (num_to_gfp 1)
               (encode_fib n))`;;
 *)
+
+(* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for a parametric theory of GF(p) finite fields.        *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "gfp-hol-light-thm";;
+
+export_thm_names
+  ["gfp-def";
+   "gfp-thm";
+   "gfp-div-def";
+   "gfp-div-thm";
+   "gfp-div-gcd-def";
+   "gfp-div-gcd-thm";
+   "gfp-div-exp-def";
+   "gfp-div-exp-thm"];;

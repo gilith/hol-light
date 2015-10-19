@@ -1294,6 +1294,20 @@ let primes_src = GSYM correct_sieve;;
 export_thm primes_src;;
 
 (* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for prime numbers.                                     *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "natural-prime-hol-light-thm";;
+
+export_thm_names
+  ["natural-prime-def";
+   "natural-prime-thm";
+   "natural-prime-stream-def";
+   "natural-prime-stream-thm";
+   "natural-prime-sieve-def";
+   "natural-prime-sieve-thm"];;
+
+(* ------------------------------------------------------------------------- *)
 (* Haskell source for prime numbers.                                         *)
 (* ------------------------------------------------------------------------- *)
 

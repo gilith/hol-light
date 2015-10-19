@@ -43,23 +43,13 @@ let mk_primed_var =
 (* General case of beta-conversion.                                          *)
 (* ------------------------------------------------------------------------- *)
 
-let BETA_CONV tm =
-  try BETA tm with Failure _ ->
-  try let f,arg = dest_comb tm in
-      let v = bndvar f in
-      let th = INST [arg,v] (BETA (mk_comb(f,v))) in
-      let () = replace_proof th (Beta_conv_proof tm) in
-      th
-  with Failure _ -> failwith "BETA_CONV: Not a beta-redex";;
+let BETA_CONV = Object.BETA_CONV;;
 
 (* ------------------------------------------------------------------------- *)
 (* A few very basic derived equality rules.                                  *)
 (* ------------------------------------------------------------------------- *)
 
-let AP_TERM tm =
-  let rth = REFL tm in
-  fun th -> try MK_COMB(rth,th)
-            with Failure _ -> failwith "AP_TERM";;
+let AP_TERM = Object.AP_TERM;;
 
 let AP_THM th tm =
   try MK_COMB(th,REFL tm)

@@ -1205,6 +1205,16 @@ let zeckendorf_src = prove
 export_thm zeckendorf_src;;
 
 (* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for Fibonacci numbers.                                 *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "natural-fibonacci-hol-light-thm";;
+
+export_thm_names
+  ["natural-fibonacci-def";
+   "natural-fibonacci-thm"];;
+
+(* ------------------------------------------------------------------------- *)
 (* Haskell source for Fibonacci numbers.                                     *)
 (* ------------------------------------------------------------------------- *)
 

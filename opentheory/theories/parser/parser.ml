@@ -1923,6 +1923,22 @@ let parse_src = prove
 export_thm parse_src;;
 
 (* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for stream parsers.                                    *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "parser-hol-light-thm";;
+
+export_thm_names
+  ["parser-stream-def";
+   "parser-stream-thm";
+   "parser-comb-def";
+   "parser-comb-thm";
+   "parser-fold-def";
+   "parser-fold-thm";
+   "parser-all-def";
+   "parser-all-thm"];;
+
+(* ------------------------------------------------------------------------- *)
 (* Haskell source for stream parsers.                                        *)
 (* ------------------------------------------------------------------------- *)
 

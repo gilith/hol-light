@@ -2435,6 +2435,16 @@ let random_uniform_src = prove
 export_thm random_uniform_src;;
 
 (* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for natural number to bit-list conversions.            *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "natural-bits-hol-light-thm";;
+
+export_thm_names
+  ["natural-bits-def";
+   "natural-bits-thm"];;
+
+(* ------------------------------------------------------------------------- *)
 (* Haskell source for natural number to bit-list conversions.                *)
 (* ------------------------------------------------------------------------- *)
 

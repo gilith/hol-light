@@ -61,3 +61,23 @@ loads "opentheory/theories/hardware/hardware-counter.ml";;
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/hardware/hardware-multiplier.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for hardware devices.                                  *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "hardware-hol-light-thm";;
+
+export_thm_names
+  ["hardware-def";
+   "hardware-thm";
+   "hardware-wire-def";
+   "hardware-wire-thm";
+   "hardware-bus-def";
+   "hardware-bus-thm";
+   "hardware-adder-def";
+   "hardware-adder-thm";
+   "hardware-counter-def";
+   "hardware-counter-thm";
+   "hardware-multiplier-def";
+   "hardware-multiplier-thm"];;

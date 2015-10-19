@@ -755,6 +755,47 @@ let export_thm th =
     ();;
 
 (* ------------------------------------------------------------------------- *)
+(* Exporting theorem names.                                                  *)
+(* ------------------------------------------------------------------------- *)
+
+let map_partial f =
+    let rec mp xs =
+        match xs with
+          [] -> []
+        | x :: xs ->
+          match f x with
+            None -> mp xs
+          | Some y -> y :: mp xs in
+    mp;;
+
+let search_function =
+    let search (_ : term list) : (string * thm) list =
+        failwith "Export.search_function: not initialized" in
+    ref search;;
+
+let search_exact tm =
+    let pred (_,th) = concl th = tm in
+    match filter pred (!search_function [tm]) with
+      [] -> None
+    | th :: _ -> Some th;;
+
+let export_thm_names thys =
+    let peek_bind (th,thy) =
+        if not (mem thy thys) then None else
+        let () = if length (hyp th) = 0 then () else
+                 failwith "export_thm_names: theorem cannot have hypotheses" in
+        search_exact (concl th) in
+    let mk_bind (s,th) =
+        let stm = mk_var (s,bool_ty) in
+        let tm = mk_comb (mk_abs (stm,stm), concl th) in
+        EQ_MP (Object.SYM (Object.BETA_CONV tm)) th in
+    let ths = map_partial peek_bind (list_the_exported_thms ()) in
+    let () = if length ths <> 0 then () else
+             failwith "export_thm_names: no theorems found" in
+    let bths = map mk_bind ths in
+    List.iter export_thm bths;;
+
+(* ------------------------------------------------------------------------- *)
 (* Exporting proofs.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
@@ -796,5 +837,6 @@ and export_goal = Export.export_goal
 and export_proof = Export.export_proof
 and export_theory = Export.logfile
 and export_thm = Export.export_thm
+and export_thm_names = Export.export_thm_names
 and list_the_exported_thms = Export.list_the_exported_thms
 and peek_the_exported_thms = Export.peek_the_exported_thms;;

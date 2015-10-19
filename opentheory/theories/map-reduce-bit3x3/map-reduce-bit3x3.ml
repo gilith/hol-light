@@ -105,7 +105,7 @@ export_thm bit3x3_sat_thm;;
 (* Correctness of the map reduce 3x3 bit matrix example.                     *)
 (* ------------------------------------------------------------------------- *)
 
-export_theory "map-reduce-bit3x3-product";;
+export_theory "map-reduce-bit3x3-def";;
 
 new_type_abbrev("bit3",`:bool # bool # bool`);;
 
@@ -167,6 +167,8 @@ let bit3x3_product_def = new_definition
   `bit3x3_product = foldl bit3x3_mult bit3x3_identity`;;
 
 export_thm bit3x3_product_def;;
+
+export_theory "map-reduce-bit3x3-thm";;
 
 let bit3x3_cases = prove
   (`!a : bit3x3. ?a11 a12 a13
@@ -549,3 +551,13 @@ let bit4x4_product_parallel = prove
     REWRITE_TAC [bit4x4_mult_def; bit4_dot_def; PAIR_EQ] THEN
     ACCEPT_TAC bit4x4_sat_thm]);;
 *)
+
+(* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for the map reduce 3x3 bit matrix example.             *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "map-reduce-bit3x3-hol-light-thm";;
+
+export_thm_names
+  ["map-reduce-bit3x3-def";
+   "map-reduce-bit3x3-thm"];;

@@ -33,11 +33,21 @@ let maps (f : 'a -> 's -> 'b * 's) =
 (* Inference rules used by articles.                                         *)
 (* ------------------------------------------------------------------------- *)
 
+let BETA_CONV tm =
+  try BETA tm with Failure _ ->
+  try let f,arg = dest_comb tm in
+      let (v,_) = dest_abs f in
+      let th = INST [arg,v] (BETA (mk_comb(f,v))) in
+      let () = replace_proof th (Beta_conv_proof tm) in
+      th
+  with Failure _ -> failwith "BETA_CONV: Not a beta-redex";;
+
+let AP_TERM tm =
+  let rth = REFL tm in
+  fun th -> try MK_COMB(rth,th)
+            with Failure _ -> failwith "AP_TERM";;
+
 let SYM th =
-    let AP_TERM tm =
-      let rth = REFL tm in
-      fun th -> try MK_COMB(rth,th)
-                with Failure _ -> failwith "AP_TERM" in
     let tm = concl th in
     let l,r = dest_eq tm in
     let lth = REFL l in
@@ -461,10 +471,7 @@ let mkAssume objT =
 
 let mkBetaConv objT =
     let t = dest_term objT in
-    let (f,x) = dest_comb t in
-    let (v,_) = dest_abs f in
-    let th = INST [(x,v)] (BETA (mk_comb (f,v))) in
-    Thm_object th;;
+    Thm_object (BETA_CONV t);;
 
 let mkConst const_context objN =
     let n = dest_name objN in

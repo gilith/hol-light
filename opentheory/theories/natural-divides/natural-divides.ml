@@ -2616,6 +2616,20 @@ let gcd_right_distrib = prove
 export_thm gcd_right_distrib;;
 
 (* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for the divides relation on natural numbers.           *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "natural-divides-hol-light-thm";;
+
+export_thm_names
+  ["natural-divides-def";
+   "natural-divides-thm";
+   "natural-divides-gcd-def";
+   "natural-divides-gcd-thm";
+   "natural-divides-lcm-def";
+   "natural-divides-lcm-thm"];;
+
+(* ------------------------------------------------------------------------- *)
 (* Haskell source for the divides relation on natural numbers.               *)
 (* ------------------------------------------------------------------------- *)
 

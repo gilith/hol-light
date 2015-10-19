@@ -17,6 +17,60 @@ struct
 let import_directory = "opentheory/import";;
 
 (* ------------------------------------------------------------------------- *)
+(* Utility functions.                                                        *)
+(* ------------------------------------------------------------------------- *)
+
+let open_command cmd =
+    let (fd_in,fd_out) = Unix.pipe () in
+    match Unix.fork () with
+      0 -> let () = Unix.dup2 fd_out Unix.stdout in
+           let () = Unix.close fd_out in
+           let () = Unix.close fd_in in
+           let () = Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |] in
+           failwith "returned from execv"
+    | _ -> let () = Unix.close fd_out in
+           let h = Unix.in_channel_of_descr fd_in in
+           let () = set_binary_mode_in h false in
+           h;;
+
+let read_all_lines h =
+    let rec loop l =
+        try loop (input_line h :: l)
+        with End_of_file -> l in
+    rev (loop []);;
+
+let read_from_command cmd =
+    let h = open_command cmd in
+    let l = read_all_lines h in
+    let () = close_in h in
+    l;;
+
+(* ------------------------------------------------------------------------- *)
+(* Interface to the opentheory tool.                                         *)
+(* ------------------------------------------------------------------------- *)
+
+let list_theories exp =
+    let qexp = "'" ^ exp ^ "'" in
+    let cmd = "opentheory list --dependency-order --format NAME " ^ qexp in
+    read_from_command cmd;;
+
+let required_theories thy =
+    let rsubs = "(Requires & Subtheories)" in
+    let reqs = "((Requires | Requires " ^ rsubs ^ ") - Subtheories) " ^ thy in
+    let subs = rsubs ^ " " ^ thy in
+    (list_theories reqs, list_theories subs);;
+
+let theory_article thy =
+    let cmd = "opentheory info --clear-local-names --article " ^ thy in
+    open_command cmd;;
+
+let theory_directory thy =
+    let cmd = "opentheory info --directory " ^ thy in
+    match read_from_command cmd with
+      [dir] -> dir
+    | _ -> failwith ("theory_directory: strange output for theory " ^ thy);;
+
+(* ------------------------------------------------------------------------- *)
 (* Alpha conversion.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
@@ -369,7 +423,22 @@ let import_article filename =
     thy;;
 
 (* ------------------------------------------------------------------------- *)
-(* Importing theories.                                                       *)
+(* Theory interpretations.                                                   *)
+(* ------------------------------------------------------------------------- *)
+
+let theory_interpretation thy =
+    let rec extend_with_first files =
+        match files with
+          [] -> failwith ("no interpretation found for theory " ^ thy)
+        | file :: files ->
+          if Sys.file_exists file then extend_the_interpretation file else
+          extend_with_first files in
+    let local_override_file = Filename.concat import_directory (thy ^ ".int") in
+    let theory_file = Filename.concat (theory_directory thy) "hol-light.int" in
+    extend_with_first [local_override_file; theory_file];;
+
+(* ------------------------------------------------------------------------- *)
+(* The set of imported theories.                                             *)
 (* ------------------------------------------------------------------------- *)
 
 let the_imported_theories = ref ([] : Theory.t list);;
@@ -381,6 +450,11 @@ let peek_imported_theory n =
     let thys = imported_theories () in
     try Some (List.find pred thys)
     with Not_found -> None;;
+
+let get_imported_theory n =
+    match peek_imported_theory n with
+      Some th -> th
+    | None -> failwith ("theory " ^ n ^ " has not been imported");;
 
 let is_imported_theory n =
     match peek_imported_theory n with
@@ -394,51 +468,50 @@ let add_imported_theory thy =
     let () = the_imported_theories := !the_imported_theories @ [thy] in
     ();;
 
-let open_command cmd =
-    let (fd_in,fd_out) = Unix.pipe () in
-    match Unix.fork () with
-      0 -> let () = Unix.dup2 fd_out Unix.stdout in
-           let () = Unix.close fd_out in
-           let () = Unix.close fd_in in
-           let () = Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |] in
-           failwith "returned from execv"
-    | _ -> let () = Unix.close fd_out in
-           let h = Unix.in_channel_of_descr fd_in in
-           let () = set_binary_mode_in h false in
-           h;;
+(* ------------------------------------------------------------------------- *)
+(* Theory bindings for theorems.                                             *)
+(* ------------------------------------------------------------------------- *)
 
-let read_all_lines h =
-    let rec loop l =
-        try loop (input_line h :: l)
-        with End_of_file -> l in
-    rev (loop []);;
+let exec_function =
+    let exec (_ : string) : unit =
+        failwith "Import.exec_function: not initialized" in
+    ref exec;;
 
-let read_from_command cmd =
-    let h = open_command cmd in
-    let l = read_all_lines h in
-    let () = close_in h in
-    l;;
+let theory_thm n i =
+    let thy = get_imported_theory n in
+    let ths = Theory.theorems thy in
+    List.nth ths i;;
 
-let list_theories exp =
-    let qexp = "'" ^ exp ^ "'" in
-    let cmd = "opentheory list --dependency-order --format NAME " ^ qexp in
-    read_from_command cmd;;
+let theory_bindings thy =
+    let n = Theory.name thy in
+    let concls = map concl (Theory.theorems thy) in
+    let bind_thm_names file =
+        let bind th =
+            let (s,tm) = dest_comb (concl th) in
+            let (_,s) = dest_comb s in
+            let (s,_) = dest_abs s in
+            let (s,_) = dest_var s in
+            let i = index tm concls in
+            let cmd = "let " ^ s ^ " = " ^
+                      "Import.theory_thm \"" ^ n ^ "\" " ^
+                      string_of_int i ^ ";;" in
+            let () = !exec_function cmd in
+            () in
+        let (_,ths) = import_article file in
+        List.iter bind ths in
+    let rec bind_first files =
+        match files with
+          [] -> warn true ("no HOL Light theorem names found for theory " ^ n)
+        | file :: files ->
+          if Sys.file_exists file then bind_thm_names file else
+          bind_first files in
+    let local_override_file = Filename.concat import_directory (n ^ ".art") in
+    let theory_file = Filename.concat (theory_directory n) "hol-light.art" in
+    bind_first [local_override_file; theory_file];;
 
-let required_theories thy =
-    let rsubs = "(Requires & Subtheories)" in
-    let reqs = "((Requires | Requires " ^ rsubs ^ ") - Subtheories) " ^ thy in
-    let subs = rsubs ^ " " ^ thy in
-    (list_theories reqs, list_theories subs);;
-
-let theory_article thy =
-    let cmd = "opentheory info --clear-local-names --article " ^ thy in
-    open_command cmd;;
-
-let theory_directory thy =
-    let cmd = "opentheory info --directory " ^ thy in
-    match read_from_command cmd with
-      [dir] -> dir
-    | _ -> failwith ("theory_directory: strange output for theory " ^ thy);;
+(* ------------------------------------------------------------------------- *)
+(* Importing theories.                                                       *)
+(* ------------------------------------------------------------------------- *)
 
 let read_theory thy =
     let h = theory_article thy in
@@ -446,17 +519,6 @@ let read_theory thy =
     let (a,t) = read_article c ("theory " ^ thy) h in
     let () = close_in h in
     Theory.Theory (thy,a,t);;
-
-let theory_interpretation thy =
-    let rec extend_with_first files =
-        match files with
-          [] -> failwith ("no interpretation found for theory " ^ thy)
-        | file :: files ->
-          if Sys.file_exists file then extend_the_interpretation file else
-          extend_with_first files in
-    let local_override_file = Filename.concat import_directory (thy ^ ".int") in
-    let theory_file = Filename.concat (theory_directory thy) "hol-light.int" in
-    extend_with_first [local_override_file; theory_file];;
 
 let import_theory =
     let import_thy prefix thy =
@@ -467,12 +529,16 @@ let import_theory =
     let import_sub prefix thy =
         let _ = import_thy (prefix ^ "imported sub-theory") thy in
         () in
+    let import_main prefix thy =
+        let th = import_thy (prefix ^ "imported theory") thy in
+        let () = theory_bindings th in
+        th in
     let rec import prefix thy =
         let (reqs,subs) = required_theories thy in
         let () = List.iter auto_import reqs in
         let () = theory_interpretation thy in
         let () = List.iter (import_sub prefix) subs in
-        import_thy (prefix ^ "imported theory") thy
+        import_main prefix thy
     and auto_import thy =
         if is_imported_theory thy then () else
         let _ = import "auto-" thy in

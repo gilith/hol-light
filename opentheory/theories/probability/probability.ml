@@ -204,6 +204,16 @@ let random_geometric_loop_src =
 export_thm random_geometric_loop_src;;
 
 (* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for probability.                                       *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "probability-hol-light-thm";;
+
+export_thm_names
+  ["probability-def";
+   "probability-thm"];;
+
+(* ------------------------------------------------------------------------- *)
 (* Haskell source for probability.                                           *)
 (* ------------------------------------------------------------------------- *)
 

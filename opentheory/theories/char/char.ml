@@ -2508,6 +2508,18 @@ let encode_unicode_utf8_src = prove
 export_thm encode_unicode_utf8_src;;
 
 (* ------------------------------------------------------------------------- *)
+(* HOL Light bindings for unicode characters.                                *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "char-hol-light-thm";;
+
+export_thm_names
+  ["char-def";
+   "char-thm";
+   "char-utf8-def";
+   "char-utf8-thm"];;
+
+(* ------------------------------------------------------------------------- *)
 (* Haskell source for unicode characters.                                    *)
 (* ------------------------------------------------------------------------- *)
 
