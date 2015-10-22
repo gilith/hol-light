@@ -148,9 +148,11 @@ struct
 
 type symbol = Const_symbol | Type_op_symbol;;
 
+type relation = Name.t list Name_map.t;;
+
 type translation =
-     {to_opentheory : Name.t list Name_map.t;
-      from_opentheory : Name.t list Name_map.t};;
+     {from_opentheory : relation;
+      to_opentheory : relation};;
 
 type t =
      {const_translation : translation;
@@ -172,54 +174,66 @@ let parse_symbol =
         Some (_,i) -> Some (Type_op_symbol,i)
       | None -> None;;
 
+let empty_relation : relation = Name_map.empty;;
+
+let lookup_relation (rel : relation) n =
+    if Name_map.mem n rel then Name_map.find n rel else [];;
+
+let update_relation (rel : relation) n nl : relation =
+    Name_map.add n nl rel;;
+
+let add_relation rel n nl =
+    update_relation rel n (lookup_relation rel n @ nl);;
+
+let singleton_relation n1 n2 = update_relation empty_relation n1 [n2];;
+
+let fold_relation f (rel : relation) = Name_map.fold f rel;;
+
+let union_relation =
+    let add n nl rel = add_relation rel n nl in
+    fun rel1 rel2 ->
+    fold_relation add rel2 rel1;;
+
+let compose_relation (rel1 : relation) rel2 =
+    let add1 x ys rel =
+        match flat (map (lookup_relation rel2) ys) with
+          [] -> rel
+        | zs -> update_relation rel x zs in
+    let add2 y zs rel =
+        if Name_map.mem y rel1 then rel else update_relation rel y zs in
+    let rel = empty_relation in
+    let rel = fold_relation add1 rel1 rel in
+    let rel = fold_relation add2 rel2 rel in
+    rel;;
+
 let empty_translation : translation =
-    {to_opentheory = Name_map.empty;
-     from_opentheory = Name_map.empty};;
+    {from_opentheory = empty_relation;
+     to_opentheory = empty_relation};;
 
-let add_translation =
-    let add_relation nlm (n1 : Name.t) (n2 : Name.t) =
-        let l2 = if Name_map.mem n1 nlm then Name_map.find n1 nlm else [] in
-        Name_map.add n1 (l2 @ [n2]) nlm in
-    fun tr n1 n2 ->
-    let {to_opentheory = to_tr; from_opentheory = from_tr} = tr in
-    {to_opentheory = add_relation to_tr n1 n2;
-     from_opentheory = add_relation from_tr n2 n1};;
+let singleton_translation x y : translation =
+    {from_opentheory = singleton_relation x y;
+     to_opentheory = singleton_relation y x};;
 
-let union_translation =
-    let lookup m n = if Name_map.mem n m then Name_map.find n m else [] in
-    let union_relation =
-        let add x ys m = Name_map.add x (lookup m x @ ys) m in
-        Name_map.fold add in
-    fun tr1 tr2 ->
-    let {to_opentheory = to_tr1; from_opentheory = from_tr1} = tr1 in
-    let {to_opentheory = to_tr2; from_opentheory = from_tr2} = tr2 in
-    {to_opentheory = union_relation to_tr2 to_tr1;
-     from_opentheory = union_relation from_tr1 from_tr2};;
+let union_translation tr1 tr2 =
+    let {from_opentheory = from_tr1; to_opentheory = to_tr1} = tr1
+    and {from_opentheory = from_tr2; to_opentheory = to_tr2} = tr2 in
+    {from_opentheory = union_relation from_tr1 from_tr2;
+     to_opentheory = union_relation to_tr1 to_tr2};;
 
-let compose_translation =
-    let lookup m n = if Name_map.mem n m then Name_map.find n m else [] in
-    let compose_relation m1 m2 =
-        let add1 x ys m =
-            match flat (map (lookup m2) ys) with
-              [] -> m
-            | zs -> Name_map.add x zs m in
-        let add2 y zs m =
-            if Name_map.mem y m1 then m else Name_map.add y zs m in
-        let m = Name_map.empty in
-        let m = Name_map.fold add1 m1 m in
-        let m = Name_map.fold add2 m2 m in
-        m in
-    fun tr1 tr2 ->
-    let {to_opentheory = to_tr1; from_opentheory = from_tr1} = tr1 in
-    let {to_opentheory = to_tr2; from_opentheory = from_tr2} = tr2 in
-    {to_opentheory = compose_relation to_tr1 to_tr2;
-     from_opentheory = compose_relation from_tr2 from_tr1};;
+let add_translation tr x y =
+    union_translation tr (singleton_translation x y);;
 
-let export_translation {to_opentheory = to_tr; from_opentheory = _} n =
-    if Name_map.mem n to_tr then Name_map.find n to_tr else [];;
+let compose_translation tr1 tr2 =
+    let {from_opentheory = from_tr1; to_opentheory = to_tr1} = tr1
+    and {from_opentheory = from_tr2; to_opentheory = to_tr2} = tr2 in
+    {from_opentheory = compose_relation from_tr1 from_tr2;
+     to_opentheory = compose_relation to_tr2 to_tr1};;
 
-let import_translation {to_opentheory = _; from_opentheory = from_tr} n =
-    if Name_map.mem n from_tr then Name_map.find n from_tr else [];;
+let import_translation {from_opentheory = from_tr; to_opentheory = _} =
+    lookup_relation from_tr;;
+
+let export_translation {from_opentheory = _; to_opentheory = to_tr} =
+    lookup_relation to_tr;;
 
 let empty : t =
     {const_translation = empty_translation;
