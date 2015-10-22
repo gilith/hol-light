@@ -157,20 +157,20 @@ type t =
       type_op_translation : translation};;
 
 let parse_symbol =
-  let str_const = "const" in
-  let str_type_op = "type" in
-  let re_const = Str.regexp str_const in
-  let re_type_op = Str.regexp str_type_op in
-  fun line ->
-  let parse_const = parse_regexp re_const line in
-  let parse_type_op = parse_regexp re_type_op line in
-  fun i ->
-  match parse_const i with
-    Some (_,i) -> Some (Const_symbol,i)
-  | None ->
-    match parse_type_op i with
-      Some (_,i) -> Some (Type_op_symbol,i)
-    | None -> None;;
+    let str_const = "const" in
+    let str_type_op = "type" in
+    let re_const = Str.regexp str_const in
+    let re_type_op = Str.regexp str_type_op in
+    fun line ->
+    let parse_const = parse_regexp re_const line in
+    let parse_type_op = parse_regexp re_type_op line in
+    fun i ->
+    match parse_const i with
+      Some (_,i) -> Some (Const_symbol,i)
+    | None ->
+      match parse_type_op i with
+        Some (_,i) -> Some (Type_op_symbol,i)
+      | None -> None;;
 
 let empty_translation : translation =
     {to_opentheory = Name_map.empty;
@@ -180,9 +180,40 @@ let add_translation =
     let add_relation nlm (n1 : Name.t) (n2 : Name.t) =
         let l2 = if Name_map.mem n1 nlm then Name_map.find n1 nlm else [] in
         Name_map.add n1 (l2 @ [n2]) nlm in
-    fun {to_opentheory = to_tr; from_opentheory = from_tr} n1 n2 ->
+    fun tr n1 n2 ->
+    let {to_opentheory = to_tr; from_opentheory = from_tr} = tr in
     {to_opentheory = add_relation to_tr n1 n2;
      from_opentheory = add_relation from_tr n2 n1};;
+
+let union_translation =
+    let lookup m n = if Name_map.mem n m then Name_map.find n m else [] in
+    let union_relation =
+        let add x ys m = Name_map.add x (lookup m x @ ys) m in
+        Name_map.fold add in
+    fun tr1 tr2 ->
+    let {to_opentheory = to_tr1; from_opentheory = from_tr1} = tr1 in
+    let {to_opentheory = to_tr2; from_opentheory = from_tr2} = tr2 in
+    {to_opentheory = union_relation to_tr2 to_tr1;
+     from_opentheory = union_relation from_tr1 from_tr2};;
+
+let compose_translation =
+    let lookup m n = if Name_map.mem n m then Name_map.find n m else [] in
+    let compose_relation m1 m2 =
+        let add1 x ys m =
+            match flat (map (lookup m2) ys) with
+              [] -> m
+            | zs -> Name_map.add x zs m in
+        let add2 y zs m =
+            if Name_map.mem y m1 then m else Name_map.add y zs m in
+        let m = Name_map.empty in
+        let m = Name_map.fold add1 m1 m in
+        let m = Name_map.fold add2 m2 m in
+        m in
+    fun tr1 tr2 ->
+    let {to_opentheory = to_tr1; from_opentheory = from_tr1} = tr1 in
+    let {to_opentheory = to_tr2; from_opentheory = from_tr2} = tr2 in
+    {to_opentheory = compose_relation to_tr1 to_tr2;
+     from_opentheory = compose_relation from_tr2 from_tr1};;
 
 let export_translation {to_opentheory = to_tr; from_opentheory = _} n =
     if Name_map.mem n to_tr then Name_map.find n to_tr else [];;
@@ -220,73 +251,87 @@ let import_type_op int =
     let {const_translation = _; type_op_translation = type_op} = int in
     import_translation type_op;;
 
+let union int1 int2 =
+    let {const_translation = const1; type_op_translation = type_op1} = int1 in
+    let {const_translation = const2; type_op_translation = type_op2} = int2 in
+    {const_translation = union_translation const1 const2;
+     type_op_translation = union_translation type_op1 type_op2};;
+
+let compose int1 int2 =
+    let {const_translation = const1; type_op_translation = type_op1} = int1 in
+    let {const_translation = const2; type_op_translation = type_op2} = int2 in
+    {const_translation = compose_translation const1 const2;
+     type_op_translation = compose_translation type_op1 type_op2};;
+
 let parse =
-  let str_space = " " in
-  let str_space_as_space = " as " in
-  let re_space = Str.regexp str_space in
-  let re_space_as_space = Str.regexp str_space_as_space in
-  fun line ->
-  let parse_space i =
-    match parse_regexp re_space line i with
-      None -> None
-    | Some (_,i) -> Some ((),i) in
-  let parse_space_as_space i =
-    match parse_regexp re_space_as_space line i with
-      None -> None
-    | Some (_,i) -> Some ((),i) in
-  fun i ->
-  match parse_symbol line i with
-    None -> None
-  | Some (s,i) ->
-    match parse_space i with
-      None -> None
-    | Some ((),i) ->
-      match Name.parse line i with
+    let str_space = " " in
+    let str_space_as_space = " as " in
+    let re_space = Str.regexp str_space in
+    let re_space_as_space = Str.regexp str_space_as_space in
+    fun line ->
+    let parse_space i =
+      match parse_regexp re_space line i with
         None -> None
-      | Some (n1,i) ->
-        match parse_space_as_space i with
+      | Some (_,i) -> Some ((),i) in
+    let parse_space_as_space i =
+      match parse_regexp re_space_as_space line i with
+        None -> None
+      | Some (_,i) -> Some ((),i) in
+    fun i ->
+    match parse_symbol line i with
+      None -> None
+    | Some (s,i) ->
+      match parse_space i with
+        None -> None
+      | Some ((),i) ->
+        match Name.parse line i with
           None -> None
-        | Some ((),i) ->
-          match Name.parse line i with
+        | Some (n1,i) ->
+          match parse_space_as_space i with
             None -> None
-          | Some (n2,i) -> Some ((s,n1,n2),i);;
+          | Some ((),i) ->
+            match Name.parse line i with
+              None -> None
+            | Some (n2,i) -> Some ((s,n1,n2),i);;
 
 let extend int file =
-  let is_comment line =
-      (* parser.ml redefines || *)
-      Pervasives.(||) (String.length line = 0) (String.get line 0 = '#') in
-  let intfile = open_in file in
-  let rec read acc =
-    try let line = input_line intfile in
-        if is_comment line then read acc else
-        match parse_everything parse line with
-          None -> failwith ("bad line in interpretation file " ^ file ^
-                            ":\n" ^ line)
-        | Some (s,n1,n2) ->
-          let acc =
-              match s with
-                Const_symbol -> add_const acc n1 n2
-              | Type_op_symbol -> add_type_op acc n1 n2 in
-          read acc
-    with End_of_file -> acc in
-  let int = read int in
-  let () = close_in intfile in
-  int;;
+    let is_comment line =
+        (* parser.ml redefines || *)
+        Pervasives.(||) (String.length line = 0) (String.get line 0 = '#') in
+    let intfile = open_in file in
+    let rec read acc =
+      try let line = input_line intfile in
+          if is_comment line then read acc else
+          match parse_everything parse line with
+            None -> failwith ("bad line in interpretation file " ^ file ^
+                              ":\n" ^ line)
+          | Some (s,n1,n2) ->
+            let acc =
+                match s with
+                  Const_symbol -> add_const acc n1 n2
+                | Type_op_symbol -> add_type_op acc n1 n2 in
+            read acc
+      with End_of_file -> acc in
+    let int = read int in
+    let () = close_in intfile in
+    int;;
+
+let from_file = extend empty;;
 
 end
 
 let the_interpretation = ref Interpretation.empty;;
 
-let export_const_from_the_interpretation n =
+let export_const_using_the_interpretation n =
     Interpretation.export_const (!the_interpretation) n;;
 
-let export_type_op_from_the_interpretation n =
+let export_type_op_using_the_interpretation n =
     Interpretation.export_type_op (!the_interpretation) n;;
 
-let import_const_from_the_interpretation n =
+let import_const_using_the_interpretation n =
     Interpretation.import_const (!the_interpretation) n;;
 
-let import_type_op_from_the_interpretation n =
+let import_type_op_using_the_interpretation n =
     Interpretation.import_type_op (!the_interpretation) n;;
 
 let extend_the_interpretation file =

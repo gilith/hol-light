@@ -92,7 +92,7 @@ let log_type_var_name s = log_name (Name.mk_type_var s);;
 let log_type_op_name s =
     let n = Name.mk_type_op s in
     let n =
-        match export_type_op_from_the_interpretation n with
+        match export_type_op_using_the_interpretation n with
           [] -> n
         | [n] -> n
         | _ :: _ :: _ -> failwith ("ambiguous export for type operator " ^ s) in
@@ -101,7 +101,7 @@ let log_type_op_name s =
 let log_const_name s =
     let n = Name.mk_const s in
     let n =
-        match export_const_from_the_interpretation n with
+        match export_const_using_the_interpretation n with
           [] -> n
         | [n] -> n
         | _ :: _ :: _ -> failwith ("ambiguous export for constant " ^ s) in
@@ -838,5 +838,6 @@ and export_proof = Export.export_proof
 and export_theory = Export.logfile
 and export_thm = Export.export_thm
 and export_thm_names = Export.export_thm_names
+and the_exported_thms = Export.the_exported_thms
 and list_the_exported_thms = Export.list_the_exported_thms
 and peek_the_exported_thms = Export.peek_the_exported_thms;;

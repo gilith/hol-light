@@ -175,17 +175,18 @@ let (new_theory_const_name,new_theory_type_op_name) =
 (* ------------------------------------------------------------------------- *)
 
 type context =
-  {const_context : Name.t -> string;
-   type_op_context : Name.t -> string;
-   axiom_context : Sequent.t -> thm};;
+    {const_context : Name.t -> string;
+     type_op_context : Name.t -> string;
+     axiom_context : Sequent.t -> thm};;
 
 let theory_context thy =
     let new_const_name = new_theory_const_name thy in
     let new_type_op_name = new_theory_type_op_name thy in
+    fun int thms ->
     let const_context n =
         if Name.is_empty n then new_const_name () else
         let n =
-            match import_const_from_the_interpretation n with
+            match Interpretation.import_const int n with
               [] -> n
             | n :: _ -> n in
         match Name.dest_const n with
@@ -194,41 +195,50 @@ let theory_context thy =
     let type_op_context n =
         if Name.is_empty n then new_type_op_name () else
         let n =
-            match import_type_op_from_the_interpretation n with
+            match Interpretation.import_type_op int n with
               [] -> n
             | n :: _ -> n in
         match Name.dest_type_op n with
           Some s -> s
         | None -> failwith ("unknown type operator " ^ Name.to_string n) in
     let axiom_context s =
-        match peek_the_exported_thms s with
+        match peek_sequent_map thms s with
           Some (th,_) -> th
         | None -> failwith ("unknown assumption:\n" ^ Sequent.to_string s) in
     {const_context = const_context;
      type_op_context = type_op_context;
      axiom_context = axiom_context};;
 
-let default_context = theory_context "";;
+let default_context =
+    let ctxt =
+        let ctxt_fn = theory_context "" in
+        fun () -> ctxt_fn (!the_interpretation) (!the_exported_thms) in
+    let const_context n = (ctxt ()).const_context n in
+    let type_op_context n = (ctxt ()).type_op_context n in
+    let axiom_context s = (ctxt ()).axiom_context s in
+    {const_context = const_context;
+     type_op_context = type_op_context;
+     axiom_context = axiom_context};;
 
 (* ------------------------------------------------------------------------- *)
 (* A type of import states.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 type state =
-  {stack : Object.t list;
-   dict : Object.t Int_map.t;
-   asms : thm list;
-   thms : thm list};;
+    {stack : Object.t list;
+     dict : Object.t Int_map.t;
+     asms : thm list;
+     thms : thm list};;
 
 let is_digit = function
   | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' -> true
   | _ -> false;;
 
 let initial_state =
-  {stack = [];
-   dict = Int_map.empty;
-   asms = [];
-   thms = []};;
+    {stack = [];
+     dict = Int_map.empty;
+     asms = [];
+     thms = []};;
 
 let process_num state cmd =
     let {stack = stack; dict = dict; asms = asms; thms = thms} = state in
@@ -247,151 +257,151 @@ let process_name state cmd =
       failwith ("bad name format in article: " ^ cmd);;
 
 let process_command context state cmd =
-  if String.length cmd = 0 then state else
-  let c = String.get cmd 0 in
-  if c = '#' then state else
-  if c = '\"' then process_name state cmd else
-  if is_digit c then process_num state cmd else
-  let {stack = stack; dict = dict; asms = asms; thms = thms} = state in
-  match (cmd,stack) with
-    ("absTerm", objB :: objV :: stack) ->
-    let obj = Object.mkAbsTerm objV objB in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("absThm", objB :: objV :: stack) ->
-    let obj = Object.mkAbsThm objV objB in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("appTerm", objX :: objF :: stack) ->
-    let obj = Object.mkAppTerm objF objX in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("appThm", objX :: objF :: stack) ->
-    let obj = Object.mkAppThm objF objX in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("assume", objT :: stack) ->
-    let obj = Object.mkAssume objT in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("axiom", objC :: objH :: stack) ->
-    let (s,r) = go_native_sequent (Object.dest_sequent (objH,objC)) in
-    let th = context.axiom_context s in
-    let obj = Object.mk_thm (r th) in
-    let stack = obj :: stack in
-    let asms = th :: asms in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("betaConv", objT :: stack) ->
-    let obj = Object.mkBetaConv objT in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("cons", objT :: objH :: stack) ->
-    let obj = Object.mk_cons objH objT in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("const", objN :: stack) ->
-    let obj = Object.mkConst (context.const_context) objN in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("constTerm", objT :: objC :: stack) ->
-    let obj = Object.mkConstTerm objC objT in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("deductAntisym", objU :: objT :: stack) ->
-    let obj = Object.mkDeductAntisym objT objU in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("def", Object.Num_object k :: (obj :: _ as stack)) ->
-    let dict = Int_map.add k obj dict in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("defineConst", objT :: objN :: stack) ->
-    let (objC,objD) = Object.mkDefineConst (context.const_context) objN objT in
-    let stack = objD :: objC :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("defineConstList", objT :: objL :: stack) ->
-    let (objC,objD) =
-        Object.mkDefineConstList (context.const_context) objL objT in
-    let stack = objD :: objC :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("defineTypeOp", objT :: objL :: objR :: objA :: objN :: stack) ->
-    let (objT,objA,objR,objRA,objAR) =
-        Object.mkDefineTypeOp
-          (context.type_op_context) (context.const_context)
-          objN objA objR objL objT in
-    let stack = objAR :: objRA :: objR :: objA :: objT :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("eqMp", objU :: objT :: stack) ->
-    let obj = Object.mkEqMp objT objU in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("hdTl", objL :: stack) ->
-    let (objH,objT) = Object.mkHdTl objL in
-    let stack = objT :: objH :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("nil", _) ->
-    let stack = Object.mk_nil :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("opType", objL :: objT :: stack) ->
-    let obj = Object.mkOpType objT objL in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("pop", _ :: stack) ->
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("pragma", _ :: stack) ->
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("proveHyp", objU :: objT :: stack) ->
-    let obj = Object.mkProveHyp objT objU in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("ref", Object.Num_object k :: stack) ->
-    let obj = Int_map.find k dict in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("refl", objT :: stack) ->
-    let obj = Object.mkRefl objT in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("remove", Object.Num_object k :: stack) ->
-    let obj = Int_map.find k dict in
-    let dict = Int_map.remove k dict in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("subst", objT :: objS :: stack) ->
-    let obj = Object.mkSubst objS objT in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("sym", objU :: stack) ->
-    let obj = Object.mkSym objU in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("thm", objC :: objH :: objT :: stack) ->
-    let s = Object.dest_sequent (objH,objC) in
-    let th = go_native_thm (alpha_rule s (Object.dest_thm objT)) in
-    let thms = th :: thms in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("trans", objU :: objT :: stack) ->
-    let obj = Object.mkTrans objT objU in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("typeOp", objN :: stack) ->
-    let obj = Object.mkTypeOp (context.type_op_context) objN in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("var", objT :: objN :: stack) ->
-    let obj = Object.mkVar objN objT in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("varTerm", objV :: stack) ->
-    let obj = Object.mkVarTerm objV in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("varType", objN :: stack) ->
-    let obj = Object.mkVarType objN in
-    let stack = obj :: stack in
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | ("version", _ :: stack) ->
-    {stack = stack; dict = dict; asms = asms; thms = thms}
-  | _ -> failwith ("unhandled article line: " ^ cmd);;
+    if String.length cmd = 0 then state else
+    let c = String.get cmd 0 in
+    if c = '#' then state else
+    if c = '\"' then process_name state cmd else
+    if is_digit c then process_num state cmd else
+    let {stack = stack; dict = dict; asms = asms; thms = thms} = state in
+    match (cmd,stack) with
+      ("absTerm", objB :: objV :: stack) ->
+      let obj = Object.mkAbsTerm objV objB in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("absThm", objB :: objV :: stack) ->
+      let obj = Object.mkAbsThm objV objB in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("appTerm", objX :: objF :: stack) ->
+      let obj = Object.mkAppTerm objF objX in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("appThm", objX :: objF :: stack) ->
+      let obj = Object.mkAppThm objF objX in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("assume", objT :: stack) ->
+      let obj = Object.mkAssume objT in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("axiom", objC :: objH :: stack) ->
+      let (s,r) = go_native_sequent (Object.dest_sequent (objH,objC)) in
+      let th = context.axiom_context s in
+      let obj = Object.mk_thm (r th) in
+      let stack = obj :: stack in
+      let asms = th :: asms in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("betaConv", objT :: stack) ->
+      let obj = Object.mkBetaConv objT in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("cons", objT :: objH :: stack) ->
+      let obj = Object.mk_cons objH objT in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("const", objN :: stack) ->
+      let obj = Object.mkConst (context.const_context) objN in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("constTerm", objT :: objC :: stack) ->
+      let obj = Object.mkConstTerm objC objT in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("deductAntisym", objU :: objT :: stack) ->
+      let obj = Object.mkDeductAntisym objT objU in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("def", Object.Num_object k :: (obj :: _ as stack)) ->
+      let dict = Int_map.add k obj dict in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("defineConst", objT :: objN :: stack) ->
+      let (objC,objD) = Object.mkDefineConst (context.const_context) objN objT in
+      let stack = objD :: objC :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("defineConstList", objT :: objL :: stack) ->
+      let (objC,objD) =
+          Object.mkDefineConstList (context.const_context) objL objT in
+      let stack = objD :: objC :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("defineTypeOp", objT :: objL :: objR :: objA :: objN :: stack) ->
+      let (objT,objA,objR,objRA,objAR) =
+          Object.mkDefineTypeOp
+            (context.type_op_context) (context.const_context)
+            objN objA objR objL objT in
+      let stack = objAR :: objRA :: objR :: objA :: objT :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("eqMp", objU :: objT :: stack) ->
+      let obj = Object.mkEqMp objT objU in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("hdTl", objL :: stack) ->
+      let (objH,objT) = Object.mkHdTl objL in
+      let stack = objT :: objH :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("nil", _) ->
+      let stack = Object.mk_nil :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("opType", objL :: objT :: stack) ->
+      let obj = Object.mkOpType objT objL in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("pop", _ :: stack) ->
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("pragma", _ :: stack) ->
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("proveHyp", objU :: objT :: stack) ->
+      let obj = Object.mkProveHyp objT objU in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("ref", Object.Num_object k :: stack) ->
+      let obj = Int_map.find k dict in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("refl", objT :: stack) ->
+      let obj = Object.mkRefl objT in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("remove", Object.Num_object k :: stack) ->
+      let obj = Int_map.find k dict in
+      let dict = Int_map.remove k dict in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("subst", objT :: objS :: stack) ->
+      let obj = Object.mkSubst objS objT in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("sym", objU :: stack) ->
+      let obj = Object.mkSym objU in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("thm", objC :: objH :: objT :: stack) ->
+      let s = Object.dest_sequent (objH,objC) in
+      let th = go_native_thm (alpha_rule s (Object.dest_thm objT)) in
+      let thms = th :: thms in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("trans", objU :: objT :: stack) ->
+      let obj = Object.mkTrans objT objU in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("typeOp", objN :: stack) ->
+      let obj = Object.mkTypeOp (context.type_op_context) objN in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("var", objT :: objN :: stack) ->
+      let obj = Object.mkVar objN objT in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("varTerm", objV :: stack) ->
+      let obj = Object.mkVarTerm objV in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("varType", objN :: stack) ->
+      let obj = Object.mkVarType objN in
+      let stack = obj :: stack in
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | ("version", _ :: stack) ->
+      {stack = stack; dict = dict; asms = asms; thms = thms}
+    | _ -> failwith ("unhandled article line: " ^ cmd);;
 
 (* ------------------------------------------------------------------------- *)
 (* Importing articles.                                                       *)
@@ -427,15 +437,14 @@ let import_article filename =
 (* ------------------------------------------------------------------------- *)
 
 let theory_interpretation thy =
-    let rec extend_with_first files =
+    let rec first_existing files =
         match files with
           [] -> failwith ("no interpretation found for theory " ^ thy)
         | file :: files ->
-          if Sys.file_exists file then extend_the_interpretation file else
-          extend_with_first files in
+          if Sys.file_exists file then file else first_existing files in
     let local_override_file = Filename.concat import_directory (thy ^ ".int") in
     let theory_file = Filename.concat (theory_directory thy) "hol-light.int" in
-    extend_with_first [local_override_file; theory_file];;
+    first_existing [local_override_file; theory_file];;
 
 (* ------------------------------------------------------------------------- *)
 (* The set of imported theories.                                             *)
@@ -513,16 +522,18 @@ let theory_bindings thy =
 (* Importing theories.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-let read_theory thy =
-    let h = theory_article thy in
-    let c = theory_context thy in
-    let (a,t) = read_article c ("theory " ^ thy) h in
+let read_theory src_thy int thms thy =
+    let c = theory_context thy int thms in
+    let h = theory_article src_thy in
+    let (a,t) = read_article c ("theory " ^ src_thy) h in
     let () = close_in h in
     Theory.Theory (thy,a,t);;
 
-let import_theory =
+let (auto_import_theory,import_theory) =
     let import_thy prefix thy =
-        let th = read_theory thy in
+        let int = !the_interpretation in
+        let thms = !the_exported_thms in
+        let th = read_theory thy int thms thy in
         let () = print_endline (prefix ^ " " ^ Theory.to_string th) in
         let () = add_imported_theory th in
         th in
@@ -533,23 +544,37 @@ let import_theory =
         let th = import_thy (prefix ^ "imported theory") thy in
         let () = theory_bindings th in
         th in
-    let rec import prefix thy =
+    let rec import_gen prefix thy =
         let (reqs,subs) = required_theories thy in
         let () = List.iter auto_import reqs in
-        let () = theory_interpretation thy in
+        let () = extend_the_interpretation (theory_interpretation thy) in
         let () = List.iter (import_sub prefix) subs in
         import_main prefix thy
     and auto_import thy =
         if is_imported_theory thy then () else
-        let _ = import "auto-" thy in
+        let _ = import_gen "auto-" thy in
         () in
-    fun thy ->
-    match peek_imported_theory thy with
-      None -> import "" thy
-    | Some th -> th;;
+    let import thy =
+        match peek_imported_theory thy with
+          None -> import_gen "" thy
+        | Some th -> th in
+    (auto_import,import);;
+
+let instantiate_theory src int n =
+    let (reqs,_) = required_theories src in
+    let () = List.iter auto_import_theory reqs in
+    let int = Interpretation.from_file int in
+    let src_int = Interpretation.from_file (theory_interpretation src) in
+    let int = Interpretation.compose int src_int in
+    let int = Interpretation.union int (!the_interpretation) in
+    let thms = !the_exported_thms in
+    let thy = read_theory src int thms n in
+    let () = List.iter (Export.add_exported_thm n) (Theory.theorems thy) in
+    thy;;
 
 end
 
 let import_article = Import.import_article
 and list_the_imported_theories = Import.imported_theories
-and import_theory = Import.import_theory;;
+and import_theory = Import.import_theory
+and instantiate_theory = Import.instantiate_theory;;
