@@ -7,4 +7,4 @@
 
 # Number.Natural
 
-const "HOLLight.BIT2" as "Number.Natural.bit2"
+const "Number.Natural.bit2" as "HOLLight.BIT2"

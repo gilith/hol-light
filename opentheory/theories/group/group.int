@@ -7,17 +7,17 @@
 
 # Algebra.Group
 
-type "HOLLight.group" as "Algebra.Group.group"
+type "Algebra.Group.group" as "HOLLight.group"
 
-const "HOLLight.group_add" as "Algebra.Group.+"
-const "HOLLight.group_neg" as "Algebra.Group.~"
-const "HOLLight.group_mult" as "Algebra.Group.*"
-const "HOLLight.group_sub" as "Algebra.Group.-"
-const "HOLLight.group_zero" as "Algebra.Group.0"
-const "HOLLight.group_mult_add" as "Algebra.Group.multAdd"
-const "HOLLight.group_mult_sub" as "Algebra.Group.multSub"
+const "Algebra.Group.+" as "HOLLight.group_add"
+const "Algebra.Group.~" as "HOLLight.group_neg"
+const "Algebra.Group.*" as "HOLLight.group_mult"
+const "Algebra.Group.-" as "HOLLight.group_sub"
+const "Algebra.Group.0" as "HOLLight.group_zero"
+const "Algebra.Group.multAdd" as "HOLLight.group_mult_add"
+const "Algebra.Group.multSub" as "HOLLight.group_mult_sub"
 
 # Algebra.Group.ElGamal
 
-const "HOLLight.group_elgamal_decrypt" as "Algebra.Group.ElGamal.decrypt"
-const "HOLLight.group_elgamal_encrypt" as "Algebra.Group.ElGamal.encrypt"
+const "Algebra.Group.ElGamal.decrypt" as "HOLLight.group_elgamal_decrypt"
+const "Algebra.Group.ElGamal.encrypt" as "HOLLight.group_elgamal_encrypt"
