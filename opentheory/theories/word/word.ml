@@ -55,6 +55,15 @@ let word_size_nonzero = new_axiom
 
 loads "opentheory/theories/word/word-modular.ml";;
 
+(***
+instantiate_theory
+  {Import.source_theory = "modular";
+   Import.interpretation = "opentheory/theories/word/word-def-modular.int";
+   Import.theorem_renamer = Import.replace "modular" "word" o
+                            Import.replace "modulus" "word_size";
+   Import.destination_theory = "word-def"};;
+***)
+
 (* ------------------------------------------------------------------------- *)
 (* Definition of word to bit-list conversions.                               *)
 (* ------------------------------------------------------------------------- *)

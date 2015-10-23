@@ -20,6 +20,8 @@ let import_directory = "opentheory/import";;
 (* Utility functions.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
+let replace x = Str.global_replace (Str.regexp_string x);;
+
 let open_command cmd =
     let (fd_in,fd_out) = Unix.pipe () in
     match Unix.fork () with
@@ -486,46 +488,51 @@ let exec_function =
         failwith "Import.exec_function: not initialized" in
     ref exec;;
 
-let theory_thm n i =
-    let thy = get_imported_theory n in
-    let ths = Theory.theorems thy in
-    List.nth ths i;;
+let bind_thm_names_mbox = ref (REFL (mk_var ("x",bool_ty)));;
 
-let theory_bindings thy =
-    let n = Theory.name thy in
-    let concls = map concl (Theory.theorems thy) in
-    let bind_thm_names file =
-        let bind th =
-            let (s,tm) = dest_comb (concl th) in
-            let (_,s) = dest_comb s in
-            let (s,_) = dest_abs s in
-            let (s,_) = dest_var s in
-            let i = index tm concls in
-            let cmd = "let " ^ s ^ " = " ^
-                      "Import.theory_thm \"" ^ n ^ "\" " ^
-                      string_of_int i ^ ";;" in
-            let () = !exec_function cmd in
-            () in
-        let (_,ths) = import_article file in
-        List.iter bind ths in
-    let rec bind_first files =
+let bind_thm_names =
+    let ctxt_fn = theory_context "theorem names" in
+    fun int thms bind renamer ->
+    let bind_thm sth =
+        let (s,tm) = dest_comb (concl sth) in
+        let (_,s) = dest_comb s in
+        let (s,_) = dest_abs s in
+        let (s,_) = dest_var s in
+        let s = renamer s in
+        let th =
+            match peek_sequent_map thms (Sequent.mk ([],tm)) with
+              None -> failwith "bind_thm_names: couldn't find theorem"
+            | Some (th,_) -> th in
+        let () = bind_thm_names_mbox := th in
+        let cmd = "let " ^ s ^ " = !Import.bind_thm_names_mbox;;" in
+        let () = !exec_function cmd in
+        () in
+    let ctxt = ctxt_fn int thms in
+    let h = open_in bind in
+    let (_,sthl) = read_article ctxt "theorem names" h in
+    let () = close_in h in
+    List.iter bind_thm sthl;;
+
+let theory_bindings n =
+    let rec first_existing files =
         match files with
-          [] -> warn true ("no HOL Light theorem names found for theory " ^ n)
+          [] ->
+          let msg = "no HOL Light theorem names found for theory " ^ n in
+          let () = warn true msg in
+          None
         | file :: files ->
-          if Sys.file_exists file then bind_thm_names file else
-          bind_first files in
+          if Sys.file_exists file then Some file else first_existing files in
     let local_override_file = Filename.concat import_directory (n ^ ".art") in
     let theory_file = Filename.concat (theory_directory n) "hol-light.art" in
-    bind_first [local_override_file; theory_file];;
+    first_existing [local_override_file; theory_file];;
 
 (* ------------------------------------------------------------------------- *)
 (* Importing theories.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-let read_theory src_thy int thms thy =
-    let c = theory_context thy int thms in
-    let h = theory_article src_thy in
-    let (a,t) = read_article c ("theory " ^ src_thy) h in
+let read_theory ctxt thy =
+    let h = theory_article thy in
+    let (a,t) = read_article ctxt ("theory " ^ thy) h in
     let () = close_in h in
     Theory.Theory (thy,a,t);;
 
@@ -533,7 +540,8 @@ let (auto_import_theory,import_theory) =
     let import_thy prefix thy =
         let int = !the_interpretation in
         let thms = !the_exported_thms in
-        let th = read_theory thy int thms thy in
+        let ctxt = theory_context thy int thms in
+        let th = read_theory ctxt thy in
         let () = print_endline (prefix ^ " " ^ Theory.to_string th) in
         let () = add_imported_theory th in
         th in
@@ -542,7 +550,13 @@ let (auto_import_theory,import_theory) =
         () in
     let import_main prefix thy =
         let th = import_thy (prefix ^ "imported theory") thy in
-        let () = theory_bindings th in
+        let () =
+            match theory_bindings thy with
+              None -> ()
+            | Some bind ->
+              let int = !the_interpretation in
+              let thms = !the_exported_thms in
+              bind_thm_names int thms bind I in
         th in
     let rec import_gen prefix thy =
         let (reqs,subs) = required_theories thy in
@@ -560,14 +574,32 @@ let (auto_import_theory,import_theory) =
         | Some th -> th in
     (auto_import,import);;
 
-let instantiate_theory src int n =
+type instantiation =
+     {source_theory : string;
+      interpretation : string;
+      theorem_renamer : string -> string;
+      destination_theory : string};;
+
+let instantiate_theory =
+    let ctxt_fn = theory_context "instantiate theory" in
+    fun {source_theory = src;
+         interpretation = int;
+         theorem_renamer = renamer;
+         destination_theory = dest} ->
     let (reqs,_) = required_theories src in
     let () = List.iter auto_import_theory reqs in
     let int = Interpretation.from_file int in
     let int = Interpretation.compose int (!the_interpretation) in
     let thms = !the_exported_thms in
-    let thy = read_theory src int thms n in
-    let () = List.iter (Export.add_exported_thm n) (Theory.theorems thy) in
+    let ctxt = ctxt_fn int thms in
+    let thy = read_theory ctxt src in
+    let () = List.iter (Export.add_exported_thm dest) (Theory.theorems thy) in
+    let () =
+        match theory_bindings src with
+          None -> ()
+        | Some bind ->
+          let thms = !the_exported_thms in
+          bind_thm_names int thms bind renamer in
     thy;;
 
 end

@@ -50,7 +50,16 @@ let oddprime_nonzero = new_axiom
 
 (* Parametric theory instantiation: modular *)
 
+(***
 loads "opentheory/theories/gfp/gfp-modular.ml";;
+***)
+
+instantiate_theory
+  {Import.source_theory = "modular";
+   Import.interpretation = "opentheory/theories/gfp/gfp-def-modular.int";
+   Import.theorem_renamer = Import.replace "modular" "gfp" o
+                            Import.replace "modulus" "oddprime";
+   Import.destination_theory = "gfp-def"};;
 
 (* ------------------------------------------------------------------------- *)
 (* Properties of GF(p) finite fields.                                        *)
