@@ -4,7 +4,15 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for probability.                                          *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "stream"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/probability/probability.int";;
@@ -204,17 +212,17 @@ let random_geometric_loop_src =
 export_thm random_geometric_loop_src;;
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for probability.                                       *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "probability-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "probability"
   ["probability-def";
    "probability-thm"];;
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell source for probability.                                           *)
+(* Haskell source.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "probability-haskell-src";;

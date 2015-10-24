@@ -4,7 +4,14 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for the map reduce 3x3 bit matrix example.                *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation
@@ -558,6 +565,6 @@ let bit4x4_product_parallel = prove
 
 export_theory "map-reduce-bit3x3-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "map-reduce-bit3x3"
   ["map-reduce-bit3x3-def";
    "map-reduce-bit3x3-thm"];;

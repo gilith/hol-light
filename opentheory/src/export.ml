@@ -7,10 +7,24 @@ module Export =
 struct
 
 (* ------------------------------------------------------------------------- *)
-(* The export directory.                                                     *)
+(* Constants.                                                                *)
 (* ------------------------------------------------------------------------- *)
 
 let export_directory = "opentheory/export";;
+
+(* ------------------------------------------------------------------------- *)
+(* Utility functions.                                                        *)
+(* ------------------------------------------------------------------------- *)
+
+let map_partial f =
+    let rec mp xs =
+        match xs with
+          [] -> []
+        | x :: xs ->
+          match f x with
+            None -> mp xs
+          | Some y -> y :: mp xs in
+    mp;;
 
 (* ------------------------------------------------------------------------- *)
 (* Imperative logging dictionaries.                                          *)
@@ -686,6 +700,10 @@ let peek_the_exported_thms seq = peek_sequent_map (!the_exported_thms) seq;;
 let list_the_exported_thms () =
     map snd (Sequent_map.bindings (!the_exported_thms));;
 
+let filter_the_exported_thms thys =
+    let pred (th,thy) = if mem thy thys then Some th else None in
+    map_partial pred (list_the_exported_thms ());;
+
 (* ------------------------------------------------------------------------- *)
 (* Exporting theorems.                                                       *)
 (* ------------------------------------------------------------------------- *)
@@ -758,16 +776,6 @@ let export_thm th =
 (* Exporting theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-let map_partial f =
-    let rec mp xs =
-        match xs with
-          [] -> []
-        | x :: xs ->
-          match f x with
-            None -> mp xs
-          | Some y -> y :: mp xs in
-    mp;;
-
 let search_function =
     let search (_ : term list) : (string * thm) list =
         failwith "Export.search_function: not initialized" in
@@ -779,9 +787,8 @@ let search_exact tm =
       [] -> None
     | th :: _ -> Some th;;
 
-let export_thm_names thys =
-    let peek_bind (th,thy) =
-        if not (mem thy thys) then None else
+let export_thm_names =
+    let peek_bind th =
         let () = if length (hyp th) = 0 then () else
                  failwith "export_thm_names: theorem cannot have hypotheses" in
         search_exact (concl th) in
@@ -789,9 +796,10 @@ let export_thm_names thys =
         let stm = mk_var (s,bool_ty) in
         let tm = mk_comb (mk_abs (stm,stm), concl th) in
         EQ_MP (Object.SYM (Object.BETA_CONV tm)) th in
-    let ths = map_partial peek_bind (list_the_exported_thms ()) in
+    fun ths ->
+    let ths = map_partial peek_bind ths in
     let () = if length ths <> 0 then () else
-             failwith "export_thm_names: no theorems found" in
+             failwith "export_thm_names: no theorem names found" in
     let bths = map mk_bind ths in
     List.iter export_thm bths;;
 
@@ -840,4 +848,5 @@ and export_thm = Export.export_thm
 and export_thm_names = Export.export_thm_names
 and the_exported_thms = Export.the_exported_thms
 and list_the_exported_thms = Export.list_the_exported_thms
-and peek_the_exported_thms = Export.peek_the_exported_thms;;
+and peek_the_exported_thms = Export.peek_the_exported_thms
+and filter_the_exported_thms = Export.filter_the_exported_thms;;

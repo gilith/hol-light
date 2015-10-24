@@ -4,7 +4,15 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for natural number to bit-list conversions.               *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "probability"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/natural-bits/natural-bits.int";;
@@ -2435,17 +2443,17 @@ let random_uniform_src = prove
 export_thm random_uniform_src;;
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for natural number to bit-list conversions.            *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "natural-bits-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "natural-bits"
   ["natural-bits-def";
    "natural-bits-thm"];;
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell source for natural number to bit-list conversions.                *)
+(* Haskell source.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "natural-bits-haskell-src";;

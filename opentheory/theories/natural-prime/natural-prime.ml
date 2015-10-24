@@ -4,7 +4,16 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for prime natural numbers.                                *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "stream";
+   "natural-divides"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/natural-prime/natural-prime.int";;
@@ -1294,12 +1303,12 @@ let primes_src = GSYM correct_sieve;;
 export_thm primes_src;;
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for prime numbers.                                     *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "natural-prime-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "natural-prime"
   ["natural-prime-def";
    "natural-prime-thm";
    "natural-prime-stream-def";
@@ -1308,7 +1317,7 @@ export_thm_names
    "natural-prime-sieve-thm"];;
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell source for prime numbers.                                         *)
+(* Haskell source.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "natural-prime-haskell-src";;
@@ -1322,7 +1331,7 @@ export_thm next_sieve_def;;  (* Haskell *)
 export_thm primes_src;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell tests for prime numbers.                                          *)
+(* Haskell tests.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "natural-prime-haskell-test";;

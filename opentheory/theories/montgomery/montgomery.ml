@@ -4,7 +4,17 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for Montgomery multiplication.                            *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "natural-bits";
+   "natural-divides";
+   "hardware"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/montgomery/montgomery.int";;
@@ -46,12 +56,12 @@ loads "opentheory/theories/montgomery/montgomery-hardware-synthesis.ml";;
 loads "opentheory/theories/montgomery/timelock.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for Montgomery multiplication.                         *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "montgomery-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "montgomery"
   ["montgomery-def";
    "montgomery-thm";
    "montgomery-hardware-def";

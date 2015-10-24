@@ -35,7 +35,18 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for memory safety for the H interface.                    *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "natural-bits";
+   "byte";
+   "word10";
+   "word12"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/h/h.int";;
@@ -6521,11 +6532,11 @@ export_thm output_consistency;;
 *)
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for memory safety for the H interface.                 *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "h-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "h"
   ["h-def";
    "h-thm"];;

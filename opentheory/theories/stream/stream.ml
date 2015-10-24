@@ -4,7 +4,14 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for stream types.                                         *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/stream/stream.int";;
@@ -664,17 +671,17 @@ let stake_src = prove
 export_thm stake_src;;
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for stream types.                                      *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "stream-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "stream"
   ["stream-def";
    "stream-thm"];;
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell source for stream types.                                          *)
+(* Haskell source.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "stream-haskell-src";;

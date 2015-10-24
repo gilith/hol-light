@@ -11,7 +11,7 @@ module Import =
 struct
 
 (* ------------------------------------------------------------------------- *)
-(* The local import directory.                                               *)
+(* Constants.                                                                *)
 (* ------------------------------------------------------------------------- *)
 
 let import_directory = "opentheory/import";;
@@ -574,6 +574,14 @@ let (auto_import_theory,import_theory) =
         | Some th -> th in
     (auto_import,import);;
 
+let import_theories =
+    let import thy = let _ = import_theory thy in () in
+    List.iter import;;
+
+(* ------------------------------------------------------------------------- *)
+(* Instantiating parametric theories.                                        *)
+(* ------------------------------------------------------------------------- *)
+
 type instantiation =
      {source_theory : string;
       interpretation : string;
@@ -602,9 +610,29 @@ let instantiate_theory =
           bind_thm_names int thms bind renamer in
     thy;;
 
+(* ------------------------------------------------------------------------- *)
+(* Exporting theorem names for a particular theory.                          *)
+(* ------------------------------------------------------------------------- *)
+
+let export_theory_thm_names thy thys =
+    let () =
+        let msg = match !Export.the_current_theory with
+                     None -> Some "outside of any theory"
+                   | Some s -> if s = thy ^ "-hol-light-thm" then None else
+                               Some ("in non-standard theory " ^ s) in
+        match msg with
+          None -> ()
+        | Some m -> warn true ("export_theory_thm_names " ^ thy ^ " " ^ m) in
+    let ths = filter_the_exported_thms thys in
+    let () = export_thm_names ths in
+    let () = add_imported_theory (Theory.Theory (thy,[],ths)) in
+    ();;
+
 end
 
 let import_article = Import.import_article
 and list_the_imported_theories = Import.imported_theories
 and import_theory = Import.import_theory
-and instantiate_theory = Import.instantiate_theory;;
+and import_theories = Import.import_theories
+and instantiate_theory = Import.instantiate_theory
+and export_theory_thm_names = Import.export_theory_thm_names;;

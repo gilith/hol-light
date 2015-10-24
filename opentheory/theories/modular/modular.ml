@@ -4,7 +4,17 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for a parametric theory of modular arithmetic.            *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "probability";
+   "natural-bits";
+   "natural-divides"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/modular/modular.int";;
@@ -1143,11 +1153,11 @@ let modular_lt_trans = new_axiom
 *)
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for a parametric theory of modular arithmetic.         *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "modular-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "modular"
   ["modular-def";
    "modular-thm"];;

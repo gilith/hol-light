@@ -9,7 +9,16 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for hardware devices.                                     *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "stream";
+   "natural-bits"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/hardware/hardware.int";;
@@ -63,12 +72,12 @@ loads "opentheory/theories/hardware/hardware-counter.ml";;
 loads "opentheory/theories/hardware/hardware-multiplier.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for hardware devices.                                  *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "hardware-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "hardware"
   ["hardware-def";
    "hardware-thm";
    "hardware-wire-def";

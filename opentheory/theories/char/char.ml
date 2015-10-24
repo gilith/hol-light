@@ -4,7 +4,18 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for Unicode characters.                                   *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "probability";
+   "natural-bits";
+   "byte";
+   "parser"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/char/char.int";;
@@ -2508,19 +2519,19 @@ let encode_unicode_utf8_src = prove
 export_thm encode_unicode_utf8_src;;
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for unicode characters.                                *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "char-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "char"
   ["char-def";
    "char-thm";
    "char-utf8-def";
    "char-utf8-thm"];;
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell source for unicode characters.                                    *)
+(* Haskell source.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "char-haskell-src";;
@@ -2554,7 +2565,7 @@ export_thm parser_utf8_def;;  (* Haskell *)
 export_thm decode_utf8_def;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell tests for unicode characters.                                     *)
+(* Haskell tests.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "char-haskell-test";;

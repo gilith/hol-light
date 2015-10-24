@@ -4,7 +4,14 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for the divides relation on natural numbers.              *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation
@@ -2616,12 +2623,12 @@ let gcd_right_distrib = prove
 export_thm gcd_right_distrib;;
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for the divides relation on natural numbers.           *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "natural-divides-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "natural-divides"
   ["natural-divides-def";
    "natural-divides-thm";
    "natural-divides-gcd-def";
@@ -2630,7 +2637,7 @@ export_thm_names
    "natural-divides-lcm-thm"];;
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell source for the divides relation on natural numbers.               *)
+(* Haskell source.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "natural-divides-haskell-src";;
@@ -2640,7 +2647,7 @@ export_thm egcd_def;;  (* Haskell *)
 export_thm chinese_src;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell tests for the divides relation on natural numbers.                *)
+(* Haskell tests.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "natural-divides-haskell-test";;

@@ -6,7 +6,16 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for Fibonacci numbers.                                    *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "stream";
+   "probability"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation
@@ -1205,17 +1214,17 @@ let zeckendorf_src = prove
 export_thm zeckendorf_src;;
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for Fibonacci numbers.                                 *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "natural-fibonacci-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "natural-fibonacci"
   ["natural-fibonacci-def";
    "natural-fibonacci-thm"];;
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell source for Fibonacci numbers.                                     *)
+(* Haskell source.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "natural-fibonacci-haskell-src";;
@@ -1229,7 +1238,7 @@ export_thm encode_fib_src;;  (* Haskell *)
 export_thm zeckendorf_src;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell tests for Fibonacci numbers.                                      *)
+(* Haskell tests.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "natural-fibonacci-haskell-test";;

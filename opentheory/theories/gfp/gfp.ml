@@ -4,7 +4,19 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for a parametric theory of GF(p) finite fields.           *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "natural-bits";
+   "natural-fibonacci";
+   "natural-divides";
+   "natural-prime";
+   "natural-fibonacci"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/gfp/gfp.int";;
@@ -1492,12 +1504,12 @@ let gfp_exp_div = new_axiom
 *)
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for a parametric theory of GF(p) finite fields.        *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "gfp-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "gfp"
   ["gfp-def";
    "gfp-thm";
    "gfp-div-def";

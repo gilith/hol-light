@@ -4,7 +4,14 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for stream parsers.                                       *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/parser/parser.int";;
@@ -1923,12 +1930,12 @@ let parse_src = prove
 export_thm parse_src;;
 
 (* ------------------------------------------------------------------------- *)
-(* HOL Light bindings for stream parsers.                                    *)
+(* HOL Light theorem names.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "parser-hol-light-thm";;
 
-export_thm_names
+export_theory_thm_names "parser"
   ["parser-stream-def";
    "parser-stream-thm";
    "parser-comb-def";
@@ -1939,7 +1946,7 @@ export_thm_names
    "parser-all-thm"];;
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell source for stream parsers.                                        *)
+(* Haskell source.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "parser-haskell-src";;
@@ -1973,7 +1980,7 @@ export_thm parser_foldn_def;;  (* Haskell *)
 export_thm parse_src;;  (* Haskell *)
 
 (* ------------------------------------------------------------------------- *)
-(* Haskell tests for stream parsers.                                         *)
+(* Haskell tests.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "parser-haskell-test";;
