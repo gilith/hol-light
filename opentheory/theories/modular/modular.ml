@@ -20,7 +20,7 @@ import_theories
 export_interpretation "opentheory/theories/modular/modular.int";;
 
 (* ------------------------------------------------------------------------- *)
-(* Parametric theory witness for modular arithmetic.                         *)
+(* Parametric theory witness.                                                *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "modular-witness";;

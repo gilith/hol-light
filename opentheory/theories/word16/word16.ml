@@ -4,7 +4,18 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for 16-bit words.                                         *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "probability";
+   "natural-bits";
+   "natural-divides";
+   "byte"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/word16/word16.int";;
@@ -135,6 +146,18 @@ let bytes_to_word16_cases = prove
   FIRST_ASSUM ACCEPT_TAC);;
 
 export_thm bytes_to_word16_cases;;
+
+(* ------------------------------------------------------------------------- *)
+(* HOL Light theorem names.                                                  *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "word16-hol-light-thm";;
+
+export_theory_thm_names "word16"
+  ["word16-def";
+   "word16-bits";
+   "word16-bytes-def";
+   "word16-bytes-thm"];;
 
 (* ------------------------------------------------------------------------- *)
 (* Proof tools for 16-bit words.                                             *)

@@ -4,13 +4,23 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for a parametric theory of words.                         *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "probability";
+   "natural-bits";
+   "natural-divides"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/word/word.int";;
 
 (* ------------------------------------------------------------------------- *)
-(* Parametric theory witness for words.                                      *)
+(* Parametric theory witness.                                                *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "word-witness";;
@@ -800,6 +810,17 @@ let word_lt_list = new_axiom
   `!w1 w2.
      word_bits_lte F (word_to_list w1) (word_to_list w2) <=> word_lt w1 w2`;;
 *)
+
+(* ------------------------------------------------------------------------- *)
+(* HOL Light theorem names.                                                  *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "word-hol-light-thm";;
+
+export_theory_thm_names "word"
+  ["word-def";
+   "word-bits-def";
+   "word-bits-thm"];;
 
 (* ------------------------------------------------------------------------- *)
 (* Proof tools for words after width parameter is instantiated to a numeral. *)

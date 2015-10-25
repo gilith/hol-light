@@ -42,7 +42,6 @@ info-clean:
 
 THEORY_INTERPRETATIONS = \
   theories/byte/byte-word.ml \
-  theories/gfp/gfp-modular.ml \
   theories/word/word-modular.ml \
   theories/word10/word10-word.ml \
   theories/word12/word12-word.ml \
@@ -65,9 +64,6 @@ theories/field/field-group.ml: theories/group/group.ml $(wildcard theories/group
 
 theories/field/field-star-group.ml: theories/group/group.ml $(wildcard theories/group/group-*.ml)
 	scripts/instantiate -r "group/field_star" $< > $@
-
-theories/gfp/gfp-modular.ml: theories/modular/modular.ml
-	scripts/instantiate -r "modulus/oddprime:modular/gfp" $< > $@
 
 theories/group/group-abelian-monoid.ml: theories/monoid/monoid-comm.ml
 	scripts/instantiate -r "monoid/group" $< > $@

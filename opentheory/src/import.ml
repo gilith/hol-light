@@ -579,17 +579,17 @@ let import_theories =
     List.iter import;;
 
 (* ------------------------------------------------------------------------- *)
-(* Instantiating parametric theories.                                        *)
+(* Interpreting parametric theories.                                         *)
 (* ------------------------------------------------------------------------- *)
 
-type instantiation =
+type interpretation =
      {source_theory : string;
       interpretation : string;
       theorem_renamer : string -> string;
       destination_theory : string};;
 
-let instantiate_theory =
-    let ctxt_fn = theory_context "instantiate theory" in
+let interpret_theory =
+    let ctxt_fn = theory_context "interpret theory" in
     fun {source_theory = src;
          interpretation = int;
          theorem_renamer = renamer;
@@ -634,5 +634,5 @@ let import_article = Import.import_article
 and list_the_imported_theories = Import.imported_theories
 and import_theory = Import.import_theory
 and import_theories = Import.import_theories
-and instantiate_theory = Import.instantiate_theory
+and interpret_theory = Import.interpret_theory
 and export_theory_thm_names = Import.export_theory_thm_names;;

@@ -4,7 +4,17 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Interpretations for 12-bit words.                                         *)
+(* Theory requirements.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+import_theories
+  ["base";
+   "probability";
+   "natural-bits";
+   "natural-divides"];;
+
+(* ------------------------------------------------------------------------- *)
+(* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
 export_interpretation "opentheory/theories/word12/word12.int";;
@@ -33,3 +43,13 @@ export_theory "word12-bits";;
 let word12_list_cases = prove_word12_list_cases 12;;
 
 export_thm word12_list_cases;;
+
+(* ------------------------------------------------------------------------- *)
+(* HOL Light theorem names.                                                  *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "word12-hol-light-thm";;
+
+export_theory_thm_names "word12"
+  ["word12-def";
+   "word12-bits"];;
