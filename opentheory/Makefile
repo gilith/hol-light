@@ -37,57 +37,17 @@ info-clean:
 	@$(MAKE) clean
 
 ###############################################################################
-# Parametric theory interpretations.
+# Instantiate parametric proof tools.
 ###############################################################################
 
-THEORY_INTERPRETATIONS = \
+PARAMETRIC_PROOF_TOOLS = \
   theories/byte/byte-word.ml \
-  theories/word/word-modular.ml \
   theories/word10/word10-word.ml \
   theories/word12/word12-word.ml \
   theories/word16/word16-word.ml
-#  theories/field/field-group.ml \
-#  theories/field/field-star-group.ml \
-#  theories/group/group-abelian-monoid.ml \
-#  theories/group/group-mult-monoid.ml \
-#  theories/group/group-monoid.ml \
-#  theories/ring/ring-add-comm.ml \
-#  theories/ring/ring-add-group.ml \
-#  theories/ring/ring-mult.ml \
-#  theories/ring/ring-unit-group.ml \
 
 theories/byte/byte-word.ml: theories/word/word.ml $(wildcard theories/word/word-*.ml)
 	scripts/instantiate -r "word/byte" $< > $@
-
-theories/field/field-group.ml: theories/group/group.ml $(wildcard theories/group/group-*.ml)
-	scripts/instantiate -r "group/field" $< > $@
-
-theories/field/field-star-group.ml: theories/group/group.ml $(wildcard theories/group/group-*.ml)
-	scripts/instantiate -r "group/field_star" $< > $@
-
-theories/group/group-abelian-monoid.ml: theories/monoid/monoid-comm.ml
-	scripts/instantiate -r "monoid/group" $< > $@
-
-theories/group/group-mult-monoid.ml: theories/monoid/monoid-mult.ml
-	scripts/instantiate -r "monoid/group" $< > $@
-
-theories/group/group-monoid.ml: theories/monoid/monoid-thm.ml
-	scripts/instantiate -r "monoid/group" $< > $@
-
-theories/ring/ring-add-group.ml: theories/group/group-thm.ml theories/group/group-monoid.ml theories/group/group-sub.ml
-	scripts/instantiate -r "group/ring" theories/group/group-thm.ml theories/group/group-monoid.ml theories/group/group-sub.ml > $@
-
-theories/ring/ring-add-comm.ml: theories/group/group-abelian.ml $(wildcard theories/group/group-abelian-*.ml)
-	scripts/instantiate -r "group/ring" theories/group/group-abelian.ml > $@
-
-theories/ring/ring-mult.ml: theories/monoid/monoid-thm.ml theories/monoid/monoid-mult.ml
-	scripts/instantiate -r "monoid_mult_right_zero/monoid_mult_right_ZERO:monoid_mult_right_add/monoid_mult_right_ADD:monoid_mult_right_mult/monoid_mult_right_MULT:monoid/ring:mult/exp:add/mult:zero/one:ZERO/zero:ADD/add:MULT/mult" theories/monoid/monoid-thm.ml theories/monoid/monoid-mult.ml > $@
-
-theories/ring/ring-unit-group.ml: theories/group/group.ml $(wildcard theories/group/group-*.ml)
-	scripts/instantiate -r "group/ring_unit" $< > $@
-
-theories/word/word-modular.ml: theories/modular/modular.ml
-	scripts/instantiate -r "modulus/word_size:modular/word" $< > $@
 
 theories/word10/word10-word.ml: theories/word/word.ml $(wildcard theories/word/word-*.ml)
 	scripts/instantiate -r "word/word10" $< > $@
@@ -98,20 +58,20 @@ theories/word12/word12-word.ml: theories/word/word.ml $(wildcard theories/word/w
 theories/word16/word16-word.ml: theories/word/word.ml $(wildcard theories/word/word-*.ml)
 	scripts/instantiate -r "word/word16" $< > $@
 
-.PHONY: theory-interpretations
-theory-interpretations: $(THEORY_INTERPRETATIONS)
+.PHONY: instantiate-parametric-proof-tools
+instantiate-parametric-proof-tools: $(PARAMETRIC_PROOF_TOOLS)
 
-.PHONY: info-theory-interpretations
-info-theory-interpretations:
+.PHONY: info-instantiate-parametric-proof-tools
+info-instantiate-parametric-proof-tools:
 	@echo
-	@echo '+-------------------------------+'
-	@echo '| Interpret parametric theories |'
-	@echo '+-------------------------------+'
+	@echo '+------------------------------------+'
+	@echo '| Instantiate parametric proof tools |'
+	@echo '+------------------------------------+'
 	@echo
-	@$(MAKE) theory-interpretations
+	@$(MAKE) instantiate-parametric-proof-tools
 
 ###############################################################################
-# Export the theories.
+# Export theories.
 ###############################################################################
 
 .PHONY: export-theories
@@ -128,7 +88,7 @@ info-export-theories:
 	@$(MAKE) export-theories
 
 ###############################################################################
-# Check the theory sources.
+# Check theory sources.
 ###############################################################################
 
 .PHONY: check-theories
@@ -150,13 +110,13 @@ info-check-theories:
 	@$(MAKE) check-theories
 
 ###############################################################################
-# Export the theories.
+# Export theories.
 ###############################################################################
 
 .PHONY: theories
 theories:
 	@$(MAKE) info-clean
-	@$(MAKE) info-theory-interpretations
+	@$(MAKE) info-instantiate-parametric-proof-tools
 	@$(MAKE) info-export-theories
 	@$(MAKE) info-check-theories
 

@@ -534,7 +534,7 @@ let read_theory ctxt thy =
     let h = theory_article thy in
     let (a,t) = read_article ctxt ("theory " ^ thy) h in
     let () = close_in h in
-    Theory.Theory (thy,a,t);;
+    Theory.Theory (thy, Some a, t);;
 
 let (auto_import_theory,import_theory) =
     let import_thy prefix thy =
@@ -594,8 +594,6 @@ let interpret_theory =
          interpretation = int;
          theorem_renamer = renamer;
          destination_theory = dest} ->
-    let (reqs,_) = required_theories src in
-    let () = List.iter auto_import_theory reqs in
     let int = Interpretation.from_file int in
     let int = Interpretation.compose int (!the_interpretation) in
     let thms = !the_exported_thms in
@@ -625,7 +623,7 @@ let export_theory_thm_names thy thys =
         | Some m -> warn true ("export_theory_thm_names " ^ thy ^ " " ^ m) in
     let ths = filter_the_exported_thms thys in
     let () = export_thm_names ths in
-    let () = add_imported_theory (Theory.Theory (thy,[],ths)) in
+    let () = add_imported_theory (Theory.Theory (thy,None,ths)) in
     ();;
 
 end

@@ -6,7 +6,7 @@
 module Theory =
 struct
 
-type t = Theory of string * thm list * thm list;;
+type t = Theory of string * thm list option * thm list;;
 
 let name th =
     match th with
@@ -21,15 +21,19 @@ let theorems th =
       Theory (_,_,t) -> t;;
 
 let from_current_state n =
-    let a = axioms () in
+    let a = Some (axioms ()) in
     let t = map fst (list_the_exported_thms ()) in
     Theory (n,a,t);;
 
 let to_string th =
-    let string_of_list l = "{" ^ string_of_int (length l) ^ "}" in
+    let string_of_list x =
+        let s = match x with
+                  Some l -> string_of_int (length l)
+                | None -> "?" in
+        "{" ^ s ^ "}" in
     name th ^ " : " ^
     string_of_list (assumptions th) ^ " |> " ^
-    string_of_list (theorems th);;
+    string_of_list (Some (theorems th));;
 
 let pp fmt th =
     let () = Format.pp_open_hbox fmt () in

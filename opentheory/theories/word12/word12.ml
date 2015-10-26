@@ -30,7 +30,15 @@ let word12_width_def = new_definition
 
 export_thm word12_width_def;;
 
-(* Parametric theory instantiation: word *)
+(* Interpret parametric theory *)
+
+interpret_theory
+  {Import.source_theory = "word";
+   Import.interpretation = "opentheory/theories/word12/word12-def-word.int";
+   Import.theorem_renamer = Import.replace "word" "word12";
+   Import.destination_theory = "word12-def"};;
+
+(* Load parametric proof tools *)
 
 loads "opentheory/theories/word12/word12-word.ml";;
 

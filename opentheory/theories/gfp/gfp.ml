@@ -55,6 +55,8 @@ let oddprime_nonzero = prove
 
 export_thm oddprime_nonzero;;
 
+(* Interpret parametric theory *)
+
 interpret_theory
   {Import.source_theory = "modular";
    Import.interpretation = "opentheory/theories/gfp/gfp-def-modular.int";

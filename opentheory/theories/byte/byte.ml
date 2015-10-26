@@ -30,7 +30,15 @@ let byte_width_def = new_definition
 
 export_thm byte_width_def;;
 
-(* Parametric theory instantiation: word *)
+(* Interpret parametric theory *)
+
+interpret_theory
+  {Import.source_theory = "word";
+   Import.interpretation = "opentheory/theories/byte/byte-def-word.int";
+   Import.theorem_renamer = Import.replace "word" "byte";
+   Import.destination_theory = "byte-def"};;
+
+(* Load parametric proof tools *)
 
 loads "opentheory/theories/byte/byte-word.ml";;
 
