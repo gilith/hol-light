@@ -797,6 +797,7 @@ let export_thm_names =
         let tm = mk_comb (mk_abs (stm,stm), concl th) in
         EQ_MP (Object.SYM (Object.BETA_CONV tm)) th in
     fun ths ->
+    if not_logging () then () else
     let ths = map_partial peek_bind ths in
     let () = if length ths <> 0 then () else
              failwith "export_thm_names: no theorem names found" in

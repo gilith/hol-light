@@ -3,8 +3,6 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-needs "opentheory/theories/tactics.ml";;
-
 (* ------------------------------------------------------------------------- *)
 (* Theory requirements.                                                      *)
 (* ------------------------------------------------------------------------- *)
@@ -14,6 +12,8 @@ import_theories
    "probability";
    "natural-bits";
    "natural-divides"];;
+
+needs "opentheory/theories/tactics.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)

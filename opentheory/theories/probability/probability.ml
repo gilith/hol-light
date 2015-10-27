@@ -3,8 +3,6 @@
 (* Joe Leslie-Hurd                                                           *)
 (* ========================================================================= *)
 
-needs "opentheory/theories/tactics.ml";;
-
 (* ------------------------------------------------------------------------- *)
 (* Theory requirements.                                                      *)
 (* ------------------------------------------------------------------------- *)
@@ -12,6 +10,8 @@ needs "opentheory/theories/tactics.ml";;
 import_theories
   ["base";
    "stream"];;
+
+needs "opentheory/theories/tactics.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)
