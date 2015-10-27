@@ -1,7 +1,5 @@
 #!/usr/bin/perl
 
-# Joe Leslie-Hurd
-
 use strict;
 use warnings;
 use Pod::Usage;
