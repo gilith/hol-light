@@ -13,7 +13,7 @@ import_theories
    "natural-bits";
    "natural-divides"];;
 
-needs "opentheory/theories/tactics.ml";;
+needs "opentheory/theories/tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)

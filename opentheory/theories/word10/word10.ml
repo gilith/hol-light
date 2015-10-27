@@ -40,7 +40,7 @@ interpret_theory
 
 (* Load parametric proof tools *)
 
-loads "opentheory/theories/word10/word10-word.ml";;
+loads "opentheory/theories/word10/word10-tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* 10-bit word to bit-list conversions.                                      *)

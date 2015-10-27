@@ -11,7 +11,7 @@ import_theories
   ["base";
    "stream"];;
 
-needs "opentheory/theories/tactics.ml";;
+needs "opentheory/theories/tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)

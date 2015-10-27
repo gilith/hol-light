@@ -45,7 +45,7 @@ import_theories
    "word10";
    "word12"];;
 
-needs "opentheory/theories/tactics.ml";;
+needs "opentheory/theories/tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)

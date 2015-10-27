@@ -40,7 +40,7 @@ interpret_theory
 
 (* Load parametric proof tools *)
 
-loads "opentheory/theories/word12/word12-word.ml";;
+loads "opentheory/theories/word12/word12-tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* 12-bit word to bit-list conversions.                                      *)

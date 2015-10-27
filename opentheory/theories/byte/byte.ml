@@ -13,7 +13,7 @@ import_theories
    "natural-bits";
    "natural-divides"];;
 
-needs "opentheory/theories/tactics.ml";;
+needs "opentheory/theories/tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)
@@ -42,7 +42,7 @@ interpret_theory
 
 (* Load parametric proof tools *)
 
-loads "opentheory/theories/byte/byte-word.ml";;
+loads "opentheory/theories/byte/byte-tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Byte to bit-list conversions.                                             *)

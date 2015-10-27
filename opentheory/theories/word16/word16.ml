@@ -41,7 +41,7 @@ interpret_theory
 
 (* Load parametric proof tools *)
 
-loads "opentheory/theories/word16/word16-word.ml";;
+loads "opentheory/theories/word16/word16-tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* 16-bit word to bit-list conversions.                                      *)

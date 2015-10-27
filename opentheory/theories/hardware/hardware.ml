@@ -17,7 +17,7 @@ import_theories
    "stream";
    "natural-bits"];;
 
-needs "opentheory/theories/tactics.ml";;
+needs "opentheory/theories/tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)
