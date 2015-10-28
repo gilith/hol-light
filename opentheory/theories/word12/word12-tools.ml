@@ -1,4 +1,6 @@
 (*BEGIN-PARAMETRIC*)
+needs "opentheory/theories/natural-bits/natural-bits-tools.ml";;
+
 let word12_reduce_conv =
   REWRITE_CONV
     [word12_to_num_to_word12;

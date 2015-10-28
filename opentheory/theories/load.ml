@@ -55,13 +55,17 @@ loads "opentheory/theories/natural-fibonacci/natural-fibonacci.ml";;
 (* Parametric theory of monoids.                                             *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 loads "opentheory/theories/monoid/monoid.ml";;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory of commutative monoids.                                 *)
 (* ------------------------------------------------------------------------- *)
 
+(***
 loads "opentheory/theories/monoid-comm/monoid-comm.ml";;
+***)
 
 (* ------------------------------------------------------------------------- *)
 (* Parametric theory of groups.                                              *)

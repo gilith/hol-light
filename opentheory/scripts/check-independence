@@ -1,0 +1,148 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2011 Joe Leslie-Hurd, distributed under the MIT license
+
+use strict;
+use warnings;
+use Pod::Usage;
+use Getopt::Std;
+
+use vars qw($opt_h $opt_v);
+
+###############################################################################
+# Process options.
+###############################################################################
+
+getopts('hv');
+
+if ($opt_h or scalar @ARGV != 0)
+{
+    pod2usage({-exitval => 2,
+	       -verbose => 2});
+}
+
+# Autoflush STDIN
+$|++;
+
+my $program = "check-independence";
+
+my $thy_load = "theories/load.ml";
+[ -f $thy_load ] or die "$program: $thy_load does not exist";
+
+###############################################################################
+# Execute commands.
+###############################################################################
+
+sub check_load {
+  (scalar @_ == 1) or die;
+  my $load = shift @_;
+
+  my $tmp = "check-independence.ml";
+
+  open TMPFILE, ">$tmp" or
+    die "$program: couldn't open $tmp for writing: $!\n";
+  print TMPFILE "#use \"hol.ml\";;\n";
+  print TMPFILE "$load\n";
+  close TMPFILE;
+
+  my $log = "export/log.txt";
+
+  my $cmd = "cd .. ; echo '#use \"opentheory/$tmp\";;' | ocaml >opentheory/$log 2>&1";
+
+  if ($opt_v) { print STDOUT "$cmd\n"; }
+
+  (system($cmd) == 0) or die "couldn't execute command:\n$cmd";
+
+  $cmd = "grep '^Exception:\\\|^Error:\\\|^Error in included file\\\|Warning: inventing type variables' $log";
+
+  if ($opt_v) { print STDOUT "$cmd\n"; }
+
+  if (system($cmd) == 0) {
+    die "error during independent $load";
+  }
+
+  print STDOUT "success: $load\n";
+
+  unlink $tmp or die "$program: couldn't remove $tmp: $!\n";
+}
+
+###############################################################################
+# Import theories.
+###############################################################################
+
+# print STDOUT "cmd = $cmd\n";
+
+my $state = 'normal';
+
+open THEORIES, $thy_load or
+  die "$program: couldn't read $thy_load: $!\n";
+
+while (my $line = <THEORIES>) {
+  chomp $line;
+
+  if ($state eq 'comment') {
+    if ($line =~ /^[*]+[)]$/) {
+      $state = 'normal';
+    }
+  }
+  elsif ($state eq 'normal') {
+    if ($line =~ /^[(][*]+[^*]*$/) {
+      $state = 'comment';
+    }
+    elsif ($line =~ /^loads/) {
+      check_load $line;
+    }
+  }
+  else {
+    die "weird state";
+  }
+}
+
+close THEORIES;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+check-independence - check additional theories can be loaded independently
+
+=head1 SYNOPSIS
+
+check-independence [-hv]
+
+=head1 ARGUMENTS
+
+The recognized flags are described below:
+
+=over 2
+
+=item B<-h>
+
+Produce this documentation.
+
+=item B<-v>
+
+Print the commands that are being executed.
+
+=back
+
+=head1 DESCRIPTION
+
+Check the HOL Light additional theories in the theories directory can each
+be loaded immediately after #use "hol.ml";;
+
+=head1 BUGS
+
+Waiting to rear their ugly heads.
+
+=head1 AUTHORS
+
+Joe Leslie-Hurd <joe@gilith.com>
+
+=head1 SEE ALSO
+
+Perl(1).
+
+=cut

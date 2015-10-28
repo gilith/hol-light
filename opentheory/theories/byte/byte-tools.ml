@@ -1,4 +1,6 @@
 (*BEGIN-PARAMETRIC*)
+needs "opentheory/theories/natural-bits/natural-bits-tools.ml";;
+
 let byte_reduce_conv =
   REWRITE_CONV
     [byte_to_num_to_byte;
