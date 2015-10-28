@@ -14,6 +14,8 @@ import_theories
    "natural-divides";
    "byte"];;
 
+needs "opentheory/theories/byte/byte-tools.ml";;
+
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
@@ -41,7 +43,7 @@ interpret_theory
 
 (* Load parametric proof tools *)
 
-loads "opentheory/theories/word16/word16-tools.ml";;
+loads "opentheory/theories/word16/word16-word-tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* 16-bit word to bit-list conversions.                                      *)

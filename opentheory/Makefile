@@ -44,7 +44,7 @@ PARAMETRIC_PROOF_TOOLS = \
   theories/byte/byte-tools.ml \
   theories/word10/word10-tools.ml \
   theories/word12/word12-tools.ml \
-  theories/word16/word16-tools.ml
+  theories/word16/word16-word-tools.ml
 
 theories/byte/byte-tools.ml: theories/word/word-tools.ml
 	scripts/instantiate -r "word/byte" $< > $@
@@ -55,7 +55,7 @@ theories/word10/word10-tools.ml: theories/word/word-tools.ml
 theories/word12/word12-tools.ml: theories/word/word-tools.ml
 	scripts/instantiate -r "word/word12" $< > $@
 
-theories/word16/word16-tools.ml: theories/word/word-tools.ml
+theories/word16/word16-word-tools.ml: theories/word/word-tools.ml
 	scripts/instantiate -r "word/word16" $< > $@
 
 .PHONY: instantiate-parametric-proof-tools

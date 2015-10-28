@@ -6,6 +6,5 @@ echo '#use "opentheory/export-theories.ml";;' | ocaml >$log 2>&1
 
 if grep '^Exception:\|^Error:\|^Error in included file\|Warning: inventing type variables' $log
 then
-    cat $log
     exit 1
 fi

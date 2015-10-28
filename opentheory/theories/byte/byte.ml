@@ -13,8 +13,6 @@ import_theories
    "natural-bits";
    "natural-divides"];;
 
-needs "opentheory/theories/tools.ml";;
-
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)

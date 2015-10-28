@@ -1,4 +1,5 @@
 (*BEGIN-PARAMETRIC*)
+needs "opentheory/theories/tools.ml";;
 needs "opentheory/theories/natural-bits/natural-bits-tools.ml";;
 
 let byte_reduce_conv =
