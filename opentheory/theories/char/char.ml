@@ -14,6 +14,8 @@ import_theories
    "byte";
    "parser"];;
 
+needs "opentheory/theories/byte/byte-tools.ml";;
+
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)
@@ -1567,8 +1569,8 @@ let parser_unicode_utf8_strong_inverse = prove
       (DISJ_CASES_THEN2 SUBST_VAR_TAC
         (X_CHOOSE_THEN `b : byte`
           (X_CHOOSE_THEN `zs : byte pstream` SUBST_VAR_TAC)))) THENL
-  [ASM_REWRITE_TAC [apply_parser_def; option_distinct];
-   ASM_REWRITE_TAC [apply_parser_def; option_distinct];
+  [ASM_REWRITE_TAC [apply_parser_error; option_distinct];
+   ASM_REWRITE_TAC [apply_parser_eof; option_distinct];
    ALL_TAC] THEN
   REWRITE_TAC
     [parser_unicode_utf8_def; apply_parser_map_partial; parser_num_utf8_def;
@@ -2350,7 +2352,7 @@ let decode_encode_utf8 = prove
   REWRITE_TAC [decode_utf8_def; encode_utf8_def; parser_utf8_def] THEN
   LIST_INDUCT_TAC THENL
   [REWRITE_TAC
-     [MAP; concat_def; list_to_pstream_nil; parse_def; pstream_to_list_def];
+     [MAP; concat_def; list_to_pstream_nil; parse_eof; pstream_to_list_def];
    ALL_TAC] THEN
   REWRITE_TAC [MAP; concat_def; list_to_pstream_append] THEN
   ONCE_REWRITE_TAC [parse_apply] THEN
@@ -2425,7 +2427,7 @@ let reencode_decode_utf8 = prove
       APPEND_SING; CONS_11] THEN
    FIRST_X_ASSUM (MP_TAC o SPEC `ys : byte pstream`) THEN
    REWRITE_TAC
-     [parser_utf8_def; is_proper_suffix_pstream_def; is_suffix_pstream_refl];
+     [parser_utf8_def; is_proper_suffix_pstream_cons; is_suffix_pstream_refl];
    ALL_TAC] THEN
   MP_TAC
     (ISPECL

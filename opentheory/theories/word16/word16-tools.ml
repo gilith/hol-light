@@ -8,7 +8,7 @@
 (* ------------------------------------------------------------------------- *)
 
 needs "opentheory/theories/tools.ml";;
-needs "opentheory/theories/byte/byte.ml";;
+needs "opentheory/theories/byte/byte-tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Instantiated parametric proof tools from the word theory                  *)
