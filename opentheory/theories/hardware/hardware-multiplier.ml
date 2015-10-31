@@ -716,15 +716,3 @@ let scmult_bits_to_num = prove
    ASM_REWRITE_TAC [length_bsignal; LE_REFL]]);;
 
 export_thm scmult_bits_to_num;;
-
-(* ------------------------------------------------------------------------- *)
-(* Automatically synthesizing hardware.                                      *)
-(* ------------------------------------------------------------------------- *)
-
-let bmult_syn =
-    setify (("mulb",bmult_def) :: adder2_syn @ badder3_syn @ adder3_syn);;
-
-let scmult_syn =
-    setify
-      (("mulsc",scmult_def) ::
-       scshiftr_syn @ pipe_syn @ bmult_syn);;

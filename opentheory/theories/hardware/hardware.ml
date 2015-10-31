@@ -32,6 +32,12 @@ export_interpretation "opentheory/theories/hardware/hardware.int";;
 loads "opentheory/theories/hardware/hardware-def.ml";;
 
 (* ------------------------------------------------------------------------- *)
+(* Syntax operations for the hardware model.                                 *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/hardware/hardware-syntax.ml";;
+
+(* ------------------------------------------------------------------------- *)
 (* Properties of the hardware model.                                         *)
 (* ------------------------------------------------------------------------- *)
 
@@ -72,6 +78,12 @@ loads "opentheory/theories/hardware/hardware-counter.ml";;
 (* ------------------------------------------------------------------------- *)
 
 loads "opentheory/theories/hardware/hardware-multiplier.ml";;
+
+(* ------------------------------------------------------------------------- *)
+(* Proof tools.                                                              *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/hardware/hardware-tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* HOL Light theorem names.                                                  *)
