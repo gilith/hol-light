@@ -1828,7 +1828,7 @@ let counter_signal = prove
      `mk_wire
         (stream (\u. UNCURRY h ((g : num -> num # num) u)))` THEN
    GEN_TAC THEN
-   REWRITE_TAC [signal_def; wire_tybij; stream_tybij];
+   REWRITE_TAC [signal_def; wire_tybij; stream_snth];
    ALL_TAC] THEN
   SUBGOAL_THEN
     `!i. i <= k + 1 ==> (g : cycle -> cycle # cycle) i = (0,i)`
