@@ -56,12 +56,6 @@ loads "opentheory/theories/hardware/hardware-wire.ml";;
 loads "opentheory/theories/hardware/hardware-bus.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Hardware synthesis.                                                       *)
-(* ------------------------------------------------------------------------- *)
-
-loads "opentheory/theories/hardware/hardware-synthesis.ml";;
-
-(* ------------------------------------------------------------------------- *)
 (* Hardware adder devices.                                                   *)
 (* ------------------------------------------------------------------------- *)
 

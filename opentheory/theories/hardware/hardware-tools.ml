@@ -13,7 +13,7 @@ needs "opentheory/theories/hardware/hardware-syntax.ml";;
 (* Hardware synthesis.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-needs "opentheory/theories/hardware/hardware-synthesis.ml";;
+loads "opentheory/theories/hardware/hardware-synthesis.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Automatically synthesizing hardware adder devices.                        *)
