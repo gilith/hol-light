@@ -169,8 +169,7 @@ let delay_exists = prove
   REWRITE_TAC [delay_def] THEN
   EXISTS_TAC `mk_wire (stream (\t. t = 0 \/ signal x (t - 1)))` THEN
   GEN_TAC THEN
-  REWRITE_TAC
-    [mk_wire_signal; stream_tybij; ADD_SUB; ADD_EQ_0; ONE; NOT_SUC]);;
+  REWRITE_TAC [mk_wire_signal; stream_snth; ADD_SUB; ADD_EQ_0; ONE; NOT_SUC]);;
 
 export_thm delay_exists;;
 
@@ -209,7 +208,7 @@ let not_exists = prove
   REWRITE_TAC [not_def] THEN
   EXISTS_TAC `mk_wire (stream (\t. ~signal x t))` THEN
   GEN_TAC THEN
-  REWRITE_TAC [mk_wire_signal; stream_tybij]);;
+  REWRITE_TAC [mk_wire_signal; stream_snth]);;
 
 export_thm not_exists;;
 
@@ -248,7 +247,7 @@ let and2_exists = prove
   REWRITE_TAC [and2_def] THEN
   EXISTS_TAC `mk_wire (stream (\t. signal x t /\ signal y t))` THEN
   GEN_TAC THEN
-  REWRITE_TAC [mk_wire_signal; stream_tybij]);;
+  REWRITE_TAC [mk_wire_signal; stream_snth]);;
 
 export_thm and2_exists;;
 
@@ -317,7 +316,7 @@ let or2_exists = prove
   REWRITE_TAC [or2_def] THEN
   EXISTS_TAC `mk_wire (stream (\t. signal x t \/ signal y t))` THEN
   GEN_TAC THEN
-  REWRITE_TAC [mk_wire_signal; stream_tybij]);;
+  REWRITE_TAC [mk_wire_signal; stream_snth]);;
 
 export_thm or2_exists;;
 
@@ -386,7 +385,7 @@ let xor2_exists = prove
   REWRITE_TAC [xor2_def] THEN
   EXISTS_TAC `mk_wire (stream (\t. ~(signal x t <=> signal y t)))` THEN
   GEN_TAC THEN
-  REWRITE_TAC [mk_wire_signal; stream_tybij]);;
+  REWRITE_TAC [mk_wire_signal; stream_snth]);;
 
 export_thm xor2_exists;;
 
@@ -457,7 +456,7 @@ let case1_exists = prove
     `mk_wire
        (stream (\t. if signal s t then signal x t else signal y t))` THEN
   GEN_TAC THEN
-  REWRITE_TAC [mk_wire_signal; stream_tybij]);;
+  REWRITE_TAC [mk_wire_signal; stream_snth]);;
 
 export_thm case1_exists;;
 
