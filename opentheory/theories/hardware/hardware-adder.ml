@@ -1430,3 +1430,9 @@ let scshiftr_signal = prove
   REWRITE_TAC [bit_tl_cons]);;
 
 export_thm scshiftr_signal;;
+
+(* ------------------------------------------------------------------------- *)
+(* Proof tools.                                                              *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/hardware/hardware-adder-tools.ml";;

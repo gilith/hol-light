@@ -13,6 +13,9 @@ import_theories
    "natural-divides";
    "hardware"];;
 
+needs "opentheory/theories/natural-divides/natural-divides-tools.ml";;
+needs "opentheory/theories/hardware/hardware-tools.ml";;
+
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)
 (* ------------------------------------------------------------------------- *)

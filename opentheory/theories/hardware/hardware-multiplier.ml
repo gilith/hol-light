@@ -716,3 +716,9 @@ let scmult_bits_to_num = prove
    ASM_REWRITE_TAC [length_bsignal; LE_REFL]]);;
 
 export_thm scmult_bits_to_num;;
+
+(* ------------------------------------------------------------------------- *)
+(* Proof tools.                                                              *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/hardware/hardware-multiplier-tools.ml";;

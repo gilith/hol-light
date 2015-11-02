@@ -3556,3 +3556,9 @@ let counter_pulse_signal = prove
   REWRITE_TAC [NOT_LT; GSYM ADD1; LT_SUC_LE; LE_ANTISYM]);;
 
 export_thm counter_pulse_signal;;
+
+(* ------------------------------------------------------------------------- *)
+(* Proof tools.                                                              *)
+(* ------------------------------------------------------------------------- *)
+
+loads "opentheory/theories/hardware/hardware-counter-tools.ml";;

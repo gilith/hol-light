@@ -27,13 +27,12 @@ let two_nonzero = prove
 
 let exp_two_nz = prove
  (`!n. ~(2 EXP n = 0)`,
-  REWRITE_TAC [EXP_EQ_0] THEN
-  NUM_REDUCE_TAC);;
+  REWRITE_TAC [EXP_EQ_0; two_nonzero]);;
 
 let le_exp_two = prove
  (`!m n. 2 EXP m <= 2 EXP n <=> m <= n`,
-  REWRITE_TAC [LE_EXP] THEN
-  NUM_REDUCE_TAC);;
+  REWRITE_TAC [LE_EXP; two_nonzero] THEN
+  REWRITE_TAC [TWO; ONE; SUC_INJ; NOT_SUC]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of natural number to bit-list conversions.                     *)

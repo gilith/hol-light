@@ -2026,7 +2026,9 @@ let montgomery_mult_compress_bits_to_num = prove
    SUBGOAL_THEN `x < 2 EXP SUC (SUC (SUC r))` MP_TAC THENL
    [MATCH_MP_TAC LTE_TRANS THEN
     EXISTS_TAC `2 EXP bit_width x` THEN
-    REWRITE_TAC [lt_exp_bit_width; le_exp_two; ADD1; GSYM ADD_ASSOC] THEN
+    REWRITE_TAC [lt_exp_bit_width; LE_EXP] THEN
+    NUM_REDUCE_TAC THEN
+    REWRITE_TAC [ADD1; GSYM ADD_ASSOC] THEN
     REWRITE_TAC [NUM_REDUCE_CONV `1 + 1`] THEN
     ASM_REWRITE_TAC [ADD_ASSOC];
     ALL_TAC] THEN
