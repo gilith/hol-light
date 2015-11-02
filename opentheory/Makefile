@@ -76,7 +76,7 @@ info-instantiate-parametric-proof-tools:
 
 .PHONY: export-theories
 export-theories:
-	cd .. && OPENTHEORY_EXPORT_BASE=1 opentheory/scripts/export-theories
+	cd .. && opentheory/scripts/export-theories
 
 .PHONY: info-export-theories
 info-export-theories:
