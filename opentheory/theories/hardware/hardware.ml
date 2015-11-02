@@ -18,6 +18,7 @@ import_theories
    "natural-bits"];;
 
 needs "opentheory/theories/tools.ml";;
+needs "opentheory/theories/natural-bits/natural-bits-tools.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Theory interpretation.                                                    *)
