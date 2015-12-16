@@ -1,3 +1,179 @@
+Wed 22nd Jul 2015       Library/wo.ml
+
+Added the basic fact that a finite toset is a woset:
+
+ WOSET_FINITE_TOSET = |- !l. toset l /\ FINITE (fl l) ==> woset l
+
+Mon 20th Jul 2015       sets.ml
+
+Added a series of theorems about injectivity and surjectivity of the "preimage"
+construct. These are a natural dual to existing "IMAGE" versions, and
+essentially show that the preimage map is injective/surjective when the
+function itself is surjective/injective.
+
+  INJECTIVE_ON_PREIMAGE =
+    |- !f:A->B s u.
+          (!t t'. t SUBSET u /\ t' SUBSET u /\
+                  {x | x IN s /\ f x IN t} = {x | x IN s /\ f x IN t'}
+                  ==> t = t') <=>
+          u SUBSET IMAGE f s
+
+  SURJECTIVE_ON_PREIMAGE =
+    |- !f s u.
+        (!k. k SUBSET s ==> ?t. t SUBSET u /\ {x | x IN s /\ f x IN t} = k) <=>
+        IMAGE f s SUBSET u /\ (!x y. x IN s /\ y IN s /\ f x = f y ==> x = y)
+
+  INJECTIVE_PREIMAGE =
+    |- !f. (!t t'. {x | f x IN t} = {x | f x IN t'} ==> t = t') <=>
+           IMAGE f UNIV = UNIV
+
+  SURJECTIVE_PREIMAGE =
+    |- !f. (!k. ?t. {x | f x IN t} = k) <=> (!x y. f x = f y ==> x = y)
+
+Sun 19th Jul 2015       Library/card.ml
+
+Renamed CARD_ADD_ABSORB to CARD_ADD_ABSORB_LEFT and added a few more basic
+theorems:
+
+  CARD_ADD_ABSORB_RIGHT  = |- !s t. INFINITE s /\ t <=_c s ==> s +_c t =_c s
+
+  CARD_DIFF_ABSORB = |- !s t. INFINITE s /\ t <_c s ==> s DIFF t =_c s
+
+  CARD_UNION_ABSORB_LEFT = |- !s t. INFINITE t /\ s <=_c t ==> s UNION t =_c t
+
+  CARD_UNION_ABSORB_RIGHT = |- !s t. INFINITE s /\ t <=_c s ==> s UNION t =_c s
+
+Fri 17th Jul 2015       Library/floor.ml
+
+Added one more theorem about the rationals:
+
+  INFINITE_RATIONAL_IN_RANGE =
+    |- !a b. a < b ==> INFINITE {q | rational q /\ a < q /\ q < b}
+
+Mon 13th Jul 2015       Library/prime.ml
+
+Added one more natural theorem about primality on N, as well as slightly
+reorganizing a couple of existing proofs:
+
+ PRIME_IRREDUCIBLE =
+  |- !p. prime p <=>
+         p > 1 /\ (!a b. p divides a * b ==> p divides a \/ p divides b)
+
+Fri 10th Jul 2015       Library/floor.ml
+
+Added a couple more rational approximation theorems:
+
+  RATIONAL_APPROXIMATION_ABOVE =
+    |- !x e. &0 < e ==> (?q. rational q /\ x < q /\ q < x + e)
+
+  RATIONAL_APPROXIMATION_BELOW =
+    |- !x e. &0 < e ==> (?q. rational q /\ x - e < q /\ q < x)
+
+Fri 10th Jul 2015       Library/wo.ml, Library/card.ml
+
+Added a few new theorems about ordered sets, ordinals and cardinals, including
+slightly reshuffling things between these two files. Tukey's lemma is the only
+real "named" theorem. Several of these slightly fill out the rather sparse
+theory of ordinals (for example showing they are themselves wellordered by
+"initial segment of"), which however remains pretty sparse.
+
+  INSEG_ANTISYM = |- !l m. l inseg m /\ m inseg l ==> l = m
+
+  INSEG_ORDINAL = |- !l m. m inseg l /\ ordinal l ==> ordinal m
+
+  INSEG_REFL = |- !l. l inseg l
+
+  INSEG_TRANS = |- !l m n. l inseg m /\ m inseg n ==> l inseg n
+
+  LE_C_IMAGE_SUBSET = |- !s t. s <=_c t <=> (?f. s SUBSET IMAGE f t)
+
+  ORDINAL_FL_SUBSET =
+    |- !l m. ordinal l /\ ordinal m /\ fl l SUBSET fl m ==> l inseg m
+
+  ORDINAL_FL_UNIQUE =
+   |- !l m. ordinal l /\ ordinal m /\ fl l = fl m ==> l = m
+
+  TUKEY =
+    |- !s. ~(s = {}) /\
+           (!t. (!c. FINITE c /\ c SUBSET t ==> c IN s) <=> t IN s)
+           ==> (?u. u IN s /\ (!v. v IN s /\ u SUBSET v ==> u = v))
+
+  WF_INSEG_WOSET =
+    |- WF (\x y. woset x /\ woset y /\ x inseg y /\ ~(x = y))
+
+  WOSET_INSEG_ORDINAL =
+    |- woset (\(x,y). ordinal x /\ ordinal y /\ x inseg y)
+
+  WOSET_WF =
+    |- !l. woset l <=>
+           WF (\x y. l(x,y) /\ ~(x = y)) /\
+           (!x y. fl l x /\ fl l y ==> l(x,y) \/ l(y,x))
+
+Fri 10th Jul 2015       wf.ml
+
+Added the simple fact that a wellfounded relation is antisymmetric
+
+ WF_ANTISYM = |- !(<<) x y. WF (<<) ==> ~(x << y /\ y << x)
+
+Tue 30th Jun 2015       sets.ml
+
+Added a variety of set theorems, mostly basic properties of CROSS that are
+near-clones of existing theorems for PCROSS, many with the same proof.
+
+  CROSS_DIFF =
+    |- (!s t u. s CROSS (t DIFF u) = s CROSS t DIFF s CROSS u) /\
+       (!s t u. (s DIFF t) CROSS u = s CROSS u DIFF t CROSS u)
+
+  CROSS_EQ =
+    |- !s s' t t'.
+           s CROSS t = s' CROSS t' <=>
+           (s = {} \/ t = {}) /\ (s' = {} \/ t' = {}) \/ s = s' /\ t = t'
+
+  CROSS_INTER =
+    |- (!s t u. s CROSS (t INTER u) = s CROSS t INTER s CROSS u) /\
+       (!s t u. (s INTER t) CROSS u = s CROSS u INTER t CROSS u)
+
+  CROSS_MONO =
+    |- !s t s' t'. s SUBSET s' /\ t SUBSET t' ==> s CROSS t SUBSET s' CROSS t'
+
+  CROSS_UNION =
+    |- (!s t u. s CROSS (t UNION u) = s CROSS t UNION s CROSS u) /\
+       (!s t u. (s UNION t) CROSS u = s CROSS u UNION t CROSS u)
+
+  CROSS_UNIONS =
+    |- (!s f. s CROSS UNIONS f = UNIONS {s CROSS t | t IN f}) /\
+       (!f t. UNIONS f CROSS t = UNIONS {s CROSS t | s IN f})
+
+  CROSS_UNIONS_UNIONS =
+    |- !f g. UNIONS f CROSS UNIONS g = UNIONS {s CROSS t | s IN f /\ t IN g}
+
+  EXISTS_IN_CROSS =
+    |- !P s t.
+         (?z. z IN s CROSS t /\ P z) <=> (?x y. x IN s /\ y IN t /\ P (x,y))
+
+  FORALL_IN_CROSS =
+    |- !P s t.
+         (!z. z IN s CROSS t ==> P z) <=>
+         (!x y. x IN s /\ y IN t ==> P (x,y))
+
+  IMAGE_FST_CROSS =
+    |- !s t. IMAGE FST (s CROSS t) = (if t = {} then {} else s)
+
+  IMAGE_SND_CROSS =
+    |- !s t. IMAGE SND (s CROSS t) = (if s = {} then {} else t)
+
+  INTER_CROSS =
+    |- !s s' t t'.
+         s CROSS t INTER s' CROSS t' = (s INTER s') CROSS (t INTER t')
+
+  SUBSET_CROSS =
+    |- !s t s' t'.
+         s CROSS t SUBSET s' CROSS t' <=>
+         s = {} \/ t = {} \/ s SUBSET s' /\ t SUBSET t'
+
+  UNIONS_UNIV =
+    |- UNIONS (:A->bool) = (:A)
+
 Fri 12th Jun 2015       sets.ml
 
 Added two useful rewrites for sup and inf on finite sets from Marco

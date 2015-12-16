@@ -3259,7 +3259,7 @@ let HOMOTOPIC_RESTRICTED_LINEAR_MAPS = prove
    [UNDISCH_THEN `real_sgn(det(matrix f:real^N^N)) = b`
      (SUBST1_TAC o SYM) THEN
     ASM_SIMP_TAC[LINEAR_COMPOSE; MATRIX_COMPOSE; DET_MUL; REAL_SGN_MUL;
-                 ORTHOGONAL_TRANSFORMATION_IMP_LINEAR] THEN
+                 ORTHOGONAL_TRANSFORMATION_LINEAR] THEN
     REPEAT STRIP_TAC THEN
     AP_TERM_TAC THEN ASM_SIMP_TAC[real_sgn; DET_POSITIVE_DEFINITE];
     ASM_REWRITE_TAC[HOMOTOPIC_LINEAR_POSITIVE_DEFINITE_MAPS];
@@ -3274,7 +3274,7 @@ let HOMOTOPIC_RESTRICTED_LINEAR_MAPS = prove
     UNDISCH_TAC `real_sgn(det(matrix f:real^N^N)) = b` THEN
     UNDISCH_THEN `real_sgn(det(matrix g:real^N^N)) = b`
      (SUBST1_TAC o SYM) THEN
-    ASM_SIMP_TAC[MATRIX_COMPOSE; ORTHOGONAL_TRANSFORMATION_IMP_LINEAR] THEN
+    ASM_SIMP_TAC[MATRIX_COMPOSE; ORTHOGONAL_TRANSFORMATION_LINEAR] THEN
     ASM_REWRITE_TAC[DET_MUL; REAL_SGN_MUL] THEN MATCH_MP_TAC(REAL_RING
      `x = &1 /\ y = &1 ==> a * x = b * y ==> a = b`) THEN
     ASM_SIMP_TAC[REAL_SGN_EQ; DET_POSITIVE_DEFINITE; real_gt]]);;
@@ -7155,6 +7155,20 @@ let NORM_CPOW = prove
   SIMP_TAC[NORM_CPOW_REAL; rpow; COMPLEX_NORM_NZ] THEN
   ASM_CASES_TAC `w = Cx(&0)` THEN ASM_REWRITE_TAC[RE_CX; REAL_LT_REFL] THEN
   SIMP_TAC[REAL_NORM; real_abs; REAL_LT_IMP_LE]);;
+
+let REAL_MAX_RPOW = prove
+ (`!x y z. &0 <= x /\ &0 <= y /\ &0 <= z
+           ==> max (x rpow z) (y rpow z) = (max x y) rpow z`,
+  MATCH_MP_TAC REAL_WLOG_LE THEN CONJ_TAC THENL
+   [MESON_TAC[REAL_ARITH `max x y:real = max y x`]; ALL_TAC] THEN
+  SIMP_TAC[RPOW_LE2; REAL_ARITH `max x y:real = if x <= y then y else x`]);;
+
+let REAL_MIN_RPOW = prove
+ (`!x y z. &0 <= x /\ &0 <= y /\ &0 <= z
+           ==> min (x rpow z) (y rpow z) = (min x y) rpow z`,
+  MATCH_MP_TAC REAL_WLOG_LE THEN CONJ_TAC THENL
+   [MESON_TAC[REAL_ARITH `min x y:real = min y x`]; ALL_TAC] THEN
+  SIMP_TAC[RPOW_LE2; REAL_ARITH `min x y:real = if x <= y then x else y`]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Summability of zeta function series.                                      *)

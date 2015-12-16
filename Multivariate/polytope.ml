@@ -5,6 +5,31 @@
 needs "Multivariate/paths.ml";;
 
 (* ------------------------------------------------------------------------- *)
+(* A simple lemma.                                                           *)
+(* ------------------------------------------------------------------------- *)
+
+let DIFFERENT_NORM_3_COLLINEAR_POINTS = prove
+ (`!a b x:real^N.
+     ~(x IN segment(a,b) /\ norm(a) = norm(b) /\ norm(x) = norm(b))`,
+  REPEAT GEN_TAC THEN ASM_CASES_TAC `a:real^N = b` THEN
+  ASM_SIMP_TAC[SEGMENT_REFL; NOT_IN_EMPTY; OPEN_SEGMENT_ALT] THEN
+  REWRITE_TAC[IN_ELIM_THM] THEN DISCH_THEN
+   (CONJUNCTS_THEN2 (X_CHOOSE_THEN `u:real` STRIP_ASSUME_TAC) MP_TAC) THEN
+  ASM_REWRITE_TAC[NORM_EQ] THEN REWRITE_TAC[VECTOR_ARITH
+   `(x + y:real^N) dot (x + y) = x dot x + &2 * x dot y + y dot y`] THEN
+  REWRITE_TAC[DOT_LMUL; DOT_RMUL] THEN
+  DISCH_THEN(CONJUNCTS_THEN2 (ASSUME_TAC o SYM) MP_TAC) THEN
+  UNDISCH_TAC `~(a:real^N = b)` THEN
+  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [GSYM VECTOR_SUB_EQ] THEN
+  REWRITE_TAC[GSYM DOT_EQ_0; VECTOR_ARITH
+   `(a - b:real^N) dot (a - b) = a dot a + b dot b - &2 * a dot b`] THEN
+  ASM_REWRITE_TAC[REAL_RING `a + a - &2 * ab = &0 <=> ab = a`] THEN
+  SIMP_TAC[REAL_RING
+   `(&1 - u) * (&1 - u) * a + &2 * (&1 - u) * u * x + u * u * a = a <=>
+    x = a \/ u = &0 \/ u = &1`] THEN
+  ASM_REAL_ARITH_TAC);;
+
+(* ------------------------------------------------------------------------- *)
 (* Faces of a (usually convex) set.                                          *)
 (* ------------------------------------------------------------------------- *)
 
@@ -1489,6 +1514,31 @@ let extreme_point_of = new_definition
  `x extreme_point_of s <=>
     x IN s /\ !a b. a IN s /\ b IN s ==> ~(x IN segment(a,b))`;;
 
+let EXTREME_POINT_RELATIVE_FRONTIER = prove
+ (`!s x:real^N.
+       convex s /\ x IN s DIFF relative_interior s /\
+       (!a b. {a,b} SUBSET s DIFF relative_interior s ==> ~(x IN segment(a,b)))
+       ==> x extreme_point_of s`,
+  REWRITE_TAC[IN_DIFF] THEN REPEAT STRIP_TAC THEN
+  ASM_REWRITE_TAC[extreme_point_of] THEN
+  MAP_EVERY X_GEN_TAC [`a:real^N`; `b:real^N`] THEN STRIP_TAC THEN
+  FIRST_X_ASSUM(MP_TAC o SPECL [`a:real^N`; `b:real^N`]) THEN
+  ASM_REWRITE_TAC[INSERT_SUBSET; EMPTY_SUBSET; IN_DIFF] THEN
+  ASM_MESON_TAC[IN_RELATIVE_INTERIOR_CLOSURE_CONVEX_SEGMENT; SUBSET;
+                CLOSURE_INC; SEGMENT_SYM]);;
+
+let EXTREME_POINT_OF_STILLCONVEX_IMP = prove
+ (`!s x:real^N. x IN s /\ convex(s DELETE x) ==> x extreme_point_of s`,
+  REWRITE_TAC[CONVEX_CONTAINS_SEGMENT; extreme_point_of; open_segment] THEN
+  REWRITE_TAC[IN_DIFF; IN_DELETE; IN_INSERT; NOT_IN_EMPTY; SUBSET_DELETE] THEN
+  SET_TAC[]);;
+
+let EXTREME_POINTS_OF_STILLCONVEX = prove
+ (`!s t:real^N->bool.
+        convex s /\ t SUBSET {x | x extreme_point_of s} ==> convex(s DIFF t)`,
+  REWRITE_TAC[extreme_point_of; open_segment; CONVEX_CONTAINS_SEGMENT] THEN
+  SET_TAC[]);;
+
 let EXTREME_POINT_OF_STILLCONVEX = prove
  (`!s x:real^N.
         convex s ==> (x extreme_point_of s <=> x IN s /\ convex(s DELETE x))`,
@@ -1916,6 +1966,21 @@ let FACE_OF_CONIC_HULL_EQ = prove
       ASM_SIMP_TAC[FACE_OF_CONIC_HULL_REV]];
     ASM_SIMP_TAC[FACE_OF_SING; EXTREME_POINT_OF_CONIC_HULL];
     ASM_MESON_TAC[FACE_OF_CONIC_HULL]]);;
+
+let EXTREME_POINT_OF_CBALL = prove
+ (`!a r x:real^N.
+        x extreme_point_of cball(a,r) <=> x IN sphere(a,r)`,
+  REPEAT GEN_TAC THEN EQ_TAC THENL
+   [MESON_TAC[EXTREME_POINT_IN_FRONTIER; FRONTIER_CBALL];
+    GEOM_ORIGIN_TAC `a:real^N` THEN REWRITE_TAC[IN_SPHERE_0] THEN
+    REPEAT GEN_TAC THEN ASM_CASES_TAC `r = &0` THEN
+    ASM_SIMP_TAC[CBALL_SING; EXTREME_POINT_OF_SING; NORM_EQ_0] THEN
+    STRIP_TAC THEN MATCH_MP_TAC EXTREME_POINT_RELATIVE_FRONTIER THEN
+    ASM_REWRITE_TAC[CONVEX_CBALL; IN_CBALL_0; IN_DIFF; RELATIVE_INTERIOR_CBALL;
+                    REAL_LE_REFL; IN_BALL_0; REAL_LT_REFL;
+                    INSERT_SUBSET; EMPTY_SUBSET; IN_DIFF] THEN
+    REWRITE_TAC[REAL_ARITH `x <= y /\ ~(x < y) <=> x = y`] THEN
+    ASM_MESON_TAC[DIFFERENT_NORM_3_COLLINEAR_POINTS]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Closure and (relative) openness of conic hulls etc.                       *)
@@ -2830,27 +2895,6 @@ let EDGE_OF_IMP_SUBSET = prove
 (* Existence of extreme points.                                              *)
 (* ------------------------------------------------------------------------- *)
 
-let DIFFERENT_NORM_3_COLLINEAR_POINTS = prove
- (`!a b x:real^N.
-     ~(x IN segment(a,b) /\ norm(a) = norm(b) /\ norm(x) = norm(b))`,
-  REPEAT GEN_TAC THEN ASM_CASES_TAC `a:real^N = b` THEN
-  ASM_SIMP_TAC[SEGMENT_REFL; NOT_IN_EMPTY; OPEN_SEGMENT_ALT] THEN
-  REWRITE_TAC[IN_ELIM_THM] THEN DISCH_THEN
-   (CONJUNCTS_THEN2 (X_CHOOSE_THEN `u:real` STRIP_ASSUME_TAC) MP_TAC) THEN
-  ASM_REWRITE_TAC[NORM_EQ] THEN REWRITE_TAC[VECTOR_ARITH
-   `(x + y:real^N) dot (x + y) = x dot x + &2 * x dot y + y dot y`] THEN
-  REWRITE_TAC[DOT_LMUL; DOT_RMUL] THEN
-  DISCH_THEN(CONJUNCTS_THEN2 (ASSUME_TAC o SYM) MP_TAC) THEN
-  UNDISCH_TAC `~(a:real^N = b)` THEN
-  GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [GSYM VECTOR_SUB_EQ] THEN
-  REWRITE_TAC[GSYM DOT_EQ_0; VECTOR_ARITH
-   `(a - b:real^N) dot (a - b) = a dot a + b dot b - &2 * a dot b`] THEN
-  ASM_REWRITE_TAC[REAL_RING `a + a - &2 * ab = &0 <=> ab = a`] THEN
-  SIMP_TAC[REAL_RING
-   `(&1 - u) * (&1 - u) * a + &2 * (&1 - u) * u * x + u * u * a = a <=>
-    x = a \/ u = &0 \/ u = &1`] THEN
-  ASM_REAL_ARITH_TAC);;
-
 let EXTREME_POINT_EXISTS_CONVEX = prove
  (`!s:real^N->bool.
         compact s /\ convex s /\ ~(s = {}) ==> ?x. x extreme_point_of s`,
@@ -3489,10 +3533,10 @@ let FACE_OF_CONVEX_HULL_INSERT_EQ = prove
     MATCH_MP_TAC(REWRITE_RULE[SUBSET] CONVEX_HULL_SUBSET_AFFINE_HULL) THEN
     ASM_REWRITE_TAC[] THEN ASM SET_TAC[]]);;
 
-let CONVEX_HULL_REDUNDANT_SUBSET = prove
+let CONVEX_HULL_REDUNDANT_SUBSET_GEN = prove
  (`!s t:real^N->bool.
         compact s /\ t SUBSET s /\
-        s DIFF t SUBSET interior(convex hull s)
+        DISJOINT (s DIFF t) {x | x extreme_point_of convex hull s}
         ==> convex hull s = convex hull t`,
   REPEAT STRIP_TAC THEN MATCH_MP_TAC SUBSET_ANTISYM THEN
   ASM_SIMP_TAC[HULL_MONO] THEN
@@ -3508,7 +3552,91 @@ let CONVEX_HULL_REDUNDANT_SUBSET = prove
     DISCH_THEN SUBST1_TAC THEN ASM_SIMP_TAC[HULL_MONO];
     FIRST_X_ASSUM(MATCH_MP_TAC o MATCH_MP(SET_RULE
       `~DISJOINT {x | P x} t ==> (!x. x IN t ==> ~P x) ==> Q`)) THEN
-    ASM_MESON_TAC[EXTREME_POINT_NOT_IN_INTERIOR; IN_DIFF; SUBSET]]);;
+    ASM SET_TAC[]]);;
+
+let CONVEX_HULL_REDUNDANT_SUBSET = prove
+ (`!s t:real^N->bool.
+        compact s /\ t SUBSET s /\
+        s DIFF t SUBSET interior(convex hull s)
+        ==> convex hull s = convex hull t`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC CONVEX_HULL_REDUNDANT_SUBSET_GEN THEN
+  ASM_REWRITE_TAC[] THEN
+  MP_TAC(ISPEC `convex hull s:real^N->bool` EXTREME_POINT_NOT_IN_INTERIOR) THEN
+  ASM SET_TAC[]);;
+
+let CONVEX_HULL_REDUNDANT_SUBSET_REV = prove
+ (`!s t:real^N->bool.
+        convex hull s = convex hull t
+        ==> DISJOINT (s DIFF t) {x | x extreme_point_of (convex hull s)}`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC(ISPEC `t:real^N->bool` EXTREME_POINTS_OF_CONVEX_HULL) THEN
+  FIRST_X_ASSUM(SUBST1_TAC o SYM) THEN ASM SET_TAC[]);;
+
+let CONVEX_HULL_INSERT_REDUNDANT_POINT = prove
+ (`!s a b c:real^N.
+        a IN convex hull (c INSERT s) /\
+        b IN convex hull (c INSERT s) /\
+        c IN segment(a,b)
+        ==> convex hull (c INSERT s) = convex hull s`,
+  REPEAT GEN_TAC THEN ASM_CASES_TAC `s:real^N->bool = {}` THENL
+   [ASM_SIMP_TAC[CONVEX_HULL_SING; IN_SING] THEN
+    MESON_TAC[ENDS_NOT_IN_SEGMENT];
+    DISCH_TAC] THEN
+  REWRITE_TAC[GSYM SUBSET_ANTISYM_EQ] THEN
+  SIMP_TAC[HULL_MONO; SET_RULE `s SUBSET x INSERT s`] THEN
+  MATCH_MP_TAC HULL_MINIMAL THEN
+  SIMP_TAC[CONVEX_CONVEX_HULL; INSERT_SUBSET; HULL_SUBSET] THEN
+  FIRST_X_ASSUM(MP_TAC o check (is_conj o concl)) THEN
+  ASM_REWRITE_TAC[CONVEX_HULL_INSERT_ALT] THEN
+  REWRITE_TAC[IN_SEGMENT; IN_ELIM_THM] THEN
+  REWRITE_TAC[IMP_CONJ; LEFT_IMP_EXISTS_THM] THEN
+  MAP_EVERY X_GEN_TAC [`u:real`; `x:real^N`] THEN REPEAT DISCH_TAC THEN
+  MAP_EVERY X_GEN_TAC [`v:real`; `y:real^N`] THEN REPEAT DISCH_TAC THEN
+  X_GEN_TAC `w:real` THEN DISCH_TAC THEN DISCH_TAC THEN
+  ASM_REWRITE_TAC[VECTOR_ARITH
+   `c:real^N = (&1 - w) % ((&1 - u) % c + u % x) + w % ((&1 - v) % c + v % y)
+    <=> (u - w * u) % x + (w * v) % y = ((u - w * u) + w * v) % c`] THEN
+  SUBGOAL_THEN `&0 < u - w * u + w * v` ASSUME_TAC THENL
+   [MATCH_MP_TAC(REAL_ARITH
+     `~((&1 - w) * u = &0 /\ w * v = &0) /\
+       &0 <= (&1 - w) * u /\ &0 <= w * v
+       ==> &0 < u - w * u + w * v`) THEN
+    ASM_SIMP_TAC[REAL_LE_MUL; REAL_LT_IMP_LE; REAL_SUB_LE; REAL_ENTIRE] THEN
+    ASM_CASES_TAC `u = &0 /\ v = &0` THENL
+     [ASM_MESON_TAC[VECTOR_MUL_LZERO]; ASM_REAL_ARITH_TAC];
+    DISCH_THEN(MP_TAC o AP_TERM
+     `(%) (inv(u - w * u + w * v)):real^N->real^N`) THEN
+    ASM_SIMP_TAC[VECTOR_MUL_ASSOC; REAL_MUL_LINV; REAL_LT_IMP_NZ] THEN
+    REWRITE_TAC[VECTOR_MUL_LID; VECTOR_ADD_LDISTRIB; VECTOR_MUL_ASSOC] THEN
+    DISCH_THEN(SUBST1_TAC o SYM)] THEN
+  SUBGOAL_THEN
+   `inv(u - w * u + w * v) * (u - w * u) =
+    &1 - inv(u - w * u + w * v) * w * v`
+  SUBST1_TAC THENL
+   [UNDISCH_TAC `&0 < u - w * u + w * v` THEN CONV_TAC REAL_FIELD;
+    MATCH_MP_TAC IN_CONVEX_SET] THEN
+  ASM_REWRITE_TAC[CONVEX_CONVEX_HULL] THEN
+  REWRITE_TAC[ONCE_REWRITE_RULE[REAL_MUL_SYM] (GSYM real_div)] THEN
+  ASM_SIMP_TAC[REAL_LE_LDIV_EQ; REAL_LE_RDIV_EQ] THEN
+  REWRITE_TAC[REAL_ARITH
+   `w * v <= &1 * (u - w * u + w * v) <=> &0 <= (&1 - w) * u`] THEN
+  ASM_SIMP_TAC[REAL_MUL_LZERO; REAL_LE_MUL; REAL_LT_IMP_LE; REAL_SUB_LE]);;
+
+let CONVEX_HULL_REDUNDANT_POINT = prove
+ (`!s a:real^N. convex hull (s DELETE a) = convex hull s <=>
+                ~(a extreme_point_of convex hull s)`,
+  REPEAT GEN_TAC THEN EQ_TAC THENL
+   [DISCH_THEN(SUBST1_TAC o SYM) THEN DISCH_THEN(MP_TAC o MATCH_MP (SET_RULE
+     `a extreme_point_of convex hull s
+      ==> {x | x extreme_point_of convex hull s} SUBSET s ==> a IN s`)) THEN
+    REWRITE_TAC[EXTREME_POINTS_OF_CONVEX_HULL; IN_DELETE];
+    DISJ_CASES_TAC(SET_RULE `s DELETE (a:real^N) = s \/ a IN s`) THEN
+    ASM_REWRITE_TAC[] THEN ABBREV_TAC `t = s DELETE (a:real^N)` THEN
+    SUBGOAL_THEN `s = (a:real^N) INSERT t` SUBST1_TAC THENL
+     [ASM SET_TAC[]; REWRITE_TAC[extreme_point_of]] THEN
+    SIMP_TAC[HULL_INC; IN_INSERT] THEN DISCH_TAC THEN
+    MATCH_MP_TAC(GSYM CONVEX_HULL_INSERT_REDUNDANT_POINT) THEN
+    ASM_MESON_TAC[]]);;
 
 let HAUSDIST_FRONTIERS_CONVEX = prove
  (`!s t:real^N->bool.

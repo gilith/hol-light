@@ -410,7 +410,7 @@ let MEASURE_LE = prove
 export_thm MEASURE_LE;;
 
 (* ------------------------------------------------------------------------- *)
-(* Trivially, a WF relation is irreflexive.                                  *)
+(* Trivially, a WF relation is irreflexive and antisymmetric.                *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "relation-well-founded-thm";;
@@ -439,6 +439,24 @@ let WF_REFL = prove
   MATCH_MP_TAC irreflexive THEN
   MATCH_MP_TAC wellfounded_irreflexive THEN
   FIRST_ASSUM ACCEPT_TAC);;
+
+let WF_ANTISYM = prove
+ (`!r x (y : A). WF r ==> ~(r x y /\ r y x)`,
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM (MP_TAC o GEN_REWRITE_RULE I [WF]) THEN
+  DISCH_THEN (MP_TAC o SPEC `\ (z : A). z = x \/ z = y`) THEN
+  ANTS_TAC THENL
+  [EXISTS_TAC `x : A` THEN
+   REWRITE_TAC [];
+   REWRITE_TAC [NOT_EXISTS_THM] THEN
+   X_GEN_TAC `z : A` THEN
+   MATCH_MP_TAC (TAUT `!x y. (x ==> ~y) ==> ~(x /\ y)`) THEN
+   REWRITE_TAC [NOT_FORALL_THM; NOT_IMP] THEN
+   DISCH_THEN (DISJ_CASES_THEN SUBST_VAR_TAC) THENL
+   [EXISTS_TAC `y : A` THEN
+    ASM_REWRITE_TAC [];
+    EXISTS_TAC `x : A` THEN
+    ASM_REWRITE_TAC []]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Even more trivially, the everywhere-false relation is wellfounded.        *)
