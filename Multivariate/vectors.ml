@@ -859,6 +859,12 @@ let NORM_LE_COMPONENTWISE = prove
   MATCH_MP_TAC SUM_LE_NUMSEG THEN
   ASM_SIMP_TAC[GSYM REAL_POW_2; GSYM REAL_LE_SQUARE_ABS]);;
 
+let NORM_EQ_COMPONENTWISE = prove
+ (`!x:real^N y:real^N.
+        (!i. 1 <= i /\ i <= dimindex (:N) ==> abs(x$i) = abs(y$i))
+        ==> norm x = norm y`,
+  SIMP_TAC[GSYM REAL_LE_ANTISYM; NORM_LE_COMPONENTWISE]);;
+
 let L1_LE_NORM = prove
  (`!x:real^N.
     sum(1..dimindex(:N)) (\i. abs(x$i)) <= sqrt(&(dimindex(:N))) * norm x`,
@@ -2784,6 +2790,24 @@ let LINEAR_IMP_LIPSCHITZ = prove
         linear f ==> ?B. !x y. norm(f x - f y) <= B * norm(x - y)`,
   SIMP_TAC[GSYM LINEAR_SUB] THEN MESON_TAC[LINEAR_BOUNDED]);;
 
+let LIPSCHITZ_ON_COMPONENTWISE = prove
+ (`!f:real^M->real^N s.
+      (?B. !x y. x IN s /\ y IN s ==> norm(f x - f y) <= B * norm(x - y)) <=>
+      !i. 1 <= i /\ i <= dimindex(:N)
+          ==> ?B. !x y. x IN s /\ y IN s
+                        ==> abs(f x$i - f y$i) <= B * norm(x - y)`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[GSYM VECTOR_SUB_COMPONENT] THEN EQ_TAC THENL
+   [MESON_TAC[COMPONENT_LE_NORM; REAL_LE_TRANS]; ALL_TAC] THEN
+  GEN_REWRITE_TAC (LAND_CONV o BINDER_CONV) [RIGHT_IMP_EXISTS_THM] THEN
+  REWRITE_TAC[SKOLEM_THM; LEFT_IMP_EXISTS_THM] THEN
+  X_GEN_TAC `B:num->real` THEN REWRITE_TAC[RIGHT_IMP_FORALL_THM; IMP_IMP] THEN
+  DISCH_TAC THEN EXISTS_TAC `sum(1..dimindex(:N)) B` THEN
+  MAP_EVERY X_GEN_TAC [`x:real^M`; `y:real^M`] THEN STRIP_TAC THEN
+  W(MP_TAC o PART_MATCH lhand NORM_LE_L1 o lhand o snd) THEN
+  MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ_ALT] REAL_LE_TRANS) THEN
+  REWRITE_TAC[GSYM SUM_RMUL] THEN MATCH_MP_TAC SUM_LE_NUMSEG THEN
+  ASM_SIMP_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Matrix notation. NB: an MxN matrix is of type real^N^M, not real^M^N.     *)
 (* We could define a special type if we're going to use them a lot.          *)
@@ -3225,7 +3249,7 @@ let TRANSP_TRANSP = prove
  (`!A:real^N^M. transp(transp A) = A`,
   SIMP_TAC[CART_EQ; transp; LAMBDA_BETA]);;
 
-let SYMMETRIX_MATRIX_CONJUGATE = prove
+let SYMMETRIC_MATRIX_SIMILAR = prove
  (`!A B:real^N^N. transp B = B
                   ==> transp(transp A ** B ** A) = transp A ** B ** A`,
   SIMP_TAC[MATRIX_TRANSP_MUL; TRANSP_TRANSP; MATRIX_MUL_ASSOC]);;
@@ -3326,6 +3350,16 @@ let MATRIX_VECTOR_LMUL = prove
   SIMP_TAC[matrix_cmul; CART_EQ; LAMBDA_BETA; matrix_vector_mul;
            VECTOR_MUL_COMPONENT] THEN
   REWRITE_TAC[GSYM REAL_MUL_ASSOC; SUM_LMUL]);;
+
+let MATRIX_VECTOR_MUL_LNEG = prove
+ (`!A:real^M^N x:real^M. --A ** x = --(A ** x)`,
+  REWRITE_TAC[MATRIX_NEG_MINUS1; MATRIX_VECTOR_LMUL] THEN
+  CONV_TAC VECTOR_ARITH);;
+
+let MATRIX_VECTOR_MUL_RNEG = prove
+ (`!A:real^M^N x:real^M. A ** --x = --(A ** x)`,
+  REWRITE_TAC[VECTOR_NEG_MINUS1; MATRIX_VECTOR_MUL_RMUL] THEN
+  CONV_TAC VECTOR_ARITH);;
 
 let COLUMN_MATRIX_MUL = prove
  (`!A:real^N^M B:real^P^N.
@@ -3602,7 +3636,7 @@ let onorm = new_definition
 let NORM_BOUND_GENERALIZE = prove
  (`!f:real^M->real^N b.
         linear f
-        ==> ((!x. (norm(x) = &1) ==> norm(f x) <= b) <=>
+        ==> ((!x. norm(x) = &1 ==> norm(f x) <= b) <=>
              (!x. norm(f x) <= b * norm(x)))`,
   REPEAT STRIP_TAC THEN EQ_TAC THEN DISCH_TAC THENL
    [ALL_TAC; ASM_MESON_TAC[REAL_MUL_RID]] THEN
@@ -3616,6 +3650,29 @@ let NORM_BOUND_GENERALIZE = prove
   FIRST_ASSUM(fun th -> REWRITE_TAC[GSYM(MATCH_MP LINEAR_CMUL th)]) THEN
   ASM_SIMP_TAC[NORM_MUL; REAL_ABS_INV; REAL_ABS_NORM; REAL_MUL_LINV;
                NORM_EQ_0]);;
+
+let ONORM_DOT = prove
+ (`!f:real^M->real^N. onorm f = sup {f x dot y | norm x = &1 /\ norm y = &1}`,
+  REPEAT STRIP_TAC THEN REWRITE_TAC[onorm] THEN MATCH_MP_TAC SUP_EQ THEN
+  X_GEN_TAC `b:real` THEN REWRITE_TAC[FORALL_IN_GSPEC] THEN
+  EQ_TAC THEN DISCH_TAC THENL
+   [MAP_EVERY X_GEN_TAC [`x:real^M`; `y:real^N`] THEN STRIP_TAC THEN
+    TRANS_TAC REAL_LE_TRANS `norm((f:real^M->real^N) x) * norm(y:real^N)` THEN
+    REWRITE_TAC[NORM_CAUCHY_SCHWARZ] THEN ASM_SIMP_TAC[REAL_MUL_RID];
+    FIRST_ASSUM(fun th ->
+      MP_TAC(ISPECL [`basis 1:real^M`; `--basis 1:real^N`] th) THEN
+      MP_TAC(ISPECL [`basis 1:real^M`; `basis 1:real^N`] th)) THEN
+    SIMP_TAC[NORM_BASIS; DIMINDEX_GE_1; LE_REFL; NORM_NEG] THEN
+    REWRITE_TAC[DOT_RNEG; IMP_IMP] THEN DISCH_THEN(ASSUME_TAC o MATCH_MP
+     (REAL_ARITH `x <= b /\ --x <= b ==> &0 <= b`)) THEN
+    X_GEN_TAC `x:real^M` THEN DISCH_TAC THEN
+    ASM_CASES_TAC `(f:real^M->real^N) x = vec 0` THEN
+    ASM_REWRITE_TAC[NORM_0] THEN
+    FIRST_X_ASSUM(MP_TAC o SPECL
+     [`x:real^M`; `inv(norm((f:real^M->real^N) x)) % f x`]) THEN
+    ASM_REWRITE_TAC[DOT_RMUL; NORM_MUL; REAL_ABS_INV; REAL_ABS_NORM] THEN
+    ASM_SIMP_TAC[REAL_MUL_LINV; NORM_EQ_0; GSYM NORM_POW_2;
+                 REAL_FIELD `~(x = &0) ==> inv x * x pow 2 = x`]]);;
 
 let ONORM = prove
  (`!f:real^M->real^N.
@@ -3672,21 +3729,31 @@ let ONORM_COMPOSE = prove
   MESON_TAC[ONORM; LINEAR_COMPOSE; o_THM; REAL_MUL_ASSOC; REAL_LE_TRANS; ONORM;
             REAL_LE_LMUL; ONORM_POS_LE]);;
 
-let ONORM_NEG_LEMMA = prove
- (`!f. linear f ==> onorm(\x. --(f x)) <= onorm f`,
-  REPEAT STRIP_TAC THEN
-  FIRST_ASSUM(STRIP_ASSUME_TAC o MATCH_MP ONORM o
-    MATCH_MP LINEAR_COMPOSE_NEG) THEN
-  FIRST_X_ASSUM MATCH_MP_TAC THEN ASM_SIMP_TAC[NORM_NEG; ONORM]);;
+let ONORM_CMUL = prove
+ (`!f:real^M->real^N c. linear f ==> onorm(\x. c % f x) = abs c * onorm f`,
+  SUBGOAL_THEN
+   `!f:real^M->real^N c. linear f ==> onorm(\x. c % f x) <= abs c * onorm f`
+  ASSUME_TAC THENL
+   [REPEAT STRIP_TAC THEN
+    ASM_SIMP_TAC[ONORM_LE_EQ; LINEAR_COMPOSE_CMUL] THEN
+    GEN_TAC THEN REWRITE_TAC[NORM_MUL; GSYM REAL_MUL_ASSOC] THEN
+    MATCH_MP_TAC REAL_LE_LMUL THEN
+    ASM_SIMP_TAC[REAL_ABS_POS; ONORM];
+    REPEAT STRIP_TAC THEN ASM_SIMP_TAC[GSYM REAL_LE_ANTISYM] THEN
+    ASM_CASES_TAC `c = &0` THEN
+    ASM_SIMP_TAC[REAL_ABS_NUM; REAL_MUL_LZERO; ONORM_POS_LE;
+                 LINEAR_COMPOSE_CMUL] THEN
+    FIRST_X_ASSUM(MP_TAC o SPECL
+     [`\x. c % (f:real^M->real^N) x`; `inv c:real`]) THEN
+    ASM_SIMP_TAC[LINEAR_COMPOSE_CMUL; VECTOR_MUL_ASSOC; REAL_MUL_LINV] THEN
+    REWRITE_TAC[REAL_ABS_INV; VECTOR_MUL_LID; ETA_AX] THEN
+    ONCE_REWRITE_TAC[REAL_MUL_SYM] THEN
+    ASM_SIMP_TAC[GSYM real_div; REAL_LE_RDIV_EQ; GSYM REAL_ABS_NZ]]);;
 
 let ONORM_NEG = prove
  (`!f:real^M->real^N. linear f ==> (onorm(\x. --(f x)) = onorm f)`,
-  REPEAT STRIP_TAC THEN  REWRITE_TAC[GSYM REAL_LE_ANTISYM] THEN
-  ASM_SIMP_TAC[ONORM_NEG_LEMMA] THEN
-  SUBGOAL_THEN `f:real^M->real^N = \x. --(--(f x))`
-   (fun th -> GEN_REWRITE_TAC (LAND_CONV o RAND_CONV) [th]) THEN
-  ASM_SIMP_TAC[ONORM_NEG_LEMMA; LINEAR_COMPOSE_NEG] THEN
-  REWRITE_TAC[VECTOR_NEG_NEG; ETA_AX]);;
+  ONCE_REWRITE_TAC[VECTOR_ARITH `--x:real^N = --(&1) % x`] THEN
+  SIMP_TAC[ONORM_CMUL; REAL_ABS_NEG; REAL_ABS_NUM; REAL_MUL_LID]);;
 
 let ONORM_TRIANGLE = prove
  (`!f:real^M->real^N g.
@@ -3718,6 +3785,57 @@ let ONORM_ID = prove
 let ONORM_I = prove
  (`onorm(I:real^N->real^N) = &1`,
   REWRITE_TAC[I_DEF; ONORM_ID]);;
+
+let ONORM_ADJOINT = prove
+ (`!f:real^N->real^N. linear f ==> onorm(adjoint f) = onorm f`,
+  REPEAT STRIP_TAC THEN REWRITE_TAC[ONORM_DOT] THEN
+  GEN_REWRITE_TAC (LAND_CONV o ONCE_DEPTH_CONV) [DOT_SYM] THEN
+  ASM_SIMP_TAC[GSYM ADJOINT_WORKS] THEN AP_TERM_TAC THEN SET_TAC[]);;
+
+let ONORM_COMPOSE_ADJOINT_LEFT = prove
+ (`!f:real^N->real^N. linear f ==> onorm(adjoint f o f) = onorm f pow 2`,
+  REWRITE_TAC[GSYM REAL_LE_ANTISYM] THEN REPEAT STRIP_TAC THENL
+   [ASM_MESON_TAC[REAL_POW_2; ONORM_COMPOSE; ADJOINT_LINEAR; ONORM_ADJOINT];
+    MATCH_MP_TAC REAL_RSQRT_LE THEN
+    ASM_SIMP_TAC[LINEAR_COMPOSE; ADJOINT_LINEAR; ONORM_POS_LE] THEN
+    ASM_SIMP_TAC[ONORM_LE_EQ] THEN X_GEN_TAC `x:real^N` THEN
+    GEN_REWRITE_TAC (RAND_CONV o RAND_CONV) [vector_norm] THEN
+    REWRITE_TAC[GSYM SQRT_MUL] THEN MATCH_MP_TAC REAL_LE_RSQRT THEN
+    REWRITE_TAC[NORM_POW_2] THEN
+    FIRST_ASSUM(fun th -> REWRITE_TAC[MATCH_MP ADJOINT_WORKS th]) THEN
+    W(MP_TAC o PART_MATCH lhand NORM_CAUCHY_SCHWARZ o lhand o snd) THEN
+    MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ_ALT] REAL_LE_TRANS) THEN
+    SIMP_TAC[GSYM NORM_POW_2; REAL_ARITH `(x:real) * y pow 2 = y * x * y`] THEN
+    MATCH_MP_TAC REAL_LE_LMUL THEN REWRITE_TAC[NORM_POS_LE] THEN
+    MP_TAC(ISPEC `adjoint f o (f:real^N->real^N)` ONORM) THEN
+    ASM_SIMP_TAC[LINEAR_COMPOSE; ADJOINT_LINEAR; o_DEF]]);;
+
+let ONORM_COMPOSE_ADJOINT_RIGHT = prove
+ (`!f:real^N->real^N. linear f ==> onorm(f o adjoint f) = onorm f pow 2`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC(ISPEC `adjoint f:real^N->real^N` ONORM_COMPOSE_ADJOINT_LEFT) THEN
+  ASM_SIMP_TAC[ADJOINT_LINEAR; ADJOINT_ADJOINT; ONORM_ADJOINT]);;
+
+let ONORM_TRANSP = prove
+ (`!A:real^N^N. onorm(\x. transp A ** x) = onorm(\x. A ** x)`,
+  REWRITE_TAC[GSYM ADJOINT_MATRIX] THEN
+  SIMP_TAC[ONORM_ADJOINT; MATRIX_VECTOR_MUL_LINEAR]);;
+
+let ONORM_COVARIANCE = prove
+ (`!A:real^N^N.
+        onorm(\x. (transp A ** A) ** x) = onorm(\x. A ** x) pow 2`,
+  GEN_TAC THEN
+  MP_TAC(ISPEC `\x:real^N. (A:real^N^N) ** x` ONORM_COMPOSE_ADJOINT_LEFT) THEN
+  REWRITE_TAC[ADJOINT_MATRIX; MATRIX_VECTOR_MUL_LINEAR; o_DEF] THEN
+  REWRITE_TAC[MATRIX_VECTOR_MUL_ASSOC]);;
+
+let ONORM_COVARIANCE_ALT = prove
+ (`!A:real^N^N.
+        onorm(\x. (A ** transp A) ** x) = onorm(\x. A ** x) pow 2`,
+  GEN_TAC THEN
+  MP_TAC(ISPEC `\x:real^N. (A:real^N^N) ** x` ONORM_COMPOSE_ADJOINT_RIGHT) THEN
+  REWRITE_TAC[ADJOINT_MATRIX; MATRIX_VECTOR_MUL_LINEAR; o_DEF] THEN
+  REWRITE_TAC[MATRIX_VECTOR_MUL_ASSOC]);;
 
 (* ------------------------------------------------------------------------- *)
 (* It's handy to "lift" from R to R^1 and "drop" from R^1 to R.              *)
@@ -3962,6 +4080,12 @@ let LINEAR_LIFT_DOT = prove
  (`!a. linear(\x. lift(a dot x))`,
   REWRITE_TAC[linear; DOT_RMUL; DOT_RADD; LIFT_ADD; LIFT_CMUL]);;
 
+let LINEAR_TO_1 = prove
+ (`!f:real^N->real^1. linear f <=> ?a. f = \x. lift(a dot x)`,
+  GEN_TAC THEN EQ_TAC THEN STRIP_TAC THEN ASM_SIMP_TAC[LINEAR_LIFT_DOT] THEN
+  FIRST_ASSUM(MP_TAC o MATCH_MP LINEAR_TO_REALS) THEN
+  DISCH_THEN SUBST1_TAC THEN REWRITE_TAC[FUN_EQ_THM] THEN MESON_TAC[]);;
+
 let LINEAR_LIFT_COMPONENT = prove
  (`!k. linear(\x:real^N. lift(x$k))`,
   REPEAT GEN_TAC THEN
@@ -3975,6 +4099,12 @@ let BILINEAR_DROP_MUL = prove
  (`bilinear (\x y:real^N. drop x % y)`,
   REWRITE_TAC[bilinear; linear] THEN
   REWRITE_TAC[DROP_ADD; DROP_CMUL] THEN VECTOR_ARITH_TAC);;
+
+let BILINEAR_LIFT_MUL = prove
+ (`bilinear (\x y. lift(drop x * drop y))`,
+  REWRITE_TAC[linear; bilinear; GSYM DROP_EQ;
+              LIFT_DROP; DROP_ADD; DROP_CMUL] THEN
+  REAL_ARITH_TAC);;
 
 let LINEAR_COMPONENTWISE = prove
  (`!f:real^M->real^N.
@@ -8520,6 +8650,14 @@ let MATRIX_INV = prove
   ASM_REWRITE_TAC[GSYM MATRIX_MUL_ASSOC; MATRIX_MUL_RID] THEN
   SIMP_TAC[MATRIX_MUL_LID]);;
 
+let MATRIX_INV_LEFT = prove
+ (`!A:real^N^N. matrix_inv A ** A = mat 1 <=> invertible A`,
+  MESON_TAC[INVERTIBLE_LEFT_INVERSE; MATRIX_INV]);;
+
+let MATRIX_INV_RIGHT = prove
+ (`!A:real^N^N. A ** matrix_inv A = mat 1 <=> invertible A`,
+  MESON_TAC[INVERTIBLE_RIGHT_INVERSE; MATRIX_INV]);;
+
 let MATRIX_MUL_LCANCEL = prove
  (`!A:real^M^N B:real^P^M C.
         invertible A ==> (A ** B = A ** C <=> B = C)`,
@@ -8639,7 +8777,7 @@ let MATRIX_INV_COVARIANCE_LMUL = prove
   REWRITE_TAC[SYMMETRIC_MATRIX_INV_LMUL; GSYM MATRIX_MUL_ASSOC] THEN
   REWRITE_TAC[MATRIX_INV_MUL_OUTER]);;
 
-let RANK_CONJUGATE = prove
+let RANK_SIMILAR = prove
  (`!A:real^N^N U:real^M^N.
         invertible U ==> rank(matrix_inv U ** A ** U) = rank A`,
   SIMP_TAC[RANK_INVERTIBLE_RMUL; RANK_INVERTIBLE_LMUL;

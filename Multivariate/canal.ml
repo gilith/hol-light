@@ -8,6 +8,7 @@
 
 needs "Library/floor.ml";;
 needs "Library/iter.ml";;
+needs "Multivariate/integration.ml";;
 needs "Multivariate/complexes.ml";;
 
 prioritize_complex();;
@@ -658,6 +659,16 @@ let CONTINUOUS_COMPLEX_POW = prove
  (`!net f n. f continuous net ==> (\x. f(x) pow n) continuous net`,
   SIMP_TAC[continuous; LIM_COMPLEX_POW]);;
 
+let CONTINUOUS_CPRODUCT = prove
+ (`!(net:B net) f k:A->bool.
+        FINITE k /\
+        (!i. i IN k ==> f i continuous net)
+        ==> (\z. cproduct k (\i. f i z)) continuous net`,
+  GEN_TAC THEN GEN_TAC THEN REWRITE_TAC[IMP_CONJ; RIGHT_FORALL_IMP_THM] THEN
+  MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
+  SIMP_TAC[CPRODUCT_CLAUSES; CONTINUOUS_CONST; FORALL_IN_INSERT;
+           ETA_AX; CONTINUOUS_COMPLEX_MUL]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Write away the netlimit, which is otherwise a bit tedious.                *)
 (* ------------------------------------------------------------------------- *)
@@ -725,6 +736,13 @@ let CONTINUOUS_ON_COMPLEX_DIV = prove
 let CONTINUOUS_ON_COMPLEX_POW = prove
  (`!f n s. f continuous_on s ==> (\x. f(x) pow n) continuous_on s`,
   SIMP_TAC[CONTINUOUS_ON_EQ_CONTINUOUS_WITHIN; CONTINUOUS_COMPLEX_POW]);;
+
+let CONTINUOUS_ON_CPRODUCT = prove
+ (`!f k:A->bool s.
+        FINITE k /\
+        (!i. i IN k ==> f i continuous_on s)
+        ==> (\z. cproduct k (\i. f i z)) continuous_on s`,
+  SIMP_TAC[CONTINUOUS_ON_EQ_CONTINUOUS_WITHIN; CONTINUOUS_CPRODUCT]);;
 
 (* ------------------------------------------------------------------------- *)
 (* And also uniform versions.                                                *)
@@ -2230,6 +2248,23 @@ let COMPLEX_DERIVATIVE_JACOBIAN = prove
   ASM_SIMP_TAC[CART_EQ; matrix_vector_mul; DIMINDEX_2; SUM_2; ARITH;
                FORALL_2; FUN_EQ_THM; LAMBDA_BETA] THEN
   REWRITE_TAC[GSYM RE_DEF; GSYM IM_DEF; IM; RE; complex_mul] THEN
+  REAL_ARITH_TAC);;
+
+let JACOBIAN_COMPLEX_DERIVATIVE = prove
+ (`!f f' z.
+        (f has_complex_derivative f') (at z)
+        ==> det(jacobian f (at z)) = norm(f') pow 2`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC(fst(EQ_IMP_RULE(ISPECL [`f:complex->complex`; `z:complex`]
+        CAUCHY_RIEMANN))) THEN
+  ANTS_TAC THENL [ASM_MESON_TAC[complex_differentiable]; STRIP_TAC] THEN
+  ASM_REWRITE_TAC[DET_2; GSYM DOT_2; GSYM NORM_POW_2; REAL_ARITH
+   `y * y - --x * x:real = x * x + y * y`] THEN
+  REWRITE_TAC[jacobian] THEN
+  RULE_ASSUM_TAC(REWRITE_RULE[has_complex_derivative]) THEN
+  FIRST_ASSUM(SUBST1_TAC o MATCH_MP HAS_FRECHET_DERIVATIVE_UNIQUE_AT) THEN
+  SIMP_TAC[NORM_POW_2; DOT_2; matrix; LAMBDA_BETA; DIMINDEX_2; ARITH; complex;
+           complex_mul; VECTOR_2; IM_DEF; RE_DEF; BASIS_COMPONENT] THEN
   REAL_ARITH_TAC);;
 
 let COMPLEX_DIFFERENTIABLE_EQ_CONFORMAL = prove

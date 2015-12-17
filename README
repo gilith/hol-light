@@ -6,6 +6,10 @@ its front end. This is the HOL Light homepage:
 
         http://www.cl.cam.ac.uk/~jrh13/hol-light/index.html
 
+and this is the root of the Github code repository:
+
+        https://github.com/jrh13/hol-light
+
 Basic installation instructions are below. For more detailed information
 on usage, see the Tutorial:
 
@@ -100,23 +104,21 @@ environment such as Linux [or Cygwin (see www.cygwin.com) under
 Windows], but the steps automated by the Makefile are easy enough to
 invoke manually. There's more detail on doing that in the Tutorial.
 
-(0) You can download the HOL Light sources from the Google Code site.
-    [AS OF 2015/08/24 GOOGLE CODE IS ABOUT TO GO READ-ONLY, SO THESE
-    INSTRUCTIONS WILL SOON CHANGE --- REFER TO THE HOME PAGE ABOVE.]
+(0) You can download the HOL Light sources from the Github site.
     For example, the following will copy the code from the trunk of the
-    Google Code repository into a new directory 'hol_light':
+    Github repository into a new directory 'hol-light':
 
-        svn checkout http://hol-light.googlecode.com/svn/trunk/ hol_light
+        git clone https://github.com/jrh13/hol-light.git
 
     The above is now the recommended way of getting HOL Light. There
     are also gzipped tar files on the HOL Light Web page, but they are
     only for quite old versions and will probably be difficult to use
     with recent versions of OCaml.
 
-    You should next enter the 'hol_light' directory that has been
+    You should next enter the 'hol-light' directory that has been
      created:
 
-        cd ./hol_light
+        cd ./hol-light
 
 There are now two alternatives: launch the OCaml toplevel and directly
 load the HOL Light source files into it, or create a standalone image
@@ -137,10 +139,12 @@ be available for some platforms. First the basic approach:
 
       export CAMLP5LIB=$HOME/mylib/ocaml/camlp5
 
-(2) Do 'ocaml' (possibly 'ocamlnum' on some platforms --- see [*] below).
-    You should see a prompt, something like:
+(2) Do 'ocaml'. (Actually for OCaml >= 4.02 I prefer 'ocaml -safe-string'
+    to avoid mutable strings, while you may need something else like
+    'ocamlnum' on some platforms --- see [*] below.) You should see a
+    prompt, something like:
 
-                Objective Caml version 3.08.2
+                Objective Caml version 4.01.0
 
         #
 
@@ -167,7 +171,7 @@ be available for some platforms. First the basic approach:
 
     to, for example
 
-        let hol_dir = "/home/johnh/hol_light";;
+        let hol_dir = "/home/johnh/hol-light";;
 
     or
 
@@ -188,7 +192,7 @@ recent Linux kernel/libc combinations.
 
         make hol
 
-    in the 'hol_light' directory, and a standalone HOL Light image
+    in the 'hol-light' directory, and a standalone HOL Light image
     called 'hol' should be created. If desired you can move or copy
     this to some other place such as '~/bin' or '/usr/local/bin'. You
     then simply type 'hol' (or './hol') to start the system up and
