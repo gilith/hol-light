@@ -94,7 +94,7 @@ info-export-theories:
 .PHONY: check-theories
 check-theories: export/files.txt
 	@echo Looking for duplicate let bindings:
-	@cd .. && (for f in $$(cat opentheory/export/files.txt) ; do cat $$f ; done) | grep '^let ' | sort | uniq -d
+	@cd .. && (for f in $$(cat opentheory/export/files.txt) ; do cat $$f ; done) | grep '^let ' | grep -v '^let () =' | sort | uniq -d
 	@echo
 	@echo Looking for duplicate theorem exports:
 	@cd .. && (for f in $$(cat opentheory/export/files.txt) ; do cat $$f ; done) | grep '^export_thm ' | sort | uniq -d
