@@ -152,10 +152,10 @@ let same_name_th = EQ_MP (SYM same_name_def) same_name_ax;;
 export_thm same_name_th;;
 
 (* ------------------------------------------------------------------------- *)
-(* Testing generation of theory theorems.                                    *)
+(* Testing constant and type definitions.                                    *)
 (* ------------------------------------------------------------------------- *)
 
-export_theory "theorems1";;
+export_theory "example13";;
 
 let def1 = new_basic_definition `c1 = \f x. (f : A -> B) x`;;
 
@@ -178,6 +178,22 @@ let (abs_rep2,rep_abs2) =
 
 export_thm abs_rep2;;
 export_thm rep_abs2;;
+
+(* ------------------------------------------------------------------------- *)
+(* Testing large numerals                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "example14";;
+
+let fermat7 = NUM_REDUCE_CONV `2 EXP (2 EXP 7) + 1`;;
+
+let fermat7_factorization =
+    let th = NUM_REDUCE_CONV `59649589127497217 * 5704689200685129054721` in
+    TRANS fermat7 (SYM th);;
+
+let fermat7_axiom = new_axiom (concl fermat7_factorization);;
+
+export_thm fermat7_axiom;;
 
 (* ------------------------------------------------------------------------- *)
 (* Testing the QBF cloud tactic                                              *)
