@@ -1,6 +1,5 @@
 ###############################################################################
-# INTERPRETATIONS FOR THE MAP REDUCE 3x3 BIT MATRIX EXAMPLE
-# Joe Leslie-Hurd
+# HOL Light interpretation for the map reduce 3x3 bit matrix example
 ###############################################################################
 
 # Bit
