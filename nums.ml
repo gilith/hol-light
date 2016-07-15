@@ -279,12 +279,16 @@ export_thm num_Axiom;;
 (* ------------------------------------------------------------------------- *)
 
 let NUMERAL =
-  let def = new_basic_definition `NUMERAL = \n. (n : num)` in
-  let () = delete_const_definition ["NUMERAL"] in
+  let name = "NUMERAL" in
+  let def =
+      let num_ty = type_of(lhand(concl ZERO_DEF)) in
+      let funn_ty = mk_fun_ty num_ty num_ty in
+      let numeral_tm = mk_var(name,funn_ty) in
+      let n_tm = mk_var("n",num_ty) in
+      new_basic_definition (mk_eq (numeral_tm, mk_abs(n_tm,n_tm))) in
+  let () = delete_const_definition [name] in
   let () = delete_proof def in
-  prove
-  (`!(n:num). NUMERAL n = n`,
-   REWRITE_TAC [def]);;
+  prove (`!(n:num). NUMERAL n = n`, REWRITE_TAC [def]);;
 
 let [NOT_SUC; num_INDUCTION; num_Axiom] =
   let th = prove(`_0 = 0`,REWRITE_TAC[NUMERAL]) in
@@ -333,18 +337,25 @@ inductive_type_store :=
 export_theory "natural-numeral-def";;
 
 let (BIT0_ZERO,BIT0_SUC) =
+  let funn_ty = type_of(rator(lhand(snd(dest_forall(concl NUMERAL))))) in
+  let num_ty = snd(dest_fun_ty funn_ty) in
+  let bit0_tm = mk_var("BIT0",funn_ty) in
   let def = new_definition
-    `BIT0 = @fn. fn 0 = 0 /\ (!n. fn (SUC n) = SUC (SUC (fn n)))`
-  and th = BETA_RULE(ISPECL [`0`; `\m n:num. SUC (SUC m)`] num_RECURSION) in
-  CONJ_PAIR (REWRITE_RULE [GSYM def] (SELECT_RULE th));;
+   (mk_eq(bit0_tm,`@fn. fn 0 = 0 /\ (!n. fn (SUC n) = SUC (SUC(fn n)))`))
+  and th = BETA_RULE(ISPECL [`0`; `\m n:num. SUC(SUC m)`] num_RECURSION) in
+  CONJ_PAIR (REWRITE_RULE[GSYM def] (SELECT_RULE th));;
 
 export_thm BIT0_ZERO;;
 export_thm BIT0_SUC;;
 
 let BIT0_DEF = CONJ BIT0_ZERO BIT0_SUC;;
 
-let BIT1_DEF = new_definition
- `!n. BIT1 n = SUC (BIT0 n)`;;
+let BIT1_DEF =
+  let funn_ty = type_of(rator(lhand(lhand(concl BIT0_DEF)))) in
+  let num_ty = snd(dest_fun_ty funn_ty) in
+  let n_tm = mk_var("n",num_ty) in
+  let bit1_tm = mk_var("BIT1",funn_ty) in
+  new_definition(mk_eq(mk_comb(bit1_tm,n_tm),`SUC (BIT0 n)`));;
 
 export_thm BIT1_DEF;;
 

@@ -178,7 +178,7 @@ let montgomery_reduce_bits = prove
      bit_shr (bit_bound (a * k) r * n) r +
      bit_to_num (~(bit_bound (a * k * n) r = 0))`,
   REPEAT STRIP_TAC THEN
-  REWRITE_TAC [bit_shr_def; bit_bound_def; bit_to_num_def; COND_NOT] THEN
+  REWRITE_TAC [bit_shr_def; bit_bound_def; bit_to_num_def; COND_SWAP] THEN
   MATCH_MP_TAC montgomery_reduce_divides THEN
   EXISTS_TAC `s : num` THEN
   ASM_REWRITE_TAC []);;

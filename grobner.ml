@@ -671,17 +671,17 @@ let NUM_SIMPLIFY_CONV =
 
 let NUM_RING =
   let NUM_INTEGRAL_LEMMA = prove
-   (`(w = x + d) /\ (y = z + e)
+   (`((w : num) = x + d) /\ (y = z + e)
      ==> ((w * y + x * z = w * z + x * y) <=> (w = x) \/ (y = z))`,
     DISCH_THEN(fun th -> REWRITE_TAC[th]) THEN
     REWRITE_TAC[LEFT_ADD_DISTRIB; RIGHT_ADD_DISTRIB; GSYM ADD_ASSOC] THEN
     ONCE_REWRITE_TAC[AC ADD_AC
-     `a + b + c + d + e = a + c + e + b + d`] THEN
+     `(a : num) + b + c + d + e = a + c + e + b + d`] THEN
     REWRITE_TAC[EQ_ADD_LCANCEL; EQ_ADD_LCANCEL_0; MULT_EQ_0]) in
   let NUM_INTEGRAL = prove
-   (`(!x. 0 * x = 0) /\
-     (!x y z. (x + y = x + z) <=> (y = z)) /\
-     (!w x y z. (w * y + x * z = w * z + x * y) <=> (w = x) \/ (y = z))`,
+   (`(!x : num. 0 * x = 0) /\
+     (!x y z : num. (x + y = x + z) <=> (y = z)) /\
+     (!w x y z : num. (w * y + x * z = w * z + x * y) <=> (w = x) \/ (y = z))`,
     REWRITE_TAC[MULT_CLAUSES; EQ_ADD_LCANCEL] THEN
     REPEAT GEN_TAC THEN
     DISJ_CASES_TAC (SPECL [`w:num`; `x:num`] LE_CASES) THEN

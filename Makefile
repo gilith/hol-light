@@ -19,10 +19,10 @@ BINDIR=${HOME}/bin
 
 # This is the list of source files in the HOL Light core
 
-HOLSRC=system.ml lib.ml type.ml term.ml thm.ml basics.ml nets.ml        \
-       preterm.ml parser.ml printer.ml equal.ml bool.ml drule.ml        \
-       tactics.ml itab.ml simp.ml theorems.ml ind_defs.ml class.ml      \
-       trivia.ml canon.ml meson.ml quot.ml recursion.ml pair.ml         \
+HOLSRC=system.ml lib.ml fusion.ml basics.ml nets.ml preterm.ml          \
+       parser.ml printer.ml equal.ml bool.ml drule.ml tactics.ml        \
+       itab.ml simp.ml theorems.ml ind_defs.ml class.ml trivia.ml       \
+       canon.ml meson.ml metis.ml quot.ml recursion.ml pair.ml          \
        nums.ml arith.ml wf.ml calc_num.ml normalizer.ml grobner.ml      \
        ind_types.ml lists.ml realax.ml calc_int.ml realarith.ml         \
        real.ml calc_rat.ml int.ml sets.ml iterate.ml cart.ml define.ml  \
@@ -39,7 +39,7 @@ CAMLP5_VERSION=`camlp5 -v 2>&1 | cut -f3 -d' ' | cut -f1-3 -d'.' | cut -c1-6`
 
 pa_j.cmo: pa_j.ml; if test ${OCAML_BINARY_VERSION} = "3.0" ; \
                    then ocamlc -c -pp "camlp4r pa_extend.cmo q_MLast.cmo" -I `camlp4 -where` pa_j.ml ; \
-                   else if test ${OCAML_BINARY_VERSION} = "3.1" -o ${OCAML_VERSION} = "4.00" -o ${OCAML_VERSION} = "4.01" ; \
+                   else if test ${OCAML_BINARY_VERSION} = "3.1" -o ${OCAML_VERSION} = "4.00" -o ${OCAML_VERSION} = "4.01"  -o ${OCAML_VERSION} = "4.02" -o ${OCAML_VERSION} = "4.03" ; \
                         then  ocamlc -c -pp "camlp5r pa_lexer.cmo pa_extend.cmo q_MLast.cmo" -I `camlp5 -where` pa_j.ml ; \
                         else ocamlc -safe-string -c -pp "camlp5r pa_lexer.cmo pa_extend.cmo q_MLast.cmo" -I `camlp5 -where` pa_j.ml ; \
                         fi \
@@ -62,7 +62,7 @@ pa_j.ml: pa_j_3.07.ml pa_j_3.08.ml pa_j_3.09.ml pa_j_3.1x_5.xx.ml pa_j_3.1x_6.xx
              then cp pa_j_3.1x_6.02.1.ml pa_j.ml; \
              else if test ${CAMLP5_VERSION} = "6.02.2" -o ${CAMLP5_VERSION} = "6.02.3" -o ${CAMLP5_VERSION} = "6.03" -o ${CAMLP5_VERSION} = "6.04" -o ${CAMLP5_VERSION} = "6.05" -o ${CAMLP5_VERSION} = "6.06" ; \
                   then cp pa_j_3.1x_6.02.2.ml pa_j.ml; \
-                  else if test ${CAMLP5_VERSION} = "6.06" -o ${CAMLP5_VERSION} = "6.07" -o ${CAMLP5_VERSION} = "6.08" -o ${CAMLP5_VERSION} = "6.09" -o ${CAMLP5_VERSION} = "6.10" -o ${CAMLP5_VERSION} = "6.11" -o ${CAMLP5_VERSION} = "6.12" -o ${CAMLP5_VERSION} = "6.13" -o ${CAMLP5_VERSION} = "6.14" ; \
+                  else if test ${CAMLP5_VERSION} = "6.06" -o ${CAMLP5_VERSION} = "6.07" -o ${CAMLP5_VERSION} = "6.08" -o ${CAMLP5_VERSION} = "6.09" -o ${CAMLP5_VERSION} = "6.10" -o ${CAMLP5_VERSION} = "6.11" -o ${CAMLP5_VERSION} = "6.12" -o ${CAMLP5_VERSION} = "6.13" -o ${CAMLP5_VERSION} = "6.14" -o ${CAMLP5_VERSION} = "6.15" -o ${CAMLP5_VERSION} = "6.16" ; \
                        then cp pa_j_3.1x_6.11.ml pa_j.ml; \
                        else cp pa_j_3.1x_${CAMLP5_BINARY_VERSION}.xx.ml pa_j.ml; \
                        fi \
@@ -85,13 +85,14 @@ hol: pa_j.cmo ${HOLSRC} update_database.ml;                    \
 # Build an image with multivariate calculus preloaded.
 
 hol.multivariate: ./hol                                                 \
-     Library/card.ml Library/permutations.ml Multivariate/misc.ml       \
-     Library/products.ml Library/floor.ml Multivariate/vectors.ml       \
+     Library/card.ml Library/permutations.ml Library/products.ml        \
+     Library/floor.ml Multivariate/misc.ml Library/iter.ml              \
+     Multivariate/metric.ml Multivariate/vectors.ml                     \
      Multivariate/determinants.ml Multivariate/topology.ml              \
-     Multivariate/convex.ml Multivariate/polytope.ml                    \
-     Multivariate/dimension.ml Multivariate/derivatives.ml              \
-     Multivariate/clifford.ml Multivariate/integration.ml               \
-     Multivariate/measure.ml                                            \
+     Multivariate/convex.ml Multivariate/paths.ml                       \
+     Multivariate/polytope.ml Multivariate/degree.ml                    \
+     Multivariate/derivatives.ml Multivariate/clifford.ml               \
+     Multivariate/integration.ml Multivariate/measure.ml                \
      Multivariate/multivariate_database.ml update_database.ml;          \
      echo -e 'loadt "Multivariate/make.ml";;\nloadt "update_database.ml";;\nself_destruct "Preloaded with multivariate analysis";;' | ./hol; mv hol.snapshot hol.multivariate;
 
@@ -110,10 +111,11 @@ hol.card: ./hol Library/card.ml; update_database.ml;                    \
 # Build an image with multivariate-based complex analysis preloaded
 
 hol.complex: ./hol.multivariate                                         \
-        Library/binomial.ml Library/iter.ml Multivariate/complexes.ml   \
+        Library/binomial.ml Multivariate/complexes.ml                   \
         Multivariate/canal.ml Multivariate/transcendentals.ml           \
-        Multivariate/realanalysis.ml Multivariate/cauchy.ml             \
-        Multivariate/complex_database.ml update_database.ml;            \
+        Multivariate/realanalysis.ml Multivariate/moretop.ml            \
+        Multivariate/cauchy.ml Multivariate/complex_database.ml         \
+        update_database.ml;                                             \
         echo -e 'loadt "Multivariate/complexes.ml";;\nloadt "Multivariate/canal.ml";;\nloadt "Multivariate/transcendentals.ml";;\nloadt "Multivariate/realanalysis.ml";;\nloadt "Multivariate/cauchy.ml";;\nloadt "Multivariate/complex_database.ml";;\nloadt "update_database.ml";;\nself_destruct "Preloaded with multivariate-based complex analysis";;' | ./hol.multivariate; mv hol.snapshot hol.complex;
 
 # Build all those

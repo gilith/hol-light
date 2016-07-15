@@ -2323,6 +2323,35 @@ let zip_unzip = prove
 
 export_thm zip_unzip;;
 
+let unzip_map = prove
+ (`!l : (A # B) list. unzip l = (MAP FST l, MAP SND l)`,
+  LIST_INDUCT_TAC THEN
+  ASM_REWRITE_TAC [unzip_nil; MAP; unzip_cons]);;
+
+export_thm unzip_map;;
+
+let map_fst_zip = prove
+ (`!(xs : A list) (ys : B list).
+      LENGTH xs = LENGTH ys ==> MAP FST (zip xs ys) = xs`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (ISPECL [`zip (xs : A list) (ys : B list)`;
+                  `xs : A list`; `ys : B list`] zip_unzip) THEN
+  ASM_REWRITE_TAC [unzip_map; PAIR_EQ] THEN
+  STRIP_TAC);;
+
+export_thm map_fst_zip;;
+
+let map_snd_zip = prove
+ (`!(xs : A list) (ys : B list).
+      LENGTH xs = LENGTH ys ==> MAP SND (zip xs ys) = ys`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC (ISPECL [`zip (xs : A list) (ys : B list)`;
+                  `xs : A list`; `ys : B list`] zip_unzip) THEN
+  ASM_REWRITE_TAC [unzip_map; PAIR_EQ] THEN
+  STRIP_TAC);;
+
+export_thm map_snd_zip;;
+
 (* ------------------------------------------------------------------------- *)
 (* Nub.                                                                      *)
 (* ------------------------------------------------------------------------- *)

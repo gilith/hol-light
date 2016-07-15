@@ -770,6 +770,10 @@ let REAL_SUMMABLE_FROM_ELSEWHERE = prove
   SIMP_TAC[FINITE_NUMSEG; SUBSET; IN_NUMSEG; IN_UNION; IN_DIFF; IN_FROM] THEN
   ARITH_TAC);;
 
+let REAL_SUMMABLE_FROM_ELSEWHERE_EQ = prove
+ (`!n m f. real_summable (from m) f <=> real_summable (from n) f`,
+  MESON_TAC[REAL_SUMMABLE_FROM_ELSEWHERE]);;
+
 let REAL_SERIES_GOESTOZERO = prove
  (`!s x. real_summable s x
          ==> !e. &0 < e
@@ -899,6 +903,20 @@ let REAL_SUMS_REINDEX = prove
   ASM_MESON_TAC[ARITH_RULE `N + k:num <= n ==> n = (n - k) + k /\ N <= n - k`;
                 ARITH_RULE `N + k:num <= n ==> N <= n + k`]);;
 
+let REAL_SERIES_EVEN = prove
+ (`!f l n.
+    (f real_sums l) (from n) <=>
+    ((\i. if EVEN i then f(i DIV 2) else &0) real_sums l) (from (2 * n))`,
+  REWRITE_TAC[REAL_SUMS; o_DEF; COND_RAND; LIFT_NUM] THEN
+  REWRITE_TAC[GSYM SERIES_EVEN]);;
+
+let REAL_SERIES_ODD = prove
+ (`!f l n.
+    (f real_sums l) (from n) <=>
+    ((\i. if ODD i then f(i DIV 2) else &0) real_sums l) (from (2 * n + 1))`,
+  REWRITE_TAC[REAL_SUMS; o_DEF; COND_RAND; LIFT_NUM] THEN
+  REWRITE_TAC[GSYM SERIES_ODD]);;
+
 let REAL_INFSUM = prove
  (`!f s. real_summable s f ==> real_infsum s f = drop(infsum s (lift o f))`,
   REPEAT GEN_TAC THEN
@@ -976,6 +994,41 @@ let REAL_SERIES_COMPARISON_BOUND = prove
   MATCH_MP_TAC SERIES_COMPARISON_BOUND THEN
   EXISTS_TAC `lift o (g:num->real)` THEN
   ASM_SIMP_TAC[o_THM; LIFT_DROP]);;
+
+let REAL_SERIES_MUL = prove
+ (`!x y a b.
+        (x real_sums a) (from 0) /\ (y real_sums b) (from 0) /\
+        (real_summable (from 0) (\n. abs(x n)) \/
+         real_summable (from 0) (\n. abs(y n)))
+        ==> ((\n. sum(0..n) (\i. x i * y(n - i))) real_sums (a * b))
+            (from 0)`,
+  REPEAT GEN_TAC THEN DISCH_TAC THEN
+  MP_TAC(ISPECL
+   [`\x y:real^1. drop x % y`;
+    `lift o (x:num->real)`; `lift o (y:num->real)`;
+    `lift a`; `lift b`]
+   SERIES_BILINEAR) THEN
+  ASM_REWRITE_TAC[GSYM REAL_SUMMABLE; GSYM REAL_SUMS; BILINEAR_DROP_MUL] THEN
+  RULE_ASSUM_TAC(REWRITE_RULE
+   [REAL_SUMMABLE; REAL_SUMS; o_DEF; GSYM NORM_1]) THEN
+  ASM_REWRITE_TAC[o_DEF; NORM_LIFT; REAL_SUMS; TENDSTO_REAL; LIFT_SUM] THEN
+  REWRITE_TAC[DROP_CMUL; LIFT_DROP; LIFT_CMUL]);;
+
+let REAL_SERIES_MUL_UNIQUE = prove
+ (`!x y a b c.
+        (x real_sums a) (from 0) /\ (y real_sums b) (from 0) /\
+        ((\n. sum (0..n) (\i. x i * y(n - i))) real_sums c) (from 0)
+        ==> a * b = c`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC(ISPECL
+   [`\x y:real^1. drop x % y`;
+    `lift o (x:num->real)`; `lift o (y:num->real)`;
+    `lift a`; `lift b`; `lift c`]
+   SERIES_BILINEAR_UNIQUE) THEN
+  ASM_REWRITE_TAC[GSYM REAL_SUMS; BILINEAR_DROP_MUL] THEN
+  RULE_ASSUM_TAC(REWRITE_RULE[REAL_SUMS; o_DEF; LIFT_SUM; GSYM NORM_1]) THEN
+  ASM_REWRITE_TAC[o_DEF; DROP_CMUL; LIFT_DROP; GSYM LIFT_CMUL] THEN
+  REWRITE_TAC[LIFT_EQ]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Similar combining theorems just for summability.                          *)
@@ -1101,6 +1154,18 @@ let REAL_SUMS_OFFSET_REV = prove
   REWRITE_TAC[EXTENSION; IN_DIFF; IN_UNION; IN_FROM; IN_NUMSEG] THEN
   ASM_ARITH_TAC);;
 
+let REAL_SUMMABLE_EVEN = prove
+ (`!f n.
+      real_summable (from n) f <=>
+      real_summable (from (2 * n)) (\i. if EVEN i then f(i DIV 2) else &0)`,
+  REWRITE_TAC[real_summable; GSYM REAL_SERIES_EVEN]);;
+
+let REAL_SUMMABLE_ODD = prove
+ (`!f n.
+      real_summable (from n) f <=>
+      real_summable (from (2 * n + 1)) (\i. if ODD i then f(i DIV 2) else &0)`,
+  REWRITE_TAC[real_summable; GSYM REAL_SERIES_ODD]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Similar combining theorems for infsum.                                    *)
 (* ------------------------------------------------------------------------- *)
@@ -1159,6 +1224,18 @@ let REAL_INFSUM_RESTRICT = prove
     ASM_REWRITE_TAC[REAL_SERIES_RESTRICT; REAL_SUMS_INFSUM];
     RULE_ASSUM_TAC(REWRITE_RULE[real_summable; NOT_EXISTS_THM]) THEN
     ASM_REWRITE_TAC[real_infsum]]);;
+
+let REAL_INFSUM_EVEN = prove
+ (`!f n.
+        real_infsum (from n) f =
+        real_infsum (from (2 * n)) (\i. if EVEN i then f(i DIV 2) else &0)`,
+  REWRITE_TAC[real_infsum; GSYM REAL_SERIES_EVEN]);;
+
+let REAL_INFSUM_ODD = prove
+ (`!f n.
+        real_infsum (from n) f =
+        real_infsum (from (2 * n + 1)) (\i. if ODD i then f(i DIV 2) else &0)`,
+  REWRITE_TAC[real_infsum; GSYM REAL_SERIES_ODD]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Convergence tests for real series.                                        *)
@@ -1321,6 +1398,36 @@ let POWER_REAL_SERIES_CONV_IMP_ABSCONV_WEAK = prove
   REWRITE_TAC[REAL_SUMMABLE_COMPLEX; o_DEF; CX_MUL; CX_ABS; CX_POW] THEN
   REPEAT STRIP_TAC THEN MATCH_MP_TAC POWER_SERIES_CONV_IMP_ABSCONV_WEAK THEN
   EXISTS_TAC `Cx z` THEN ASM_REWRITE_TAC[COMPLEX_NORM_CX]);;
+
+let REAL_SUMMABLE_MUL_LEFT = prove
+ (`!x y m n p.
+        real_summable (from m) (\n. abs(x n)) /\
+        real_summable (from n) y
+        ==> real_summable (from p) (\n. sum(0..n) (\i. x i * y(n - i)))`,
+  ONCE_REWRITE_TAC[SPEC `0` REAL_SUMMABLE_FROM_ELSEWHERE_EQ] THEN
+  REPEAT STRIP_TAC THEN
+  FIRST_ASSUM(MP_TAC o MATCH_MP REAL_SERIES_ABSCONV_IMP_CONV) THEN
+  UNDISCH_TAC `real_summable (from 0) y` THEN
+  REWRITE_TAC[real_summable; LEFT_IMP_EXISTS_THM] THEN
+  X_GEN_TAC `b:real` THEN DISCH_TAC THEN
+  X_GEN_TAC `a:real` THEN DISCH_TAC THEN
+  EXISTS_TAC `a * b:real` THEN MATCH_MP_TAC REAL_SERIES_MUL THEN
+  ASM_REWRITE_TAC[]);;
+
+let REAL_SUMMABLE_MUL_RIGHT = prove
+ (`!x y m n p.
+        real_summable (from m) x /\
+        real_summable (from n) (\n. abs(y n))
+        ==> real_summable (from p) (\n. sum(0..n) (\i. x i * y(n - i)))`,
+  ONCE_REWRITE_TAC[SPEC `0` REAL_SUMMABLE_FROM_ELSEWHERE_EQ] THEN
+  REPEAT STRIP_TAC THEN
+  FIRST_ASSUM(MP_TAC o MATCH_MP REAL_SERIES_ABSCONV_IMP_CONV) THEN
+  UNDISCH_TAC `real_summable (from 0) x` THEN
+  REWRITE_TAC[real_summable; LEFT_IMP_EXISTS_THM] THEN
+  X_GEN_TAC `a:real` THEN DISCH_TAC THEN
+  X_GEN_TAC `b:real` THEN DISCH_TAC THEN
+  EXISTS_TAC `a * b:real` THEN MATCH_MP_TAC REAL_SERIES_MUL THEN
+  ASM_REWRITE_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Nets for real limit.                                                      *)
@@ -1891,7 +1998,7 @@ let REAL_ABEL_LIMIT_THEOREM = prove
              (atreal (&1) within {z | z <= &1})`,
   REPEAT GEN_TAC THEN STRIP_TAC THEN
   MP_TAC(ISPECL [`&1`; `s:num->bool`; `Cx o (a:num->real)`]
-        ABEL_LIMIT_THEOREM) THEN
+        ABEL_LIMIT_THEOREM_1) THEN
   ASM_REWRITE_TAC[GSYM REAL_SUMMABLE_COMPLEX; REAL_LT_01] THEN STRIP_TAC THEN
   MATCH_MP_TAC(TAUT `a /\ (a ==> b) ==> a /\ b`) THEN CONJ_TAC THENL
    [X_GEN_TAC `r:real` THEN STRIP_TAC THEN
@@ -16381,12 +16488,11 @@ let HAS_BOUNDED_REAL_VARIATION_DARBOUX_STRONG = prove
     ASM_REAL_ARITH_TAC));;
 
 let HAS_BOUNDED_REAL_VARIATION_COUNTABLE_DISCONTINUITIES = prove
- (`!f a b. f has_bounded_real_variation_on real_interval[a,b]
-           ==> COUNTABLE {x | x IN real_interval[a,b] /\
-                              ~(f real_continuous atreal x)}`,
+ (`!f s. f has_bounded_real_variation_on s /\ is_realinterval s
+           ==> COUNTABLE {x | x IN s /\ ~(f real_continuous atreal x)}`,
   REPEAT GEN_TAC THEN REWRITE_TAC[has_bounded_real_variation_on] THEN
   REWRITE_TAC[REAL_CONTINUOUS_CONTINUOUS_ATREAL] THEN
-  REWRITE_TAC[IMAGE_LIFT_REAL_INTERVAL] THEN DISCH_THEN(MP_TAC o
+  REWRITE_TAC[IS_REALINTERVAL_IS_INTERVAL] THEN DISCH_THEN(MP_TAC o
     MATCH_MP HAS_BOUNDED_VARIATION_COUNTABLE_DISCONTINUITIES) THEN
   DISCH_THEN(MP_TAC o ISPEC `drop` o MATCH_MP COUNTABLE_IMAGE) THEN
   MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ_ALT] COUNTABLE_SUBSET) THEN

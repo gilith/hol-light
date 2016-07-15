@@ -1,3 +1,472 @@
+  * *****************************************************************
+  * NB: This CHANGES file no longer gives a comprehensive list of   *
+  * changes made to the system. In particular, most changes in the  *
+  * Multivariate theories are excluded, simply because there are    *
+  * so many of them that tracking them would be tedious. For more   *
+  * detailed update lists, consult the git logs ("git log" if you   *
+  * have the system downloaed) or the list of commits on the Web    *
+  * page: https://github.com/jrh13/hol-light/commits/master         *
+  * *****************************************************************
+
+Sat  9th Jul 2016       Makefile
+
+Added yet another disjunct to the OCaml and camlp5 version case split
+for 4.03 and 6.15 respectively (Flemming Andersen pointed out that
+this combination failed).
+
+Sun  3rd Jul 2016       cart.ml
+
+Added a finite-forcing Cartesian product for type indices (a natural thing to
+have by analogy with finite_sum and finite_diff, and also requested on
+hol-info by Abid Rauf):
+
+  finite_prod_tybij =
+    |- (!a. mk_finite_prod(dest_finite_prod a) = a) /\
+       (!r. r IN 1..dimindex(:A) * dimindex(:B) <=>
+            dest_finite_prod(mk_finite_prod r) = r)
+
+  FINITE_PROD_IMAGE =
+    |- (:(A,B)finite_prod) =
+       IMAGE mk_finite_prod (1..dimindex(:A) * dimindex(:B))
+
+  DIMINDEX_HAS_SIZE_FINITE_PROD =
+    |- (:(M,N)finite_prod) HAS_SIZE dimindex(:M) * dimindex(:N)
+
+  DIMINDEX_FINITE_PROD =
+    |- dimindex(:(M,N)finite_prod) = dimindex(:M) * dimindex(:N)
+
+Sun  3rd Jul 2016       sets.ml, cart.ml
+
+Added analogous theorems about distributing intersections over
+Cartesian products, in two forms:
+
+  CROSS_INTERS =
+   |- (!s f. s CROSS (INTERS f) =
+             if f = {} then s CROSS UNIV else INTERS {s CROSS t | t IN f}) /\
+      (!f t. (INTERS f) CROSS t =
+             if f = {} then UNIV CROSS t else INTERS {s CROSS t | s IN f})
+
+  CROSS_INTERS_INTERS =
+    |- !f g. (INTERS f) CROSS (INTERS g) =
+             if f = {} then INTERS {UNIV CROSS t | t IN g}
+             else if g = {} then INTERS {s CROSS UNIV | s IN f}
+             else INTERS {s CROSS t | s IN f /\ t IN g}
+
+  PCROSS_INTERS =
+    |- (!s f. s PCROSS (INTERS f) =
+              if f = {} then s PCROSS UNIV
+              else INTERS {s PCROSS t | t IN f}) /\
+       (!f t. (INTERS f) PCROSS t =
+              if f = {} then UNIV PCROSS t else INTERS {s PCROSS t | s IN f})
+
+  PCROSS_INTERS_INTERS =
+    |- !f g. (INTERS f) PCROSS (INTERS g) =
+             if f = {} then INTERS {UNIV PCROSS t | t IN g}
+             else if g = {} then INTERS {s PCROSS UNIV | s IN f}
+             else INTERS {s PCROSS t | s IN f /\ t IN g}
+
+Fri 24th Jun 2016       lists.ml
+
+Added a definition of "list_of_seq" mapping a sequence s and length n
+to the list [s_0,...,s_{n-1}], and various basic list theorems:
+
+
+  APPEND_LCANCEL =
+    |- !l1 l2 l3. APPEND l1 l2 = APPEND l1 l3 <=> l2 = l3
+
+  APPEND_RCANCEL =
+    |- !l1 l2 l3. APPEND l1 l3 = APPEND l2 l3 <=> l1 = l2
+
+  BUTLAST_APPEND =
+    |- !l m.
+         BUTLAST (APPEND l m) =
+         (if m = [] then BUTLAST l else APPEND l (BUTLAST m))
+
+  EL_LIST_OF_SEQ =
+    |- !s m n. m < n ==> EL m (list_of_seq s n) = s m
+
+  LENGTH_LIST_OF_SEQ =
+    |- !s n. LENGTH (list_of_seq s n) = n
+
+  LIST_EQ =
+    |- !l1 l2.
+         l1 = l2 <=>
+         LENGTH l1 = LENGTH l2 /\ (!n. n < LENGTH l2 ==> EL n l1 = EL n l2)
+
+  LIST_OF_SEQ_EQ_NIL =
+    |- !s n. list_of_seq s n = [] <=> n = 0
+
+  list_of_seq =
+    |- list_of_seq s 0 = [] /\
+       list_of_seq s (SUC n) = APPEND (list_of_seq s n) [s n]
+
+Fri 24th Jun 2016       sets.ml
+
+Added a few more handy set lemmas
+
+  INTER_INTERS =
+   |- (!f s. s INTER INTERS f =
+             if f = {} then s else INTERS {s INTER t | t IN f}) /\
+      (!f s. INTERS f INTER s =
+             if f = {} then s else INTERS {t INTER s | t IN f})
+
+  FINITE_UNIV_PAIR =
+   |- FINITE(:A#A) <=> FINITE(:A)
+
+  INFINITE_UNIV_PAIR =
+   |- INFINITE(:A#A) <=> INFINITE(:A)
+
+Tue 14th Jun 2016       sets.ml
+
+Added a few handy set theory lemmas, mainly on a theme of finite subsets
+of the union of a chain:
+
+  CARD_LE_UNIONS_CHAIN =
+    |- !f n.
+         (!t u. t IN f /\ u IN f ==> t SUBSET u \/ u SUBSET t) /\
+         (!t. t IN f ==> FINITE t /\ CARD t <= n)
+         ==> FINITE (UNIONS f) /\ CARD (UNIONS f) <= n
+
+  CHOOSE_SUBSET_EQ =
+    |- !n s. FINITE s ==> n <= CARD s <=> (?t. t SUBSET s /\ t HAS_SIZE n)
+
+  FINITE_SUBSET_UNIONS =
+    |- !f s.
+           FINITE s /\ s SUBSET UNIONS f
+           ==> (?f'. FINITE f' /\ f' SUBSET f /\ s SUBSET UNIONS f')
+
+  FINITE_SUBSET_UNIONS_CHAIN =
+    |- !f s.
+           FINITE s /\
+           s SUBSET UNIONS f /\
+           ~(f = {}) /\
+           (!t u. t IN f /\ u IN f ==> t SUBSET u \/ u SUBSET t)
+           ==> (?t. t IN f /\ s SUBSET t)
+
+  INTERS_IN_CHAIN =
+    |- !f. FINITE f /\
+           ~(f = {}) /\
+           (!s t. s IN f /\ t IN f ==> s SUBSET t \/ t SUBSET s)
+           ==> INTERS f IN f
+
+  UNIONS_IN_CHAIN =
+    |- !f. FINITE f /\
+           ~(f = {}) /\
+           (!s t. s IN f /\ t IN f ==> s SUBSET t \/ t SUBSET s)
+           ==> UNIONS f IN f
+
+Sat  4th Jun 2016       Examples/division_algebras.ml [new file]
+
+Added a new example with two nonexistence proofs for division algebras in
+higher dimensions; these are fairly straightforward corollaries of some
+Multivariate results like the global inverse function theorem.
+
+Sat  4th Jun 2016       sets.ml
+
+Added an equivalential form of an existing theorem:
+
+ INFINITE_ENUMERATE_EQ =
+  |- !s. INFINITE s <=>
+         (?r. (!m n. m < n ==> r m < r n) /\ IMAGE r (:num) = s)
+
+Wed 25th May 2016       sets.ml
+
+Added the simple fact that the "proper subset" relation on a finite
+set is wellfounded:
+
+  WF_PSUBSET = |- !s. FINITE s ==> WF (\t1 t2. t1 PSUBSET t2 /\ t2 SUBSET s)
+
+Sat  7th May 2016       Library/floor.ml
+
+Added RATIONAL_BETWEEN_EQ =
+          |- !a b. (?q. rational q /\ a < q /\ q < b) <=> a < b
+
+Fri 29th Apr 2016       Library/card.ml
+
+Added two theorems asserting that a countable chain has an "equivalent"
+omega-indexed chain:
+
+ COUNTABLE_ASCENDING_CHAIN =
+   |- !f:(A->bool)->bool.
+        COUNTABLE f /\ ~(f = {}) /\
+        (!s t. s IN f /\ t IN f ==> s SUBSET t \/ t SUBSET s)
+        ==> ?u. (!n. u(n) IN f) /\ (!n. u(n) SUBSET u(SUC n)) /\
+                UNIONS {u n | n IN (:num)} = UNIONS f
+
+ COUNTABLE_DESCENDING_CHAIN = prove
+   |- !f:(A->bool)->bool.
+        COUNTABLE f /\ ~(f = {}) /\
+        (!s t. s IN f /\ t IN f ==> s SUBSET t \/ t SUBSET s)
+        ==> ?u. (!n. u(n) IN f) /\ (!n. u(SUC n) SUBSET u(n)) /\
+                INTERS {u n | n IN (:num)} = INTERS f
+
+Sat 23rd Apr 2016       Library/products.ml
+
+Added two obvious theorems about the sizes of cartesian products:
+
+  HAS_SIZE_CART =
+    |- !P m.
+           (!i. 1 <= i /\ i <= dimindex (:N) ==> {x | P i x} HAS_SIZE m i)
+           ==> {v | !i. 1 <= i /\ i <= dimindex (:N) ==> P i (v$i)} HAS_SIZE
+               nproduct (1..dimindex (:N)) m
+
+  CARD_CART =
+    |- !P. (!i. 1 <= i /\ i <= dimindex (:N) ==> FINITE {x | P i x})
+           ==> CARD {v | !i. 1 <= i /\ i <= dimindex (:N) ==> P i (v$i)} =
+               nproduct (1..dimindex (:N)) (\i. CARD {x | P i x})
+
+Wed 13th Apr 2016       Library/wo.ml, Library/card.ml
+
+Added a few basic theorems including the fact that a toset contains a
+cofinal woset.
+
+
+   COUNTABLE_FL =
+        |- !l. COUNTABLE(fl l) <=> COUNTABLE l
+
+   FINITE_FL =
+        |- !l. FINITE(fl l) <=> FINITE l
+
+   FL =
+        |- !l. fl l = {x | ?y. l(x,y) \/ l(y,x)}
+
+   FL_SUBSET =
+        |- !l r. l SUBSET r ==> fl l SUBSET fl r
+
+   TOSET_COFINAL_WOSET =
+    |- !l. toset l
+           ==> ?w. w SUBSET l /\
+                   woset w /\
+                   !x. x IN fl l ==> ?y. y IN fl w /\ l(x,y)
+
+Wed 13th Apr 2016       sets.ml
+
+Added one more trivial set theorem:
+
+        INTERS_EQ_UNIV = |- !f. INTERS f = (:A) <=> !s. s IN f ==> s = (:A)
+
+Fri  8th Apr 2016       iterate.ml, Library/products.ml
+
+Added some theorems about "reflecting" (= reindexing in reverse order)
+various iterated constructs:
+
+  ITERATE_REFLECT =
+    |- !op:A->A->A.
+          monoidal op
+          ==> !x m n. iterate op (m..n) x =
+                      if n < m then neutral op
+                      else iterate op (0..n-m) (\i. x(n - i))
+
+  NSUM_REFLECT =
+    |- !x m n. nsum(m..n) x = if n < m then 0 else nsum(0..n-m) (\i. x(n - i))
+
+  SUM_REFLECT =
+    |- !x m n. sum(m..n) x = if n < m then &0 else sum(0..n-m) (\i. x(n - i))
+
+  NPRODUCT_REFLECT =
+    |- !x m n. nproduct(m..n) x =
+               if n < m then 1 else nproduct(0..n-m) (\i. x(n - i))
+
+  PRODUCT_REFLECT =
+    |- !x m n. product(m..n) x =
+               if n < m then &1 else product(0..n-m) (\i. x(n - i))
+
+Sun 20th Mar 2016       class.ml, sets.ml, Library/card.ml
+
+Added a few handy trivialities:
+
+  COND_SWAP = |- !p x y. (if ~p then x else y) = (if p then y else x)
+
+  num_INFINITE_EQ = |- !s:num->bool. INFINITE s <=> !N. ?n. N <= n /\ n IN s
+
+  CARD_POWERSET_CONG =
+    |- !s t. s =_c t ==> {u | u SUBSET s} =_c {v | v SUBSET t}
+
+Fri 26th Feb 2016       real.ml, int.ml
+
+Added another simple lemma about the sign function for reals and integers:
+
+  REAL_SGN_ABS_ALT = |- !x. real_sgn x * x = abs x
+
+  INT_SGN_ABS_ALT = |- !x. int_sgn x * x = abs x
+
+Wed 17th Feb 2016       metis.ml
+
+Hid or removed some local theorems inside the Metis module so that they don't
+show up in "search" results:
+
+        Metis_reconstruct.EXCLUDED_MIDDLE
+        Metis_reconstruct.IMPL_NOT_L
+        Metis_reconstruct.IMPL_NOT_R
+        Metis_reconstruct.RESOLVE_1
+        Metis_reconstruct.RESOLVE_2L
+        Metis_reconstruct.RESOLVE_2R
+        Metis_reconstruct.RESOLVE_3
+
+Wed 17th Feb 2016       Permutation/morelist.ml, Permutation/permutation.ml
+
+Added a few more lemmas based on the concepts in the Permutation library:
+
+  LIST_UNIQ_EQ_PAIRWISE_DISTINCT =
+   |- LIST_UNIQ = PAIRWISE (\x y. ~(x = y))
+
+  ORDERED_PAIRWISE =
+   |- ORDERED = PAIRWISE
+
+  PERMUTED_APPEND_CONG =
+    |- !l1 l1' l2 l2'.
+           l1 PERMUTED l1' /\ l2 PERMUTED l2'
+           ==> APPEND l1 l2 PERMUTED APPEND l1' l2'
+
+  PERMUTED_APPEND_LCANCEL =
+    |- !l1 l2 l3. APPEND l1 l2 PERMUTED APPEND l1 l3 <=> l2 PERMUTED l3
+
+  PERMUTED_APPEND_RCANCEL =
+    |- !l1 l2 l3. APPEND l1 l3 PERMUTED APPEND l2 l3 <=> l1 PERMUTED l2
+
+  PERMUTED_LENGTH_MEM =
+    |- !l l'.
+           LIST_UNIQ l /\ LENGTH l = LENGTH l' /\ (!x. MEM x l <=> MEM x l')
+           ==> l PERMUTED l'
+
+Wed 17th Feb 2016       lists.ml, sets.ml
+
+Added a few elementary list theorems and moved the definition of (list)
+PAIRWISE from sets.ml to lists.ml, which seems a more thematic home. New
+theorems:
+
+  LENGTH_ZIP =
+    |- !l1 l2. LENGTH l1 = LENGTH l2 ==> LENGTH (ZIP l1 l2) = LENGTH l2
+
+  PAIRWISE_APPEND =
+    |- !R l m.
+           PAIRWISE R (APPEND l m) <=>
+           PAIRWISE R l /\ PAIRWISE R m /\ (!x y. MEM x l /\ MEM y m ==> R x y)
+
+  PAIRWISE_IMPLIES =
+    |- !R R' l.
+           PAIRWISE R l /\ (!x y. MEM x l /\ MEM y l /\ R x y ==> R' x y)
+           ==> PAIRWISE R' l
+
+  PAIRWISE_MAP =
+    |- !R f l. PAIRWISE R (MAP f l) <=> PAIRWISE (\x y. R (f x) (f y)) l
+
+  PAIRWISE_TRANSITIVE =
+    |- !R x y l.
+           (!x y z. R x y /\ R y z ==> R x z)
+           ==> (PAIRWISE R (CONS x (CONS y l)) <=>
+                R x y /\ PAIRWISE R (CONS y l))
+
+Fri 12th Feb 2016       Minisat/README, Minisat/zc2mso/zc2mso.C, Formal_ineqs/examples_flyspeck.hl, Formal_ineqs/docs/FormalVerifier.tex
+
+Fixed a few broken URLs (including changing Flyspeck from Google Code to the
+new Github repo: https://github.com/flyspeck/flyspeck), and added a line to
+Minisat/zc2mso/zc2mso.C to make it compile out of the box with a recent g++.
+
+Thu 11th Feb 2016       fusion.ml, nums.ml, calc_num.ml
+
+Slightly tweaked "MK_COMB" to compare the types of the right-hand sides of the
+equations rather than the left (on the expectation that in typical uses the
+RHS will be simpler and therefore quicker to type).
+
+Also made a couple of tiny efficiency tweaks to ensure the :num and :num->num
+types in "NUMERAL", "BIT0" and "BIT1" are actually pointer ==.
+
+Tue  9th Feb 2016       metis.ml [new file], meson.ml, passim
+
+Installed Michael Färber and Cezary Kaliszyk's OCaml and HOL Light version
+of Joe Leslie-Hurd's Metis prover. This provides alternatives to the various
+MESON functions with the same naming convention: ASM_METIS_TAC, METIS_TAC and
+METIS. Slightly reorganized meson.ml as part of this installation into a module
+so that some of the "hidden" functions can be re-used, and changed a few MESON
+calls to METIS where it is obviously faster (no doubt there are many more, and
+many opportunities to prove things automatically that are currently manual).
+
+Fri 29th Jan 2016       cart.ml
+
+Added a "subtraction" on type indices, with a type constructor "finite_diff"
+analogous to "finite_sum", with the following type definition theorem and other
+lemmas:
+
+ finite_diff_tybij =
+  |- (!a. mk_finite_diff (dest_finite_diff a) = a) /\
+     (!r. r IN
+          1..
+          (if dimindex (:B) < dimindex (:A)
+           then dimindex (:A) - dimindex (:B)
+           else 1) <=>
+          dest_finite_diff (mk_finite_diff r) = r)
+
+ FINITE_DIFF_IMAGE =
+  |- (:(A,B)finite_diff) =
+     IMAGE mk_finite_diff
+     (1..
+      (if dimindex (:B) < dimindex (:A)
+       then dimindex (:A) - dimindex (:B)
+       else 1))
+
+ DIMINDEX_HAS_SIZE_FINITE_DIFF =
+  |- (:(M,N)finite_diff) HAS_SIZE
+     (if dimindex (:N) < dimindex (:M)
+      then dimindex (:M) - dimindex (:N)
+      else 1)
+
+ DIMINDEX_FINITE_DIFF =
+  |- dimindex (:(M,N)finite_diff) =
+     (if dimindex (:N) < dimindex (:M)
+      then dimindex (:M) - dimindex (:N)
+      else 1)
+
+ FINITE_DIFF_IMAGE =
+  |- (:(A,B)finite_diff) =
+     IMAGE mk_finite_diff
+     (1..
+      (if dimindex (:B) < dimindex (:A)
+       then dimindex (:A) - dimindex (:B)
+       else 1))
+
+ DIMINDEX_HAS_SIZE_FINITE_DIFF =
+  |- (:(M,N)finite_diff) HAS_SIZE
+     (if dimindex (:N) < dimindex (:M)
+      then dimindex (:M) - dimindex (:N)
+      else 1)
+
+This can occasionally be useful to make "size-lowering" arguments.
+
+Fri 29th Jan 2016       sets.ml
+
+Incompatibly improved (by making the hypotheses sharper) the following
+two theorems (formerly, the antecendent did not have the set membership
+assertions in their own antecedent):
+
+ IMAGE_DIFF_INJ =
+  |- !f s t.
+         (!x y. x IN s /\ y IN t /\ f x = f y ==> x = y)
+         ==> IMAGE f (s DIFF t) = IMAGE f s DIFF IMAGE f t
+
+ IMAGE_DELETE_INJ =
+  |- !f s a.
+         (!x. x IN s /\ f x = f a ==> x = a)
+         ==> IMAGE f (s DELETE a) = IMAGE f s DELETE f a
+
+Also added the following two variants:
+
+ IMAGE_DIFF_INJ_ALT =
+  |- !f s t.
+         (!x y. x IN s /\ y IN s /\ f x = f y ==> x = y) /\ t SUBSET s
+         ==> IMAGE f (s DIFF t) = IMAGE f s DIFF IMAGE f t
+
+ IMAGE_DELETE_INJ_ALT =
+  |- !f s a.
+         (!x y. x IN s /\ y IN s /\ f x = f y ==> x = y) /\ a IN s
+         ==> IMAGE f (s DELETE a) = IMAGE f s DELETE f a
+
+Thu 28th Jan 2016       Makefile
+
+Updated the Makefile with yet more cases, to work with OCaml 4.02 and with
+camlp5 6.15. HOL Light has been tested with OCaml 4.02.3 and camlp5 6.15 (under
+Cygwin64), so the combination of the two seems to work.
+
 Thu 17th Dec 2015       Help/*.doc
 
 Fixed several documentation errors pointed out by Marco Maggesi.
@@ -477,7 +946,7 @@ Added two rather trivial but occasionally useful results:
   NSUM_MUL_BOUND =
     |- !a b s. FINITE s ==> nsum s (\i. a i * b i) <= nsum s a * nsum s b
 
-  SUM_MUL_BOUND;;
+  SUM_MUL_BOUND =
     |- !a b s.
         FINITE s /\ (!i. i IN s ==> &0 <= a i /\ &0 <= b i)
         ==> sum s (\i. a i * b i) <= sum s a * sum s b
@@ -585,7 +1054,7 @@ Dynamical Systems, vol 1, pp. 103-106, 1981.
 
 Fri  7th Nov 2014       Library/iter.ml
 
-Added ITER_ADD_POINTLESS : thm = |- !m n. ITER (m + n) f = ITER m f o ITER n f
+Added ITER_ADD_POINTLESS = |- !m n. ITER (m + n) f = ITER m f o ITER n f
 
 Fri  7th Nov 2014       sets.ml
 
@@ -1021,13 +1490,13 @@ core
 Added some theorems to Library/iter.ml about the "order" or "characteristic" in
 a general setting
 
-  val ORDER_EXISTENCE_GEN : thm =
+  val ORDER_EXISTENCE_GEN =
     |- !P f.
            P (f 0) /\
            (!m n. P (f m) /\ ~(m = 0) ==> (P (f (m + n)) <=> P (f n)))
            ==> ?d. !n. P (f n) <=> d divides n
 
-  val ORDER_EXISTENCE_ITER : thm =
+  val ORDER_EXISTENCE_ITER =
     |- !R f z.
            R z z /\
            (!x y. R x y ==> R y x) /\
@@ -1035,7 +1504,7 @@ a general setting
            (!x y. R x y ==> R (f x) (f y))
            ==> ?d. !n. R (ITER n f z) z <=> d divides n
 
-  val ORDER_EXISTENCE_CARD : thm =
+  val ORDER_EXISTENCE_CARD =
     |- !R f z k.
            FINITE {R (ITER n f z) | n IN (:num)} /\
            CARD {R (ITER n f z) | n IN (:num)} <= k /\
@@ -1045,7 +1514,7 @@ a general setting
            (!x y. R (f x) (f y) <=> R x y)
            ==> ?d. 0 < d /\ d <= k /\ (!n. R (ITER n f z) z <=> d divides n)
 
-  val ORDER_EXISTENCE_FINITE : thm =
+  val ORDER_EXISTENCE_FINITE =
     |- !R f z.
            FINITE {R (ITER n f z) | n IN (:num)} /\
            R z z /\
@@ -2083,7 +2552,7 @@ PCROSS_MONO =
   |- !s t s' t'.
          s SUBSET s' /\ t SUBSET t' ==> s PCROSS t SUBSET s' PCROSS t'
 
-SUBSET_PCROSS;;
+SUBSET_PCROSS =
   |- !s t s' t'.
          s PCROSS t SUBSET s' PCROSS t' <=>
          s = {} \/ t = {} \/ s SUBSET s' /\ t SUBSET t'
@@ -3037,7 +3506,7 @@ Added two natural theorems about intersections of unions
   INTERS_UNION =
    |- !s t. INTERS (s UNION t) = INTERS s INTER INTERS t
 
-  INTERS_OVER_UNIONS;;
+  INTERS_OVER_UNIONS =
    |- !f s.
         INTERS {UNIONS (f x) | x IN s} =
         UNIONS {INTERS {g x | x IN s} | g | !x. x IN s ==> g x IN f x}
@@ -3726,7 +4195,7 @@ intervals.
 
 as well as the trivial consequence
 
-  real_INFINITE : thm = |- INFINITE(:real)
+  real_INFINITE = |- INFINITE(:real)
 
 Fri  8th Jan 2010       pair.ml
 
@@ -3839,7 +4308,7 @@ REAL_POW_LT2_ODD).
   REAL_POW_EQ_ODD =
     |- !n x y. ODD n /\ x pow n = y pow n ==> x = y
 
-  REAL_POW_EQ_EQ;;
+  REAL_POW_EQ_EQ =
   |- !n x y.
          x pow n = y pow n <=>
          (if EVEN n then n = 0 \/ abs x = abs y else x = y)
@@ -5339,8 +5808,8 @@ Tue 20th Nov 2007       real.ml
 
 Added two theorems that I keep regenerating:
 
- ( REAL_BOUNDS_LE ) : thm = |- !x k. --k <= x /\ x <= k <=> abs x <= k
- ( REAL_BOUNDS_LT ) : thm = |- !x k. --k < x /\ x < k <=> abs x < k
+  REAL_BOUNDS_LE = |- !x k. --k <= x /\ x <= k <=> abs x <= k
+  REAL_BOUNDS_LT = |- !x k. --k < x /\ x < k <=> abs x < k
 
 The symmetric form of the first one was already there as REAL_ABS_BOUNDS, but
 I've never actually used it (however, since it's used by Freek and Tom, I

@@ -540,16 +540,16 @@ let SEMIRING_NORMALIZERS_CONV =
 
 let NUM_NORMALIZE_CONV =
   let sth = prove
-   (`(!x y z. x + (y + z) = (x + y) + z) /\
-     (!x y. x + y = y + x) /\
-     (!x. 0 + x = x) /\
-     (!x y z. x * (y * z) = (x * y) * z) /\
-     (!x y. x * y = y * x) /\
-     (!x. 1 * x = x) /\
-     (!x. 0 * x = 0) /\
-     (!x y z. x * (y + z) = x * y + x * z) /\
-     (!x. x EXP 0 = 1) /\
-     (!x n. x EXP (SUC n) = x * x EXP n)`,
+   (`(!x y z : num. x + (y + z) = (x + y) + z) /\
+     (!x y : num. x + y = y + x) /\
+     (!x : num. 0 + x = x) /\
+     (!x y z : num. x * (y * z) = (x * y) * z) /\
+     (!x y : num. x * y = y * x) /\
+     (!x : num. 1 * x = x) /\
+     (!x : num. 0 * x = 0) /\
+     (!x y z : num. x * (y + z) = x * y + x * z) /\
+     (!x : num. x EXP 0 = 1) /\
+     (!x n : num. x EXP (SUC n) = x * x EXP n)`,
     REWRITE_TAC[EXP; MULT_CLAUSES; ADD_CLAUSES; LEFT_ADD_DISTRIB] THEN
     REWRITE_TAC[ADD_AC; MULT_AC])
   and rth = TRUTH

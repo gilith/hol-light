@@ -332,7 +332,7 @@ let subrelation_successor_lt = prove
 export_thm subrelation_successor_lt;;
 
 let transitive_lt = prove
- (`transitive (<)`,
+ (`transitive ((<) : num -> num -> bool)`,
   REWRITE_TAC [transitive_def] THEN
   ACCEPT_TAC LT_TRANS);;
 

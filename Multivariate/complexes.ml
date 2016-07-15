@@ -388,6 +388,17 @@ let COMPLEX_DIV_REFL = prove
  (`!x. ~(x = Cx(&0)) ==> (x / x = Cx(&1))`,
   REWRITE_TAC[COMPLEX_EQ_0] THEN SIMPLE_COMPLEX_ARITH_TAC);;
 
+let COMPLEX_VEC_0 = prove
+ (`vec 0 = Cx(&0)`,
+  SIMP_TAC[CART_EQ; VEC_COMPONENT; CX_DEF; complex;
+           DIMINDEX_2; FORALL_2; VECTOR_2]);;
+
+let COMPLEX_CMUL = prove
+ (`!c x. c % x = Cx(c) * x`,
+  SIMP_TAC[CART_EQ; VECTOR_MUL_COMPONENT; CX_DEF; complex;
+           complex_mul; DIMINDEX_2; FORALL_2; IM_DEF; RE_DEF; VECTOR_2] THEN
+  REAL_ARITH_TAC);;
+
 (* ------------------------------------------------------------------------- *)
 (* Homomorphic embedding properties for Cx mapping.                          *)
 (* ------------------------------------------------------------------------- *)
@@ -746,6 +757,25 @@ let COMPLEX_EQ_INV2 = prove
  (`!w x:complex. inv w = inv z <=> w = z`,
   MESON_TAC[COMPLEX_INV_INV]);;
 
+let SGN_RE_COMPLEX_INV = prove
+ (`!z. real_sgn(Re(inv z)) = real_sgn(Re z)`,
+  GEN_TAC THEN ASM_CASES_TAC `z = Cx(&0)` THEN
+  ASM_REWRITE_TAC[COMPLEX_INV_0] THEN
+  REWRITE_TAC[RE; complex_inv; REAL_SGN_DIV] THEN
+  SUBGOAL_THEN `real_sgn (Re z pow 2 + Im z pow 2) = &1`
+   (fun th -> REWRITE_TAC[REAL_DIV_1; th]) THEN
+  REWRITE_TAC[REAL_SGN_EQ; real_gt; GSYM COMPLEX_SQNORM] THEN
+  ASM_SIMP_TAC[REAL_POW_LT; NORM_POS_LT; COMPLEX_VEC_0]);;
+
+let RE_COMPLEX_INV_GT_0 = prove
+ (`!z. &0 < Re(inv z) <=> &0 < Re z`,
+  REWRITE_TAC[GSYM real_gt; GSYM REAL_SGN_EQ; SGN_RE_COMPLEX_INV]);;
+
+let RE_COMPLEX_INV_GE_0 = prove
+ (`!z. &0 <= Re(inv z) <=> &0 <= Re z`,
+  REWRITE_TAC[GSYM REAL_NOT_LT] THEN
+  REWRITE_TAC[GSYM REAL_SGN_EQ; SGN_RE_COMPLEX_INV]);;
+
 (* ------------------------------------------------------------------------- *)
 (* And also field procedure.                                                 *)
 (* ------------------------------------------------------------------------- *)
@@ -919,11 +949,6 @@ let COMPLEX_DIV_POW2 = prove
 (* ------------------------------------------------------------------------- *)
 (* Norms (aka "moduli").                                                     *)
 (* ------------------------------------------------------------------------- *)
-
-let COMPLEX_VEC_0 = prove
- (`vec 0 = Cx(&0)`,
-  SIMP_TAC[CART_EQ; VEC_COMPONENT; CX_DEF; complex;
-           DIMINDEX_2; FORALL_2; VECTOR_2]);;
 
 let COMPLEX_NORM_ZERO = prove
  (`!z. (norm z = &0) <=> (z = Cx(&0))`,
@@ -1372,11 +1397,15 @@ let CSQRT_EQ_0 = prove
 (* A few more complex-specific cases of vector notions.                      *)
 (* ------------------------------------------------------------------------- *)
 
-let COMPLEX_CMUL = prove
- (`!c x. c % x = Cx(c) * x`,
-  SIMP_TAC[CART_EQ; VECTOR_MUL_COMPONENT; CX_DEF; complex;
-           complex_mul; DIMINDEX_2; FORALL_2; IM_DEF; RE_DEF; VECTOR_2] THEN
-  REAL_ARITH_TAC);;
+let DOT_COMPLEX_MUL_CNJ = prove
+ (`!w z. w dot z = Re(w * cnj z)`,
+  REWRITE_TAC[cnj; complex_mul; RE; IM] THEN
+  REWRITE_TAC[DOT_2; RE_DEF; IM_DEF] THEN REAL_ARITH_TAC);;
+
+let DOT_CNJ = prove
+ (`!w z. cnj w dot cnj z = w dot z`,
+  REWRITE_TAC[DOT_2; GSYM RE_DEF; GSYM IM_DEF] THEN
+  REWRITE_TAC[cnj; RE; IM] THEN REAL_ARITH_TAC);;
 
 let LINEAR_COMPLEX_MUL = prove
  (`!c. linear (\x. c * x)`,
@@ -1390,6 +1419,10 @@ let LINEAR_CNJ = prove
  (`linear cnj`,
   REWRITE_TAC[linear; COMPLEX_CMUL; CNJ_ADD; CNJ_MUL; CNJ_CX]);;
 
+let ORTHOGONAL_TRANSFORMATION_CNJ = prove
+ (`orthogonal_transformation cnj`,
+  REWRITE_TAC[orthogonal_transformation; LINEAR_CNJ; DOT_CNJ]);;
+
 let LINEAR_COMPLEX_LMUL = prove
  (`!f:real^N->complex c. linear f ==> linear (\x. c * f x)`,
   SIMP_TAC[linear; COMPLEX_CMUL] THEN
@@ -1399,6 +1432,120 @@ let LINEAR_COMPLEX_RMUL = prove
  (`!f:real^N->complex c. linear f ==> linear (\x. f x * c)`,
   ONCE_REWRITE_TAC[COMPLEX_MUL_SYM] THEN REWRITE_TAC[LINEAR_COMPLEX_LMUL]);;
 
+let COMPLEX_CAUCHY_SCHWARZ_EQ = prove
+ (`!w z. (w dot z) pow 2 + ((ii * w) dot z) pow 2 =
+          norm(w) pow 2 * norm(z) pow 2`,
+  REWRITE_TAC[NORM_POW_2; DOT_2; GSYM RE_DEF; GSYM IM_DEF] THEN
+  REWRITE_TAC[ii; complex_mul; RE; IM] THEN REAL_ARITH_TAC);;
+
+let COMPLEX_BASIS = prove
+ (`basis 1 = Cx(&1) /\ basis 2 = ii`,
+  SIMP_TAC[CART_EQ; FORALL_2; BASIS_COMPONENT; DIMINDEX_2; ARITH] THEN
+  REWRITE_TAC[GSYM RE_DEF; GSYM IM_DEF; RE_CX; IM_CX] THEN
+  REWRITE_TAC[ii] THEN SIMPLE_COMPLEX_ARITH_TAC);;
+
+let COMPLEX_LINEAR = prove
+ (`!f:complex->complex.
+        (?c. f = \z. c * z) <=>
+        linear f /\
+        (matrix f)$1$1 = (matrix f)$2$2 /\
+        (matrix f)$1$2 = --((matrix f)$2$1)`,
+  GEN_TAC THEN EQ_TAC THENL
+   [STRIP_TAC THEN ASM_REWRITE_TAC[LINEAR_COMPLEX_MUL] THEN
+    SIMP_TAC[matrix; LAMBDA_BETA; DIMINDEX_2; ARITH] THEN
+    REWRITE_TAC[COMPLEX_BASIS; GSYM RE_DEF; GSYM IM_DEF; ii] THEN
+    SIMPLE_COMPLEX_ARITH_TAC;
+    STRIP_TAC THEN
+    EXISTS_TAC `complex(matrix(f:complex->complex)$1$1,matrix f$2$1)` THEN
+    FIRST_ASSUM(fun th ->
+      GEN_REWRITE_TAC LAND_CONV [MATCH_MP MATRIX_VECTOR_MUL th]) THEN
+    ASM_SIMP_TAC[CART_EQ; matrix_vector_mul; DIMINDEX_2; SUM_2; ARITH;
+                 FORALL_2; FUN_EQ_THM; LAMBDA_BETA] THEN
+    REWRITE_TAC[GSYM RE_DEF; GSYM IM_DEF; IM; RE; complex_mul] THEN
+    REAL_ARITH_TAC]);;
+
+let COMPLEX_LINEAR_ALT = prove
+ (`!f:complex->complex.
+        (?c. f = \z. c * z) <=> linear f /\ f(ii) = ii * f(Cx(&1))`,
+  GEN_TAC THEN EQ_TAC THEN STRIP_TAC THEN
+  ASM_REWRITE_TAC[LINEAR_COMPLEX_MUL] THENL
+   [SIMPLE_COMPLEX_ARITH_TAC; ASM_REWRITE_TAC[COMPLEX_LINEAR]] THEN
+  FIRST_ASSUM(MP_TAC o SYM) THEN
+  FIRST_ASSUM(fun th -> GEN_REWRITE_TAC (LAND_CONV o ONCE_DEPTH_CONV)
+   [MATCH_MP MATRIX_VECTOR_MUL th]) THEN
+  REWRITE_TAC[CART_EQ; FORALL_2; DIMINDEX_2] THEN
+  REWRITE_TAC[GSYM RE_DEF; GSYM IM_DEF; RE_MUL_II; IM_MUL_II] THEN
+  REWRITE_TAC[MATRIX_VECTOR_MUL_COMPONENT; IM_DEF; RE_DEF] THEN
+  SIMP_TAC[MATRIX_VECTOR_MUL_COMPONENT; DIMINDEX_2; ARITH; DOT_2] THEN
+  REWRITE_TAC[GSYM RE_DEF; GSYM IM_DEF; CX_DEF; RE; IM; RE_II; IM_II] THEN
+  REAL_ARITH_TAC);;
+
+let ORTHOGONAL_TRANSFORMATION_COMPLEX_MUL = prove                               
+ (`!c. orthogonal_transformation(\z. c * z) <=> norm c = &1`,                   
+  REWRITE_TAC[ORTHOGONAL_TRANSFORMATION; LINEAR_COMPLEX_MUL] THEN              
+  GEN_TAC THEN REWRITE_TAC[COMPLEX_NORM_MUL] THEN                              
+  REWRITE_TAC[REAL_RING `c * v:real = v <=> c = &1 \/ v = &0`] THEN            
+  ASM_CASES_TAC `norm(c:complex) = &1` THEN ASM_REWRITE_TAC[] THEN             
+  DISCH_THEN(MP_TAC o SPEC `Cx(&1)`) THEN REWRITE_TAC[COMPLEX_NORM_CX] THEN    
+  REAL_ARITH_TAC);;                                                            
+
+let COMPLEX_ORTHOGONAL_ROTATION = prove                                         
+ (`!f:complex->complex.                                                        
+        orthogonal_transformation f /\ det(matrix f) = &1 <=>                  
+        ?c. norm c = &1 /\ f = \z. c * z`,                                     
+  GEN_TAC THEN TRANS_TAC EQ_TRANS                                              
+   `(!z. norm(f z) = norm z) /\ (?c. f = \z:complex. c * z)` THEN               
+  CONJ_TAC THENL                                                               
+   [REWRITE_TAC[COMPLEX_LINEAR] THEN                                           
+    ONCE_REWRITE_TAC[TAUT `p /\ q /\ r <=> (q /\ p) /\ r`] THEN            
+    REWRITE_TAC[GSYM ORTHOGONAL_TRANSFORMATION] THEN                       
+    REWRITE_TAC[ORTHOGONAL_TRANSFORMATION_MATRIX] THEN                      
+    REWRITE_TAC[GSYM CONJ_ASSOC] THEN AP_TERM_TAC THEN                         
+    REWRITE_TAC[ORTHOGONAL_MATRIX_2; DET_2] THEN CONV_TAC REAL_RING;           
+    REWRITE_TAC[RIGHT_AND_EXISTS_THM] THEN                                     
+    AP_TERM_TAC THEN GEN_REWRITE_TAC I [FUN_EQ_THM] THEN                       
+    X_GEN_TAC `c:complex` THEN REWRITE_TAC[] THEN                              
+    ASM_CASES_TAC `f:complex->complex = \z. c * z` THEN                        
+    ASM_REWRITE_TAC[COMPLEX_NORM_MUL] THEN                                     
+    REWRITE_TAC[REAL_RING `c * v:real = v <=> c = &1 \/ v = &0`] THEN          
+    ASM_CASES_TAC `norm(c:complex) = &1` THEN ASM_REWRITE_TAC[] THEN           
+    DISCH_THEN(MP_TAC o SPEC `Cx(&1)`) THEN REWRITE_TAC[COMPLEX_NORM_CX] THEN  
+    REAL_ARITH_TAC]);;                                                          
+                                                                               
+let COMPLEX_ORTHOGONAL_ROTOINVERSION = prove                                   
+ (`!f:complex->complex.                                                        
+        orthogonal_transformation f /\ det(matrix f) = -- &1 <=>               
+        ?c. norm c = &1 /\ f = \z. c * cnj z`,                                 
+  GEN_TAC THEN                                                                 
+  SUBGOAL_THEN                                                             
+   `!c. (f = \z. c * cnj z) = (f o cnj = \z. c * z)`                           
+   (fun th -> REWRITE_TAC[th])                                                 
+  THENL                                                                        
+   [REWRITE_TAC[FUN_EQ_THM; o_THM] THEN MESON_TAC[CNJ_CNJ; CNJ_MUL];
+    REWRITE_TAC[GSYM COMPLEX_ORTHOGONAL_ROTATION]] THEN
+  EQ_TAC THEN DISCH_TAC THENL
+   [ALL_TAC;
+    SUBGOAL_THEN `(f:complex->complex) = (f o cnj) o cnj` SUBST1_TAC THENL
+     [REWRITE_TAC[FUN_EQ_THM; o_THM; CNJ_CNJ];
+      POP_ASSUM MP_TAC THEN
+      SPEC_TAC(`(f:complex->complex) o cnj`,`f:complex->complex`) THEN
+      REPEAT STRIP_TAC]] THEN
+  ASM_SIMP_TAC[ORTHOGONAL_TRANSFORMATION_COMPOSE; MATRIX_COMPOSE; DET_MUL;
+    ORTHOGONAL_TRANSFORMATION_CNJ; ORTHOGONAL_TRANSFORMATION_LINEAR] THEN
+  SIMP_TAC[DET_2; MATRIX_COMPONENT; DIMINDEX_2; ARITH] THEN
+  REWRITE_TAC[COMPLEX_BASIS; CNJ_II; CNJ_CX] THEN
+  REWRITE_TAC[GSYM IM_DEF; GSYM RE_DEF; IM; RE; CX_DEF; ii; complex_neg] THEN
+  CONV_TAC REAL_RAT_REDUCE_CONV);;
+
+let COMPLEX_ORTHOGONAL_TRANSFORMATION = prove
+ (`!f:complex->complex.
+        orthogonal_transformation f <=>
+        ?c. norm c = &1 /\ ((f = \z. c * z) \/ (f = \z. c * cnj z))`,
+  GEN_TAC THEN
+  REWRITE_TAC[LEFT_OR_DISTRIB; EXISTS_OR_THM] THEN
+  REWRITE_TAC[GSYM COMPLEX_ORTHOGONAL_ROTATION;
+              GSYM COMPLEX_ORTHOGONAL_ROTOINVERSION] THEN
+  MESON_TAC[DET_ORTHOGONAL_MATRIX; ORTHOGONAL_TRANSFORMATION_MATRIX]);;
 (* ------------------------------------------------------------------------- *)
 (* Complex-specific theorems about sums.                                     *)
 (* ------------------------------------------------------------------------- *)
@@ -2040,6 +2187,14 @@ let CPRODUCT_PAIR = prove
  (`!f m n. cproduct(2*m..2*n+1) f = cproduct(m..n) (\i. f(2*i) * f(2*i+1))`,
   MP_TAC(MATCH_MP ITERATE_PAIR MONOIDAL_COMPLEX_MUL) THEN
   REWRITE_TAC[cproduct; NEUTRAL_COMPLEX_MUL]);;
+
+let CPRODUCT_REFLECT = prove
+ (`!x m n. cproduct(m..n) x =
+           if n < m then Cx(&1) else cproduct(0..n-m) (\i. x(n - i))`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[cproduct] THEN
+  GEN_REWRITE_TAC LAND_CONV
+   [MATCH_MP ITERATE_REFLECT MONOIDAL_COMPLEX_MUL] THEN
+  REWRITE_TAC[NEUTRAL_COMPLEX_MUL]);;
 
 let CNJ_CPRODUCT = prove
  (`!f s. FINITE s ==> cnj(cproduct s f) = cproduct s (\i. cnj(f i))`,

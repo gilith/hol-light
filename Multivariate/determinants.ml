@@ -732,8 +732,7 @@ let INVERTIBLE_NEARBY_ONORM = prove
         onorm(\x. (B - A) ** x) < inv(onorm(\x. matrix_inv A ** x))
         ==> invertible B`,
   REPEAT GEN_TAC THEN DISCH_THEN(CONJUNCTS_THEN2 ASSUME_TAC MP_TAC) THEN
-  W(MP_TAC o PART_MATCH (rand o rand) ONORM_NEG o lhand o lhand o snd) THEN
-  REWRITE_TAC[MATRIX_VECTOR_MUL_LINEAR] THEN DISCH_THEN(SUBST1_TAC o SYM) THEN
+  GEN_REWRITE_TAC (LAND_CONV o LAND_CONV) [GSYM ONORM_NEG] THEN
   REWRITE_TAC[GSYM MATRIX_VECTOR_MUL_LNEG; MATRIX_NEG_SUB] THEN DISCH_TAC THEN
   ABBREV_TAC `S = matrix_inv(A:real^N^N) ** (A - B)` THEN
   SUBGOAL_THEN `B = (A:real^N^N) ** (mat 1 - S:real^N^N)` SUBST1_TAC THENL
@@ -1630,6 +1629,14 @@ let CHARACTERISTIC_POLYNOMIAL = prove
     FIRST_X_ASSUM(MP_TAC o SPEC `p:num->num`) THEN ANTS_TAC THENL
      [ASM_MESON_TAC[PERMUTES_IMAGE; SUBSET_REFL]; SIMP_TAC[]]]);;
 
+let FINITE_EIGENVALUES = prove
+ (`!A:real^N^N. FINITE {c | ?v. ~(v = vec 0) /\ A ** v = c % v}`,
+  GEN_TAC THEN REWRITE_TAC[EIGENVALUES_CHARACTERISTIC] THEN
+  MP_TAC(ISPEC `A:real^N^N` CHARACTERISTIC_POLYNOMIAL) THEN
+  STRIP_TAC THEN ASM_REWRITE_TAC[] THEN
+  REWRITE_TAC[REAL_POLYFUN_FINITE_ROOTS] THEN EXISTS_TAC `dimindex(:N)` THEN
+  ASM_REWRITE_TAC[IN_NUMSEG; LE_0; LE_REFL] THEN REAL_ARITH_TAC);;
+
 (* ------------------------------------------------------------------------- *)
 (* Grassmann-Plucker relations for n = 2, n = 3 and n = 4.                   *)
 (* I have a proof of the general n case but the proof is a bit long and the  *)
@@ -1744,6 +1751,12 @@ let DIAGONAL_MATRIX_MUL_COMPONENT = prove
         1 <= j /\ j <= dimindex(:N)
         ==> (A ** B)$i$j = A$i$j * B$i$j`,
   ASM_SIMP_TAC[DIAGONAL_MATRIX_MUL_EXPLICIT; LAMBDA_BETA]);;
+
+let MATRIX_MUL_DIAGONAL = prove
+ (`!A:real^N^N B:real^N^N.
+        diagonal_matrix A /\ diagonal_matrix B
+        ==> A ** B = lambda i j. A$i$j * B$i$j`,
+  SIMP_TAC[CART_EQ; LAMBDA_BETA; DIAGONAL_MATRIX_MUL_COMPONENT]);;
 
 let DIAGONAL_MATRIX_MUL = prove
  (`!A:real^N^N B:real^N^N.
@@ -2171,6 +2184,16 @@ let TRACE_COVARIANCE_CAUCHY_SCHWARZ_ABS = prove
               MATRIX_NEG_NEG; TRACE_NEG] THEN
   REAL_ARITH_TAC);;
 
+let TRACE_COVARIANCE_CAUCHY_SCHWARZ_SQUARE = prove
+ (`!A B:real^M^N.
+        trace(transp A ** B) pow 2
+        <= trace(transp A ** A) * trace(transp B ** B)`,
+  REPEAT STRIP_TAC THEN ONCE_REWRITE_TAC[GSYM REAL_POW2_ABS] THEN
+  MATCH_MP_TAC REAL_RSQRT_LE THEN
+
+  SIMP_TAC[REAL_ABS_POS; REAL_LE_MUL; TRACE_COVARIANCE_POS_LE] THEN
+  REWRITE_TAC[TRACE_COVARIANCE_CAUCHY_SCHWARZ_ABS; SQRT_MUL]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Positive definite matrices.                                               *)
 (* ------------------------------------------------------------------------- *)
@@ -2196,6 +2219,15 @@ let POSITIVE_DEFINITE_POSITIVE_SEMIDEFINITE = prove
   ASM_SIMP_TAC[POSITIVE_SEMIDEFINITE_ZERO_FORM_EQ] THEN
   REWRITE_TAC[GSYM HOMOGENEOUS_LINEAR_EQUATIONS_DET; INVERTIBLE_DET_NZ] THEN
   MESON_TAC[]);;
+
+let POSITIVE_DEFINITE_SIMILAR_EQ = prove
+ (`!A B:real^N^N.
+        positive_definite(transp B ** A ** B) <=>
+        invertible B /\ positive_definite A`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[POSITIVE_DEFINITE_POSITIVE_SEMIDEFINITE] THEN
+  REWRITE_TAC[INVERTIBLE_MATRIX_MUL; INVERTIBLE_TRANSP] THEN
+  MESON_TAC[POSITIVE_SEMIDEFINITE_SIMILAR_EQ]);;
 
 let POSITIVE_DEFINITE_1_GEN = prove
  (`!A:real^N^N.
@@ -2251,6 +2283,13 @@ let POSITIVE_DEFINITE_CMUL = prove
         ==> positive_definite(c %% A)`,
   SIMP_TAC[positive_definite; TRANSP_MATRIX_CMUL] THEN
   SIMP_TAC[MATRIX_VECTOR_LMUL; DOT_RMUL; REAL_LT_MUL]);;
+
+let NEARBY_POSITIVE_DEFINITE_MATRIX_GEN = prove
+ (`!A:real^N^N B x.
+        positive_semidefinite A /\ positive_definite B /\ &0 < x
+        ==> positive_definite(A + x %% B)`,
+  SIMP_TAC[POSITIVE_SEMIDEFINITE_POSITIVE_DEFINITE_ADD;
+           POSITIVE_DEFINITE_CMUL]);;
 
 let POSITIVE_DEFINITE_TRANSP = prove
  (`!A:real^N^N. positive_definite(transp A) <=> positive_definite A`,
@@ -2331,6 +2370,11 @@ let POSITIVE_SEMIDEFINITE_MAT = prove
   SIMP_TAC[POSITIVE_SEMIDEFINITE_DIAGONAL_MATRIX_EQ; DIAGONAL_MATRIX_MAT] THEN
   SIMP_TAC[mat; LAMBDA_BETA; REAL_POS] THEN
   MESON_TAC[LE_REFL; DIMINDEX_GE_1]);;
+
+let NEARBY_POSITIVE_DEFINITE_MATRIX = prove
+ (`!A:real^N^N x.
+      positive_semidefinite A /\ &0 < x ==> positive_definite(A + x %% mat 1)`,
+  SIMP_TAC[NEARBY_POSITIVE_DEFINITE_MATRIX_GEN; POSITIVE_DEFINITE_ID]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Hadamard's inequality.                                                    *)
@@ -2504,6 +2548,12 @@ let ORTHOGONAL_TRANSFORMATION = prove
   GEN_TAC THEN REWRITE_TAC[orthogonal_transformation] THEN EQ_TAC THENL
    [MESON_TAC[vector_norm]; SIMP_TAC[DOT_NORM] THEN MESON_TAC[LINEAR_ADD]]);;
 
+let ORTHOGONAL_ORTHOGONAL_TRANSFORMATION = prove
+ (`!f x y:real^N.
+        orthogonal_transformation f
+        ==> (orthogonal (f x) (f y) <=> orthogonal x y)`,
+  SIMP_TAC[orthogonal; orthogonal_transformation]);;
+
 let ORTHOGONAL_TRANSFORMATION_COMPOSE = prove
  (`!f g. orthogonal_transformation f /\ orthogonal_transformation g
          ==> orthogonal_transformation(f o g)`,
@@ -2513,6 +2563,21 @@ let ORTHOGONAL_TRANSFORMATION_NEG = prove
  (`!f:real^N->real^N.
      orthogonal_transformation(\x. --(f x)) <=> orthogonal_transformation f`,
   REWRITE_TAC[ORTHOGONAL_TRANSFORMATION; LINEAR_COMPOSE_NEG_EQ; NORM_NEG]);;
+
+let ORTHOGONAL_TRANSFORMATION_LINEAR = prove
+ (`!f:real^N->real^N. orthogonal_transformation f ==> linear f`,
+  SIMP_TAC[orthogonal_transformation]);;
+
+let ORTHOGONAL_TRANSFORMATION_INJECTIVE = prove
+ (`!f:real^N->real^N.
+        orthogonal_transformation f ==> !x y. f x = f y ==> x = y`,
+  SIMP_TAC[LINEAR_INJECTIVE_0; ORTHOGONAL_TRANSFORMATION; GSYM NORM_EQ_0]);;
+
+let ORTHOGONAL_TRANSFORMATION_SURJECTIVE = prove
+ (`!f:real^N->real^N.
+        orthogonal_transformation f ==> !y. ?x. f x = y`,
+  MESON_TAC[LINEAR_INJECTIVE_IMP_SURJECTIVE;
+            ORTHOGONAL_TRANSFORMATION_INJECTIVE; orthogonal_transformation]);;
 
 let orthogonal_matrix = new_definition
  `orthogonal_matrix(Q:real^N^N) <=>
@@ -2902,6 +2967,80 @@ let ISOMETRY_IMP_AFFINITY = prove
   ASM_REWRITE_TAC[NORM_ARITH `dist(x - a:real^N,y - a) = dist(x,y)`]);;
 
 (* ------------------------------------------------------------------------- *)
+(* An orthogonality-preserving linear map is a similarity.                   *)
+(* ------------------------------------------------------------------------- *)
+
+let ORTHOGONALITY_PRESERVING_IMP_SCALING = prove
+ (`!f:real^M->real^N.
+        linear f /\ (!x y. orthogonal x y ==> orthogonal (f x) (f y))
+        ==> ?c. &0 <= c /\ !x. norm(f x) = c * norm(x)`,
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN
+   `?c. &0 <= c /\
+        !i. 1 <= i /\ i <= dimindex(:M)
+            ==> norm((f:real^M->real^N)(basis i)) = c`
+  MP_TAC THENL
+   [MATCH_MP_TAC(MESON[]
+     `(!x. A(f x)) /\ (?x. P x) /\ (!i j. P i /\ P j ==> f i = f j)
+      ==> ?c. A c /\ !x. P x ==> f x = c`) THEN
+    REWRITE_TAC[NORM_POS_LE] THEN CONJ_TAC THENL
+     [EXISTS_TAC `1` THEN REWRITE_TAC[LE_REFL; DIMINDEX_GE_1]; ALL_TAC] THEN
+    MAP_EVERY X_GEN_TAC [`i:num`; `j:num`] THEN STRIP_TAC THEN
+    ASM_CASES_TAC `i:num = j` THEN ASM_REWRITE_TAC[] THEN
+    FIRST_X_ASSUM(MP_TAC o ISPECL
+     [`basis i + basis j:real^M`; `basis i - basis j:real^M`]) THEN
+    ASM_SIMP_TAC[orthogonal; LINEAR_ADD; LINEAR_SUB; VECTOR_ARITH
+     `(x + y:real^M) dot (x - y) = x dot x - y dot y`] THEN
+
+    ASM_SIMP_TAC[GSYM NORM_POW_2; REAL_SUB_0; NORM_BASIS] THEN
+    REWRITE_TAC[NORM_POW_2; GSYM NORM_EQ];
+    MATCH_MP_TAC MONO_EXISTS THEN X_GEN_TAC `c:real` THEN STRIP_TAC THEN
+    ASM_SIMP_TAC[NORM_EQ_SQUARE; NORM_POS_LE; REAL_LE_MUL]  THEN
+    X_GEN_TAC `x:real^M` THEN REWRITE_TAC[GSYM NORM_POW_2] THEN
+    GEN_REWRITE_TAC (LAND_CONV o LAND_CONV o RAND_CONV o RAND_CONV)
+     [GSYM BASIS_EXPANSION] THEN
+    ASM_SIMP_TAC[LINEAR_VSUM; FINITE_NUMSEG; o_DEF; LINEAR_CMUL] THEN
+    W(MP_TAC o PART_MATCH (lhand o rand)
+      NORM_VSUM_PYTHAGOREAN o lhand o snd) THEN
+    REWRITE_TAC[pairwise; IN_NUMSEG; ORTHOGONAL_MUL; FINITE_NUMSEG] THEN
+    ASM_SIMP_TAC[ORTHOGONAL_BASIS_BASIS] THEN DISCH_THEN SUBST1_TAC THEN
+    ONCE_REWRITE_TAC[REAL_MUL_SYM] THEN
+    ASM_SIMP_TAC[NORM_MUL; REAL_POW_MUL; SUM_RMUL; REAL_POW2_ABS] THEN
+    REWRITE_TAC[REAL_POW_2; GSYM dot; GSYM NORM_POW_2]]);;
+
+let ORTHOGONALITY_PRESERVING_EQ_SIMILARITY_ALT,
+    ORTHOGONALITY_PRESERVING_EQ_SIMILARITY =
+  (CONJ_PAIR o prove)
+ (`(!f:real^N->real^N.
+        linear f /\ (!x y. orthogonal x y ==> orthogonal (f x) (f y)) <=>
+        ?c g. &0 <= c /\ orthogonal_transformation g /\ f = \z. c % g z) /\
+   (!f:real^N->real^N.
+        linear f /\ (!x y. orthogonal x y ==> orthogonal (f x) (f y)) <=>
+        ?c g. orthogonal_transformation g /\ f = \z. c % g z)`,
+  REWRITE_TAC[AND_FORALL_THM] THEN GEN_TAC THEN
+  MATCH_MP_TAC(TAUT
+   `(q ==> r) /\ (r ==> p) /\ (p ==> q)
+    ==> (p <=> q) /\ (p <=> r)`) THEN
+  REPEAT CONJ_TAC THENL
+   [ASM_MESON_TAC[];
+    STRIP_TAC THEN
+    ASM_SIMP_TAC[ORTHOGONAL_TRANSFORMATION_LINEAR; LINEAR_COMPOSE_CMUL] THEN
+    ASM_SIMP_TAC[ORTHOGONAL_MUL; ORTHOGONAL_ORTHOGONAL_TRANSFORMATION];
+    DISCH_TAC THEN
+    FIRST_ASSUM(MP_TAC o MATCH_MP ORTHOGONALITY_PRESERVING_IMP_SCALING) THEN
+    MATCH_MP_TAC MONO_EXISTS THEN X_GEN_TAC `c:real` THEN
+    ASM_CASES_TAC `c = &0` THENL
+     [ASM_SIMP_TAC[REAL_MUL_LZERO; FUN_EQ_THM; NORM_EQ_0] THEN
+      DISCH_TAC THEN EXISTS_TAC `\x:real^N. x` THEN
+      REWRITE_TAC[VECTOR_MUL_LZERO; ORTHOGONAL_TRANSFORMATION_ID];
+      STRIP_TAC THEN EXISTS_TAC `\x. inv(c) % (f:real^N->real^N) x` THEN
+      ASM_REWRITE_TAC[ORTHOGONAL_TRANSFORMATION; FUN_EQ_THM] THEN
+      ASM_SIMP_TAC[LINEAR_COMPOSE_CMUL; NORM_MUL; VECTOR_MUL_ASSOC] THEN
+      ASM_SIMP_TAC[REAL_MUL_RINV; VECTOR_MUL_LID; REAL_ABS_INV] THEN
+      ASM_REWRITE_TAC[real_abs; REAL_MUL_ASSOC] THEN
+      ASM_SIMP_TAC[REAL_MUL_LINV; REAL_MUL_LID]]]);;
+
+(* ------------------------------------------------------------------------- *)
 (* Hence another formulation of orthogonal transformation.                   *)
 (* ------------------------------------------------------------------------- *)
 
@@ -2963,21 +3102,6 @@ let ISOMETRY_SPHERE_EXTEND = prove
   REPEAT CONJ_TAC THEN FIRST_X_ASSUM MATCH_MP_TAC THEN
   REWRITE_TAC[NORM_MUL; VECTOR_MUL_ASSOC; REAL_ABS_INV; REAL_ABS_NORM] THEN
   ASM_SIMP_TAC[REAL_MUL_LINV; REAL_MUL_RINV; NORM_EQ_0]);;
-
-let ORTHOGONAL_TRANSFORMATION_LINEAR = prove
- (`!f:real^N->real^N. orthogonal_transformation f ==> linear f`,
-  SIMP_TAC[orthogonal_transformation]);;
-
-let ORTHOGONAL_TRANSFORMATION_INJECTIVE = prove
- (`!f:real^N->real^N.
-        orthogonal_transformation f ==> !x y. f x = f y ==> x = y`,
-  SIMP_TAC[LINEAR_INJECTIVE_0; ORTHOGONAL_TRANSFORMATION; GSYM NORM_EQ_0]);;
-
-let ORTHOGONAL_TRANSFORMATION_SURJECTIVE = prove
- (`!f:real^N->real^N.
-        orthogonal_transformation f ==> !y. ?x. f x = y`,
-  MESON_TAC[LINEAR_INJECTIVE_IMP_SURJECTIVE;
-            ORTHOGONAL_TRANSFORMATION_INJECTIVE; orthogonal_transformation]);;
 
 let ORTHOGONAL_TRANSFORMATION_INVERSE_o = prove
  (`!f:real^N->real^N.

@@ -571,13 +571,13 @@ let COND_ABS = prove
 
 export_thm COND_ABS;;
 
-let COND_NOT = prove
+let COND_SWAP = prove
   (`!c (x:A) y. (if (~c) then x else y) = (if c then y else x)`,
    REPEAT GEN_TAC THEN
    BOOL_CASES_TAC `c : bool` THEN
    REWRITE_TAC [COND_TRUE; COND_FALSE]);;
 
-export_thm COND_NOT;;
+export_thm COND_SWAP;;
 
 (* ------------------------------------------------------------------------- *)
 (* Redefine TAUT to freeze in the rewrites including COND.                   *)

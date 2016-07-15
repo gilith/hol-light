@@ -265,7 +265,7 @@ let WF_REC_WF = prove
   DISCH_THEN(MP_TAC o GEN `n:num` o SPEC `(x:num->A) n`) THEN
   SUBGOAL_THEN `!n. ?p. (x:num->A) n = x p` (fun th -> REWRITE_TAC[th]) THENL
    [MESON_TAC[]; DISCH_TAC] THEN
-  SUBGOAL_THEN `!n:num. ?k. f(x(k):A) < f(x(n))` ASSUME_TAC THENL
+  SUBGOAL_THEN `!n:num. ?k. (f(x(k):A):num) < f(x(n))` ASSUME_TAC THENL
    [GEN_TAC THEN EXISTS_TAC `@m:num. r (x(m):A) (x(n))` THEN
     FIRST_ASSUM(fun th -> GEN_REWRITE_TAC RAND_CONV [th]) THEN REWRITE_TAC[LT];
     MP_TAC(SPEC `\n:num. ?i:num. n = f(x(i):A)` num_WOP) THEN
@@ -362,7 +362,7 @@ export_thm WF_POINTWISE;;
 export_theory "relation-natural-thm";;
 
 let WF_num = prove
- (`WF(<)`,
+ (`WF ((<) : num -> num -> bool)`,
   REWRITE_TAC[WF_IND; num_WF]);;
 
 export_thm WF_num;;
@@ -379,7 +379,7 @@ let WF_REC_num = prove
 export_theory "relation-natural-def";;
 
 let MEASURE = new_definition
-  `!m (x:A) y. MEASURE m x y = m x < m y`;;
+  `!(m : A -> num) x y. MEASURE m x y = m x < m y`;;
 
 export_thm MEASURE;;
 
@@ -652,7 +652,7 @@ export_thm WF_FINITE;;
 let wellfounded_successor = prove
  (`WF successor`,
   MATCH_MP_TAC wellfounded_subrelation THEN
-  EXISTS_TAC `(<)` THEN
+  EXISTS_TAC `(<) : num -> num -> bool` THEN
   REWRITE_TAC [subrelation_successor_lt; WF_num]);;
 
 export_thm wellfounded_successor;;
