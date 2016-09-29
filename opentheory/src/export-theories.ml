@@ -36,7 +36,7 @@ let () =
 (* Test theory.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-(*
+(* Uncomment when testing
 #use "opentheory/theories/test.ml";;
 *)
 

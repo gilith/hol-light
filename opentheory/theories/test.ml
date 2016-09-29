@@ -196,6 +196,25 @@ let fermat7_axiom = new_axiom (concl fermat7_factorization);;
 export_thm fermat7_axiom;;
 
 (* ------------------------------------------------------------------------- *)
+(* Testing large numerals                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+export_theory "example15";;
+
+let expand_power_of_two n =
+    let th = SPEC `2` EXP_0 in
+    let rewr = prove
+      (`!n m. 2 EXP n = m <=> 2 EXP SUC n = m + m`,
+       REPEAT GEN_TAC THEN
+       REWRITE_TAC [GSYM MULT_2; EXP; EQ_MULT_LCANCEL] THEN
+       REWRITE_TAC [TWO; NOT_SUC]) in
+    let conv = REWR_CONV rewr THENC LAND_CONV (RAND_CONV NUM_SUC_CONV) in
+    funpow n (CONV_RULE conv) th;;
+
+(***export_thm (new_axiom (concl (expand_power_of_two 20)));;***)
+export_thm (expand_power_of_two 20);;
+
+(* ------------------------------------------------------------------------- *)
 (* Testing the QBF cloud tactic                                              *)
 (* ------------------------------------------------------------------------- *)
 
