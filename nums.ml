@@ -438,13 +438,13 @@ let new_specification =
       if not (frees c = []) then
         failwith "new_specification: Free variables in predicate" else
       let avs = fst(strip_exists c) in
-      if length names = 0 or length names > length avs then
+      if length names = 0 || length names > length avs then
         failwith "new_specification: Unsuitable number of constant names" else
       if not (check_distinct names) then
         failwith "new_specification: Constant names not distinct"
       else
         try let sth = snd(find (fun ((names',th'),sth') ->
-                                 names' = names & aconv (concl th') (concl th))
+                                 names' = names && aconv (concl th') (concl th))
                                (!the_specifications)) in
             warn true ("Benign respecification"); sth
         with Failure _ ->
@@ -464,7 +464,7 @@ let native_numeral_conv =
         if is_zero tm then 0 else
         let (f,x) = dest_comb tm in
         let n = dest_numeral x in
-        if is_bit0 f & n <> 0 then 2 * n else
+        if is_bit0 f && n <> 0 then 2 * n else
         if is_bit1 f then 2 * n + 1 else
         failwith "not a numeral" in
     let is_numeral = can dest_numeral in

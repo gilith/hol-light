@@ -3312,6 +3312,20 @@ let IS_REAL_INTERVAL_CASES = prove
   REWRITE_TAC[EXTENSION; IN_IMAGE_LIFT_DROP; IN_ELIM_THM] THEN
   REWRITE_TAC[GSYM FORALL_DROP; IN_UNIV; NOT_IN_EMPTY]);;
 
+let IS_REALINTERVAL_CLAUSES = prove
+ (`is_realinterval {} /\
+   is_realinterval (:real) /\
+   (!a. is_realinterval {x | a < x}) /\
+   (!a. is_realinterval {x | a <= x}) /\
+   (!b. is_realinterval {x | x < b}) /\
+   (!b. is_realinterval {x | x <= b}) /\
+   (!a b. is_realinterval {x | a < x /\ x < b}) /\
+   (!a b. is_realinterval {x | a < x /\ x <= b}) /\
+   (!a b. is_realinterval {x | a <= x /\ x < b}) /\
+   (!a b. is_realinterval {x | a <= x /\ x <= b})`,
+  REWRITE_TAC[is_realinterval; IN_ELIM_THM; IN_UNIV; NOT_IN_EMPTY] THEN
+  REAL_ARITH_TAC);;
+
 let REAL_CONVEX = prove
  (`!s. is_realinterval s <=>
        !x y u v. x IN s /\ y IN s /\ &0 <= u /\ &0 <= v /\ u + v = &1
@@ -8648,6 +8662,13 @@ let REAL_INTEGRABLE_ON_SUBINTERVAL = prove
   EXISTS_TAC `IMAGE lift s` THEN ASM_REWRITE_TAC[] THEN
   REWRITE_TAC[GSYM IMAGE_LIFT_REAL_INTERVAL] THEN
   ASM_SIMP_TAC[IMAGE_SUBSET]);;
+
+let REAL_INTEGRABLE_ON_SUBINTERVAL_GEN = prove
+ (`!f s t. f real_integrable_on s /\ t SUBSET s /\ is_realinterval t
+           ==> f real_integrable_on t`,
+  REWRITE_TAC[REAL_INTEGRABLE_ON; IS_REALINTERVAL_IS_INTERVAL] THEN
+  ONCE_REWRITE_TAC[GSYM SUBSET_LIFT_IMAGE] THEN
+  REWRITE_TAC[INTEGRABLE_ON_SUBINTERVAL_GEN]);;
 
 let REAL_INTEGRABLE_STRADDLE = prove
  (`!f s.

@@ -989,7 +989,7 @@ let NORM_ARITH =
           lincomb_cmul (rat_of_term l) (vector_lincomb r)
       | Comb(Const("vector_neg",_),t) ->
           lincomb_neg (vector_lincomb t)
-      | Comb(Const("vec",_),n) when is_numeral n & dest_numeral n =/ Int 0 ->
+      | Comb(Const("vec",_),n) when is_numeral n && dest_numeral n =/ Int 0 ->
           undefined
       | _ -> (tm |=> Int 1) in
   let vector_lincombs tms =
@@ -1145,7 +1145,7 @@ let NORM_ARITH =
           (APPLY_pth2 THENC VECTOR_CANON_CONV) tm
       | Comb(Const("vector_neg",_),t) ->
           (APPLY_pth3 THENC VECTOR_CANON_CONV) tm
-      | Comb(Const("vec",_),n) when is_numeral n & dest_numeral n =/ Int 0 ->
+      | Comb(Const("vec",_),n) when is_numeral n && dest_numeral n =/ Int 0 ->
           REFL tm
       | _ -> APPLY_pth1 tm in
     fun tm ->
@@ -2056,7 +2056,7 @@ let EXPAND_VSUM_CONV =
   let rec conv tm =
     let smn,ftm = dest_comb tm in
     let s,mn = dest_comb smn in
-    if not(is_const s & fst(dest_const s) = "vsum")
+    if not(is_const s && fst(dest_const s) = "vsum")
     then failwith "EXPAND_VSUM_CONV" else
     let mtm,ntm = dest_binop ns_tm mn in
     let m = dest_numeral mtm and n = dest_numeral ntm in
@@ -3883,6 +3883,14 @@ let ONORM_I = prove
  (`onorm(I:real^N->real^N) = &1`,
   REWRITE_TAC[I_DEF; ONORM_ID]);;
 
+let ONORM_INVERSE_FUNCTION_BOUND = prove
+ (`!f g:real^M->real^N.
+        linear f /\ linear g /\ f o g = I ==> &1 <= onorm f * onorm g`,
+  REPEAT STRIP_TAC THEN
+  FIRST_ASSUM(MP_TAC o AP_TERM `onorm:(real^M->real^M)->real`) THEN
+  REWRITE_TAC[ONORM_I] THEN DISCH_THEN(SUBST1_TAC o SYM) THEN
+  MATCH_MP_TAC ONORM_COMPOSE THEN ASM_REWRITE_TAC[]);;
+
 let ONORM_ADJOINT = prove
  (`!f:real^N->real^N. linear f ==> onorm(adjoint f) = onorm f`,
   REPEAT STRIP_TAC THEN REWRITE_TAC[ONORM_DOT] THEN
@@ -4247,6 +4255,12 @@ let DROP_INDICATOR_LE_1 = prove
 let DROP_INDICATOR_ABS_LE_1 = prove
  (`!s x. abs(drop(indicator s x)) <= &1`,
   REWRITE_TAC[DROP_INDICATOR] THEN REAL_ARITH_TAC);;
+
+let INDICATOR_COMPLEMENT = prove
+ (`!s. indicator((:real^N) DIFF s) = \x. vec 1 - indicator s x`,
+  GEN_TAC THEN REWRITE_TAC[FUN_EQ_THM; indicator] THEN
+  X_GEN_TAC `x:real^N` THEN ASM_CASES_TAC `(x:real^N) IN s` THEN
+  ASM_REWRITE_TAC[IN_UNIV; IN_DIFF; VECTOR_SUB_REFL; VECTOR_SUB_RZERO]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Pasting vectors.                                                          *)

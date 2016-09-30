@@ -1192,6 +1192,12 @@ let DIFF_COMM = prove
 
 export_thm DIFF_COMM;;
 
+let COMPL_COMPL = prove
+ (`!s : A set. UNIV DIFF (UNIV DIFF s) = s`,
+  REWRITE_TAC [EXTENSION; IN_DIFF; IN_UNIV]);;
+
+export_thm COMPL_COMPL;;
+
 (* ------------------------------------------------------------------------- *)
 (* Insertion and deletion.                                                   *)
 (* ------------------------------------------------------------------------- *)

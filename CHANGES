@@ -8,6 +8,147 @@
   * page: https://github.com/jrh13/hol-light/commits/master         *
   * *****************************************************************
 
+Fri  9th Sep 2016       passim
+
+Changed all (?) instances of "&" to "&&" and "or" to "||" to avoid any
+OCaml "deprecated" warnings which will presumably soon enough become
+actual errors.
+
+Fri  9th Sep 2016       parser.ml, theorems.ml, help.ml, Examples/mizar.ml, Examples/sos.ml, miz3/miz3.ml, Help/*.doc
+
+Renamed the parser "or" combinator from "||" to "|||", which is a bit of
+a mouthful but still quite intuitive. This seemed worth doing in principle
+given that "||" is overwriting an OCaml builtin, and I was more motivated
+because the word "or" is now depracated in favour of "||" for the logical
+"or" operation.
+
+Fri  2nd Sep 2016       Library/card.ml
+
+Added a couple more lemmas about bounding cardinalities of "sequences"
+(expressed via cardinal exponentiation for maximum generality):
+
+  CARD_EXP_LE_REAL =
+    |- !s t. s <=_c (:real) /\ COUNTABLE t ==> s ^_c t <=_c (:real)
+
+  CARD_EXP_EQ_REAL =
+    |- !s. COUNTABLE s /\ ~(s = {}) ==> (:real) ^_c s =_c (:real)
+
+Thu 25th Aug 2016       Library/sets.ml
+
+Added a number of simple results about the COUNTABLE case of the new
+constructs "UNION_OF" and "INTERSECTION_OF". This is the immediately
+most useful case in topology, but one could of course reasonably
+add "FINITE" or more general variants too.
+
+  COUNTABLE_INTERSECTION_OF_COMPLEMENT =
+    |- !P s. (COUNTABLE INTERSECTION_OF P) s <=>
+             (COUNTABLE UNION_OF (\s. P((:A) DIFF s))) ((:A) DIFF s)
+
+  COUNTABLE_INTERSECTION_OF_IDEMPOT =
+    |- !P:(A->bool)->bool.
+          COUNTABLE INTERSECTION_OF COUNTABLE INTERSECTION_OF P =
+          COUNTABLE INTERSECTION_OF P
+
+  COUNTABLE_INTERSECTION_OF_INC =
+    |- !P s:A->bool. P s ==> (COUNTABLE INTERSECTION_OF P) s
+
+  COUNTABLE_INTERSECTION_OF_INTER =
+    |- !P s t. (COUNTABLE INTERSECTION_OF P) s /\
+               (COUNTABLE INTERSECTION_OF P) t
+               ==> (COUNTABLE INTERSECTION_OF P) (s INTER t)
+
+  COUNTABLE_INTERSECTION_OF_INTERS =
+    |- !P u:(A->bool)->bool.
+          COUNTABLE u /\ (!s. s IN u ==> (COUNTABLE INTERSECTION_OF P) s)
+          ==> (COUNTABLE INTERSECTION_OF P) (INTERS u)
+
+  COUNTABLE_INTERSECTION_OF_UNION =
+    |- !P:(A->bool)->bool.
+          (!s t. P s /\ P t ==> P(s UNION t))
+          ==> (!s t. (COUNTABLE INTERSECTION_OF P) s /\
+                     (COUNTABLE INTERSECTION_OF P) t
+                     ==> (COUNTABLE INTERSECTION_OF P) (s UNION t))
+
+  COUNTABLE_UNION_OF_ASCENDING =
+    |- !P s:A->bool.
+          P {} /\ (!t u. P t /\ P u ==> P(t UNION u))
+          ==> ((COUNTABLE UNION_OF P) s <=>
+               ?t. (!n. P(t n)) /\
+                   (!n. t n SUBSET t(SUC n)) /\
+                   UNIONS {t n | n IN (:num)} = s)
+
+  COUNTABLE_UNION_OF_COMPLEMENT =
+    |- !P s. (COUNTABLE UNION_OF P) s <=>
+             (COUNTABLE INTERSECTION_OF (\s. P((:A) DIFF s))) ((:A) DIFF s)
+
+  COUNTABLE_UNION_OF_EXPLICIT =
+    |- !P s:A->bool.
+          P {}
+          ==> ((COUNTABLE UNION_OF P) s <=>
+               ?t. (!n. P(t n)) /\ UNIONS {t n | n IN (:num)} = s)
+
+  COUNTABLE_UNION_OF_IDEMPOT =
+    |- !P:(A->bool)->bool.
+          COUNTABLE UNION_OF COUNTABLE UNION_OF P = COUNTABLE UNION_OF P
+
+  COUNTABLE_UNION_OF_INC =
+    |- !P s:A->bool. P s ==> (COUNTABLE UNION_OF P) s
+
+  COUNTABLE_UNION_OF_INTER =
+    |- !P:(A->bool)->bool.
+          (!s t. P s /\ P t ==> P(s INTER t))
+          ==> (!s t. (COUNTABLE UNION_OF P) s /\ (COUNTABLE UNION_OF P) t
+                     ==> (COUNTABLE UNION_OF P) (s INTER t))
+
+  COUNTABLE_UNION_OF_UNION =
+    |- !P s t. (COUNTABLE UNION_OF P) s /\ (COUNTABLE UNION_OF P) t
+             ==> (COUNTABLE UNION_OF P) (s UNION t)
+
+  COUNTABLE_UNION_OF_UNIONS =
+    |- !P u:(A->bool)->bool.
+          COUNTABLE u /\ (!s. s IN u ==> (COUNTABLE UNION_OF P) s)
+          ==> (COUNTABLE UNION_OF P) (UNIONS u)
+
+Fri 19th Aug 2016       sets.ml
+
+Added a few basic theorems, one trivial but very useful fact that
+complementation is an involution, and a few basic general properties
+of the "UNION_OF" and "INTERSECTION_OF" constructs:
+
+  COMPL_COMPL =
+    |- !s. (:A) DIFF ((:A) DIFF s) = s
+
+  INTERSECTION_OF_INC =
+    |- !P Q s:A->bool. P {s} /\ Q s ==> (P INTERSECTION_OF Q) s
+
+  INTERSECTION_OF_MONO =
+    |- !P Q Q' s:A->bool.
+         (P INTERSECTION_OF Q) s /\ (!x. Q x ==> Q' x)
+         ==> (P INTERSECTION_OF Q') s
+
+  UNION_OF_INC =
+    |- !P Q s:A->bool. P {s} /\ Q s ==> (P UNION_OF Q) s
+
+  UNION_OF_MONO =
+    |- !P Q Q' s:A->bool.
+        (P UNION_OF Q) s /\ (!x. Q x ==> Q' x) ==> (P UNION_OF Q') s
+
+
+Fri 12th Aug 2016       sets.ml
+
+Added two natural infix constants "UNION_OF" and "INTERSECTION_OF" for the
+useful and otherwise longwinded idiom that a set is a suitable (e.g. finite or
+countable or pairwise disjoint) union/intersection of "somethings". Typical
+examples are topological: `fsigma = COUNTABLE UNION_OF closed` etc.
+
+        UNION_OF =
+          |- !P Q. P UNION_OF Q =
+                   (\s. ?u. P u /\ (!c. c IN u ==> Q c) /\ UNIONS u = s)
+
+        INTERSECTION_OF =
+          |- !P Q. P INTERSECTION_OF Q =
+                   (\s. ?u. P u /\ (!c. c IN u ==> Q c) /\ INTERS u = s)
+
 Sat  9th Jul 2016       Makefile
 
 Added yet another disjunct to the OCaml and camlp5 version case split
@@ -193,7 +334,7 @@ omega-indexed chain:
         ==> ?u. (!n. u(n) IN f) /\ (!n. u(n) SUBSET u(SUC n)) /\
                 UNIONS {u n | n IN (:num)} = UNIONS f
 
- COUNTABLE_DESCENDING_CHAIN = prove
+ COUNTABLE_DESCENDING_CHAIN =
    |- !f:(A->bool)->bool.
         COUNTABLE f /\ ~(f = {}) /\
         (!s t. s IN f /\ t IN f ==> s SUBSET t \/ t SUBSET s)
