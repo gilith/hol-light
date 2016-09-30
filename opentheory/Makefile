@@ -30,9 +30,9 @@ clean:
 .PHONY: info-clean
 info-clean:
 	@echo
-	@echo '+------------------+'
-	@echo '| Clean everything |'
-	@echo '+------------------+'
+	@echo '+-----------------------------------+'
+	@echo '| Clean exported HOL Light theories |'
+	@echo '+-----------------------------------+'
 	@echo
 	@$(MAKE) clean
 
@@ -64,9 +64,9 @@ instantiate-parametric-proof-tools: $(PARAMETRIC_PROOF_TOOLS)
 .PHONY: info-instantiate-parametric-proof-tools
 info-instantiate-parametric-proof-tools:
 	@echo
-	@echo '+------------------------------------+'
-	@echo '| Instantiate parametric proof tools |'
-	@echo '+------------------------------------+'
+	@echo '+----------------------------------------------+'
+	@echo '| Instantiate HOL Light parametric proof tools |'
+	@echo '+----------------------------------------------+'
 	@echo
 	@$(MAKE) instantiate-parametric-proof-tools
 
@@ -81,9 +81,9 @@ export-theories:
 .PHONY: info-export-theories
 info-export-theories:
 	@echo
-	@echo '+-----------------+'
-	@echo '| Export theories |'
-	@echo '+-----------------+'
+	@echo '+---------------------------+'
+	@echo '| Export HOL Light theories |'
+	@echo '+---------------------------+'
 	@echo
 	@$(MAKE) export-theories
 
@@ -103,9 +103,9 @@ check-theories: export/files.txt
 .PHONY: info-check-theories
 info-check-theories:
 	@echo
-	@echo '+----------------------+'
-	@echo '| Check theory sources |'
-	@echo '+----------------------+'
+	@echo '+--------------------------------+'
+	@echo '| Check HOL Light theory sources |'
+	@echo '+--------------------------------+'
 	@echo
 	@$(MAKE) check-theories
 
