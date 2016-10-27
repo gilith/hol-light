@@ -338,7 +338,6 @@ export_theory "natural-numeral-def";;
 
 let (BIT0_ZERO,BIT0_SUC) =
   let funn_ty = type_of(rator(lhand(snd(dest_forall(concl NUMERAL))))) in
-  let num_ty = snd(dest_fun_ty funn_ty) in
   let bit0_tm = mk_var("BIT0",funn_ty) in
   let def = new_definition
    (mk_eq(bit0_tm,`@fn. fn 0 = 0 /\ (!n. fn (SUC n) = SUC (SUC(fn n)))`))
