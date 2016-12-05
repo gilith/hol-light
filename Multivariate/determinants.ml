@@ -44,7 +44,7 @@ let TRACE_NEG = prove
   REWRITE_TAC[trace; MATRIX_NEG_COMPONENT; SUM_NEG]);;
 
 let TRACE_MUL_SYM = prove
- (`!A B:real^N^N. trace(A ** B) = trace(B ** A)`,
+ (`!A B:real^N^M. trace(A ** B) = trace(B ** A)`,
   REPEAT GEN_TAC THEN SIMP_TAC[trace; matrix_mul; LAMBDA_BETA] THEN
   GEN_REWRITE_TAC RAND_CONV [SUM_SWAP_NUMSEG] THEN REWRITE_TAC[REAL_MUL_SYM]);;
 
@@ -59,8 +59,10 @@ let TRACE_SIMILAR = prove
   ASM_SIMP_TAC[GSYM MATRIX_MUL_ASSOC; MATRIX_INV; MATRIX_MUL_RID]);;
 
 let TRACE_MUL_CYCLIC = prove
- (`!A:real^N^N B C:real^N^N. trace(A ** B ** C) = trace(B ** C ** A)`,
-  MESON_TAC[MATRIX_MUL_ASSOC; TRACE_MUL_SYM]);;
+ (`!A:real^P^M B C:real^M^N. trace(A ** B ** C) = trace(B ** C ** A)`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[MATRIX_MUL_ASSOC] THEN
+  GEN_REWRITE_TAC RAND_CONV [TRACE_MUL_SYM] THEN
+  REWRITE_TAC[MATRIX_MUL_ASSOC]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Definition of determinant.                                                *)
@@ -2190,7 +2192,6 @@ let TRACE_COVARIANCE_CAUCHY_SCHWARZ_SQUARE = prove
         <= trace(transp A ** A) * trace(transp B ** B)`,
   REPEAT STRIP_TAC THEN ONCE_REWRITE_TAC[GSYM REAL_POW2_ABS] THEN
   MATCH_MP_TAC REAL_RSQRT_LE THEN
-
   SIMP_TAC[REAL_ABS_POS; REAL_LE_MUL; TRACE_COVARIANCE_POS_LE] THEN
   REWRITE_TAC[TRACE_COVARIANCE_CAUCHY_SCHWARZ_ABS; SQRT_MUL]);;
 
@@ -2590,6 +2591,14 @@ let ORTHOGONAL_MATRIX = prove
 let ORTHOGONAL_MATRIX_ALT = prove
  (`!A:real^N^N. orthogonal_matrix A <=> A ** transp A = mat 1`,
   MESON_TAC[MATRIX_LEFT_RIGHT_INVERSE; orthogonal_matrix]);;
+
+let ORTHOGONAL_MATRIX_TRANSP_LMUL = prove
+ (`!P:real^N^N. orthogonal_matrix P ==> transp P ** P = mat 1`,
+  REWRITE_TAC[ORTHOGONAL_MATRIX]);;
+
+let ORTHOGONAL_MATRIX_TRANSP_RMUL = prove
+ (`!P:real^N^N. orthogonal_matrix P ==> P ** transp P = mat 1`,
+  REWRITE_TAC[ORTHOGONAL_MATRIX_ALT]);;
 
 let ORTHOGONAL_MATRIX_ID = prove
  (`orthogonal_matrix(mat 1)`,
@@ -3147,33 +3156,6 @@ let ONORM_COMPOSE_ORTHOGONAL_TRANSFORMATION_RIGHT = prove
 (* ------------------------------------------------------------------------- *)
 (* We can find an orthogonal matrix taking any unit vector to any other.     *)
 (* ------------------------------------------------------------------------- *)
-
-let FINITE_INDEX_NUMSEG_SPECIAL = prove
- (`!s a:A.
-        FINITE s /\ a IN s
-        ==> ?f. (!i j. i IN 1..CARD s /\ j IN 1..CARD s /\ f i = f j
-                       ==> i = j) /\
-                s = IMAGE f (1..CARD s) /\
-                f 1 = a`,
-  REPEAT STRIP_TAC THEN
-  FIRST_ASSUM(MP_TAC o GEN_REWRITE_RULE I [FINITE_INDEX_NUMSEG]) THEN
-  DISCH_THEN(X_CHOOSE_THEN `f:num->A` STRIP_ASSUME_TAC) THEN
-  SUBGOAL_THEN `?k. k IN 1..CARD(s:A->bool) /\ (a:A) = f k`
-  STRIP_ASSUME_TAC THENL[ASM SET_TAC[]; ALL_TAC] THEN
-  EXISTS_TAC `(f:num->A) o swap(1,k)` THEN
-  SUBGOAL_THEN `1 IN 1..CARD(s:A->bool)` ASSUME_TAC THENL
-   [REWRITE_TAC[IN_NUMSEG; LE_REFL; ARITH_RULE `1 <= x <=> ~(x = 0)`] THEN
-    ASM_SIMP_TAC[CARD_EQ_0; ARITH_EQ] THEN ASM SET_TAC[];
-    ALL_TAC] THEN
-  ASM_REWRITE_TAC[o_THM; swap] THEN
-  CONJ_TAC THENL [ASM SET_TAC[]; ALL_TAC] THEN
-  UNDISCH_THEN `s = IMAGE (f:num->A) (1..CARD(s:A->bool))`
-   (fun th -> GEN_REWRITE_TAC LAND_CONV [th]) THEN
-  REWRITE_TAC[EXTENSION; IN_IMAGE; o_THM] THEN
-  X_GEN_TAC `b:A` THEN EQ_TAC THEN
-  DISCH_THEN(X_CHOOSE_THEN `i:num` STRIP_ASSUME_TAC) THEN
-  EXISTS_TAC `swap(1,k) i` THEN
-  REWRITE_TAC[swap] THEN ASM_MESON_TAC[swap]);;
 
 let ORTHOGONAL_MATRIX_EXISTS_BASIS = prove
  (`!a:real^N.
@@ -3970,6 +3952,50 @@ let REFLECT_ALONG_EQ = prove
 let REFLECT_ALONG_SURJECTIVE = prove
  (`!v y:real^N. ?x. reflect_along v x = y`,
   MESON_TAC[REFLECT_ALONG_INVOLUTION]);;
+
+let ROTOINVERSION_EXISTS_GEN = prove
+ (`!s a b:real^N.
+        subspace s /\ a IN s /\ b IN s /\ ~(a = b) /\ norm a = norm b
+         ==> ?f. orthogonal_transformation f /\ IMAGE f s = s /\
+                 (!x. orthogonal a x /\ orthogonal b x ==> f x = x) /\
+                 det (matrix f) = -- &1 /\
+                 f a = b /\ f b = a`,
+  REPEAT STRIP_TAC THEN EXISTS_TAC `reflect_along (b - a:real^N)` THEN
+  REWRITE_TAC[ORTHOGONAL_TRANSFORMATION_REFLECT_ALONG] THEN
+  ASM_REWRITE_TAC[DET_MATRIX_REFLECT_ALONG; VECTOR_SUB_EQ] THEN
+  CONJ_TAC THENL
+   [MATCH_MP_TAC(SET_RULE
+     `(!x. f(f x) = x) /\ (!x. x IN s ==> f x IN s) ==> IMAGE f s = s`) THEN
+    REWRITE_TAC[REFLECT_ALONG_INVOLUTION] THEN REWRITE_TAC[reflect_along] THEN
+    ASM_SIMP_TAC[SUBSPACE_SUB; SUBSPACE_MUL];
+
+    REWRITE_TAC[ONCE_REWRITE_RULE[DOT_SYM] orthogonal] THEN
+    SIMP_TAC[reflect_along; DOT_RSUB] THEN
+    REWRITE_TAC[real_div; REAL_SUB_REFL; REAL_MUL_LZERO; REAL_MUL_RZERO] THEN
+    REWRITE_TAC[VECTOR_ARITH `x - &0 % y:real^N = x`] THEN
+    REWRITE_TAC[VECTOR_ARITH
+      `(a - c % (b - a):real^N = b <=> (&1 + c) % (b - a) = vec 0) /\
+       (b - c % (b - a):real^N = a <=> (&1 - c) % (b - a) = vec 0)`] THEN
+    ASM_REWRITE_TAC[VECTOR_MUL_EQ_0; VECTOR_SUB_EQ] THEN
+    MATCH_MP_TAC(REAL_FIELD
+     `~(d = &0) /\ x + y = &0 /\ y - x = d
+      ==> &1 + &2 * x * inv d = &0 /\ &1 - &2 * y * inv d = &0`) THEN
+    ASM_REWRITE_TAC[GSYM DOT_RSUB; DOT_EQ_0; VECTOR_SUB_EQ] THEN
+    ASM_REWRITE_TAC[DOT_RSUB; GSYM NORM_POW_2; DOT_LSUB] THEN
+    REWRITE_TAC[DOT_SYM] THEN REAL_ARITH_TAC]);;
+
+let ORTHOGONAL_TRANSFORMATION_EXISTS_GEN = prove
+ (`!s a b:real^N.
+        subspace s /\ a IN s /\ b IN s /\ norm a = norm b
+         ==> ?f. orthogonal_transformation f /\ IMAGE f s = s /\
+                 (!x. orthogonal a x /\ orthogonal b x ==> f x = x) /\
+                 f a = b /\ f b = a`,
+  REPEAT STRIP_TAC THEN ASM_CASES_TAC `b:real^N = a` THENL
+   [EXISTS_TAC `\x:real^N. x` THEN
+    ASM_REWRITE_TAC[ORTHOGONAL_TRANSFORMATION_ID; IMAGE_ID];
+    MP_TAC(ISPECL [`s:real^N->bool`; `a:real^N`; `b:real^N`]
+        ROTOINVERSION_EXISTS_GEN) THEN
+    ASM_REWRITE_TAC[] THEN MESON_TAC[]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* All orthogonal transformations are a composition of reflections.          *)

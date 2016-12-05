@@ -1797,7 +1797,7 @@ let LE_LDIV = prove
 
 export_thm LE_LDIV;;
 
-let LT_LDIV_EQ = prove
+let RDIV_LT_EQ = prove
  (`!a b n. ~(a = 0) ==> (b DIV a < n <=> b < a * n)`,
   REPEAT STRIP_TAC THEN
   REWRITE_TAC [GSYM NOT_LE] THEN
@@ -1805,7 +1805,7 @@ let LT_LDIV_EQ = prove
   MATCH_MP_TAC LE_RDIV_EQ THEN
   FIRST_ASSUM ACCEPT_TAC);;
 
-export_thm LT_LDIV_EQ;;
+export_thm RDIV_LT_EQ;;
 
 let LT_LDIV = prove
  (`!a b n. b < a * n ==> b DIV a < n`,
@@ -1814,10 +1814,16 @@ let LT_LDIV = prove
   [DISCH_THEN SUBST_VAR_TAC THEN
    POP_ASSUM MP_TAC THEN
    REWRITE_TAC [ZERO_MULT; LT];
-   MP_TAC (SPECL [`a : num`; `b : num`; `n : num`] LT_LDIV_EQ) THEN
+   MP_TAC (SPECL [`a : num`; `b : num`; `n : num`] RDIV_LT_EQ) THEN
    ASM_REWRITE_TAC []]);;
 
 export_thm LT_LDIV;;
+
+let LDIV_LT_EQ = prove
+ (`!a b n. ~(a = 0) ==> (n < b DIV a <=> a * (n + 1) <= b)`,
+  SIMP_TAC[GSYM NOT_LE; LE_LDIV_EQ]);;
+
+export_thm LDIV_LT_EQ;;
 
 let DIV_MONO = prove
  (`!m n p. ~(p = 0) /\ m <= n ==> m DIV p <= n DIV p`,
@@ -2760,9 +2766,13 @@ let FACT_LT = prove
   INDUCT_TAC THEN ASM_REWRITE_TAC[FACT; LT_MULT] THEN
   REWRITE_TAC[ONE; LT_0]);;
 
+export_thm FACT_LT;;
+
 let FACT_LE = prove
  (`!n. 1 <= FACT n`,
   REWRITE_TAC[ONE; LE_SUC_LT; FACT_LT]);;
+
+export_thm FACT_LE;;
 
 let FACT_NZ = prove
  (`!n. ~(FACT n = 0)`,

@@ -1578,6 +1578,13 @@ let VSUM_SUPPORT = prove
   REPEAT GEN_TAC THEN CONV_TAC SYM_CONV THEN MATCH_MP_TAC VSUM_SUPERSET THEN
   SET_TAC[]);;
 
+let VSUM_UNIV = prove
+ (`!f:A->real^N s.
+     support (+) f (:A) SUBSET s ==> vsum s f = vsum (:A) f`,
+  REWRITE_TAC[support; NEUTRAL_VECTOR_ADD] THEN REPEAT STRIP_TAC THEN
+  ONCE_REWRITE_TAC[GSYM VSUM_SUPPORT] THEN
+  AP_THM_TAC THEN AP_TERM_TAC THEN ASM SET_TAC[]);;
+
 let VSUM_EQ_SUPERSET = prove
  (`!f s t:A->bool.
         FINITE t /\ t SUBSET s /\
@@ -3616,8 +3623,8 @@ let MATRIX_VECTOR_COLUMN = prove
   REWRITE_TAC[REAL_MUL_AC]);;
 
 let MATRIX_MUL_COMPONENT = prove
- (`!i. 1 <= i /\ i <= dimindex(:N)
-       ==> ((A:real^N^N) ** (B:real^N^N))$i = transp B ** A$i`,
+ (`!i. 1 <= i /\ i <= dimindex(:P)
+       ==> ((A:real^N^P) ** (B:real^M^N))$i = transp B ** A$i`,
   SIMP_TAC[matrix_mul; LAMBDA_BETA; matrix_vector_mul; vector_matrix_mul;
        transp; CART_EQ] THEN
   REPEAT STRIP_TAC THEN MATCH_MP_TAC SUM_EQ_NUMSEG THEN
@@ -3722,6 +3729,13 @@ let SYMMETRIC_MATRIX_ORTHOGONAL_EIGENVECTORS = prove
   REPEAT GEN_TAC THEN REWRITE_TAC[SYMMETRIC_MATRIX] THEN
   DISCH_THEN(MATCH_MP_TAC o MATCH_MP (ONCE_REWRITE_RULE[IMP_CONJ_ALT]
         SELF_ADJOINT_ORTHOGONAL_EIGENVECTORS)) THEN
+  REWRITE_TAC[MATRIX_VECTOR_MUL_LINEAR]);;
+
+let MATRIX_INJECTIVE_0 = prove
+ (`!m:real^M^N.
+        (!x y:real^M. m ** x = m ** y ==> x = y) <=>
+        (!x:real^M. m ** x = vec 0 ==> x = vec 0)`,
+  GEN_TAC THEN MATCH_MP_TAC LINEAR_INJECTIVE_0 THEN
   REWRITE_TAC[MATRIX_VECTOR_MUL_LINEAR]);;
 
 (* ------------------------------------------------------------------------- *)
@@ -4620,6 +4634,10 @@ let SUBSPACE_SPAN = prove
   GEN_TAC THEN REWRITE_TAC[span] THEN MATCH_MP_TAC P_HULL THEN
   SIMP_TAC[subspace; IN_INTERS]);;
 
+let NONEMPTY_SPAN = prove
+ (`!s:real^N->bool. ~(span s = {})`,
+  SIMP_TAC[SUBSPACE_IMP_NONEMPTY; SUBSPACE_SPAN]);;
+
 let SPAN_CLAUSES = prove
  (`(!a s. a IN s ==> a IN span s) /\
    (vec(0) IN span s) /\
@@ -5124,6 +5142,18 @@ let INDEPENDENT_STDBASIS = prove
     ALL_TAC] THEN
   REWRITE_TAC[IN_SPAN_IMAGE_BASIS] THEN DISCH_THEN(MP_TAC o SPEC `k:num`) THEN
   ASM_SIMP_TAC[IN_DELETE; BASIS_COMPONENT; REAL_OF_NUM_EQ; ARITH]);;
+
+let INDEPENDENT_BASIS_IMAGE = prove
+ (`!k. independent(IMAGE basis k:real^N->bool) <=> k SUBSET 1..dimindex(:N) `,
+  REPEAT(STRIP_TAC ORELSE EQ_TAC) THENL
+   [FIRST_X_ASSUM(MP_TAC o MATCH_MP INDEPENDENT_NONZERO) THEN
+    REWRITE_TAC[SET_RULE `~(a IN IMAGE f s) <=> !x. x IN s ==> ~(f x = a)`;
+                BASIS_EQ_0; GSYM SUBSET];
+    MATCH_MP_TAC INDEPENDENT_MONO THEN
+    EXISTS_TAC `{basis i:real^N | 1 <= i /\ i <= dimindex(:N)}` THEN
+    REWRITE_TAC[INDEPENDENT_STDBASIS] THEN
+    ONCE_REWRITE_TAC[SIMPLE_IMAGE_GEN] THEN MATCH_MP_TAC IMAGE_SUBSET THEN
+    ASM_REWRITE_TAC[GSYM numseg]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* This is useful for building a basis step-by-step.                         *)
@@ -6508,6 +6538,19 @@ let MATRIX_INVERTIBLE = prove
     EXISTS_TAC `matrix(g:real^N->real^M)` THEN
     ASM_SIMP_TAC[GSYM MATRIX_VECTOR_MUL_ASSOC; MATRIX_WORKS]]);;
 
+let INVERTIBLE_EQ_INJECTIVE_AND_SURJECTIVE = prove
+ (`!m:real^M^N.
+        invertible m <=>
+        (!x y:real^M. m ** x = m ** y ==> x = y) /\
+        IMAGE (\x. m ** x) (:real^M) = (:real^N)`,
+  REPEAT GEN_TAC THEN
+  MP_TAC(ISPEC `\x:real^M. (m:real^M^N) ** x` MATRIX_INVERTIBLE) THEN
+  REWRITE_TAC[MATRIX_OF_MATRIX_VECTOR_MUL; MATRIX_VECTOR_MUL_LINEAR] THEN
+  DISCH_THEN SUBST1_TAC THEN
+  SIMP_TAC[GSYM LINEAR_BIJECTIVE_LEFT_RIGHT_INVERSE_EQ;
+           MATRIX_VECTOR_MUL_LINEAR] THEN
+  SET_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Left-invertible linear transformation has a lower bound.                  *)
 (* ------------------------------------------------------------------------- *)
@@ -7135,6 +7178,20 @@ let ADJOINT_INJECTIVE_INJECTIVE_0 = prove
   FIRST_ASSUM(ASSUME_TAC o MATCH_MP ADJOINT_LINEAR) THEN
   ASM_MESON_TAC[LINEAR_INJECTIVE_0]);;
 
+let TRANSP_INJECTIVE = prove
+ (`!m:real^M^N.
+        (!x y:real^N. transp m ** x = transp m ** y ==> x = y) <=>
+        IMAGE (\x. m ** x) (:real^M) = (:real^N)`,
+  GEN_TAC THEN
+  MP_TAC(ISPEC `\x:real^M. (m:real^M^N) ** x` ADJOINT_INJECTIVE) THEN
+  REWRITE_TAC[MATRIX_VECTOR_MUL_LINEAR; ADJOINT_MATRIX] THEN SET_TAC[]);;
+
+let TRANSP_SURJECTIVE = prove
+ (`!m:real^M^N.
+        IMAGE (\x. transp m ** x) (:real^N) = (:real^M) <=>
+        (!x y:real^M. m ** x = m ** y ==> x = y)`,
+  REWRITE_TAC[GSYM TRANSP_INJECTIVE; TRANSP_TRANSP]);;
+
 let LINEAR_SINGULAR_INTO_HYPERPLANE = prove
  (`!f:real^N->real^N.
         linear f
@@ -7201,18 +7258,40 @@ let SPAN_DELETE_0 = prove
    [MATCH_MP_TAC SPAN_MONO THEN SET_TAC[];
     SIMP_TAC[SUBSET; SPAN_BREAKDOWN_EQ; VECTOR_MUL_RZERO; VECTOR_SUB_RZERO]]);;
 
+let DIM_BASIS_IMAGE = prove
+ (`!k. dim(IMAGE basis k:real^N->bool) = CARD((1..dimindex(:N)) INTER k)`,
+  GEN_TAC THEN TRANS_TAC EQ_TRANS
+   `dim(IMAGE basis ((1..dimindex(:N)) INTER k):real^N->bool)` THEN
+  CONJ_TAC THENL
+   [ONCE_REWRITE_TAC[GSYM DIM_SPAN] THEN
+    ONCE_REWRITE_TAC[GSYM SPAN_DELETE_0] THEN
+    AP_TERM_TAC THEN AP_TERM_TAC THEN MATCH_MP_TAC(SET_RULE
+     `(!x. ~(f x = a) <=> x IN k)
+      ==> IMAGE f s DELETE a = IMAGE f (k INTER s) DELETE a`) THEN
+    REWRITE_TAC[BASIS_EQ_0];
+    W(MP_TAC o PART_MATCH (lhand o rand) DIM_EQ_CARD o lhand o snd) THEN
+    REWRITE_TAC[INDEPENDENT_BASIS_IMAGE; INTER_SUBSET] THEN
+    DISCH_THEN SUBST1_TAC THEN MATCH_MP_TAC CARD_IMAGE_INJ THEN
+    SIMP_TAC[FINITE_INTER; FINITE_NUMSEG; IN_INTER; IN_NUMSEG] THEN
+    MESON_TAC[BASIS_INJ]]);;
+
 let SPAN_IMAGE_SCALE = prove
- (`!c s. FINITE s /\ (!x. x IN s ==> ~(c x = &0))
+ (`!c s. (!x. x IN s ==> ~(c x = &0))
          ==> span (IMAGE (\x:real^N. c(x) % x) s) = span s`,
-  GEN_TAC THEN REWRITE_TAC[IMP_CONJ] THEN
-  MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
-  SIMP_TAC[IMAGE_CLAUSES; SPAN_BREAKDOWN_EQ; EXTENSION; FORALL_IN_INSERT] THEN
-  MAP_EVERY X_GEN_TAC [`x:real^N`; `t:real^N->bool`] THEN
-  STRIP_TAC THEN STRIP_TAC THEN X_GEN_TAC `y:real^N` THEN
-  REWRITE_TAC[VECTOR_MUL_ASSOC] THEN EQ_TAC THENL [MESON_TAC[]; ALL_TAC] THEN
-  DISCH_THEN(X_CHOOSE_TAC `k:real`) THEN
-  EXISTS_TAC `k / (c:real^N->real) x` THEN
-  ASM_SIMP_TAC[REAL_DIV_RMUL]);;
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC SUBSET_ANTISYM THEN
+  CONJ_TAC THEN MATCH_MP_TAC SPAN_SUBSET_SUBSPACE THEN
+  REWRITE_TAC[SUBSPACE_SPAN; SUBSET; FORALL_IN_IMAGE] THEN
+  ASM_SIMP_TAC[SPAN_MUL; SPAN_SUPERSET] THEN
+  X_GEN_TAC `x:real^N` THEN DISCH_TAC THEN
+  SUBGOAL_THEN `x:real^N = inv(c x) % c x % x` SUBST1_TAC THENL
+   [ASM_SIMP_TAC[VECTOR_MUL_ASSOC; REAL_MUL_LINV; VECTOR_MUL_LID];
+    MATCH_MP_TAC SPAN_MUL THEN MATCH_MP_TAC SPAN_SUPERSET THEN
+    ASM SET_TAC[]]);;
+
+let DIM_IMAGE_SCALE = prove
+ (`!c s:real^N->bool.
+        (!x. x IN s ==> ~(c x = &0)) ==> dim(IMAGE (\x. c x % x) s) = dim s`,
+  ONCE_REWRITE_TAC[GSYM DIM_SPAN] THEN SIMP_TAC[SPAN_IMAGE_SCALE]);;
 
 let PAIRWISE_ORTHOGONAL_INDEPENDENT = prove
  (`!s:real^N->bool.
@@ -7674,8 +7753,53 @@ let ORTHONORMAL_BASIS_EXPAND_NORM = prove
   ASM_SIMP_TAC[REAL_POW_2; ORTHONORMAL_BASIS_EXPAND_DOT; NORM_POW_2]);;
 
 (* ------------------------------------------------------------------------- *)
-(* Decomposing a vector into parts in orthogonal subspaces.                  *)
+(* Independent and orthogonal subspaces.                                     *)
 (* ------------------------------------------------------------------------- *)
+
+let ORTHOGONAL_IMP_INDEPENDENT_SUBSPACES = prove
+ (`!s t:real^N->bool.
+        (!a b. a IN s /\ b IN t ==> orthogonal a b)
+        ==> s INTER t SUBSET {vec 0}`,
+  REWRITE_TAC[SUBSET; IN_INTER; IN_SING] THEN
+  MESON_TAC[ORTHOGONAL_REFL]);;
+
+let INDEPENDENT_SUBSPACES_ALT = prove
+ (`!s t:real^N->bool.
+        subspace s /\ subspace t
+        ==> (s INTER t SUBSET {vec 0} <=> s INTER t = {vec 0})`,
+  REWRITE_TAC[GSYM SUBSET_ANTISYM_EQ] THEN
+  SIMP_TAC[SING_SUBSET; IN_INTER; SUBSPACE_0]);;
+
+let INDEPENDENT_SUBSPACES_0 = prove
+ (`!s t:real^N->bool.
+        subspace s /\ subspace t
+        ==> (s INTER t SUBSET {vec 0} <=>
+             !x y. x IN s /\ y IN t /\ x + y = vec 0
+                   ==> x = vec 0 /\ y = vec 0)`,
+  REPEAT STRIP_TAC THEN
+  REWRITE_TAC[SUBSET; IN_INTER; IN_SING] THEN
+  ONCE_REWRITE_TAC[MESON[VECTOR_NEG_NEG]
+   `(!x y:real^N. P x y) <=> (!x y. P x (--y))`] THEN
+  ASM_SIMP_TAC[MESON[SUBSPACE_NEG; VECTOR_NEG_NEG]
+   `subspace t ==> ((--x:real^N) IN t <=> x IN t)`] THEN
+  REWRITE_TAC[VECTOR_NEG_EQ_0; VECTOR_ARITH
+   `x + --y:real^N = vec 0 <=> x = y`] THEN
+  MESON_TAC[]);;
+
+let INDEPENDENT_SUBSPACES = prove
+ (`!s t:real^N->bool.
+        subspace s /\ subspace t
+        ==> (s INTER t SUBSET {vec 0} <=>
+             !x y x' y'. x IN s /\ x' IN s /\ y IN t /\ y' IN t /\
+                         x + y = x' + y'
+                         ==> x = x' /\ y = y')`,
+  REPEAT STRIP_TAC THEN ASM_SIMP_TAC[INDEPENDENT_SUBSPACES_0] THEN
+  EQ_TAC THEN DISCH_TAC THEN REPEAT GEN_TAC THEN STRIP_TAC THENL
+   [ONCE_REWRITE_TAC[GSYM VECTOR_SUB_EQ] THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN ASM_SIMP_TAC[SUBSPACE_SUB] THEN
+    FIRST_X_ASSUM(MP_TAC o SYM) THEN CONV_TAC VECTOR_ARITH;
+    FIRST_X_ASSUM MATCH_MP_TAC THEN
+    ASM_SIMP_TAC[SUBSPACE_0; VECTOR_ADD_RID]]);;
 
 let ORTHOGONAL_SUBSPACE_DECOMP_UNIQUE = prove
  (`!s t x y x' y':real^N.
@@ -9522,6 +9646,10 @@ let COLLINEAR_LEMMA = prove
 let COLLINEAR_LEMMA_ALT = prove
  (`!x y. collinear {vec 0,x,y} <=> x = vec 0 \/ ?c. y = c % x`,
   REWRITE_TAC[COLLINEAR_LEMMA] THEN MESON_TAC[VECTOR_MUL_LZERO]);;
+
+let COLLINEAR_SPAN = prove
+ (`!a b:real^N. collinear{vec 0,a,b} <=> a = vec 0 \/ b IN span {a}`,
+  REWRITE_TAC[SPAN_SING; COLLINEAR_LEMMA_ALT] THEN SET_TAC[]);;
 
 let NORM_CAUCHY_SCHWARZ_EQUAL = prove
  (`!x y:real^N. abs(x dot y) = norm(x) * norm(y) <=> collinear {vec 0,x,y}`,

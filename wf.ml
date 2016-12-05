@@ -287,6 +287,30 @@ let WF_EREC = prove
 export_thm WF_EREC;;
 
 (* ------------------------------------------------------------------------- *)
+(* Defining a recursive function via an existence condition.                 *)
+(* ------------------------------------------------------------------------- *)
+
+let WF_REC_EXISTS = prove
+ (`!r.
+     WF (r : A -> A -> bool) ==>
+     !p. (!f g x y. (!z. r z x ==> f z = g z) ==> (p f x y <=> p g x y)) /\
+           (!f x. (!z. r z x ==> p f z (f z)) ==> ?y. p f x y)
+           ==> ?f : A -> B. !x. p f x (f x)`,
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN `?f:A->B. !x. f x = @y. p f x y` MP_TAC THENL
+   [FIRST_ASSUM(MATCH_MP_TAC o MATCH_MP WF_REC) THEN
+    REPEAT STRIP_TAC THEN AP_TERM_TAC THEN ABS_TAC THEN
+    FIRST_X_ASSUM MATCH_MP_TAC THEN ASM_REWRITE_TAC[];
+    MATCH_MP_TAC MONO_EXISTS THEN X_GEN_TAC `f:A->B` THEN
+    DISCH_THEN(fun th ->
+      ONCE_REWRITE_TAC[th] THEN ASSUME_TAC(GSYM th)) THEN
+    CONV_TAC(BINDER_CONV SELECT_CONV) THEN
+    FIRST_ASSUM(MATCH_MP_TAC o GEN_REWRITE_RULE I [WF_IND]) THEN
+    ASM_MESON_TAC[]]);;
+
+export_thm WF_REC_EXISTS;;
+
+(* ------------------------------------------------------------------------- *)
 (* Some preservation theorems for wellfoundedness.                           *)
 (* ------------------------------------------------------------------------- *)
 
