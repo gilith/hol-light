@@ -605,6 +605,18 @@ let ITERATE_EQ = prove
   MATCH_MP_TAC FINITE_INDUCT_STRONG THEN ASM_SIMP_TAC[ITERATE_CLAUSES] THEN
   MESON_TAC[IN_INSERT]);;
 
+let ITERATE_RESTRICT_SET = prove
+ (`!op. monoidal op
+        ==> !P s f:A->B. iterate op {x | x IN s /\ P x} f =
+                         iterate op s (\x. if P x then f x else neutral op)`,
+  REPEAT STRIP_TAC THEN
+  ONCE_REWRITE_TAC[GSYM ITERATE_SUPPORT] THEN
+  REWRITE_TAC[support; IN_ELIM_THM] THEN
+  REWRITE_TAC[MESON[] `~((if P x then f x else a) = a) <=> P x /\ ~(f x = a)`;
+              GSYM CONJ_ASSOC] THEN
+  FIRST_X_ASSUM(MATCH_MP_TAC o MATCH_MP ITERATE_EQ) THEN
+  SIMP_TAC[IN_ELIM_THM]);;
+
 let ITERATE_EQ_GENERAL = prove
  (`!op. monoidal op
         ==> !s:A->bool t:B->bool f:A->C g h.
@@ -684,6 +696,18 @@ let ITERATE_UNIV = prove
   FIRST_X_ASSUM(MATCH_MP_TAC o MATCH_MP ITERATE_SUPERSET) THEN
   ASM SET_TAC[]);;
 
+let ITERATE_SWAP = prove
+ (`!op. monoidal op
+        ==> !f:A->B->C s t.
+                FINITE s /\ FINITE t
+                ==> iterate op s (\i. iterate op t (f i)) =
+                    iterate op t (\j. iterate op s (\i. f i j))`,
+  GEN_TAC THEN DISCH_TAC THEN
+  GEN_TAC THEN REWRITE_TAC[IMP_CONJ; RIGHT_FORALL_IMP_THM] THEN
+  MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
+  ASM_SIMP_TAC[ITERATE_CLAUSES] THEN
+  ASM_SIMP_TAC[ITERATE_EQ_NEUTRAL; GSYM ITERATE_OP]);;
+
 let ITERATE_IMAGE_NONZERO = prove
  (`!op. monoidal op
         ==> !g:B->C f:A->B s.
@@ -702,6 +726,26 @@ let ITERATE_IMAGE_NONZERO = prove
   REWRITE_TAC[IN_IMAGE] THEN COND_CASES_TAC THEN ASM_REWRITE_TAC[o_THM] THEN
   SUBGOAL_THEN `(g:B->C) ((f:A->B) a) = neutral op` SUBST1_TAC THEN
   ASM_MESON_TAC[MONOIDAL_AC]);;
+
+let ITERATE_IMAGE_GEN = prove
+ (`!op. monoidal op
+        ==> !f:A->B g:A->C s.
+                FINITE s
+                ==> iterate op s g =
+                    iterate op (IMAGE f s)
+                       (\y. iterate op {x | x IN s /\ f x = y} g)`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC EQ_TRANS THEN EXISTS_TAC
+   `iterate op s (\x:A. iterate op {y:B | y IN IMAGE f s /\ (f x = y)}
+       (\y. (g:A->C) x))` THEN
+  CONJ_TAC THENL
+   [FIRST_ASSUM(MATCH_MP_TAC o MATCH_MP ITERATE_EQ) THEN
+    ASM_REWRITE_TAC[] THEN X_GEN_TAC `x:A` THEN DISCH_TAC THEN
+    SUBGOAL_THEN `{y | y IN IMAGE (f:A->B) s /\ f x = y} = {(f x)}`
+    SUBST1_TAC THENL [ASM SET_TAC[]; ASM_SIMP_TAC[ITERATE_SING]];
+    ASM_SIMP_TAC[ITERATE_RESTRICT_SET] THEN
+    FIRST_ASSUM(fun th -> W(MP_TAC o PART_MATCH (lhand o rand)
+     (MATCH_MP ITERATE_SWAP th) o lhand o snd)) THEN
+    ASM_SIMP_TAC[FINITE_IMAGE]]);;
 
 let ITERATE_CASES = prove
  (`!op. monoidal op
@@ -1068,11 +1112,8 @@ let NSUM_EQ_SUPERSET = prove
 
 let NSUM_RESTRICT_SET = prove
  (`!P s f. nsum {x:A | x IN s /\ P x} f = nsum s (\x. if P x then f(x) else 0)`,
-  ONCE_REWRITE_TAC[GSYM NSUM_SUPPORT] THEN
-  REWRITE_TAC[support; NEUTRAL_ADD; IN_ELIM_THM] THEN
-  REWRITE_TAC[MESON[] `~((if P x then f x else a) = a) <=> P x /\ ~(f x = a)`;
-              GSYM CONJ_ASSOC] THEN
-  REPEAT GEN_TAC THEN MATCH_MP_TAC NSUM_EQ THEN SIMP_TAC[IN_ELIM_THM]);;
+  REWRITE_TAC[nsum; GSYM NEUTRAL_ADD] THEN
+  MATCH_MP_TAC ITERATE_RESTRICT_SET THEN REWRITE_TAC[MONOIDAL_ADD]);;
 
 let NSUM_NSUM_RESTRICT = prove
  (`!R f s t.
@@ -1116,20 +1157,10 @@ let NSUM_MULTICOUNT = prove
 let NSUM_IMAGE_GEN = prove
  (`!f:A->B g s.
         FINITE s
-        ==> (nsum s g =
-             nsum (IMAGE f s) (\y. nsum {x | x IN s /\ (f(x) = y)} g))`,
-  REPEAT STRIP_TAC THEN MATCH_MP_TAC EQ_TRANS THEN EXISTS_TAC
-   `nsum s (\x:A. nsum {y:B | y IN IMAGE f s /\ (f x = y)} (\y. g x))` THEN
-  CONJ_TAC THENL
-   [MATCH_MP_TAC NSUM_EQ THEN ASM_REWRITE_TAC[] THEN X_GEN_TAC `x:A` THEN
-    DISCH_TAC THEN
-    SUBGOAL_THEN `{y | y IN IMAGE (f:A->B) s /\ (f x = y)} = {(f x)}`
-     (fun th -> REWRITE_TAC[th; NSUM_SING; o_THM]) THEN
-    REWRITE_TAC[EXTENSION; IN_ELIM_THM; IN_SING; IN_IMAGE] THEN
-    ASM_MESON_TAC[];
-    GEN_REWRITE_TAC (funpow 2 RAND_CONV o ABS_CONV o RAND_CONV)
-     [GSYM ETA_AX] THEN
-    ASM_SIMP_TAC[NSUM_NSUM_RESTRICT; FINITE_IMAGE]]);;
+        ==> nsum s g =
+            nsum (IMAGE f s) (\y. nsum {x | x IN s /\ f x = y} g)`,
+  REWRITE_TAC[nsum] THEN MATCH_MP_TAC ITERATE_IMAGE_GEN THEN
+  REWRITE_TAC[MONOIDAL_ADD]);;
 
 let NSUM_GROUP = prove
  (`!f:A->B g s t.
@@ -1749,11 +1780,8 @@ let SUM_EQ_SUPERSET = prove
 
 let SUM_RESTRICT_SET = prove
  (`!P s f. sum {x | x IN s /\ P x} f = sum s (\x. if P x then f x else &0)`,
-  ONCE_REWRITE_TAC[GSYM SUM_SUPPORT] THEN
-  REWRITE_TAC[support; NEUTRAL_REAL_ADD; IN_ELIM_THM] THEN
-  REWRITE_TAC[MESON[] `~((if P x then f x else a) = a) <=> P x /\ ~(f x = a)`;
-              GSYM CONJ_ASSOC] THEN
-  REPEAT GEN_TAC THEN MATCH_MP_TAC SUM_EQ THEN SIMP_TAC[IN_ELIM_THM]);;
+  REWRITE_TAC[sum; GSYM NEUTRAL_REAL_ADD] THEN
+  MATCH_MP_TAC ITERATE_RESTRICT_SET THEN REWRITE_TAC[MONOIDAL_REAL_ADD]);;
 
 let SUM_SUM_RESTRICT = prove
  (`!R f s t.
@@ -1799,20 +1827,10 @@ let SUM_MULTICOUNT = prove
 let SUM_IMAGE_GEN = prove
  (`!f:A->B g s.
         FINITE s
-        ==> (sum s g =
-             sum (IMAGE f s) (\y. sum {x | x IN s /\ (f(x) = y)} g))`,
-  REPEAT STRIP_TAC THEN MATCH_MP_TAC EQ_TRANS THEN EXISTS_TAC
-   `sum s (\x:A. sum {y:B | y IN IMAGE f s /\ (f x = y)} (\y. g x))` THEN
-  CONJ_TAC THENL
-   [MATCH_MP_TAC SUM_EQ THEN ASM_REWRITE_TAC[] THEN X_GEN_TAC `x:A` THEN
-    DISCH_TAC THEN
-    SUBGOAL_THEN `{y | y IN IMAGE (f:A->B) s /\ (f x = y)} = {(f x)}`
-     (fun th -> REWRITE_TAC[th; SUM_SING; o_THM]) THEN
-    REWRITE_TAC[EXTENSION; IN_ELIM_THM; IN_SING; IN_IMAGE] THEN
-    ASM_MESON_TAC[];
-    GEN_REWRITE_TAC (funpow 2 RAND_CONV o ABS_CONV o RAND_CONV)
-     [GSYM ETA_AX] THEN
-    ASM_SIMP_TAC[SUM_SUM_RESTRICT; FINITE_IMAGE]]);;
+        ==> sum s g =
+            sum (IMAGE f s) (\y. sum {x | x IN s /\ f x = y} g)`,
+  REWRITE_TAC[sum] THEN MATCH_MP_TAC ITERATE_IMAGE_GEN THEN
+  REWRITE_TAC[MONOIDAL_REAL_ADD]);;
 
 let SUM_GROUP = prove
  (`!f:A->B g s t.

@@ -1227,6 +1227,25 @@ export_thm LAST_MULTIPLE;;
 
 let LAST_CLAUSES = CONJ LAST_SING LAST_MULTIPLE;;
 
+let LAST_APPEND_CONS = prove
+ (`!(h : A) t l. LAST (APPEND l (CONS h t)) = LAST (CONS h t)`,
+  GEN_TAC THEN
+  GEN_TAC THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [APPEND];
+   ASM_REWRITE_TAC [APPEND; LAST; NULL_APPEND; NULL]]);;
+
+export_thm LAST_APPEND_CONS;;
+
+let LAST_APPEND = prove
+ (`!l1 l2 : A list. LAST (APPEND l1 l2) = if NULL l2 then LAST l1 else LAST l2`,
+  GEN_TAC THEN
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC [APPEND_NIL; NULL];
+   REWRITE_TAC [LAST_APPEND_CONS; NULL]]);;
+
+export_thm LAST_APPEND;;
+
 (* ------------------------------------------------------------------------- *)
 (* Element indices.                                                          *)
 (* ------------------------------------------------------------------------- *)
