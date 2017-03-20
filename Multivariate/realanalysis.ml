@@ -107,6 +107,10 @@ let REALLIM_COMPLEX = prove
   REWRITE_TAC[FUN_EQ_THM; tendsto; tendsto_real; o_THM; dist;
               GSYM CX_SUB; COMPLEX_NORM_CX]);;
 
+let REALLIM_TRIVIAL = prove
+ (`!net f l. trivial_limit net ==> (f ---> l) net`,
+  SIMP_TAC[tendsto_real; EVENTUALLY_TRIVIAL]);;
+
 let REALLIM_UNIQUE = prove
  (`!net f l l'.
          ~trivial_limit net /\ (f ---> l) net /\ (f ---> l') net ==> l = l'`,
@@ -325,16 +329,9 @@ let REAL_CONVERGENT_IMP_BOUNDED = prove
   REWRITE_TAC[BOUNDED_POS; FORALL_IN_IMAGE; IN_UNIV] THEN
   REWRITE_TAC[o_DEF; NORM_LIFT]);;
 
-let REALLIM = prove
- (`(f ---> l) net <=>
-        trivial_limit net \/
-        !e. &0 < e ==> ?y. (?x. netord(net) x y) /\
-                           !x. netord(net) x y ==> abs(f(x) -l) < e`,
-  REWRITE_TAC[tendsto_real; eventually] THEN MESON_TAC[]);;
-
 let REALLIM_NULL_ABS = prove
  (`!net f. ((\x. abs(f x)) ---> &0) net <=> (f ---> &0) net`,
-  REWRITE_TAC[REALLIM; REAL_SUB_RZERO; REAL_ABS_ABS]);;
+  REWRITE_TAC[tendsto_real; REAL_SUB_RZERO; REAL_ABS_ABS]);;
 
 let REALLIM_WITHIN_LE = prove
  (`!f:real^N->real l a s.
@@ -378,8 +375,10 @@ let REALLIM_SEQUENTIALLY = prove
 
 let REALLIM_EVENTUALLY = prove
  (`!net f l. eventually (\x. f x = l) net ==> (f ---> l) net`,
-  REWRITE_TAC[eventually; REALLIM] THEN
-  MESON_TAC[REAL_ARITH `abs(x - x) = &0`]);;
+  SIMP_TAC[tendsto_real] THEN REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM(MATCH_MP_TAC o MATCH_MP (REWRITE_RULE[IMP_CONJ_ALT]
+        EVENTUALLY_MONO)) THEN
+  ASM_MESON_TAC[REAL_ARITH `abs(x - x) = &0`]);;
 
 let LIM_COMPONENTWISE = prove
  (`!net f:A->real^N.
@@ -1262,85 +1261,54 @@ let REAL_SUMMABLE_MUL_RIGHT = prove
 (* ------------------------------------------------------------------------- *)
 
 let atreal = new_definition
- `atreal a = mk_net(\x y. &0 < abs(x - a) /\ abs(x - a) <= abs(y - a))`;;
+ `atreal a = atpointof euclideanreal a`;;
 
 let ATREAL = prove
- (`!a x y.
-        netord(atreal a) x y <=> &0 < abs(x - a) /\ abs(x - a) <= abs(y - a)`,
-  GEN_TAC THEN NET_PROVE_TAC[atreal] THEN
-  MESON_TAC[REAL_LE_TOTAL; REAL_LE_REFL; REAL_LE_TRANS; REAL_LET_TRANS]);;
-
-let WITHINREAL_UNIV = prove
- (`!x. atreal x within (:real) = atreal x`,
-  REWRITE_TAC[within; atreal; IN_UNIV] THEN REWRITE_TAC[ETA_AX; net_tybij]);;
-
-let TRIVIAL_LIMIT_ATREAL = prove
- (`!a. ~(trivial_limit (atreal a))`,
-  X_GEN_TAC `a:real` THEN SIMP_TAC[trivial_limit; ATREAL; DE_MORGAN_THM] THEN
-  CONJ_TAC THENL
-   [DISCH_THEN(MP_TAC o SPECL [`&0`; `&1`]) THEN REAL_ARITH_TAC; ALL_TAC] THEN
-  REWRITE_TAC[NOT_EXISTS_THM] THEN
-  MAP_EVERY X_GEN_TAC [`b:real`; `c:real`] THEN
-  ASM_CASES_TAC `b:real = c` THEN ASM_REWRITE_TAC[] THEN
-  REWRITE_TAC[GSYM DE_MORGAN_THM; GSYM NOT_EXISTS_THM] THEN
-  SUBGOAL_THEN `~(b:real = a) \/ ~(c = a)` DISJ_CASES_TAC THENL
-   [ASM_MESON_TAC[];
-    EXISTS_TAC `(a + b) / &2` THEN ASM_REAL_ARITH_TAC;
-    EXISTS_TAC `(a + c) / &2` THEN ASM_REAL_ARITH_TAC]);;
-
-let NETLIMIT_WITHINREAL = prove
- (`!a s. ~(trivial_limit (atreal a within s))
-         ==> (netlimit (atreal a within s) = a)`,
-  REWRITE_TAC[trivial_limit; netlimit; ATREAL; WITHIN; DE_MORGAN_THM] THEN
-  REPEAT STRIP_TAC THEN MATCH_MP_TAC SELECT_UNIQUE THEN REWRITE_TAC[] THEN
-  SUBGOAL_THEN
-   `!x. ~(&0 < abs(x - a) /\ abs(x - a) <= abs(a - a) /\ x IN s)`
-  ASSUME_TAC THENL [REAL_ARITH_TAC; ASM_MESON_TAC[]]);;
+ (`!a. netfilter (atreal a) = { u | real_open u /\ a IN u}`,
+  REWRITE_TAC[atreal; ATPOINTOF; REAL_OPEN_IN]);;
 
 let NETLIMIT_ATREAL = prove
  (`!a. netlimit(atreal a) = a`,
-  GEN_TAC THEN ONCE_REWRITE_TAC[GSYM WITHINREAL_UNIV] THEN
-  MATCH_MP_TAC NETLIMIT_WITHINREAL THEN
-  SIMP_TAC[TRIVIAL_LIMIT_ATREAL; WITHINREAL_UNIV]);;
+  REWRITE_TAC[atreal; NETLIMIT_ATPOINTOF]);;
+
+let NETLIMIT_WITHINREAL = prove
+ (`!a s. netlimit (atreal a within s) = a`,
+  REWRITE_TAC[netlimit; NETLIMITS_WITHIN] THEN
+  REWRITE_TAC[GSYM netlimit] THEN REWRITE_TAC[NETLIMIT_ATREAL]);;
+
+let WITHINREAL_UNIV = prove
+ (`!x. atreal x within (:real) = atreal x`,
+  REWRITE_TAC[NET_WITHIN_UNIV]);;
+
+let EVENTUALLY_ATREAL = prove
+ (`!a p. eventually p (atreal a) <=>
+         ?d. &0 < d /\ !x. &0 < abs(x - a) /\ abs(x - a) < d ==> p(x)`,
+  REWRITE_TAC[atreal;  GSYM MTOPOLOGY_REAL_EUCLIDEAN_METRIC] THEN
+  REWRITE_TAC[EVENTUALLY_ATPOINTOF_METRIC] THEN
+  REWRITE_TAC[REAL_EUCLIDEAN_METRIC; IN_UNIV] THEN
+  REWRITE_TAC[REAL_ABS_SUB]);;
+
+let TRIVIAL_LIMIT_ATREAL = prove
+ (`!a. ~(trivial_limit (atreal a))`,
+  REWRITE_TAC[trivial_limit; EVENTUALLY_ATREAL; NOT_EXISTS_THM] THEN
+  MAP_EVERY X_GEN_TAC [`a:real`; `d:real`] THEN
+  DISCH_THEN(CONJUNCTS_THEN2 ASSUME_TAC (MP_TAC o SPEC `a + d / &2`)) THEN
+  ASM_REAL_ARITH_TAC);;
+
+let EVENTUALLY_WITHINREAL = prove
+ (`!s a p.
+     eventually p (atreal a within s) <=>
+      ?d. &0 < d /\ !x. x IN s /\ &0 < abs(x - a) /\ abs(x - a) < d ==> p(x)`,
+  REWRITE_TAC[EVENTUALLY_WITHIN_IMP; EVENTUALLY_ATREAL] THEN MESON_TAC[]);;
 
 let EVENTUALLY_WITHINREAL_LE = prove
  (`!s a p.
      eventually p (atreal a within s) <=>
         ?d. &0 < d /\
             !x. x IN s /\ &0 < abs(x - a) /\ abs(x - a) <= d ==> p(x)`,
-  REWRITE_TAC[eventually; ATREAL; WITHIN; trivial_limit] THEN
-  REWRITE_TAC[MESON[REAL_LT_01; REAL_LT_REFL] `~(!a b:real. a = b)`] THEN
-  REPEAT GEN_TAC THEN EQ_TAC THENL
-   [DISCH_THEN(DISJ_CASES_THEN(X_CHOOSE_THEN `b:real` MP_TAC)) THENL
-     [DISCH_THEN(X_CHOOSE_THEN `c:real` STRIP_ASSUME_TAC) THEN
-      FIRST_X_ASSUM(DISJ_CASES_TAC o MATCH_MP (REAL_ARITH
-       `~(b = c) ==> &0 < abs(b - a) \/ &0 < abs(c - a)`)) THEN
-      ASM_MESON_TAC[];
-      MESON_TAC[REAL_LTE_TRANS]];
-    DISCH_THEN(X_CHOOSE_THEN `d:real` STRIP_ASSUME_TAC) THEN
-    ASM_CASES_TAC `?x. x IN s /\ &0 < abs(x - a) /\ abs(x - a) <= d` THENL
-     [DISJ2_TAC THEN FIRST_X_ASSUM(X_CHOOSE_TAC `b:real`) THEN
-      EXISTS_TAC `b:real` THEN ASM_MESON_TAC[REAL_LE_TRANS; REAL_LE_REFL];
-      DISJ1_TAC THEN MAP_EVERY EXISTS_TAC [`a + d:real`; `a:real`] THEN
-      ASM_SIMP_TAC[REAL_ADD_SUB; REAL_EQ_ADD_LCANCEL_0; REAL_LT_IMP_NZ] THEN
-      FIRST_X_ASSUM(MP_TAC o GEN_REWRITE_RULE I [NOT_EXISTS_THM]) THEN
-      MATCH_MP_TAC MONO_FORALL THEN X_GEN_TAC `x:real` THEN
-      ASM_CASES_TAC `(x:real) IN s` THEN ASM_REWRITE_TAC[] THEN
-      ASM_REAL_ARITH_TAC]]);;
-
-let EVENTUALLY_WITHINREAL = prove
- (`!s a p.
-     eventually p (atreal a within s) <=>
-        ?d. &0 < d /\ !x. x IN s /\ &0 < abs(x - a) /\ abs(x - a) < d ==> p(x)`,
-  REWRITE_TAC[EVENTUALLY_WITHINREAL_LE] THEN
+  REWRITE_TAC[EVENTUALLY_WITHINREAL] THEN
   ONCE_REWRITE_TAC[TAUT `a /\ b /\ c ==> d <=> c ==> a /\ b ==> d`] THEN
   REWRITE_TAC[APPROACHABLE_LT_LE]);;
-
-let EVENTUALLY_ATREAL = prove
- (`!a p. eventually p (atreal a) <=>
-         ?d. &0 < d /\ !x. &0 < abs(x - a) /\ abs(x - a) < d ==> p(x)`,
-  ONCE_REWRITE_TAC[GSYM WITHINREAL_UNIV] THEN
-  REWRITE_TAC[EVENTUALLY_WITHINREAL; IN_UNIV]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Usual limit results with real domain and either vector or real range.     *)
@@ -1658,42 +1626,19 @@ let TRIVIAL_LIMIT_WITHINREAL_WITHIN = prove
  (`trivial_limit(atreal x within s) <=>
         trivial_limit(at (lift x) within (IMAGE lift s))`,
   REWRITE_TAC[trivial_limit; AT; WITHIN; ATREAL] THEN
-  REWRITE_TAC[FORALL_LIFT; EXISTS_LIFT; LIFT_EQ; DIST_LIFT] THEN
-  REWRITE_TAC[IN_IMAGE_LIFT_DROP; LIFT_DROP]);;
+  REWRITE_TAC[EVENTUALLY_WITHIN; EVENTUALLY_WITHINREAL] THEN
+  REWRITE_TAC[TAUT `~(p /\ q /\ r) <=> p ==> ~(q /\ r)`] THEN
+  REWRITE_TAC[FORALL_IN_IMAGE; DIST_LIFT]);;
 
 let TRIVIAL_LIMIT_WITHINREAL_WITHINCOMPLEX = prove
  (`trivial_limit(atreal x within s) <=>
         trivial_limit(at (Cx x) within (real INTER IMAGE Cx s))`,
   REWRITE_TAC[trivial_limit; AT; WITHIN; ATREAL] THEN
-  REWRITE_TAC[SET_RULE `x IN real INTER s <=> real x /\ x IN s`] THEN
-  REWRITE_TAC[TAUT `~(p /\ x /\ q) /\ ~(r /\ x /\ s) <=>
-                    x ==> ~(p /\ q) /\ ~(r /\ s)`] THEN
-  REWRITE_TAC[FORALL_REAL;
-    MESON[IN_IMAGE; CX_INJ] `Cx x IN IMAGE Cx s <=> x IN s`] THEN
-  REWRITE_TAC[dist; GSYM CX_SUB; o_THM; RE_CX; COMPLEX_NORM_CX] THEN
-  MATCH_MP_TAC(TAUT `~p /\ ~q /\ (r <=> s) ==> (p \/ r <=> q \/ s)`) THEN
-  REPEAT CONJ_TAC THEN TRY EQ_TAC THEN REWRITE_TAC[LEFT_IMP_EXISTS_THM] THENL
-   [DISCH_THEN(MP_TAC o SPECL [`&0`; `&1`]) THEN CONV_TAC REAL_RING;
-    DISCH_THEN(MP_TAC o SPECL [`Cx(&0)`; `Cx(&1)`]) THEN
-    CONV_TAC COMPLEX_RING;
-    MAP_EVERY X_GEN_TAC [`a:real`; `b:real`] THEN STRIP_TAC THEN
-    MAP_EVERY EXISTS_TAC [`Cx a`; `Cx b`] THEN ASM_REWRITE_TAC[CX_INJ] THEN
-    ASM_REWRITE_TAC[GSYM CX_SUB; COMPLEX_NORM_CX];
-    MAP_EVERY X_GEN_TAC [`a:complex`; `b:complex`] THEN STRIP_TAC THEN
-    SUBGOAL_THEN
-     `?d. &0 < d /\
-          !z. &0 < abs(z - x) /\ abs(z - x) <= d ==> ~(z IN s)`
-    STRIP_ASSUME_TAC THENL
-     [MATCH_MP_TAC(MESON[] `!a b. P a \/ P b ==> ?x. P x`) THEN
-      MAP_EVERY EXISTS_TAC [`norm(a - Cx x)`; `norm(b - Cx x)`] THEN
-      ASM_REWRITE_TAC[TAUT `a ==> ~b <=> ~(a /\ b)`] THEN
-      UNDISCH_TAC `~(a:complex = b)` THEN NORM_ARITH_TAC;
-      ALL_TAC] THEN
-    MAP_EVERY EXISTS_TAC [`x + d:real`; `x - d:real`] THEN
-    ASM_SIMP_TAC[REAL_ARITH `&0 < d ==> ~(x + d = x - d)`;
-                 REAL_ARITH `&0 < d ==> abs((x + d) - x) = d`;
-                 REAL_ARITH `&0 < d ==> abs(x - d - x) = d`] THEN
-    ASM_MESON_TAC[]]);;
+  REWRITE_TAC[EVENTUALLY_WITHIN; EVENTUALLY_WITHINREAL] THEN
+  REWRITE_TAC[SET_RULE
+   `(!x. ~(x IN s INTER IMAGE f t /\ P x /\ Q x)) <=>
+    (!x. x IN t ==> ~(f x IN s /\ P(f x) /\ Q(f x)))`] THEN
+  REWRITE_TAC[DIST_CX; REAL_CX; IN] THEN MESON_TAC[]);;
 
 let LIM_WITHINREAL_WITHINCOMPLEX = prove
  (`(f --> a) (atreal x within s) <=>
@@ -1851,8 +1796,7 @@ let REAL_ABEL_LIMIT_THEOREM = prove
     EXISTS_TAC `\n. vsum(s INTER (0..n)) (\i. Cx(a i) * Cx r pow i)` THEN
     REWRITE_TAC[SEQUENTIALLY; TRIVIAL_LIMIT_SEQUENTIALLY; GSYM sums] THEN
     SIMP_TAC[GSYM CX_POW; GSYM CX_MUL; REAL_VSUM; FINITE_INTER; FINITE_NUMSEG;
-             SUMS_INFSUM; REAL_CX; GE] THEN
-    CONJ_TAC THENL [ALL_TAC; MESON_TAC[LE_REFL]] THEN
+             SUMS_INFSUM; REAL_CX; GE; EVENTUALLY_TRUE] THEN
     ONCE_REWRITE_TAC[GSYM o_DEF] THEN
     ASM_SIMP_TAC[GSYM REAL_SUMMABLE_COMPLEX];
     ALL_TAC] THEN
@@ -1880,8 +1824,7 @@ let REAL_ABEL_LIMIT_THEOREM = prove
   EXISTS_TAC `\n. vsum(s INTER (0..n)) (Cx o a)` THEN
   REWRITE_TAC[SEQUENTIALLY; TRIVIAL_LIMIT_SEQUENTIALLY; GSYM sums] THEN
   SIMP_TAC[GSYM CX_POW; GSYM CX_MUL; REAL_VSUM; FINITE_INTER; FINITE_NUMSEG;
-           SUMS_INFSUM; REAL_CX; GE; o_DEF] THEN
-  CONJ_TAC THENL [ALL_TAC; MESON_TAC[LE_REFL]] THEN
+           SUMS_INFSUM; REAL_CX; GE; o_DEF; EVENTUALLY_TRUE] THEN
   ONCE_REWRITE_TAC[GSYM o_DEF] THEN
   ASM_SIMP_TAC[GSYM REAL_SUMMABLE_COMPLEX]);;
 
@@ -1896,15 +1839,15 @@ let real_continuous = new_definition
 
 let REAL_CONTINUOUS_TRIVIAL_LIMIT = prove
  (`!f net. trivial_limit net ==> f real_continuous net`,
-  SIMP_TAC[real_continuous; REALLIM]);;
+  SIMP_TAC[real_continuous; REALLIM_TRIVIAL]);;
 
 let REAL_CONTINUOUS_WITHIN = prove
  (`!f x:real^N s.
         f real_continuous (at x within s) <=>
                 (f ---> f(x)) (at x within s)`,
   REPEAT GEN_TAC THEN REWRITE_TAC[real_continuous] THEN
-  ASM_CASES_TAC `trivial_limit(at(x:real^N) within s)` THENL
-   [ASM_REWRITE_TAC[REALLIM]; ASM_SIMP_TAC[NETLIMIT_WITHIN]]);;
+  ASM_CASES_TAC `trivial_limit(at(x:real^N) within s)` THEN
+  ASM_SIMP_TAC[REALLIM_TRIVIAL; NETLIMIT_WITHIN]);;
 
 let REAL_CONTINUOUS_AT = prove
  (`!f x. f real_continuous (at x) <=> (f ---> f(x)) (at x)`,
@@ -1915,8 +1858,8 @@ let REAL_CONTINUOUS_WITHINREAL = prove
  (`!f x s. f real_continuous (atreal x within s) <=>
                 (f ---> f(x)) (atreal x within s)`,
   REPEAT GEN_TAC THEN REWRITE_TAC[real_continuous] THEN
-  ASM_CASES_TAC `trivial_limit(atreal x within s)` THENL
-   [ASM_REWRITE_TAC[REALLIM]; ASM_SIMP_TAC[NETLIMIT_WITHINREAL]]);;
+  ASM_CASES_TAC `trivial_limit(atreal x within s)` THEN
+  ASM_SIMP_TAC[REALLIM_TRIVIAL; NETLIMIT_WITHINREAL]);;
 
 let REAL_CONTINUOUS_ATREAL = prove
  (`!f x. f real_continuous (atreal x) <=> (f ---> f(x)) (atreal x)`,
@@ -1927,8 +1870,8 @@ let CONTINUOUS_WITHINREAL = prove
  (`!f x s. f continuous (atreal x within s) <=>
                  (f --> f(x)) (atreal x within s)`,
   REPEAT GEN_TAC THEN REWRITE_TAC[continuous] THEN
-  ASM_CASES_TAC `trivial_limit(atreal x within s)` THENL
-   [ASM_REWRITE_TAC[LIM]; ASM_SIMP_TAC[NETLIMIT_WITHINREAL]]);;
+  ASM_CASES_TAC `trivial_limit(atreal x within s)` THEN
+  ASM_SIMP_TAC[REALLIM_TRIVIAL; NETLIMIT_WITHINREAL]);;
 
 let CONTINUOUS_ATREAL = prove
  (`!f x. f continuous (atreal x) <=> (f --> f(x)) (atreal x)`,
@@ -2817,8 +2760,8 @@ let HAS_REAL_DERIVATIVE_WITHINREAL = prove
  (`(f has_real_derivative f') (atreal a within s) <=>
            ((\x. (f x - f a) / (x - a)) ---> f') (atreal a within s)`,
   REWRITE_TAC[has_real_derivative] THEN
-  ASM_CASES_TAC `trivial_limit(atreal a within s)` THENL
-   [ASM_REWRITE_TAC[REALLIM]; ALL_TAC] THEN
+  ASM_CASES_TAC `trivial_limit(atreal a within s)` THEN
+  ASM_SIMP_TAC[REALLIM_TRIVIAL; NETLIMIT_WITHINREAL] THEN
   ASM_SIMP_TAC[NETLIMIT_WITHINREAL] THEN
   GEN_REWRITE_TAC RAND_CONV [REALLIM_NULL] THEN
   REWRITE_TAC[REALLIM_WITHINREAL; REAL_SUB_RZERO] THEN
@@ -3003,13 +2946,8 @@ let HAS_REAL_DERIVATIVE_FROM_COMPLEX_AT = prove
   EXISTS_TAC `\y. ((f:complex->complex) y - f (Cx x)) / (y - Cx x)` THEN
   ASM_REWRITE_TAC[GSYM HAS_COMPLEX_DERIVATIVE_WITHIN] THEN
   REWRITE_TAC[TRIVIAL_LIMIT_WITHIN_REAL; REAL_CX] THEN
-  REWRITE_TAC[WITHIN; AT] THEN
-  REWRITE_TAC[SET_RULE `p /\ x IN real <=> real x /\ p`] THEN
-  SIMP_TAC[REAL_EXISTS; IMP_CONJ; LEFT_IMP_EXISTS_THM] THEN
-  ASM_SIMP_TAC[GSYM REAL_EXISTS; GSYM CX_SUB; GSYM CX_DIV; REAL_CX;
-               REAL_DIV; REAL_SUB] THEN
-  REPEAT(EXISTS_TAC `Cx(x + &1)`) THEN
-  REWRITE_TAC[REAL_LE_REFL; REAL_CX; DIST_CX] THEN REAL_ARITH_TAC);;
+  REWRITE_TAC[EVENTUALLY_WITHIN] THEN EXISTS_TAC `&1` THEN
+  ASM_SIMP_TAC[IN; REAL_CX; REAL_SUB; REAL_DIV; REAL_LT_01]);;
 
 let REAL_DIFFERENTIABLE_FROM_COMPLEX_AT = prove
  (`!f x. f complex_differentiable at (Cx x) /\
@@ -3178,40 +3116,6 @@ let IS_REALINTERVAL_CONVEX_COMPLEX = prove
     REWRITE_TAC[linear; o_THM; RE_CMUL;
                 RE_ADD; RE_MUL_CX; LIFT_ADD; LIFT_CMUL]]);;
 
-let REAL_INTERVAL_INTERVAL = prove
- (`real_interval[a,b] = IMAGE drop (interval[lift a,lift b]) /\
-   real_interval(a,b) = IMAGE drop (interval(lift a,lift b))`,
-  REWRITE_TAC[EXTENSION; IN_IMAGE; IN_INTERVAL_1; IN_REAL_INTERVAL] THEN
-  REWRITE_TAC[EXISTS_LIFT; LIFT_DROP; UNWIND_THM1]);;
-
-let INTERVAL_REAL_INTERVAL = prove
- (`interval[a,b] = IMAGE lift (real_interval[drop a,drop b]) /\
-   interval(a,b) = IMAGE lift (real_interval(drop a,drop b))`,
-  REWRITE_TAC[EXTENSION; IN_IMAGE; IN_INTERVAL_1; IN_REAL_INTERVAL] THEN
-  REWRITE_TAC[EXISTS_DROP; LIFT_DROP; UNWIND_THM1]);;
-
-let DROP_IN_REAL_INTERVAL = prove
- (`(!a b x. drop x IN real_interval[a,b] <=> x IN interval[lift a,lift b]) /\
-   (!a b x. drop x IN real_interval(a,b) <=> x IN interval(lift a,lift b))`,
-  REWRITE_TAC[REAL_INTERVAL_INTERVAL; IN_IMAGE] THEN MESON_TAC[LIFT_DROP]);;
-
-let LIFT_IN_INTERVAL = prove
- (`(!a b x. lift x IN interval[a,b] <=> x IN real_interval[drop a,drop b]) /\
-   (!a b x. lift x IN interval(a,b) <=> x IN real_interval(drop a,drop b))`,
-  REWRITE_TAC[FORALL_DROP; DROP_IN_REAL_INTERVAL; LIFT_DROP]);;
-
-let IMAGE_LIFT_REAL_INTERVAL = prove
- (`IMAGE lift (real_interval[a,b]) = interval[lift a,lift b] /\
-   IMAGE lift (real_interval(a,b)) = interval(lift a,lift b)`,
-  REWRITE_TAC[REAL_INTERVAL_INTERVAL; GSYM IMAGE_o; o_DEF; LIFT_DROP] THEN
-  SET_TAC[]);;
-
-let IMAGE_DROP_INTERVAL = prove
- (`IMAGE drop (interval[a,b]) = real_interval[drop a,drop b] /\
-   IMAGE drop (interval(a,b)) = real_interval(drop a,drop b)`,
-  REWRITE_TAC[INTERVAL_REAL_INTERVAL; GSYM IMAGE_o; o_DEF; LIFT_DROP] THEN
-  SET_TAC[]);;
-
 let SUBSET_REAL_INTERVAL = prove
  (`!a b c d.
         (real_interval[a,b] SUBSET real_interval[c,d] <=>
@@ -3237,14 +3141,6 @@ let REAL_CLOSED_OPEN_INTERVAL = prove
  (`!a b. a <= b ==> real_interval[a,b] = real_interval(a,b) UNION {a,b}`,
   SIMP_TAC[EXTENSION; IN_UNION; IN_REAL_INTERVAL; IN_INSERT; NOT_IN_EMPTY] THEN
   REAL_ARITH_TAC);;
-
-let REAL_CLOSED_REAL_INTERVAL = prove
- (`!a b. real_closed(real_interval[a,b])`,
-  REWRITE_TAC[REAL_CLOSED; IMAGE_LIFT_REAL_INTERVAL; CLOSED_INTERVAL]);;
-
-let REAL_OPEN_REAL_INTERVAL = prove
- (`!a b. real_open(real_interval(a,b))`,
-  REWRITE_TAC[REAL_OPEN; IMAGE_LIFT_REAL_INTERVAL; OPEN_INTERVAL]);;
 
 let REAL_COMPACT_INTERVAL = prove
  (`!a b. real_compact(real_interval[a,b])`,
@@ -3319,19 +3215,19 @@ let REAL_COMPLEX_CONTINUOUS_WITHINREAL = prove
        (Cx o f o Re) continuous (at (Cx x) within (real INTER IMAGE Cx s))`,
   REWRITE_TAC[real_continuous; continuous; REALLIM_COMPLEX;
          LIM_WITHINREAL_WITHINCOMPLEX; NETLIMIT_WITHINREAL; GSYM o_ASSOC] THEN
-  ASM_CASES_TAC `trivial_limit(at(Cx x) within (real INTER IMAGE Cx s))` THENL
-   [ASM_REWRITE_TAC[LIM];
-    ASM_SIMP_TAC[TRIVIAL_LIMIT_WITHINREAL_WITHINCOMPLEX;
-        NETLIMIT_WITHIN; NETLIMIT_WITHINREAL; RE_CX; o_THM]]);;
+  ASM_CASES_TAC `trivial_limit(at(Cx x) within (real INTER IMAGE Cx s))` THEN
+  ASM_SIMP_TAC[LIM_TRIVIAL] THEN
+  ASM_SIMP_TAC[TRIVIAL_LIMIT_WITHINREAL_WITHINCOMPLEX;
+               NETLIMIT_WITHIN; NETLIMIT_WITHINREAL; RE_CX; o_THM]);;
 
 let REAL_COMPLEX_CONTINUOUS_ATREAL = prove
  (`f real_continuous (atreal x) <=>
        (Cx o f o Re) continuous (at (Cx x) within real)`,
   REWRITE_TAC[real_continuous; continuous; REALLIM_COMPLEX;
               LIM_ATREAL_ATCOMPLEX; NETLIMIT_ATREAL; GSYM o_ASSOC] THEN
-  ASM_CASES_TAC `trivial_limit(at(Cx x) within real)` THENL
-   [ASM_REWRITE_TAC[LIM];
-    ASM_SIMP_TAC[NETLIMIT_WITHIN; RE_CX; o_THM]]);;
+  ASM_CASES_TAC `trivial_limit(at(Cx x) within real)` THEN
+  ASM_SIMP_TAC[LIM_TRIVIAL] THEN
+  ASM_SIMP_TAC[NETLIMIT_WITHIN; RE_CX; o_THM]);;
 
 let CONTINUOUS_CONTINUOUS_WITHINREAL = prove
  (`!f x s. f continuous (atreal x within s) <=>
@@ -5864,6 +5760,14 @@ let REAL_SEGMENT_INTERVAL = prove
   REWRITE_TAC[REAL_INTERVAL_INTERVAL] THEN
   CONJ_TAC THEN REPEAT GEN_TAC THEN COND_CASES_TAC THEN REWRITE_TAC[]);;
 
+let REAL_INTERVAL_SUBSET_REAL_SEGMENT = prove
+ (`(!a b. real_interval[a,b] SUBSET real_segment[a,b]) /\
+   (!a b. real_interval(a,b) SUBSET real_segment(a,b))`,
+  REWRITE_TAC[REAL_SEGMENT_INTERVAL] THEN
+  REPEAT STRIP_TAC THEN COND_CASES_TAC THEN ASM_REWRITE_TAC[SUBSET_REFL] THEN
+  MATCH_MP_TAC(SET_RULE `s = {} ==> s SUBSET t`) THEN
+  REWRITE_TAC[REAL_INTERVAL_EQ_EMPTY] THEN ASM_REAL_ARITH_TAC);;
+
 let REAL_CONTINUOUS_INJECTIVE_IFF_MONOTONIC = prove
  (`!f s.
         f real_continuous_on s /\ is_realinterval s
@@ -5983,6 +5887,10 @@ let REAL_CONVEX_ON_SUBSET = prove
   REWRITE_TAC[REAL_CONVEX_ON] THEN
   MESON_TAC[CONVEX_ON_SUBSET; IMAGE_SUBSET]);;
 
+let REAL_CONVEX_ON_CONST = prove
+ (`!s c. (\x. c) real_convex_on s`,
+  REWRITE_TAC[REAL_CONVEX_ON; o_DEF; CONVEX_ON_CONST]);;
+
 let REAL_CONVEX_ADD = prove
  (`!s f g. f real_convex_on s /\ g real_convex_on s
            ==> (\x. f(x) + g(x)) real_convex_on s`,
@@ -6011,10 +5919,11 @@ let REAL_CONVEX_CONVEX_COMPOSE = prove
   ASM_MESON_TAC[REAL_LE_TRANS]);;
 
 let REAL_CONVEX_COMPOSE = prove
- (`!f g. f real_convex_on s /\ g real_convex_on t /\
-         is_realinterval s /\ is_realinterval t /\ IMAGE f s SUBSET t /\
-         (!x y. x IN t /\ y IN t /\ x <= y ==> g x <= g y)
-        ==> (g o f) real_convex_on s`,
+ (`!f g s t.
+        f real_convex_on s /\ g real_convex_on t /\
+        is_realinterval s /\ is_realinterval t /\ IMAGE f s SUBSET t /\
+        (!x y. x IN t /\ y IN t /\ x <= y ==> g x <= g y)
+       ==> (g o f) real_convex_on s`,
   REPEAT STRIP_TAC THEN REWRITE_TAC[REAL_CONVEX_ON; GSYM o_ASSOC] THEN
   MATCH_MP_TAC REAL_CONVEX_CONVEX_COMPOSE THEN EXISTS_TAC `t:real->bool` THEN
   ASM_REWRITE_TAC[GSYM REAL_CONVEX_ON; GSYM IMAGE_o; o_DEF; LIFT_DROP;
@@ -6028,6 +5937,24 @@ let REAL_CONVEX_LOWER = prove
   REWRITE_TAC[FORALL_DROP; GSYM IN_IMAGE_LIFT_DROP] THEN
   REPEAT GEN_TAC THEN DISCH_THEN(MP_TAC o MATCH_MP CONVEX_LOWER) THEN
   REWRITE_TAC[o_THM; DROP_ADD; DROP_CMUL]);;
+
+let REAL_CONVEX_LOWER_REAL_SEGMENT = prove
+ (`!f s a b x.
+        f real_convex_on s /\ a IN s /\ b IN s /\ x IN real_segment[a,b]
+        ==> f x <= max (f a) (f b)`,
+  REWRITE_TAC[REAL_CONVEX_ON; REAL_SEGMENT_SEGMENT] THEN
+  REWRITE_TAC[FORALL_DROP; LIFT_DROP; DROP_IN_IMAGE_DROP] THEN
+  REWRITE_TAC[GSYM IN_IMAGE_LIFT_DROP; o_DEF] THEN
+  REWRITE_TAC[CONVEX_LOWER_SEGMENT]);;
+
+let REAL_CONVEX_LOWER_REAL_INTERVAL = prove
+ (`!f a b x.
+        f real_convex_on real_interval[a,b] /\ x IN real_interval[a,b]
+        ==> f x <= max (f a) (f b)`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC REAL_CONVEX_LOWER_REAL_SEGMENT THEN
+  EXISTS_TAC `real_segment[a,b]` THEN REWRITE_TAC[ENDS_IN_REAL_SEGMENT] THEN
+  FIRST_ASSUM(MP_TAC o MATCH_MP (SET_RULE `a IN s ==> ~(s = {})`)) THEN
+  ASM_SIMP_TAC[REAL_SEGMENT_INTERVAL; REAL_INTERVAL_NE_EMPTY]);;
 
 let REAL_CONVEX_LOCAL_GLOBAL_MINIMUM = prove
  (`!f s t x.
@@ -6417,6 +6344,83 @@ let REAL_CONVEX_ON_RPOW = prove
         MATCH_MP_TAC REAL_INV_1_LE THEN ASM_REAL_ARITH_TAC;
         ASM_SIMP_TAC[REAL_MUL_LID; EXP_LOG; REAL_LT_LE; REAL_LE_REFL]];
       ASM_MESON_TAC[REAL_LT_LE; REAL_LET_TRANS]]]);;
+
+let REAL_CONVEX_ON_RPOW_NEG = prove
+ (`!s t. s SUBSET {x | &0 < x} /\ t <= &0
+         ==> (\x. x rpow t) real_convex_on s`,
+  REPEAT STRIP_TAC THEN FIRST_X_ASSUM(MATCH_MP_TAC o MATCH_MP
+   (REWRITE_RULE[IMP_CONJ_ALT] REAL_CONVEX_ON_SUBSET)) THEN
+  MP_TAC(ISPECL
+   [`\v. v rpow t`;
+    `\v. t * v rpow (t - &1)`;
+    `\v. t * (t - &1) * v rpow (t - &2)`;
+    `{x | &0 < x}`] REAL_CONVEX_ON_SECOND_DERIVATIVE) THEN
+  REWRITE_TAC[IN_ELIM_THM; IS_REALINTERVAL_CLAUSES; NOT_EXISTS_THM] THEN
+  MATCH_MP_TAC(TAUT `r /\ p ==> (p ==> (q <=> r)) ==> q`) THEN
+  REPEAT CONJ_TAC THEN X_GEN_TAC `x:real` THEN DISCH_TAC THENL
+   [ONCE_REWRITE_TAC[REAL_ARITH `t * (t - &1) * x = x * --t * (&1 - t)`] THEN
+    MATCH_MP_TAC REAL_LE_MUL THEN
+    ASM_SIMP_TAC[RPOW_POS_LE; REAL_LT_IMP_LE] THEN
+    MATCH_MP_TAC REAL_LE_MUL THEN ASM_REAL_ARITH_TAC;
+    FIRST_X_ASSUM(MATCH_MP_TAC o MATCH_MP (SET_RULE
+     `s = {x} ==> !a b. ~(a = b) /\ a IN s /\ b IN s ==> F`)) THEN
+    MAP_EVERY EXISTS_TAC [`&1:real`; `&2:real`] THEN
+    REWRITE_TAC[IN_ELIM_THM] THEN CONV_TAC REAL_RAT_REDUCE_CONV;
+    REAL_DIFF_TAC THEN ASM_REAL_ARITH_TAC;
+    REAL_DIFF_TAC THEN REWRITE_TAC[REAL_ARITH `t - &1 - &1 = t - &2`] THEN
+    ASM_REAL_ARITH_TAC]);;
+
+let REAL_CONVEX_ON_RPOW_INTEGER = prove
+ (`!s t. s SUBSET {x | &0 < x} /\ integer t
+         ==> (\x. x rpow t) real_convex_on s`,
+  REPEAT STRIP_TAC THEN
+  MP_TAC(ISPECL [`&0:real`; `t:real`] REAL_LT_INTEGERS) THEN
+  ASM_REWRITE_TAC[INTEGER_CLOSED; GSYM REAL_NOT_LE; REAL_ADD_LID] THEN
+  ASM_CASES_TAC `t:real <= &0` THEN
+  ASM_SIMP_TAC[REAL_CONVEX_ON_RPOW_NEG] THEN DISCH_TAC THEN
+  MATCH_MP_TAC REAL_CONVEX_ON_RPOW THEN
+  ASM_REWRITE_TAC[] THEN TRANS_TAC SUBSET_TRANS `{x:real | &0 < x}` THEN
+  ASM_REWRITE_TAC[] THEN REWRITE_TAC[SUBSET; IN_ELIM_THM] THEN
+  REAL_ARITH_TAC);;
+
+let REAL_CONVEX_ON_REAL_INV = prove
+ (`!s. s SUBSET {x | &0 < x} ==> inv real_convex_on s`,
+  REPEAT STRIP_TAC THEN MP_TAC
+   (ISPECL [`s:real->bool`; `-- &1:real`] REAL_CONVEX_ON_RPOW_INTEGER) THEN
+  ASM_REWRITE_TAC[INTEGER_NEG; INTEGER_CLOSED; RPOW_NEG; RPOW_POW] THEN
+  REWRITE_TAC[REAL_POW_1; ETA_AX]);;
+
+let CONVEX_ON_REAL_POW = prove
+ (`!f:real^N->real s n.
+        f convex_on s /\ convex s /\ (!x. x IN s ==> &0 <= f x)
+        ==> (\x. (f x) pow n) convex_on s`,
+  REPEAT STRIP_TAC THEN ASM_CASES_TAC `n = 0` THEN
+  ASM_REWRITE_TAC[real_pow; CONVEX_ON_CONST] THEN
+  FIRST_ASSUM(MATCH_MP_TAC o MATCH_MP
+   (REWRITE_RULE[o_DEF] (ONCE_REWRITE_RULE[IMP_CONJ]
+        REAL_CONVEX_CONVEX_COMPOSE))) THEN
+  EXISTS_TAC `{x:real | &0 <= x}` THEN
+  ASM_SIMP_TAC[SUBSET; FORALL_IN_IMAGE; REAL_POW_LE2; IN_ELIM_THM] THEN
+  REWRITE_TAC[IS_REALINTERVAL_CLAUSES] THEN
+  REWRITE_TAC[GSYM RPOW_POW] THEN
+  MATCH_MP_TAC REAL_CONVEX_ON_RPOW THEN
+  REWRITE_TAC[REAL_OF_NUM_LE; SUBSET_REFL] THEN ASM_ARITH_TAC);;
+
+let REAL_CONVEX_ON_REAL_POW = prove
+ (`!f s n.
+        f real_convex_on s /\ is_realinterval s /\ (!x. x IN s ==> &0 <= f x)
+        ==> (\x. (f x) pow n) real_convex_on s`,
+  REPEAT STRIP_TAC THEN ASM_CASES_TAC `n = 0` THEN
+  ASM_REWRITE_TAC[real_pow; REAL_CONVEX_ON_CONST] THEN
+  FIRST_ASSUM(MATCH_MP_TAC o MATCH_MP
+   (REWRITE_RULE[o_DEF] (ONCE_REWRITE_RULE[IMP_CONJ]
+        REAL_CONVEX_COMPOSE))) THEN
+  EXISTS_TAC `{x:real | &0 <= x}` THEN
+  ASM_SIMP_TAC[SUBSET; FORALL_IN_IMAGE; REAL_POW_LE2; IN_ELIM_THM] THEN
+  REWRITE_TAC[IS_REALINTERVAL_CLAUSES] THEN
+  REWRITE_TAC[GSYM RPOW_POW] THEN
+  MATCH_MP_TAC REAL_CONVEX_ON_RPOW THEN
+  REWRITE_TAC[REAL_OF_NUM_LE; SUBSET_REFL] THEN ASM_ARITH_TAC);;
 
 let REAL_CONVEX_ON_LOG = prove
  (`!s. s SUBSET {x | &0 < x} ==> (\x. --log x) real_convex_on s`,

@@ -740,8 +740,6 @@ let UNION_ACI = prove
   REPEAT GEN_TAC THEN
   MATCH_ACCEPT_TAC DISJ_ACI);;
 
-export_thm UNION_ACI;;
-
 (* ------------------------------------------------------------------------- *)
 (* Intersection.                                                             *)
 (* ------------------------------------------------------------------------- *)
@@ -856,8 +854,6 @@ let INTER_ACI = prove
   PURE_REWRITE_TAC [EXTENSION; IN_INTER; GSYM FORALL_AND_THM] THEN
   REPEAT GEN_TAC THEN
   MATCH_ACCEPT_TAC CONJ_ACI);;
-
-export_thm INTER_ACI;;
 
 (* ------------------------------------------------------------------------- *)
 (* Distributivity.                                                           *)
@@ -1606,8 +1602,6 @@ let INSERT_AC = prove
      (x INSERT (y INSERT s) = y INSERT (x INSERT s)) /\
      (x INSERT (x INSERT s) = x INSERT s)`,
   REWRITE_TAC[INSERT_COMM; INSERT_INSERT]);;
-
-export_thm INSERT_AC;;
 
 (* ------------------------------------------------------------------------- *)
 (* Big union.                                                                *)
@@ -5835,6 +5829,14 @@ let INTERS_CROSS_INTERS = prove
 
 export_thm INTERS_CROSS_INTERS;;
 
+let DISJOINT_CROSS = prove
+ (`!(s1 : A set) (t1 : B set) s2 t2.
+     DISJOINT (s1 CROSS t1) (s2 CROSS t2) <=>
+     DISJOINT s1 s2 \/ DISJOINT t1 t2`,
+  REWRITE_TAC [DISJOINT; INTER_CROSS_INTER; CROSS_EQ_EMPTY]);;
+
+export_thm DISJOINT_CROSS;
+
 export_theory "set-finite-thm";;
 
 let FINITE_CROSS_EQ = prove
@@ -6240,6 +6242,29 @@ let FINITE_UNIONS = prove
     ASM_REWRITE_TAC []]]);;
 
 export_thm FINITE_UNIONS;;
+
+let FINITE_IMAGE_INFINITE = prove
+ (`!f:A->B s.
+        INFINITE s /\ FINITE(IMAGE f s)
+        ==> ?a. a IN s /\ INFINITE {x | x IN s /\ f x = f a}`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[IMP_CONJ_ALT] THEN DISCH_TAC THEN
+  GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM] THEN
+  REWRITE_TAC[NOT_EXISTS_THM; INFINITE; TAUT `~(p /\ q) <=> p ==> ~q`] THEN
+  DISCH_TAC THEN
+  SUBGOAL_THEN `s = UNIONS {{x | x IN s /\ (f:A->B) x = y} |y| y IN IMAGE f s}`
+  SUBST1_TAC THENL
+  [REWRITE_TAC [UNIONS_GSPEC] THEN
+   REWRITE_TAC [EXTENSION; IN_ELIM] THEN
+   X_GEN_TAC `x : A` THEN
+   REWRITE_TAC [EXISTS_IN_IMAGE] THEN
+   ASM_CASES_TAC `(x : A) IN s` THEN
+   ASM_REWRITE_TAC [] THEN
+   EXISTS_TAC `x : A` THEN
+   ASM_REWRITE_TAC [];
+   ALL_TAC] THEN
+  ASM_SIMP_TAC[FINITE_UNIONS; SIMPLE_IMAGE; FINITE_IMAGE; FORALL_IN_IMAGE]);;
+
+export_thm FINITE_IMAGE_INFINITE;;
 
 export_theory "set-size-thm";;
 
