@@ -229,7 +229,7 @@ let EXISTS_PASTECART = prove
   MESON_TAC[PASTECART_FST_SND; FSTCART_PASTECART; SNDCART_PASTECART]);;
 
 let PASTECART_INJ = prove
- (`!x:real^M y:real^N w z. pastecart x y = pastecart w z <=> x = w /\ y = z`,
+ (`!x:A^M y:A^N w z. pastecart x y = pastecart w z <=> x = w /\ y = z`,
   REWRITE_TAC[PASTECART_EQ; FSTCART_PASTECART; SNDCART_PASTECART]);;
 
 (* ------------------------------------------------------------------------- *)
@@ -458,6 +458,11 @@ let PCROSS_EQ_EMPTY = prove
 let PCROSS_EMPTY = prove
  (`(!s. s PCROSS {} = {}) /\ (!t. {} PCROSS t = {})`,
   REWRITE_TAC[PCROSS_EQ_EMPTY]);;
+
+let PCROSS_SING = prove
+ (`!x y:A^N. {x} PCROSS {y} = {pastecart x y}`,
+  REWRITE_TAC[EXTENSION; FORALL_PASTECART; IN_SING; PASTECART_IN_PCROSS;
+              PASTECART_INJ]);;
 
 let SUBSET_PCROSS = prove
  (`!s t s' t'. s PCROSS t SUBSET s' PCROSS t' <=>

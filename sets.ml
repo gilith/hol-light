@@ -4,8 +4,9 @@
 (*       John Harrison, University of Cambridge Computer Laboratory          *)
 (*                                                                           *)
 (*            (c) Copyright, University of Cambridge 1998                    *)
-(*              (c) Copyright, John Harrison 1998-2007                       *)
-(*              (c) Copyright, Marco Maggesi 2012-2015                       *)
+(*              (c) Copyright, John Harrison 1998-2016                       *)
+(*              (c) Copyright, Marco Maggesi 2012-2017                       *)
+(*             (c) Copyright, Andrea Gabrielli 2012-2017                     *)
 (* ========================================================================= *)
 
 needs "calc_num.ml";;
@@ -1924,7 +1925,7 @@ let SUBSET_INTERS = prove
 
 export_thm SUBSET_INTERS;;
 
-let INTERS_SUBSET_INTERS = prove
+let INTERS_ANTIMONO = prove
  (`!(s : (A set) set) t. s SUBSET t ==> (INTERS t) SUBSET (INTERS s)`,
   REWRITE_TAC [SUBSET; IN_INTERS] THEN
   REPEAT STRIP_TAC THEN
@@ -1932,7 +1933,7 @@ let INTERS_SUBSET_INTERS = prove
   FIRST_X_ASSUM MATCH_MP_TAC THEN
   FIRST_ASSUM ACCEPT_TAC);;
 
-export_thm INTERS_SUBSET_INTERS;;
+export_thm INTERS_ANTIMONO;;
 
 let INTERS_UNION = prove
  (`!(s : (A set) set) t. INTERS (s UNION t) = (INTERS s) INTER (INTERS t)`,
@@ -2580,6 +2581,12 @@ let SING_GSPEC2 = prove
 
 let SING_GSPEC = CONJ SING_GSPEC1 SING_GSPEC2;;
 
+let IN_GSPEC = prove
+ (`!s:A set. {x | x IN s} = s`,
+  REWRITE_TAC [EXTENSION; IN_ELIM]);;
+
+export_thm IN_GSPEC;;
+
 let IN_ELIM_PAIR_THM = prove
  (`!p (a:A) (b:B). (a,b) IN {(x,y) | p x y} <=> p a b`,
   REPEAT GEN_TAC THEN
@@ -2893,6 +2900,20 @@ export_thm INTERS_GSPEC3;;
 
 let INTERS_GSPEC =
     CONJ INTERS_GSPEC1 (CONJ INTERS_GSPEC2 INTERS_GSPEC3);;
+
+let UNIONS_SINGS_GEN = prove
+ (`!p:A->bool. UNIONS {{x} | p x} = {x | p x}`,
+  REWRITE_TAC [UNIONS_GSPEC; EXTENSION; IN_ELIM; IN_SING] THEN
+  ONCE_REWRITE_TAC [CONJ_SYM] THEN
+  REWRITE_TAC [UNWIND_THM1]);;
+
+export_thm UNIONS_SINGS_GEN;;
+
+let UNIONS_SINGS = prove
+ (`!s:A set. UNIONS {{x} | x IN s} = s`,
+  REWRITE_TAC [UNIONS_SINGS_GEN; IN_GSPEC]);;
+
+export_thm UNIONS_SINGS;;
 
 let IMAGE_INTERS = prove
  (`!(f : A -> B) s.
@@ -3746,6 +3767,26 @@ let FINITE_SUBSET_IMAGE_IMP = prove
   ASM_REWRITE_TAC [SUBSET_REFL]);;
 
 export_thm FINITE_SUBSET_IMAGE_IMP;;
+
+let FINITE_IMAGE_EQ = prove
+ (`!(f:A->B) s. FINITE(IMAGE f s) <=>
+                ?t. FINITE t /\ t SUBSET s /\ IMAGE f s = IMAGE f t`,
+  MESON_TAC[FINITE_SUBSET_IMAGE; FINITE_IMAGE; SUBSET_REFL]);;
+
+export_thm FINITE_IMAGE_EQ;;
+
+let FINITE_IMAGE_EQ_INJ = prove
+ (`!(f:A->B) s. FINITE(IMAGE f s) <=>
+                ?t. FINITE t /\ t SUBSET s /\ IMAGE f s = IMAGE f t /\
+                    (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y))`,
+  REPEAT GEN_TAC THEN EQ_TAC THENL [ALL_TAC; MESON_TAC[FINITE_IMAGE]] THEN
+  DISCH_TAC THEN
+  MP_TAC(ISPECL [`f:A->B`; `IMAGE (f:A->B) s`; `s:A set`]
+        SUBSET_IMAGE_INJ) THEN
+  REWRITE_TAC[SUBSET_REFL] THEN MATCH_MP_TAC MONO_EXISTS THEN
+  ASM_METIS_TAC[FINITE_IMAGE_INJ_EQ]);;
+
+export_thm FINITE_IMAGE_EQ_INJ;;
 
 let FINITE_DIFF = prove
  (`!(s : A set) t. FINITE s ==> FINITE(s DIFF t)`,
@@ -5491,6 +5532,12 @@ let CROSS_EMPTY = prove
 
 export_thm CROSS_EMPTY;;
 
+let CROSS_SING = prove
+ (`!x:A y:B. {x} CROSS {y} = {(x,y)}`,
+  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM; IN_SING; IN_CROSS; PAIR_EQ]);;
+
+export_thm CROSS_SING;;
+
 let CROSS_UNIV = prove
  (`(UNIV : A set) CROSS (UNIV : B set) = (UNIV : (A # B) set)`,
   REWRITE_TAC [CROSS; EXTENSION; FORALL_PAIR_THM; IN_ELIM_PAIR_THM] THEN
@@ -6021,6 +6068,10 @@ let FINITE_FUNSPACE = prove
   ASM_REWRITE_TAC []);;
 
 export_thm FINITE_FUNSPACE;;
+
+(* ------------------------------------------------------------------------- *)
+(* Cardinality of functions with bounded domain (support) and range.         *)
+(* ------------------------------------------------------------------------- *)
 
 export_theory "set-size-thm";;
 

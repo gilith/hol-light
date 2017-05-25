@@ -2437,6 +2437,27 @@ let large_exp = prove
 
 export_thm large_exp;;
 
+let DIV_EXP,MOD_EXP = (CONJ_PAIR o prove)
+ (`(!m n p. ~(m = 0)
+            ==> (m EXP n) DIV (m EXP p) =
+                if p <= n then m EXP (n - p)
+                else if m = 1 then 1 else 0) /\
+   (!m n p. ~(m = 0)
+            ==> (m EXP n) MOD (m EXP p) =
+                if p <= n \/ m = 1 then 0 else m EXP n)`,
+  REWRITE_TAC[AND_FORALL_THM] THEN REPEAT GEN_TAC THEN
+  ASM_CASES_TAC `m = 0` THEN ASM_REWRITE_TAC[] THEN
+  MATCH_MP_TAC DIVMOD_UNIQ THEN
+  ASM_CASES_TAC `p:num <= n` THEN
+  ASM_SIMP_TAC[GSYM EXP_ADD; EXP_LT_0; SUB_ADD; ADD_CLAUSES] THEN
+  ASM_CASES_TAC `m = 1` THEN
+  ASM_REWRITE_TAC[EXP_ONE; ADD_CLAUSES; MULT_CLAUSES; LT_EXP] THEN
+  REWRITE_TAC[LT; GSYM NOT_LT; ONE; TWO] THEN
+  ASM_REWRITE_TAC[SYM ONE; GSYM NOT_LE]);;
+
+export_thm DIV_EXP;;
+export_thm MOD_EXP;;
+
 (* Logarithm *)
 
 export_theory "natural-exp-log-def";;

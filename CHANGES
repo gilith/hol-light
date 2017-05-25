@@ -8,6 +8,262 @@
   * page: https://github.com/jrh13/hol-light/commits/master         *
   * *****************************************************************
 
+Sat 13th May 2017       printer.ml
+
+Added a patch to the prettyprinter from Marco Maggesi that ensures better
+printing of set enumerations and lists by inserting split hints in a correct
+way. A typical example where this helps is the following term, which now prints
+as shown, but was formerly broken up irregularly and hence was much less
+readable.
+
+  `{[a 1 2 3 4 5 6 7 8; b 1 2 3 4 5 6 7 8 9; c 1 2 3 4 5; d 1 2 3 4 5 6 7],
+    [e 1 2 3 4 5 6; f 1 2 3 4 5 6 7 8; g 1 2 3 4 5],
+    [h 1 2 3 4 5 6 7 8 9 10 11; i 1 2 3 4 5 6 7 8 9 10; j 1 2 3 4 5 6 7 8 9;
+     k 1 2 3 4 5],
+    [l 1 2 3 4 5 6 7 8 9; m 1 2 3 4 5 6 7 8; n 1 2 3 4 5 6 7 8 9;
+     p 2 3 4 5 6 7 8 9]}`
+
+Thu 11th May 2017       sets.ml
+
+Added one more handy little theorem about arbitrary unions:
+
+  ARBITRARY_UNION_OF_ALT =
+    |- !B s.
+         (ARBITRARY UNION_OF B) s <=>
+         (!x. x IN s ==> (?u. u IN B /\ x IN u /\ u SUBSET s))
+
+Sat  6th May 2017       sets.ml, Library/card.ml
+
+Added four theorems that are rather easy special cases of existing
+ones (FORALL_COUNTABLE_SUBSET_IMAGE_INJ etc.), but awkward enough
+to derive by 1-liners that they are worth having for themselves:
+
+  FINITE_IMAGE_EQ =
+    |- !f s.
+         FINITE (IMAGE f s) <=>
+         (?t. FINITE t /\ t SUBSET s /\ IMAGE f s = IMAGE f t)
+
+  FINITE_IMAGE_EQ_INJ =
+    |- !f s.
+         FINITE (IMAGE f s) <=>
+         (?t. FINITE t /\
+              t SUBSET s /\
+              IMAGE f s = IMAGE f t /\
+              (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y)))
+
+  COUNTABLE_IMAGE_EQ =
+    |- !f s.
+         COUNTABLE (IMAGE f s) <=>
+         (?t. COUNTABLE t /\ t SUBSET s /\ IMAGE f s = IMAGE f t)
+
+  COUNTABLE_IMAGE_EQ_INJ =
+    |- !f s.
+         COUNTABLE (IMAGE f s) <=>
+         (?t. COUNTABLE t /\
+              t SUBSET s /\
+              IMAGE f s = IMAGE f t /\
+              (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y)))
+
+Sat 30th Apr 2017       pair.ml, sets.ml, Library/card.ml
+
+Added various simple lemmas, the only one that isn't completely trivial
+being FORALL_CARTESIAN_PRODUCT_ELEMENTS:
+
+  CARD_LE_COUNTABLE_INFINITE =
+    |- !s t. COUNTABLE s /\ INFINITE t ==> s <=_c t
+
+  CARD_LT_COUNTABLE_UNCOUNTABLE =
+    |- !s t. COUNTABLE s /\ ~COUNTABLE t ==> s <_c t
+
+  CARD_LT_NUM_REAL =
+    |- (:num) <_c (:real)
+
+  EXISTS_UNPAIR_FUN_THM =
+    |- !P. (?f g. P f g) <=> (?h. P (FST o h) (SND o h))
+
+  FORALL_CARTESIAN_PRODUCT_ELEMENTS =
+    |- !P k s.
+         (!z i. z IN cartesian_product k s /\ i IN k ==> P i (z i)) <=>
+         cartesian_product k s = {} \/ (!i x. i IN k /\ x IN s i ==> P i x)
+
+  FORALL_UNPAIR_FUN_THM =
+    |- !P. (!f g. P f g) <=> (!h. P (FST o h) (SND o h))
+
+  INTERS_ANTIMONO =
+    |- !f g. g SUBSET f ==> INTERS f SUBSET INTERS g
+
+  IN_GSPEC =
+    |- !s. {x | x IN s} = s
+
+  UNIONS_SINGS =
+    |- !s. UNIONS {{x} | x IN s} = s
+
+  UNIONS_SINGS_GEN =
+    |- !P. UNIONS {{x} | P x} = {x | P x}
+
+Wed 11th Apr 2017       pair.ml, sets.ml, cart.ml
+
+Added a few more trivial but nice-to-have rewrites:
+
+  EXISTS_PAIR_FUN_THM =
+    |- !P. (?f. P f) <=> (?g h. P (\a. g a,h a))
+
+  FORALL_PAIR_FUN_THM =
+    |- !P. (!f. P f) <=> (!g h. P (\a. g a,h a))
+
+  CROSS_SING =
+    |- !x y. {x} CROSS {y} = {(x,y)}
+
+  PCROSS_SING =
+     |- !x y. {x} PCROSS {y} = {pastecart x y}
+
+Sat  8th Apr 2017       cart.ml
+
+Type-generalized PASTECART_INJ which had a pointless restriction to ":real".
+
+Sat  8th Apr 2017       sets.ml
+
+Added a number of new theorems from Andrea Gabrielli and Marco Maggesi, giving
+some additional properties of sup and inf and using useful relational versions
+"has_sup" and "has_inf" to express some properties more nicely:
+
+  has_inf =
+    |- !s b. s has_inf b <=> (!c. (!x. x IN s ==> c <= x) <=> c <= b)
+
+  has_sup =
+    |- !s b. s has_sup b <=> (!c. (!x. x IN s ==> x <= c) <=> b <= c)
+
+  HAS_INF =
+    |- !s l.
+           s has_inf l <=>
+           ~(s = {}) /\
+           (!x. x IN s ==> l <= x) /\
+           (!c. l < c ==> (?x. x IN s /\ x < c))
+
+  HAS_INF_APPROACH =
+    |- !s l c. s has_inf l /\ l < c ==> (?x. x IN s /\ x < c)
+
+  HAS_INF_INF =
+    |- !s l.
+           s has_inf l <=>
+           ~(s = {}) /\ (?b. !x. x IN s ==> b <= x) /\ inf s = l
+
+  HAS_INF_LBOUND =
+    |- !s b x. s has_inf b /\ x IN s ==> b <= x
+
+  HAS_INF_LE =
+    |- !s t l m.
+           s has_inf l /\
+           t has_inf m /\
+           (!y. y IN t ==> (?x. x IN s /\ x <= y))
+           ==> l <= m
+
+  HAS_SUP =
+    |- !s l.
+           s has_sup l <=>
+           ~(s = {}) /\
+           (!x. x IN s ==> x <= l) /\
+           (!c. c < l ==> (?x. x IN s /\ c < x))
+
+  HAS_SUP_APPROACH =
+    |- !s l c. s has_sup l /\ c < l ==> (?x. x IN s /\ c < x)
+
+  HAS_SUP_LE =
+    |- !s t l m.
+           s has_sup l /\
+           t has_sup m /\
+           (!y. y IN t ==> (?x. x IN s /\ y <= x))
+           ==> m <= l
+
+  HAS_SUP_SUP =
+    |- !s l.
+           s has_sup l <=>
+           ~(s = {}) /\ (?b. !x. x IN s ==> x <= b) /\ sup s = l
+
+  HAS_SUP_UBOUND =
+    |- !s b x. s has_sup b /\ x IN s ==> x <= b
+
+  INF_APPROACH =
+    |- !s c.
+           ~(s = {}) /\ (?b. !x. x IN s ==> b <= x) /\ inf s < c
+           ==> (?x. x IN s /\ x < c)
+
+  INF_EXISTS =
+    |- !s. (?l. s has_inf l) <=> ~(s = {}) /\ (?b. !x. x IN s ==> b <= x)
+
+  SUP_APPROACH =
+    |- !s c.
+           ~(s = {}) /\ (?b. !x. x IN s ==> x <= b) /\ c < sup s
+           ==> (?x. x IN s /\ c < x)
+
+  SUP_EXISTS =
+    |- !s. (?l. s has_sup l) <=> ~(s = {}) /\ (?b. !x. x IN s ==> x <= b)
+
+Wed 29th Mar 2017       arith.ml
+
+Added some natural theorems that were missing:
+
+  DIV_EXP =
+    |- m n p. ~(m = 0)
+              ==> (m EXP n) DIV (m EXP p) =
+                  if p <= n then m EXP (n - p)
+                  else if m = 1 then 1 else 0)
+
+  MOD_EXP =
+    |- !m n p. ~(m = 0)
+               ==> (m EXP n) MOD (m EXP p) =
+                   if p <= n \/ m = 1 then 0 else m EXP n)
+
+Tue 28th Mar 2017       Library/card.ml
+
+Added a small but more compact reformulation of cardinal exponentiation:
+
+  EXP_C =
+   |- !s t. s ^_c t = {f | IMAGE f t SUBSET s /\ EXTENSIONAL t f}
+
+Mon 27th Mar 2018       Library/floor.ml, Library/prime.ml
+
+Added a few handy lemmas:
+
+  RATIONAL_ABS_EQ = prove
+    |- !x. rational(abs x) <=> rational x
+
+  DIVIDES_EXP_LE_IMP = prove
+    |- !p m n. m <= n ==> (p EXP m) divides (p EXP n)
+
+  EXP_INDEX_DIVIDES = prove
+    |- !p n. p EXP (index p n) divides n
+
+  INDEX_ADD_MIN = prove
+    |- !p m n. MIN (index p m) (index p n) <= index p (m + n)
+
+  INDEX_SUB_MIN = prove
+    |- !p m n. n < m ==> MIN (index p m) (index p n) <= index p (m - n)
+
+Sat 25th Mar 2017       Minisat/minisat_parse.ml
+
+Replaced the use of int32 literals "0x...l" with "Int32.of_int 0x...".
+The former seems to have recently started to be problematic with the
+camlp5 preprocessing; really the underlying problem should be investigated and
+fixed but as this is the only instance, I just made this change for now.
+
+Fri 24th Mar 2017       holtest, holtest.ml
+
+Added "Multivariate/lpspaces.ml" to the test suite (formerly missing its
+own individual entry, though it's called in 100/fourier.ml anyway).
+
+Wed 22nd Mar 2017       Library/card.ml
+
+Added another variant of relational cardinal equality, as well as simplifying
+the proof of the Schroeder-Bernstein theorem using a formulation in the
+relational style (following a paper by Chad Brown, perhaps actually following
+Knaster?)
+
+  EQ_C_ALT =
+   |- s =_c t <=>
+      ?R:A#B->bool. (!x. x IN s ==> ?!y. y IN t /\ R(x,y)) /\
+                    (!y. y IN t ==> ?!x. x IN s /\ R(x,y))
+
 Thu 16th Mar 2017       Makefile
 
 Added yet another disjunct to the camlp5 version cases after a report from

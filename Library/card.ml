@@ -117,6 +117,16 @@ let EQ_C = prove
      [EXISTS_UNIQUE_ALT; RIGHT_IMP_EXISTS_THM; SKOLEM_THM] THEN
     MATCH_MP_TAC MONO_EXISTS THEN ASM_MESON_TAC[]]);;
 
+let EQ_C_ALT = prove
+ (`s =_c t <=>
+   ?R:A#B->bool. (!x. x IN s ==> ?!y. y IN t /\ R(x,y)) /\
+                 (!y. y IN t ==> ?!x. x IN s /\ R(x,y))`,
+  GEN_REWRITE_TAC LAND_CONV [EQ_C] THEN
+  EQ_TAC THENL [MATCH_MP_TAC MONO_EXISTS THEN SIMP_TAC[]; ALL_TAC] THEN
+  DISCH_THEN(X_CHOOSE_THEN `R:A#B->bool` STRIP_ASSUME_TAC) THEN
+  EXISTS_TAC `\(x,y). (R:A#B->bool)(x,y) /\ x IN s /\ y IN t` THEN
+  ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* The "easy" ordering properties.                                           *)
 (* ------------------------------------------------------------------------- *)
@@ -229,42 +239,19 @@ let CARD_SING_LE = prove
 let CARD_LE_ANTISYM = prove
  (`!s:A->bool t:B->bool. s <=_c t /\ t <=_c s <=> (s =_c t)`,
   REPEAT GEN_TAC THEN EQ_TAC THENL
-   [ALL_TAC;
-    SIMP_TAC[CARD_EQ_IMP_LE] THEN ONCE_REWRITE_TAC[CARD_EQ_SYM] THEN
-    SIMP_TAC[CARD_EQ_IMP_LE]] THEN
-  ASM_CASES_TAC `s:A->bool = {}` THEN ASM_CASES_TAC `t:B->bool = {}` THEN
-  ASM_SIMP_TAC[CARD_LE_EMPTY; CARD_EQ_EMPTY] THEN
-  RULE_ASSUM_TAC(REWRITE_RULE[EXTENSION; NOT_IN_EMPTY; NOT_FORALL_THM]) THEN
-  ASM_SIMP_TAC[le_c; eq_c; INJECTIVE_LEFT_INVERSE_NONEMPTY] THEN
-  DISCH_THEN(CONJUNCTS_THEN2
-   (X_CHOOSE_THEN `i:A->B`
-     (CONJUNCTS_THEN2 ASSUME_TAC (X_CHOOSE_THEN `i':B->A` STRIP_ASSUME_TAC)))
-   (X_CHOOSE_THEN `j:B->A`
-     (CONJUNCTS_THEN2 ASSUME_TAC
-       (X_CHOOSE_THEN `j':A->B` STRIP_ASSUME_TAC)))) THEN
+   [REWRITE_TAC[le_c; EQ_C; INJECTIVE_ON_ALT];
+    MESON_TAC[CARD_EQ_IMP_LE; CARD_EQ_SYM]] THEN
+  DISCH_THEN(CONJUNCTS_THEN2 (X_CHOOSE_THEN `f:A->B` STRIP_ASSUME_TAC)
+   (X_CHOOSE_THEN `g:B->A` STRIP_ASSUME_TAC)) THEN
   MP_TAC(ISPEC
-    `\a. s DIFF (IMAGE (j:B->A) (t DIFF (IMAGE (i:A->B) a)))`
-    TARSKI_SET) THEN
-  REWRITE_TAC[] THEN ANTS_TAC THENL
-   [REWRITE_TAC[SUBSET; IN_DIFF; IN_IMAGE] THEN MESON_TAC[];
-    ALL_TAC] THEN
-  DISCH_THEN(X_CHOOSE_THEN `a:A->bool` ASSUME_TAC) THEN
-  REWRITE_TAC[BIJECTIVE_INVERSES] THEN REWRITE_TAC[RIGHT_AND_EXISTS_THM] THEN
-  EXISTS_TAC `\x. if x IN a then (i:A->B)(x) else j'(x)` THEN
-  EXISTS_TAC `\y. if y IN (IMAGE (i:A->B) a) then i'(y) else (j:B->A)(y)` THEN
-  REWRITE_TAC[FUN_EQ_THM; o_THM; I_DEF] THEN
-  ONCE_REWRITE_TAC[TAUT `a /\ b /\ c /\ d <=> (a /\ d) /\ (b /\ c)`] THEN
-  REWRITE_TAC[AND_FORALL_THM] THEN
-  REWRITE_TAC[TAUT `(a ==> b) /\ (a ==> c) <=> a ==> b /\ c`] THEN
-  CONJ_TAC THENL
-   [X_GEN_TAC `x:A` THEN ASM_CASES_TAC `x:A IN a`;
-    X_GEN_TAC `y:B` THEN ASM_CASES_TAC `y IN IMAGE (i:A->B) a`] THEN
-  ASM_REWRITE_TAC[] THEN COND_CASES_TAC THEN ASM_REWRITE_TAC[] THEN
-  RULE_ASSUM_TAC(REWRITE_RULE[EXTENSION; IN_UNIV; IN_DIFF; IN_IMAGE]) THEN
-  TRY(FIRST_X_ASSUM(X_CHOOSE_THEN `x:A` STRIP_ASSUME_TAC)) THEN
-  TRY(FIRST_X_ASSUM(fun th -> MP_TAC(SPEC `x:A` th) THEN
-      ASM_REWRITE_TAC[] THEN ASSUME_TAC th)) THEN
-  ASM_MESON_TAC[]);;
+   `\X. IMAGE (g:B->A) (t DIFF IMAGE (f:A->B) (s DIFF X))` TARSKI_SET) THEN
+  REWRITE_TAC[] THEN ANTS_TAC THENL [SET_TAC[]; ALL_TAC] THEN
+  DISCH_THEN(X_CHOOSE_TAC `u:A->bool`) THEN
+  EXISTS_TAC `\(x:A,y:B). x IN s /\ y IN t /\
+                          (~(x IN u) /\ y = f x \/ x IN u /\ x = g y)` THEN
+  REWRITE_TAC[] THEN REPEAT(CONJ_TAC THENL [ASM SET_TAC[]; ALL_TAC]) THEN
+  X_GEN_TAC `y:B` THEN STRIP_TAC THEN
+  ASM_CASES_TAC `y IN IMAGE (f:A->B) (s DIFF u)` THEN ASM SET_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Totality (cardinal comparability).                                        *)
@@ -1340,6 +1327,15 @@ let FINITE_IMP_COUNTABLE = prove
  (`!s. FINITE s ==> COUNTABLE s`,
   SIMP_TAC[FINITE_CARD_LT; lt_c; COUNTABLE; ge_c]);;
 
+let CARD_LE_COUNTABLE_INFINITE = prove
+ (`!(s:A->bool) (t:B->bool). COUNTABLE s /\ INFINITE t ==> s <=_c t`,
+  REWRITE_TAC[COUNTABLE; ge_c; INFINITE_CARD_LE; CARD_LE_TRANS]);;
+
+let CARD_LT_COUNTABLE_UNCOUNTABLE = prove
+ (`!(s:A->bool) (t:B->bool).
+        COUNTABLE s /\ ~COUNTABLE t ==> s <_c t`,
+  REWRITE_TAC[COUNTABLE; ge_c; CARD_NOT_LE; CARD_LET_TRANS]);;
+
 let COUNTABLE_IMAGE = prove
  (`!f:A->B s. COUNTABLE s ==> COUNTABLE (IMAGE f s)`,
   REWRITE_TAC[COUNTABLE; ge_c] THEN REPEAT STRIP_TAC THEN
@@ -1646,6 +1642,22 @@ let COUNTABLE_SUBSET_IMAGE = prove
    [ALL_TAC; ASM_MESON_TAC[COUNTABLE_IMAGE; IMAGE_SUBSET]] THEN
   SPEC_TAC(`t:B->bool`,`t:B->bool`) THEN
   REWRITE_TAC[FORALL_COUNTABLE_SUBSET_IMAGE] THEN MESON_TAC[]);;
+
+let COUNTABLE_IMAGE_EQ = prove
+ (`!(f:A->B) s. COUNTABLE(IMAGE f s) <=>
+                ?t. COUNTABLE t /\ t SUBSET s /\ IMAGE f s = IMAGE f t`,
+  MESON_TAC[COUNTABLE_SUBSET_IMAGE; COUNTABLE_IMAGE; SUBSET_REFL]);;
+
+let COUNTABLE_IMAGE_EQ_INJ = prove
+ (`!(f:A->B) s. COUNTABLE(IMAGE f s) <=>
+                ?t. COUNTABLE t /\ t SUBSET s /\ IMAGE f s = IMAGE f t /\
+                    (!x y. x IN t /\ y IN t ==> (f x = f y <=> x = y))`,
+  REPEAT GEN_TAC THEN EQ_TAC THENL [ALL_TAC; MESON_TAC[COUNTABLE_IMAGE]] THEN
+  DISCH_TAC THEN
+  MP_TAC(ISPECL [`f:A->B`; `IMAGE (f:A->B) s`; `s:A->bool`]
+        SUBSET_IMAGE_INJ) THEN
+  REWRITE_TAC[SUBSET_REFL] THEN MATCH_MP_TAC MONO_EXISTS THEN
+  ASM_METIS_TAC[COUNTABLE_IMAGE_INJ_EQ]);;
 
 let COUNTABLE_FL = prove
  (`!l:A#A->bool. COUNTABLE(fl l) <=> COUNTABLE l`,
@@ -2217,6 +2229,10 @@ let COUNTABLE_IMP_CARD_LT_REAL = prove
   REWRITE_TAC[GSYM CARD_NOT_LE] THEN
   ASM_MESON_TAC[CARD_LE_COUNTABLE; UNCOUNTABLE_REAL]);;
 
+let CARD_LT_NUM_REAL = prove
+ (`(:num) <_c (:real)`,
+  SIMP_TAC[COUNTABLE_IMP_CARD_LT_REAL; NUM_COUNTABLE]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Cardinal exponentiation.                                                  *)
 (* ------------------------------------------------------------------------- *)
@@ -2226,6 +2242,12 @@ parse_as_infix("^_c",(24,"left"));;
 let exp_c = new_definition
   `s ^_c t = {f:B->A | (!x. x IN t ==> f x IN s) /\
                        (!x. ~(x IN t) ==> f x = @y. F)}`;;
+
+let EXP_C = prove
+ (`!(s:A->bool) (t:B->bool).
+        s ^_c t = {f:B->A | IMAGE f t SUBSET s /\ EXTENSIONAL t f}`,
+  REWRITE_TAC[EXTENSIONAL; ARB; IN_ELIM_THM; SUBSET; FORALL_IN_IMAGE] THEN
+  REWRITE_TAC[exp_c]);;
 
 let CARD_EXP_UNIV = prove
  (`(:A) ^_c (:B) = (:B->A)`,

@@ -413,6 +413,33 @@ let EXISTS_UNPAIR_THM = prove
 
 export_thm EXISTS_UNPAIR_THM;;
 
+let FORALL_PAIR_FUN_THM = prove
+ (`!p. (!f:A->B#C. p f) <=> (!g h. p (\a. g a, h a))`,
+  GEN_TAC THEN EQ_TAC THEN DISCH_TAC THEN ASM_REWRITE_TAC[] THEN
+  GEN_TAC THEN GEN_REWRITE_TAC RAND_CONV [GSYM ETA_AX] THEN
+  GEN_REWRITE_TAC BINDER_CONV [GSYM PAIR] THEN PURE_ASM_REWRITE_TAC[]);;
+
+export_thm FORALL_PAIR_FUN_THM;;
+
+let EXISTS_PAIR_FUN_THM = prove
+ (`!p. (?f:A->B#C. p f) <=> (?g h. p (\a. g a, h a))`,
+  REWRITE_TAC[MESON[] `(?x:A. p x) <=> ~(!x. ~p x)`] THEN
+  REWRITE_TAC[FORALL_PAIR_FUN_THM]);;
+
+export_thm EXISTS_PAIR_FUN_THM;;
+
+let FORALL_UNPAIR_FUN_THM = prove
+ (`!p. (!(f:A->B) (g:A->C). p f g) <=> (!h. p (FST o h) (SND o h))`,
+  REWRITE_TAC[FORALL_PAIR_FUN_THM; o_DEF; ETA_AX]);;
+
+export_thm FORALL_UNPAIR_FUN_THM;;
+
+let EXISTS_UNPAIR_FUN_THM = prove
+ (`!p. (?(f:A->B) (g:A->C). p f g) <=> (?h. p (FST o h) (SND o h))`,
+  REWRITE_TAC[EXISTS_PAIR_FUN_THM; o_DEF; ETA_AX]);;
+
+export_thm EXISTS_UNPAIR_FUN_THM;;
+
 (* ------------------------------------------------------------------------- *)
 (* Related theorems for explicitly paired quantifiers.                       *)
 (* ------------------------------------------------------------------------- *)
