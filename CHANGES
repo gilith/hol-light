@@ -8,6 +8,257 @@
   * page: https://github.com/jrh13/hol-light/commits/master         *
   * *****************************************************************
 
+Tuw 13th Jun 2017       drule.ml, grobner.ml
+
+Fixed a couple of cases where "||" was used instead of "or" in error
+strings, as a result of overenthusiastic search-and-replace.
+
+Wed  7th Jun 2017       arith.ml, sets.ml, Library/card.ml
+
+Added a few miscellaneous theorems including some basics about
+cardinality of Cartesian products:
+
+  CARD_DIFF_CONG =
+    |- !s s' t t'.
+         s' SUBSET s /\
+         t' SUBSET t /\
+         s =_c t /\
+         s' =_c t' /\
+         (INFINITE s ==> s' <_c s)
+         ==> s DIFF s' =_c t DIFF t'
+
+  CARD_EQ_REAL_SUBSET =
+    |- !s a b. a < b /\ (!x. a < x /\ x < b ==> x IN s) ==> s =_c (:real)
+
+  CARD_LE_1 =
+    |- !s. FINITE s /\ CARD s <= 1 <=> (?a. s SUBSET {a})
+
+  CARD_LE_CARTESIAN_PRODUCT =
+    |- !s t k.
+         (!i. i IN k ==> s i <=_c t i)
+         ==> cartesian_product k s <=_c cartesian_product k t
+
+  CARD_LE_CARTESIAN_PRODUCT_SUBINDEX =
+    |- !s k l.
+         k SUBSET l /\ ~(cartesian_product l s = {})
+         ==> cartesian_product k s <=_c cartesian_product l s
+
+  CARD_LE_EQ_SUBSET_UNIV =
+    |- !s. (?t. t =_c s) <=> s <=_c (:B)
+
+  CARD_LE_SING =
+    |- !c s. s <=_c {c} <=> (?a. s SUBSET {a})
+
+  CARTESIAN_PRODUCT_CONST =
+    |- !s t. cartesian_product t (\i. s) = s ^_c t
+
+  CARTESIAN_PRODUCT_EQ_MEMBERS =
+    |- !k s x y.
+         x IN cartesian_product k s /\
+         y IN cartesian_product k s /\
+         (!i. i IN k ==> x i = y i)
+         ==> x = y
+
+  COUNTABLE_CARTESIAN_PRODUCT =
+    |- !s k.
+         COUNTABLE (cartesian_product k s) <=>
+         cartesian_product k s = {} \/
+         FINITE {i | i IN k /\ ~(?a. s i SUBSET {a})} /\
+         (!i. i IN k ==> COUNTABLE (s i))
+
+  COUNTABLE_RESTRICTED_FUNSPACE =
+    |- !s t k.
+         COUNTABLE s /\ COUNTABLE t
+         ==> COUNTABLE
+             {f | IMAGE f s SUBSET t /\
+                  {x | ~(f x = k x)} SUBSET s /\
+                  FINITE {x | ~(f x = k x)}}
+
+  EQ_C_BIJECTIONS_DISJOINT =
+    |- !s s' t t'.
+         DISJOINT s s' /\ DISJOINT t t'
+         ==> (s =_c t /\ s' =_c t' <=>
+              (?f g.
+                   (!x. x IN s ==> f x IN t /\ g (f x) = x) /\
+                   (!y. y IN t ==> g y IN s /\ f (g y) = y) /\
+                   (!x. x IN s' ==> f x IN t' /\ g (f x) = x) /\
+                   (!y. y IN t' ==> g y IN s' /\ f (g y) = y)))
+
+  EQ_C_BIJECTIONS_EXTEND =
+    |- !f g s s' t t'.
+         s SUBSET s' /\
+         t SUBSET t' /\
+         s' DIFF s =_c t' DIFF t /\
+         (!x. x IN s ==> f x IN t /\ g (f x) = x) /\
+         (!y. y IN t ==> g y IN s /\ f (g y) = y)
+         ==> (?f' g'.
+                  (!x. x IN s' ==> f' x IN t' /\ g' (f' x) = x) /\
+                  (!y. y IN t' ==> g' y IN s' /\ f' (g' y) = y) /\
+                  (!x. x IN s ==> f' x = f x) /\
+                  (!y. y IN t ==> g' y = g y))
+
+  EQ_C_BIJECTIONS_SUBSETS =
+    |- !s s' t t'.
+         s' SUBSET s /\ t' SUBSET t
+         ==> (s' =_c t' /\ s DIFF s' =_c t DIFF t' <=>
+              (?f g.
+                   (!x. x IN s ==> f x IN t /\ g (f x) = x) /\
+                   (!y. y IN t ==> g y IN s /\ f (g y) = y) /\
+                   IMAGE f s' = t' /\
+                   IMAGE g t' = s'))
+
+  EQ_C_BIJECTIONS_SUBSETS_LT =
+    |- !s s' t t'.
+         s' SUBSET s /\ t' SUBSET t /\ (INFINITE s ==> s' <_c s)
+         ==> (s =_c t /\ s' =_c t' <=>
+              (?f g.
+                   (!x. x IN s ==> f x IN t /\ g (f x) = x) /\
+                   (!y. y IN t ==> g y IN s /\ f (g y) = y) /\
+                   IMAGE f s' = t' /\
+                   IMAGE g t' = s'))
+
+  EQ_C_INVOLUTION =
+    |- !f s t.
+         (!x. x IN s ==> f x IN t) /\
+         (!x. x IN t ==> f x IN s) /\
+         (!x. x IN s \/ x IN t ==> f (f x) = x)
+         ==> s =_c t
+
+  FINITE_CARTESIAN_PRODUCT =
+    |- !s k.
+         FINITE (cartesian_product k s) <=>
+         cartesian_product k s = {} \/
+         FINITE {i | i IN k /\ ~(?a. s i SUBSET {a})} /\
+         (!i. i IN k ==> FINITE (s i))
+
+  FINITE_POWERSET_EQ =
+    |- !s. FINITE {t | t SUBSET s} <=> FINITE s
+
+  FINITE_RESTRICTED_FUNSPACE =
+    |- !s t k.
+         FINITE s /\ FINITE t
+         ==> FINITE {f | IMAGE f s SUBSET t /\ {x | ~(f x = k x)} SUBSET s}
+
+  LT_IMP_NE =
+    |- !m n. m < n ==> ~(m = n)
+
+Tue  6th Jun 2017       calc_rat.ml
+
+Added some basic properties of the "shrinking" mapping x |-> x / (1 + |x|)
+and its inverse. These have natural generalizations to R^n (see
+CONVEXITY_PRESERVING_SHRINK_0 in "Multivariate/convex.ml") but these simple
+forms are nice to have too:
+
+  REAL_GROW_SHRINK =
+    |- !x y. x / (&1 + abs x) / (&1 - abs (x / (&1 + abs x))) = x
+
+  REAL_SHRINK_EQ =
+    |- !x y. x / (&1 + abs x) = y / (&1 + abs y) <=> x = y
+
+  REAL_SHRINK_GALOIS =
+    |- !x y. x / (&1 + abs x) = y <=> abs y < &1 /\ y / (&1 - abs y) = x
+
+  REAL_SHRINK_GROW =
+    |- !x y. abs x < &1
+             ==> x / (&1 - abs x) / (&1 + abs (x / (&1 - abs x))) = x
+
+  REAL_SHRINK_GROW_EQ =
+    |- !x y. x / (&1 - abs x) / (&1 + abs (x / (&1 - abs x))) = x <=>
+             abs x < &1
+
+  REAL_SHRINK_LE =
+    |- !x y. x / (&1 + abs x) <= y / (&1 + abs y) <=> x <= y
+
+  REAL_SHRINK_LT =
+    |- !x y. x / (&1 + abs x) < y / (&1 + abs y) <=> x < y
+
+  REAL_SHRINK_RANGE =
+    |- !x. abs (x / (&1 + abs x)) < &1
+
+Sat  3rd Jun 2017       Library/floor.ml
+
+Added some more specific versions of rational approximation where we
+want to choose "p-adic" rationals:
+
+  PADIC_RATIONAL_APPROXIMATION_STRADDLE =
+    |- !p x e.
+         &0 < e /\ &1 < p
+         ==> (?n q r.
+                  integer q /\
+                  integer r /\
+                  q / p pow n < x /\
+                  x < r / p pow n /\
+                  abs (q / p pow n - r / p pow n) < e)
+
+  PADIC_RATIONAL_APPROXIMATION_STRADDLE_POS =
+    |- !p x e.
+         &0 < e /\ &1 < p /\ &0 < x
+         ==> (?n q r.
+                  &q / p pow n < x /\
+                  x < &r / p pow n /\
+                  abs (&q / p pow n - &r / p pow n) < e)
+
+  PADIC_RATIONAL_APPROXIMATION_STRADDLE_POS_LE =
+    |- !p x e.
+         &0 < e /\ &1 < p /\ &0 <= x
+         ==> (?n q r.
+                  &q / p pow n <= x /\
+                  x < &r / p pow n /\
+                  abs (&q / p pow n - &r / p pow n) < e)
+
+Sat  3rd Jun 2017       real.ml, sets.ml, passim
+
+Moved a few theorems into the core that were formerly tucked away in
+"Multivariate/misc.ml", including variants of the Archimedean property:
+
+  REAL_ARCH_INV =
+    |- !e. &0 < e <=> (?n. ~(n = 0) /\ &0 < inv (&n) /\ inv (&n) < e)
+
+  REAL_ARCH_POW =
+    |- !x y. &1 < x ==> (?n. y < x pow n)
+
+  REAL_ARCH_POW2 =
+    |- !x. ?n. x < &2 pow n
+
+  REAL_ARCH_POW_INV =
+    |- !x y. &0 < y /\ x < &1 ==> (?n. x pow n < y)
+
+  REAL_MAX_SUP =
+    |- !x y. max x y = sup {x, y}
+
+  REAL_MIN_INF =
+     |- !x y. min x y = inf {x, y}
+
+  REAL_POW_LBOUND =
+    |- !x n. &0 <= x ==> &1 + &n * x <= (&1 + x) pow n
+
+Sun 21st May 2017       arith.ml
+
+Added ternary versions of the basic "WLOG" lemma for naturals, reals and
+integers, as well as adding missing binary versions for integers:
+
+  INT_WLOG_LE =
+    |- (!x y. P x y <=> P y x) /\ (!x y. x <= y ==> P x y) ==> (!x y. P x y)
+
+  INT_WLOG_LT =
+    |- (!x. P x x) /\ (!x y. P x y <=> P y x) /\ (!x y. x < y ==> P x y)
+       ==> (!x y. P x y)
+
+  INT_WLOG_LE_3 =
+    |- !P. (!x y z. P x y z ==> P y x z /\ P x z y) /\
+           (!x y z. x <= y /\ y <= z ==> P x y z)
+           ==> (!x y z. P x y z)
+
+  REAL_WLOG_LE_3 =
+    |- !P. (!x y z. P x y z ==> P y x z /\ P x z y) /\
+           (!x y z. x <= y /\ y <= z ==> P x y z)
+           ==> (!x y z. P x y z)
+
+  WLOG_LE_3 =
+    |- !P. (!x y z. P x y z ==> P y x z /\ P x z y) /\
+           (!x y z. x <= y /\ y <= z ==> P x y z)
+           ==> (!x y z. P x y z)
+
 Sat 13th May 2017       printer.ml
 
 Added a patch to the prettyprinter from Marco Maggesi that ensures better

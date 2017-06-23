@@ -144,6 +144,10 @@ let LT_REFL = prove
 
 export_thm LT_REFL;;
 
+let LT_IMP_NE = prove
+ (`!m n:num. m < n ==> ~(m = n)`,
+  MESON_TAC [LT_REFL]);;
+
 (* Antisymmetry *)
 
 let LE_ANTISYM = prove
@@ -2908,6 +2912,13 @@ let WLOG_LT = prove
      (!m. p m m) /\ (!m n. p m n <=> p n m) /\ (!m n. m < n ==> p m n)
      ==> !m y. p m y`,
   MESON_TAC[LT_CASES]);;
+
+let WLOG_LE_3 = prove
+ (`!p : num -> num -> num -> bool.
+       (!x y z. p x y z ==> p y x z /\ p x z y) /\
+       (!x y z. x <= y /\ y <= z ==> p x y z)
+       ==> !x y z. p x y z`,
+  MESON_TAC[LE_CASES]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Useful lemmas about monotonicity of num -> num functions.                 *)
