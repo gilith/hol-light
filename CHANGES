@@ -8,30 +8,135 @@
   * page: https://github.com/jrh13/hol-light/commits/master         *
   * *****************************************************************
 
+Mon  2nd Oct 2017       parser.ml
+
+Fixed an amazingly stupid and longstanding bug arising from mis-use of an 
+accumulator variable in preterm parsing. As a consequence "pfrees" could be
+wrong in situations where the same variable appears both free and bound, which
+can have consequences for determining the relevant variables in a set
+abstraction, typified by the mis-parsing of this:
+
+ `{{x | x IN (\i. T) /\ x i = 1} | i IN 1..n}`;;
+
+versus the correctly parsed:
+
+  `{{x | x IN (\j. T) /\ x i = 1} | i IN 1..n}`;;
+
+Sat 30th Sep 2017       Multivariate/homology.ml [new file]
+
+Added a new file with an initial development of singular homology.
+
+Sun 24th Sep 2017       Ntrie/ntrie.ml
+
+Added a complete revision from Marco Maggesi of the "Ntrie" library for
+manipulation of concrete numeral sets using a trie-like representation. Among
+other improvements, the conversions have been made cleaner (always failing
+predictably on non-minimal ntries) and much more efficient (typically 5x-15x as
+fast), and a syntax extension for ntries has been added.
+
+Wed 20th Sep 2017       int.ml, Library/prime.ml
+
+Moved a few existing things (theorems DIVIDES_ANTISYM, DIVIDES_LE_STRONG,
+DIVIDES_ONE and the definition of "prime") from "Library/prime.ml" into the
+core, to avoid loading all that file for a few more simple facts, and also
+added two new (and trivial) theorems:
+
+  ONE_OR_PRIME =
+    |- !p. p = 1 \/ prime p <=> (!n. n divides p ==> n = 1 \/ n = p)
+
+  FORALL_INT_CASES =
+    |- !P:int->bool. (!x. P x) <=> (!n. P(&n)) /\ (!n. P(-- &n))
+
+Sat 16th Sep 2017       Library/frag.ml [new file], Library/grouptheory.ml
+
+Added another file "Library/frag.ml" with a type constructor for defining the
+free Abelian group on a given type. Incorporated this into the general group
+theory. In that "Library/grouptheory.ml" file, systematically adopted a
+multiplicative terminology (changing various names from "op/OP" to "mul/MUL")
+as well as adding new material: powers (natural number and integer), trivial
+homomorphisms, Abelian groups, cyclic groups and the group of integers.
+
+Sun 10th Sep 2017       Library/grouptheory.ml [new file]
+
+Added a new file with a basic development of group theory, using a type of
+":(A)group" for a group on a (subset of a) type ":A". So far this is all pretty
+elementary but it's good to have some standard version of groups.
+
+Fri  1st Sep 2017       sets.ml
+
+Added a simple theorem about the image of a Cartesian product:
+
+  IMAGE_PAIRED_CROSS =
+    |- !f g s t.
+           IMAGE (\(x,y). f x,g y) (s CROSS t) = IMAGE f s CROSS IMAGE g t
+
+Thu 24th Aug 2017       passim
+
+Eliminated a number of duplicated theorems (often exact duplicates,
+otherwise differing at most in their outer universal quantifiers or
+bound variable names):
+
+        BOREL_INDUCT_OPEN_UNIONS_INTERS -> BOREL_INDUCT_UNIONS_INTERS
+        CLOSED_SIMPLEX -> SIMPLEX_IMP_CLOSED
+        COMPACT_IN_SUBTOPOLOGY_EQ -> COMPACT_IN_SUBTOPOLOGY
+        COMPACT_SIMPLEX -> SIMPLEX_IMP_COMPACT
+        COMPLEX_DIFFERENTIABLE_COMPOSE -> COMPLEX_DIFFERENTIABLE_COMPOSE_AT
+        CONVEX_SIMPLEX -> SIMPLEX_IMP_CONVEX
+        DIAGONAL_MATRIX_MUL_EXPLICIT -> MATRIX_MUL_DIAGONAL
+        DOT_NORM_NEG -> DOT_NORM_SUB
+        FINITE_EMPTY_INTERIOR -> EMPTY_INTERIOR_FINITE
+        HAS_VECTOR_DERIVATIVE_UNIQUE_AT -> VECTOR_DERIVATIVE_AT
+        HAUSDIST_TRANS -> HAUSDIST_TRIANGLE
+        INT_LE_NEG -> INT_LE_NEG2
+        INT_LT_NEG -> INT_LT_NEG2
+        INT_NEGNEG -> INT_NEG_NEG
+        INT_OF_REAL_OF_INT -> int_abstr
+        LAMBDA_UNPAIR_THM -> LAMBDA_PAIR
+        LIM_NULL_COMPLEX_BOUND -> LIM_NULL_COMPARISON_COMPLEX
+        MATRIX_LEFT_INVERTIBLE_NULLSPACE -> MATRIX_LEFT_INVERTIBLE_KER
+        MBOUNDED_IFF_FINITE_DIAMETER -> MBOUNDED_ALT
+        PSUBSET_MEMBER -> PSUBSET_ALT
+        REALLIM_TRANSFORM_BOUND -> REALLIM_NULL_COMPARISON
+        REAL_LE_NEG -> REAL_LE_NEG2
+        REAL_LT_NEG -> REAL_LT_NEG2
+        REAL_NEGNEG -> REAL_NEG_NEG
+        REAL_POS_NZ -> REAL_LT_IMP_NZ
+        RELATIVE_FRONTIER_CONVEX_HULL_CASES -> RELATIVE_FRONTIER_OF_CONVEX_HULL
+        SETDIST_LIPSCHITZ -> SETDIST_SING_TRIANGLE
+        num_RECURSION_STD -> num_RECURSION
+
+Also changed the following to be the genuinely distinct theorems that were
+presumably intended:
+
+  ABS_DROP (was same as NORM_1)
+  ANGLE_EQ_PI_RIGHT (was same as ANGLE_EQ_PI_LEFT)
+  CLOSURE_RATIONALS_IN_OPEN_SET (was same as CLOSURE_DYADIC_RATIONALS_IN_OPEN_SET)
+  CONNECTED_CONVEX_1_GEN (was same as CONVEX_CONNECTED_1_GEN)
+
 Fri 18th Aug 2017       real.ml
 
 Added quite a few new and fairly basic real number theorems (some of the convex
 bounds ones were moved out of Multivariate/misc.ml).
-  
+
   REAL_ABS_LE_SQRT =
    |- !x y. abs (sqrt x - sqrt y) <= sqrt (&2 * abs (x - y))
-  
+
   REAL_ABS_LE_SQRT_POS =
     |- !x y. &0 <= x /\ &0 <= y ==> abs (sqrt x - sqrt y) <= sqrt (abs (x - y))
-  
+
   REAL_ABS_SQRT =
     |- !x. abs (sqrt x) = sqrt (abs x)
-  
+
   REAL_CONVEX_BOUND2_LE =
     |- !x y a u v.
            x <= a /\ y <= b /\ &0 <= u /\ &0 <= v /\ u + v = &1
            ==> u * x + v * y <= u * a + v * b
-  
+
   REAL_CONVEX_BOUND2_LT =
     |- !x y a u v.
            x < a /\ y < b /\ &0 <= u /\ &0 <= v /\ u + v = &1
            ==> u * x + v * y < u * a + v * b
-  
+
   REAL_CONVEX_BOUNDS_LE =
     |- !x y a b u v.
            a <= x /\
@@ -42,35 +147,35 @@ bounds ones were moved out of Multivariate/misc.ml).
            &0 <= v /\
            u + v = &1
            ==> a <= u * x + v * y /\ u * x + v * y <= b
-  
+
   REAL_CONVEX_BOUNDS_LT =
     |- !x y a b u v.
            a < x /\ x < b /\ a < y /\ y < b /\ &0 <= u /\ &0 <= v /\ u + v = &1
            ==> a < u * x + v * y /\ u * x + v * y < b
-  
+
   REAL_CONVEX_BOUND_GE =
     |- !x y a u v.
            a <= x /\ a <= y /\ &0 <= u /\ &0 <= v /\ u + v = &1
            ==> a <= u * x + v * y
-  
+
   REAL_CONVEX_BOUND_GT =
     |- !x y a u v.
            a < x /\ a < y /\ &0 <= u /\ &0 <= v /\ u + v = &1
            ==> a < u * x + v * y
-  
+
   REAL_CONVEX_BOUND_LE =
     |- !x y a u v.
            x <= a /\ y <= a /\ &0 <= u /\ &0 <= v /\ u + v = &1
            ==> u * x + v * y <= a
-  
+
   REAL_CONVEX_BOUND_LT =
     |- !x y a u v.
            x < a /\ y < a /\ &0 <= u /\ &0 <= v /\ u + v = &1
            ==> u * x + v * y < a
-  
+
   REAL_DIV_EQ_1 =
     |- !x y. x / y = &1 <=> x = y /\ ~(x = &0) /\ ~(y = &0)
-  
+
   SQRT_EQ_1 =
     |- !x. sqrt x = &1 <=> x = &1
 

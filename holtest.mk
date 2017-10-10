@@ -16,6 +16,7 @@ STANDALONE_EXAMPLES:=\
 	Library/floor \
 	Examples/forster \
 	Examples/gcdrecurrence \
+	Library/grouptheory \
 	Examples/harmonicsum \
 	Examples/hol88 \
 	Examples/holby \
@@ -79,6 +80,7 @@ EXTENDED_EXAMPLES:=\
 	Multivariate/flyspeck \
 	Multivariate/gamma \
 	Multivariate/geom \
+	Multivariate/homology \
 	Multivariate/lpspaces \
 	Multivariate/tarski \
 	RichterHilbertAxiomGeometry/Topology \

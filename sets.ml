@@ -5708,6 +5708,15 @@ let INTER_CROSS = prove
 
 export_thm INTER_CROSS;;
 
+let IMAGE_PAIRED_CROSS = prove
+ (`!(f:A->B) (g:C->D) s t.
+         IMAGE (\(x,y). f x,g y) (s CROSS t) = (IMAGE f s) CROSS (IMAGE g t)`,
+  REWRITE_TAC[EXTENSION; IN_IMAGE; EXISTS_PAIR_THM; IN_CROSS; FORALL_PAIR_THM;
+              PAIR_EQ] THEN
+  MESON_TAC[]);;
+
+export_thm IMAGE_PAIRED_CROSS;;
+
 let CROSS_INTER = prove
  (`!(s : A set) (t : B set) u.
      s CROSS (t INTER u) = (s CROSS t) INTER (s CROSS u)`,

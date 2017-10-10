@@ -185,7 +185,7 @@ let int_pow_th = prove
     ASM_REWRITE_TAC[GSYM int_mul; int_mul_th]]);;
 
 (* ------------------------------------------------------------------------- *)
-(* A couple of theorems peculiar to the integers.                            *)
+(* A few convenient theorems about the integer type.                         *)
 (* ------------------------------------------------------------------------- *)
 
 let INT_IMAGE = prove
@@ -197,6 +197,10 @@ let INT_IMAGE = prove
    [DISJ1_TAC; DISJ2_TAC] THEN
   EXISTS_TAC `n:num` THEN REWRITE_TAC[int_abstr] THEN
   REWRITE_TAC[GSYM int_of_num; int_of_num_th]);;
+
+let FORALL_INT_CASES = prove
+ (`!P:int->bool. (!x. P x) <=> (!n. P(&n)) /\ (!n. P(-- &n))`,
+  MESON_TAC[INT_IMAGE]);;
 
 let INT_LT_DISCRETE = prove
  (`!x y. x < y <=> (x + &1) <= y`,
@@ -363,7 +367,6 @@ let INT_LE_MAX = INT_OF_REAL_THM REAL_LE_MAX;;
 let INT_LE_MIN = INT_OF_REAL_THM REAL_LE_MIN;;
 let INT_LE_MUL = INT_OF_REAL_THM REAL_LE_MUL;;
 let INT_LE_MUL_EQ = INT_OF_REAL_THM REAL_LE_MUL_EQ;;
-let INT_LE_NEG = INT_OF_REAL_THM REAL_LE_NEG;;
 let INT_LE_NEG2 = INT_OF_REAL_THM REAL_LE_NEG2;;
 let INT_LE_NEGL = INT_OF_REAL_THM REAL_LE_NEGL;;
 let INT_LE_NEGR = INT_OF_REAL_THM REAL_LE_NEGR;;
@@ -405,7 +408,6 @@ let INT_LT_MAX = INT_OF_REAL_THM REAL_LT_MAX;;
 let INT_LT_MIN = INT_OF_REAL_THM REAL_LT_MIN;;
 let INT_LT_MUL = INT_OF_REAL_THM REAL_LT_MUL;;
 let INT_LT_MUL_EQ = INT_OF_REAL_THM REAL_LT_MUL_EQ;;
-let INT_LT_NEG = INT_OF_REAL_THM REAL_LT_NEG;;
 let INT_LT_NEG2 = INT_OF_REAL_THM REAL_LT_NEG2;;
 let INT_LT_NEGTOTAL = INT_OF_REAL_THM REAL_LT_NEGTOTAL;;
 let INT_LT_POW2 = INT_OF_REAL_THM REAL_LT_POW2;;
@@ -442,7 +444,6 @@ let INT_MUL_RID = INT_OF_REAL_THM REAL_MUL_RID;;
 let INT_MUL_RNEG = INT_OF_REAL_THM REAL_MUL_RNEG;;
 let INT_MUL_RZERO = INT_OF_REAL_THM REAL_MUL_RZERO;;
 let INT_MUL_SYM = INT_OF_REAL_THM REAL_MUL_SYM;;
-let INT_NEGNEG = INT_OF_REAL_THM REAL_NEGNEG;;
 let INT_NEG_0 = INT_OF_REAL_THM REAL_NEG_0;;
 let INT_NEG_ADD = INT_OF_REAL_THM REAL_NEG_ADD;;
 let INT_NEG_EQ = INT_OF_REAL_THM REAL_NEG_EQ;;
@@ -473,7 +474,7 @@ let INT_OF_NUM_POW = INT_OF_REAL_THM REAL_OF_NUM_POW;;
 let INT_OF_NUM_SUB = INT_OF_REAL_THM REAL_OF_NUM_SUB;;
 let INT_OF_NUM_SUC = INT_OF_REAL_THM REAL_OF_NUM_SUC;;
 let INT_POS = INT_OF_REAL_THM REAL_POS;;
-let INT_POS_NZ = INT_OF_REAL_THM REAL_POS_NZ;;
+let INT_POS_NZ = INT_OF_REAL_THM REAL_LT_IMP_NZ;;
 let INT_POW2_ABS = INT_OF_REAL_THM REAL_POW2_ABS;;
 let INT_POW_1 = INT_OF_REAL_THM REAL_POW_1;;
 let INT_POW_1_LE = INT_OF_REAL_THM REAL_POW_1_LE;;
@@ -535,20 +536,20 @@ let INT_SUB_SUB = INT_OF_REAL_THM REAL_SUB_SUB;;
 let INT_SUB_SUB2 = INT_OF_REAL_THM REAL_SUB_SUB2;;
 let INT_SUB_TRIANGLE = INT_OF_REAL_THM REAL_SUB_TRIANGLE;;
 
-let INT_WLOG_LE = prove                                                        
- (`(!x y:int. P x y <=> P y x) /\ (!x y. x <= y ==> P x y) ==> !x y. P x y`,   
-  MESON_TAC[INT_LE_TOTAL]);;                                                   
-                                                      
-let INT_WLOG_LT = prove                                                      
+let INT_WLOG_LE = prove
+ (`(!x y:int. P x y <=> P y x) /\ (!x y. x <= y ==> P x y) ==> !x y. P x y`,
+  MESON_TAC[INT_LE_TOTAL]);;
+
+let INT_WLOG_LT = prove
  (`(!x:int. P x x) /\ (!x y. P x y <=> P y x) /\ (!x y. x < y ==> P x y)
-   ==> !x y. P x y`,                                            
-  MESON_TAC[INT_LT_TOTAL]);;                           
-                                                        
-let INT_WLOG_LE_3 = prove                          
- (`!P. (!x y z. P x y z ==> P y x z /\ P x z y) /\              
-       (!x y z:int. x <= y /\ y <= z ==> P x y z)                       
-       ==> !x y z. P x y z`,                                              
-  MESON_TAC[INT_LE_TOTAL]);;                                                   
+   ==> !x y. P x y`,
+  MESON_TAC[INT_LT_TOTAL]);;
+
+let INT_WLOG_LE_3 = prove
+ (`!P. (!x y z. P x y z ==> P y x z /\ P x z y) /\
+       (!x y z:int. x <= y /\ y <= z ==> P x y z)
+       ==> !x y z. P x y z`,
+  MESON_TAC[INT_LE_TOTAL]);;
 
 (* ------------------------------------------------------------------------- *)
 (* More useful "image" theorems.                                             *)
@@ -1470,6 +1471,34 @@ let DIVIDES_LE = prove
   REWRITE_TAC[LE_MULT_LCANCEL; MULT_EQ_0; ARITH_RULE
    `m <= m * n <=> m * 1 <= m * n`] THEN
   ASM_ARITH_TAC);;
+
+let DIVIDES_LE_STRONG = prove
+ (`!m n. m divides n ==> 1 <= m /\ m <= n \/ n = 0`,
+  REPEAT GEN_TAC THEN ASM_CASES_TAC `m = 0` THEN
+  ASM_REWRITE_TAC[NUMBER_RULE `0 divides n <=> n = 0`] THEN
+  ASM_MESON_TAC[DIVIDES_LE; LE_1]);;
+
+let DIVIDES_ANTISYM = prove
+ (`!m n. m divides n /\ n divides m <=> m = n`,
+  REPEAT GEN_TAC THEN EQ_TAC THENL [ALL_TAC; NUMBER_TAC] THEN
+  DISCH_THEN(CONJUNCTS_THEN(MP_TAC o MATCH_MP DIVIDES_LE_STRONG)) THEN
+  ARITH_TAC);;
+
+let DIVIDES_ONE = prove
+ (`!n. n divides 1 <=> n = 1`,
+  REWRITE_TAC[divides] THEN MESON_TAC[MULT_EQ_1; MULT_CLAUSES]);;
+
+(* ------------------------------------------------------------------------- *)
+(* Definition (and not much more) of primality.                              *)
+(* ------------------------------------------------------------------------- *)
+
+let prime = new_definition
+  `prime(p) <=> ~(p = 1) /\ !x. x divides p ==> x = 1 \/ x = p`;;
+
+let ONE_OR_PRIME = prove
+ (`!p. p = 1 \/ prime p <=> !n. n divides p ==> n = 1 \/ n = p`,
+  GEN_TAC THEN REWRITE_TAC[prime] THEN
+  ASM_CASES_TAC `p = 1` THEN ASM_REWRITE_TAC[DIVIDES_ONE]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Make sure we give priority to N.                                          *)

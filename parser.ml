@@ -263,22 +263,22 @@ let parse_preterm =
     match l with
       [] -> true
     | h::t -> forall (r h) t && pairwise r t in
-  let rec pfrees ptm acc =
+  let rec pfrees ptm =
     match ptm with
       Varp(v,pty) ->
-        if v = "" && pty = dpty then acc
+        if v = "" && pty = dpty then []
         else if can get_const_type v || can num_of_string v
-                || exists (fun (w,_) -> v = w) (!the_interface) then acc
-        else insert ptm acc
-    | Constp(_,_) -> acc
-    | Combp(p1,p2) -> pfrees p1 (pfrees p2 acc)
-    | Absp(p1,p2) -> subtract (pfrees p2 acc) (pfrees p1 [])
-    | Typing(p,_) -> pfrees p acc in
+                || exists (fun (w,_) -> v = w) (!the_interface) then []
+        else [ptm]
+    | Constp(_,_) -> []
+    | Combp(p1,p2) -> union (pfrees p1) (pfrees p2)
+    | Absp(p1,p2) -> subtract (pfrees p2) (pfrees p1)
+    | Typing(p,_) -> pfrees p in
   let pdest_eq (Combp(Combp(Varp(("="|"<=>"),_),l),r)) = l,r in
   let pmk_let (letbindings,body) =
     let vars,tms = unzip (map pdest_eq letbindings) in
     let _ = warn(not
-     (pairwise (fun s t -> intersect(pfrees s []) (pfrees t []) = []) vars))
+     (pairwise (fun s t -> intersect(pfrees s) (pfrees t) = []) vars))
      "duplicate names on left of let-binding: latest is used" in
     let lend = Combp(Varp("LET_END",dpty),body) in
     let abs = itlist (fun v t -> Absp(v,t)) vars lend in
@@ -320,15 +320,15 @@ let parse_preterm =
     | _ -> failwith "pvarname: not a Varp" in
   let sortvars = let cmp v1 v2 = pvarname v1 <= pvarname v2 in sort cmp in
   let pmk_setcompr (fabs,bvs,babs) =
-    let avoid = map pvarname (pfrees babs (pfrees fabs bvs)) in
+    let avoid = map pvarname (union (pfrees babs) (union (pfrees fabs) bvs)) in
     let v = pvariant avoid "v" in
     let bod = itlist (curry pmk_exists) (sortvars bvs)
                      (Combp(Combp(Varp("/\\",dpty),Combp(Combp(Varp("=",dpty),v),fabs)),babs)) in
     Combp(Varp("GSPEC",dpty),Absp(v,bod)) in
   let pmk_setabs (fabs,babs) =
     let evs =
-      let fvs = pfrees fabs []
-      and bvs = pfrees babs [] in
+      let fvs = pfrees fabs
+      and bvs = pfrees babs in
       if length fvs <= 1 || bvs = [] then fvs
       else intersect fvs bvs in
     pmk_setcompr (fabs,evs,babs) in
@@ -346,7 +346,7 @@ let parse_preterm =
   let pmk_geq s t = Combp(Combp(Varp("GEQ",dpty),s),t) in
   let pmk_pattern ((pat,guards),res) =
     let x = pgenvar() and y = pgenvar() in
-    let vs = pfrees pat []
+    let vs = pfrees pat
     and bod =
      if guards = [] then
        Combp(Combp(Varp("_UNGUARDED_PATTERN",dpty),pmk_geq pat x),
@@ -374,7 +374,7 @@ let parse_preterm =
   and lmk_setenum(l,_) = pmk_set_enum l
   and lmk_setabs(((l,_),r),_) = pmk_setabs(l,r)
   and lmk_setcompr(((((f,_),vs),_),b),_) =
-     pmk_setcompr(f,pfrees vs [],b)
+     pmk_setcompr(f,pfrees vs,b)
   and lmk_decimal ((_,l0),ropt) =
     let l,r = if ropt = [] then l0,"1" else
               let r0 = hd ropt in
