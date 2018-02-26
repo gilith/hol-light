@@ -1957,6 +1957,11 @@ let INTERS_SUBSET = prove
 
 export_thm INTERS_SUBSET;;
 
+let INTERS_ANTIMONO_GEN = prove
+ (`!s t. (!y. y IN t ==> ?x. x IN s /\ x SUBSET y)
+         ==> INTERS s SUBSET INTERS t`,
+  SET_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Image.                                                                    *)
 (* ------------------------------------------------------------------------- *)
