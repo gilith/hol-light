@@ -1925,12 +1925,37 @@ let SUBSET_INTERS = prove
 
 export_thm SUBSET_INTERS;;
 
+let INTERS_ANTIMONO_GEN = prove
+ (`!s t : (A set) set.
+     (!y. y IN t ==> ?x. x IN s /\ x SUBSET y) ==>
+     INTERS s SUBSET INTERS t`,
+  REWRITE_TAC [SUBSET; IN_INTERS] THEN
+  REPEAT GEN_TAC THEN
+  STRIP_TAC THEN
+  X_GEN_TAC `x : A` THEN
+  STRIP_TAC THEN
+  X_GEN_TAC `q : A set` THEN
+  STRIP_TAC THEN
+  FIRST_X_ASSUM
+    (fun th ->
+       POP_ASSUM
+         (X_CHOOSE_THEN `p : A set` STRIP_ASSUME_TAC o
+          MATCH_MP th)) THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  FIRST_ASSUM ACCEPT_TAC);;
+
+export_thm INTERS_ANTIMONO_GEN;;
+
 let INTERS_ANTIMONO = prove
  (`!(s : (A set) set) t. s SUBSET t ==> (INTERS t) SUBSET (INTERS s)`,
-  REWRITE_TAC [SUBSET; IN_INTERS] THEN
   REPEAT STRIP_TAC THEN
-  FIRST_X_ASSUM MATCH_MP_TAC THEN
-  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  MATCH_MP_TAC INTERS_ANTIMONO_GEN THEN
+  X_GEN_TAC `x : A set` THEN
+  STRIP_TAC THEN
+  EXISTS_TAC `x : A set` THEN
+  REWRITE_TAC [SUBSET_REFL] THEN
+  FIRST_X_ASSUM (MATCH_MP_TAC o REWRITE_RULE [SUBSET]) THEN
   FIRST_ASSUM ACCEPT_TAC);;
 
 export_thm INTERS_ANTIMONO;;
@@ -1956,11 +1981,6 @@ let INTERS_SUBSET = prove
   ASM_REWRITE_TAC []);;
 
 export_thm INTERS_SUBSET;;
-
-let INTERS_ANTIMONO_GEN = prove
- (`!s t. (!y. y IN t ==> ?x. x IN s /\ x SUBSET y)
-         ==> INTERS s SUBSET INTERS t`,
-  SET_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Image.                                                                    *)
