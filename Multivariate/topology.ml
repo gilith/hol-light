@@ -319,6 +319,79 @@ let CONTINUOUS_MAP_DROP_EQ = prove
         continuous_map(euclidean,top) (f o drop)`,
   REWRITE_TAC[CONTINUOUS_MAP_LIFT_EQ; o_DEF; LIFT_DROP; ETA_AX]);;
 
+let CONTINUOUS_MAP_COMPONENTWISE_EUCLIDEAN_SPACE = prove
+ (`!top (f:A->num->real) n.
+        continuous_map (top,euclidean_space n)
+                       (\x i. if 1 <= i /\ i <= n then f x i else &0) <=>
+   !i. 1 <= i /\ i <= n ==> continuous_map(top,euclideanreal) (\x. f x i)`,
+  REWRITE_TAC[euclidean_space; CONTINUOUS_MAP_IN_SUBTOPOLOGY] THEN
+  SIMP_TAC[SUBSET; FORALL_IN_IMAGE; IN_ELIM_THM; IN_NUMSEG] THEN
+  REPEAT GEN_TAC THEN REWRITE_TAC[CONTINUOUS_MAP_COMPONENTWISE_UNIV] THEN
+  EQ_TAC THEN MATCH_MP_TAC MONO_FORALL THEN X_GEN_TAC `i:num` THEN
+  ASM_CASES_TAC `1 <= i /\ i <= n` THEN
+  ASM_REWRITE_TAC[CONTINUOUS_MAP_REAL_CONST]);;
+
+(* ------------------------------------------------------------------------- *)
+(* Arithmetic combining theorems for vector-valued continuous maps.          *)
+(* ------------------------------------------------------------------------- *)
+
+let CONTINUOUS_MAP_VECTOR_CONST = prove
+ (`!(top:A topology) (b:real^N).
+        continuous_map (top,euclidean) (\x. b)`,
+  REWRITE_TAC[CONTINUOUS_MAP_CONST; TOPSPACE_EUCLIDEAN; IN_UNIV]);;
+
+let CONTINUOUS_MAP_VECTOR_ADD = prove
+ (`!top f g:A->real^N.
+        continuous_map(top,euclidean) f /\ continuous_map(top,euclidean) g
+        ==> continuous_map(top,euclidean) (\x. f x + g x)`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[CONTINUOUS_MAP_COMPONENTWISE_REAL] THEN
+  STRIP_TAC THEN X_GEN_TAC `i:num` THEN STRIP_TAC THEN
+  REPEAT(FIRST_X_ASSUM(MP_TAC o SPEC `i:num`)) THEN
+  ASM_SIMP_TAC[VECTOR_ADD_COMPONENT; CONTINUOUS_MAP_REAL_ADD]);;
+
+let CONTINUOUS_MAP_VECTOR_SUB = prove
+ (`!top f g:A->real^N.
+        continuous_map(top,euclidean) f /\ continuous_map(top,euclidean) g
+        ==> continuous_map(top,euclidean) (\x. f x - g x)`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[CONTINUOUS_MAP_COMPONENTWISE_REAL] THEN
+  STRIP_TAC THEN X_GEN_TAC `i:num` THEN STRIP_TAC THEN
+  REPEAT(FIRST_X_ASSUM(MP_TAC o SPEC `i:num`)) THEN
+  ASM_SIMP_TAC[VECTOR_SUB_COMPONENT; CONTINUOUS_MAP_REAL_SUB]);;
+
+let CONTINUOUS_MAP_VECTOR_MUL = prove
+ (`!top c f:A->real^N.
+        continuous_map(top,euclideanreal) c /\ continuous_map(top,euclidean) f
+        ==> continuous_map(top,euclidean) (\x. c x % f x)`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[CONTINUOUS_MAP_COMPONENTWISE_REAL] THEN
+  STRIP_TAC THEN X_GEN_TAC `i:num` THEN STRIP_TAC THEN
+  FIRST_X_ASSUM(MP_TAC o SPEC `i:num`) THEN
+  ASM_SIMP_TAC[VECTOR_MUL_COMPONENT; CONTINUOUS_MAP_REAL_MUL]);;
+
+let CONTINUOUS_MAP_DOT = prove
+ (`!top f g:A->real^N.
+        continuous_map(top,euclidean) f /\ continuous_map(top,euclidean) g
+        ==> continuous_map(top,euclideanreal) (\x. f x dot g x)`,
+  REWRITE_TAC[CONTINUOUS_MAP_COMPONENTWISE_REAL] THEN REPEAT STRIP_TAC THEN
+  REWRITE_TAC[dot] THEN MATCH_MP_TAC CONTINUOUS_MAP_SUM THEN
+  ASM_SIMP_TAC[IN_NUMSEG; FINITE_NUMSEG; CONTINUOUS_MAP_REAL_MUL]);;
+
+let CONTINUOUS_MAP_VSUM = prove
+ (`!top k (f:A->K->real^N).
+        FINITE k /\ (!i. i IN k ==> continuous_map(top,euclidean) (\x. f x i))
+        ==> continuous_map(top,euclidean) (\x. vsum k (f x))`,
+  GEN_TAC THEN REWRITE_TAC[IMP_CONJ; RIGHT_FORALL_IMP_THM] THEN
+  MATCH_MP_TAC FINITE_INDUCT_STRONG THEN REWRITE_TAC[FORALL_IN_INSERT] THEN
+  SIMP_TAC[VSUM_CLAUSES; CONTINUOUS_MAP_VECTOR_CONST;
+           CONTINUOUS_MAP_VECTOR_ADD]);;
+
+let CONTINUOUS_MAP_EUCLIDEAN_COMPONENT = prove
+ (`!top (f:A->real^N) i.
+        continuous_map(top,euclidean) f
+        ==> continuous_map (top,euclideanreal) (\x. f x$i)`,
+  REWRITE_TAC[CONTINUOUS_MAP_COMPONENTWISE_REAL] THEN REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN `?k. 1 <= k /\ k <= dimindex(:N) /\ !x:real^N. x$i = x$k`
+  STRIP_ASSUME_TAC THENL [REWRITE_TAC[FINITE_INDEX_INRANGE]; ASM_SIMP_TAC[]]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Open and closed balls and spheres.                                        *)
 (* ------------------------------------------------------------------------- *)
@@ -792,6 +865,77 @@ let CLOSED_IN_INJECTIVE_LINEAR_IMAGE = prove
   GEOM_TRANSFORM_TAC[]);;
 
 add_linear_invariants [CLOSED_IN_INJECTIVE_LINEAR_IMAGE];;
+
+(* ------------------------------------------------------------------------- *)
+(* Relating two variants of Euclidean space, one within product topology.    *)
+(* ------------------------------------------------------------------------- *)
+
+let HOMEOMORPHIC_MAPS_EUCLIDEAN_SPACE_EUCLIDEAN_GEN = prove
+ (`!n. n <= dimindex(:N)
+       ==> homeomorphic_maps
+             (euclidean_space n,
+              subtopology euclidean (span(IMAGE basis (1..n)):real^N->bool))
+             ((\x. lambda i. if 1 <= i /\ i <= n then x i else &0),
+              (\x i. if 1 <= i /\ i <= n then x$i else &0))`,
+  REPEAT STRIP_TAC THEN REWRITE_TAC[homeomorphic_maps] THEN
+  REWRITE_TAC[CONTINUOUS_MAP_COMPONENTWISE_EUCLIDEAN_SPACE;
+              CONTINUOUS_MAP_IN_SUBTOPOLOGY; CONTINUOUS_MAP_COMPONENTWISE_UNIV;
+              CONTINUOUS_MAP_COMPONENTWISE_REAL] THEN
+  SIMP_TAC[CONTINUOUS_MAP_FROM_SUBTOPOLOGY; CONTINUOUS_MAP_EUCLIDEAN_COMPONENT;
+           LAMBDA_BETA; CONTINUOUS_MAP_ID] THEN
+  REWRITE_TAC[SUBSET; FORALL_IN_IMAGE; TOPSPACE_EUCLIDEAN_SPACE] THEN
+  REPEAT CONJ_TAC THENL
+   [X_GEN_TAC `i:num` THEN ASM_CASES_TAC `i:num <= n` THEN
+    ASM_REWRITE_TAC[CONTINUOUS_MAP_REAL_CONST] THEN
+    SIMP_TAC[CONTINUOUS_MAP_PRODUCT_PROJECTION; IN_UNIV; euclidean_space;
+             CONTINUOUS_MAP_FROM_SUBTOPOLOGY];
+    X_GEN_TAC `x:num->real` THEN
+    REWRITE_TAC[IN_SPAN_IMAGE_BASIS; IN_ELIM_THM; IN_NUMSEG] THEN
+    SIMP_TAC[LAMBDA_BETA];
+    REWRITE_TAC[IN_ELIM_THM; IN_NUMSEG] THEN REPEAT STRIP_TAC THEN
+    GEN_REWRITE_TAC I [FUN_EQ_THM] THEN X_GEN_TAC `i:num` THEN
+    REWRITE_TAC[] THEN COND_CASES_TAC THEN ASM_SIMP_TAC[] THEN
+    SUBGOAL_THEN `i <= dimindex(:N)` MP_TAC THENL
+     [ASM_ARITH_TAC; ASM_SIMP_TAC[LAMBDA_BETA]];
+    REWRITE_TAC[TOPSPACE_EUCLIDEAN_SUBTOPOLOGY; IN_SPAN_IMAGE_BASIS] THEN
+    SIMP_TAC[CART_EQ; IN_NUMSEG; LAMBDA_BETA] THEN MESON_TAC[]]);;
+
+let HOMEOMORPHIC_MAPS_EUCLIDEAN_SPACE_EUCLIDEAN = prove
+ (`homeomorphic_maps (euclidean_space(dimindex(:N)),euclidean:(real^N)topology)
+                 ((\x. lambda i. x i),
+                  (\x i. if 1 <= i /\ i <= dimindex(:N) then x$i else &0))`,
+  MP_TAC(SPEC `dimindex(:N)`
+        HOMEOMORPHIC_MAPS_EUCLIDEAN_SPACE_EUCLIDEAN_GEN) THEN
+  REWRITE_TAC[GSYM SIMPLE_IMAGE; IN_NUMSEG; SPAN_STDBASIS; LE_REFL] THEN
+  REWRITE_TAC[SUBTOPOLOGY_UNIV] THEN MATCH_MP_TAC EQ_IMP THEN
+  BINOP_TAC THEN REWRITE_TAC[PAIR_EQ] THEN ABS_TAC THEN
+  SIMP_TAC[CART_EQ; LAMBDA_BETA]);;
+
+let HOMEOMORPHIC_MAPS_NSPHERE_EUCLIDEAN_SPHERE = prove
+ (`!n. 1 <= n /\ n <= dimindex(:N)
+       ==> homeomorphic_maps
+            (nsphere(n - 1),
+             subtopology euclidean
+              (sphere(vec 0:real^N,&1) INTER span(IMAGE basis (1..n))))
+            ((\x. lambda i. if 1 <= i /\ i <= n then x i else &0),
+             (\x i. if 1 <= i /\ i <= n then x$i else &0))`,
+  REPEAT STRIP_TAC THEN ASM_SIMP_TAC[nsphere; SUB_ADD] THEN
+  ONCE_REWRITE_TAC[INTER_COMM] THEN
+  REWRITE_TAC[GSYM SUBTOPOLOGY_SUBTOPOLOGY] THEN
+  MATCH_MP_TAC HOMEOMORPHIC_MAPS_SUBTOPOLOGIES_ALT THEN
+  ASM_SIMP_TAC[HOMEOMORPHIC_MAPS_EUCLIDEAN_SPACE_EUCLIDEAN_GEN] THEN
+  REWRITE_TAC[SUBSET; TOPSPACE_EUCLIDEAN_SPACE; FORALL_IN_IMAGE] THEN
+  REWRITE_TAC[IN_INTER; IN_ELIM_THM; TOPSPACE_EUCLIDEAN_SUBTOPOLOGY] THEN
+  REWRITE_TAC[IN_SPHERE_0; NORM_EQ_1; dot; GSYM REAL_POW_2] THEN
+  SUBGOAL_THEN `!j. j <= n ==> j <= dimindex(:N)` ASSUME_TAC THENL
+   [ASM_ARITH_TAC; ALL_TAC] THEN
+  REWRITE_TAC[IN_NUMSEG; IN_SPAN_IMAGE_BASIS] THEN REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM(fun th ->  GEN_REWRITE_TAC RAND_CONV [GSYM th]) THENL
+   [ALL_TAC; CONV_TAC SYM_CONV] THEN
+  MATCH_MP_TAC SUM_EQ_SUPERSET THEN
+  ASM_SIMP_TAC[FINITE_NUMSEG; SUBSET_NUMSEG; IN_NUMSEG; LAMBDA_BETA] THEN
+  REWRITE_TAC[LE_REFL] THEN REPEAT STRIP_TAC THEN
+  CONV_TAC REAL_RAT_REDUCE_CONV);;
 
 (* ------------------------------------------------------------------------- *)
 (* Manhattan metric.                                                         *)
