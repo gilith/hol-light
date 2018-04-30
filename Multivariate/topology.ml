@@ -1321,9 +1321,7 @@ let CONNECTED_IFF_CONNECTABLE_POINTS = prove
   GEN_REWRITE_TAC LAND_CONV [connected_in] THEN
   REWRITE_TAC[CONNECTED_SPACE_SUBCONNECTED; TOPSPACE_EUCLIDEAN; SUBSET_UNIV;
               TOPSPACE_EUCLIDEAN_SUBTOPOLOGY] THEN
-  ONCE_REWRITE_TAC[GSYM CONNECTED_IN_ABSOLUTE] THEN
-  REWRITE_TAC[SUBTOPOLOGY_SUBTOPOLOGY] THEN
-  MESON_TAC[SET_RULE `t SUBSET s ==> s INTER t = t`]);;
+  REWRITE_TAC[CONNECTED_IN_SUBTOPOLOGY; GSYM CONJ_ASSOC]);;
 
 let CONNECTED_EMPTY = prove
  (`connected {}`,
@@ -8580,7 +8578,7 @@ let QUOTIENT_MAP_COMPOSE_EXPLICIT = prove
     {x | x IN s /\ f x IN {x | x IN t /\ g x IN v}}`
   SUBST1_TAC THENL [ASM SET_TAC[]; ASM_SIMP_TAC[SUBSET_RESTRICT]]);;
 
-let QUOTIENT_MAP_FROM_COMPOSITION = prove
+let QUOTIENT_MAP_FROM_COMPOSITION_EXPLICIT = prove
  (`!f:real^M->real^N g:real^N->real^P s t u.
         f continuous_on s /\ IMAGE f s SUBSET t /\
         g continuous_on t /\ IMAGE g t SUBSET u /\
@@ -8617,7 +8615,7 @@ let QUOTIENT_MAP_FROM_SUBSET = prove
                              {x | x IN t /\ f x IN v} <=>
                      open_in (subtopology euclidean u) v)`,
   REPEAT GEN_TAC THEN STRIP_TAC THEN
-  MATCH_MP_TAC QUOTIENT_MAP_FROM_COMPOSITION THEN
+  MATCH_MP_TAC QUOTIENT_MAP_FROM_COMPOSITION_EXPLICIT THEN
   MAP_EVERY EXISTS_TAC [`\x:real^M. x`; `s:real^M->bool`] THEN
   ASM_REWRITE_TAC[CONTINUOUS_ON_ID; IMAGE_ID; o_THM]);;
 
@@ -17287,7 +17285,7 @@ add_linear_invariants [INTERIOR_OF_INJECTIVE_LINEAR_IMAGE];;
 (* Relatively weak hypotheses if the domain of the function is compact.      *)
 (* ------------------------------------------------------------------------- *)
 
-let CONTINUOUS_IMP_CLOSED_MAP = prove
+let CONTINUOUS_IMP_CLOSED_MAP_EXPLICIT = prove
  (`!f:real^M->real^N s t.
         f continuous_on s /\ IMAGE f s = t /\ compact s
         ==> !u. closed_in (subtopology euclidean s) u
@@ -17300,7 +17298,7 @@ let CONTINUOUS_IMP_CLOSED_MAP = prove
   ASM_MESON_TAC[COMPACT_EQ_BOUNDED_CLOSED; CLOSED_IN_CLOSED_TRANS;
                 BOUNDED_SUBSET; CONTINUOUS_ON_SUBSET]);;
 
-let CONTINUOUS_IMP_QUOTIENT_MAP = prove
+let CONTINUOUS_IMP_QUOTIENT_MAP_EXPLICIT = prove
  (`!f:real^M->real^N s t.
         f continuous_on s /\ IMAGE f s = t /\ compact s
         ==> !u. u SUBSET t
@@ -17310,7 +17308,7 @@ let CONTINUOUS_IMP_QUOTIENT_MAP = prove
   REPEAT GEN_TAC THEN STRIP_TAC THEN FIRST_X_ASSUM(SUBST_ALL_TAC o SYM) THEN
   MATCH_MP_TAC CLOSED_MAP_IMP_QUOTIENT_MAP THEN
   ASM_REWRITE_TAC[] THEN
-  MATCH_MP_TAC CONTINUOUS_IMP_CLOSED_MAP THEN
+  MATCH_MP_TAC CONTINUOUS_IMP_CLOSED_MAP_EXPLICIT THEN
   ASM_REWRITE_TAC[]);;
 
 let CONTINUOUS_ON_INVERSE = prove
@@ -29547,6 +29545,33 @@ let [LOCALLY_CONTINUOUS_ON; LOCALLY_CONTINUOUS_ON_ALT;
     REWRITE_TAC[CONTINUOUS_ON] THEN
     MATCH_MP_TAC MONO_FORALL THEN MESON_TAC[LIM_WITHIN_OPEN_IN]]);;
 
+let LOCALLY_TO_COMPACTLY = prove
+ (`!P s c:real^N->bool.
+        (!t u. t SUBSET u /\ u SUBSET s /\ P u ==> P t) /\
+        (!f. FINITE f /\ (!t. t IN f ==> P t /\ t SUBSET s)
+             ==> P(UNIONS f)) /\
+        locally P s /\ compact c /\ c SUBSET s
+        ==> P c`,
+  REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM(MP_TAC o GEN_REWRITE_RULE I [locally]) THEN
+  DISCH_THEN(MP_TAC o SPEC `s:real^N->bool`) THEN
+  ASM_REWRITE_TAC[OPEN_IN_REFL; RIGHT_IMP_EXISTS_THM] THEN
+  REWRITE_TAC[SKOLEM_THM; LEFT_IMP_EXISTS_THM] THEN
+  MAP_EVERY X_GEN_TAC [`u:real^N->real^N->bool`; `v:real^N->real^N->bool`] THEN
+  DISCH_TAC THEN FIRST_ASSUM(MP_TAC o
+    GEN_REWRITE_RULE I [COMPACT_EQ_HEINE_BOREL_GEN]) THEN DISCH_THEN(MP_TAC o
+    SPECL [`IMAGE (u:real^N->real^N->bool) s`; `s:real^N->bool`]) THEN
+  ASM_SIMP_TAC[FORALL_IN_IMAGE] THEN
+  ANTS_TAC THENL [ASM SET_TAC[]; ALL_TAC] THEN
+  ONCE_REWRITE_TAC[TAUT `a /\ b /\ c <=> b /\ a /\ c`] THEN
+  REWRITE_TAC[EXISTS_FINITE_SUBSET_IMAGE] THEN
+  DISCH_THEN(X_CHOOSE_THEN `k:real^N->bool` STRIP_ASSUME_TAC) THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  EXISTS_TAC `UNIONS (IMAGE (v:real^N->real^N->bool) k)` THEN
+  REPEAT (CONJ_TAC THENL [ASM SET_TAC[]; ALL_TAC]) THEN
+  FIRST_X_ASSUM MATCH_MP_TAC THEN
+  ASM_SIMP_TAC[FINITE_IMAGE; FORALL_IN_IMAGE] THEN ASM SET_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Local compactness.                                                        *)
 (* ------------------------------------------------------------------------- *)
@@ -30212,6 +30237,20 @@ let MUMFORD_LEMMA = prove
       DISCH_THEN(MP_TAC o SPEC `e:real`) THEN ASM_REWRITE_TAC[] THEN
       DISCH_THEN(X_CHOOSE_THEN `n:num` (MP_TAC o SPEC `n:num`)) THEN
       ASM_REWRITE_TAC[LE_REFL; o_THM] THEN ASM SET_TAC[]]]);;
+
+let LOCALLY_EQ_COMPACTLY = prove
+ (`!P s:real^N->bool.
+        (!t u. t SUBSET u /\ u SUBSET s /\ P u ==> P t) /\
+        (!f. FINITE f /\ (!t. t IN f ==> P t /\ t SUBSET s)
+             ==> P(UNIONS f)) /\
+        locally compact s
+        ==> (locally P s <=> !c. compact c /\ c SUBSET s ==> P c)`,
+  REPEAT STRIP_TAC THEN EQ_TAC THENL
+   [REPEAT STRIP_TAC THEN MATCH_MP_TAC LOCALLY_TO_COMPACTLY THEN
+    EXISTS_TAC `s:real^N->bool` THEN ASM_REWRITE_TAC[];
+    REPEAT STRIP_TAC THEN
+    FIRST_X_ASSUM(MP_TAC o GEN_REWRITE_RULE I [LOCALLY_AND_SUBSET]) THEN
+    MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ] LOCALLY_MONO) THEN ASM_MESON_TAC[]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Locally compact sets are closed in an open set and are homeomorphic       *)
