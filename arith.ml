@@ -922,7 +922,23 @@ let MIN_ADD_RCANCEL = prove
 
 export_thm MIN_ADD_RCANCEL;;
 
-(* Another variant of induction *)
+(* Variants of induction *)
+
+let num_INDUCTION_DOWN = prove
+ (`!(p : num -> bool) m.
+     (!n. m <= n ==> p n) /\
+     (!n. n < m /\ p (n + 1) ==> p n) ==>
+     !n. p n`,
+  REWRITE_TAC [GSYM ADD1] THEN REPEAT GEN_TAC THEN STRIP_TAC THEN
+  ONCE_REWRITE_TAC [GSYM NOT_NOT_THM] THEN
+  PURE_REWRITE_TAC [NOT_FORALL_THM] THEN
+  W(MP_TAC o PART_MATCH (lhand o lhand) num_MAX o rand o snd) THEN
+  MATCH_MP_TAC (TAUT `q /\ ~r ==> (p /\ q <=> r) ==> ~p`) THEN
+  ONCE_REWRITE_TAC [TAUT `~p ==> q <=> ~q ==> p`] THEN
+  REWRITE_TAC[NOT_EXISTS_THM; TAUT `~(~p /\ q) <=> q ==> p`; NOT_LE] THEN
+  ASM_MESON_TAC [LTE_CASES; LT; LT_IMP_LE]);;
+
+export_thm num_INDUCTION_DOWN;;
 
 let LE_INDUCT = prove
  (`!p : num -> num -> bool.
@@ -1649,14 +1665,14 @@ export_thm DIV_MULT;;
 export_thm MOD_MULT;;
 
 let MOD_LT = prove
- (`!m n. m < n ==> (m MOD n = m)`,
+ (`!m n. m < n ==> m MOD n = m`,
   REPEAT STRIP_TAC THEN MATCH_MP_TAC MOD_UNIQ THEN
   EXISTS_TAC `0` THEN ASM_REWRITE_TAC[MULT_CLAUSES; ADD_CLAUSES]);;
 
 export_thm MOD_LT;;
 
 let MOD_EQ = prove
- (`!m n p q. (m = n + q * p) ==> (m MOD p = n MOD p)`,
+ (`!m n p q. m = n + q * p ==> m MOD p = n MOD p`,
   REPEAT GEN_TAC THEN ASM_CASES_TAC `p = 0` THENL
    [ASM_REWRITE_TAC[MULT_CLAUSES; ADD_CLAUSES] THEN
     DISCH_THEN SUBST1_TAC THEN REFL_TAC;
@@ -1708,7 +1724,7 @@ export_thm DIV_1;;
 export_thm MOD_1;;
 
 let DIV_LT = prove
- (`!m n. m < n ==> (m DIV n = 0)`,
+ (`!m n. m < n ==> m DIV n = 0`,
   REPEAT STRIP_TAC THEN MATCH_MP_TAC DIV_UNIQ THEN EXISTS_TAC `m:num` THEN
   ASM_REWRITE_TAC[MULT_CLAUSES; ADD_CLAUSES]);;
 
@@ -1867,14 +1883,14 @@ let MOD_EQ_0 = prove
 export_thm MOD_EQ_0;;
 
 let EVEN_MOD = prove
- (`!n. EVEN(n) <=> (n MOD 2 = 0)`,
+ (`!n. EVEN(n) <=> n MOD 2 = 0`,
   GEN_TAC THEN REWRITE_TAC[EVEN_EXISTS] THEN ONCE_REWRITE_TAC[MULT_SYM] THEN
   MATCH_MP_TAC(GSYM MOD_EQ_0) THEN REWRITE_TAC[TWO; NOT_SUC]);;
 
 export_thm EVEN_MOD;;
 
 let ODD_MOD = prove
- (`!n. ODD(n) <=> (n MOD 2 = 1)`,
+ (`!n. ODD(n) <=> n MOD 2 = 1`,
   GEN_TAC THEN REWRITE_TAC[GSYM NOT_EVEN; EVEN_MOD] THEN
   SUBGOAL_THEN `n MOD 2 < 2` MP_TAC THENL
    [SIMP_TAC[DIVISION; TWO; NOT_SUC]; ALL_TAC] THEN
@@ -2125,6 +2141,25 @@ let div_induction = prove
     REWRITE_TAC [ONE_MULT; LE_REFL]]]);;
 
 export_thm div_induction;;
+
+let MOD_LE_TWICE = prove
+ (`!m n. 0 < m /\ m <= n ==> 2 * (n MOD m) <= n`,
+  REPEAT STRIP_TAC THEN ASM_CASES_TAC `2 * m <= n` THENL
+   [TRANS_TAC LE_TRANS `2 * m` THEN
+    ASM_SIMP_TAC[LE_MULT_LCANCEL; DIVISION; LT_IMP_LE; LE_1];
+    RULE_ASSUM_TAC(REWRITE_RULE[NOT_LE])] THEN
+  TRANS_TAC LE_TRANS `m + n MOD m` THEN
+  ASM_SIMP_TAC[MULT_2; LE_ADD_RCANCEL; DIVISION; LT_IMP_LE; LE_1] THEN
+  ONCE_REWRITE_TAC[ADD_SYM] THEN
+  SUBGOAL_THEN `n MOD m = n - m`
+   (fun th -> ASM_SIMP_TAC[LE_REFL; SUB_ADD; th]) THEN
+  MATCH_MP_TAC MOD_UNIQ THEN EXISTS_TAC `1` THEN
+  ONCE_REWRITE_TAC[ADD_SYM] THEN ASM_SIMP_TAC[MULT_CLAUSES; SUB_ADD] THEN
+  ONCE_REWRITE_TAC[MESON[LT_ADD_RCANCEL]
+   `n - m:num < m <=> (n - m) + m < m + m`] THEN
+  ASM_SIMP_TAC[GSYM MULT_2; SUB_ADD]);;
+
+export_thm MOD_LE_TWICE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Exponentiation.                                                           *)
