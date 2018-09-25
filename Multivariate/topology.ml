@@ -68,6 +68,10 @@ let REGULAR_SPACE_EUCLIDEAN = prove
  (`regular_space euclidean`,
   REWRITE_TAC[GSYM MTOPOLOGY_EUCLIDEAN_METRIC; REGULAR_SPACE_MTOPOLOGY]);;
 
+let K_SPACE_EUCLIDEAN = prove
+ (`k_space(euclidean:(real^N)topology)`,
+  REWRITE_TAC[GSYM MTOPOLOGY_EUCLIDEAN_METRIC; K_SPACE_MTOPOLOGY]);;
+
 let OPEN_EMPTY = prove
  (`open {}`,
   REWRITE_TAC[open_def; NOT_IN_EMPTY]);;
@@ -320,6 +324,34 @@ let CONTINUOUS_MAP_DROP_EQ = prove
         continuous_map(euclideanreal,top) f <=>
         continuous_map(euclidean,top) (f o drop)`,
   REWRITE_TAC[CONTINUOUS_MAP_LIFT_EQ; o_DEF; LIFT_DROP; ETA_AX]);;
+
+let CONTINUOUS_MAP_LIFT_EQ_GEN = prove
+ (`!top s (f:real^1->A).
+        continuous_map (subtopology euclidean s,top) f <=>
+        continuous_map (subtopology euclideanreal (IMAGE drop s),top)
+                       (f o lift)`,
+  REPEAT GEN_TAC THEN EQ_TAC THEN DISCH_TAC THENL
+   [MATCH_MP_TAC CONTINUOUS_MAP_COMPOSE THEN
+    EXISTS_TAC `subtopology euclidean (s:real^1->bool)` THEN
+    ASM_SIMP_TAC[CONTINUOUS_MAP_IN_SUBTOPOLOGY; CONTINUOUS_MAP_LIFT;
+                 CONTINUOUS_MAP_FROM_SUBTOPOLOGY] THEN
+    REWRITE_TAC[SUBSET; TOPSPACE_EUCLIDEANREAL_SUBTOPOLOGY] THEN
+    REWRITE_TAC[FORALL_IN_IMAGE; LIFT_DROP];
+    SUBGOAL_THEN `f:real^1->A = (f o lift) o drop` SUBST1_TAC THENL
+     [REWRITE_TAC[o_DEF; LIFT_DROP; ETA_AX]; ALL_TAC] THEN
+    MATCH_MP_TAC CONTINUOUS_MAP_COMPOSE THEN
+    EXISTS_TAC `subtopology euclideanreal (IMAGE drop (s:real^1->bool))` THEN
+    ASM_SIMP_TAC[CONTINUOUS_MAP_IN_SUBTOPOLOGY; CONTINUOUS_MAP_DROP;
+                 CONTINUOUS_MAP_FROM_SUBTOPOLOGY] THEN
+    REWRITE_TAC[SUBSET; TOPSPACE_EUCLIDEAN_SUBTOPOLOGY] THEN
+    REWRITE_TAC[FORALL_IN_IMAGE; LIFT_DROP]]);;
+
+let CONTINUOUS_MAP_DROP_EQ_GEN = prove
+ (`!top s (f:real->A).
+        continuous_map(subtopology euclideanreal s,top) f <=>
+        continuous_map(subtopology euclidean (IMAGE lift s),top) (f o drop)`,
+  REWRITE_TAC[CONTINUOUS_MAP_LIFT_EQ_GEN; o_DEF; LIFT_DROP; ETA_AX;
+              GSYM IMAGE_o; IMAGE_ID]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Arithmetic combining theorems for vector-valued continuous maps.          *)
@@ -1215,6 +1247,14 @@ let CONNECTED_IN_EUCLIDEAN = prove
  (`!s:real^N->bool. connected_in euclidean s <=> connected s`,
   REWRITE_TAC[CONNECTED_IN; connected] THEN
   REWRITE_TAC[TOPSPACE_EUCLIDEAN; GSYM OPEN_IN; SUBSET_UNIV; INTER_UNIV]);;
+
+let CONNECTED_SPACE_EUCLIDEAN_SUBTOPOLOGY = prove
+ (`!s:real^N->bool.
+       connected_space(subtopology euclidean s) <=> connected s`,
+  REWRITE_TAC[GSYM CONNECTED_IN_TOPSPACE] THEN
+  REWRITE_TAC[CONNECTED_IN_SUBTOPOLOGY] THEN
+  REWRITE_TAC[CONNECTED_IN_EUCLIDEAN] THEN
+  REWRITE_TAC[TOPSPACE_EUCLIDEAN_SUBTOPOLOGY; SUBSET_REFL]);;
 
 let CONNECTED_CLOSED = prove
  (`!s:real^N->bool.
@@ -8893,12 +8933,8 @@ let OPEN_MAP_CLOSED_SUPERSET_PREIMAGE = prove
         ==> ?v. closed_in (subtopology euclidean t) v /\
                 w SUBSET v /\
                 {x | x IN s /\ f(x) IN v} SUBSET u`,
-  REPEAT STRIP_TAC THEN
-  EXISTS_TAC `t DIFF IMAGE (f:real^M->real^N) (s DIFF u)` THEN
-  CONJ_TAC THENL [ALL_TAC; ASM SET_TAC[]] THEN
-  MATCH_MP_TAC CLOSED_IN_DIFF THEN REWRITE_TAC[CLOSED_IN_REFL] THEN
-  FIRST_X_ASSUM MATCH_MP_TAC THEN
-  ASM_SIMP_TAC[OPEN_IN_DIFF; OPEN_IN_REFL]);;
+  REWRITE_TAC[GSYM open_map; OPEN_MAP_PREIMAGE_NEIGHBOURHOOD] THEN
+  SIMP_TAC[TOPSPACE_EUCLIDEAN_SUBTOPOLOGY]);;
 
 let OPEN_MAP_CLOSED_SUPERSET_PREIMAGE_EQ = prove
  (`!f:real^M->real^N s t.
@@ -8909,16 +8945,8 @@ let OPEN_MAP_CLOSED_SUPERSET_PREIMAGE_EQ = prove
                    w SUBSET t /\ {x | x IN s /\ f(x) IN w} SUBSET u
                    ==> ?v. closed_in (subtopology euclidean t) v /\
                            w SUBSET v /\ {x | x IN s /\ f(x) IN v} SUBSET u))`,
-  REPEAT(STRIP_TAC ORELSE EQ_TAC) THEN
-  ASM_SIMP_TAC[OPEN_MAP_CLOSED_SUPERSET_PREIMAGE] THEN
-  FIRST_X_ASSUM(MP_TAC o SPECL
-   [`s DIFF k:real^M->bool`; `t DIFF IMAGE (f:real^M->real^N) k`]) THEN
-  FIRST_ASSUM(ASSUME_TAC o MATCH_MP OPEN_IN_IMP_SUBSET) THEN
-  ASM_SIMP_TAC[CLOSED_IN_DIFF; CLOSED_IN_REFL] THEN
-  ANTS_TAC THENL [ASM SET_TAC[]; ALL_TAC] THEN
-  DISCH_THEN(X_CHOOSE_THEN `v:real^N->bool` STRIP_ASSUME_TAC) THEN
-  SUBGOAL_THEN `IMAGE (f:real^M->real^N) k = t DIFF v` SUBST1_TAC THENL
-   [ASM SET_TAC[]; ASM_SIMP_TAC[OPEN_IN_DIFF; OPEN_IN_REFL]]);;
+  REWRITE_TAC[GSYM open_map; OPEN_MAP_PREIMAGE_NEIGHBOURHOOD] THEN
+  SIMP_TAC[TOPSPACE_EUCLIDEAN_SUBTOPOLOGY]);;
 
 let CLOSED_MAP_OPEN_SUPERSET_PREIMAGE = prove
  (`!f:real^M->real^N s t u w.
@@ -8929,12 +8957,8 @@ let CLOSED_MAP_OPEN_SUPERSET_PREIMAGE = prove
         ==> ?v. open_in (subtopology euclidean t) v /\
                 w SUBSET v /\
                 {x | x IN s /\ f(x) IN v} SUBSET u`,
-  REPEAT STRIP_TAC THEN
-  EXISTS_TAC `t DIFF IMAGE (f:real^M->real^N) (s DIFF u)` THEN
-  CONJ_TAC THENL [ALL_TAC; ASM SET_TAC[]] THEN
-  MATCH_MP_TAC OPEN_IN_DIFF THEN REWRITE_TAC[OPEN_IN_REFL] THEN
-  FIRST_X_ASSUM MATCH_MP_TAC THEN
-  ASM_SIMP_TAC[CLOSED_IN_DIFF; CLOSED_IN_REFL]);;
+  REWRITE_TAC[GSYM closed_map; CLOSED_MAP_PREIMAGE_NEIGHBOURHOOD] THEN
+  SIMP_TAC[TOPSPACE_EUCLIDEAN_SUBTOPOLOGY]);;
 
 let CLOSED_MAP_OPEN_SUPERSET_PREIMAGE_EQ = prove
  (`!f:real^M->real^N s t.
@@ -8945,16 +8969,8 @@ let CLOSED_MAP_OPEN_SUPERSET_PREIMAGE_EQ = prove
                    w SUBSET t /\ {x | x IN s /\ f(x) IN w} SUBSET u
                    ==> ?v. open_in (subtopology euclidean t) v /\
                            w SUBSET v /\ {x | x IN s /\ f(x) IN v} SUBSET u))`,
-  REPEAT(STRIP_TAC ORELSE EQ_TAC) THEN
-  ASM_SIMP_TAC[CLOSED_MAP_OPEN_SUPERSET_PREIMAGE] THEN
-  FIRST_X_ASSUM(MP_TAC o SPECL
-   [`s DIFF k:real^M->bool`; `t DIFF IMAGE (f:real^M->real^N) k`]) THEN
-  FIRST_ASSUM(ASSUME_TAC o MATCH_MP CLOSED_IN_IMP_SUBSET) THEN
-  ASM_SIMP_TAC[OPEN_IN_DIFF; OPEN_IN_REFL] THEN
-  ANTS_TAC THENL [ASM SET_TAC[]; ALL_TAC] THEN
-  DISCH_THEN(X_CHOOSE_THEN `v:real^N->bool` STRIP_ASSUME_TAC) THEN
-  SUBGOAL_THEN `IMAGE (f:real^M->real^N) k = t DIFF v` SUBST1_TAC THENL
-   [ASM SET_TAC[]; ASM_SIMP_TAC[CLOSED_IN_DIFF; CLOSED_IN_REFL]]);;
+  REWRITE_TAC[GSYM closed_map; CLOSED_MAP_PREIMAGE_NEIGHBOURHOOD] THEN
+  SIMP_TAC[TOPSPACE_EUCLIDEAN_SUBTOPOLOGY]);;
 
 let CLOSED_MAP_OPEN_SUPERSET_PREIMAGE_POINT = prove
  (`!f:real^M->real^N s t.
@@ -8965,27 +8981,8 @@ let CLOSED_MAP_OPEN_SUPERSET_PREIMAGE_POINT = prove
                    y IN t /\ {x | x IN s /\ f(x) = y} SUBSET u
                    ==> ?v. open_in (subtopology euclidean t) v /\
                            y IN v /\ {x | x IN s /\ f(x) IN v} SUBSET u))`,
-  REPEAT STRIP_TAC THEN ASM_SIMP_TAC[CLOSED_MAP_OPEN_SUPERSET_PREIMAGE_EQ] THEN
-  EQ_TAC THEN DISCH_TAC THENL
-   [MAP_EVERY X_GEN_TAC [`u:real^M->bool`; `y:real^N`] THEN
-    STRIP_TAC THEN
-    FIRST_X_ASSUM(MP_TAC o SPECL  [`u:real^M->bool`; `{y:real^N}`]) THEN
-    ASM_REWRITE_TAC[SING_SUBSET; IN_SING];
-    MAP_EVERY X_GEN_TAC [`u:real^M->bool`; `w:real^N->bool`] THEN
-    STRIP_TAC THEN FIRST_X_ASSUM(MP_TAC o SPEC `u:real^M->bool`) THEN
-    GEN_REWRITE_TAC (LAND_CONV o ONCE_DEPTH_CONV) [RIGHT_IMP_EXISTS_THM] THEN
-    REWRITE_TAC[SKOLEM_THM; LEFT_IMP_EXISTS_THM] THEN
-    X_GEN_TAC `vv:real^N->real^N->bool` THEN DISCH_TAC THEN
-    EXISTS_TAC `UNIONS {(vv:real^N->real^N->bool) y | y IN w}` THEN
-    CONJ_TAC THENL
-     [MATCH_MP_TAC OPEN_IN_UNIONS THEN REWRITE_TAC[FORALL_IN_GSPEC] THEN
-      ASM SET_TAC[];
-      REWRITE_TAC[UNIONS_GSPEC] THEN
-      CONJ_TAC THENL [ASM SET_TAC[]; ALL_TAC] THEN
-      REWRITE_TAC[SUBSET; IN_ELIM_THM; RIGHT_AND_EXISTS_THM;
-                  LEFT_IMP_EXISTS_THM] THEN
-      MAP_EVERY X_GEN_TAC [`x:real^M`; `y:real^N`] THEN STRIP_TAC THEN
-      FIRST_X_ASSUM(MP_TAC o SPEC `y:real^N`) THEN ASM SET_TAC[]]]);;
+  REWRITE_TAC[GSYM closed_map; CLOSED_MAP_FIBRE_NEIGHBOURHOOD] THEN
+  SIMP_TAC[TOPSPACE_EUCLIDEAN_SUBTOPOLOGY]);;
 
 let CONNECTED_OPEN_MONOTONE_PREIMAGE = prove
  (`!f:real^M->real^N s t.
@@ -14974,6 +14971,13 @@ let IS_INTERVAL_1_CLAUSES = prove
    (!a b. is_interval {x | a <= drop x /\ drop x <= b})`,
   REWRITE_TAC[IS_INTERVAL_1; IN_ELIM_THM; IN_UNIV; NOT_IN_EMPTY] THEN
   REAL_ARITH_TAC);;
+
+let IS_REALINTERVAL_IS_INTERVAL = prove
+ (`!s. is_realinterval s <=> is_interval(IMAGE lift s)`,
+  REWRITE_TAC[IS_INTERVAL_1; is_realinterval] THEN
+  REWRITE_TAC[IMP_CONJ; RIGHT_FORALL_IMP_THM; FORALL_IN_IMAGE] THEN
+  REWRITE_TAC[LIFT_DROP; IN_IMAGE; EXISTS_DROP; UNWIND_THM1] THEN
+  REWRITE_TAC[GSYM FORALL_DROP]);;
 
 let IS_INTERVAL_PCROSS = prove
  (`!s:real^M->bool t:real^N->bool.
