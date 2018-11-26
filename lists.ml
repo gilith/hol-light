@@ -1064,6 +1064,12 @@ let MAP_REVERSE = prove
 
 export_thm MAP_REVERSE;;
 
+let REVERSE_EQ_EMPTY = prove
+ (`!l : A list. REVERSE l = [] <=> l = []`,
+  MESON_TAC [REVERSE_REVERSE; REVERSE]);;
+
+export_thm REVERSE_EQ_EMPTY;;
+
 (* ------------------------------------------------------------------------- *)
 (* fold.                                                                     *)
 (* ------------------------------------------------------------------------- *)
@@ -1245,6 +1251,19 @@ let LAST_APPEND = prove
    REWRITE_TAC [LAST_APPEND_CONS; NULL]]);;
 
 export_thm LAST_APPEND;;
+
+let LAST_REVERSE = prove
+ (`!l : A list. ~(l = []) ==> LAST (REVERSE l) = HD l`,
+  LIST_INDUCT_TAC THEN
+  REWRITE_TAC [HD; REVERSE; LAST_APPEND_CONS; LAST_SING; NOT_CONS_NIL]);;
+
+export_thm LAST_REVERSE;;
+
+let HD_REVERSE = prove
+ (`!l : A list. ~(l = []) ==> HD (REVERSE l) = LAST l`,
+  MESON_TAC [LAST_REVERSE; REVERSE_REVERSE; REVERSE_EQ_EMPTY]);;
+
+export_thm HD_REVERSE;;
 
 (* ------------------------------------------------------------------------- *)
 (* Element indices.                                                          *)

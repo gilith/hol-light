@@ -186,12 +186,28 @@ let one_RECURSION = prove
 export_thm one_RECURSION;;
 
 let one_Axiom = prove
- (`!e:A. ?!fn. fn one = e`,
+ (`!e : A. ?!fn. fn one = e`,
   GEN_TAC THEN REWRITE_TAC[EXISTS_UNIQUE_THM; one_RECURSION] THEN
   REPEAT STRIP_TAC THEN ONCE_REWRITE_TAC[FUN_EQ_THM] THEN
   ONCE_REWRITE_TAC [one] THEN ASM_REWRITE_TAC[]);;
 
 export_thm one_Axiom;;
+
+let FORALL_ONE_THM = prove
+ (`!p : 1 -> bool. (!x. p x) <=> p one`,
+  GEN_TAC THEN
+  EQ_TAC THEN
+  REWRITE_TAC [one_INDUCT] THEN
+  DISCH_THEN MATCH_ACCEPT_TAC);;
+
+export_thm FORALL_ONE_THM;;
+
+let EXISTS_ONE_THM = prove
+ (`!p : 1 -> bool. (?x. p x) <=> p one`,
+  GEN_REWRITE_TAC (RAND_CONV o ABS_CONV) [TAUT `(p <=> q) <=> (~p <=> ~q)`] THEN
+  REWRITE_TAC [NOT_EXISTS_THM; FORALL_ONE_THM]);;
+
+export_thm EXISTS_ONE_THM;;
 
 (* ------------------------------------------------------------------------- *)
 (* Add the type "1" to the inductive type store.                             *)
