@@ -1671,6 +1671,18 @@ let MOD_LT = prove
 
 export_thm MOD_LT;;
 
+let MOD_ADD_CASES = prove
+ (`!m n p.
+        m < p /\ n < p
+        ==> (m + n) MOD p = if m + n < p then m + n else (m + n) - p`,
+  REPEAT STRIP_TAC THEN COND_CASES_TAC THEN ASM_SIMP_TAC[MOD_LT] THEN
+  MATCH_MP_TAC MOD_UNIQ THEN EXISTS_TAC `1` THEN
+  RULE_ASSUM_TAC(REWRITE_RULE[NOT_LT]) THEN CONJ_TAC THENL
+   [REWRITE_TAC[MULT_CLAUSES] THEN ASM_MESON_TAC[SUB_ADD; ADD_SYM];
+    ASM_MESON_TAC[LT_ADD_RCANCEL; SUB_ADD; LT_ADD2]]);;
+
+export_thm MOD_ADD_CASES;;
+
 let MOD_EQ = prove
  (`!m n p q. m = n + q * p ==> m MOD p = n MOD p`,
   REPEAT GEN_TAC THEN ASM_CASES_TAC `p = 0` THENL
@@ -1754,6 +1766,13 @@ let MOD_MOD_REFL = prove
  (`!m n. ~(n = 0) ==> ((m MOD n) MOD n = m MOD n)`,
   REPEAT GEN_TAC THEN
   MATCH_ACCEPT_TAC MOD_MOD_REFL');;
+
+let MOD_MOD_LE = prove
+ (`!m n p. ~(n = 0) /\ n <= p ==> (m MOD n) MOD p = m MOD n`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC MOD_LT THEN
+  ASM_MESON_TAC[DIVISION; LTE_TRANS]);;
+
+export_thm MOD_MOD_LE;;
 
 let DIV_MULT2 = prove
  (`!m n p. ~(m * p = 0) ==> ((m * n) DIV (m * p) = n DIV p)`,
@@ -1898,6 +1917,12 @@ let ODD_MOD = prove
   REWRITE_TAC[TWO; ONE; LT] THEN MESON_TAC[NOT_SUC]);;
 
 export_thm ODD_MOD;;
+
+let MOD_2_CASES = prove
+ (`!n. n MOD 2 = if EVEN n then 0 else 1`,
+  MESON_TAC[EVEN_MOD; ODD_MOD; NOT_ODD]);;
+
+export_thm MOD_2_CASES;;
 
 let MOD_MULT_RMOD' = prove
  (`!n m p. ~(n = 0) ==> ((m * (p MOD n)) MOD n = (m * p) MOD n)`,
@@ -2160,6 +2185,30 @@ let MOD_LE_TWICE = prove
   ASM_SIMP_TAC[GSYM MULT_2; SUB_ADD]);;
 
 export_thm MOD_LE_TWICE;;
+
+let MOD_MULT_MOD = prove
+ (`!m n p.
+     ~(n = 0) /\ ~(p = 0) ==>
+     m MOD (n * p) = n * (m DIV n) MOD p + m MOD n`,
+  REPEAT GEN_TAC THEN STRIP_TAC THEN
+  MATCH_MP_TAC(MESON[EQ_ADD_LCANCEL] `(?a : num. a + x = a + y) ==> x = y`) THEN
+  EXISTS_TAC `m DIV n DIV p * n * p` THEN
+  MP_TAC (SPECL [`m : num`; `n : num`; `p : num`] DIV_DIV) THEN
+  ASM_REWRITE_TAC [MULT_EQ_0] THEN
+  DISCH_THEN (fun th -> CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [th]))) THEN
+  MP_TAC (SPECL [`m : num`; `n * p : num`] (CONJUNCT1 DIVISION_SIMP)) THEN
+  ASM_REWRITE_TAC [MULT_EQ_0] THEN
+  DISCH_THEN (fun th -> CONV_TAC (LAND_CONV (ONCE_REWRITE_CONV [th]))) THEN
+  REWRITE_TAC[AC MULT_AC `(d : num) * n * p = n * (d * p)`] THEN
+  REWRITE_TAC[GSYM LEFT_ADD_DISTRIB; ADD_ASSOC] THEN
+  MP_TAC (SPECL [`m DIV n`; `p : num`] (CONJUNCT1 DIVISION_SIMP)) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]) THEN
+  MP_TAC (SPECL [`m : num`; `n : num`] (CONJUNCT2 DIVISION_SIMP)) THEN
+  ASM_REWRITE_TAC [] THEN
+  DISCH_THEN (fun th -> REWRITE_TAC [th]));;
+
+export_thm MOD_MULT_MOD;;
 
 (* ------------------------------------------------------------------------- *)
 (* Exponentiation.                                                           *)
@@ -2431,13 +2480,13 @@ let MOD_MOD_EXP_MIN = prove
              ==> x MOD (p EXP m) MOD (p EXP n) = x MOD (p EXP (MIN m n))`,
   REPEAT STRIP_TAC THEN REWRITE_TAC[MIN] THEN
   ASM_CASES_TAC `m:num <= n` THEN ASM_REWRITE_TAC[] THENL
-   [FIRST_X_ASSUM(CHOOSE_THEN SUBST1_TAC o GEN_REWRITE_RULE I [LE_EXISTS]) THEN
-    MATCH_MP_TAC MOD_LT THEN MATCH_MP_TAC LTE_TRANS THEN
-    EXISTS_TAC `p EXP m` THEN
-    ASM_SIMP_TAC[DIVISION; EXP_EQ_0; LE_EXP; LE_ADD];
-    SUBGOAL_THEN `?d. m = n + d` (CHOOSE_THEN SUBST1_TAC) THENL
-     [ASM_MESON_TAC[LE_CASES; LE_EXISTS];
-      ASM_SIMP_TAC[EXP_ADD; MOD_MOD; MULT_EQ_0; EXP_EQ_0]]]);;
+  [FIRST_X_ASSUM(CHOOSE_THEN SUBST1_TAC o GEN_REWRITE_RULE I [LE_EXISTS]) THEN
+   MATCH_MP_TAC MOD_LT THEN MATCH_MP_TAC LTE_TRANS THEN
+   EXISTS_TAC `p EXP m` THEN
+   ASM_SIMP_TAC[DIVISION; EXP_EQ_0; LE_EXP; LE_ADD];
+   SUBGOAL_THEN `?d : num. m = n + d` (CHOOSE_THEN SUBST1_TAC) THENL
+   [ASM_MESON_TAC[LE_CASES; LE_EXISTS];
+    ASM_SIMP_TAC[EXP_ADD; MOD_MOD; MULT_EQ_0; EXP_EQ_0]]]);;
 
 export_thm MOD_MOD_EXP_MIN;;
 
