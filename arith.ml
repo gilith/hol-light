@@ -6,6 +6,7 @@
 (*            (c) Copyright, University of Cambridge 1998                    *)
 (*              (c) Copyright, John Harrison 1998-2007                       *)
 (*                 (c) Copyright, Marco Maggesi 2015                         *)
+(*      (c) Copyright, Andrea Gabrielli, Marco Maggesi 2017-2018             *)
 (* ========================================================================= *)
 
 needs "recursion.ml";;
@@ -1671,6 +1672,24 @@ let MOD_LT = prove
 
 export_thm MOD_LT;;
 
+let MOD_LT_EQ = prove
+ (`!m n. m MOD n < n <=> ~(n = 0)`,
+  MESON_TAC[DIVISION; LE_1; CONJUNCT1 LT]);;
+
+let MOD_LT_EQ_LT = prove
+ (`!m n. m MOD n < n <=> 0 < n`,
+  MESON_TAC[DIVISION; LE_1; CONJUNCT1 LT]);;
+
+let MOD_CASES = prove
+ (`!n p. n < 2 * p ==> n MOD p = if n < p then n else n - p`,
+  REPEAT STRIP_TAC THEN COND_CASES_TAC THEN ASM_SIMP_TAC[MOD_LT] THEN
+  MATCH_MP_TAC MOD_UNIQ THEN EXISTS_TAC `1` THEN
+  RULE_ASSUM_TAC(REWRITE_RULE[NOT_LT]) THEN CONJ_TAC THENL
+   [REWRITE_TAC[MULT_CLAUSES] THEN ASM_MESON_TAC[SUB_ADD; ADD_SYM];
+    ASM_MESON_TAC[LT_ADD_RCANCEL; SUB_ADD; MULT_2; LT_ADD2]]);;
+
+export_thm MOD_CASES;;
+
 let MOD_ADD_CASES = prove
  (`!m n p.
         m < p /\ n < p
@@ -3094,3 +3113,59 @@ let NUM_CANCEL_CONV =
 let LE_IMP =
   let pth = PURE_ONCE_REWRITE_RULE[IMP_CONJ] LE_TRANS in
   fun th -> GEN_ALL(MATCH_MP pth (SPEC_ALL th));;
+
+(* ------------------------------------------------------------------------- *)
+(* A couple of forms of Dependent Choice.                                    *)
+(* ------------------------------------------------------------------------- *)
+
+let DEPENDENT_CHOICE_FIXED = prove
+ (`!P R a:A.
+        P 0 a /\ (!n x. P n x ==> ?y. P (SUC n) y /\ R n x y)
+        ==> ?f. f 0 = a /\ (!n. P n (f n)) /\ (!n. R n (f n) (f(SUC n)))`,
+  REPEAT STRIP_TAC THEN
+  (MP_TAC o prove_recursive_functions_exist num_RECURSION)
+    `f 0 = (a:A) /\ (!n. f(SUC n) = @y. P (SUC n) y /\ R n (f n) y)` THEN
+  MATCH_MP_TAC MONO_EXISTS THEN GEN_TAC THEN STRIP_TAC THEN
+  ASM_REWRITE_TAC[] THEN GEN_REWRITE_TAC LAND_CONV
+   [MESON[num_CASES] `(!n. P n) <=> P 0 /\ !n. P(SUC n)`] THEN
+  ASM_REWRITE_TAC[AND_FORALL_THM] THEN INDUCT_TAC THEN ASM_MESON_TAC[]);;
+
+let DEPENDENT_CHOICE = prove
+ (`!P R:num->A->A->bool.
+        (?a. P 0 a) /\ (!n x. P n x ==> ?y. P (SUC n) y /\ R n x y)
+        ==> ?f. (!n. P n (f n)) /\ (!n. R n (f n) (f(SUC n)))`,
+  MESON_TAC[DEPENDENT_CHOICE_FIXED]);;
+
+(* ------------------------------------------------------------------------- *)
+(* Conversion that elimimates every occurrence of `NUMERAL`, `BIT0`,         *)
+(* `BIT1`, `_0` that is not part of a well-formed numeral.                   *)
+(* ------------------------------------------------------------------------- *)
+
+let BITS_ELIM_CONV : conv =
+  let NUMERAL_pth = prove(`m = n <=> NUMERAL m = n`,REWRITE_TAC[NUMERAL])
+  and ZERO_pth = GSYM (REWRITE_CONV[NUMERAL] `0`)
+  and BIT0_pth,BIT1_pth = CONJ_PAIR
+   (prove(`(m = n <=> BIT0 m = 2 * n) /\
+           (m = n <=> BIT1 m = 2 * n + 1)`,
+    CONJ_TAC THEN GEN_REWRITE_TAC (RAND_CONV o LAND_CONV) [BIT0; BIT1] THEN
+    REWRITE_TAC[ADD1; EQ_ADD_RCANCEL; GSYM MULT_2] THEN
+    REWRITE_TAC[EQ_MULT_LCANCEL] THEN
+    REWRITE_TAC[TWO; NOT_SUC]))
+  and mvar,nvar = `m:num`,`n:num` in
+  let rec BITS_ELIM_CONV : conv =
+    fun tm -> match tm with
+      Const("_0",_) -> ZERO_pth
+    | Var _ | Const _ -> REFL tm
+    | Comb(Const("NUMERAL",_),mtm) ->
+        if is_numeral tm then REFL tm else
+        let th = BITS_ELIM_CONV mtm in
+        EQ_MP (INST[mtm,mvar;rand(concl th),nvar] NUMERAL_pth) th
+    | Comb(Const("BIT0",_),mtm) ->
+        let th = BITS_ELIM_CONV mtm in
+        EQ_MP (INST [mtm,mvar;rand(concl th),nvar] BIT0_pth) th
+    | Comb(Const("BIT1",_),mtm) ->
+        let th = BITS_ELIM_CONV mtm in
+        EQ_MP (INST [mtm,mvar;rand(concl th),nvar] BIT1_pth) th
+    | Comb _ -> COMB_CONV BITS_ELIM_CONV tm
+    | Abs _ -> ABS_CONV BITS_ELIM_CONV tm in
+  BITS_ELIM_CONV;;
