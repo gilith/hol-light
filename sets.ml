@@ -6496,6 +6496,11 @@ let INSERT_NUMSEG_LT = prove
 
 export_thm INSERT_NUMSEG_LT;;
 
+let NUMSEG_CLAUSES_LT = prove
+ (`{i | i < 0} = {} /\
+   (!k. {i | i < SUC k} = k INSERT {i | i < k})`,
+  REWRITE_TAC [EMPTY_NUMSEG_LT; INSERT_NUMSEG_LT]);;
+
 let INSERT_NUMSEG_LT' = prove
   (`!n. { m | m < SUC n } = 0 INSERT { SUC m | m < n }`,
    GEN_TAC THEN
@@ -6519,6 +6524,29 @@ let INSERT_NUMSEG_LT' = prove
      ASM_REWRITE_TAC [LT_SUC]]]);;
 
 export_thm INSERT_NUMSEG_LT';;
+
+let EMPTY_NUMSEG_LE = prove
+  (`{m | m <= 0} = {0}`,
+   REWRITE_TAC [GSYM LT_SUC_LE; NUMSEG_CLAUSES_LT]);;
+
+export_thm EMPTY_NUMSEG_LE;;
+
+let INSERT_NUMSEG_LE = prove
+  (`!n. {m | m <= SUC n} = SUC n INSERT {m | m <= n}`,
+   REWRITE_TAC [GSYM LT_SUC_LE; NUMSEG_CLAUSES_LT]);;
+
+export_thm INSERT_NUMSEG_LE;;
+
+let NUMSEG_CLAUSES_LE = prove
+ (`{i | i <= 0} = {0} /\
+   (!k. {i | i <= SUC k} = SUC k INSERT {i | i <= k})`,
+  REWRITE_TAC [EMPTY_NUMSEG_LE; INSERT_NUMSEG_LE]);;
+
+let INSERT_NUMSEG_LE' = prove
+  (`!n. { m | m <= SUC n } = 0 INSERT { SUC m | m <= n }`,
+   REWRITE_TAC [GSYM LT_SUC_LE; INSERT_NUMSEG_LT']);;
+
+export_thm INSERT_NUMSEG_LE';;
 
 export_theory "set-finite-thm";;
 

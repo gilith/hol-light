@@ -565,10 +565,10 @@ let print_sequent = pp_print_sequent std_formatter;;
 (* Install all the printers.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-#install_printer print_qtype;;
-#install_printer print_qterm;;
-#install_printer print_thm;;
-#install_printer print_sequent;;
+#install_printer pp_print_qtype;;
+#install_printer pp_print_qterm;;
+#install_printer pp_print_thm;;
+#install_printer pp_print_sequent;;
 
 (* ------------------------------------------------------------------------- *)
 (* Conversions to string.                                                    *)
