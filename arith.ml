@@ -1655,6 +1655,22 @@ let DIVMOD_UNIQ = prove
           (SPECL [`m:num`; `n:num`; `q:num`; `r:num`] MOD_UNIQ)) THEN
   ASM_REWRITE_TAC []);;
 
+let EQ_DIVMOD = prove
+ (`!p m n. ~(p = 0) ==> (m DIV p = n DIV p /\ m MOD p = n MOD p <=> m = n)`,
+  REPEAT STRIP_TAC THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   MP_TAC (SPECL [`n : num`; `p : num`] DIVISION) THEN
+   ASM_REWRITE_TAC [] THEN
+   DISCH_THEN (fun th -> ONCE_REWRITE_TAC [CONJUNCT1 th]) THEN
+   MP_TAC (SPECL [`m : num`; `p : num`] DIVISION) THEN
+   ASM_REWRITE_TAC [] THEN
+   STRIP_TAC;
+   STRIP_TAC THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm EQ_DIVMOD;;
+
 let DIV_MULT,MOD_MULT = (CONJ_PAIR o prove)
  (`(!m n. ~(m = 0) ==> (m * n) DIV m = n) /\
    (!m n. ~(m = 0) ==> (m * n) MOD m = 0)`,
@@ -1989,6 +2005,14 @@ let MOD_MULT_ADD = prove
 
 export_thm MOD_MULT_ADD;;
 
+let MOD_MULT_ADD_SIMP = prove
+ (`(!m n p. (m * n + p) MOD n = p MOD n) /\
+   (!m n p. (n * m + p) MOD n = p MOD n) /\
+   (!m n p. (p + m * n) MOD n = p MOD n) /\
+   (!m n p. (p + n * m) MOD n = p MOD n)`,
+  MP_TAC MOD_MULT_ADD THEN
+  SIMP_TAC [MULT_AC; ADD_AC]);;
+
 let DIV_MULT_ADD = prove
  (`!a b n. ~(n = 0) ==> (a * n + b) DIV n = a + b DIV n`,
   REPEAT STRIP_TAC THEN MATCH_MP_TAC DIV_UNIQ THEN
@@ -1997,6 +2021,14 @@ let DIV_MULT_ADD = prove
   ASM_MESON_TAC[DIVISION]);;
 
 export_thm DIV_MULT_ADD;;
+
+let DIV_MULT_ADD_SIMP = prove
+ (`(!a b n. ~(n = 0) ==> (a * n + b) DIV n = a + b DIV n) /\
+   (!a b n. ~(n = 0) ==> (n * a + b) DIV n = a + b DIV n) /\
+   (!a b n. ~(n = 0) ==> (b + a * n) DIV n = b DIV n + a) /\
+   (!a b n. ~(n = 0) ==> (b + n * a) DIV n = b DIV n + a)`,
+  MP_TAC DIV_MULT_ADD THEN
+  SIMP_TAC [MULT_AC; ADD_AC]);;
 
 let MOD_ADD_MOD' = prove
  (`!n a b. ~(n = 0) ==> ((a MOD n + b MOD n) MOD n = (a + b) MOD n)`,

@@ -375,6 +375,18 @@ let MEM_LIST_OF_SET = prove
 
 export_thm MEM_LIST_OF_SET;;
 
+let ALL_EQ = prove
+ (`!(p : A -> bool) q r l.
+     ALL p l /\ (!x. p x ==> (q x <=> r x)) ==> (ALL q l <=> ALL r l)`,
+  GEN_TAC THEN
+  GEN_TAC THEN
+  GEN_TAC THEN
+  LIST_INDUCT_TAC THEN REWRITE_TAC[ALL] THEN
+  STRIP_TAC THEN BINOP_TAC THEN FIRST_ASSUM MATCH_MP_TAC THEN
+  ASM_REWRITE_TAC[]);;
+
+export_thm ALL_EQ;;
+
 let ALL_T = prove
  (`!(l : A list). ALL (\x. T) l`,
   REWRITE_TAC [ALL_SET_OF_LIST]);;
