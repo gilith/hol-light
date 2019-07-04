@@ -730,6 +730,16 @@ let UNION_SUBSET = prove
 
 export_thm UNION_SUBSET;;
 
+let UNION_RESTRICT = prove
+ (`!(p : A -> bool) s t.
+     {x | x IN (s UNION t) /\ p x} =
+     {x | x IN s /\ p x} UNION {x | x IN t /\ p x}`,
+  PURE_REWRITE_TAC [EXTENSION; IN_UNION; IN_ELIM] THEN
+  REPEAT GEN_TAC THEN
+  ITAUT_TAC);;
+
+export_thm UNION_RESTRICT;;
+
 let UNION_ACI = prove
  (`!(p : A set) q r.
      (p UNION q = q UNION p) /\
@@ -844,6 +854,17 @@ let SUBSET_INTER = prove
    FIRST_ASSUM ACCEPT_TAC]);;
 
 export_thm SUBSET_INTER;;
+
+let INTER_RESTRICT = prove
+ (`!(p : A -> bool) s t.
+     {x | x IN (s INTER t) /\ p x} =
+     {x | x IN s /\ p x} INTER {x | x IN t /\ p x}`,
+  REPEAT GEN_TAC THEN
+  PURE_REWRITE_TAC [EXTENSION; IN_ELIM; IN_INTER] THEN
+  X_GEN_TAC `x : A` THEN
+  ITAUT_TAC);;
+
+export_thm INTER_RESTRICT;;
 
 let INTER_ACI = prove
  (`!(p : A set) q r.
@@ -1195,6 +1216,17 @@ let COMPL_COMPL = prove
 
 export_thm COMPL_COMPL;;
 
+let DIFF_RESTRICT = prove
+ (`!(p : A -> bool) s t.
+     {x | x IN (s DIFF t) /\ p x} =
+     {x | x IN s /\ p x} DIFF {x | x IN t /\ p x}`,
+  REPEAT GEN_TAC THEN
+  PURE_REWRITE_TAC [EXTENSION; IN_ELIM; IN_DIFF] THEN
+  X_GEN_TAC `x : A` THEN
+  ITAUT_TAC);;
+
+export_thm DIFF_RESTRICT;;
+
 (* ------------------------------------------------------------------------- *)
 (* Insertion and deletion.                                                   *)
 (* ------------------------------------------------------------------------- *)
@@ -1436,6 +1468,18 @@ let EXISTS_SUBSET_INSERT = prove
   REWRITE_TAC [FORALL_SUBSET_INSERT; DE_MORGAN_THM]);;
 
 export_thm EXISTS_SUBSET_INSERT;;
+
+let INSERT_RESTRICT = prove
+ (`!p s a:A.
+        {x | x IN a INSERT s /\ p x} =
+        if p a then a INSERT {x | x IN s /\ p x} else {x | x IN s /\ p x}`,
+  REPEAT GEN_TAC THEN COND_CASES_TAC THEN
+  ASM_REWRITE_TAC [EXTENSION; IN_ELIM; IN_INSERT] THEN
+  X_GEN_TAC `x : A` THEN
+  ASM_CASES_TAC `(x : A) = a` THEN
+  ASM_REWRITE_TAC []);;
+
+export_thm INSERT_RESTRICT;;
 
 let DELETE_DIFF_SING = prove
  (`!x:A. !s. s DIFF (x INSERT EMPTY) = s DELETE x`,
