@@ -8,6 +8,71 @@
   * page: https://github.com/jrh13/hol-light/commits/master         *
   * *****************************************************************
 
+Sun 29th Sep 2019       Library/wo.ml, Library/card.ml, Logic/fol_prop.ml, Multivariate/topology.ml
+
+Made a small but systematic switch of the whole theory of orderings in this
+file (poset, toset, woset, ordinal, ...) from uncurried relations `:A#A->bool`
+to curried ones `:A->A->bool`. This has the slight negative feature that you
+can't directly use set unions, but in all other respects is more coherent: it
+is consistent with the core definition of WF, with all the stuff in
+Library/rstc.ml and Examples/reduct.ml, and with all the concrete cases like
+"<" on number systems.
+
+Fri 20th Sep 2019       sets.ml
+
+Added an additional conjunct to IN_ELIM_TRIPLE_THM and also added an
+analogous IN_ELIM_QUAD_THM, so:
+
+  IN_ELIM_TRIPLE_THM =
+    |- (!P a b c. a,b,c IN {x,y,z | P x y z} <=> P a b c) /\
+       (!P a b c. (a,b),c IN {(x,y),z | P x y z} <=> P a b c)
+
+  IN_ELIM_QUAD_THM =
+    |- (!P a b c d. a,b,c,d IN {w,x,y,z | P w x y z} <=> P a b c d) /\
+       (!P a b c d. (a,b),c,d IN {(w,x),y,z | P w x y z} <=> P a b c d) /\
+       (!P a b c d. ((a,b),c),d IN {((w,x),y),z | P w x y z} <=> P a b c d)
+
+Tue  3rd Sep 2019       sets.ml
+
+Added a trivial variant of IN_ELIM_PAIR_THM that is not an instance of it:
+
+  IN_ELIM_TRIPLE_THM =
+    |- !P a b c. a,b,c IN {x,y,z | P x y z} <=> P a b c
+
+Fri 30th Aug 2019       int.ml, Library/integer.ml
+
+Renamed the theorem INT_DIVISION_DECOMP in int.ml to INT_DIVISION_SIMP,
+which better maintains the pattern of DIVISION_SIMP and avoids a clash
+with a different theorem in Library/integer.ml. Also added one more
+simple theorem to the latter file, something that INTEGER_RULE won't do
+by default, depending as it does on the canonical choice of nonnegative
+integer gcds:
+
+  INT_GCD_EQ =
+    |- !x y u v.
+         (!d. d divides x /\ d divides y <=> d divides u /\ d divides v)
+         ==> gcd(x,y) = gcd(u,v)
+
+Fri 30th Aug 2019       int.ml
+
+Added some trivialities about integer div and rem, the last three being
+especially handy when reasoning about even/odd integers.
+
+  let INT_MUL_DIV_EQ = prove
+   |- (!m n. n * m div n = m <=> n divides m) /\
+      (!m n. m div n * n = m <=> n divides m)
+
+  INT_REM_2_CASES =
+    |- !n. n rem &2 = &0 \/ n rem &2 = &1
+
+  INT_REM_2_DIVIDES =
+    |- (!n. n rem &2 = &0 <=> &2 divides n) /\
+       (!n. n rem &2 = &1 <=> ~(&2 divides n))
+
+  NOT_INT_REM_2 =
+    |- (!n. ~(n rem &2 = &0) <=> n rem &2 = &1) /\
+       (!n. ~(n rem &2 = &1) <=> n rem &2 = &0)
+
 Wed  7th Aug 2019       grobner.ml
 
 Made a few small tweaks so that the derived rule inside RING becomes
