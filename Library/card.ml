@@ -349,31 +349,7 @@ let CARD_EQ_CONG = prove
 
 let INFINITE_CARD_LE = prove
  (`!s:A->bool. INFINITE s <=> (UNIV:num->bool) <=_c s`,
-  REPEAT STRIP_TAC THEN EQ_TAC THENL
-   [ALL_TAC;
-    ONCE_REWRITE_TAC[GSYM CONTRAPOS_THM] THEN
-    REWRITE_TAC[INFINITE; le_c; IN_UNIV] THEN REPEAT STRIP_TAC THEN
-    FIRST_ASSUM(MP_TAC o MATCH_MP INFINITE_IMAGE_INJ) THEN
-    DISCH_THEN(MP_TAC o C MATCH_MP num_INFINITE) THEN
-    REWRITE_TAC[INFINITE] THEN
-    MATCH_MP_TAC FINITE_SUBSET THEN EXISTS_TAC `s:A->bool` THEN
-    ASM_SIMP_TAC[SUBSET; IN_IMAGE; IN_UNIV; LEFT_IMP_EXISTS_THM]] THEN
-  DISCH_TAC THEN
-  SUBGOAL_THEN `?f:num->A. !n. f(n) = @x. x IN (s DIFF IMAGE f {m | m < n})`
-  MP_TAC THENL
-   [MATCH_MP_TAC(MATCH_MP WF_REC WF_num) THEN
-    REWRITE_TAC[IN_IMAGE; IN_ELIM_THM; IN_DIFF] THEN REPEAT STRIP_TAC THEN
-    AP_TERM_TAC THEN ABS_TAC THEN ASM_MESON_TAC[];
-    ALL_TAC] THEN
-  REWRITE_TAC[le_c] THEN MATCH_MP_TAC MONO_EXISTS THEN
-  X_GEN_TAC `f:num->A` THEN REWRITE_TAC[IN_UNIV] THEN DISCH_TAC THEN
-  SUBGOAL_THEN `!n. (f:num->A)(n) IN (s DIFF IMAGE f {m | m < n})` MP_TAC THENL
-   [GEN_TAC THEN ONCE_ASM_REWRITE_TAC[] THEN CONV_TAC SELECT_CONV THEN
-    REWRITE_TAC[MEMBER_NOT_EMPTY] THEN
-    MATCH_MP_TAC INFINITE_NONEMPTY THEN MATCH_MP_TAC INFINITE_DIFF_FINITE THEN
-    ASM_SIMP_TAC[FINITE_IMAGE; FINITE_NUMSEG_LT];
-    ALL_TAC] THEN
-  REWRITE_TAC[IN_IMAGE; IN_ELIM_THM; IN_DIFF] THEN MESON_TAC[LT_CASES]);;
+  REWRITE_TAC[INFINITE_ENUMERATE_SUBSET; le_c; IN_UNIV]);;
 
 let FINITE_CARD_LT = prove
  (`!s:A->bool. FINITE s <=> s <_c (UNIV:num->bool)`,
@@ -425,6 +401,11 @@ let CARD_LE_FINITE = prove
 let CARD_EQ_FINITE = prove
  (`!s t:A->bool. FINITE t /\ s =_c t ==> FINITE s`,
   REWRITE_TAC[GSYM CARD_LE_ANTISYM] THEN MESON_TAC[CARD_LE_FINITE]);;
+
+let CARD_EQ_INFINITE = prove
+ (`!(s:A->bool) (t:B->bool). INFINITE t /\ s =_c t ==> INFINITE s`,
+  ONCE_REWRITE_TAC[CARD_EQ_SYM] THEN REWRITE_TAC[INFINITE] THEN
+  MESON_TAC[CARD_EQ_FINITE]);;
 
 let CARD_LE_INFINITE = prove
  (`!s:A->bool t:B->bool. INFINITE s /\ s <=_c t ==> INFINITE t`,
@@ -554,9 +535,9 @@ let CARD_SING_LE = prove
 (* ------------------------------------------------------------------------- *)
 
 let CARD_EQ_ORDINAL_EXISTS = prove
- (`!s:A->bool. ?l:A->A->bool. ordinal l /\ fl l =_c s`,
+ (`!s:A->bool. ?l:A->A->bool. ordinal l /\ fld l =_c s`,
   REPEAT STRIP_TAC THEN
-  SUBGOAL_THEN `?l:A->A->bool. ordinal l /\ !x. fl l x` STRIP_ASSUME_TAC THENL
+  SUBGOAL_THEN `?l:A->A->bool. ordinal l /\ !x. fld l x` STRIP_ASSUME_TAC THENL
    [REWRITE_TAC[WO_ORDINAL];
     MP_TAC(ISPECL [`l:A->A->bool`; `s:A->bool`] SUBWOSET_ISO_INSEG)] THEN
   FIRST_ASSUM(ASSUME_TAC o CONJUNCT1 o REWRITE_RULE[ordinal]) THEN
@@ -565,16 +546,16 @@ let CARD_EQ_ORDINAL_EXISTS = prove
   EXISTS_TAC `\x y. x IN IMAGE (f:A->A) s /\ y IN IMAGE f s /\ l x y` THEN
   CONJ_TAC THENL
    [FIRST_ASSUM(MATCH_MP_TAC o MATCH_MP (REWRITE_RULE[IMP_CONJ_ALT]
-     INSEG_ORDINAL)) THEN ASM_SIMP_TAC[inseg; FL_RESTRICT];
+     INSEG_ORDINAL)) THEN ASM_SIMP_TAC[inseg; FLD_RESTRICT];
     GEN_REWRITE_TAC LAND_CONV [GSYM ETA_AX] THEN
-    ASM_SIMP_TAC[FL_RESTRICT; SET_RULE `(\x. x IN s) = s`] THEN
+    ASM_SIMP_TAC[FLD_RESTRICT; SET_RULE `(\x. x IN s) = s`] THEN
     MATCH_MP_TAC CARD_EQ_IMAGE] THEN
-  REPEAT(POP_ASSUM MP_TAC) THEN REWRITE_TAC[less; woset] THEN SET_TAC[]);;
+  REPEAT(POP_ASSUM MP_TAC) THEN REWRITE_TAC[properly; woset] THEN SET_TAC[]);;
 
 let WF_CARD_LT = prove
  (`WF((<_c):(A->bool)->(A->bool)->bool)`,
   SUBGOAL_THEN
-   `?w:(A->bool)->A->A->bool. (!s. ordinal(w s)) /\ (!s. fl(w s) =_c s)`
+   `?w:(A->bool)->A->A->bool. (!s. ordinal(w s)) /\ (!s. fld(w s) =_c s)`
   STRIP_ASSUME_TAC THENL
    [REWRITE_TAC[AND_FORALL_THM; GSYM SKOLEM_THM; CARD_EQ_ORDINAL_EXISTS];
     ALL_TAC] THEN
@@ -589,7 +570,7 @@ let WF_CARD_LT = prove
   ASM_REWRITE_TAC[] THEN MATCH_MP_TAC(TAUT
    `~p /\ (~p /\ q ==> r) ==> p \/ q ==> r`) THEN
   CONJ_TAC THENL [ALL_TAC; MESON_TAC[INSEG_REFL]] THEN
-  DISCH_THEN(MP_TAC o MATCH_MP INSEG_SUBSET_FL) THEN
+  DISCH_THEN(MP_TAC o MATCH_MP INSEG_SUBSET_FLD) THEN
   REWRITE_TAC[SET_RULE `(!x. s x ==> t x) <=> s SUBSET t`; ETA_AX] THEN
   DISCH_THEN(MP_TAC o MATCH_MP CARD_LE_SUBSET) THEN
   REWRITE_TAC[CARD_NOT_LE] THEN
@@ -816,6 +797,20 @@ let CARD_LE_ADDL = prove
  (`!s:A->bool t:B->bool. t <=_c s +_c t`,
   REPEAT GEN_TAC THEN REWRITE_TAC[le_c] THEN
   EXISTS_TAC `INR:B->A+B` THEN SIMP_TAC[IN_CARD_ADD; sum_INJECTIVE]);;
+
+let CARD_MUL_LID = prove
+ (`!(a:A) (t:B->bool). {a} *_c t =_c t`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[EQ_C_BIJECTIONS] THEN
+  EXISTS_TAC `SND:A#B->B` THEN EXISTS_TAC `\b:B. (a:A,b)` THEN
+  REWRITE_TAC[mul_c; FORALL_PAIR_THM; IN_ELIM_PAIR_THM] THEN
+  REWRITE_TAC[IN_SING; PAIR_EQ] THEN SET_TAC[]);;
+
+let CARD_MUL_RID = prove
+ (`!(s:A->bool) (b:B). s *_c {b} =_c s`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[EQ_C_BIJECTIONS] THEN
+  EXISTS_TAC `FST:A#B->A` THEN EXISTS_TAC `\a:A. (a,(b:B))` THEN
+  REWRITE_TAC[mul_c; FORALL_PAIR_THM; IN_ELIM_PAIR_THM] THEN
+  REWRITE_TAC[IN_SING; PAIR_EQ] THEN SET_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* A rather special lemma but temporarily useful.                            *)
@@ -1128,6 +1123,12 @@ let CARD_MUL2_ABSORB_LE = prove
   TRANS_TAC CARD_LE_TRANS `(s:A->bool) *_c (u:C->bool)` THEN
   ASM_SIMP_TAC[CARD_MUL_ABSORB_LE] THEN MATCH_MP_TAC CARD_LE_MUL THEN
   ASM_REWRITE_TAC[CARD_LE_REFL]);;
+
+let CARD_MUL2_ABSORB_LE_ALT = prove
+ (`!(s:A->bool) (t:B->bool) (u:C->bool).
+        (INFINITE s \/ INFINITE t) /\ s <=_c u /\ t <=_c u
+        ==> s *_c t <=_c u`,
+  MESON_TAC[CARD_LE_INFINITE; CARD_MUL2_ABSORB_LE]);;
 
 let CARD_ADD_ABSORB_LE = prove
  (`!s:A->bool t:B->bool. INFINITE(t) /\ s <=_c t ==> s +_c t <=_c t`,
@@ -1879,8 +1880,8 @@ let COUNTABLE_IMAGE_EQ_INJ = prove
   REWRITE_TAC[SUBSET_REFL] THEN MATCH_MP_TAC MONO_EXISTS THEN
   ASM_METIS_TAC[COUNTABLE_IMAGE_INJ_EQ]);;
 
-let COUNTABLE_FL = prove
- (`!l:A->A->bool. COUNTABLE(fl l) <=> COUNTABLE {(x,y) | l x y}`,
+let COUNTABLE_FLD = prove
+ (`!l:A->A->bool. COUNTABLE(fld l) <=> COUNTABLE {(x,y) | l x y}`,
   GEN_TAC THEN EQ_TAC THENL
    [DISCH_THEN(MP_TAC o MATCH_MP COUNTABLE_CROSS o W CONJ);
     DISCH_THEN((fun th ->
@@ -1889,7 +1890,7 @@ let COUNTABLE_FL = prove
     REWRITE_TAC[IMP_IMP; GSYM COUNTABLE_UNION]] THEN
   MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ_ALT] COUNTABLE_SUBSET) THEN
   REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_ELIM_PAIR_THM] THEN
-  REWRITE_TAC[IN_CROSS; FL; IN_IMAGE; IN_ELIM_THM; IN_UNION] THEN
+  REWRITE_TAC[IN_CROSS; fld; IN_IMAGE; IN_ELIM_THM; IN_UNION] THEN
   REWRITE_TAC[EXISTS_PAIR_THM; PAIR_EQ] THEN SET_TAC[]);;
 
 let COUNTABLE_UNION_OF_EMPTY = prove
@@ -2858,6 +2859,24 @@ let CARD_EQ_FULLSIZE_POWERSET = prove
   MATCH_MP_TAC CARD_LE_FINITE_INFINITE THEN
   ASM_REWRITE_TAC[FINITE_BOOL]);;
 
+let CARD_EQ_EXP_INFINITE_FINITE = prove
+ (`!(s:A->bool) (t:B->bool).
+       INFINITE s /\ FINITE t /\ ~(t = {}) ==> s ^_c t =_c s`,
+  REWRITE_TAC[IMP_CONJ; RIGHT_FORALL_IMP_THM] THEN
+  GEN_TAC THEN DISCH_TAC THEN MATCH_MP_TAC FINITE_INDUCT_STRONG THEN
+  REWRITE_TAC[NOT_INSERT_EMPTY] THEN
+  MAP_EVERY X_GEN_TAC [`b:B`; `t:B->bool`] THEN
+  ASM_CASES_TAC `t:B->bool = {}` THEN ASM_REWRITE_TAC[CARD_EXP_SING] THEN
+  STRIP_TAC THEN TRANS_TAC CARD_EQ_TRANS `(s:A->bool) *_c s` THEN
+  ASM_SIMP_TAC[CARD_SQUARE_INFINITE] THEN
+  ONCE_REWRITE_TAC[SET_RULE `a INSERT s = {a} UNION s`] THEN
+  TRANS_TAC CARD_EQ_TRANS `(s:A->bool) ^_c ({b:B} +_c (t:B->bool))` THEN
+  ASM_SIMP_TAC[CARD_EXP_CONG; CARD_EQ_REFL; CARD_DISJOINT_UNION;
+               GSYM DISJOINT; DISJOINT_SING] THEN
+  W(MP_TAC o PART_MATCH lhand CARD_EXP_ADD o lhand o snd) THEN
+  MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ_ALT] CARD_EQ_TRANS) THEN
+  ASM_SIMP_TAC[CARD_MUL_CONG; CARD_EQ_REFL; CARD_EXP_SING]);;
+
 (* ------------------------------------------------------------------------- *)
 (* More about cardinality of lists and restricted powersets etc.             *)
 (* ------------------------------------------------------------------------- *)
@@ -3021,6 +3040,59 @@ let COUNTABLE_RESTRICTED_FUNSPACE = prove
   W(MP_TAC o PART_MATCH lhand CARD_LE_RESTRICTED_FUNSPACE o rand o snd) THEN
   MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ] CARD_LE_COUNTABLE) THEN
   ASM_SIMP_TAC[COUNTABLE_FINITE_SUBSETS; COUNTABLE_CROSS; COUNTABLE_IMAGE]);;
+
+let CARD_LE_RESTRICTED_FUNSPACE_INFINITE = prove
+ (`!(s:A->bool) (t:B->bool) k.
+        INFINITE s /\ ~(t = {})
+        ==> {f | IMAGE f s SUBSET t /\
+                 {x | ~(f x = k x)} SUBSET s /\
+                 FINITE {x | ~(f x = k x)}} <=_c
+            s *_c t`,
+  REPEAT STRIP_TAC THEN
+  W(MP_TAC o PART_MATCH lhand CARD_LE_RESTRICTED_FUNSPACE o lhand o snd) THEN
+  MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ_ALT] CARD_LE_TRANS) THEN
+  MATCH_MP_TAC CARD_EQ_IMP_LE THEN REWRITE_TAC[mul_c; GSYM CROSS] THEN
+  MATCH_MP_TAC CARD_EQ_FINITE_SUBSETS THEN
+  ASM_REWRITE_TAC[INFINITE_CROSS_EQ]);;
+
+let CARD_EQ_RESTRICTED_FUNSPACE_INFINITE = prove
+ (`!(s:A->bool) (t:B->bool) k.
+        INFINITE s /\ ~(?a. t SUBSET {a}) /\ IMAGE k s SUBSET t
+        ==> {f | IMAGE f s SUBSET t /\
+                 {x | ~(f x = k x)} SUBSET s /\
+                 FINITE {x | ~(f x = k x)}} =_c
+            s *_c t`,
+  REPEAT STRIP_TAC THEN REWRITE_TAC[GSYM CARD_LE_ANTISYM] THEN CONJ_TAC THENL
+   [MATCH_MP_TAC CARD_LE_RESTRICTED_FUNSPACE_INFINITE THEN ASM SET_TAC[];
+    MATCH_MP_TAC CARD_MUL2_ABSORB_LE_ALT THEN ASM_REWRITE_TAC[]] THEN
+  CONJ_TAC THENL
+   [SUBGOAL_THEN `!x:A. ?y:B. y IN t /\ ~(k x = y)` MP_TAC THENL
+     [ASM SET_TAC[]; REWRITE_TAC[FORALL_AND_THM; le_c; SKOLEM_THM]] THEN
+    DISCH_THEN(X_CHOOSE_THEN `f:A->B` STRIP_ASSUME_TAC) THEN
+    EXISTS_TAC `\a x. if x = a then (f:A->B) x else k x` THEN
+    REWRITE_TAC[IN_ELIM_THM; SUBSET; FORALL_IN_IMAGE] THEN
+    CONJ_TAC THENL [ALL_TAC; ASM SET_TAC[]] THEN X_GEN_TAC `a:A`;
+    SUBGOAL_THEN `?a:A. a IN s` STRIP_ASSUME_TAC THENL
+     [ASM_MESON_TAC[MEMBER_NOT_EMPTY; FINITE_EMPTY; INFINITE]; ALL_TAC] THEN
+    REWRITE_TAC[le_c] THEN
+    EXISTS_TAC `\b x. if x = a then b else (k:A->B) x` THEN
+    REWRITE_TAC[IN_ELIM_THM; SUBSET; FORALL_IN_IMAGE] THEN
+    CONJ_TAC THENL [X_GEN_TAC `b:B`; ASM SET_TAC[]]] THEN
+  (STRIP_TAC THEN
+   REPEAT(CONJ_TAC THENL [ASM SET_TAC[]; ALL_TAC]) THEN
+   MATCH_MP_TAC FINITE_SUBSET THEN EXISTS_TAC `{a:A}` THEN
+   REWRITE_TAC[FINITE_SING] THEN ASM SET_TAC[]));;
+
+let CARD_EQ_FUNSPACE = prove
+ (`!(s:A->bool) (t:B->bool) k.
+        {f | IMAGE f s SUBSET t /\ {x | ~(f x = k x)} SUBSET s} =_c
+        t ^_c s`,
+  REWRITE_TAC[exp_c; SUBSET; FORALL_IN_IMAGE; IN_ELIM_THM] THEN
+  REPEAT GEN_TAC THEN REWRITE_TAC[EQ_C_BIJECTIONS] THEN
+  EXISTS_TAC `\f x. if x IN s then (f:A->B) x else ARB` THEN
+  EXISTS_TAC `\f x. if x IN s then (f:A->B) x else k x` THEN
+  REWRITE_TAC[IN_ELIM_THM; ARB] THEN REWRITE_TAC[FUN_EQ_THM] THEN
+  MESON_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Cardinality properties of Cartesian products.                             *)

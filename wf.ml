@@ -144,6 +144,17 @@ let WF_DCHAIN = prove
 
 export_thm WF_DCHAIN;;
 
+let WF_DCHAIN_TRANSITIVE = prove
+ (`!r:A->A->bool.
+        (!x y z. r x y /\ r y z ==> r x z)
+        ==> (WF r <=> ~(?s:num->A. !i j. i < j ==> r (s j) (s i)))`,
+  GEN_TAC THEN DISCH_TAC THEN REWRITE_TAC[WF_DCHAIN] THEN
+  AP_TERM_TAC THEN EQ_TAC THEN MATCH_MP_TAC MONO_EXISTS THEN
+  X_GEN_TAC `s:num->A` THEN SIMP_TAC[LT] THEN DISCH_TAC THEN
+  MATCH_MP_TAC TRANSITIVE_STEPWISE_LT THEN ASM_MESON_TAC[]);;
+
+export_thm WF_DCHAIN_TRANSITIVE;;
+
 (* ------------------------------------------------------------------------- *)
 (* Equivalent to just *uniqueness* part of recursion.                        *)
 (* ------------------------------------------------------------------------- *)
@@ -330,6 +341,15 @@ let WF_SUBSET = prove
  (`!r s. (!(x:A) y. r x y ==> s x y) /\ WF s ==> WF r`,
   ACCEPT_TAC (REWRITE_RULE [subrelation] wellfounded_subrelation));;
 
+export_thm WF_SUBSET;;
+
+let WF_RESTRICT = prove
+ (`!r (p:A->bool). WF r ==> WF (\x y. p x /\ p y /\ r x y)`,
+  REPEAT GEN_TAC THEN MATCH_MP_TAC(REWRITE_RULE[IMP_CONJ] WF_SUBSET) THEN
+  SIMP_TAC[]);;
+
+export_thm WF_RESTRICT;;
+
 let WF_MEASURE_GEN = prove
  (`!r (m:A->B). WF r ==> WF (\x y. r (m x) (m y))`,
   REPEAT GEN_TAC THEN REWRITE_TAC[WF_IND] THEN REPEAT STRIP_TAC THEN
@@ -464,6 +484,8 @@ let WF_REFL = prove
   MATCH_MP_TAC wellfounded_irreflexive THEN
   FIRST_ASSUM ACCEPT_TAC);;
 
+export_thm WF_REFL;;
+
 let WF_ANTISYM = prove
  (`!r x (y : A). WF r ==> ~(r x y /\ r y x)`,
   REPEAT STRIP_TAC THEN
@@ -482,6 +504,8 @@ let WF_ANTISYM = prove
     EXISTS_TAC `x : A` THEN
     ASM_REWRITE_TAC []]]);;
 
+export_thm WF_ANTISYM;;
+
 (* ------------------------------------------------------------------------- *)
 (* Even more trivially, the everywhere-false relation is wellfounded.        *)
 (* ------------------------------------------------------------------------- *)
@@ -497,10 +521,40 @@ let WF_FALSE = prove
   REWRITE_TAC[WF]);;
 
 (* ------------------------------------------------------------------------- *)
-(* Tail recursion.                                                           *)
+(* The Nash-Williams minimal bad sequence argument for some predicate `bad`  *)
+(* that is a "safety property" in the Lamport/Alpern/Schneider sense.        *)
 (* ------------------------------------------------------------------------- *)
 
 export_theory "relation-natural-thm";;
+
+let MINIMAL_BAD_SEQUENCE = prove
+ (`!r (bad:(num->A)->bool).
+        WF r /\
+        (!x. ~bad x ==> ?n. !y. (!k. k < n ==> y k = x k) ==> ~bad y) /\
+        (?x. bad x)
+         ==> ?y. bad y /\
+                 !z n. bad z /\ (!k. k < n ==> z k = y k) ==> ~(r (z n) (y n))`,
+  REPEAT GEN_TAC THEN DISCH_TAC THEN SUBGOAL_THEN
+   `?x:num->A. !n. (?y. bad y /\ (!k. k < n ==> y k = x k) /\ y n = x n) /\
+                   !z. bad z /\ (!k. k < n ==> z k = x k) ==> ~(r (z n) (x n))`
+  MP_TAC THENL
+   [MATCH_MP_TAC(MATCH_MP WF_REC_EXISTS WF_num) THEN SIMP_TAC[];
+    MATCH_MP_TAC MONO_EXISTS THEN ASM_MESON_TAC[]] THEN
+  MAP_EVERY X_GEN_TAC [`x:num->A`; `n:num`] THEN
+  DISCH_TAC THEN REWRITE_TAC[MESON[]
+    `(?a. (?y. P y /\ Q y /\ (f : (num -> A) -> A) y = a) /\
+     (!z : num -> A. A z ==> ~B a z)) <=>
+     ?y. (P y /\ Q y) /\ (!z. B (f y) z ==> ~A z)`] THEN
+  MP_TAC(ISPECL [`r:A->A->bool`; `\x:num->A. x n`] WF_MEASURE_GEN) THEN
+  ASM_REWRITE_TAC[] THEN REWRITE_TAC[WF] THEN DISCH_THEN MATCH_MP_TAC THEN
+  POP_ASSUM_LIST(MP_TAC o end_itlist CONJ) THEN SPEC_TAC(`n:num`,`n:num`) THEN
+  INDUCT_TAC THEN SIMP_TAC[LT] THEN MESON_TAC[]);;
+
+export_thm MINIMAL_BAD_SEQUENCE;;
+
+(* ------------------------------------------------------------------------- *)
+(* Tail recursion.                                                           *)
+(* ------------------------------------------------------------------------- *)
 
 let WF_REC_TAIL = prove
  (`!p g h. ?(f : A -> B). !x. f x = if p x then f (g x) else h x`,
@@ -687,3 +741,37 @@ let irreflexive_successor = prove
   ACCEPT_TAC wellfounded_successor);;
 
 export_thm irreflexive_successor;;
+
+let INFINITE_ENUMERATE_SUBSET = prove
+ (`!s. INFINITE s <=>
+       ?f:num->A. (!x. f x IN s) /\ (!x y. f x = f y ==> x = y)`,
+  GEN_TAC THEN EQ_TAC THEN STRIP_TAC THENL
+   [SUBGOAL_THEN `?f:num->A. !n. f n IN s /\ !m. m < n ==> ~(f m = f n)`
+    MP_TAC THENL
+     [MATCH_MP_TAC(MATCH_MP WF_REC_EXISTS WF_num) THEN SIMP_TAC[] THEN
+      MAP_EVERY X_GEN_TAC [`f:num->A`; `n:num`] THEN STRIP_TAC THEN
+      FIRST_ASSUM(MP_TAC o SPEC `IMAGE (f:num->A) {m | m < n}` o
+        MATCH_MP (REWRITE_RULE[IMP_CONJ] INFINITE_DIFF_FINITE)) THEN
+      SIMP_TAC[FINITE_IMAGE; FINITE_NUMSEG_LT] THEN
+      DISCH_THEN(MP_TAC o MATCH_MP INFINITE_NONEMPTY) THEN
+      REWRITE_TAC [GSYM MEMBER_NOT_EMPTY; IN_DIFF; IN_IMAGE; IN_ELIM] THEN
+      DISCH_THEN (X_CHOOSE_THEN `x : A` MP_TAC) THEN
+      REWRITE_TAC [NOT_EXISTS_THM] THEN
+      STRIP_TAC THEN
+      EXISTS_TAC `x : A` THEN
+      ASM_REWRITE_TAC [] THEN
+      X_GEN_TAC `m : num` THEN
+      STRIP_TAC THEN
+      ONCE_REWRITE_TAC [EQ_SYM_EQ] THEN
+      FIRST_X_ASSUM (MP_TAC o SPEC `m : num`) THEN
+      ASM_REWRITE_TAC [];
+      MATCH_MP_TAC MONO_EXISTS THEN GEN_TAC THEN STRIP_TAC THEN
+      ASM_REWRITE_TAC[] THEN MATCH_MP_TAC WLOG_LT THEN
+      ASM_REWRITE_TAC [] THEN
+      ASM_MESON_TAC []];
+     MATCH_MP_TAC INFINITE_SUPERSET THEN
+     EXISTS_TAC `IMAGE (f:num->A) (UNIV : num set)` THEN
+     ASM_REWRITE_TAC[SUBSET; FORALL_IN_IMAGE] THEN
+     ASM_MESON_TAC[INFINITE_IMAGE_INJ; num_INFINITE]]);;
+
+export_thm INFINITE_ENUMERATE_SUBSET;;

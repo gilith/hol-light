@@ -6048,16 +6048,36 @@ let FINITE_CROSS_EQ = prove
 
 export_thm FINITE_CROSS_EQ;;
 
+let INFINITE_CROSS_EQ = prove
+ (`!(s:A set) (t:B set).
+        INFINITE(s CROSS t) <=>
+        ~(s = {}) /\ INFINITE t \/ INFINITE s /\ ~(t = {})`,
+  REWRITE_TAC[INFINITE; FINITE_CROSS_EQ] THEN MESON_TAC[FINITE_EMPTY]);;
+
+export_thm INFINITE_CROSS_EQ;;
+
+let FINITE_CROSS_UNIV = prove
+ (`FINITE(UNIV:(A#B)set) <=> FINITE(UNIV:A set) /\ FINITE(UNIV:B set)`,
+  REWRITE_TAC[GSYM CROSS_UNIV; FINITE_CROSS_EQ; UNIV_NOT_EMPTY]);;
+
+export_thm FINITE_CROSS_UNIV;;
+
+let INFINITE_CROSS_UNIV = prove
+ (`INFINITE(UNIV:(A#B)set) <=> INFINITE(UNIV:A set) \/ INFINITE(UNIV:B set)`,
+  REWRITE_TAC[GSYM CROSS_UNIV; INFINITE_CROSS_EQ; UNIV_NOT_EMPTY] THEN
+  MESON_TAC[]);;
+
+export_thm INFINITE_CROSS_UNIV;;
+
 let FINITE_UNIV_PAIR = prove
  (`FINITE (UNIV : (A # A)set) <=> FINITE (UNIV : A set)`,
-  MP_TAC(ISPECL [`UNIV : A set`; `UNIV : A set`] FINITE_CROSS_EQ) THEN
-  REWRITE_TAC[CROSS_UNIV; UNIV_NOT_EMPTY]);;
+  REWRITE_TAC[FINITE_CROSS_UNIV]);;
 
 export_thm FINITE_UNIV_PAIR;;
 
 let INFINITE_UNIV_PAIR = prove
  (`INFINITE (UNIV : (A # A)set) <=> INFINITE (UNIV : A set)`,
-  REWRITE_TAC[INFINITE; FINITE_UNIV_PAIR]);;
+  REWRITE_TAC[INFINITE_CROSS_UNIV]);;
 
 export_thm INFINITE_UNIV_PAIR;;
 
@@ -6533,6 +6553,40 @@ let CARD_POWERSET = prove
 
 export_thm CARD_POWERSET;;
 
+let FINITE_RESTRICTED_POWERSET = prove
+ (`!(s:A set) n.
+        FINITE {t | t SUBSET s /\ t HAS_SIZE n} <=>
+        FINITE s \/ n = 0`,
+  REPEAT GEN_TAC THEN ASM_CASES_TAC `n = 0` THEN ASM_REWRITE_TAC[] THENL
+   [REWRITE_TAC[HAS_SIZE_0] THEN
+    MATCH_MP_TAC FINITE_SUBSET THEN
+    EXISTS_TAC `{ {} } : (A set) set` THEN
+    REWRITE_TAC [FINITE_SING; SUBSET] THEN
+    X_GEN_TAC `u : A set` THEN
+    REWRITE_TAC [IN_ELIM; IN_SING] THEN
+    STRIP_TAC;
+    ASM_CASES_TAC `FINITE(s:A set)` THEN ASM_REWRITE_TAC[] THENL
+     [MP_TAC (ISPEC `{x : A set | x SUBSET s}` FINITE_RESTRICT) THEN
+      REWRITE_TAC [IN_ELIM] THEN
+      DISCH_THEN MATCH_MP_TAC THEN
+      MATCH_MP_TAC FINITE_POWERSET THEN
+      ASM_REWRITE_TAC [];
+      DISCH_TAC THEN SUBGOAL_THEN `FINITE(s:A set)`
+      MP_TAC THENL [ALL_TAC; ASM_REWRITE_TAC[]] THEN
+      MATCH_MP_TAC FINITE_SUBSET THEN
+      EXISTS_TAC `UNIONS {t:A set | t SUBSET s /\ t HAS_SIZE n}` THEN
+      CONJ_TAC THENL
+       [ASM_SIMP_TAC[FINITE_UNIONS; FORALL_IN_GSPEC] THEN SIMP_TAC[HAS_SIZE];
+        GEN_REWRITE_TAC I [SUBSET] THEN X_GEN_TAC `x:A` THEN DISCH_TAC THEN
+        REWRITE_TAC[UNIONS_GSPEC; IN_ELIM_THM; UNWIND_THM1] THEN
+        REWRITE_TAC [GSYM SING_SUBSET] THEN
+        ONCE_REWRITE_TAC [CONJ_SYM] THEN
+        MATCH_MP_TAC CHOOSE_SUBSET_BETWEEN THEN
+        ASM_REWRITE_TAC[SING_SUBSET; FINITE_SING; CARD_SING] THEN
+        ASM_SIMP_TAC[LE_1]]]]);;
+
+export_thm FINITE_RESTRICTED_POWERSET;;
+
 (* ------------------------------------------------------------------------- *)
 (* Set of numbers is infinite.                                               *)
 (* ------------------------------------------------------------------------- *)
@@ -6785,6 +6839,17 @@ let INFINITE_ENUMERATE = prove
       ASM_REWRITE_TAC [LE_0]]]]]);;
 
 export_thm INFINITE_ENUMERATE;;
+
+let INFINITE_ENUMERATE_EQ = prove
+ (`!s:num set.
+     INFINITE s <=> ?r. (!m n:num. m < n ==> r m < r n) /\ IMAGE r (UNIV : num set) = s`,
+  GEN_TAC THEN EQ_TAC THEN REWRITE_TAC[INFINITE_ENUMERATE] THEN
+  DISCH_THEN(X_CHOOSE_THEN `r:num->num` (STRIP_ASSUME_TAC o GSYM)) THEN
+  ASM_REWRITE_TAC[] THEN MATCH_MP_TAC INFINITE_IMAGE_INJ THEN
+  REWRITE_TAC[num_INFINITE; IN_UNIV] THEN
+  MATCH_MP_TAC WLOG_LT THEN ASM_MESON_TAC[LT_REFL]);;
+
+export_thm INFINITE_ENUMERATE_EQ;;
 
 export_theory "set-size-thm";;
 
