@@ -7072,6 +7072,46 @@ let IMAGE_IMP_INJECTIVE = prove
 
 export_thm IMAGE_IMP_INJECTIVE;;
 
+let HAS_SIZE_IMAGE_INJ_RESTRICT = prove
+ (`!(f:A->B) s t p n.
+      FINITE s /\ FINITE t /\ CARD s = CARD t /\
+      IMAGE f s SUBSET t /\
+      (!x y. x IN s /\ y IN s /\ f x = f y ==> x = y) /\
+      {x | x IN s /\ p (f x)} HAS_SIZE n
+      ==> {x | x IN t /\ p x} HAS_SIZE n`,
+  REPEAT STRIP_TAC THEN
+  SUBGOAL_THEN
+   `{x | x IN t /\ p x} = IMAGE (f:A->B) {x | x IN s /\ p (f x)}`
+  SUBST1_TAC THENL
+  [MP_TAC(ISPECL [`s:A set`; `t:B set`; `f:A->B`]
+       SURJECTIVE_IFF_INJECTIVE_GEN) THEN
+   ASM_REWRITE_TAC[] THEN
+   STRIP_TAC THEN
+   REWRITE_TAC [EXTENSION] THEN
+   X_GEN_TAC `y:B` THEN
+   REWRITE_TAC [IN_ELIM; IN_IMAGE] THEN
+   EQ_TAC THENL
+   [STRIP_TAC THEN
+    FIRST_X_ASSUM (MP_TAC o SPEC `y : B`) THEN
+    ASM_REWRITE_TAC [] THEN
+    DISCH_THEN (X_CHOOSE_THEN `x : A` STRIP_ASSUME_TAC) THEN
+    EXISTS_TAC `x : A` THEN
+    ASM_REWRITE_TAC [];
+    DISCH_THEN (X_CHOOSE_THEN `x : A` STRIP_ASSUME_TAC) THEN
+    ASM_REWRITE_TAC [] THEN
+    UNDISCH_TAC `IMAGE (f : A -> B) s SUBSET t` THEN
+    ASM_REWRITE_TAC [SUBSET; IN_IMAGE] THEN
+    DISCH_THEN MATCH_MP_TAC THEN
+    EXISTS_TAC `x : A` THEN
+    ASM_REWRITE_TAC []];
+   MATCH_MP_TAC HAS_SIZE_IMAGE_INJ THEN
+   ASM_REWRITE_TAC [IN_ELIM] THEN
+   REPEAT STRIP_TAC THEN
+   FIRST_X_ASSUM MATCH_MP_TAC THEN
+   ASM_REWRITE_TAC []]);;
+
+export_thm HAS_SIZE_IMAGE_INJ_RESTRICT;;
+
 (* ------------------------------------------------------------------------- *)
 (* Converse relation between cardinality and injection.                      *)
 (* ------------------------------------------------------------------------- *)
