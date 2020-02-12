@@ -339,15 +339,11 @@ let FINITE_SPECIAL_DIVISORS = prove
   SET_TAC[]);;
 
 let DIVIDES_DIVIDES_DIV = prove
- (`!n d. 1 <= n /\ d divides n
-         ==> (e divides (n DIV d) <=> (d * e) divides n)`,
-  REPEAT GEN_TAC THEN
-  GEN_REWRITE_TAC (LAND_CONV o ONCE_DEPTH_CONV) [DIVIDES_DIV_MULT] THEN
-  ABBREV_TAC `q = n DIV d` THEN
-  DISCH_THEN(CONJUNCTS_THEN2 ASSUME_TAC MP_TAC) THEN
-  ASM_CASES_TAC `d = 0` THENL
-   [ASM_SIMP_TAC[MULT_CLAUSES; LE_1];
-    ASM_MESON_TAC[DIVIDES_LMUL2_EQ; MULT_SYM]]);;
+ (`!n d e. d divides n ==> (e divides (n DIV d) <=> (d * e) divides n)`,
+  REPEAT GEN_TAC THEN ASM_CASES_TAC `d = 0` THEN
+  ASM_REWRITE_TAC[DIV_ZERO; MULT_CLAUSES; DIVIDES_0; DIVIDES_ZERO] THEN
+  REWRITE_TAC[divides; LEFT_IMP_EXISTS_THM] THEN
+  ASM_SIMP_TAC[DIV_MULT; GSYM MULT_ASSOC; EQ_MULT_LCANCEL]);;
 
 let DIVISORS_EQ = prove
  (`!m n. m = n <=> !d. d divides m <=> d divides n`,
@@ -1020,6 +1016,14 @@ let PRIME_FACTOR_INDUCT = prove
   RULE_ASSUM_TAC(REWRITE_RULE[MULT_EQ_0; DE_MORGAN_THM]) THEN
   DISCH_THEN MATCH_MP_TAC THEN ASM_REWRITE_TAC[] THEN
   FIRST_X_ASSUM MATCH_MP_TAC THEN ASM_MESON_TAC[PRIME_FACTOR_LT; MULT_EQ_0]);;
+
+let COMPLETE_FACTOR_INDUCT = prove
+ (`!P. P 0 /\ P 1 /\
+       (!p. prime p ==> P p) /\
+       (!m n. P m /\ P n ==> P(m * n))
+       ==> !n. P n`,
+  GEN_TAC THEN STRIP_TAC THEN MATCH_MP_TAC PRIME_FACTOR_INDUCT THEN
+  ASM_SIMP_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Infinitude of primes.                                                     *)

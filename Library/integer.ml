@@ -103,6 +103,11 @@ let INT_DIVIDES_RPOW_SUC = prove
  (`!x y n. x divides y ==> x divides (y pow (SUC n))`,
   SIMP_TAC[INT_DIVIDES_RPOW; NOT_SUC]);;
 
+let INT_DIVIDES_POW_LE_IMP = prove
+ (`!(p:int) m n. m <= n ==> p pow m divides p pow n`,
+  SIMP_TAC[LE_EXISTS; INT_POW_ADD; LEFT_IMP_EXISTS_THM] THEN
+  CONV_TAC INTEGER_RULE);;
+
 let INT_DIVIDES_ANTISYM_DIVISORS = prove
  (`!a b:int. a divides b /\ b divides a <=> !d. d divides a <=> d divides b`,
   MESON_TAC[INT_DIVIDES_REFL; INT_DIVIDES_TRANS]);;
@@ -421,6 +426,10 @@ let INT_CONG = prove
  (`!x y n. (x == y) (mod n) <=> n divides (x - y)`,
   INTEGER_TAC);;
 
+let INT_CONG_MOD_ABS = prove
+ (`!a b n:int. (a == b) (mod (abs n)) <=> (a == b) (mod n)`,
+  REWRITE_TAC[INT_CONG; INT_DIVIDES_LABS]);;
+
 let INT_CONG_MUL_LCANCEL = prove
  (`!a n x y. coprime(a,n) /\ (a * x == a * y) (mod n) ==> (x == y) (mod n)`,
   INTEGER_TAC);;
@@ -517,6 +526,14 @@ let INT_CONG_COPRIME = prove
  (`!x y n. (x == y) (mod n) ==> (coprime(n,x) <=> coprime(n,y))`,
   INTEGER_TAC);;
 
+let INT_COPRIME_RREM = prove
+ (`!m n. coprime(m,n rem m) <=> coprime(m,n)`,
+  MESON_TAC[INT_CONG_COPRIME; INT_CONG_RREM; INT_CONG_REFL]);;
+
+let INT_COPRIME_LREM = prove
+ (`!a b. coprime(a rem n,n) <=> coprime(a,n)`,
+  MESON_TAC[INT_COPRIME_RREM; INT_COPRIME_SYM]);;
+
 let INT_CONG_MOD_MULT = prove
  (`!x y m n. (x == y) (mod n) /\ m divides n ==> (x == y) (mod m)`,
   INTEGER_TAC);;
@@ -535,6 +552,10 @@ let INT_CONG_TO_1 = prove
 
 let INT_CONG_SOLVE = prove
  (`!a b n. coprime(a,n) ==> ?x. (a * x == b) (mod n)`,
+  INTEGER_TAC);;
+
+let INT_CONG_SOLVE_EQ = prove
+ (`!n a b:int. (?x. (a * x == b) (mod n)) <=> gcd(a,n) divides b`,
   INTEGER_TAC);;
 
 let INT_CONG_SOLVE_UNIQUE = prove

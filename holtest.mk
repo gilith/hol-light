@@ -26,11 +26,13 @@ STANDALONE_EXAMPLES:=\
 	Examples/inverse_bug_puzzle_tac \
 	RichterHilbertAxiomGeometry/inverse_bug_puzzle_read \
 	Library/isum \
+	Examples/jacobi \
 	Examples/kb \
 	Examples/lagrange_lemma \
 	Examples/lucas_lehmer \
 	Examples/mangoldt \
 	Examples/mccarthy \
+	Examples/miller_rabin \
 	Examples/misiurewicz \
 	Examples/mizar \
 	Library/modmul_group \

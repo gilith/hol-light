@@ -8,29 +8,273 @@
   * page: https://github.com/jrh13/hol-light/commits/master         *
   * *****************************************************************
 
+Fri 31st Jan 2020       Library/jacobi.ml [new file]
+
+Added a new library file giving the definition of and basic results about the
+Jacobi symbol. The basic NxN->Z version is "jacobi" and there is an integer
+(ZxZ->Z) version "int_jacobi". This development doesn't explicitly break out
+the concept of Legendgre symbol, since the Jacobi symbol cleanly subsumes it,
+but "100/reciprocity.ml" has an explicit definition if wanted, and the proof
+here of reciprocity for the Jacobi symbol repurposes some of that material,
+mainly the Gauss's Lemma variants.
+
+Thu 30th Jan 2020       int.ml, Library/integer.ml, Library/prime.ml, Library/primitive.ml
+
+Added a miscellany of theorems all connected with integers, divisibility etc.,
+a few filling rather surprising gaps.
+
+  COMPLETE_FACTOR_INDUCT =
+    |- !P. P 0 /\
+           P 1 /\
+           (!p. prime p ==> P p) /\
+           (!m n. P m /\ P n ==> P (m * n))
+           ==> (!n. P n)
+
+  EXISTS_INT_CASES =
+    |- !P. (?x. P x) <=> (?n. P (&n)) \/ (?n. P (-- &n))
+
+  INT_CONG_NUM_EXISTS =
+    |- !x y. (y = &0 ==> &0 <= x) ==> (?n. (&n == x) (mod y))
+
+  INT_CONG_SOLVE_EQ =
+    |- !n a b. (?x. (a * x == b) (mod n)) <=> gcd(a,n) divides b
+
+  INT_DIVIDES_POW_LE_IMP =
+    |- !p m n. m <= n ==> p pow m divides p pow n
+
+  INT_OF_NUM_POWER_RESIDUE =
+    |- !n k a. (?x. (x EXP k == a) (mod n)) <=> (?x. (x pow k == &a) (mod &n))
+
+  POWER_RESIDUE_MODULO_PRIMITIVE_ORDER =
+    |- !n a k.
+           coprime(n,a) /\ (?x. order n x = phi n)
+           ==> ((?x. (x EXP k == a) (mod n)) <=>
+                gcd(k,phi n) divides phi n DIV order n a)
+
+  POWER_RESIDUE_MODULO_PRIMITIVE_ORDER_ALT =
+    |- !n a k.
+           coprime(n,a) /\ (?x. order n x = phi n)
+           ==> ((?x. (x EXP k == a) (mod n)) <=>
+                order n a divides phi n DIV gcd(k,phi n))
+
+  QUADRATIC_RESIDUE_MODULO_ODD_POWER =
+    |- !n a k.
+           ODD n /\ coprime(n,a)
+           ==> ((?x. (x EXP 2 == a) (mod (n EXP k))) <=>
+                k = 0 \/ (?x. (x EXP 2 == a) (mod n)))
+
+  QUADRATIC_RESIDUE_MODULO_PRIMITIVE_ORDER =
+    |- !n a.
+           coprime(n,a) /\ 3 <= n /\ (?x. order n x = phi n)
+           ==> ((?x. (x EXP 2 == a) (mod n)) <=> EVEN (phi n DIV order n a))
+
+Wed 29th Jan 2020       int.ml
+
+Added a simple but usefully sharp fact about commuting addition and
+truncating division over N:
+
+  |- !d a b. d divides a \/ d divides b ==> (a + b) DIV d = a DIV d + b DIV d
+
+Tue 28th Jan 2020       Library/products.ml, 100/reciprocity.ml
+
+Added four groups of analogous product theorems for real, integer and natural
+number products:
+
+  IPRODUCT_INJECTION =
+    |- !f p s.
+           FINITE s /\
+           (!x. x IN s ==> p x IN s) /\
+           (!x y. x IN s /\ y IN s /\ p x = p y ==> x = y)
+           ==> iproduct s (f o p) = iproduct s f
+
+  IPRODUCT_RELATED =
+    |- !R f g s.
+           R (&1) (&1) /\
+           (!m n m' n'. R m n /\ R m' n' ==> R (m * m') (n * n')) /\
+           FINITE s /\
+           (!i. i IN s ==> R (f i) (g i))
+           ==> R (iproduct s f) (iproduct s g)
+
+  IPRODUCT_RESTRICT =
+    |- !f s.
+           FINITE s
+           ==> iproduct s (\i. if i IN s then f i else &1) = iproduct s f
+
+  IPRODUCT_RESTRICT_SET =
+    |- !P s f.
+           iproduct {i | i IN s /\ P i} f =
+           iproduct s (\i. if P i then f i else &1)
+
+  NPRODUCT_INJECTION =
+    |- !f p s.
+           FINITE s /\
+           (!x. x IN s ==> p x IN s) /\
+           (!x y. x IN s /\ y IN s /\ p x = p y ==> x = y)
+           ==> nproduct s (f o p) = nproduct s f
+
+  NPRODUCT_RELATED =
+    |- !R f g s.
+           R 1 1 /\
+           (!m n m' n'. R m n /\ R m' n' ==> R (m * m') (n * n')) /\
+           FINITE s /\
+           (!i. i IN s ==> R (f i) (g i))
+           ==> R (nproduct s f) (nproduct s g)
+
+  NPRODUCT_RESTRICT =
+    |- !f s.
+           FINITE s
+           ==> nproduct s (\i. if i IN s then f i else 1) = nproduct s f
+
+  NPRODUCT_RESTRICT_SET =
+    |- !P s f.
+           nproduct {i | i IN s /\ P i} f =
+           nproduct s (\i. if P i then f i else 1)
+
+  PRODUCT_INJECTION =
+    |- !f p s.
+           FINITE s /\
+           (!x. x IN s ==> p x IN s) /\
+           (!x y. x IN s /\ y IN s /\ p x = p y ==> x = y)
+           ==> product s (f o p) = product s f
+
+  PRODUCT_RELATED =
+    |- !R f g s.
+           R (&1) (&1) /\
+           (!m n m' n'. R m n /\ R m' n' ==> R (m * m') (n * n')) /\
+           FINITE s /\
+           (!i. i IN s ==> R (f i) (g i))
+           ==> R (product s f) (product s g)
+
+  PRODUCT_RESTRICT =
+    |- !f s.
+           FINITE s
+           ==> product s (\i. if i IN s then f i else &1) = product s f
+
+  PRODUCT_RESTRICT_SET =
+    |- !P s f.
+           product {i | i IN s /\ P i} f =
+           product s (\i. if P i then f i else &1)
+
+Removed a few effective duplications from 100/reciprocity.ml including
+NPRODUCT_INJECTION above.
+
+Fri 24th Jan 2020       Library/prime.ml
+
+Removed the unnecessary 1 <= n hypothesis from
+
+  DIVIDES_DIVIDES_DIV =
+   |- !n d e. d divides n ==> (e divides n DIV d <=> d * e divides n)
+
+and likewise a ~(n = 0) hypothesis from
+
+  POWER_RESIDUE_MODULO_PRIMITIVE =
+    |- !n a k.
+         coprime(n,a) /\ (?x. order n x = phi n)
+         ==> ((?x. (x EXP k == a) (mod n)) <=>
+              (a EXP (phi n DIV gcd(k,phi n)) == 1) (mod n))
+
+Thu 23rd Jan 2020       int.ml, Library/integer.ml
+
+Added miscelleneous trivia around integer divisibility:
+
+  INT_CONG_MOD_ABS =
+    |- !a b n. (a == b) (mod abs n) <=> (a == b) (mod n)
+
+  INT_COPRIME_LREM =
+    |- !a b. coprime(a rem n,n) <=> coprime(a,n)
+
+  INT_COPRIME_RREM =
+   |- !m n. coprime(m,n rem m) <=> coprime(m,n)
+
+  INT_REM_RABS =
+   |- !x y. x rem abs y = x rem y
+
+  NUM_OF_INT_ADD =
+    |- !x y.
+           &0 <= x /\ &0 <= y
+           ==> num_of_int (x + y) = num_of_int x + num_of_int y
+
+  NUM_OF_INT_MUL =
+    |- !x y.
+           &0 <= x /\ &0 <= y
+           ==> num_of_int (x * y) = num_of_int x * num_of_int y
+
+  NUM_OF_INT_POW =
+   |- !x n. &0 <= x ==> num_of_int (x pow n) = num_of_int x EXP n
+
+Wed 22nd Jan 2020       int.ml
+
+Added a few trivial integer remainder theorems, analogs of things already
+there for the natural numbers
+
+  INT_CONG_LREM =
+    |- !x y n. (x rem n == y) (mod n) <=> (x == y) (mod n)
+
+  INT_CONG_RREM =
+    |- !x y n. (x == y rem n) (mod n) <=> (x == y) (mod n)
+
+  INT_REM_REM_MUL =
+    |- (!m n p. m rem (n * p) rem n = m rem n) /\
+       (!m n p. m rem (n * p) rem p = m rem p)
+
+Tue 21st Jan 2020       Library/pocklington.ml
+
+Added a couple of trivial but handy formulations of congruences mod 2:
+
+  CONG_MOD_2 =
+    |- !a b. (a == b) (mod 2) <=> (EVEN a <=> EVEN b)
+
+  CONG_MOD_2_ALT =
+    |- !a b. (a == b) (mod 2) <=> (ODD a <=> ODD b)
+
+Mon 20th Jan 2020       int.ml, Library/products.ml
+
+Added a definition of "iproduct" (product over integers) to the Library file
+"Library/products.ml", with theorems exactly analogous to those of real
+products minus the ones about inversion and division. The only other difference
+is that there is no "prioritize_int()" to avoid disturbing any existing
+applications.
+
+In support, added two trivial theorems where the analogs of existing real
+theorems were forgotten:
+
+  INT_LE_MUL2 =
+    |- !w x y z. &0 <= w /\ w <= x /\ &0 <= y /\ y <= z ==> w * y <= x * z
+
+  INT_LT_MUL2 =
+    |- !w x y z. &0 <= w /\ w < x /\ &0 <= y /\ y < z ==> w * y < x * z
+
+Sun  5th Jan 2020       Examples/miller_rabin.ml [new file]
+
+Added a new file giving some results about Miller-Rabin strong probable primes
+or pseudoprimes (in our naming we  use "pseudoprime" inclusively to include
+primes). This consists of the basic definitions, a few elementary properties
+and relations with primality, and then the main "1/4 of (coprime) numbers"
+upper bounds on the density of pseudoprime bases for a composite number.
+
 Sat 28th Dec 2019       arith.ml, Library/prime.ml, Library/pocklington.ml
 
 Added a few more basic number-theoretic lemmas:
 
   DIV_EQ_SELF =
     |- !m n. m DIV n = m <=> m = 0 \/ n = 1
-  
+
   LCM_EQ_MULT =
     |- !m n. lcm(m,n) = m * n <=> m = 0 \/ n = 0 \/ coprime(m,n)
-  
+
   LCM_LE_MULT =
     |- !m n. lcm(m,n) <= m * n
-  
+
   LE_LCM =
     |- (!m n. m <= lcm(m,n) <=> n = 0 ==> m = 0) /\
        (!m n. n <= lcm(m,n) <=> m = 0 ==> n = 0)
-  
+
   MAX_LE_LCM =
     |- !m n. (m = 0 <=> n = 0) ==> MAX m n <= lcm(m,n)
-  
+
   MAX_LE_LCM_EQ =
     |- !m n. MAX m n <= lcm(m,n) <=> m = 0 <=> n = 0
-  
+
   ORDER_DIVIDES_MAXIMAL =
     |- !p. ~(p = 1)
            ==> ?n. coprime(p,n) /\
